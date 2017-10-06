@@ -336,6 +336,16 @@ for ($i = 0; $i<@cxs; $i++) {
   $utils->doAsyncCmd($cmd);
 }
 
+# LANforge 5.3.7 GUI has 'cli' cmd to run arbitrary commands.  So, ask it
+# to refresh the endpoints and cx now that they are running.  This will only
+# work on a unix-like system, but one could use a real tcp connection with a bit
+# more work.  Assumes GUI is running with option: -cli-socket 3990 on the local machine.
+$cmd = "echo -e cli show_endp\\\\ncli show_port\\\\ncli show_cx\\\\nexit | nc localhost 3990";
+#print("Running cmd: $cmd\n");
+$rslt = `$cmd`;
+#print $rslt;
+
+
 print("Sleeping 5 seconds to let connections initialize...\n");
 sleep(5);
 
@@ -474,6 +484,14 @@ for ($i = 0; $i<@cxs; $i++) {
   my $cmd = "set_cx_state all " . $cxs[$i] . " stopped";
   $utils->doCmd($cmd);
 }
+
+# Refresh GUI stats before we query JSON.
+$cmd = "echo -e cli show_port\\\\ncli show_cx\\\\nexit | nc localhost 3990";
+#print("Running cmd: $cmd\n");
+$rslt = `$cmd`;
+
+# Wait 2 seconds for reports to come back to the GUI.
+sleep(2);
 
 # Gather some stats using JSON.  This assumes the GUI is running on the local machine on port 8080
 # [lanforge@lf0313-6477 LANforgeGUI_5.3.7]$ pwd
