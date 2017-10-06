@@ -500,15 +500,13 @@ sleep(2);
 #
 
 # Get a JSON dump of all rows and columns on the LANforge GUI Ports Tab.
-my $port_tab = `curl -sq http://localhost:8080/PortTab`;
-my $ports_data = GuiResponseToHash($port_tab);
-#my $ports_data = decode_json($port_tab);
-#print Dumper($ports_data);
+my $gjson = new LANforge::GuiJson();
+$gjson->Request("http://localhost:8080/PortTab");
 
 # Grab data for these fields for all of our ports in use in this test.
 my @field_names = ("bps TX", "bps RX", "TX-Rate", "RX-Rate", "AP", "Channel", "CX Time.*");
 my @port_names = (@stations, $upstream);
-my $ra_fields = GetFields($ports_data, 'Device', \@port_names, \@field_names);
+my $ra_fields = $gjson->GetFields('Device', \@port_names, \@field_names);
 
 # And print out the JSON data on the console.  This is just an example, you may
 # instead wish to grab different data and graph it and/or poke it into some long-term
