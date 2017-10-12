@@ -95,7 +95,7 @@ my $usage = "$0  --port_name {name | number}
 [--speedB         { transmit speed for endpoint B }
 [--min_sleep      { minimum number (seconds) to run the connections } ]
 [--max_sleep      { maximum number (seconds) to run the connections} ]
-[--load           { db-name } ]
+[--load|-L        { db-name } ]
 [--card           { card-id } ]
 [--quiet          { level } ]
 [--set_ifstate    {up | down} ]
@@ -113,7 +113,8 @@ my $usage = "$0  --port_name {name | number}
 [--ap             {BSSID of AP, or 'DEFAULT' for any.}
 [--eap_identity   {value|[BLANK]}]
 [--eap_passwd     {value|[BLANK]}]
-[--log_file       {value}] # disabled by default
+[--log_file|--log {value}] # disabled by default
+[--help|-h        # show help ]
 
 Examples:
 ./lf_wifi_rest_example.pl --manager localhost --card 1 --port_name sta010 --station_count 5 --ssid Lede-apu2-AC \
@@ -122,9 +123,10 @@ Examples:
 
 my $i = 0;
 my $log_cli = 'unset';
-
+my $show_help =0;
 GetOptions
 (
+ 'help|h'            => \$show_help,
  'ap=s'              => \$ap,
  'port_name|e=s'     => \$port_name,
  'upstream=s'        => \$upstream,
@@ -147,10 +149,15 @@ GetOptions
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|i=s'  => \$eap_identity,
  'eap_passwd|p=s'    => \$eap_passwd,
- 'log_file|l=s'      => \$log_file,
+ 'log_file|log=s'      => \$log_file,
  'log_cli=s{0,1}'    => \$log_cli,
  'wifi_mode=i'       => \$wifi_mode,
  ) || (print($usage) && exit(1));
+
+if ($show_help) {
+   print $usage;
+   exit 0;
+}
 
  if ($::quiet eq "0") {
    $::quiet = "no";
