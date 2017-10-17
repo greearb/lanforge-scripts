@@ -1475,6 +1475,11 @@ sub initStationAddr {
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
 my $help;
+
+if (@ARGV < 2) {
+   print $usage;
+   exit 0;
+}
 GetOptions
 (
   'mgr|m=s'                   => \$::lfmgr_host,

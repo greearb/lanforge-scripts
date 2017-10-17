@@ -150,41 +150,53 @@ Example:
 
 my $i = 0;
 my $cmd;
-die($::usage) if (@ARGV < 2);
+
 my $log_cli = "unset"; # use ENV{LOG_CLI} elsewhere
+my $show_help = 0;
+
+if (@ARGV < 2) {
+   print $usage;
+   exit 0;
+}
 
 GetOptions
 (
-        'endp_name|e=s' => \$::endp_name,
-        'endp_cmd=s'    => \$::endp_cmd,
-        'endp_vals|o=s' => \$::endp_vals,
-        'action|a=s'    => \$::action,
-        'cmd|c=s'       => \$::do_cmd,
-        'mgr|m=s'       => \$::lfmgr_host,
-        'mgr_port|p=i'  => \$::lfmgr_port,
-        'resource|r=i'  => \$::resource,
-        'port_name=s'   => \$::port_name,
-        'speed|s=i'     => \$::speed,
-        'max_speed=s'   => \$::speed,
-        'quiet|q=s'     => \$::quiet,
-        'endp_type=s'   => \$::endp_type,
-        'mcast_addr=s'  => \$::mcast_addr,
-        'mcast_port=s'  => \$::mcast_port,
-        'min_pkt_sz=s'  => \$::min_pkt_sz,
-        'max_pkt_sz=s'  => \$::max_pkt_sz,
-        'rcv_mcast=s'   => \$::rcv_mcast,
-        'use_csums=s'   => \$::use_csums,
-        'ttl=i'         => \$::ttl,
-        'report_timer=i' => \$::report_timer,
-        'cx_name=s'     => \$::cx_name,
-        'cx_endps=s'    => \$::cx_endps,
-        'test_mgr=s'    => \$::test_mgr,
-        'tos=s'         => \$::tos,
-        'arm_pps=i'     => \$::arm_pps,
-        'ip_port=i'     => \$::ip_port,
-        'multicon=i'    => \$::multicon,
-        'log_cli=s{0,1}'=> \$log_cli,
+   'help|h'        => \$show_help,
+   'endp_name|e=s' => \$::endp_name,
+   'endp_cmd=s'    => \$::endp_cmd,
+   'endp_vals|o=s' => \$::endp_vals,
+   'action|a=s'    => \$::action,
+   'cmd|c=s'       => \$::do_cmd,
+   'mgr|m=s'       => \$::lfmgr_host,
+   'mgr_port|p=i'  => \$::lfmgr_port,
+   'resource|r=i'  => \$::resource,
+   'port_name=s'   => \$::port_name,
+   'speed|s=i'     => \$::speed,
+   'max_speed=s'   => \$::speed,
+   'quiet|q=s'     => \$::quiet,
+   'endp_type=s'   => \$::endp_type,
+   'mcast_addr=s'  => \$::mcast_addr,
+   'mcast_port=s'  => \$::mcast_port,
+   'min_pkt_sz=s'  => \$::min_pkt_sz,
+   'max_pkt_sz=s'  => \$::max_pkt_sz,
+   'rcv_mcast=s'   => \$::rcv_mcast,
+   'use_csums=s'   => \$::use_csums,
+   'ttl=i'         => \$::ttl,
+   'report_timer=i' => \$::report_timer,
+   'cx_name=s'     => \$::cx_name,
+   'cx_endps=s'    => \$::cx_endps,
+   'test_mgr=s'    => \$::test_mgr,
+   'tos=s'         => \$::tos,
+   'arm_pps=i'     => \$::arm_pps,
+   'ip_port=i'     => \$::ip_port,
+   'multicon=i'    => \$::multicon,
+   'log_cli=s{0,1}'=> \$log_cli,
 ) || die("$::usage");
+
+if ($show_help) {
+   print $usage;
+   exit 0;
+}
 
 if ($::quiet eq "0") {
   $::quiet = "no";

@@ -94,6 +94,7 @@ my $usage = "$0  --port_name {name | number}
 [--eap_identity   {value|[BLANK]}]
 [--eap_passwd     {value|[BLANK]}]
 [--log_file       {value}] # disabled by default
+[--help|-h        ] # show help
 
 Examples:
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --show_port
@@ -110,9 +111,15 @@ Examples:
 
 my $i = 0;
 my $log_cli = 'unset';
+my $show_help = 0;
 
+if (@ARGV < 2) {
+   print $usage;
+   exit 0;
+}
 GetOptions
 (
+ 'help|h'            => \$show_help,
  'ap=s'              => \$ap,
  'port_name|e=s'     => \$port_name,
  'cmd|c=s'           => \$cmd,
@@ -144,6 +151,11 @@ GetOptions
  elsif ($::quiet eq "1") {
    $::quiet = "yes";
  }
+
+if ($show_help) {
+   print $usage;
+   exit 0
+}
 
 # Open connection to the LANforge server.
 if (defined $log_cli) {

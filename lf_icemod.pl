@@ -83,20 +83,25 @@ my $i = 0;
 
 GetOptions 
 (
-        'endp_name|e=s'  => \$endp_name,
-        'speed|s=i'     => \$speed,
-        'cx|c=s'   => \$cx,
-        'drop_pm|d=i'   => \$drop_pm,
-        'latency|l=i'   => \$latency,
-        'jitter|j=i'    => \$jitter,
-        'switch|w=s'    => \$switch,
-        'manager|m=s'    => \$lfmgr_host,
-        'pcap|p=s'    => \$pcap,
-        'load|L=s'    => \$load,
-        'state|S=s'    => \$state,
-        'quiet|q=i'    => \$quiet,
-
+   'help|h'          => \$show_help,
+   'endp_name|e=s'   => \$endp_name,
+   'speed|s=i'       => \$speed,
+   'cx|c=s'          => \$cx,
+   'drop_pm|d=i'     => \$drop_pm,
+   'latency|l=i'     => \$latency,
+   'jitter|j=i'      => \$jitter,
+   'switch|w=s'      => \$switch,
+   'manager|m=s'     => \$lfmgr_host,
+   'pcap|p=s'        => \$pcap,
+   'load|L=s'        => \$load,
+   'state|S=s'       => \$state,
+   'quiet|q=i'       => \$quiet,
 ) || die("$usage");
+
+if ($show_help) {
+   print $usage;
+   exit 0;
+}
 
 if (! ($quiet == 0xffff)) {
   open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");

@@ -55,21 +55,31 @@ Example:
  $0 --mgr 192.168.100.138 --action set_atten --atten_serno 3 --atten_idx all --atten_val 550\n";
 
 my $i = 0;
+my $show_help = 0;
 
+if (@ARGV < 2) {
+   print $usage;
+   exit 0;
+}
 GetOptions 
 (
-        'atten_serno|s=s' => \$atten_serno,
-        'atten_idx|i=s'   => \$atten_idx,
-        'atten_val|v=s'   => \$atten_val,
-        'action|a=s'      => \$action,
-        'cmd|c=s'         => \$do_cmd,
-        'mgr|m=s'         => \$lfmgr_host,
-        'mgr_port|p=i'    => \$lfmgr_port,
-        'resource|r=i'    => \$resource,
-        'quiet|q=s'       => \$quiet,
+   'help|h'          => \$show_help,
+   'atten_serno|s=s' => \$atten_serno,
+   'atten_idx|i=s'   => \$atten_idx,
+   'atten_val|v=s'   => \$atten_val,
+   'action|a=s'      => \$action,
+   'cmd|c=s'         => \$do_cmd,
+   'mgr|m=s'         => \$lfmgr_host,
+   'mgr_port|p=i'    => \$lfmgr_port,
+   'resource|r=i'    => \$resource,
+   'quiet|q=s'       => \$quiet,
 
 ) || (print($usage) && exit(1));
 
+if ($show_help) {
+   print $usage;
+   exit 0;
+}
 
 if ($do_cmd ne "NA") {
   $action = "do_cmd";
