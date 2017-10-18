@@ -5,6 +5,7 @@
 use strict;
 use warnings;
 use diagnostics;
+use Data::Dumper;
 
 $| = 1;
 use Net::Telnet ();
@@ -16,7 +17,7 @@ package main;
 # so as to reduce chance of timeout
 our $batch_thresh = 3;
 # if caching_ok > 0, use a c_show_port to get older results faster
-our $use_caching  = 0;
+our $use_caching  = -1;
 our $card         = 1; # resource id
 my $mgr           = "localhost";
 my $mgr_port      = "4001";
@@ -125,37 +126,152 @@ else {
 
 die("No resource defined, bye.") if (! defined $card);
 my $num_ports_down = @::port_list;
-my $state = undef;
-my $ip = undef;
 if ($verbose > 2) {
    print "\nWe have ".(0+@::port_list)." ports: ".join(",", sort @::port_list), "\n";
 }
+
 # performance and timeouts: just probing a port or two is pretty easy, but repeatedly calling nc_show_port
 # can chance a timeout, which is pretty messy. Setting a batch-level threshold to check nc_show_port 1 $c ALL
 # should reduce chances of timeout
 
+sub query_show_port {
+   my $port = shift;
+   if (!defined $port || "$port" eq "") {
+      die("query_show_port called without port argument");
+   }
+   my $statblock = "";
+   if (($::use_caching < 0) && (@::port_list > (2 * $::batch_thresh))) {
+      print STDERR "Turning on use_caching at 2x batch threshold\n";
+      $::use_caching = 1;
+   }
+   my $show = ($::use_caching > 0) ? "c_show_port" : "nc_show_port";
+
+   if (@::port_list < $::batch_thresh) {
+      $statblock = $utils->doAsyncCmd($utils->fmt_cmd($show, 1, $::card, $port, "16"));
+   }
+   else {
+      $statblock = $utils->doAsyncCmd($utils->fmt_cmd($show, 1, $::card, 'all', "16"));
+   }
+   my @blocklines = split("\n", $statblock);
+   chomp @blocklines;
+   return @blocklines;
+}
+
+=pod
+expects arg1 $portname
+expects arg2 @$ra_statblock to parse
+expects arg3 %$rh_hashref
+   arg3 hash of {portname => {state=>x, ip=>y}}
+
+We find a port by this type of pattern:
+Alias: is not populated unless there is a user alias override set.
+Record ends with an empty line.
+---------------------------------------------
+Shelf: 1, Card: 2, Port: 8  Type: STA  Alias:
+ .*
+   MAC: 00:0e:8e:54:42:62  DEV: sta2100 .*
+
+---------------------------------------------
+=cut
+sub parse_show_port {
+   my $portname  = shift;
+   my $ra_statblock = shift;
+   my $rh_port_stat = shift;
+
+   die ("parse_show_port: called without arg1:portname")
+      if (!defined $portname || "$portname" eq "");
+   die ("parse_show_port: called without arg2:statblock")
+      if (!defined $ra_statblock || ref($ra_statblock) ne "ARRAY");
+   die ("parse_show_port: called without arg3: rh_port_stat")
+      if (!defined $rh_port_stat || ref($rh_port_stat) ne "HASH");
+
+   #for my $line (@$ra_statblock) {
+   #   print "\nL: $line";
+   #}
+
+   print " $portname " if ($verbose > 3);
+
+   my $state = "";
+   my $ip   = "";
+   my (@devicelines) = grep {/^\s+MAC: [^ ]+\s+DEV: [^ ]+ /} @$ra_statblock;
+   if (@devicelines < 1) {
+      print STDERR "device $portname not found\n";
+      $rh_port_stat->{'state'} = $state;
+      $rh_port_stat->{'ip'} = $ip;
+      return;
+   }
+
+   # loop through statblock and grep regions divided by blank lines
+   my @current_region = ();
+   for my $line (@$ra_statblock) {
+      if ($line =~ /^Shelf: 1, Card:/) {
+         @current_region = ();
+      }
+      push (@current_region, $line);
+
+      if ($line =~ /^\s*$/) {
+         @devicelines = grep {/^\s+MAC: [^ ]+\s+DEV:\s+$portname\s+ /} @current_region;
+         next
+            if (@devicelines < 1);
+
+         print join("\nDEV| ", @current_region)."\n"
+            if ($::verbose > 3) ;
+
+         my (@state) = grep {/^\s+Current:\s+([^ ]+)/} @current_region;
+         print join("\nState: ", @state)."\n"
+            if ($::verbose > 3);
+
+        ($state) = $state[0] =~ /^\s+Current:\s+([^ ]+)/
+            if (@state > 0);
+
+         my (@ip)    = grep {/^\s+IP:\s+([^ ]+)/} @current_region;
+         print join("\nIP: ", @ip)."\n"
+            if ($::verbose > 3);
+
+         ($ip) = $ip[0] =~ /^\s+IP:\s+([^ ]+)/
+            if (@ip > 0);
+
+         last;
+      } # ~if at end of record
+   } #~for each line
+
+   # retro below
+   if (! defined $state) {
+      print "STATE undefined: -- \n"; 
+   }
+   if (! defined $ip) {
+      print "IP undefined: -- \n"; 
+   }
+
+   $rh_port_stat->{'state'} = $state;
+   $rh_port_stat->{'ip'} = $ip;
+}
+
+my %port_stat = (
+   'state'  => 0,
+   'ip'     => "",
+);
+
 while( $num_ports_down > 0 ) {
    my @ports_up = ();
    my @ports_down = ();
+   my @statblock = ();
+
    for my $port (sort @::port_list) {
-      my $statblock = $utils->doAsyncCmd($utils->fmt_cmd("nc_show_port", 1, $card, $port));
-      #print $statblock;
-      
-      print " $port " if ($verbose > 3);
-      ($state) = $statblock =~ /^\s+Current:\s+([^ ]+)/m;
-      ($ip)    = $statblock =~ /^\s+IP:\s+([^ ]+)/m;
-
-      if (! defined $state) {
-         print "STATE undefined: $statblock\n"; 
+      if (@::port_list < $::batch_thresh) {
+         @statblock = query_show_port($port);
       }
-      if (! defined $ip) {
-         print "IP undefined: $statblock\n"; 
+      elsif (@statblock < 2) {
+         @statblock = query_show_port("all");
       }
 
-      #print "\n$port is [$state] ";# if ($quiet =~ /0|no/i);
-      #print "\n$ip has [$ip] "   ;#if ($quiet =~ /0|no/i);
+      parse_show_port($port, \@statblock, \%port_stat);
+
+      print Dumper(\%port_stat)."\n"
+         if ($::verbose > 3);
+
       if ($require_ip) {
-         if (($state !~ /down/i) && ($ip !~ /0\.0\.0\.0/)) {
+         if (($port_stat{'state'} !~ /down/i) && ($port_stat{'ip'} !~ /0\.0\.0\.0/)) {
             $num_ports_down--;
             push(@ports_up, $port);
             print "+" if ($verbose > 0);
@@ -168,7 +284,7 @@ while( $num_ports_down > 0 ) {
          }
       }
       else {
-         if ($state =~ /down/i) {
+         if ($port_stat{'state'} =~ /down/i) {
             push(@ports_down, $port);
             print "-" if ($verbose > 0);
             $down_count{$port}++;
@@ -180,7 +296,8 @@ while( $num_ports_down > 0 ) {
             $down_count{$port} = 0;
          }
       }
-   }
+   } # ~for each port 
+
    if ($verbose > 1) {
       my $num_ports = @::port_list;
       my $num_ports_up = @ports_up;
@@ -202,10 +319,12 @@ while( $num_ports_down > 0 ) {
          }
       }
       $num_ports_down = @::port_list;
+      @statblock = ();
       print " ";
       print "Napping...\n" if ($verbose > 1);
       sleep 4;
    }
-}
+} # ~while num_ports_down > 0
+
 print "All ports up.\n" if ($verbose > 0);
 #
