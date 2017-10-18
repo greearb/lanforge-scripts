@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
-# updated
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ##
+## Use this script wait on list of ports until they are up                 ##
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ##
 use strict;
 use warnings;
 use diagnostics;
@@ -10,29 +12,40 @@ use LANforge::Utils;
 use Getopt::Long;
 
 package main;
-# we want to take the list of ports on ARGV and wait until they are up
-
-exit 0 if (@ARGV < 1);
-
-my $card       = 1;
-my $mgr        = "localhost";
-my $mgr_port   = "4001";
-my @port_list  = ();
-our $quiet     = 1;
-my $require_ip = 1;
-our $verbose   = -1;
-my %down_count = ();
-my $shove_level = 4; # count at which a lf_portmod trigger gets called
+# if number of ports to probe is greater than this, probe all ports on card
+# so as to reduce chance of timeout
+our $batch_thresh = 3;
+# if caching_ok > 0, use a c_show_port to get older results faster
+our $use_caching  = 0;
+our $card         = 1; # resource id
+my $mgr           = "localhost";
+my $mgr_port      = "4001";
+our @port_list    = ();
+our $quiet        = 1;
+our $require_ip   = 1;
+our $verbose      = -1;
+our %down_count   = ();
+our $shove_level  = 4; # count at which a lf_portmod trigger gets called
 
 sub help() {
-   print "$0 --mgr $mgr \\
-      --mgr_port $mgr_port \\
-      --card $card \\
-      --quiet $::quiet \\
-      --require_ip $require_ip \\
-      --verbose 0|1 \\
-      --port sta1 -p sta2 -p sta3...\n";
+   print "$0 --mgr      # manager [$mgr] [default values] in brackets \\
+      --mgr_port              # manager port [$mgr_port] \\
+      --resource|resrc|card   # resource id [$card] \\
+      --quiet yes|no|0|1      # show CLI protocol [$::quiet] \\
+      --require_ip 0|1        # require a port to have an IP to be 'up' [$require_ip] \\
+      --shove_level           # retry up/down ports [$shove_level] \\
+      --verbose 0|1+          # debugging output  [$verbose] \\
+      --batch_level           # query all port statuses if querying more than this many [$batch_thresh] \\
+      --use_caching 0|1       # faster to use older port status [$use_caching] \\
+      --port sta1 -p sta2 -p sta3... \\
+      --help|-h \n";
 }
+
+if (@ARGV < 1) {
+   help();
+   exit 0;
+}
+
 
 # should move to Utils
 sub fmt_port_up_down {
@@ -54,20 +67,28 @@ sub fmt_port_up_down {
    return $cmd;
 }
 
-
+my $show_help = 0;
 my $p = new Getopt::Long::Parser;
 $p->configure('pass_through');
 
 GetOptions (
    'mgr:s'           => \$mgr,
    'mgr_port:i'      => \$mgr_port,
-   'card|resource:i' => \$card,
+   'card|resource:i' => \$::card,
    'quiet|q:s'       => \$::quiet,
-   'ports|p:s@'      => \@port_list,
-   'require_ip:i'    => \$require_ip,
-   'v:i'             => \$verbose,
+   'ports|p:s@'      => \@::port_list,
+   'require_ip:i'    => \$::require_ip,
+   'batch_level:i'   => \$::batch_thresh,
+   'use_caching:i'   => \$::use_caching,
+   'shove_level:i'   => \$::shove_level,
+   'v:i'             => \$::verbose,
+   'help|h'          => \$show_help,
 ) || die help();
 
+if ($show_help) {
+   help();
+   exit 0;
+}
 if ($::quiet eq "0") {
    $::quiet = "no";
 }
@@ -103,17 +124,20 @@ else {
 }
 
 die("No resource defined, bye.") if (! defined $card);
-my $num_ports_down = @port_list;
+my $num_ports_down = @::port_list;
 my $state = undef;
 my $ip = undef;
 if ($verbose > 2) {
-   print "\nWe have ".(0+@port_list)." ports: ".join(",", sort @port_list), "\n";
+   print "\nWe have ".(0+@::port_list)." ports: ".join(",", sort @::port_list), "\n";
 }
+# performance and timeouts: just probing a port or two is pretty easy, but repeatedly calling nc_show_port
+# can chance a timeout, which is pretty messy. Setting a batch-level threshold to check nc_show_port 1 $c ALL
+# should reduce chances of timeout
 
 while( $num_ports_down > 0 ) {
    my @ports_up = ();
    my @ports_down = ();
-   for my $port (sort @port_list) {
+   for my $port (sort @::port_list) {
       my $statblock = $utils->doAsyncCmd($utils->fmt_cmd("nc_show_port", 1, $card, $port));
       #print $statblock;
       
@@ -158,7 +182,7 @@ while( $num_ports_down > 0 ) {
       }
    }
    if ($verbose > 1) {
-      my $num_ports = @port_list;
+      my $num_ports = @::port_list;
       my $num_ports_up = @ports_up;
       print "\n\n${num_ports_up}/${num_ports}  Ports up:   ".join(", ", @ports_up   )."\n"
          if ($verbose > 2);
@@ -177,7 +201,7 @@ while( $num_ports_down > 0 ) {
             $down_count{$port} = 0;
          }
       }
-      $num_ports_down = @port_list;
+      $num_ports_down = @::port_list;
       print " ";
       print "Napping...\n" if ($verbose > 1);
       sleep 4;
