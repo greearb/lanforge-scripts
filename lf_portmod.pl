@@ -102,11 +102,36 @@ Examples:
 ./lf_portmod.pl --manager 192.168.1.101 --cli_cmd \"scan 1 1 sta0\"
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --cmd reset
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --set_ifstate down
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --wifi_mode 2 --set_speed \"1 Mbps /b\" \\
+./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed \"1 Mbps /b\" \\
                 --ssid fast-ap --passwd \"secret passwd\" --ap DEFAULT
 ./lf_portmod.pl --load my_db
 ./lf_portmod.pl --manager 192.168.100.138 --cmd reset --port_name 2 --amt_resets 5 --max_port_name 8 --card 1 --min_sleep 10 --max_sleep 20
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta11 --cmd set_wifi_extra --eap_identity 'adams' --eap_passwd 'family'
+
+# Set wlan0 to /a/b/g mode, 1Mbps encoding rate
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed \"1 Mbps /b\"
+
+# Set wlan0 to /a/b/g mode, default encoding rates
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed \"DEFAULT\"
+
+# Set wlan0 to /a/b/g/n mode, default encoding rates for 1 antenna stations (1x1)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"1 Stream  /n\"
+
+# Set wlan0 to /a/b/g/n mode, default encoding rates for 2 antenna stations (2x2)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"2 Streams /n\"
+
+# Set wlan0 to /a/b/g/n mode, default encoding rates for 3 antenna stations (3x3)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"DEFAULT\"
+
+# Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 1 antenna stations (1x1)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"v-1 Stream  /AC\"
+
+# Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 2 antenna stations (2x2)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"v-2 Streams /AC\"
+
+# Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 3 antenna stations (3x3)
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"DEFAULT\"
+
 ";
 
 my $i = 0;
