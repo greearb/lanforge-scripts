@@ -132,11 +132,11 @@ $utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 
 # this is the --show_port options ("")
 my @port_txt = ();
-my $port_mac = '';
-my $port_dev = '';
-my $port_ip = '';
-my $port_dns = '';
-my $port_gateway = '';
+our $port_mac = '';
+our $port_dev = '';
+our $port_ip = '';
+our $port_dns = '';
+our $port_gateway = '';
 if ((defined $::sta) && ("$sta" ne "")) {
     @port_txt = split("\n", $utils->doAsyncCmd("nc_show_port 1 $::resource $::sta"));
 }
@@ -213,12 +213,23 @@ else {
    print "Not checking DNS\n";
 }
 
+sub assembleCurl {
+   return qq(/home/lanforge/local/bin/curl -svLki -4 -m30 --connect-timeout 15 )
+         .qq( --interface $port_dev )
+         .qq( --localaddr $port_ip )
+         .qq( --dns-interface $port_dev )
+         .qq( --dns-ipv4-addr $port_ip )
+         .qq( --dns-servers $::port_dns )
+         .join(" ", @_);
+}
 print "\nChecking redirect to http://1.1.1.1/ ...\n";
-print("\n/home/lanforge/local/bin/curl -svLki -4 -m30 --connect-timeout 15 --interface $port_dev --localaddr $port_ip --dns-interface $port_dev --dns-ipv4-addr $port_ip http://1.1.1.1/\n");
-system("/home/lanforge/local/bin/curl -svLki -4 -m30 --connect-timeout 15 --interface $port_dev --localaddr $port_ip --dns-interface $port_dev --dns-ipv4-addr $port_ip http://1.1.1.1/");
+my $cmd = assembleCurl(qw("http://1.1.1.1/"));
+print("\n$cmd\n");
+system("$cmd");
 
 print "\n\nChecking redirect to http://www.slashdot.org/ ...\n";
-print("\n/home/lanforge/local/bin/curl -svLki -4 -m30 --connect-timeout 15 --interface $port_dev --localaddr $port_ip --dns-interface $port_dev --dns-ipv4-addr $port_ip http://www.slashdot.org/\n");
-system("/home/lanforge/local/bin/curl -svLki -4 -m30 --connect-timeout 15 --interface $port_dev --localaddr $port_ip --dns-interface $port_dev --dns-ipv4-addr $port_ip http://www.slashdot.org/");
+$cmd = assembleCurl(qw("http://www.slashdot.org/"));
+print("\n$cmd\n");
+system("$cmd");
 print "\n\n";
 #
