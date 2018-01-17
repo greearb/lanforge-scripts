@@ -16,21 +16,32 @@
 #
 #
 
+package main;
 use strict;
 use warnings;
 #use Carp;
 # Un-buffer output
 $| = 1;
 
+use Cwd qw(getcwd);
+my $cwd = getcwd();
+
+ # this is pedantic necessity for the following use statements
+if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
+   use lib '/home/lanforge/scripts'
+}
+elsif ( -f "LANforge/Endpoint.pm" ) {
+   use lib "./LANforge";
+}
+else {
+   use lib '/home/lanforge/scripts';
+}
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
-#use constant;
-package main;
 
-#use constant   NL    => "\n";
 my $lfmgr_host       = "localhost";
 my $lfmgr_port       = 4001;
 my $shelf_num        = 1;
@@ -38,7 +49,7 @@ my $shelf_num        = 1;
 my $card             = 1;
 
 # Default values for ye ole cmd-line args.
-
+my $list_ports       = "";
 my $port_name        = "";
 my $cmd              = "";
 our $quiet            = 0;
@@ -149,10 +160,11 @@ GetOptions
  'port_name|e=s'     => \$port_name,
  'cmd|c=s'           => \$cmd,
  'cli_cmd|i=s'       => \$cli_cmd,
- 'manager|m=s'       => \$lfmgr_host,
+ 'manager|mgr|m=s'   => \$lfmgr_host,
+ 'manager_port=i'    => \$lfmgr_port,
  'load|L=s'          => \$load,
  'quiet|q=s'         => \$::quiet,
- 'card|C=i'          => \$card,
+ 'card|resource|res|r|C=i' => \$card,
  'amt_resets=i'      => \$amt_resets,
  'max_port_name=i'   => \$max_port_name,
  'min_sleep=i'       => \$min_sleep,
@@ -161,6 +173,7 @@ GetOptions
  'set_ifstate|s=s'   => \$if_state,
  'set_speed=s'       => \$set_speed,
  'ssid=s'            => \$ssid,
+ 'list_ports'        => \$list_ports,
  'show_port:s'       => \$show_port,
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|i=s'  => \$eap_identity,
@@ -334,6 +347,11 @@ if ($load ne "") {
       print "\n";
    }
    close(CMD_LOG);
+   exit(0);
+}
+
+if ((defined $list_ports) && $list_ports) {
+   $utils->doCmd("show_ports 1 $card ALL");
    exit(0);
 }
 
