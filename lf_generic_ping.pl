@@ -26,14 +26,14 @@ use lib '/home/lanforge/scripts';
 use List::Util qw(first);
 use LANforge::Endpoint;
 use LANforge::Port;
-use LANforge::Utils;
+use LANforge::Utils qw(fmt_cmd);
 use Net::Telnet ();
 
 our $dest_ip_addr = "0.0.0.0";
 our $log_cli = "unset"; # use ENV{'LOG_CLI'}
 
 our $usage = qq( Usage:
- ./$0 --mgr {host-name | IP} 
+$0 --mgr {host-name | IP} 
    --mgr_port {ip port}
    --resource {resource}
    --dest {destination IP}
@@ -86,27 +86,6 @@ GetOptions
 if ($help) {
    print($usage) && exit(0);
 }
-
-if (defined $::radio && $radio ne "") {
-   # collect all stations on that radio
-   # add them to @interfaces
-}
-
-if (defined $::pattern && $pattern ne "") {
-   # collect all stations on that resource
-   # add them to @interfaces
-}
-
-
-if (@interfaces < 1) {
-   print STDERR "One or more interfaces required.\n";
-   print $usage;
-   exit(1);
-}
-
-print "Using these interfaces: \n";
-print " ".join(",", @interfaces)."\n";
-
 if ($::quiet eq "0") {
    $::quiet = "no";
 }
@@ -150,6 +129,32 @@ else {
   $utils->cli_rcv_silent(0);  # Show output from telnet
 }
 $utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
+
+
+our @port_info = $::utils->doAsyncCmd($utils->fmt_cmd("nc_show_ports", 1, $::resource, "ALL"));
+
+foreach my $line (@port_info) {
+   print "$line\n";
+}
+
+if (defined $::radio && $radio ne "") {
+   # collect all stations on that radio
+   # add them to @interfaces
+}
+
+if (defined $::pattern && $pattern ne "") {
+   # collect all stations on that resource
+   # add them to @interfaces
+}
+
+if (@interfaces < 1) {
+   print STDERR "One or more interfaces required.\n";
+   print $usage;
+   exit(1);
+}
+
+print "Using these interfaces: \n";
+print " ".join(",", @interfaces)."\n";
 
 
 #
