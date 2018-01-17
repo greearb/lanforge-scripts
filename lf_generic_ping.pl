@@ -33,24 +33,33 @@ use Net::Telnet ();
 our $dest_ip_addr = "0.0.0.0";
 our $log_cli = "unset"; # use ENV{'LOG_CLI'}
 
-our $usage = qq( Usage:
+our $usage = qq(Usage:
 $0 --mgr {host-name | IP}
    --mgr_port {ip port}
    --resource {resource}
    --dest {destination IP}
    --interface|-intf|-int|-i {source interface}
+    # You should be able to place 1000 interfaces in the list
    --radio {wiphy}
-   --match {simple pattern, no stars or questions marks, just '+'}
- You should be able to place 1000 interfaces in the list
+   --match {simple pattern, no stars or questions marks}
 
- A set of interfaces:
- $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
+ Examples:
+  $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
+  This will match just sta3000
 
  All interfaces on a parent radio
- $0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
+  $0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
+  This will match all stations whos parent is wiphy0: sta3 wlan0
 
  All interfaces matching a pattern:
- $0 -m localhost -r 1 -d 192.168.0.1 --match sta3+
+  $0 -m localhost -r 1 -d 192.168.0.1 --match sta3
+  This will match sta3 sta30 sta31 sta3000
+
+ If only a few of your generic commands start, check journalctl for
+ errors containing: 'cgroup: fork rejected by pids controller'
+ You want to set DefaultTasksMax=unlimited in /etc/systemd/system.conf
+ then do a systemctl daemon-restart
+ https://www.novell.com/support/kb/doc.php?id=7018594
 );
 
 our $shelf_num    = 1;
@@ -60,6 +69,8 @@ our $resource     = 1;
 our $lfmgr_host   = "localhost";
 our $lfmgr_port   = 4001;
 our $quiet        = "yes";
+our $quiesce      = 3;
+our $clear_on_start = 0;
 our $dest_ip;
 our @interfaces   = ();
 our $radio        = '';
@@ -84,7 +95,7 @@ GetOptions
   'help|h|?'                  => \$help,
 ) || (print($usage), exit(1));
 
-print "radio: $::radio, match: $::pattern, $::quiet, $::resource, $::dest_ip\n";
+#print "radio: $::radio, match: $::pattern, $::quiet, $::resource, $::dest_ip\n";
 
 if ($help) {
    print($usage) && exit(0);
@@ -172,9 +183,9 @@ foreach my $line (@ports_lines) {
   }
 }
 
-foreach $eid (keys %eid_map) {
-  print "eid $eid ";
-}
+#foreach $eid (keys %eid_map) {
+#  print "eid $eid ";
+#}
 
 if (defined $::radio) {
   while (($eid, $rh_eid) = each %eid_map) {
@@ -201,8 +212,53 @@ if (@interfaces < 1) {
    exit(1);
 }
 
-print "Work in Progress. Would be using these interfaces: \n";
-print " ".join(",", @interfaces)."\n";
+print "Creating generic lfping endpoints using these interfaces: \n";
+print " ".join(", ", @interfaces)."\n";
+
+=pod
+Example of generic created by GUI:
+   add_gen_endp test-1 1 3 sta3000 gen_generic
+   set_gen_cmd test-1 lfping  -p deadbeef -I sta3000 10.41.1.2
+   set_endp_quiesce test-1 3
+   set_endp_report_timer test-1 1000
+   set_endp_flag test-1 ClearPortOnStart 0
+   add_gen_endp D_test-1 1 3 sta3000 gen_generic
+   set_endp_flag D_test-1 unmanaged 1
+   set_endp_quiesce D_test-1 3
+   set_endp_report_timer D_test-1 1000
+   set_endp_flag D_test-1 ClearPortOnStart 0
+
+=cut
+sub create_generic {
+   my ($name, $port_name)=@_;
+   my $endp_name = "lfping_$port_name";
+   my $type = "gen_generic";
+   my $ping_cmd = "lfping -I $port_name -p deadbeef $::dest_ip";
+
+   $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
+   $::utils->doCmd("set_gen_cmd $endp_name $ping_cmd");
+   $::utils->doCmd("set_endp_quiesce $endp_name $::quiesce");
+   $::utils->doCmd("set_endp_flag $endp_name ClearPortOnStart $::clear_on_start");
+   $::utils->doCmd("set_endp_report_timer $endp_name $::report_timer");
+
+   # we also need to add the opposite unmanaged endpoint
+   $::utils->doCmd("add_gen_endp D_$endp_name 1 $::resource $port_name gen_generic");
+   $::utils->doCmd("set_endp_flag D_$endp_name unmanaged 1");
+   $::utils->doCmd("set_endp_quiesce D_$endp_name $::quiesce");
+   $::utils->doCmd("set_endp_flag D_$endp_name ClearPortOnStart $::clear_on_start");
+   $::utils->doCmd("set_endp_report_timer D_$endp_name $::report_timer");
+
+   # tie the knot with a CX
+   $::utils->doCmd("add_cx CX_$endp_name default_tm $endp_name D_$endp_name");
+   $::utils->doCmd("set_cx_report_timer default_tm CX_$endp_name $::report_timer cxonly");
+}
+
+my %command_map = ();
+for my $port (sort @interfaces) {
+   my $endp_name = "lfping_$port";
+   my $type = "gen_generic";
+   create_generic($endp_name, $port)
+}
 
 
 #
