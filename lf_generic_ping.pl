@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
 # Use this script to generate a batch of Generic lfping endpoints
-# 
+#
 # Usage:
 # ./lf_generic_ping.pl --mgr $mgr --resource $resource --dest $dest_ip -i $intf -i $intf -i $intf
 # You should be able to place 1000 interfaces in the list
@@ -17,6 +17,7 @@ use strict;
 use diagnostics;
 use warnings;
 use Carp;
+use Data::Dumper;
 $SIG{ __DIE__ }   = sub { Carp::confess( @_ )};
 $SIG{ __WARN__ }  = sub { Carp::confess( @_ )};
 use Getopt::Long;
@@ -33,7 +34,7 @@ our $dest_ip_addr = "0.0.0.0";
 our $log_cli = "unset"; # use ENV{'LOG_CLI'}
 
 our $usage = qq( Usage:
-$0 --mgr {host-name | IP} 
+$0 --mgr {host-name | IP}
    --mgr_port {ip port}
    --resource {resource}
    --dest {destination IP}
@@ -42,27 +43,27 @@ $0 --mgr {host-name | IP}
    --match {simple pattern, no stars or questions marks, just '+'}
  You should be able to place 1000 interfaces in the list
 
- A set of interfaces: 
- ./$0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
+ A set of interfaces:
+ $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
 
  All interfaces on a parent radio
- ./$0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
+ $0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
 
  All interfaces matching a pattern:
- ./$0 -m localhost -r 1 -d 192.168.0.1 --match sta3+
+ $0 -m localhost -r 1 -d 192.168.0.1 --match sta3+
 );
 
-my $shelf_num = 1;
+our $shelf_num    = 1;
 our $report_timer = 1000;
-our $test_mgr = "default_tm";
-our $resource = 1;
-our $lfmgr_host = "localhost";
-our $lfmgr_port = 4001;
-our $quiet = 1;
-our $dest_ip = undef;
-our @interfaces = ();
-our $radio = "";
-our $pattern = "";
+our $test_mgr     = "default_tm";
+our $resource     = 1;
+our $lfmgr_host   = "localhost";
+our $lfmgr_port   = 4001;
+our $quiet        = "yes";
+our $dest_ip;
+our @interfaces   = ();
+our $radio        = '';
+our $pattern      = '';
 
 my $help;
 
@@ -75,13 +76,15 @@ GetOptions
   'mgr|m=s'                   => \$::lfmgr_host,
   'mgr_port|p=i'              => \$lfmgr_port,
   'resource|r=i'              => \$::resource,
-  'quiet|q=s'                 => \$::quiet,
+  'quiet|q'                   => \$::quiet,
   'radio|o=s'                 => \$::radio,
   'match=s'                   => \$::pattern,
   'interface|intf|int|i=s'    => \@::interfaces,
   'dest_ip|dest|d=s'          => \$::dest_ip,
   'help|h|?'                  => \$help,
 ) || (print($usage), exit(1));
+
+print "radio: $::radio, match: $::pattern, $::quiet, $::resource, $::dest_ip\n";
 
 if ($help) {
    print($usage) && exit(0);
@@ -115,6 +118,7 @@ $t->waitfor("/btbits\>\>/");
 # Configure our utils.
 our $utils = new LANforge::Utils();
 $utils->telnet($t);         # Set our telnet object.
+
 if ($utils->isQuiet()) {
   if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
     $utils->cli_send_silent(0);
@@ -130,21 +134,65 @@ else {
 }
 $utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 
+our @ports_lines = split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $::resource ALL"));
+chomp(@ports_lines);
+our %eid_map = ();
+my ($eid, $card, $port, $type, $mac, $dev, $rh_eid, $parent);
+foreach my $line (@ports_lines) {
+  # collect all stations on that radio add them to @interfaces
+  if ($line =~ /^Shelf: /) {
+    $card = undef; $port = undef;
+    $type = undef; $parent = undef;
+    $eid = undef; $mac = undef;
+    $dev = undef; $rh_eid = undef;
+  }
 
-our @port_info = $::utils->doAsyncCmd($utils->fmt_cmd("nc_show_ports", 1, $::resource, "ALL"));
+  # careful about that comma after card!
+  ($card, $port, $type) = $line =~ m/ Card: (\d+), +Port: (\d+) +Type: (\w+) /;
+  if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "")) {
+    $eid = "1.${card}.${port}";
+    $rh_eid = {
+      eid => $eid,
+      type => $type,
+      parent => undef,
+      dev => undef,
+    };
+    $eid_map{$eid} = $rh_eid;
+  }
 
-foreach my $line (@port_info) {
-   print "$line\n";
+  ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\w+)/;
+  if ((defined $mac) && ($mac ne "")) {
+    $rh_eid->{mac} = $mac;
+    $rh_eid->{dev} = $dev;
+  }
+
+  ($parent) = $line =~ / Parent.Peer: (\w+) /;
+  if ((defined $parent) && ($parent ne "")) {
+    $rh_eid->{parent} = $parent;
+  }
 }
 
-if (defined $::radio && $radio ne "") {
-   # collect all stations on that radio
-   # add them to @interfaces
+foreach $eid (keys %eid_map) {
+  print "eid $eid ";
+}
+
+if (defined $::radio) {
+  while (($eid, $rh_eid) = each %eid_map) {
+    if ((defined $rh_eid->{parent}) && ($rh_eid->{parent} eq $::radio)) {
+      push(@interfaces, $rh_eid->{dev});
+    }
+  }
 }
 
 if (defined $::pattern && $pattern ne "") {
-   # collect all stations on that resource
-   # add them to @interfaces
+   my $pat = $::pattern;
+   $pat =~ s/[+]//g;
+   # collect all stations on that resource add them to @interfaces
+   while (($eid, $rh_eid) = each %eid_map) {
+     if ((defined $rh_eid->{dev}) && ($rh_eid->{dev} =~ /$pat/)) {
+       push(@interfaces, $rh_eid->{dev});
+     }
+   }
 }
 
 if (@interfaces < 1) {
@@ -153,7 +201,7 @@ if (@interfaces < 1) {
    exit(1);
 }
 
-print "Using these interfaces: \n";
+print "Work in Progress. Would be using these interfaces: \n";
 print " ".join(",", @interfaces)."\n";
 
 
