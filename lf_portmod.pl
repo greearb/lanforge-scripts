@@ -351,7 +351,7 @@ if ($load ne "") {
 }
 
 if ((defined $list_ports) && $list_ports) {
-   $utils->doCmd("show_ports 1 $card ALL");
+   $utils->doAsyncCmd("nc_show_ports 1 $card all");
    exit(0);
 }
 
