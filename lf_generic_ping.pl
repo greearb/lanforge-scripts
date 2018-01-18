@@ -40,16 +40,19 @@ $0 --mgr {host-name | IP}
    --dest {destination IP}
    --interface|-intf|-int|-i {source interface}
     # You should be able to place 1000 interfaces in the list
-   --radio {wiphy}
+   --radio {wiphy} | --parent {eth}
    --match {simple pattern, no stars or questions marks}
 
  Examples:
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
   This will match just sta3000
 
- All interfaces on a parent radio
+ All interfaces on a parent radio or macvlans on parent Ethernet port:
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
   This will match all stations whos parent is wiphy0: sta3 wlan0
+
+  $0 --mgr localhost --resource 1 --dest 192.168.0.1 --parent eth1
+  This will match all MAC VLANs with parent eth1: eth1#0 eth1#1 eth1#2
 
  All interfaces matching a pattern:
   $0 -m localhost -r 1 -d 192.168.0.1 --match sta3
@@ -58,7 +61,7 @@ $0 --mgr {host-name | IP}
  If only a few of your generic commands start, check journalctl for
  errors containing: 'cgroup: fork rejected by pids controller'
  You want to set DefaultTasksMax=unlimited in /etc/systemd/system.conf
- then do a systemctl daemon-restart
+ then do a systemctl daemon-restart.
  https://www.novell.com/support/kb/doc.php?id=7018594
 );
 
@@ -88,7 +91,7 @@ GetOptions
   'mgr_port|p=i'              => \$lfmgr_port,
   'resource|r=i'              => \$::resource,
   'quiet|q'                   => \$::quiet,
-  'radio|o=s'                 => \$::radio,
+  'radio|parent|o=s'          => \$::radio,
   'match=s'                   => \$::pattern,
   'interface|intf|int|i=s'    => \@::interfaces,
   'dest_ip|dest|d=s'          => \$::dest_ip,
@@ -171,13 +174,13 @@ foreach my $line (@ports_lines) {
     $eid_map{$eid} = $rh_eid;
   }
 
-  ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\w+)/;
+  ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\S+)/;
   if ((defined $mac) && ($mac ne "")) {
     $rh_eid->{mac} = $mac;
     $rh_eid->{dev} = $dev;
   }
 
-  ($parent) = $line =~ / Parent.Peer: (\w+) /;
+  ($parent) = $line =~ / Parent.Peer: (\S+) /;
   if ((defined $parent) && ($parent ne "")) {
     $rh_eid->{parent} = $parent;
   }
