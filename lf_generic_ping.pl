@@ -3,7 +3,7 @@
 # Use this script to generate a batch of Generic lfping endpoints
 #
 # Examples:
-# ./lf_generic_ping.pl --mgr $mgr --resource 1 --dest 10.1.1.1 -i wlan0 -i sta1 -i eth1
+# ./lf_generic_ping.pl --mgr 192.168.1.100 --resource 1 --dest 10.1.1.1 -i wlan0 -i sta1 -i eth1
 # You should be able to place 1000 interfaces in the list
 #
 # Or all interfaces on a radio
@@ -14,7 +14,14 @@
 #
 # Or all interfaces matching a prefix:
 # ./lf_generic_ping.pl -m $mgr -r 1 -d 10.1.1.1 --match sta3
+# 
+# The default name will be lfping_$endp name, use the --name 
+# switch to alter the generic endpoint name, This allows multiple
+# generic connections to be created per port:
 #
+# for n in one two three four five six seven eight nine ten; do 
+#  ./lf_generic_ping.pl -m 192.168.1.100 -r 1 -d 10.1.1.1 --match sta -name $n
+# done
 package main;
 use strict;
 use diagnostics;
@@ -50,7 +57,7 @@ $0 --mgr {host-name | IP}
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
   This will match just sta3000
 
- All interfaces on a parent radio or macvlans on parent Ethernet port:
+ All interfaces on a parent radio or MAC VLANs on parent Ethernet port:
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 --radio wiphy0
   This will match all stations whos parent is wiphy0: sta3 wlan0
 
@@ -60,6 +67,14 @@ $0 --mgr {host-name | IP}
  All interfaces matching a prefix:
   $0 -m localhost -r 1 -d 192.168.0.1 --match sta3
   This will match sta3 sta30 sta31 sta3000
+
+ The default name of the generic endpoints given will be "lfping_[port]".
+ You can create multiple generic connections per port by altering
+ the endpoint name with the --name switch.
+ Example of creating multiple connections per port in a loop:
+  for n in one two three four five six seven eight nine ten; do 
+   $0 -m localhost -r 1 -d 10.1.1.1 --match sta -name \$n
+  done
 
  If only a few of your generic commands start, check journalctl for
  errors containing: 'cgroup: fork rejected by pids controller'
@@ -81,6 +96,7 @@ our $dest_ip;
 our @interfaces   = ();
 our $radio        = '';
 our $pattern      = '';
+our $name_pref    = "lfping";
 
 my $help;
 
@@ -98,6 +114,7 @@ GetOptions
   'match=s'                   => \$::pattern,
   'interface|intf|int|i=s'    => \@::interfaces,
   'dest_ip|dest|d=s'          => \$::dest_ip,
+  'name_pref|name|n=s'        => \$::name_pref,
   'help|h|?'                  => \$help,
 ) || (print($usage), exit(1));
 
@@ -237,9 +254,9 @@ Example of generic created by GUI:
 =cut
 sub create_generic {
    my ($name, $port_name)=@_;
-   my $endp_name = "lfping_$port_name";
+   my $endp_name = "${name_pref}_${port_name}";
    my $type = "gen_generic";
-   my $ping_cmd = "lfping -I $port_name -p deadbeef $::dest_ip";
+   my $ping_cmd = "lfping -I $port_name $::dest_ip";
 
    $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
    $::utils->doCmd("set_gen_cmd $endp_name $ping_cmd");
@@ -261,7 +278,7 @@ sub create_generic {
 
 my %command_map = ();
 for my $port (sort @interfaces) {
-   my $endp_name = "lfping_$port";
+   my $endp_name = "${name_pref}_$port";
    my $type = "gen_generic";
    create_generic($endp_name, $port)
 }
