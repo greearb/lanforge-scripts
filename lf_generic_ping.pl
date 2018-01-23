@@ -78,7 +78,7 @@ $0 --mgr {host-name | IP}
 
  If only a few of your generic commands start, check journalctl for
  errors containing: 'cgroup: fork rejected by pids controller'
- You want to set DefaultTasksMax=unlimited in /etc/systemd/system.conf
+ You want to set DefaultTasksMax=65535 in /etc/systemd/system.conf
  then do a systemctl daemon-restart.
  https://www.novell.com/support/kb/doc.php?id=7018594
 );
