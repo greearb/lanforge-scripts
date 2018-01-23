@@ -2,15 +2,18 @@
 #
 # Use this script to generate a batch of Generic lfping endpoints
 #
-# Usage:
-# ./lf_generic_ping.pl --mgr $mgr --resource $resource --dest $dest_ip -i $intf -i $intf -i $intf
+# Examples:
+# ./lf_generic_ping.pl --mgr $mgr --resource 1 --dest 10.1.1.1 -i wlan0 -i sta1 -i eth1
 # You should be able to place 1000 interfaces in the list
 #
 # Or all interfaces on a radio
-# ./lf_generic_ping.pl --mgr $mgr --resource $resource --dest $dest_ip --radio $wiphy
+# ./lf_generic_ping.pl --mgr $mgr --resource 1 --dest 10.1.1.1 --radio wiphy0
 #
-# Or all interfaces matching a pattern:
-# ./lf_generic_ping.pl -m $mgr -r $resource -d $dest_ip --match sta3+
+# Or all macvlan on an ethernet port
+# ./lf_generic_ping.pl --mgr $mgr --resource 1 --dest 10.1.1.1 --parent eth1
+#
+# Or all interfaces matching a prefix:
+# ./lf_generic_ping.pl -m $mgr -r 1 -d 10.1.1.1 --match sta3
 #
 package main;
 use strict;
@@ -41,7 +44,7 @@ $0 --mgr {host-name | IP}
    --interface|-intf|-int|-i {source interface}
     # You should be able to place 1000 interfaces in the list
    --radio {wiphy} | --parent {eth}
-   --match {simple pattern, no stars or questions marks}
+   --match {simple prefix, no stars or questions marks}
 
  Examples:
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
@@ -54,7 +57,7 @@ $0 --mgr {host-name | IP}
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 --parent eth1
   This will match all MAC VLANs with parent eth1: eth1#0 eth1#1 eth1#2
 
- All interfaces matching a pattern:
+ All interfaces matching a prefix:
   $0 -m localhost -r 1 -d 192.168.0.1 --match sta3
   This will match sta3 sta30 sta31 sta3000
 
