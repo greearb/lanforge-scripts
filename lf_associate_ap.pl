@@ -140,6 +140,7 @@ our %wifi_modes = (
    "an"     => "10",
 );
 our $wifi_mode ="";
+our $bssid = "";
 my $mode_list = join("|", sort keys %wifi_modes);
 my $usage = qq($0   [--mgr {host-name | IP}]
       [--mgr_port {ip port}]     # use if on non-default management port
@@ -150,6 +151,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       ##       AP selection
       [--radio {name}]           # e.g. wiphy2
       [--ssid {ssid}]            # e.g. jedtest
+      [--bssid {aa:bb:cc:00:11:22} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2}] # station authentication type, Default is open
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
       [--passphrase {...}]       # implies wpa2 if --security not set
@@ -407,14 +409,14 @@ sub get_radio_bssid {
    die ("::get_radio_bssid: failed to find radio bssid, no MAC lines")
       if (@mac_lines < 1);
 
-   my ($bssid) = $mac_lines[0] =~ / MAC: ([^ ]+)/;
+   my ($parent_bssid) = $mac_lines[0] =~ / MAC: ([^ ]+)/;
    die ("::get_radio_bssid: failed to find radio bssid, MAC was empty")
-      if ($bssid eq "");
+      if ($parent_bssid eq "");
 
-   $::wiphy_bssids{ $radio_name } = $bssid;
-   #print $bssid."\n";
+   $::wiphy_bssids{ $radio_name } = $parent_bssid;
+   #print $parent_bssid."\n";
 
-   return $bssid;
+   return $parent_bssid;
 }
 
 sub new_mac_from_pattern {
@@ -488,10 +490,13 @@ sub get_port_id {
 }
 
 sub fmt_vsta_cmd {
-   my ($resource, $sta_wiphy, $sta_name, $flags, $ssid, $passphrase, $mac, $flags_mask, $wifi_m ) = @_;
+   my ($resource, $sta_wiphy, $sta_name, $flags, $ssid, $passphrase, $mac, $flags_mask, $wifi_m, $bssid ) = @_;
    die("fmt_vsta_cmd wants sta_wiphy name, bye.") unless($sta_wiphy);
    my $key              = "[BLANK]";
    my $ap               = "AUTO";
+   if ((defined $bssid) && ($bssid ne "")) {
+      $ap = $bssid;
+   }
    my $cfg_file         = "NA";
    my $mode             = 8; # default to a/b/g/n/AC
    my $rate             = "NA";
@@ -739,7 +744,7 @@ sub new_wifi_station {
    # perform the station create first, then assign IP as necessary
    my $sta1_cmd   = fmt_vsta_cmd($::resource, $::sta_wiphy, $sta_name,
                                  "$flags", "$::ssid", "$::passphrase",
-                                 $mac_addr, "$flagsmask", $wifi_m);
+                                 $mac_addr, "$flagsmask", $wifi_m, $::bssid);
    doCmd($sta1_cmd);
    $sta1_cmd   = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
    doCmd($sta1_cmd);
@@ -1508,6 +1513,7 @@ GetOptions
   'db_postload=s'             => \$::db_postload,
   'poll_time|poll-time=i'     => \$::poll_time,
   'wifi_mode|mode=s'          => \$::wifi_mode,
+  'bssid=s'                   => \$::bssid,
   'traffic_type=s'            => \$::traffic_type,
   'vrad_chan=i'               => \$::vrad_chan,
   'port_del=s'                => \$::port_del,
