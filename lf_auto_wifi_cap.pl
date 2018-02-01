@@ -123,7 +123,7 @@ GetOptions
         'test_text=s'   => \$::test_text,
         'use_pdu_mix=s' => \$::use_pdu_mix,
         'pdu_percent=s' => \$::pdu_percent,
-        'pdu_mix=s'     => \$::pdu_mix,
+        'pdu_mix=s'     => \@::pdu_mix,
         'quiet|q=s'     => \$::quiet,
         'help'          => \$::help,
 ) || die("$::usage");
@@ -156,7 +156,10 @@ for ($i = 0; $i<@radios; $i++) {
   my $r = $radios[$i];
 
   print "Creating/Setting $::num_sta virtual stations on resource $::resource radio: $r\n";
-  system("./lf_associate_ap.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --resource $::resource --action add --radio $r --ssid $::ssid --first_sta sta$first_sta --first_ip $::first_ip --num_stations $::num_sta --admin_down_on_add");
+  system("./lf_associate_ap.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --resource $::resource "
+         ." --action add --radio $r --ssid $::ssid "
+         ." --first_sta sta$first_sta --first_ip $::first_ip "
+         ." --num_stations $::num_sta --admin_down_on_add");
   $first_sta += $::num_sta;
 }
 
@@ -204,9 +207,9 @@ elsif ($pdu_percent eq "bps") {
 print CAP "__CFG PDU_PRCNT_PPS $pps\n";
 print CAP "__CFG PDU_PRCNT_BPS $bps\n";
 
-my @pdu_mix_ln = split(/,/, $::pdu_mix);
-for ($i = 0; $i < @pdu_mix_ln; $i++) {
-  print CAP "__CFG PDU_MIX_LN " . $pdu_mix_ln[$i] . "\n";
+#my @pdu_mix_ln = split(/,/, $::pdu_mix);
+for ($i = 0; $i < @::pdu_mix; $i++) {
+  print CAP "__CFG PDU_MIX_LN " . $::pdu_mix[$i] . "\n";
 }
 
 my @test_texts = split(/<br>/, $::test_text);
@@ -217,6 +220,14 @@ for ($i = 0; $i < @test_texts; $i++) {
 # Things not specified will be left at defaults.
 
 close(CAP);
+
+
+for ($i = $starting_sta; $i<$first_sta; $i++) {
+   sleep 1;
+  print "should wait for 1 $::resource sta$i\n";
+
+}
+
 
 #  Send command to GUI to start this test.
 # Something like:  wifi_cap run "ventana-mix-dl" "/tmp/ventana-dl-0003"
