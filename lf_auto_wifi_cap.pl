@@ -60,7 +60,7 @@ our $multicon         = -1;
 # Nothing to configure below here, most likely.
 ########################################################################
 
-our $usage = "$0 
+our $usage = "$0
   [--mgr       {host-name | IP}]
   [--mgr_port  {ip port}]
   [--resource  {number}]
@@ -132,6 +132,30 @@ if ($::help) {
   print $::usage;
   exit(0);
 }
+our $mgr_telnet = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
+          Timeout => 20);
+$::mgr_telnet->open(Host    => $lfmgr_host,
+         Port    => $lfmgr_port,
+         Timeout => 10);
+$::mgr_telnet->waitfor("/btbits\>\>/");
+
+# Configure our utils.
+our $utils = new LANforge::Utils();
+$utils->telnet($::mgr_telnet);         # Set our telnet object.
+if ($utils->isQuiet()) {
+  if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
+    $utils->cli_send_silent(0);
+  }
+  else {
+    $utils->cli_send_silent(1); # Do not show input to telnet
+  }
+  $utils->cli_rcv_silent(1);  # Repress output from telnet
+}
+else {
+  $utils->cli_send_silent(0); # Show input to telnet
+  $utils->cli_rcv_silent(0);  # Show output from telnet
+}
+$utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 
 my @radios = split(/,/, $::radio);
 my $starting_sta = 500;
@@ -231,20 +255,20 @@ for ($i = $starting_sta; $i<$first_sta; $i++) {
 
 #  Send command to GUI to start this test.
 # Something like:  wifi_cap run "ventana-mix-dl" "/tmp/ventana-dl-0003"
-my $t = new Net::Telnet(Prompt => '/#/',
-			Timeout => 60);
-$t->open(Host    => $::gui_host,
-         Port    => $::gui_port,
-         Timeout => 10);
+our $gui_telnet = new Net::Telnet(Prompt => '/#/',
+                                 Timeout => 60);
+$::gui_telnet->open(Host    => $::gui_host,
+                     Port    => $::gui_port,
+                     Timeout => 10);
 
-$t->waitfor("/#/");
+$::gui_telnet->waitfor("/#/");
 
 my $output_dname = "$::test_name" . "_" . time();
 my $output_fname = "$cwd/$output_dname";
 my $cmd = "wifi_cap run \"$cwd/$wifi_cap_fname\" \"$output_fname\"\n";
 print "Sending GUI command to start the capacity test -:$cmd:-\n";
-my @rslt = $t->cmd($cmd);
-$t->close();
+my @rslt = $::gui_telnet->cmd($cmd);
+$::gui_telnet->close();
 
 print "GUI result: " . join(@rslt, "\n");
 
@@ -267,4 +291,3 @@ system("tar -cvzf $output_dname.tar.gz $output_dname");
 
 # Notes on possible LEDE/OpenWRT DUT cleanup
 # rm /etc/dhcp.leases and reboot to clean leases.
-
