@@ -196,8 +196,10 @@ open(CAP, ">$wifi_cap_fname") or die ("Can't open $wifi_cap_fname for writing.\n
 print CAP "__CFG VERSION 1\n";
 print CAP "__CFG SEL_PORT 1 $::resource $::upstream\n";
 
+our @sta_list = ();
 for ($i = $starting_sta; $i<$first_sta; $i++) {
   print CAP "__CFG SEL_PORT 1 $::resource sta$i\n";
+  push(@sta_list, "sta$i");
 }
 
 print CAP "__CFG STA_INCREMENT $::increment\n";
@@ -244,23 +246,31 @@ for ($i = 0; $i < @test_texts; $i++) {
 # Things not specified will be left at defaults.
 
 close(CAP);
-
-
-for ($i = $starting_sta; $i<$first_sta; $i++) {
-   sleep 1;
-  print "should wait for 1 $::resource sta$i\n";
-
+my $accounted_for = 0;
+while ($accounted_for < $::num_sta) {
+   my @show_lines = split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $::resource ALL"));
+   sleep 2;
+   $accounted_for = 0;
+   for my $sta_name (@sta_list) {
+      my @sta_matches = grep { / $sta_name /} @show_lines;
+      if (@sta_matches > 0) {
+         #print "  found: ".join("\n", @sta_matches)."\n";
+         $accounted_for++;
+      }
+   } # ~for each station
+   print " $accounted_for/$::num_sta up\n";
 }
-
+# sleep 2s extra because one station might not be quite done setting up whereas
+# 10 station will overall less time per station
+sleep 2;
 
 #  Send command to GUI to start this test.
 # Something like:  wifi_cap run "ventana-mix-dl" "/tmp/ventana-dl-0003"
 our $gui_telnet = new Net::Telnet(Prompt => '/#/',
-                                 Timeout => 60);
+                                  Timeout => 60);
 $::gui_telnet->open(Host    => $::gui_host,
-                     Port    => $::gui_port,
-                     Timeout => 10);
-
+                    Port    => $::gui_port,
+                    Timeout => 10);
 $::gui_telnet->waitfor("/#/");
 
 my $output_dname = "$::test_name" . "_" . time();
@@ -271,7 +281,6 @@ my @rslt = $::gui_telnet->cmd($cmd);
 $::gui_telnet->close();
 
 print "GUI result: " . join(@rslt, "\n");
-
 print "Waiting for test to complete...\n";
 # Wait until test is done.
 while (1) {
