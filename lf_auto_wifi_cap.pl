@@ -84,13 +84,13 @@ our $usage = "$0
   [--pdu_percent { bps | (pps) }]
   [--pdu_mix   { pdu-size:%, pdu-size:%, ... }]
   [--test_name { my-test-name}]
-  [--test_text { my-test<br>over the air<br>funky-hardware-x<br>OS z}]
+  [--test_text { 'my-test<br>over the air<br>funky-hardware-x<br>OS z'}]
   [--multicon  { -1: auto, 0 none, 1 new process, 2+ new process + multiple streams}
   [--quiet     { yes | no }]
 
 Example:
 
-./lf_auto_wifi_cap.pl --mgr ben-ota-1 --resource 2 --radio wiphy0 --speed_dl 500000000 --ssid Lede-ventana --num_sta 64 --upstream eth1 --first_ip DHCP --percent_tcp 50 --increment 1,5,10,20,30,40,50,64 --duration 15 --endp_type mix --test_name ventana-mix-dl --test_text \"Ventana LEDE, WLE900VX<br>over-the-air to LANforge station system 5 feet away<br>LAN to WiFi traffic path\" --multicon 1
+./lf_auto_wifi_cap.pl --mgr ben-ota-1 --resource 2 --radio wiphy0 --speed_dl 500000000 --ssid Lede-ventana --num_sta 64 --upstream eth1 --first_ip DHCP --percent_tcp 50 --increment 1,5,10,20,30,40,50,64 --duration 15 --endp_type mix --test_name ventana-mix-dl --test_text 'Ventana LEDE, WLE900VX<br>over-the-air to LANforge station system 5 feet away<br>LAN to WiFi traffic path' --multicon 1
 
 ";
 
