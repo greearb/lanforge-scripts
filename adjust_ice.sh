@@ -163,11 +163,11 @@ function modify_values {
 
       echo "set wanlink $name: $dl_now $ul_now $lt_now"
       echo "set wanlink $name-A: Downlink $dl_now, Delay $lt_now"
-#      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
-#         "set_wanlink_info $name-A $dl_now $lt_now NA NA NA NA" &>/dev/null
+      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
+         "set_wanlink_info $name-A $dl_now $lt_now NA NA NA NA" &>/dev/null
       echo "set wanlink $name-B: Uplink $ul_now, Delay $lt_now"
-#      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
-#         "set_wanlink_info $name-B $ul_now $lt_now NA NA NA NA" &>/dev/null
+      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
+         "set_wanlink_info $name-B $ul_now $lt_now NA NA NA NA" &>/dev/null
 
       echo "B-LOOP Waiting for $pause seconds."
       sleep $pause
@@ -189,7 +189,7 @@ for ((i=0; i < $stop_at; ++i)); do
    ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
       "set_wanlink_info $name-B ${uplink[i]} ${delay[i]} NA NA NA NA" &>/dev/null
 
-   echo "A-LOOP Running for $run_time seconds."
+   echo "A-LOOP Waiting for $run_time seconds."
    sleep $run_time
 
    [[ $i -ge $stop_at ]] && break
