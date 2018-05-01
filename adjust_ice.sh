@@ -33,14 +33,35 @@ if [ $# -eq 0 ]; then
    print_help
    exit 1
 fi
-
+slices=10
 cir_dn=3500000
 cir_up=2000000
 min=20000
 max=200000
+dates=()
 downlink=()
 uplink=()
 delay=()
+declare -A months
+months=([Jan]=1 [Feb]=2 [Mar]=3 [Apr]=4 [May]=5 [Jun]=6 [Jul]=7 [Aug]=8 [Sep]=9 [Oct]=10 [Nov]=11 [Dec]=12)
+
+# expects a "d-m-y hours:minutes meridian" format
+function date_to_ts() {
+   local year
+   local hourmin
+   local meridian
+   [ -z "$1" ] && echo "date_to_ts: wants \$1 date string" && exit 1
+   local hunks=($1);
+   local datehunks=()
+
+   IFS=- read -r -a datehunks < <(echo "${hunks[0]}")
+   
+   local month=${datehunks[1]}
+   local monthno=${months[$month]}
+
+   #echo "${monthno}/${datehunks[0]}/${datehunks[2]} ${hunks[1]} ${hunks[2]}"
+   date --date "${monthno}/${datehunks[0]}/${datehunks[2]} ${hunks[1]} ${hunks[2]}" +"%s"
+}
 
 function get_values() {
    while read -r line
@@ -53,54 +74,112 @@ function get_values() {
            continue;
          fi
 
-         dl=(`echo $line |cut -d '"' -f2 |sed 's/,//g'`)
+         local datestr=`echo $line |cut -d '"' -f1 |sed 's/,/ /g'`
+         local timest=$(date_to_ts "$datestr")
+         dates+=($timest)
+         local dl=`echo $line |cut -d '"' -f2 |sed 's/,//g'`
          if [[ $dl < $cir_dn ]]; then
-           let dl=$(expr $cir_dn - $dl)
-           downlink+=( "$dl" )
+           let dl=$(( $cir_dn - $dl ))
+           downlink+=( $dl )
          else
            let bas=$(shuf -i "$min-$max" -n1)
-           downlink+=( "$bas" )
+           downlink+=( $bas )
          fi
 
-         ul=(`echo $line |cut -d '"' -f6 |sed 's/,//g'`)
+         local ul=`echo $line |cut -d '"' -f6 |sed 's/,//g'`
          if [[ $ul < $cir_up ]]; then
-           let ul=$(expr $cir_up - $ul)
-           uplink+=( "$ul" )
+           let ul=$(( $cir_up - $ul ))
+           uplink+=( $ul )
          else
            let bas=$(shuf -i "$min-$max" -n1)
-           uplink+=( "$bas" )
+           uplink+=( $bas )
          fi
 
-         lat=(`echo $line |cut -d '"' -f9 |sed 's/,//g' |cut -d '.' -f1`)
-         let lat=$(expr $lat/2)
-         delay+=( "$lat" )
+         local lat=`echo $line |cut -d '"' -f9 |sed 's/,//g' |cut -d '.' -f1`
+         let lat=$(( $lat/2 ))
+         delay+=( $lat )
 
        fi
    done < $file
 }
 
+
 function modify_values {
-   for ((j=0;j<10;++j)); do 
-      let dl_now=(`echo ${RANDOM:0:8}`)+${downlink[i]}
-      let ul_now=(`echo ${RANDOM:0:8}`)+${uplink[i]}
-      let lt_now=(`echo ${RANDOM:0:2}`)+${delay[i]}
+   [ -z "$1" ] && echo "modify_values wants row index \$1, bye" && exit 1
+   local row_idx=$1
+   local dl_now=0
+   local ul_now=0
+   local lt_now=0
+   local ts_now=${dates[$row_idx]}
+   local ts_next=${dates[ $(( $row_idx +1 )) ]}
+   local delta=$(( $ts_next - $ts_now ))
+   local pause=$(( $delta / $slices ))
+   #echo "now: $ts_now, next: $ts_next, delta: $delta pause: $pause"
+   local downlink_now="${downlink[$row_idx]}"
+   local downlink_next="${downlink[ $(( $row_idx +1 )) ]}"
+   local downlink_delta=$(( $downlink_next - $downlink_now ))
+   local uplink_now="${uplink[$row_idx]}"
+   local uplink_next="${uplink[ $(( $row_idx +1 )) ]}"
+   local uplink_delta=$(( $uplink_next - $uplink_now ))
+   local delay_now="${delay[ $row_idx ]}"
+   local delay_next="${delay[ $(( $row_idx +1 )) ]}"
+   local delay_delta=$(( $delay_next - $delay_now ))
+   local dl_series=()
+   local ul_series=()
+   local delay_series=()
+   local j;
 
-      #echo "set wanlink $name: $dl_now $ul_now $lt_now"
+   #echo "Deltas: $downlink_delta $uplink_delta $delay_delta"
+   echo "Now:    $downlink_now $uplink_now $delay_now"
+   for ((j=1; j < $slices; ++j)); do 
+      
+      local d_j=$(( $downlink_delta / $slices ))
+      local u_j=$(( $uplink_delta / $slices ))
+      local l_j=$(( $delay_delta / $slices ))
+      
+      local d_a=$d_j
+      local u_a=$u_j
+      local l_a=$l_j
+      
+      [[ $d_j -lt 0 ]] && d_a=$(( -1 * $d_j ))
+      [[ $u_j -lt 0 ]] && u_a=$(( -1 * $u_j ))
+      [[ $l_j -lt 0 ]] && l_a=$(( -1 * $l_j ))
+      local d_i=$(( ($j * $d_j) + `shuf -i 1-$d_a -n1` ))
+      local u_i=$(( ($j * $u_j) + `shuf -i 1-$u_a -n1` ))
+      local l_i=$(( ($j * $l_j) + `shuf -i 1-$l_a -n1` ))
+      #echo "$j:     $d_i $u_i $l_i"
+      echo "$j:      $(($downlink_now + $d_i)) $(($uplink_now + $u_i)) $(($delay_now + $l_i))"
+      dl_series+=( $(($downlink_now + $d_i)) )
+      ul_series+=( $(($uplink_now + $u_i)) )
+      delay_series+=( $(($delay_now + $l_i)) )
+   done
+   echo "Next:   $downlink_next $uplink_next $delay_next"
+   
+   for ((j=0; j < $slices; ++j)); do 
+   
+      dl_now=${dl_series[$j]}
+      ul_now=${ul_series[$j]}
+      lt_now=${delay_series[$j]}
+
+      echo "set wanlink $name: $dl_now $ul_now $lt_now"
       echo "set wanlink $name-A: Downlink $dl_now, Delay $lt_now"
-      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
-         "set_wanlink_info $name-A $dl_now $lt_now NA NA NA NA" &>/dev/null
+#      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
+#         "set_wanlink_info $name-A $dl_now $lt_now NA NA NA NA" &>/dev/null
       echo "set wanlink $name-B: Uplink $ul_now, Delay $lt_now"
-      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
-         "set_wanlink_info $name-B $ul_now $lt_now NA NA NA NA" &>/dev/null
+#      ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
+#         "set_wanlink_info $name-B $ul_now $lt_now NA NA NA NA" &>/dev/null
 
-      echo "Running for $run_time seconds."
-      sleep $run_time
+      echo "B-LOOP Waiting for $pause seconds."
+      sleep $pause
    done
 }
 
 
 get_values
-for ((i=0;i<${#downlink[@]};++i)); do
+
+stop_at="$(( ${#downlink[@]} - 1 ))"
+
+for ((i=0; i < $stop_at; ++i)); do
    
    #echo "set wanlink $name: ${downlink[i]} ${uplink[i]} ${delay[i]}"
    echo "set wanlink $name-A: Downlink ${downlink[i]}, Delay ${delay[i]}"
@@ -110,9 +189,10 @@ for ((i=0;i<${#downlink[@]};++i)); do
    ./lf_firemod.pl --mgr localhost --quiet on --action do_cmd --cmd \
       "set_wanlink_info $name-B ${uplink[i]} ${delay[i]} NA NA NA NA" &>/dev/null
 
-   echo "Running for $run_time seconds."
+   echo "A-LOOP Running for $run_time seconds."
    sleep $run_time
 
-   modify_values
+   [[ $i -ge $stop_at ]] && break
+   modify_values $i
 done
 
