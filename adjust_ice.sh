@@ -139,7 +139,12 @@ function modify_values {
       
       local d_a=$d_j
       local u_a=$u_j
-      local l_a=$l_j
+
+      if [[ $l_j != 0 ]]; then
+        local l_a=$l_j
+      else
+        local l_a=1
+      fi
       
       [[ $d_j -lt 0 ]] && d_a=$(( -1 * $d_j ))
       [[ $u_j -lt 0 ]] && u_a=$(( -1 * $u_j ))
@@ -155,7 +160,7 @@ function modify_values {
    done
    echo "Next:   $downlink_next $uplink_next $delay_next"
    
-   for ((j=0; j < $slices; ++j)); do 
+   for ((j=0; j < 9; ++j)); do 
    
       dl_now=${dl_series[$j]}
       ul_now=${ul_series[$j]}
