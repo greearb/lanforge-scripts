@@ -19,7 +19,8 @@ declare -A call_states=([ON_HOOK]=0
    [CALL_REMOTE_RINGING]=3
    [CALL_IN_PROGRESS]=4)
    
-highest_call_state=0;
+declare -A highest_call_state=()
+
 # pass this the file name
 function study_call() {
    [ ! -r "$1" ] && echo "Unable to find Endpoint record: $1" && exit 1
@@ -50,37 +51,14 @@ function study_call() {
          RegisterState)
             call_state=${shunks[3]}
             #echo "call_state ${call_state} = ${call_states[$call_state]}"
-            if [[ ${call_states[$call_state]} -gt $highest_call_state ]]; then
-               highest_call_state=${call_states[$call_state]}
-               echo "call_state NOW $call_state = ${call_states[$call_state]}"
-            fi
             ;;
          RptTimer)
             running_for=${shunks[3]}
             running_for=${running_for:0:-1} # chop 's' off 
-            #echo "running_for ${running_for}"
-            ;;
-         CallsAttempted)
-            results_attempted[$endp]=${fields[0]}
-            #echo "$endp attempted: ${fields[0]}"
-            ;;
-         CallsCompleted)
-            results_completed[$endp]=${fields[0]}
-            #echo "$endp completed: ${fields[0]}"
-            ;;
-         $RtpPktsTx)
-            #echo "Tx $line"
-            #echo "[${fields[0]}][${fields[1]}][${fields[2]}]"
-            results_tx[$endp]=${fields[0]}
-            ;;
-         $RtpPktsRx)
-            #echo "Rx $line"
-            #echo "[${fields[0]}][${fields[1]}][${fields[2]}]"
-            results_rx[$endp]=${fields[0]}
             ;;
       esac
    done < "$1"
-
+   # this is a work around for voip cli bugs in 5.3.7
    if [[ $call_state = ON_HOOK ]]; then
       actual_state=$call_state
    elif [[ $running_for -gt 65535 ]]; then
@@ -88,16 +66,20 @@ function study_call() {
    elif [[ $running_for -le 65535 ]]; then
       actual_state=$call_state
    fi
-   #echo "$endp $actual_state Tx ${results_tx[$endp]} Rx ${results_rx[$endp]}"
-   #echo "$endp $actual_state $highest_call_state"
+   if [[ ${call_states[$actual_state]} -gt ${highest_call_state[$endp]} ]]; then
+      highest_call_state[$endp]=${call_states[$actual_state]}
+      echo -n "$actual_state "
+   fi
 }
 
 start=0
+stop=0
 [ -z "$1" ] && usage && exit 1
 [ -z "$2" ] && usage && exit 1
 [ -z "$3" ] && usage && exit 1
 [ -z "$4" ] && usage && exit 1
 [ "$5" == "-start" ] && start=1
+[ "$6" == "-stop" ] && stop=1
 
 cd /home/lanforge/scripts
 q="--quiet yes"
@@ -113,7 +95,7 @@ $fire --action list_endp > /tmp/list_endp.$$
 # | while read -r line ; do hunks=($line); echo "${hunks[1]}"; done
 #   [v3v2-30000-B]
 #   [v3v2-30000-A]
-
+start_sec=`date +%s`
 declare -A results_tx
 declare -A results_rx
 declare -A results_attempted
@@ -128,47 +110,83 @@ while IFS= read -r line ; do
    [[ $name != ${3}-* ]] && continue
    voip_endp_names+=($name)
    cx_n="${name%-[AB]}"
-   #echo "CX_N: $cx_n"
    [[ -z "${cx_names[$cx_n]+unset}" ]] && cx_names+=(["$cx_n"]=1)
 done < /tmp/list_endp.$$
 
+if [ $stop -eq 1 ]; then
+   echo -n "Stopping ${cn_n}..."
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' STOPPED"  &>/dev/null
+   sleep 3
+   echo "done"
+fi
+
 if [ $start -eq 1 ]; then
+   echo -n "Starting ${cn_n}..."
    $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' RUNNING"  &>/dev/null
+   echo "done"
 fi
 
-duration=$(( `date +"%s"` + 4 ))
+##
+## Wait for A side to connect
+##
+duration=$(( `date +"%s"` + 120 ))
+endp="${cx_n}-A"
+echo -n "Endpoint $endp..."
+highest_call_state[$endp]=0
 while [[ `date +"%s"` -le $duration ]]; do
-   for endp in "${voip_endp_names[@]}"; do
-      if [ -z "${results_tx[$endp]+unset}" ]; then
-         results_tx[$endp]="0"
-      fi
-      if [ -z "${results_rx[$endp]+unset}" ]; then
-         results_rx[$endp]="0"
-      fi
-      if [ -z "${results_attempted[$endp]+unset}" ]; then
-         results_attempted[$endp]="0"
-      fi
-      if [ -z "${results_completed[$endp]+unset}" ]; then
-         results_completed[$endp]="0"
-      fi
-      $fire --action show_endp --endp_name $endp > /tmp/endp_$$
-      study_call /tmp/endp_$$
-      #echo "COMPARE $highest_call_state v ${call_states[CALL_IN_PROGRESS]}"
-      if [[ $highest_call_state -ge ${call_states[CALL_IN_PROGRESS]} ]]; then
-         echo "call connected"
-         break;
-      fi
-      rm -f /tmp/endp_$$
-   done
-   [ $4 -eq 0 ] && exit
-   sleep 0.5
+   $fire --action show_endp --endp_name $endp > /tmp/endp_$$
+   study_call /tmp/endp_$$
+   rm -f /tmp/endp_$$
+   
+   echo -n "(${highest_call_state[$endp]}) "
+   if [[ ${highest_call_state[$endp]} -ge ${call_states[CALL_IN_PROGRESS]} ]]; then
+      echo "$endp connected"
+      break;
+   fi
+   sleep 0.25
 done
-if [[ $highest_call_state -lt ${call_states[CALL_IN_PROGRESS]} ]]; then
-   echo "call not connected"
-   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' STOPPED" &>/dev/null      
+
+##
+## Wait for B side to connect
+##
+duration=$(( `date +"%s"` + 2 ))
+endp="${cx_n}-B"
+highest_call_state[$endp]=0
+echo -n "Endpoint $endp..."
+while [[ `date +"%s"` -le $duration ]]; do
+   $fire --action show_endp --endp_name $endp > /tmp/endp_$$
+   study_call /tmp/endp_$$
+   rm -f /tmp/endp_$$
+   echo -n "(${highest_call_state[$endp]}) "
+   if [[ ${highest_call_state[$endp]} -ge ${call_states[CALL_IN_PROGRESS]} ]]; then
+      echo "$endp connected"
+      break;
+   fi
+
+   [ $4 -eq 0 ] && exit
+   sleep 0.25
+done
+
+if [[ ${highest_call_state[$endp]} -lt ${call_states[CALL_IN_PROGRESS]} ]]; then
+   echo -n "call not connected, cancelling..."
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' STOPPED" &>/dev/null
+   echo "done"
 fi
-
-
+stop_sec=`date +%s`
+delta=$(( $stop_sec - $start_sec ))
+echo "Test duration: $delta seconds"
+#      if [ -z "${results_tx[$endp]+unset}" ]; then
+#         results_tx[$endp]="0"
+#      fi
+#      if [ -z "${results_rx[$endp]+unset}" ]; then
+#         results_rx[$endp]="0"
+#      fi
+#      if [ -z "${results_attempted[$endp]+unset}" ]; then
+#         results_attempted[$endp]="0"
+#      fi
+#      if [ -z "${results_completed[$endp]+unset}" ]; then
+#         results_completed[$endp]="0"
+#      fi
 #function old_stuff() {
 #   for cx in "${!cx_names[@]}"; do
 #      enda="${cx}-A"
