@@ -5,12 +5,6 @@
 # if the call does not connect.
 #------------------------------------------------------------
 
-function usage() {
-   echo "$0 {manager} {resource} {CX name} {poll time} [-start]"
-   echo "   Use poll time 0 to run just once"
-   echo "   Poll time is an argument to sleep(1)"
-}
-
 RtpPktsTx="RTP Pkts Tx"
 RtpPktsRx="RTP Pkts Rx"
 declare -A call_states=([ON_HOOK]=0 
@@ -70,21 +64,72 @@ function study_call() {
       highest_call_state[$endp]=${call_states[$actual_state]}
       echo -n "$actual_state "
    fi
+} # ~study_call
+
+function usage() {
+   echo "$0 -m {manager} -r {resource} -c {CX name} -a {sec} -b {sec} -s -t -u -v"
+   echo "   -a <sec> # disconnect A-side after this many seconds"
+   echo "   -b <sec> # disconnect B-side after this many seconds"
+   echo "   -s # start the connection"
+   echo "   -t # stop the cx before starting connection"
+   echo "   -u # stop cx upon successfull call"
+   echo "   -v # verbose"
+   echo "   -h # help"
 }
 
+poll_sec=0.25
 start=0
 stop=0
-[ -z "$1" ] && usage && exit 1
-[ -z "$2" ] && usage && exit 1
-[ -z "$3" ] && usage && exit 1
-[ -z "$4" ] && usage && exit 1
-[ "$5" == "-start" ] && start=1
-[ "$6" == "-stop" ] && stop=1
+end_cx=0
+verbose=0
+disconnect_time=120
+while getopts "a:b:c:hm:r:stuv" arg; do
+   #echo "ARG[$arg] OPTARG[$OPTARG]"
+   case $arg in
+   a)
+      disconnect_a=$OPTARG
+      ;;
+   b)
+      disconnect_b=$OPTARG
+      ;;
+   c)
+      cx_name=$OPTARG
+      ;;
+   h)
+      usage
+      exit 0;;
+   m)
+      mgr=$OPTARG
+      ;;
+   r)
+      resource=$OPTARG
+      ;;
+   s)
+      start=1
+      ;;
+   t)
+      stop=1
+      ;;
+   u)
+      end_cx=1
+      ;;
+   v)
+      verbose=1
+      ;;
+   *)
+      echo "Ignoring option [$arg]($OPTARG)"
+      ;;
+   esac
+done
+
+[ -z "$mgr" ] && usage && exit 1
+[ -z "$resource" ] && usage && exit 1
+[ -z "$cx_name" ] && usage && exit 1
 
 cd /home/lanforge/scripts
+m="--mgr $mgr"
 q="--quiet yes"
-m="--mgr $1"
-r="--resource $2"
+r="--resource $resource"
 
 fire=$( echo ./lf_firemod.pl $m $q $r )
 # find endpoint name
@@ -110,27 +155,27 @@ while IFS= read -r line ; do
    [[ $name != ${3}-* ]] && continue
    voip_endp_names+=($name)
    cx_n="${name%-[AB]}"
-   [[ -z "${cx_names[$cx_n]+unset}" ]] && cx_names+=(["$cx_n"]=1)
+   [[ -z "${cx_names[$cx_n]+unset}" ]] && cx_names+=(["$cx_name"]=1)
 done < /tmp/list_endp.$$
 
 if [ $stop -eq 1 ]; then
-   echo -n "Stopping ${cn_n}..."
-   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' STOPPED"  &>/dev/null
+   echo -n "Stopping ${cx_name}..."
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' STOPPED"  &>/dev/null
    sleep 3
    echo "done"
 fi
 
 if [ $start -eq 1 ]; then
-   echo -n "Starting ${cn_n}..."
-   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' RUNNING"  &>/dev/null
+   echo -n "Starting ${cx_name}..."
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' RUNNING"  &>/dev/null
    echo "done"
 fi
 
 ##
 ## Wait for A side to connect
 ##
-duration=$(( `date +"%s"` + 120 ))
-endp="${cx_n}-A"
+duration=$(( `date +"%s"` + $disconnect_a ))
+endp="${cx_name}-A"
 echo -n "Endpoint $endp..."
 highest_call_state[$endp]=0
 while [[ `date +"%s"` -le $duration ]]; do
@@ -143,14 +188,14 @@ while [[ `date +"%s"` -le $duration ]]; do
       echo "$endp connected"
       break;
    fi
-   sleep 0.25
+   sleep $poll_sec
 done
 
 ##
 ## Wait for B side to connect
 ##
-duration=$(( `date +"%s"` + 2 ))
-endp="${cx_n}-B"
+duration=$(( `date +"%s"` + $disconnect_b ))
+endp="${cx_name}-B"
 highest_call_state[$endp]=0
 echo -n "Endpoint $endp..."
 while [[ `date +"%s"` -le $duration ]]; do
@@ -162,48 +207,20 @@ while [[ `date +"%s"` -le $duration ]]; do
       echo "$endp connected"
       break;
    fi
-
-   [ $4 -eq 0 ] && exit
-   sleep 0.25
+   sleep $poll_sec
 done
 
 if [[ ${highest_call_state[$endp]} -lt ${call_states[CALL_IN_PROGRESS]} ]]; then
    echo -n "call not connected, cancelling..."
-   $fire --action do_cmd --cmd "set_cx_state all '${cx_n}' STOPPED" &>/dev/null
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' STOPPED" &>/dev/null
+   echo "done"
+elif [[ $end_cx -eq 1 ]]; then
+   echo -n "ending connected call..."
+   $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' STOPPED" &>/dev/null
    echo "done"
 fi
 stop_sec=`date +%s`
 delta=$(( $stop_sec - $start_sec ))
 echo "Test duration: $delta seconds"
-#      if [ -z "${results_tx[$endp]+unset}" ]; then
-#         results_tx[$endp]="0"
-#      fi
-#      if [ -z "${results_rx[$endp]+unset}" ]; then
-#         results_rx[$endp]="0"
-#      fi
-#      if [ -z "${results_attempted[$endp]+unset}" ]; then
-#         results_attempted[$endp]="0"
-#      fi
-#      if [ -z "${results_completed[$endp]+unset}" ]; then
-#         results_completed[$endp]="0"
-#      fi
-#function old_stuff() {
-#   for cx in "${!cx_names[@]}"; do
-#      enda="${cx}-A"
-#      endb="${cx}-B"
-#
-#      if [[ ${results_attempted[$enda]} -gt 1 ]] ; then
-#         if [[ ${results_completed[$endb]} < $(( ${results_attempted[$enda]} -1 )) ]]; then
-#            echo -n " fewer calls recieved: "
-#            echo " attempted ${results_attempted[$enda]} completed ${results_completed[$endb]}"
-#         fi
-#      fi
-#      if [[ ${results_tx[$enda]} -gt 1 ]] ; then
-#         if [[ ${results_rx[$endb]} < $(( ${results_tx[$enda]} / 2 )) ]]; then
-#            echo -n " fewer packets recieved: "
-#            echo " tx ${results_tx[$enda]}               rx ${results_rx[$endb]}"
-#         fi
-#      fi
-#   done
-#}
+
 # eof
