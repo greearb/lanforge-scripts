@@ -62,7 +62,7 @@ function study_call() {
    fi
    if [[ ${call_states[$actual_state]} -gt ${highest_call_state[$endp]} ]]; then
       highest_call_state[$endp]=${call_states[$actual_state]}
-      echo -n "$actual_state "
+      [[ $verbose -eq 1 ]] && echo -n "$actual_state "
    fi
 } # ~study_call
 
@@ -82,7 +82,9 @@ start=0
 stop=0
 end_cx=0
 verbose=0
-disconnect_time=120
+disconnect_a=120
+disconnect_b=2
+
 while getopts "a:b:c:hm:r:stuv" arg; do
    #echo "ARG[$arg] OPTARG[$OPTARG]"
    case $arg in
@@ -125,6 +127,8 @@ done
 [ -z "$mgr" ] && usage && exit 1
 [ -z "$resource" ] && usage && exit 1
 [ -z "$cx_name" ] && usage && exit 1
+[ -z "$disconnect_a" ] && usage && exit 1
+[ -z "$disconnect_b" ] && usage && exit 1
 
 cd /home/lanforge/scripts
 m="--mgr $mgr"
@@ -159,16 +163,16 @@ while IFS= read -r line ; do
 done < /tmp/list_endp.$$
 
 if [ $stop -eq 1 ]; then
-   echo -n "Stopping ${cx_name}..."
+   [[ $verbose -eq 1 ]] && echo -n "Stopping ${cx_name}..."
    $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' STOPPED"  &>/dev/null
    sleep 3
-   echo "done"
+   [[ $verbose -eq 1 ]] && echo "done"
 fi
 
 if [ $start -eq 1 ]; then
-   echo -n "Starting ${cx_name}..."
+   [[ $verbose -eq 1 ]] && echo -n "Starting ${cx_name}..."
    $fire --action do_cmd --cmd "set_cx_state all '${cx_name}' RUNNING"  &>/dev/null
-   echo "done"
+   [[ $verbose -eq 1 ]] && echo "done"
 fi
 
 ##
@@ -176,14 +180,14 @@ fi
 ##
 duration=$(( `date +"%s"` + $disconnect_a ))
 endp="${cx_name}-A"
-echo -n "Endpoint $endp..."
+[[ $verbose -eq 1 ]] && echo -n "Endpoint $endp..."
 highest_call_state[$endp]=0
 while [[ `date +"%s"` -le $duration ]]; do
    $fire --action show_endp --endp_name $endp > /tmp/endp_$$
    study_call /tmp/endp_$$
    rm -f /tmp/endp_$$
    
-   echo -n "(${highest_call_state[$endp]}) "
+   [[ $verbose -eq 1 ]] && echo -n "(${highest_call_state[$endp]}) "
    if [[ ${highest_call_state[$endp]} -ge ${call_states[CALL_IN_PROGRESS]} ]]; then
       echo "$endp connected"
       break;
@@ -197,12 +201,12 @@ done
 duration=$(( `date +"%s"` + $disconnect_b ))
 endp="${cx_name}-B"
 highest_call_state[$endp]=0
-echo -n "Endpoint $endp..."
+[[ $verbose -eq 1 ]] && echo -n "Endpoint $endp..."
 while [[ `date +"%s"` -le $duration ]]; do
    $fire --action show_endp --endp_name $endp > /tmp/endp_$$
    study_call /tmp/endp_$$
    rm -f /tmp/endp_$$
-   echo -n "(${highest_call_state[$endp]}) "
+   [[ $verbose -eq 1 ]] && echo -n "(${highest_call_state[$endp]}) "
    if [[ ${highest_call_state[$endp]} -ge ${call_states[CALL_IN_PROGRESS]} ]]; then
       echo "$endp connected"
       break;
@@ -221,6 +225,6 @@ elif [[ $end_cx -eq 1 ]]; then
 fi
 stop_sec=`date +%s`
 delta=$(( $stop_sec - $start_sec ))
-echo "Test duration: $delta seconds"
+[[ $verbose -eq 1 ]] && echo "Test duration: $delta seconds"
 
 # eof
