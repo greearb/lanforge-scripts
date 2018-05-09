@@ -329,11 +329,7 @@ sub fmt_wifi_extra {
 # $utils->doCmd("log_level 63");
 
 if ($cli_cmd ne "") {
-   my @rslt = $utils->doAsyncCmd($cli_cmd);
-   if (!$utils->isQuiet()) {
-      print @rslt;
-      print "\n";
-   }
+   print $utils->doAsyncCmd($cli_cmd) ."\n";
    close(CMD_LOG);
    exit(0);
 }
