@@ -77,7 +77,7 @@ our @known_tos       = split(',', "DONT-SET,LOWDELAY,THROUGHPUT,RELIABILITY,LOWC
 our $usage = "$0  --action { list_ports | show_port
                             | list_endp | create_endp | create_arm | show_endp | set_endp
                             | do_cmd | start_endp | stop_endp | delete_endp
-                            | create_cx | list_cx | show_cx | delete_cx } ]
+                            | create_cx | list_cx | show_cx | delete_cx | delete_cxe } ]
   [--endp_vals {key,key,key,key}]
       # show_endp output can be narrowed with key-value arguments
       # Examples:
@@ -221,7 +221,7 @@ if ($::do_cmd ne "NA") {
   $::action = "do_cmd";
 }
 our @valid_actions = split(/,/, "show_endp,set_endp,start_endp,stop_endp,delete_endp,create_endp,create_arm,"
-       ."show_port,do_cmd,list_ports,list_endp,create_cx,list_cx,show_cx,delete_cx" );
+       ."show_port,do_cmd,list_ports,list_endp,create_cx,list_cx,show_cx,delete_cx,delete_cxe" );
 
 if (! (grep {$_ eq $::action} @::valid_actions )) {
   die("Invalid action: $::action\n$::usage\n");
@@ -731,6 +731,14 @@ elsif ($::action eq "delete_cx") {
    die("Which test manager?: --test_mgr\n$::usage") if ($::test_mgr eq "");
    die("Which cross connect? --cx_name\n$::usage")  if ($::cx_name eq "");
    $::utils->doCmd($::utils->fmt_cmd("rm_cx", $::test_mgr, $::cx_name));
+}
+elsif ($::action eq "delete_cxe") {
+   # require cx_name
+   die("Which test manager?: --test_mgr\n$::usage") if ($::test_mgr eq "");
+   die("Which cross connect? --cx_name\n$::usage")  if ($::cx_name eq "");
+   $::utils->doCmd($::utils->fmt_cmd("rm_cx", $::test_mgr, $::cx_name));
+   $::utils->doCmd($::utils->fmt_cmd("rm_endp", "$::cx_name-A"));
+   $::utils->doCmd($::utils->fmt_cmd("rm_endp", "$::cx_name-B"));
 }
 else {
   die("Unknown action: $::action\n$::usage\n");

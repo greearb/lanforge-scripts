@@ -181,7 +181,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--action {step1,step2,add,del,del_all_phy}]
          # step1: creates <num_stations> stations and L3 connections
          # step2: does bringup test
-         # add: creates virtual radio (optional sta creation using specified virtual radio)
+         # add: creates station on specified radio, or radio if no stations are requested
          # del: Delete the specified port.
          # del_all_phy: Delete all interfaces with the specified parent device.
 
@@ -346,7 +346,6 @@ sub db_exists {
    return 1 if (@match > 0);
 
    print "Warning! Scenario $db_name not found among: ".join(", ", @db_names)."\n";
-   sleep 5;
    return 0;
 }
 
@@ -390,7 +389,6 @@ sub save_db {
    print "Saving database $db_name ...";
    if (db_exists($db_name)==1){
       print "Warning: will over-write database $db_name! ";
-      sleep(1);
    }
    doCmd(fmt_cmd("save", $db_name));
    print "done\n";
@@ -847,8 +845,10 @@ sub awaitStationRemoval {
          print " $sta_name,";
          my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
          $old_sta_count-- if( $status =~ m/Could not find/);
-         #print "$old_sta_count...";
-         sleep 1;
+      }
+      if ($old_sta_count > 0) {
+	#print "$old_sta_count...";
+	sleep 1;
       }
    }
    print " Old stations removed\n";
@@ -866,17 +866,14 @@ sub removeOldCrossConnects {
       doCmd("rm_endp $ep2");
       print " $cx_name ($ep1 - $ep2)...";
    }
-   sleep 1;
    print " done.\n";
 }
 
 sub removeOldStations {
    print "Deleting ports:";
-   sleep 1;
    foreach my $sta_name (reverse sort(keys %::sta_names)) {
       print "...$sta_name ";
       my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
-      sleep 1;
       my $port_id = get_port_id($::resource, $sta_name);
       if($port_id) {
          print "/$port_id";
@@ -899,7 +896,6 @@ sub awaitNewStations {
       my @are_assoc        = ();
       my @not_assoc        = ();
       for my $sta_name (sort(keys(%::sta_names))) {
-         sleep 1;
          my $status     = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
          my %sta_status = get_sta_state(\$status);
          #print " $sta_name ".$sta_status{"assoc"};
@@ -971,14 +967,12 @@ sub evalUnits {
       }
       if ($pref == 0 || $pow == 0) {
          print "Warning: speed coeficients [$pref,$pow] appear suspicious\n";
-         sleep 3;
       }
       my $speed =0 + ($pref * $pow);
       #print ">>>> setting speed to $speed <<<<\n";
       return $speed;
    }
    print "Warning: speed[$val] appears suspicious\n";
-   sleep 3;
    return $val;
 }
 
@@ -1189,7 +1183,7 @@ sub doStep_1 {
    for $sta_name (sort(keys %::sta_names)) {
       # sta, ip, rh, $ip_addr
       print " $sta_name ";
-      new_wifi_station( $sta_name, $::sta_names{$sta_name}, \%results1, $::wifi_mode, 5 );
+      new_wifi_station( $sta_name, $::sta_names{$sta_name}, \%results1, $::wifi_mode, 0);
    }
    print " Created $::num_stations stations\n";
 
@@ -1273,7 +1267,7 @@ sub doStep_2 {
       die("misconfiguration! ") if( ref($sta_name) eq "HASH");
       my $ip = $::sta_names{$sta_name};
       print "$sta_name " unless($::utils->isQuiet());
-      new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 5);
+      new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
 
       # Uncomment to diagnose connection results. The IPs assigned
       # are unlikely to appear instantly, but the mac and entity id
@@ -1329,50 +1323,18 @@ sub doStep_2 {
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##
-##    Create or Delete virtual radio.
+##    Create a station
 ##
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 sub doAdd {
-   # create virtual radio
+   # create virtual station
    if ($::num_stations > 0 && defined $::sta_wiphy) {
-      print "Creating virtual radio: $::sta_wiphy with $::num_stations stations.\n" unless($::utils->isQuiet());
       my %results2 = ();
-      new_wifi_radio();
 
       for my $sta_name (sort(keys %::sta_names)) {
 	 die("misconfiguration! ") if( ref($sta_name) eq "HASH");
 	 my $ip = $::sta_names{$sta_name};
 	 new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
-      }
-
-      # Wait until the are at least not phantom.
-      my $q;
-      for ($q = 0; $q < 10; $q++) {
-	my $all_done = 1;
-	my @ports = $::utils->getPortListing(1, $::resource);
-	for my $sta_name (sort(keys %::sta_names)) {
-	  my $i;
-	  my $found_it = 0;
-	  for ($i = 0; $i < @ports; $i++) {
-	    my $dev = $ports[$i]->dev();
-	    if ($dev eq $sta_name) {
-	      if (! $ports[$i]->isPhantom()) {
-		$found_it = 1;
-		last;
-	      }
-	    }
-	  }
-	  if (!$found_it) {
-	    print "Station: $sta_name is not found or is phantom.\n";
-	    $all_done = 0;
-	    last;
-	  }
-	}
-	if ($all_done) {
-	  last;
-	}
-	print "Waiting for stations to be created\n";
-	sleep(20);
       }
    }
    elsif (defined $::sta_wiphy) {

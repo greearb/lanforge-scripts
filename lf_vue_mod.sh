@@ -244,7 +244,9 @@ if [ -z "$resource" ]; then
   exit 1
 fi
 
-cd $SCRIPTDIR
+# Assume we are already in the right directory...doing a cd here breaks
+# running scripts from any other directory. --Ben
+#cd $SCRIPTDIR
 case "$action" in
   list_ports)
     do_firemod --action list_ports

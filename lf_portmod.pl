@@ -52,7 +52,7 @@ my $card             = 1;
 my $list_ports       = "";
 my $port_name        = "";
 my $cmd              = "";
-our $quiet            = 0;
+our $quiet            = 1;
 my $load             = "";
 my $amt_resets       = 1;
 my $max_port_name    = 0;
@@ -80,7 +80,7 @@ my $NOT_FOUND        = "-not found-";
 ########################################################################
 
 my $usage = "$0  --port_name {name | number}
---cmd             { reset }
+--cmd             { reset | delete }
 [--manager        { network address of LANforge manager} ]
 [--cli_cmd        { lf-cli-command text } ]
 [--amt_resets     { number (0 means forever) } ]
@@ -485,6 +485,12 @@ if ($cmd eq "reset") {
          sleep($sleep_time);
       }
   }#while
+}
+
+if ($cmd eq "delete") {
+  print("Deleting port: ${shelf_num}.${card}.${port_name}\n");
+  $cli_cmd = "rm_vlan $shelf_num $card $port_name";
+  $utils->doCmd($cli_cmd);
 }
 
 close(CMD_LOG);
