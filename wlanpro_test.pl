@@ -118,6 +118,11 @@ for ($i = 0; $i < $sta_max; $i++) {
   if ($testcase == -1 || $testcase == 0) {
     $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
     do_cmd($cmd);
+
+    # Set to maximum mode.  The stations might have been
+    # previously set to a different mode on an earlier run of this script.
+    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT";
+    do_cmd($cmd);
   }
   # Create data connection
   my $cxn = "l3-${sta_name}";
@@ -224,6 +229,15 @@ if ($testcase == 100) {
     $cmd = "./lf_firemod.pl --mgr $manager --action delete_cxe --cx_name $cxn";
     do_cmd($cmd);
   }
+
+  # Set radio back to full antenna capacity
+  for ($i = 0; $i<$radio_count; $i++) {
+    my $radio = $radios[$i];
+    my $set_cmd = "set_wifi_radio 1 $resource $radio NA NA NA NA NA NA NA NA NA 0";
+    $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"$set_cmd\"";
+    do_cmd($cmd);
+  }
+
 }
 
 exit 0;
