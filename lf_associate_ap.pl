@@ -151,7 +151,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       ##       AP selection
       [--radio {name}]           # e.g. wiphy2
       [--ssid {ssid}]            # e.g. jedtest
-      [--bssid {aa:bb:cc:00:11:22} # AP BSSID to connect to
+      [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2}] # station authentication type, Default is open
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
       [--passphrase {...}]       # implies wpa2 if --security not set
@@ -491,7 +491,7 @@ sub fmt_vsta_cmd {
    my ($resource, $sta_wiphy, $sta_name, $flags, $ssid, $passphrase, $mac, $flags_mask, $wifi_m, $bssid ) = @_;
    die("fmt_vsta_cmd wants sta_wiphy name, bye.") unless($sta_wiphy);
    my $key              = "[BLANK]";
-   my $ap               = "AUTO";
+   my $ap               = "DEFAULT";
    if ((defined $bssid) && ($bssid ne "")) {
       $ap = $bssid;
    }
