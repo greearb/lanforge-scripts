@@ -719,15 +719,20 @@ sub new_wifi_station {
    }
    else { # $::passphrase ne ""
       if( $::security eq "open") {
-         print "Warning: ignoring passphrase for open wifi.\n";
-         $::passphrase = "";
+	#print "Warning: ignoring passphrase for open wifi.\n";
+        #$::passphrase = "";
       }
    }
    if ( ! exists($::sec_options{$::security})) {
       die( "Unknown security option [{$::security}]");
    }
    $flags         |= $::sec_options{$::security};
-   $flagsmask     |= $::sec_options{$::security};
+   # This doesn't work since 'open' maps to 0x0 and we need to also disable
+   # flags that might be set previously.
+   # $flagsmask     |= $::sec_options{$::security};
+   # We are always configuring security to one thing or another, so we need to
+   # mask all of the bits properly.
+   $flagsmask |= (0x10 | 0x200 | 0x400);
 
    if (defined $::xsec && "$::xsec" ne "") {
       for my $sec_op (split(',', $::xsec)) {
