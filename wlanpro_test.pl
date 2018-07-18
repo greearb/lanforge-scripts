@@ -20,6 +20,8 @@
 # Assume other test EQ is doing interference?
 
 # Each ct523b has 4 radios.  We will spread stations among them.
+# This script can work on systems with fewer radios as well, see comments
+# below about naming the 3a,3b,4a,4b radios with duplicate names.
 
 use strict;
 use Getopt::Long;
@@ -27,26 +29,31 @@ use Getopt::Long;
 my $pld_size = 500;
 my $ssid = "wlanpro";
 my $psk = "wlanpro_passwd";
+# Default radio setup for 523b with 2ac, 2ac2.
+# For something like a 522 with 2 radios, set 3a, 3b to wiphy0, and
+# 4a 4b to wiphy1.
 my $radio_3a = "wiphy0";
-my $radio_3b = "wiphy0";
-my $radio_4a = "wiphy1";
-my $radio_4b = "wiphy1";
+my $radio_3b = "wiphy1";
+my $radio_4a = "wiphy2";
+my $radio_4b = "wiphy3";
 my $sta_max = 40;
 my $resource = 2;
 my $speed_dl_tot = 1000000000;
 my $speed_ul_tot = 1000000000;
 my $testcase = -1;
 my $manager = "localhost";
-my $log_name = "wlanpro_log_" . time() . ".txt";
+my $log_name = "";
 
 my $endp_type = "lf_udp";
 my $security = "wpa2";
 my $upstream_resource = 1;
 my $upstream_port = "eth1";
 my $multicon = 1;
-my $rest_time = 30;
+my $rest_time = 20;
 my $quiet = "yes";
 my $report_timer = 1000; # 1 second report timer
+my $one_way_test_time = 30;
+my $bi_test_time = 30;
 
 my $usage = "$0
   [--pld_size { bytes } ]
@@ -61,9 +68,11 @@ my $usage = "$0
   [--upstream_port {port}]
   [--speed_ul_tot {speed-bps}]
   [--speed_dl_tot {speed-bps}]
+  [--security {open | wpa2}]
   [--manager {manager-machine IP or hostname}]
-  [--testcase {test-case:  -1 all, 0 setup, 1 case 1 ..}]
+  [--testcase {test-case:  -1 all, 0 setup, 1-5, 100 means cleanup}]
   [--log_name {log-file-name}]
+  [--rest_time {seconds to sleep between rest runs, dfault is $rest_time}]
 ";
 
 
@@ -78,24 +87,37 @@ GetOptions (
 	    'resource=i'     => \$resource,
 	    'upstream_resource=i' => \$upstream_resource,
 	    'upstream_port=s' => \$upstream_port,
+	    'rest_time=i'    => \$rest_time,
 	    'speed_ul_tot=s' => \$speed_ul_tot,
 	    'speed_dl_tot=s' => \$speed_dl_tot,
+	    'security=s'     => \$security,
 	    'manager=s'      => \$manager,
 	    'mgr=s'          => \$manager,
 	    'testcase=i'     => \$testcase,
 	    'log_name=s'     => \$log_name,
 	   ) || (print($usage) && exit(1));
 
+if ($log_name eq "") {
+  $log_name = "wlanpro_log_" . $ssid . "_" . time() . ".txt";
+}
 my @radios = ($radio_3a, $radio_3b, $radio_4a, $radio_4b);
 my $radio_count = @radios;
 my $i;
 my $cmd;
+my $log_prefix = "LANforge wlanpro-test\nConfiguration:\n" .
+  "  SSID: $ssid  passphrase: $psk  security: $security  resource: $resource\n" .
+  "  speed_dl_request: $speed_dl_tot  speed_ul_request: $speed_ul_tot  payload-size: $pld_size  traffic-type: $endp_type\n" .
+  "  Test started at: " . `date` . "\n\n";
+my $brief_log = "$log_prefix";
+my $summary_text = "$log_prefix";
 
 # Initial setup for test cases, create 40 stations
 my @cxs = ();
 my @stations = ();
 
 open(LOGF, ">$log_name") or die("Could not open log file: $log_name $!\n");
+
+logp($log_prefix);
 
 # Set radios to 3x3 mode.
 if ($testcase == -1 || $testcase == 0) {
@@ -121,7 +143,7 @@ for ($i = 0; $i < $sta_max; $i++) {
 
     # Set to maximum mode.  The stations might have been
     # previously set to a different mode on an earlier run of this script.
-    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT";
+    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT --set_ifstate up";
     do_cmd($cmd);
   }
   # Create data connection
@@ -149,11 +171,12 @@ stop_all_my_cx();
 
 if ($testcase == -1 || $testcase == 1) {
   wait_for_stations();
-  do_test_series();
+  do_test_series("3x3 station upload/download test");
 }
 
 if ($testcase == -1 || $testcase == 2) {
   # Test case 2, set stations to 2x2 and re-test
+  my $start = time();
   for ($i = 0; $i<$radio_count; $i++) {
     my $radio = $radios[$i];
     my $set_cmd = "set_wifi_radio 1 $resource $radio NA NA NA NA NA NA NA NA NA 4";
@@ -162,11 +185,13 @@ if ($testcase == -1 || $testcase == 2) {
   }
 
   wait_for_stations();
-  do_test_series();
+  check_more_rest($testcase, $start);
+  do_test_series("2x2 station upload/download test");
 }
 
 if ($testcase == -1 || $testcase == 3) {
   # Test case 3, set stations to 1x1 and re-test
+  my $start = time();
   for ($i = 0; $i<$radio_count; $i++) {
     my $radio = $radios[$i];
     my $set_cmd = "set_wifi_radio 1 $resource $radio NA NA NA NA NA NA NA NA NA 1";
@@ -175,13 +200,15 @@ if ($testcase == -1 || $testcase == 3) {
   }
 
   wait_for_stations();
-  do_test_series();
+  check_more_rest($testcase, $start);
+  do_test_series("1x1 station upload/download test");
 }
 
 
 # Mixed mode test:  10 3x3, 15 2x2, 15 1x1  (Same data pattern)
 if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
   # Set radio back to full antenna capacity
+  my $start = time();
   for ($i = 0; $i<$radio_count; $i++) {
     my $radio = $radios[$i];
     my $set_cmd = "set_wifi_radio 1 $resource $radio NA NA NA NA NA NA NA NA NA 0";
@@ -205,15 +232,21 @@ if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
     do_cmd($cmd);
   }
 
+  wait_for_stations();
+  check_more_rest($testcase, $start);
+
   if ($testcase == -1 || $testcase == 4) {
-    wait_for_stations();
-    do_test_series();
+    do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test");
+    if ($testcase == -1) {
+      sleep($rest_time);
+    }
   }
 }
 
-if ($testcase == -1 || $testcase == 5) {
+# Disable this from 'all' runs for now until we figure out how the interference is going to be generated.
+if ($testcase == 5) {
   wait_for_stations();
-  do_test_series();
+  do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test with interference");
 }
 
 if ($testcase == 100) {
@@ -240,7 +273,29 @@ if ($testcase == 100) {
 
 }
 
+logpb("Completed test at " . `date` . "\n\n");
+
+# Append brief log and final log to the report.
+
+logf($brief_log);
+logp($summary_text);
+
 exit 0;
+
+sub check_more_rest {
+  my $testcase = shift;
+  my $start = shift;
+
+  if ($testcase == -1) {
+    # Running tests in series, so we need to add in our rest time
+    my $now = time();
+    if ($start + $rest_time > $now) {
+      my $st = ($start + $rest_time) - $now;
+      print "Sleeping $st seconds for rest time...";
+      sleep($st);
+    }
+  }
+}
 
 # Wait until all stations are associated and have IP addresses.
 sub wait_for_stations {
@@ -278,6 +333,7 @@ sub do_one_test {
   my $speed_dl = shift;
   my $cx_cnt = shift;
   my $sleep_sec = shift;
+  my $series_desc = shift;
 
   # Download for X seconds
   for ($i = 0; $i<$cx_cnt; $i++) {
@@ -295,38 +351,72 @@ sub do_one_test {
     do_cmd($cmd);
   }
 
-  logp("Waiting $sleep_sec seconds for test to run, $cx_cnt connections, configured speed, UL: $speed_ul  DL: $speed_dl....\n\n");
+  $cmd =  "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"clear_port_counters\"";
+
+  logp("Waiting $sleep_sec seconds for test to run, $cx_cnt connections, configured speed, UL: $speed_ul  DL: $speed_dl....\n" .
+       " Test-case: $series_desc\n\n");
   sleep($sleep_sec);
 
   logp("Gathering stats for this test run...\n");
 
-  # Gather stats data
+  # Gather layer-3 stats data
   my $sp;
-  for ($i = 0; $i<$cx_cnt; $i++) {
-    my $cxn = $cxs[$i];
-    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_cxe $cxn"`;
-    logf("$sp\n");
-  }
-
-  # Station stats
-  for ($i = 0; $i<@stations; $i++) {
-    my $sta_name = $stations[$i];
-    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_port 1 $resource $sta_name"`;
-    logf("$sp\n");
-  }
-
-  # Radio stats
-  for ($i = 0; $i<@radios; $i++) {
-    my $name = $radios[$i];
-    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_port 1 $resource $name"`;
-    logf("$sp\n");
-  }
-
-  # Upstream port
-  $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_port 1 $upstream_resource $upstream_port"`;
+  $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_cx"`;
   logf("$sp\n");
 
+  # Our endp names are derived from cx, so use that to our advantage.
+  for ($i = 0; $i<$cx_cnt; $i++) {
+    my $cxn = $cxs[$i];
+    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp $cxn-A"`;
+    logf("$sp\n");
+    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp $cxn-B"`;
+    logf("$sp\n");
+  }
+
+  # Port
+  my $tmpf = "wptest_stats_tmp.txt";
+  `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $resource" > $tmpf`;
+  if ($resource != $upstream_resource) {
+    `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $upstream_resource" >> $tmpf`;
+  }
+  $sp = `cat $tmpf`;
+  logf("$sp\n");
+
+  my $tot_dl_bps = 0;
+  my $tot_ul_bps = 0;
+  for ($i = 0; $i<@stations; $i++) {
+    my $sta_name = $stations[$i];
+    my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port AP,ESSID,bps_rx,bps_tx,MAC,Mode,RX-Rate,TX-Rate,Signal,Link-Activity,Channel,Bandwidth,NSS`;
+    $brief_log .= "Station Stats:\n$sta_stats\n\n";
+    $summary_text .= "$sta_name:";
+    if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
+      $tot_dl_bps += $1;
+      $summary_text .= " bps_rx: $1";
+    }
+    if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
+      $tot_ul_bps += $1;
+      $summary_text .= " bps_tx: $1";
+    }
+    if ($sta_stats =~ /NSS:\s+(\d+)/) {
+      $summary_text .= " NSS: $1";
+    }
+    if ($sta_stats =~ /RX-Rate:\s+(\S+)/) {
+      $summary_text .= " RX-Rate: $1";
+    }
+    if ($sta_stats =~ /TX-Rate:\s+(\S+)/) {
+      $summary_text .= " TX-Rate: $1";
+    }
+    if ($sta_stats =~ /Signal:\s+(\S+)/) {
+      $summary_text .= " Signal: $1";
+    }
+    $summary_text .= "\n";
+  }
+  $summary_text .= "Total station upload-bps: $tot_ul_bps  Total station download-bps: $tot_dl_bps\n\n";
+
   # TODO: Gather specific stats?
+  # txbps, rxbps, mode, tx-rate, rx-rate per station
+  # txbps, rxbps totals
+  # Save to summary report file, with configurables included at the top.
 
   stop_all_my_cx();
 }
@@ -352,19 +442,27 @@ sub logp {
   print $text; # to std-out too
 }
 
-sub do_test_series {
-  # First test case, 20 stations downloading, 3x3 mode.
-  logp("\nDoing download test with 20 stations.\n");
-  do_one_test(0, $speed_dl_tot / 20, 20, 30);
-  # Upload 30 sec
-  logp("\nDoing upload test with 20 stations.\n");
-  do_one_test($speed_ul_tot / 20, 0, 20, 30);
-  # Upload/Download 1 minute sec
-  logp("\nDoing upload/download test with 40 stations.\n");
-  do_one_test($speed_ul_tot / 40, $speed_dl_tot / 40, 40, 60);
+sub logpb {
+  my $text = shift;
+  print LOGF $text;
+  print $text; # to std-out too
+  $brief_log .= "$text";
+  $summary_text .= "$text"; # Even sparser summary output
+}
 
-  logp("Sleeping $rest_time seconds at end of test series...\n\n");
-  sleep($rest_time);
+sub do_test_series {
+  my $desc = shift;
+
+  logpb("\nDoing test series: $desc\n");
+  # First test case, 20 stations downloading, 3x3 mode.
+  logpb("\nDoing download test with 20 stations.\n");
+  do_one_test(0, $speed_dl_tot / 20, 20, $one_way_test_time, $desc);
+  # Upload 30 sec
+  logpb("\nDoing upload test with 20 stations.\n");
+  do_one_test($speed_ul_tot / 20, 0, 20, $one_way_test_time, $desc);
+  # Upload/Download 1 minute sec
+  logpb("\nDoing upload/download test with 40 stations.\n");
+  do_one_test($speed_ul_tot / 40, $speed_dl_tot / 40, 40, $bi_test_time, $desc);
 }
 
 sub do_cmd {
