@@ -75,6 +75,8 @@ my $eap_passwd       = "NA";
 my $cli_cmd          = "";
 my $log_file         = "";
 my $NOT_FOUND        = "-not found-";
+my $stats_from_file  = "";
+
 ########################################################################
 # Nothing to configure below here, most likely.
 ########################################################################
@@ -93,6 +95,9 @@ my $usage = "$0  --port_name {name | number}
 [--set_ifstate    {up | down} ]
 [--show_port      [key,key,key]]
    # show all port stats or just those matching /key:value/
+[--stats_from_file [file-name]
+   # Read 'show-port' ouput from a file instead of direct query from LANforge.
+   # This can save a lot of time if we already have the show-port output available.
 [--set_speed      {wifi port speed, see GUI port-modify drop-down for possible values. Common
                    examples: 'OS Defaults', '6 Mbps a/g', '1 Stream  /n', '2 Streams /n', MCS-0 (x1 15 M), MCS-10 (x2 90 M),
                              'v-MCS-0 (x1 32.5 M)', 'v-1 Stream  /AC', 'v-2 Streams /AC', ... }
@@ -110,6 +115,7 @@ my $usage = "$0  --port_name {name | number}
 Examples:
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --show_port
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta1 --show_port AP,ESSID,bps_rx,bps_tx
+./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta1 --stats_from_file /tmp/ports.txt --show_port AP,ESSID,bps_rx,bps_tx
 ./lf_portmod.pl --manager 192.168.1.101 --cli_cmd \"scan 1 1 sta0\"
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --cmd reset
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --set_ifstate down
@@ -175,6 +181,7 @@ GetOptions
  'ssid=s'            => \$ssid,
  'list_ports'        => \$list_ports,
  'show_port:s'       => \$show_port,
+ 'stats_from_file=s' => \$stats_from_file,
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|i=s'  => \$eap_identity,
  'eap_passwd|p=s'    => \$eap_passwd,
@@ -195,49 +202,55 @@ if ($show_help) {
    exit 0
 }
 
-# Open connection to the LANforge server.
-if (defined $log_cli) {
-  if ($log_cli ne "unset") {
-    # here is how we reset the variable if it was used as a flag
-    if ($log_cli eq "") {
-      $ENV{'LOG_CLI'} = 1;
+our $utils = undef;
+my $t = undef;
+
+if ($stats_from_file eq "") {
+  # Open connection to the LANforge server.
+  if (defined $log_cli) {
+    if ($log_cli ne "unset") {
+      # here is how we reset the variable if it was used as a flag
+      if ($log_cli eq "") {
+	$ENV{'LOG_CLI'} = 1;
+      }
+      else {
+	$ENV{'LOG_CLI'} = $log_cli;
+      }
+    }
+  }
+
+  # Open connection to the LANforge server.
+
+  $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
+			  Timeout => 20);
+
+  $t->open(Host => $lfmgr_host,
+	   Port    => $lfmgr_port,
+	   Timeout => 10);
+
+  $t->waitfor("/btbits\>\>/");
+
+  my $dt = "";
+
+  # Configure our utils.
+  $utils = new LANforge::Utils();
+  $::utils->telnet($t);
+  if ($::utils->isQuiet()) {
+    if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
+      $::utils->cli_send_silent(0);
     }
     else {
-      $ENV{'LOG_CLI'} = $log_cli;
+      $::utils->cli_send_silent(1); # Do not show input to telnet
     }
-  }
-}
-
-# Open connection to the LANforge server.
-
-my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-         Timeout => 20);
-
-$t->open(Host => $lfmgr_host,
-      Port    => $lfmgr_port,
-      Timeout => 10);
-
-$t->waitfor("/btbits\>\>/");
-
-my $dt = "";
-
-# Configure our utils.
-our $utils = new LANforge::Utils();
-$::utils->telnet($t);
-if ($::utils->isQuiet()) {
-  if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
-    $::utils->cli_send_silent(0);
+    $::utils->cli_rcv_silent(1);  # Repress output from telnet
   }
   else {
-    $::utils->cli_send_silent(1); # Do not show input to telnet
+    $::utils->cli_send_silent(0); # Show input to telnet
+    $::utils->cli_rcv_silent(0);  # Show output from telnet
   }
-  $::utils->cli_rcv_silent(1);  # Repress output from telnet
+  $::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 }
-else {
-  $::utils->cli_send_silent(0); # Show input to telnet
-  $::utils->cli_rcv_silent(0);  # Show output from telnet
-}
-$::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
+
 if (defined $log_file && ($log_file ne "")) {
    open(CMD_LOG, ">$log_file") or die("Can't open $log_file for writing...\n");
    $cmd_log_name = $log_file;
@@ -373,7 +386,13 @@ elsif((defined $show_port) && ("$show_port" ne "")) {
       $option_map{ $option } = '';
    }
    my $i;
-   my @lines         = split("\n", $utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
+   my @lines = ();
+   if ($stats_from_file ne "") {
+     @lines = get_stats_from_file($stats_from_file, 1, $card, $port_name);
+   }
+   else {
+     @lines         = split("\n", $utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
+   }
 
    # trick here is to place a ; before anything that looks like a keyword
    for($i=0; $i<@lines; $i++) {
@@ -495,3 +514,67 @@ if ($cmd eq "delete") {
 
 close(CMD_LOG);
 exit(0);
+
+
+sub get_stats_from_file {
+  my $fname = shift;
+  my $shelf = shift;
+  my $resource = shift;
+  my $port_name = shift;
+
+  open(F, "<$fname") or die("Can't open $fname for reading: $!\n");
+
+  my $port_text = "";
+  my $s = -1;
+  my $c = -1;
+  my $p = -1;
+
+  my @lines = ();
+  while ( my $line = <F>) {
+    @lines = (@lines, $line);
+  }
+  # Append dummy line to make it easier to terminate the parse logic.
+  @lines = (@lines, "Shelf: 9999, Card: 9999, Port: 9999  Type: STA  Alias: \n");
+
+  my $i;
+  for ($i = 0; $i<@lines;$i++) {
+    my $line = $lines[$i];
+    chomp($line);
+    if ($line =~ /Shelf:\s+(\d+).*Card:\s+(\d+).*Port:\s+(\d+)/) {
+      my $m1 = $1;
+      my $m2 = $2;
+      my $m3 = $3;
+
+      if ($port_text ne "") {
+	# See if existing port entry matches?
+	if ($s == $shelf && $c == $resource) {
+	  my $pname = "";
+	  my $palias = "";
+	  if ($port_text =~ /\s+DEV:\s+(\S+)/) {
+	    $pname = $1;
+	  }
+	  if ($port_text =~ /\s+Alias:\s+(\S+)/) {
+	    $palias = $1;
+	  }
+	  #print("search for port_name: $port_name p: $p  palias: $palias  pname: $pname\n");
+	  if (("$p" eq $port_name) ||
+	      ($palias eq $port_name) ||
+	      ($pname eq $port_name)) {
+	    return $port_text;
+	  }
+	}
+      }
+
+      $port_text = "$line\n";
+      $s = $m1;
+      $c = $m2;
+      $p = $m3;
+    }
+    else {
+      if ($port_text ne "") {
+	$port_text .= "$line\n";
+      }
+    }
+  }
+  return "";
+}
