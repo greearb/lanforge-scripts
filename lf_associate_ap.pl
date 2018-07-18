@@ -78,6 +78,7 @@ our $admin_down_on_add  = 0;
 our $ssid;
 our $first_sta          = "sta100";
 our $passphrase         = '';
+our $change_mac         = 0;
 our $min_tx             = "10000000";
 our $max_tx             = "SAME";
 our $security           = "open";
@@ -162,6 +163,9 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--first_sta {$first_sta}]
       [--first_ip {DHCP |ip address}]
       [--netmask {$netmask}]
+      [--change_mac {0|1}]
+         # If this is set to 0, then we will not change MAC if the station already exists.
+         # This is now the default behaviour.
       [--mac-pattern {$default_mac_pat}]
          # xx        : uses parent radio octet
          # [0-9a-f]  : use this value for octet
@@ -459,34 +463,6 @@ sub new_random_mac {
    return $rv;
 }
 
-sub get_port_id {
-   my ($resource, $sta_wiphy) = @_;
-   die("get_port_id wants station name or parent station radio") unless($sta_wiphy);
-
-   my @port_list = $::utils->getPortListing( 1, $resource);
-   my LANforge::Port $port;
-   if (@port_list < 1) {
-      print "::get_port_id: no ports present.\n" unless ($::utils->isQuiet());
-      return "";
-   };
-   for my $port_item (@port_list) {
-      my $card_id = $port_item->card_id();
-      my $dev     = $port_item->dev();
-      print "${sta_wiphy}? get_port_id:card_id ${card_id} dev:$dev \n" unless($::utils->isQuiet());
-      if( $card_id eq $resource && $dev eq $sta_wiphy ) {
-         $port = $port_item;
-         last;
-      }
-   }
-   if($port) {
-      my $port_id = $port->port_id();
-      return $port_id;
-   }
-
-   print("port ${sta_wiphy} not present, ") if(!defined $port || $port eq "");
-   return "";
-}
-
 sub fmt_vsta_cmd {
    my ($resource, $sta_wiphy, $sta_name, $flags, $ssid, $passphrase, $mac, $flags_mask, $wifi_m, $bssid ) = @_;
    die("fmt_vsta_cmd wants sta_wiphy name, bye.") unless($sta_wiphy);
@@ -515,7 +491,6 @@ sub fmt_vsta_cmd {
       }
    }
 
-   my $port_id = get_port_id($resource, $sta_wiphy);
    $flags      = "+0" if ($flags       == 0); # perl goes funny on zeros
    $flags_mask = "+0" if ($flags_mask  == 0);
    $flags      = "NA" if ($flags eq "");
@@ -702,26 +677,37 @@ sub new_wifi_station {
    die("new_wifi_station wants hash ref to place results, bye.")  unless(defined $rh_results);
    my $wifi_m     = shift;
    my $sleep_amt = shift;
+   my $mac_addr = "";
 
-   my $parent_mac = get_radio_bssid($::sta_wiphy);
-   die("new_wifi_station: unable to find bssid of parent radio") if ($parent_mac eq "");
-   my $mac_addr   = new_mac_from_pattern($parent_mac, $::mac_pattern);
-   print "$sta_name $mac_addr; " unless($::utils->isQuiet());
+   print "## new-wifi-station, sta-name: $sta_name  change-mac: $change_mac" unless($::utils->isQuiet());
+
+   if (! $::change_mac) {
+     my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+     if ($status =~ /MAC:\s+(\S+)\s+/) {
+       $mac_addr = $1;
+     }
+   }
+   if ($mac_addr eq "") {
+     # Couldn't find it, or we want to change the mac
+     print "## calculating new mac-addr.." unless($::utils->isQuiet());
+     my $parent_mac = get_radio_bssid($::sta_wiphy);
+     die("new_wifi_station: unable to find bssid of parent radio") if ($parent_mac eq "");
+     $mac_addr   = new_mac_from_pattern($parent_mac, $::mac_pattern);
+   }
+
+   print "## $sta_name $mac_addr; " unless($::utils->isQuiet());
    my $flags      = +0; # set this to string later
    my $flagsmask  = +0; # set this to string later
 
    # To set zero value set the bit in flags to zero.
    # Set the flagsmask value to 1 if you want the value to be set to 1 or 0.
+   # NOTE:  This script is used to change things, not just create them, so it is not
+   # always wrong to not set passphrase since it could be set already.
    if ($::passphrase eq "") {
-      if($::security ne "open") {
-         die("Passphrase not set when --security [$::security] chosen. Please set passphrase.");
-      }
-   }
-   else { # $::passphrase ne ""
-      if( $::security eq "open") {
-	#print "Warning: ignoring passphrase for open wifi.\n";
-        #$::passphrase = "";
-      }
+      $::passphrase = "NA";
+      #if($::security ne "open") {
+      #   die("Passphrase not set when --security [$::security] chosen. Please set passphrase.");
+      #}
    }
    if ( ! exists($::sec_options{$::security})) {
       die( "Unknown security option [{$::security}]");
@@ -763,9 +749,7 @@ sub new_wifi_station {
    if ($sleep_amt > 0) {
      sleep $sleep_amt;
    }
-   my $port_id = get_port_id($::resource, $sta_name);
-   print "Created vsta $sta_name mac $mac_addr with $port_id...\n" unless($::utils->isQuiet());
-   my $data = [ $mac_addr, $port_id, $sta1_cmd ];
+   my $data = [ $mac_addr, $sta_name, $sta1_cmd ];
    $rh_results->{$sta_name} = $data;
 }
 
@@ -877,16 +861,12 @@ sub removeOldCrossConnects {
 sub removeOldStations {
    print "Deleting ports:";
    foreach my $sta_name (reverse sort(keys %::sta_names)) {
-      print "...$sta_name ";
       my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
-      my $port_id = get_port_id($::resource, $sta_name);
-      if($port_id) {
-         print "/$port_id";
-         $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
-         print "...";
-      }
-      else {
-         print " not found, ";
+      if ($status =~ /Type:/) {
+	# It exists, remove it
+	#
+	print "...$sta_name ";
+	$::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
       }
    }
    print " done.\n";
@@ -1246,12 +1226,9 @@ sub doStep_2 {
    print "Removing old stations...";
    for my $sta_name (sort(keys %::sta_names)) {
       # if we have a port eid for this station, let's delete the port so we can start fresh
-      my $port_id    = get_port_id($::resource, $sta_name);
-      if( $port_id ) {
-         my $del_cmd = fmt_cmd("rm_vlan", 1, $::resource, $sta_name);
-         print "$sta_name " unless($::utils->isQuiet());
-         doCmd($del_cmd);
-      }
+      my $del_cmd = fmt_cmd("rm_vlan", 1, $::resource, $sta_name);
+      print "$sta_name " unless($::utils->isQuiet());
+      doCmd($del_cmd);
    }
    # poll until they are gone
    my $old_sta_count = (keys(%::sta_names));
@@ -1468,6 +1445,7 @@ GetOptions
   'first_sta|c=s'             => \$::first_sta,
   'num_stations|n=i'          => \$::num_stations,
   'netmask|k=s'               => \$::netmask,
+  'change_mac=i'              => \$::change_mac,
   'mac-pattern|mac_pattern=s' => \$::mac_pattern,
   'cxtype|x=s'                => \$::cx_type,
   'bps_min|bps-min|y=s'       => \$::min_tx,
