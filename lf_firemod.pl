@@ -612,7 +612,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 
          # Assume Layer-3 for now
          $cmd = $::utils->fmt_cmd("add_endp", $endp_name, NA, NA, NA, NA, NA, NA, $speed,  $max_speed);
-	 print("cmd: $cmd\n");
+	 #print("cmd: $cmd\n");
          $::utils->doCmd($cmd);
       }
    }
