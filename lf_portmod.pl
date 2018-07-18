@@ -456,7 +456,6 @@ if ($if_state ne "unset") {
   if ($if_state eq "up" || $if_state eq "down") {
     $cli_cmd = fmt_port_up_down($card, $port_name, $if_state);
     $utils->doCmd($cli_cmd);
-    exit(0);
   }
   else {
     print "ERROR:  ifstate must be 'up' or 'down', value was: $if_state.\n";
