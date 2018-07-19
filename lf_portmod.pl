@@ -388,10 +388,10 @@ elsif((defined $show_port) && ("$show_port" ne "")) {
    my $i;
    my @lines = ();
    if ($stats_from_file ne "") {
-     @lines = get_stats_from_file($stats_from_file, 1, $card, $port_name);
+     @lines = split("\n", get_stats_from_file($stats_from_file, 1, $card, $port_name));
    }
    else {
-     @lines         = split("\n", $utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
+     @lines = split("\n", $utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
    }
 
    # trick here is to place a ; before anything that looks like a keyword
