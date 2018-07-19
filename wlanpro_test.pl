@@ -36,7 +36,10 @@ my $radio_3a = "wiphy0";
 my $radio_3b = "wiphy1";
 my $radio_4a = "wiphy2";
 my $radio_4b = "wiphy3";
-my $sta_max = 40;
+my $sta_max = 40; # For upload/download tests
+my $wct_sta_max = 64; # For wifi-capacity-test on single radio (4a)
+my $gui_host = "127.0.0.1";
+my $gui_port = 7777;
 my $resource = 2;
 my $speed_dl_tot = 1000000000;
 my $speed_ul_tot = 1000000000;
@@ -73,6 +76,8 @@ my $usage = "$0
   [--testcase {test-case:  -1 all, 0 setup, 1-5, 100 means cleanup}]
   [--log_name {log-file-name}]
   [--rest_time {seconds to sleep between rest runs, dfault is $rest_time}]
+  [--gui_host  {LANforge gui_host (127.0.0.1)}]
+  [--gui_port  {LANforge gui_port (7777)}]
 ";
 
 
@@ -95,6 +100,8 @@ GetOptions (
 	    'mgr=s'          => \$manager,
 	    'testcase=i'     => \$testcase,
 	    'log_name=s'     => \$log_name,
+	    'gui_host=s'     => \$gui_host,
+	    'gui_port=i'     => \$gui_port,
 	   ) || (print($usage) && exit(1));
 
 if ($log_name eq "") {
@@ -110,10 +117,13 @@ my $log_prefix = "LANforge wlanpro-test\nConfiguration:\n" .
   "  Test started at: " . `date` . "\n\n";
 my $brief_log = "$log_prefix";
 my $summary_text = "$log_prefix";
+my $mini_summary_text = "$log_prefix";
 
 # Initial setup for test cases, create 40 stations
 my @cxs = ();
 my @stations = ();
+my @stations4a = ();
+my $sta_on_4a = 0;
 
 open(LOGF, ">$log_name") or die("Could not open log file: $log_name $!\n");
 
@@ -132,11 +142,33 @@ if ($testcase == -1 || $testcase == 0) {
   }
 }
 
+# Find wlanX for 4a radio.
+if ($radio_4a =~ /\S+(\d+)/) {
+  my $sta_name = "wlan$1";
+  @stations4a = (@stations4a, $sta_name);
+  my $radio = $radio_4a;
+  $sta_on_4a++;
+  if ($testcase == -1 || $testcase == 0 || $testcase == 6) {
+    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
+    do_cmd($cmd);
+
+    # Set to maximum mode.  The stations might have been
+    # previously set to a different mode on an earlier run of this script.
+    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT --set_ifstate up";
+    do_cmd($cmd);
+  }
+}
+
 for ($i = 0; $i < $sta_max; $i++) {
   my $sta_idx = $i + 100;
   my $radio_idx = $i % $radio_count;
   my $radio = $radios[$radio_idx];
   my $sta_name = "sta$sta_idx";
+
+  if ($radio eq $radio_4a) {
+    $sta_on_4a++;
+    @stations4a = (@stations4a, $sta_name);
+  }
 
   @stations = (@stations, $sta_name);
 
@@ -170,7 +202,29 @@ for ($i = 0; $i < $sta_max; $i++) {
   @cxs = (@cxs, $cxn);
 }
 
+# Create rest of the 4a-stations for Wifi Capacity Test
+while ($sta_on_4a < $wct_sta_max) {
+  my $sta_idx = $sta_on_4a + 200;
+  my $radio = $radio_4a;
+  my $sta_name = "sta$sta_idx";
+
+  @stations4a = (@stations4a, $sta_name);
+  $sta_on_4a++;
+
+  if ($testcase == -1 || $testcase == 0 || $testcase == 6) {
+    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
+    do_cmd($cmd);
+
+    # Set to maximum mode.  The stations might have been
+    # previously set to a different mode on an earlier run of this script.
+    # Set them to admin-down, the wifi-capacity-test will bring them up as needed.
+    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT --set_ifstate down";
+    do_cmd($cmd);
+  }
+}
+
 stop_all_cx();
+
 
 if ($testcase == -1 || $testcase == 1) {
   wait_for_stations();
@@ -252,6 +306,21 @@ if ($testcase == 5) {
   do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test with interference");
 }
 
+# WiFi capacity test
+if ($testcase == -1 || $testcase == 6) {
+
+  for ($i = 0; $i < @stations; $i++) {
+    my $sta_name = $stations[$i];
+    $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT --set_ifstate down";
+    do_cmd($cmd);
+  }
+
+  #wait_for_stations();  WCT takes care of bringing stations up/down
+  my $sta_list = join(",", @stations4a);
+  # Call to automated wifi capacity test plugin
+  do_cmd("./lf_auto_wifi_cap.pl --mgr $manager --resource $resource --radio $radio_4a --speed_dl $speed_dl_tot --ssid $ssid --num_sta $wct_sta_max --upstream $upstream_port --upstream_resource $upstream_resource --percent_tcp 50 --increment 1,5,10,20,30,45,64 --duration 15 --endp_type mix --test_name wlanpro-$ssid --test_text 'Wlan-Pro test case #6 to ssid $ssid' --multicon 1 --use_existing_sta --use_existing_cfg --use_station $sta_list --gui_host $gui_host --gui_port $gui_port");
+}
+
 if ($testcase == 100) {
   # Cleanup
   for ($i = 0; $i<@stations; $i++) {
@@ -282,6 +351,7 @@ logpb("Completed test at " . `date` . "\n\n");
 
 logf($brief_log);
 logp($summary_text);
+logp("\n\n$mini_summary_text");
 
 exit 0;
 
@@ -357,20 +427,34 @@ sub do_one_test {
   $cmd =  "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"clear_port_counters\"";
   do_cmd($cmd);
 
-  logp("Waiting $sleep_sec seconds for test to run, $cx_cnt connections, configured speed, UL: $speed_ul  DL: $speed_dl....\n" .
-       " Test-case: $series_desc\n\n");
+  my $msg = "Waiting $sleep_sec seconds for test to run, $cx_cnt connections, requested per-connection speed, UL: $speed_ul  DL: $speed_dl.\n" .
+    " Test-case: $series_desc\n\n";
+  logp($msg);
+  $mini_summary_text .= "$cx_cnt connections, requested per-connection speed, UL: $speed_ul  DL: $speed_dl\n";
+
   sleep($sleep_sec);
 
   logp("Gathering stats for this test run...\n");
 
   # Gather layer-3 stats data
   my $sp;
-  $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_cx"`;
-  logf("$sp\n");
 
-  my $tmpf = "wptest_endp_stats_tmp.txt";
-  $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp" > $tmpf`;
-  $sp = `cat $tmpf`;
+  my $tmpfe = "wptest_endp_stats_tmp.txt";
+  `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp" > $tmpfe`;
+
+  my $tmpf = "wptest_stats_tmp.txt";
+  `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $resource" > $tmpf`;
+  if ($resource != $upstream_resource) {
+    `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $upstream_resource" >> $tmpf`;
+  }
+
+  # Stop the connections while we process stats.
+  stop_all_cx();
+
+  logp("Processing stats for this test run...\n");
+
+  # Process stats
+  $sp = `cat $tmpfe`;
   logf("$sp\n");
 
   my $tot_dl_bps = 0;
@@ -381,7 +465,7 @@ sub do_one_test {
     my $epa = "$cxn-A";
     my $epb = "$cxn-B";
 
-    my $ep_stats = `./lf_firemod.pl --endp_name $epa --stats_from_file $tmpf --endp_vals RealRxRate,RealTxRate`;
+    my $ep_stats = `./lf_firemod.pl --endp_name $epa --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
     $brief_log .= "Endpoint Stats for $epa:\n$ep_stats\n\n";
     $summary_text .= "$cxn:";
     if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
@@ -391,7 +475,7 @@ sub do_one_test {
     if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
       $summary_text .= sprintf(" Upload TX: %.3fMbps", $1 / 1000000);
     }
-    $ep_stats = `./lf_firemod.pl --endp_name $epb --stats_from_file $tmpf --endp_vals RealRxRate,RealTxRate`;
+    $ep_stats = `./lf_firemod.pl --endp_name $epb --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
     $brief_log .= "Endpoint Stats for $epb:\n$ep_stats\n\n";
     if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
       $tot_ul_bps += $1;
@@ -403,13 +487,9 @@ sub do_one_test {
     $summary_text .= "\n";
   }
   $summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+  $mini_summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
 
   # Port
-  $tmpf = "wptest_stats_tmp.txt";
-  `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $resource" > $tmpf`;
-  if ($resource != $upstream_resource) {
-    `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $upstream_resource" >> $tmpf`;
-  }
   $sp = `cat $tmpf`;
   logf("$sp\n");
 
@@ -461,9 +541,6 @@ sub do_one_test {
       $tot_ul_bps += $1;
       $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
     }
-    if ($sta_stats =~ /NSS:\s+(\d+)/) {
-      $summary_text .= " NSS: $1";
-    }
     if ($sta_stats =~ /Mode:\s+(\S+)/) {
       $summary_text .= " Mode: $1";
     }
@@ -490,13 +567,6 @@ sub do_one_test {
     $summary_text .= " TX-Rate: $1";
   }
   $summary_text .= "\n";
-
-  # TODO: Gather specific stats?
-  # txbps, rxbps, mode, tx-rate, rx-rate per station
-  # txbps, rxbps totals
-  # Save to summary report file, with configurables included at the top.
-
-  stop_all_cx();
 }
 
 sub stop_all_cx {
@@ -535,8 +605,10 @@ sub logpb {
 
 sub do_test_series {
   my $desc = shift;
+  my $msg = "\n" . `date` . "Doing test series: $desc\n";
+  logpb($msg);
+  $mini_summary_text .= $msg;
 
-  logpb("\nDoing test series: $desc\n");
   # First test case, 20 stations downloading, 3x3 mode.
   logpb("\nDoing download test with 20 stations.\n");
   do_one_test(0, $speed_dl_tot / 20, 20, $one_way_test_time, $desc);
