@@ -1396,7 +1396,13 @@ sub initStationAddr {
    }
    for( my $i=0; $i < $::num_stations ; $i++ ) {
       my $suffix     = 0 + $i + $offset;
-      my $name       = sprintf("sta%03d",    $suffix);
+      my $name;
+      if ($i == 0) {
+	$name = $::first_sta;
+      }
+      else {
+	$name       = sprintf("sta%03d",    $suffix);
+      }
       my $ep_name1   = sprintf("ep-A%03d",   $suffix);
       my $ep_name2   = sprintf("ep-B%03d",   $suffix);
       my $cx_name    = sprintf("cx-%03d",    $suffix);
