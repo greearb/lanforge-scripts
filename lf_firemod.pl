@@ -35,7 +35,7 @@ our $endp_name        = "";
 our $endp_cmd         = "";
 our $port_name        = "";
 our $speed            = "-1";
-our $action           = "show_port";
+our $action           = "";
 our $do_cmd           = "NA";
 our $lfmgr_host       = "localhost";
 our $lfmgr_port       = 4001;
@@ -63,6 +63,7 @@ our $cx_endps        = "";
 our $list_cx_name    = "all";
 our $test_mgr        = "default_tm";
 our $list_test_mgr   = "all";
+our $stats_from_file = "";
 
 our $fail_msg         = "";
 our $manual_check     = 0;
@@ -86,6 +87,9 @@ our $usage = "$0  --action { list_ports | show_port
       # Special Keys:
       #  --endp_vals tx_bps         (Tx Bytes)
       #  --endp_vals rx_bps         (Rx Bytes)
+  [--stats_from_file [file-name]
+      # Read 'show-endp' ouput from a file instead of direct query from LANforge.
+      # This can save a lot of time if we already have the output available.
   [--mgr       {host-name | IP}]
   [--mgr_port  {ip port}]
   [--cmd       {lf-cli-command text}]
@@ -165,9 +169,10 @@ GetOptions
    'endp_name|e=s' => \$::endp_name,
    'endp_cmd=s'    => \$::endp_cmd,
    'endp_vals|o=s' => \$::endp_vals,
+   'stats_from_file=s' => \$::stats_from_file,
    'action|a=s'    => \$::action,
    'cmd|c=s'       => \$::do_cmd,
-   'mgr|m=s'       => \$::lfmgr_host,
+   'manager|mgr|m=s'       => \$::lfmgr_host,
    'mgr_port|p=i'  => \$::lfmgr_port,
    'resource|r=i'  => \$::resource,
    'port_name=s'   => \$::port_name,
@@ -223,6 +228,10 @@ if ($::do_cmd ne "NA") {
 our @valid_actions = split(/,/, "show_endp,set_endp,start_endp,stop_endp,delete_endp,create_endp,create_arm,"
        ."show_port,do_cmd,list_ports,list_endp,create_cx,list_cx,show_cx,delete_cx,delete_cxe" );
 
+if (($::action eq "") && ((defined $::endp_vals) && ("$::endp_vals" ne ""))) {
+  $::action = "show_endp";
+}
+
 if (! (grep {$_ eq $::action} @::valid_actions )) {
   die("Invalid action: $::action\n$::usage\n");
 }
@@ -238,34 +247,38 @@ if ($::quiet eq "1" ) {
 }
 # Open connection to the LANforge server.
 
-# Wait up to 60 seconds when requesting info from LANforge.
-my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-         Timeout => 60);
+my $t = undef;
 
-$t->open(Host    => $::lfmgr_host,
-         Port    => $::lfmgr_port,
-         Timeout => 10);
+if ($stats_from_file eq "") {
+  # Wait up to 60 seconds when requesting info from LANforge.
+  $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
+		       Timeout => 60);
 
-$t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
-$t->waitfor("/btbits\>\>/");
+  $t->open(Host    => $::lfmgr_host,
+	   Port    => $::lfmgr_port,
+	   Timeout => 10);
 
-# Configure our utils.
-our $utils = new LANforge::Utils();
-$::utils->telnet($t);         # Set our telnet object.
-if ($::utils->isQuiet()) {
-  if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
-    $::utils->cli_send_silent(0);
+  $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
+  $t->waitfor("/btbits\>\>/");
+
+  # Configure our utils.
+  our $utils = new LANforge::Utils();
+  $::utils->telnet($t);         # Set our telnet object.
+  if ($::utils->isQuiet()) {
+    if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
+      $::utils->cli_send_silent(0);
+    }
+    else {
+      $::utils->cli_send_silent(1); # Do not show input to telnet
+    }
+    $::utils->cli_rcv_silent(1);  # Repress output from telnet
   }
   else {
-    $::utils->cli_send_silent(1); # Do not show input to telnet
+    $::utils->cli_send_silent(0); # Show input to telnet
+    $::utils->cli_rcv_silent(0);  # Show output from telnet
   }
-  $::utils->cli_rcv_silent(1);  # Repress output from telnet
+  $::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 }
-else {
-  $::utils->cli_send_silent(0); # Show input to telnet
-  $::utils->cli_rcv_silent(0);  # Show output from telnet
-}
-$::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 
 if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
 	$::max_speed = $::speed if( $::max_speed eq "-1");
@@ -315,7 +328,14 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          # options are reformatted
 
          my $i;
-         my @lines         = split(NL, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
+	 my @lines = ();
+	 if ($stats_from_file ne "") {
+	   @lines = split(NL, get_stats_from_file($stats_from_file, $endp_name));
+	 }
+         else {
+	   @lines = split(NL, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
+	 }
+
          for($i=0; $i<@lines; $i++) {
             $lines[$i] = $lines[$i]." #";
          }
@@ -323,12 +343,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          my @parts;
          my @matches       = grep( /$matcher/, @lines);
          my $match;
-         #print "MATCHER $matcher".NL;
+         #print "MATCHER $matcher  matches:\n" . join("\n", @matches) . NL;
          for my $end_val (split(',', $::endp_vals)) {
             my $endval_done = 0;
             for $match (@matches) {
                last if ($endval_done);
-               #print "\nM: $end_val> $match\n";
+               #print "\nMatch-line: $end_val> $match\n";
 
                # no value between colon separated tags can be very
                # confusing to parse, let's force a dumb value in if we find that
@@ -343,7 +363,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                if (  $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
                   my $value = 0;
                   ($option) = ($match =~ /(Rx (Bytes|Pkts))/);
-                  #print "Option: $option".NL;
+                  #print "# case 1, Option: $option" . NL;
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n RX: ".join(",",@parts)."\n";
                   if ( defined $option_map{ $option } ) {
@@ -366,6 +386,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                }
                elsif (  $match =~ /Cx Detected/) {
                   my $value = 0;
+                  #print "# case 2\n";
                   ($option) = ($match =~ /(Cx Detected)/);
                   if ( defined $option_map{ $option } ) {
                      $value = 0 + ($match =~ /:\s+(\d+)/)[0];
@@ -377,7 +398,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                elsif (  $match =~ /Tx (Bytes|Pkts)/ && $end_val =~ /tx_/) {
                   my $value = 0;
                   ($option) = ($match =~ /(Tx (Bytes|Pkts))/);
-                  #print "Option: $option".NL;
+                  #print "# case 3, Option: $option" . NL;
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n TX: ".join(",",@parts)."\n";
                   if ( defined $option_map{ $option } ) {
@@ -403,7 +424,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   my $value = 0;
                   ($option) = ($match =~ /([TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)|Conn (Established|Timeouts)|TCP Retransmits)/);
                   @parts      = $match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$};
-                  #print "\n TX: ".join(",",@parts)."\n";
+                  #print "\n# case 4 TX: ".join(",",@parts)."\n";
                   if ( defined $option_map{ $option } ) {
                      #print "$match\n";
                      $match =~ s/""/ /g;
@@ -415,6 +436,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                elsif (  $match =~ /(Bytes|Packets) (Rcvd|Transmitted)/ ) {
                   ($option) = ($match =~ /((Bytes|Packets) (Rcvd|Transmitted))/);
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
+                  #print "\n# case 5 TX: ".join(",",@parts)."\n";
                   my $value = 0;
                   if ( defined $option_map{ $option } ) {
                      if ($end_val =~ /rx_(bps|pps)/ ) {
@@ -436,6 +458,8 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   }
                }
                else {
+		  #print "Default case...\n";
+
                   # special case
                   $match =~ s/Shelf: (\d+), /Shelf: $1  /
                      if ($match =~ /^\s*Shelf:/ );
@@ -458,25 +482,35 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      if ($match =~/CWND: (\d+) /);
                   # ~specials
 
-                  @parts         = ($match =~ m/( *[^ ]+):( *\S+ [^ #]*)(?! #|\S+:)/g);
-                  for (my $i=0; $i < @parts; $i+=2) {
-                     $option     = $parts[$i];
-                     #print "     parts[$option] ";
-                     $option     =~ s/^\s*(.*)\s*$/$1/;
-                     if ( defined $option_map{ $option } ) {
-                        my $value = $parts[ $i + 1 ];
-                        if ($value =~ /^\s*([^ ]+):\s+/) {
-                           $value   = "-";
-                        }
-                        else {
-                           $value   =~ s/^\s*(.*)\s*$/$1/;
-                        }
-                        #print "\n      D end_val[$end_val] option[$option] now ".$value."\n";
-                        $option_map{ $option } = $value;
-                        $endval_done++;
-                        last;
-                     }
-                  }
+		  #print "  match: $match\n";
+		  if ($match =~ /.*$end_val:\s+(\S+)/) {
+		    my $value = $1;
+		    #print " Found value: $value for key: $end_val\n";
+		    $option_map{ $end_val } = $value;
+		    $endval_done++;
+		  }
+
+		  # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
+		  # --Ben
+                  #@parts         = ($match =~ m/( *[^ ]+):( *\S+ [^ #]*)(?! #|\S+:)/g);
+                  #for (my $i=0; $i < @parts; $i+=2) {
+                  #   $option     = $parts[$i];
+                  #   $option     =~ s/^\s*(.*)\s*$/$1/;  # Trim whitespace
+                  #   print "     parts[$option] ";
+                  #   if ( defined $option_map{ $option } ) {
+                  #      my $value = $parts[ $i + 1 ];
+                  #      if ($value =~ /^\s*([^ ]+):\s+/) {
+                  #         $value   = "-";
+                  #      }
+                  #      else {
+                  #         $value   =~ s/^\s*(.*)\s*$/$1/;
+                  #      }
+                  #      #print "\n      D end_val[$end_val] option[$option] now ".$value."\n";
+                  #      $option_map{ $option } = $value;
+                  #      $endval_done++;
+                  #      last;
+                  #   }
+                  #}
                }
             } # ~matches
          } # ~endp_vals
@@ -485,7 +519,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          }
       }
       else {
-         print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
+	if ($stats_from_file ne "") {
+	  print get_stats_from_file($stats_from_file, $endp_name);
+	}
+	else {
+	  print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
+	}
       }
    }
    elsif ($::action eq "create_arm") {
@@ -745,3 +784,51 @@ else {
 }
 
 exit(0);
+
+sub get_stats_from_file {
+  my $fname = shift;
+  my $endp_name = shift;
+
+  open(F, "<$fname") or die("Can't open $fname for reading: $!\n");
+
+  my $endp_text = "";
+  my $ep = "";
+
+  my @lines = ();
+  while ( my $line = <F>) {
+    @lines = (@lines, $line);
+  }
+  # Append dummy line to make it easier to terminate the parse logic.
+  @lines = (@lines, "Endpoint [________] (NOT_RUNNING)\n");
+
+  my $i;
+  for ($i = 0; $i<@lines;$i++) {
+    my $line = $lines[$i];
+    chomp($line);
+    if (($line =~ /Endpoint\s+\[(.*)\]/) ||
+	($line =~ /WanLink\s+\[(.*)\]/) ||
+	($line =~ /ArmEndp\s+\[(.*)\]/) ||
+	# TODO: Layer-4 ?
+	($line =~ /VoipEndp\s+\[(.*)\]/)) {
+      my $m1 = $1;
+
+      #print "Found starting line: $line  name: $m1  endp_name: $endp_name\n";
+
+      if ($endp_text ne "") {
+	# See if existing endp entry matches?
+	if ($ep eq $endp_name) {
+	  return $endp_text;
+	}
+      }
+
+      $endp_text = "$line\n";
+      $ep = $m1;
+    }
+    else {
+      if ($endp_text ne "") {
+	$endp_text .= "$line\n";
+      }
+    }
+  }
+  return "";
+}
