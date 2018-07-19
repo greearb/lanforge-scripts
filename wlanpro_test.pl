@@ -119,6 +119,9 @@ open(LOGF, ">$log_name") or die("Could not open log file: $log_name $!\n");
 
 logp($log_prefix);
 
+# Stop any running tests.
+stop_all_cx();
+
 # Set radios to 3x3 mode.
 if ($testcase == -1 || $testcase == 0) {
   for ($i = 0; $i<$radio_count; $i++) {
@@ -167,7 +170,7 @@ for ($i = 0; $i < $sta_max; $i++) {
   @cxs = (@cxs, $cxn);
 }
 
-stop_all_my_cx();
+stop_all_cx();
 
 if ($testcase == -1 || $testcase == 1) {
   wait_for_stations();
@@ -352,6 +355,7 @@ sub do_one_test {
   }
 
   $cmd =  "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"clear_port_counters\"";
+  do_cmd($cmd);
 
   logp("Waiting $sleep_sec seconds for test to run, $cx_cnt connections, configured speed, UL: $speed_ul  DL: $speed_dl....\n" .
        " Test-case: $series_desc\n\n");
@@ -364,17 +368,44 @@ sub do_one_test {
   $sp = `./lf_portmod.pl --manager $manager --cli_cmd "show_cx"`;
   logf("$sp\n");
 
+  my $tmpf = "wptest_endp_stats_tmp.txt";
+  $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp" > $tmpf`;
+  $sp = `cat $tmpf`;
+  logf("$sp\n");
+
+  my $tot_dl_bps = 0;
+  my $tot_ul_bps = 0;
   # Our endp names are derived from cx, so use that to our advantage.
   for ($i = 0; $i<$cx_cnt; $i++) {
     my $cxn = $cxs[$i];
-    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp $cxn-A"`;
-    logf("$sp\n");
-    $sp = `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_endp $cxn-B"`;
-    logf("$sp\n");
+    my $epa = "$cxn-A";
+    my $epb = "$cxn-B";
+
+    my $ep_stats = `./lf_firemod.pl --endp_name $epa --stats_from_file $tmpf --endp_vals RealRxRate,RealTxRate`;
+    $brief_log .= "Endpoint Stats for $epa:\n$ep_stats\n\n";
+    $summary_text .= "$cxn:";
+    if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
+      $tot_dl_bps += $1;
+      $summary_text .= sprintf(" Download RX: %.3fMbps", $1 / 1000000);
+    }
+    if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
+      $summary_text .= sprintf(" Upload TX: %.3fMbps", $1 / 1000000);
+    }
+    $ep_stats = `./lf_firemod.pl --endp_name $epb --stats_from_file $tmpf --endp_vals RealRxRate,RealTxRate`;
+    $brief_log .= "Endpoint Stats for $epb:\n$ep_stats\n\n";
+    if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
+      $tot_ul_bps += $1;
+      $summary_text .= sprintf(" Upload RX: %.3fMbps", $1 / 1000000);
+    }
+    if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
+      $summary_text .= sprintf(" Download TX: %.3fMbps", $1 / 1000000);
+    }
+    $summary_text .= "\n";
   }
+  $summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
 
   # Port
-  my $tmpf = "wptest_stats_tmp.txt";
+  $tmpf = "wptest_stats_tmp.txt";
   `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $resource" > $tmpf`;
   if ($resource != $upstream_resource) {
     `./lf_portmod.pl --manager $manager --cli_cmd "nc_show_port 1 $upstream_resource" >> $tmpf`;
@@ -382,8 +413,8 @@ sub do_one_test {
   $sp = `cat $tmpf`;
   logf("$sp\n");
 
-  my $tot_dl_bps = 0;
-  my $tot_ul_bps = 0;
+  $tot_dl_bps = 0;
+  $tot_ul_bps = 0;
   for ($i = 0; $i<@stations; $i++) {
     my $sta_name = $stations[$i];
     my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port AP,ESSID,bps_rx,bps_tx,MAC,Mode,RX-Rate,TX-Rate,Signal,Link-Activity,Channel,Bandwidth,NSS`;
@@ -391,11 +422,11 @@ sub do_one_test {
     $summary_text .= "$sta_name:";
     if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
       $tot_dl_bps += $1;
-      $summary_text .= " bps_rx: $1";
+      $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
     }
     if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
       $tot_ul_bps += $1;
-      $summary_text .= " bps_tx: $1";
+      $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
     }
     if ($sta_stats =~ /NSS:\s+(\d+)/) {
       $summary_text .= " NSS: $1";
@@ -411,14 +442,66 @@ sub do_one_test {
     }
     $summary_text .= "\n";
   }
-  $summary_text .= "Total station upload-bps: $tot_ul_bps  Total station download-bps: $tot_dl_bps\n\n";
+  $summary_text .= sprintf("Total station TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+
+  # Radio stats
+  $tot_dl_bps = 0;
+  $tot_ul_bps = 0;
+  my @rep_ports = uniq(@radios);
+  for ($i = 0; $i<@rep_ports; $i++) {
+    my $sta_name = $rep_ports[$i];
+    my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,Mode,NSS`;
+    $brief_log .= "Radio Stats for $sta_name:\n$sta_stats\n\n";
+    $summary_text .= "$sta_name:";
+    if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
+      $tot_dl_bps += $1;
+      $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
+    }
+    if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
+      $tot_ul_bps += $1;
+      $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
+    }
+    if ($sta_stats =~ /NSS:\s+(\d+)/) {
+      $summary_text .= " NSS: $1";
+    }
+    if ($sta_stats =~ /Mode:\s+(\S+)/) {
+      $summary_text .= " Mode: $1";
+    }
+    $summary_text .= "\n";
+  }
+  $summary_text .= sprintf("Total Radio TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+
+  # Upstream port
+  my $p_stats = `./lf_portmod.pl --card $upstream_resource --port_name $upstream_port --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,RX-Rate,TX-Rate`;
+  $brief_log .= "Upstream Port Stats:\n$p_stats\n\n";
+  $summary_text .= "$upstream_port:";
+  if ($p_stats =~ /bps_rx:\s+(\d+)/) {
+    $tot_dl_bps += $1;
+    $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
+  }
+  if ($p_stats =~ /bps_tx:\s+(\d+)/) {
+    $tot_ul_bps += $1;
+    $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
+  }
+  if ($p_stats =~ /RX-Rate:\s+(\S+)/) {
+    $summary_text .= " RX-Rate: $1";
+  }
+  if ($p_stats =~ /TX-Rate:\s+(\S+)/) {
+    $summary_text .= " TX-Rate: $1";
+  }
+  $summary_text .= "\n";
 
   # TODO: Gather specific stats?
   # txbps, rxbps, mode, tx-rate, rx-rate per station
   # txbps, rxbps totals
   # Save to summary report file, with configurables included at the top.
 
-  stop_all_my_cx();
+  stop_all_cx();
+}
+
+sub stop_all_cx {
+  $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state all all STOPPED\"";
+  do_cmd($cmd);
 }
 
 sub stop_all_my_cx {
@@ -470,3 +553,11 @@ sub do_cmd {
   logp("$cmd\n");
   return system($cmd);
 }
+
+sub uniq {
+  my %seen;
+  grep !$seen{$_}++, @_;
+}
+
+my @array = qw(one two three two three);
+my @filtered = uniq(@array);
