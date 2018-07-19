@@ -132,6 +132,20 @@ logp($log_prefix);
 # Stop any running tests.
 stop_all_cx();
 
+# Delete any wifi-capacity generated connections at this time, it will clean things
+# up, and it will make parsing reporting data faster.
+my @cx_dump = `./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"show_cx\"`;
+for ($i = 0; $i<@cx_dump; $i++) {
+  my $line = $cx_dump[$i];
+  chomp($line);
+  if (($line =~ /.*CX:\s+(udp\-\-$upstream_resource\.$upstream_port\-\S+).*/) ||
+      ($line =~ /.*CX:\s+(tcp\-\-$upstream_resource\.$upstream_port\-\S+).*/)) {
+    my $cxn = $1;
+    $cmd = "./lf_firemod.pl --mgr $manager --action delete_cxe --cx_name $cxn";
+    do_cmd($cmd);
+  }
+}
+
 # Set radios to 3x3 mode.
 if ($testcase == -1 || $testcase == 0) {
   for ($i = 0; $i<$radio_count; $i++) {
