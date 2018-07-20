@@ -323,6 +323,14 @@ if ($testcase == 5) {
 # WiFi capacity test
 if ($testcase == -1 || $testcase == 6) {
 
+  # Set radio back to full antenna capacity
+  for ($i = 0; $i<$radio_count; $i++) {
+    my $radio = $radios[$i];
+    my $set_cmd = "set_wifi_radio 1 $resource $radio NA NA NA NA NA NA NA NA NA 0";
+    $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"$set_cmd\"";
+    do_cmd($cmd);
+  }
+
   for ($i = 0; $i < @stations; $i++) {
     my $sta_name = $stations[$i];
     $cmd = "./lf_portmod.pl  --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed DEFAULT --set_ifstate down";
