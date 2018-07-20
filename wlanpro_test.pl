@@ -479,6 +479,49 @@ sub do_one_test {
   $sp = `cat $tmpfe`;
   logf("$sp\n");
 
+  # Open-code the report gathering for efficiency.
+
+  # For each endpoint, see if it is one we care about, and gather reporting.  Put it
+  # in a hash so we can search for it efficiently and generate ordered output.
+  my %endp_rx_rate = ();
+  my %endp_tx_rate = ();
+  my @lines = split("\n", $sp);
+  # Append dummy line to make it easier to terminate the parse logic.
+  @lines = (@lines, "Endpoint [________] (NOT_RUNNING)\n");
+  my $endp_text = "";
+  my $ep = "";
+
+  for ($i = 0; $i<@lines;$i++) {
+    my $line = $lines[$i];
+    chomp($line);
+    if (($line =~ /Endpoint\s+\[(.*)\]/) ||
+	($line =~ /WanLink\s+\[(.*)\]/) ||
+	($line =~ /ArmEndp\s+\[(.*)\]/) ||
+	# TODO: Layer-4 ?
+	($line =~ /VoipEndp\s+\[(.*)\]/)) {
+      my $m1 = $1;
+
+      #print "Found starting line: $line  name: $m1  endp_name: $endp_name\n";
+
+      if ($endp_text ne "") {
+	# endp_text holds output for endpoint $ep.  Gather stats and store them in our hashes
+	if ($endp_text =~ /.*RealTxRate:\s+(\S+)bps.*RealRxRate:\s+(\S+)bps/s) {
+	  $endp_tx_rate{$ep} = $1;
+	  $endp_rx_rate{$ep} = $2;
+	  #print "Found $ep tx-rate: $1  rx-rate: $2\n";
+	}
+      }
+
+      $endp_text = "$line\n";
+      $ep = $m1;
+    }
+    else {
+      if ($endp_text ne "") {
+	$endp_text .= "$line\n";
+      }
+    }
+  }
+
   my $tot_dl_bps = 0;
   my $tot_ul_bps = 0;
   # Our endp names are derived from cx, so use that to our advantage.
@@ -487,25 +530,20 @@ sub do_one_test {
     my $epa = "$cxn-A";
     my $epb = "$cxn-B";
 
-    my $ep_stats = `./lf_firemod.pl --endp_name $epa --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
-    $brief_log .= "Endpoint Stats for $epa:\n$ep_stats\n\n";
     $summary_text .= "$cxn:";
-    if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
-      $tot_dl_bps += $1;
-      $summary_text .= sprintf(" Download RX: %.3fMbps", $1 / 1000000);
-    }
-    if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
-      $summary_text .= sprintf(" Upload TX: %.3fMbps", $1 / 1000000);
-    }
-    $ep_stats = `./lf_firemod.pl --endp_name $epb --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
-    $brief_log .= "Endpoint Stats for $epb:\n$ep_stats\n\n";
-    if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
-      $tot_ul_bps += $1;
-      $summary_text .= sprintf(" Upload RX: %.3fMbps", $1 / 1000000);
-    }
-    if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
-      $summary_text .= sprintf(" Download TX: %.3fMbps", $1 / 1000000);
-    }
+    my $tx = $endp_tx_rate{$epa};
+    my $rx = $endp_rx_rate{$epa};
+
+    $tot_dl_bps += $rx;
+    $summary_text .= sprintf(" Download RX: %.3fMbps", $rx / 1000000);
+    $summary_text .= sprintf(" Upload TX: %.3fMbps", $tx / 1000000);
+
+    $tx = $endp_tx_rate{$epb};
+    $rx = $endp_rx_rate{$epb};
+
+    $tot_ul_bps += $rx;
+    $summary_text .= sprintf(" Upload RX: %.3fMbps", $rx / 1000000);
+    $summary_text .= sprintf(" Download TX: %.3fMbps", $tx / 1000000);
     $summary_text .= "\n";
   }
   $summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
@@ -514,35 +552,123 @@ sub do_one_test {
   # Port
   $sp = `cat $tmpf`;
   logf("$sp\n");
+  @lines = split("\n", $sp);
+  # Append dummy line to make it easier to terminate the parse logic.
+  @lines = (@lines, "Shelf: 9999, Card: 9999, Port: 9999  Type: STA  Alias: \n");
+
+  my %port_mac = ();
+  my %port_tx_rate_link = ();
+  my %port_tx_rate = ();
+  my %port_rx_rate = ();
+  my %port_ssid = ();
+  my %port_mode = ();
+  my %port_nss = ();
+  my %port_bandwidth = ();
+  my %port_channel = ();
+  my %port_ap = ();
+  my %port_rx_rate_link = ();
+  my %port_signal = ();
+  my %port_activity = ();
+
+  my $port_text = "";
+  my $s = -1;
+  my $c = -1;
+  my $p = -1;
+
+  for ($i = 0; $i<@lines;$i++) {
+    my $line = $lines[$i];
+    chomp($line);
+    #print "line: $line\n";
+    if ($line =~ /Shelf:\s+(\d+).*Card:\s+(\d+).*Port:\s+(\d+)/) {
+      my $m1 = $1;
+      my $m2 = $2;
+      my $m3 = $3;
+
+      if ($port_text ne "") {
+	# port_text holds output for port $s.$c.$p.  Gather stats and store them in our hashes
+	if ($port_text =~ /DEV:\s+(\S+)/) {
+	  $p = $1;
+	}
+	my $pkey = "$s.$c.$p";
+	#print "pkey: $pkey\n";
+	# We want:  bps_rx,bps_tx,MAC,TX-Rate,Signal,Link-Activity,Channel,Bandwidth,NSS
+	if ($port_text =~ /.*MAC:\s+(\S+).*Tx-Rate:\s+(\S+).*bps_tx:\s+(\S+)\s+bps_rx:\s+(\S+).*/s) {
+	  $port_mac{$pkey} = $1;
+	  $port_tx_rate_link{$pkey} = $2;
+	  $port_tx_rate{$pkey} = $3;
+	  $port_rx_rate{$pkey} = $4;
+	}
+	else {
+	  print "Did not find MAC etc in text: $port_text\n";
+	  exit 1;
+	}
+
+	if ($port_text =~ /.*ESSID: (.*)  Antenna.*/) {
+	  $port_ssid{$pkey} = $1;
+	}
+
+	# WiFi stuff should come from the Probed section
+	if ($port_text =~ /.*Probed:\s+(.*)/) {
+	  my $haystack = $1;
+
+	  # We want:  Mode,NSS,Bandwidth,Channel,AP,RX-Rate,Signal,Link-Activity
+	  if ($haystack =~ /.*Mode:\s+(\S+).* NSS:\s+(\S+).*Bandwidth: (\S+).*Channel:\s+(\S+).* AP:\s+(\S+).*RX-Rate: (\S+).*Signal: (\S+).*Link-Activity: (\S+).*/s) {
+	    $port_mode{$pkey} = $1;
+	    $port_nss{$pkey} = $2;
+	    $port_bandwidth{$pkey} = $3;
+	    $port_channel{$pkey} = $4;
+	    $port_ap{$pkey} = $5;
+	    $port_rx_rate_link{$pkey} = $6;
+	    $port_signal{$pkey} = $7;
+	    $port_activity{$pkey} = $8;
+	  }
+	}
+      }
+
+      $port_text = "$line\n";
+      $s = $m1;
+      $c = $m2;
+      $p = $m3;
+    }
+    else {
+      if ($port_text ne "") {
+	$port_text .= "$line\n";
+      }
+    }
+  }# for
 
   $tot_dl_bps = 0;
   $tot_ul_bps = 0;
+
   for ($i = 0; $i<@stations; $i++) {
     my $sta_name = $stations[$i];
-    my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port AP,ESSID,bps_rx,bps_tx,MAC,Mode,RX-Rate,TX-Rate,Signal,Link-Activity,Channel,Bandwidth,NSS`;
-    $brief_log .= "Station Stats:\n$sta_stats\n\n";
+    my $pkey = "1.$resource.$sta_name";
+    my $mac = $port_mac{$pkey};
+    my $tx_rate_link = $port_tx_rate_link{$pkey};
+    my $tx_rate = $port_tx_rate{$pkey};
+    my $rx_rate = $port_rx_rate{$pkey};
+    my $ssid = $port_ssid{$pkey};
+    my $mode = $port_mode{$pkey};
+    my $nss = $port_nss{$pkey};
+    my $bandwidth = $port_bandwidth{$pkey};
+    my $channel = $port_channel{$pkey};
+    my $ap = $port_ap{$pkey};
+    my $rx_rate_link = $port_rx_rate_link{$pkey};
+    my $signal = $port_signal{$pkey};
+    my $activity = $port_activity{$pkey};
+
+    $brief_log .= "Station Stats:\nMAC: $mac SSID: $ssid  Mode: $mode  NSS: $nss  Bandwidth: $bandwidth\n";
+    $brief_log .= "\tChannel: $channel AP: $ap  Signal: $signal  Activity: $activity  TX-Link-Rate: $tx_rate_link  RX-Link-Rate: $rx_rate_link\n";
+    $brief_log .= "\tTX-Rate: ${tx_rate}bps  RX-Rate: ${rx_rate}bps";
+
     $summary_text .= "$sta_name:";
-    if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
-      $tot_dl_bps += $1;
-      $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
-    }
-    if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
-      $tot_ul_bps += $1;
-      $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
-    }
-    if ($sta_stats =~ /NSS:\s+(\d+)/) {
-      $summary_text .= " NSS: $1";
-    }
-    if ($sta_stats =~ /RX-Rate:\s+(\S+)/) {
-      $summary_text .= " RX-Rate: $1";
-    }
-    if ($sta_stats =~ /TX-Rate:\s+(\S+)/) {
-      $summary_text .= " TX-Rate: $1";
-    }
-    if ($sta_stats =~ /Signal:\s+(\S+)/) {
-      $summary_text .= " Signal: $1";
-    }
-    $summary_text .= "\n";
+    $tot_dl_bps += $rx_rate;
+    $summary_text .= sprintf(" RX: %.3fMbps", $rx_rate / 1000000);
+
+    $tot_ul_bps += $tx_rate;
+    $summary_text .= sprintf(" TX: %.3fMbps", $tx_rate / 1000000);
+
+    $summary_text .= " NSS: $nss RX-Rate: $rx_rate_link TX-Rate: $tx_rate_link  Signal: $signal\n";
   }
   $summary_text .= sprintf("Total station TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
 
@@ -552,42 +678,153 @@ sub do_one_test {
   my @rep_ports = uniq(@radios);
   for ($i = 0; $i<@rep_ports; $i++) {
     my $sta_name = $rep_ports[$i];
-    my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,Mode,NSS`;
-    $brief_log .= "Radio Stats for $sta_name:\n$sta_stats\n\n";
+    my $pkey = "1.$resource.$sta_name";
+
+    my $mac = $port_mac{$pkey};
+    my $tx_rate = $port_tx_rate{$pkey};
+    my $rx_rate = $port_rx_rate{$pkey};
+    my $mode = $port_mode{$pkey};
+    my $nss = $port_nss{$pkey};
+
+    $brief_log .= "Radio Stats for $sta_name:\nMAC: $mac Mode: $mode  NSS: $nss\n";
+    $brief_log .= "\tTX-Rate: ${tx_rate}bps  RX-Rate: ${rx_rate}bps";
+
     $summary_text .= "$sta_name:";
-    if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
-      $tot_dl_bps += $1;
-      $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
-    }
-    if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
-      $tot_ul_bps += $1;
-      $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
-    }
-    if ($sta_stats =~ /Mode:\s+(\S+)/) {
-      $summary_text .= " Mode: $1";
-    }
-    $summary_text .= "\n";
+    $tot_dl_bps += $rx_rate;
+    $summary_text .= sprintf(" RX: %.3fMbps", $rx_rate / 1000000);
+    $tot_ul_bps += $tx_rate;
+    $summary_text .= sprintf(" TX: %.3fMbps", $tx_rate / 1000000);
+    $summary_text .= " Mode: $mode  NSS: $nss\n";
   }
   $summary_text .= sprintf("Total Radio TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
 
   # Upstream port
-  my $p_stats = `./lf_portmod.pl --card $upstream_resource --port_name $upstream_port --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,RX-Rate,TX-Rate`;
-  $brief_log .= "Upstream Port Stats:\n$p_stats\n\n";
-  $summary_text .= "$upstream_port:";
-  if ($p_stats =~ /bps_rx:\s+(\d+)/) {
-    $tot_dl_bps += $1;
-    $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
-  }
-  if ($p_stats =~ /bps_tx:\s+(\d+)/) {
-    $tot_ul_bps += $1;
-    $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
-  }
-  if ($p_stats =~ /RX-Rate:\s+(\S+)/) {
-    $summary_text .= " RX-Rate: $1";
-  }
-  if ($p_stats =~ /TX-Rate:\s+(\S+)/) {
-    $summary_text .= " TX-Rate: $1";
-  }
+  my $pkey = "1.$upstream_resource.$upstream_port";
+  my $mac = $port_mac{$pkey};
+  my $tx_rate = $port_tx_rate{$pkey};
+  my $rx_rate = $port_rx_rate{$pkey};
+  my $mode = $port_mode{$pkey};
+  my $nss = $port_nss{$pkey};
+
+  $brief_log .= "Upstream Port Stats for $pkey:\nMAC: $mac";
+  $brief_log .= " TX-Rate: ${tx_rate}bps  RX-Rate: ${rx_rate}bps";
+
+  $summary_text .= "$pkey:";
+  $summary_text .= sprintf(" RX: %.3fMbps", $rx_rate / 1000000);
+  $summary_text .= sprintf(" TX: %.3fMbps", $tx_rate / 1000000);
+
+  # The code below works, and makes use of existing scripts to make it perhaps more
+  # clear to understand, but it is quite slow.  So, will hand-code some more efficient
+  # reporting. --Ben
+#   my $tot_dl_bps = 0;
+#   my $tot_ul_bps = 0;
+#   # Our endp names are derived from cx, so use that to our advantage.
+#   for ($i = 0; $i<$cx_cnt; $i++) {
+#     my $cxn = $cxs[$i];
+#     my $epa = "$cxn-A";
+#     my $epb = "$cxn-B";
+
+#     my $ep_stats = `./lf_firemod.pl --endp_name $epa --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
+#     $brief_log .= "Endpoint Stats for $epa:\n$ep_stats\n\n";
+#     $summary_text .= "$cxn:";
+#     if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
+#       $tot_dl_bps += $1;
+#       $summary_text .= sprintf(" Download RX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
+#       $summary_text .= sprintf(" Upload TX: %.3fMbps", $1 / 1000000);
+#     }
+#     $ep_stats = `./lf_firemod.pl --endp_name $epb --stats_from_file $tmpfe --endp_vals RealRxRate,RealTxRate`;
+#     $brief_log .= "Endpoint Stats for $epb:\n$ep_stats\n\n";
+#     if ($ep_stats =~ /RealRxRate:\s+(\d+)/) {
+#       $tot_ul_bps += $1;
+#       $summary_text .= sprintf(" Upload RX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($ep_stats =~ /RealTxRate:\s+(\d+)/) {
+#       $summary_text .= sprintf(" Download TX: %.3fMbps", $1 / 1000000);
+#     }
+#     $summary_text .= "\n";
+#   }
+#   $summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+#   $mini_summary_text .= sprintf("Total Endpoint Upload RX: %.3fMbps  Download RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+
+#   # Port
+#   $sp = `cat $tmpf`;
+#   logf("$sp\n");
+
+#   $tot_dl_bps = 0;
+#   $tot_ul_bps = 0;
+#   for ($i = 0; $i<@stations; $i++) {
+#     my $sta_name = $stations[$i];
+#     my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port AP,ESSID,bps_rx,bps_tx,MAC,Mode,RX-Rate,TX-Rate,Signal,Link-Activity,Channel,Bandwidth,NSS`;
+#     $brief_log .= "Station Stats:\n$sta_stats\n\n";
+#     $summary_text .= "$sta_name:";
+#     if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
+#       $tot_dl_bps += $1;
+#       $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
+#       $tot_ul_bps += $1;
+#       $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($sta_stats =~ /NSS:\s+(\d+)/) {
+#       $summary_text .= " NSS: $1";
+#     }
+#     if ($sta_stats =~ /RX-Rate:\s+(\S+)/) {
+#       $summary_text .= " RX-Rate: $1";
+#     }
+#     if ($sta_stats =~ /TX-Rate:\s+(\S+)/) {
+#       $summary_text .= " TX-Rate: $1";
+#     }
+#     if ($sta_stats =~ /Signal:\s+(\S+)/) {
+#       $summary_text .= " Signal: $1";
+#     }
+#     $summary_text .= "\n";
+#   }
+#   $summary_text .= sprintf("Total station TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+
+#   # Radio stats
+#   $tot_dl_bps = 0;
+#   $tot_ul_bps = 0;
+#   my @rep_ports = uniq(@radios);
+#   for ($i = 0; $i<@rep_ports; $i++) {
+#     my $sta_name = $rep_ports[$i];
+#     my $sta_stats = `./lf_portmod.pl --card $resource --port_name $sta_name --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,Mode,NSS`;
+#     $brief_log .= "Radio Stats for $sta_name:\n$sta_stats\n\n";
+#     $summary_text .= "$sta_name:";
+#     if ($sta_stats =~ /bps_rx:\s+(\d+)/) {
+#       $tot_dl_bps += $1;
+#       $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($sta_stats =~ /bps_tx:\s+(\d+)/) {
+#       $tot_ul_bps += $1;
+#       $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
+#     }
+#     if ($sta_stats =~ /Mode:\s+(\S+)/) {
+#       $summary_text .= " Mode: $1";
+#     }
+#     $summary_text .= "\n";
+#   }
+#   $summary_text .= sprintf("Total Radio TX: %.3fMbps  RX: %.3fMbps\n\n", $tot_ul_bps / 1000000, $tot_dl_bps / 1000000);
+
+#   # Upstream port
+#   my $p_stats = `./lf_portmod.pl --card $upstream_resource --port_name $upstream_port --stats_from_file $tmpf --show_port bps_rx,bps_tx,MAC,RX-Rate,TX-Rate`;
+#   $brief_log .= "Upstream Port Stats:\n$p_stats\n\n";
+#   $summary_text .= "$upstream_port:";
+#   if ($p_stats =~ /bps_rx:\s+(\d+)/) {
+#     $tot_dl_bps += $1;
+#     $summary_text .= sprintf(" RX: %.3fMbps", $1 / 1000000);
+#   }
+#   if ($p_stats =~ /bps_tx:\s+(\d+)/) {
+#     $tot_ul_bps += $1;
+#     $summary_text .= sprintf(" TX: %.3fMbps", $1 / 1000000);
+#   }
+#   if ($p_stats =~ /RX-Rate:\s+(\S+)/) {
+#     $summary_text .= " RX-Rate: $1";
+#   }
+#   if ($p_stats =~ /TX-Rate:\s+(\S+)/) {
+#     $summary_text .= " TX-Rate: $1";
+#   }
   $summary_text .= "\n";
 }
 
