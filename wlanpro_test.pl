@@ -38,7 +38,7 @@ my $radio_4a = "wiphy2";
 my $radio_4b = "wiphy3";
 my $sta_max = 40; # For upload/download tests
 my $wct_sta_max = 64; # For wifi-capacity-test on single radio (4a)
-my $gui_host = "127.0.0.1";
+my $gui_host = "127.0.0.1"; # auto-wifi-cap script will not work properly if not run on same machine as GUI
 my $gui_port = 7777;
 my $resource = 2;
 my $speed_dl_tot = 1000000000;
@@ -73,13 +73,26 @@ my $usage = "$0
   [--speed_dl_tot {speed-bps}]
   [--security {open | wpa2}]
   [--manager {manager-machine IP or hostname}]
-  [--testcase {test-case:  -1 all, 0 setup, 1-5, 100 means cleanup}]
+  [--testcase {test-case:  -1: all except cleanup, 0: setup, 1: 3x3 ul/dl,
+     2: 2x2 ul/dl 3: 1x1 ul/dl, 4: mix ul/dl, 5: mix ul/dl + interference,
+     6: wifi-capacity-test, 100: cleanup}]
   [--log_name {log-file-name}]
   [--rest_time {seconds to sleep between rest runs, dfault is $rest_time}]
-  [--gui_host  {LANforge gui_host (127.0.0.1)}]
-  [--gui_port  {LANforge gui_port (7777)}]
+  [--gui_host  {LANforge gui_host (127.0.0.1): Must be same as where this script runs.}]
+  [--gui_port  {LANforge gui_port (7777):  Start your GUI with -cli-port 7777}]
+
+NOTE:  The total speed will be multiplied by 1.0 for 3x3 and mixed tests, 0.75 for 2x2 testing,
+   and 0.5 for 1x1 testing.  This should still attempt near theoretical throughput without
+   over-driving the DUT too badly.
 ";
 
+my $usage_notes = "
+Errors reported by the LANforge-GUI that you should be able to ignore:
+
+* ERROR:  Cannot change MAC address with the 'add-vwifi' command.
+     Reason: Existing MAC would be fine anyway.
+
+";
 
 GetOptions (
 	    'pld_size=i'     => \$pld_size,
@@ -124,6 +137,11 @@ my @cxs = ();
 my @stations = ();
 my @stations4a = ();
 my $sta_on_4a = 0;
+
+$SIG{'INT'} = sub {
+  print "Caught ctrl-C, existing!\n";
+  exit 1;
+};
 
 open(LOGF, ">$log_name") or die("Could not open log file: $log_name $!\n");
 
@@ -242,7 +260,7 @@ stop_all_cx();
 
 if ($testcase == -1 || $testcase == 1) {
   wait_for_stations();
-  do_test_series("3x3 station upload/download test");
+  do_test_series("3x3 station upload/download test", 1.0);
 }
 
 if ($testcase == -1 || $testcase == 2) {
@@ -257,7 +275,7 @@ if ($testcase == -1 || $testcase == 2) {
 
   wait_for_stations();
   check_more_rest($testcase, $start);
-  do_test_series("2x2 station upload/download test");
+  do_test_series("2x2 station upload/download test", 0.75);
 }
 
 if ($testcase == -1 || $testcase == 3) {
@@ -272,7 +290,7 @@ if ($testcase == -1 || $testcase == 3) {
 
   wait_for_stations();
   check_more_rest($testcase, $start);
-  do_test_series("1x1 station upload/download test");
+  do_test_series("1x1 station upload/download test", 0.50);
 }
 
 
@@ -307,7 +325,7 @@ if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
   check_more_rest($testcase, $start);
 
   if ($testcase == -1 || $testcase == 4) {
-    do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test");
+    do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test", 1.0);
     if ($testcase == -1) {
       sleep($rest_time);
     }
@@ -317,7 +335,7 @@ if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
 # Disable this from 'all' runs for now until we figure out how the interference is going to be generated.
 if ($testcase == 5) {
   wait_for_stations();
-  do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test with interference");
+  do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test with interference", 1.0);
 }
 
 # WiFi capacity test
@@ -608,7 +626,7 @@ sub do_one_test {
 	}
 
 	# WiFi stuff should come from the Probed section
-	if ($port_text =~ /.*Probed:\s+(.*)/) {
+	if ($port_text =~ /.*Probed:\s+(.*)/s) {
 	  my $haystack = $1;
 
 	  # We want:  Mode,NSS,Bandwidth,Channel,AP,RX-Rate,Signal,Link-Activity
@@ -621,6 +639,22 @@ sub do_one_test {
 	    $port_rx_rate_link{$pkey} = $6;
 	    $port_signal{$pkey} = $7;
 	    $port_activity{$pkey} = $8;
+	  }
+	  # Deal with no AP or Signal field reported.
+	  elsif ($haystack =~ /.*Mode:\s+(\S+).* NSS:\s+(\S+).*Bandwidth: (\S+).*Channel:\s+(\S+).*RX-Rate: (\S+).*Link-Activity: (\S+).*/s) {
+	    $port_mode{$pkey} = $1;
+	    $port_nss{$pkey} = $2;
+	    $port_bandwidth{$pkey} = $3;
+	    $port_channel{$pkey} = $4;
+	    $port_rx_rate_link{$pkey} = $5;
+	    $port_signal{$pkey} = $6;
+	    $port_activity{$pkey} = $7;
+	    $port_ap{$pkey} = "NA";
+	    $port_signal{$pkey} = "-1";
+	  }
+	  else {
+	    print "Did not find probed wifi data, raw-text:\n$haystack\nFull port output:\n$port_text";
+	    exit 1;
 	  }
 	}
       }
@@ -864,19 +898,21 @@ sub logpb {
 
 sub do_test_series {
   my $desc = shift;
+  my $speed_mult = shift;
   my $msg = "\n" . `date` . "Doing test series: $desc\n";
+
   logpb($msg);
   $mini_summary_text .= $msg;
 
   # First test case, 20 stations downloading, 3x3 mode.
   logpb("\nDoing download test with 20 stations.\n");
-  do_one_test(0, $speed_dl_tot / 20, 20, $one_way_test_time, $desc);
+  do_one_test(0, ($speed_dl_tot * $speed_mult) / 20, 20, $one_way_test_time, $desc);
   # Upload 30 sec
   logpb("\nDoing upload test with 20 stations.\n");
-  do_one_test($speed_ul_tot / 20, 0, 20, $one_way_test_time, $desc);
+  do_one_test(($speed_ul_tot * $speed_mult) / 20, 0, 20, $one_way_test_time, $desc);
   # Upload/Download 1 minute sec
   logpb("\nDoing upload/download test with 40 stations.\n");
-  do_one_test($speed_ul_tot / 40, $speed_dl_tot / 40, 40, $bi_test_time, $desc);
+  do_one_test(($speed_ul_tot * $speed_mult) / 40, ($speed_dl_tot * $speed_mult) / 40, 40, $bi_test_time, $desc);
 }
 
 sub do_cmd {
