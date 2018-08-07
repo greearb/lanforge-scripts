@@ -45,6 +45,8 @@ our $upstream         = "eth1";
 our $increment        = 5;
 our $duration         = 30;
 our $test_name        = "lanforge-wifi-capacity-test";
+our $rpt_timer        = 1000;
+our $settle_timer     = 10000; # 10 seconds
 
 our $fail_msg         = "";
 our $manual_check     = 0;
@@ -85,6 +87,7 @@ our $usage = "$0
   [--percent_tcp {percent_tcp for mixed traffic type}]
   [--increment {station-bringup-increment (5)}]
   [--duration  {bringup-step-duration (30)}]
+  [--report_timer  {milisecond report timer for created the endpoints (1000)}]
   [--endp_type { udp, tcp, mix }
   [--use_pdu_mix { true | (false) }]
   [--pdu_percent { bps | (pps) }]
@@ -97,7 +100,7 @@ our $usage = "$0
 
 Example:
 
-./lf_auto_wifi_cap.pl --mgr ben-ota-1 --resource 2 --radio wiphy0 --speed_dl 500000000 --ssid Lede-ventana --num_sta 64 --upstream eth1 --first_ip DHCP --percent_tcp 50 --increment 1,5,10,20,30,40,50,64 --duration 15 --endp_type mix --test_name ventana-mix-dl --test_text 'Ventana LEDE, WLE900VX<br>over-the-air to LANforge station system 5 feet away<br>LAN to WiFi traffic path' --multicon 1
+./lf_auto_wifi_cap.pl --mgr ben-ota-1 --resource 2 --radio wiphy0 --speed_dl 500000000 --ssid Lede-ventana --num_sta 64 --upstream eth1 --first_ip DHCP --percent_tcp 50 --increment 1,5,10,20,30,40,50,64 --duration 15 --report_timer 3000 --endp_type mix --test_name ventana-mix-dl --test_text 'Ventana LEDE, WLE900VX<br>over-the-air to LANforge station system 5 feet away<br>LAN to WiFi traffic path' --multicon 1
 
 ";
 
@@ -126,6 +129,8 @@ GetOptions
         'percent_tcp=i' => \$::percent_tcp,
         'increment=s'   => \$::increment,
         'duration=i'    => \$::duration,
+        'report_timer=i' => \$::rpt_timer,
+        'settle_timer=i' => \$::settle_timer,
         'endp_type=s'   => \$::endp_type,
         'test_name=s'   => \$::test_name,
         'multicon=i'    => \$::multicon,
@@ -235,6 +240,8 @@ else {
 
 print CAP "__CFG STA_INCREMENT $::increment\n";
 print CAP "__CFG DURATION " . ($::duration * 1000) . "\n";
+print CAP "__CFG RPT_TIMER " . ($::rpt_timer) . "\n";
+print CAP "__CFG BEFORE_CLEAR " . ($::settle_timer) . "\n";
 
 my $proto = 0;
 if ($endp_type eq "tcp") {

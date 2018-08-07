@@ -16,6 +16,10 @@
 
 # Mixed mode:  10 3x3, 15 2x2, 15 1x1  (Same data pattern)
 
+# WiFi Capacit test notes:
+#  Mix of TCP and UDP, using MTU sized frames
+#  All 64 stations are on one 4x4 radio
+
 # Mixed With interference: Same as mixed mode
 # Assume other test EQ is doing interference?
 
@@ -55,6 +59,8 @@ my $multicon = 1;
 my $rest_time = 20;
 my $quiet = "yes";
 my $report_timer = 1000; # 1 second report timer
+my $rpt_timer_wct = 3000; # 3-second rpt timer for wifi-capacity test
+my $settle_timer_wct = 10000; # 10-sec wait for connections to get running before clearing and starting the test proper
 my $one_way_test_time = 30;
 my $bi_test_time = 30;
 
@@ -358,7 +364,7 @@ if ($testcase == -1 || $testcase == 6) {
   #wait_for_stations();  WCT takes care of bringing stations up/down
   my $sta_list = join(",", @stations4a);
   # Call to automated wifi capacity test plugin
-  do_cmd("./lf_auto_wifi_cap.pl --mgr $manager --resource $resource --radio $radio_4a --speed_dl $speed_dl_tot --ssid $ssid --num_sta $wct_sta_max --upstream $upstream_port --upstream_resource $upstream_resource --percent_tcp 50 --increment 1,5,10,20,30,45,64 --duration 15 --endp_type mix --test_name wlanpro-$ssid --test_text 'Wlan-Pro test case #6 to ssid $ssid' --multicon 1 --use_existing_sta --use_existing_cfg --use_station $sta_list --gui_host $gui_host --gui_port $gui_port");
+  do_cmd("./lf_auto_wifi_cap.pl --mgr $manager --resource $resource --radio $radio_4a --speed_dl $speed_dl_tot --ssid $ssid --num_sta $wct_sta_max --upstream $upstream_port --upstream_resource $upstream_resource --percent_tcp 50 --increment 1,5,10,20,30,45,64 --duration 15 --endp_type mix --test_name wlanpro-$ssid --test_text 'Wlan-Pro test case #6 to ssid $ssid' --multicon 1 --use_existing_sta --use_existing_cfg --use_station $sta_list --gui_host $gui_host --gui_port $gui_port --report_timer $rpt_timer_wct --settle_timer $settle_timer_wct");
 }
 
 if ($testcase == 100) {
