@@ -8,71 +8,55 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 # Un-buffer output
 $| = 1;
-#use lib '/home/lanforge/scripts';
-#use LANforge::Endpoint;
-#use LANforge::Port;
-#use LANforge::Utils;
-#use Net::Telnet ();
 use Getopt::Long;
 use JSON::XS;
 use HTTP::Request;
 use LWP;
-use LWN::UserAgent;
-
-use constant      NA          => "NA";
-use constant      NL          => "\n";
-use constant      shelf_num   => 1;
+use LWP::UserAgent;
+use Data::Dumper;
+use JSON;
+use lib '/home/lanforge/scripts';
+use LANforge::JsonUtils;
 
 package main;
 # Default values for ye ole cmd-line args.
 our $Resource  = 1;
 our $quiet     = "yes";
-our $Host      = "localhost";
+our $Host      = "atlas";
 our $Port      = 8080;
 our $HostUri   = "http://$Host:$Port";
-our $Web       = new UserAgent();
+our $Web       = LWP::UserAgent->new;
+our $Decoder   = JSON->new->utf8;
 
-sub err {
-   my $i;
-   for $i (@_) {
-      print STDERR "$i";
-   }
-   print STDERR NL;
-}
 
-sub logg {
-   my $i;
-   for $i (@_) {
-      print STDOUT "$i";
-   }
-   print STDOUT NL;
-}
 
-sub xpand {
-   my ($rrl) = @_;
-   die("Will not expand a blank URI") if ("" eq $rrl || $rrl =~ m/^\s*$/);
-   return $rrl if ($rrl =~ /^http/);
-   return $rrl if ($rrl =~ m{^$main::HostUri/});
-   return "${main::HostUri}$rrl" if ($rrl =~ m{^/});
-   return "${main::HostUri}/$rrl";
-}
+##
+##    M A I N
+##
 
-sub json_request {
-   my ($uri) = @_;
-   my $url = xpand($uri);
-   logg("$uri becomes $url\n");
-   my $req = new HTTP::Request->("GET", $url);
-   $req->header("Accept" => "application/json");
+GetOptions
+(
+  'host=s'                   => \$::Host,
+) || (print($usage) && exit(1));
 
-   my $thing = $::Web->request($req);
-
-   print Dumper::dump($thing);
-}
-
-logg(" this is a thing");
-logg("with a line ending\n");
+"http://$Host:$Port";
 
 my $uri = "/shelf/1";
-json_request($uri);
+my $rh = json_request($uri);
+my $ra_links = get_links_from($rh, 'resources');
+
+#print Dumper($ra_links);
+for $uri (@$ra_links) {
+   $uri =~ s{/resource}{/port}g;
+   $uri .= "/list";
+   logg("requesting $uri");
+
+   $rh = json_request($uri);
+   print Dumper($rh);
+   my $ra_links2 = get_links_from($rh, 'interfaces');
+   for my $uri2 (@$ra_links2) {
+      logg("found $uri2");
+   }
+}
 
 #
