@@ -63,6 +63,7 @@ my $rpt_timer_wct = 3000; # 3-second rpt timer for wifi-capacity test
 my $settle_timer_wct = 10000; # 10-sec wait for connections to get running before clearing and starting the test proper
 my $one_way_test_time = 30;
 my $bi_test_time = 30;
+my $interferer_cx = "inteferer_cx";
 
 my $usage = "$0
   [--pld_size { bytes } ]
@@ -86,10 +87,16 @@ my $usage = "$0
   [--rest_time {seconds to sleep between rest runs, dfault is $rest_time}]
   [--gui_host  {LANforge gui_host (127.0.0.1): Must be same as where this script runs.}]
   [--gui_port  {LANforge gui_port (7777):  Start your GUI with -cli-port 7777}]
+  [--interferer_cx { name of existing LANforge interferer-cx that we should start for the interference test }]
 
 NOTE:  The total speed will be multiplied by 1.0 for 3x3 and mixed tests, 0.75 for 2x2 testing,
    and 0.5 for 1x1 testing.  This should still attempt near theoretical throughput without
    over-driving the DUT too badly.
+
+For the interference test, it is expected that the user create a CX of the proper name in
+LANforge, associated to a wifi station, etc, and this script will simply start and stop it.
+That will simplify this script and will give more flexibility on how the interferer is
+configured.  By default, the intereferer CX name will be 'interferer_cx'.
 ";
 
 my $usage_notes = "
@@ -121,6 +128,7 @@ GetOptions (
 	    'log_name=s'     => \$log_name,
 	    'gui_host=s'     => \$gui_host,
 	    'gui_port=i'     => \$gui_port,
+	    'interferer_cx=s' => \$interferer_cx,
 	   ) || (print($usage) && exit(1));
 
 if ($log_name eq "") {
@@ -169,6 +177,10 @@ for ($i = 0; $i<@cx_dump; $i++) {
     do_cmd($cmd);
   }
 }
+
+# Stop the interferer, just in case it is already running for some reason
+$cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state default_tm $interferer_cx STOPPED\"";
+do_cmd($cmd);
 
 # Set radios to 3x3 mode.
 if ($testcase == -1 || $testcase == 0) {
@@ -338,10 +350,14 @@ if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
   }
 }
 
-# Disable this from 'all' runs for now until we figure out how the interference is going to be generated.
-if ($testcase == 5) {
+# Interference mixed-mode test case
+if ($testcase == -1 || $testcase == 5) {
   wait_for_stations();
+  $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state default_tm $interferer_cx RUNNING\"";
+  do_cmd($cmd);
   do_test_series("Mixed mode: 10 3x3, 15 2x2, 10 1x1 station upload/download test with interference", 1.0);
+  $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state default_tm $interferer_cx STOPPED\"";
+  do_cmd($cmd);
 }
 
 # WiFi capacity test
