@@ -97,6 +97,12 @@ For the interference test, it is expected that the user create a CX of the prope
 LANforge, associated to a wifi station, etc, and this script will simply start and stop it.
 That will simplify this script and will give more flexibility on how the interferer is
 configured.  By default, the intereferer CX name will be 'interferer_cx'.
+
+Example command:
+
+./wlanpro_test.pl --ssid mu-mimo-5G --passphrase hello123 --resource 2 --upstream_resource 1 \
+  --upstream_port eth4 --manager 192.168.100.182 --gui_port 7777 --interferer_cx inter_r3_w0 --testcase 5
+
 ";
 
 my $usage_notes = "
