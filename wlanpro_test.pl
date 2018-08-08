@@ -47,6 +47,7 @@ my $gui_port = 7777;
 my $resource = 2;
 my $speed_dl_tot = 1000000000;
 my $speed_ul_tot = 1000000000;
+my $speed_ul_bi_tot = 200000000; # 200Mbps upload speed when in bi-directional mode
 my $testcase = -1;
 my $manager = "localhost";
 my $log_name = "";
@@ -61,6 +62,7 @@ my $quiet = "yes";
 my $report_timer = 1000; # 1 second report timer
 my $rpt_timer_wct = 3000; # 3-second rpt timer for wifi-capacity test
 my $settle_timer_wct = 10000; # 10-sec wait for connections to get running before clearing and starting the test proper
+my $wct_duration_sec = 20; # Duration for each iteration
 my $one_way_test_time = 30;
 my $bi_test_time = 30;
 my $interferer_cx = "inteferer_cx";
@@ -76,8 +78,9 @@ my $usage = "$0
   [--resource {resource-number}]
   [--upstream_resource {resource-number}]
   [--upstream_port {port}]
-  [--speed_ul_tot {speed-bps}]
-  [--speed_dl_tot {speed-bps}]
+  [--speed_ul_tot {speed-bps (default: $speed_ul_tot)}]
+  [--speed_dl_tot {speed-bps (default: $speed_dl_tot)}]
+  [--speed_ul_bi_tot {speed-bps for upload in bi-directional test (default: $speed_ul_bi_tot)}]
   [--security {open | wpa2}]
   [--manager {manager-machine IP or hostname}]
   [--testcase {test-case:  -1: all except cleanup, 0: setup, 1: 3x3 ul/dl,
@@ -103,6 +106,14 @@ Example command:
 ./wlanpro_test.pl --ssid mu-mimo-5G --passphrase hello123 --resource 2 --upstream_resource 1 \
   --upstream_port eth4 --manager 192.168.100.182 --gui_port 7777 --interferer_cx inter_r3_w0 --testcase 5
 
+Interesting bugs:
+
+While testing with a netgear r7800, I noticed that the RX encoding rate received from the AP
+can be NSS 2 even when the station is configured for NSS 1.  I double-checked that the association
+request is using NSS 1 info, so this appears to be a bug in the Netgear.  But, since the LANforge
+radio can actually decode NSS 2 frames, then the packets are actually received and the Netgear gets
+better performance than is warranted in this configuration.  This appears to be a bug in the Netgear.
+
 ";
 
 my $usage_notes = "
@@ -112,6 +123,8 @@ Errors reported by the LANforge-GUI that you should be able to ignore:
      Reason: Existing MAC would be fine anyway.
 
 ";
+
+my $script_start = time();
 
 GetOptions (
 	    'pld_size=i'     => \$pld_size,
@@ -126,6 +139,7 @@ GetOptions (
 	    'upstream_port=s' => \$upstream_port,
 	    'rest_time=i'    => \$rest_time,
 	    'speed_ul_tot=s' => \$speed_ul_tot,
+	    'speed_ul_bi_tot=s' => \$speed_ul_bi_tot,
 	    'speed_dl_tot=s' => \$speed_dl_tot,
 	    'security=s'     => \$security,
 	    'manager=s'      => \$manager,
@@ -147,6 +161,7 @@ my $cmd;
 my $log_prefix = "LANforge wlanpro-test\nConfiguration:\n" .
   "  SSID: $ssid  passphrase: $psk  security: $security  resource: $resource\n" .
   "  speed_dl_request: $speed_dl_tot  speed_ul_request: $speed_ul_tot  payload-size: $pld_size  traffic-type: $endp_type\n" .
+  "  speed_ul_bi_request: $speed_ul_bi_tot  interferer: $interferer_cx\n" .
   "  Test started at: " . `date` . "\n\n";
 my $brief_log = "$log_prefix";
 my $summary_text = "$log_prefix";
@@ -159,7 +174,7 @@ my @stations4a = ();
 my $sta_on_4a = 0;
 
 $SIG{'INT'} = sub {
-  print "Caught ctrl-C, existing!\n";
+  print "Caught ctrl-C, exiting!\n";
   exit 1;
 };
 
@@ -341,7 +356,7 @@ if ($testcase == -1 || $testcase == 4 || $testcase == 5) {
   }
   for ($i = 25;$ i<40; $i++) {
     my $sta_name = $stations[$i];
-    $cmd = "./lf_portmod.pl --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed \"v-1 Stream /AC\"";
+    $cmd = "./lf_portmod.pl --quiet $quiet --manager $manager --card $resource --port_name $sta_name --wifi_mode 8 --set_speed \"v-1 Stream  /AC\"";
     do_cmd($cmd);
   }
 
@@ -386,7 +401,7 @@ if ($testcase == -1 || $testcase == 6) {
   #wait_for_stations();  WCT takes care of bringing stations up/down
   my $sta_list = join(",", @stations4a);
   # Call to automated wifi capacity test plugin
-  do_cmd("./lf_auto_wifi_cap.pl --mgr $manager --resource $resource --radio $radio_4a --speed_dl $speed_dl_tot --ssid $ssid --num_sta $wct_sta_max --upstream $upstream_port --upstream_resource $upstream_resource --percent_tcp 50 --increment 1,5,10,20,30,45,64 --duration 15 --endp_type mix --test_name wlanpro-$ssid --test_text 'Wlan-Pro test case #6 to ssid $ssid' --multicon 1 --use_existing_sta --use_existing_cfg --use_station $sta_list --gui_host $gui_host --gui_port $gui_port --report_timer $rpt_timer_wct --settle_timer $settle_timer_wct");
+  do_cmd("./lf_auto_wifi_cap.pl --mgr $manager --resource $resource --radio $radio_4a --speed_dl $speed_dl_tot --ssid $ssid --num_sta $wct_sta_max --upstream $upstream_port --upstream_resource $upstream_resource --percent_tcp 50 --increment 1,5,10,20,30,45,64 --duration $wct_duration_sec --endp_type mix --test_name wlanpro-$ssid --test_text 'Wlan-Pro test case #6 to ssid $ssid' --multicon 1 --use_existing_sta --use_existing_cfg --use_station $sta_list --gui_host $gui_host --gui_port $gui_port --report_timer $rpt_timer_wct --settle_timer $settle_timer_wct");
 }
 
 if ($testcase == 100) {
@@ -413,6 +428,9 @@ if ($testcase == 100) {
 
 }
 
+my $now_sec = time();
+my $took = ($now_sec - $script_start) / 60;
+logpb("Entire run took: $took minutes.\n");
 logpb("Completed test at " . `date` . "\n\n");
 
 # Append brief log and final log to the report.
@@ -940,7 +958,7 @@ sub do_test_series {
   do_one_test(($speed_ul_tot * $speed_mult) / 20, 0, 20, $one_way_test_time, $desc);
   # Upload/Download 1 minute sec
   logpb("\nDoing upload/download test with 40 stations.\n");
-  do_one_test(($speed_ul_tot * $speed_mult) / 40, ($speed_dl_tot * $speed_mult) / 40, 40, $bi_test_time, $desc);
+  do_one_test(($speed_ul_bi_tot * $speed_mult) / 40, ($speed_dl_tot * $speed_mult) / 40, 40, $bi_test_time, $desc);
 }
 
 sub do_cmd {
