@@ -24,7 +24,7 @@ if (defined $ENV{'DEBUG'}) {
 }
 
 our $NL="\n";
-
+use Exporter 'import';
 our @EXPORT_OK=qw(err logg xpand json_request get_links_from);
 
 sub err {
@@ -32,7 +32,7 @@ sub err {
    for $i (@_) {
       print STDERR "$i";
    }
-   print STDERR $::NL;
+   print STDERR $NL;
 }
 
 sub logg {
@@ -40,7 +40,7 @@ sub logg {
    for $i (@_) {
       print STDOUT "$i";
    }
-   print STDOUT $::NL;
+   print STDOUT $NL;
 }
 
 sub xpand {
