@@ -587,7 +587,7 @@ sub fmt_port_cmd {
    $ist_flags           |= 0x4        if($ip ne "NA");
    $ist_flags           |= 0x8        if($::netmask ne "NA");
    $ist_flags           |= 0x20       if($mac_addr ne "NA");
-   $ist_flags           |= 0x4000     if($use_dhcp); # what does 'including client-id' mean?
+   $ist_flags           |= 0x4000;    # Always interested in DHCP, we either set it to DHCP or IP
    $ist_flags           |= 0x800000;  # port up
 
    my $gateway          = "0.0.0.0";

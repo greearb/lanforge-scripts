@@ -17,7 +17,7 @@ SCRIPTDIR="/home/lanforge/scripts"
 
 function usage() {
   echo "$0:
-    --create_sta --name <name> --radio <wiphyX> --security <open|wpa2> --ssid <ssid> --passphrase <wpa2 pass>
+    --create_sta --name <name> --radio <wiphyX> --security <open|wpa2> --ssid <ssid> --passphrase <wpa2 pass> --ip <DHCP | IP-address>
     --delete_sta --name <name>
     --show_port  --name <name>
     --list_ports
@@ -38,7 +38,8 @@ function usage() {
 
 Examples:
   $0 --list_ports --mgr 192.168.1.102 --resource 2
-  $0 --create_sta --resource 2 --name sta100  --radio wiphy0 --security wpa2 --ssid jedtest --passphrase jedtest1
+  $0 --create_sta --resource 2 --name sta100  --radio wiphy0 --security wpa2 --ssid jedtest --passphrase jedtest1 --ip DHCP
+  $0 --create_sta --resource 2 --name sta100  --radio wiphy0 --security wpa2 --ssid jedtest --passphrase jedtest1 --ip 10.1.1.10 --netmask 255.255.255.0
   $0 --delete_sta --resource 2 --name sta100
   $0 --up --name sta100
   $0 --create_cx  --name tcp10 --sta sta100 --port eth1 --tcp --bps 1000000
@@ -51,7 +52,7 @@ Examples:
 }
 ##  M A I N
 OPTS="`getopt -o hm:r:n:ud -l help,mgr:,resource:,quiet:,\
-create_sta,delete_sta,ip:,radio:,name:,ssid:,passphrase:,security:,\
+create_sta,delete_sta,ip:,radio:,name:,ssid:,passphrase:,security:,ip:,netmask:,\
 list_ports,list_cx,list_l4,\
 show_port,endp_vals:,poll_endp,log_cli:,\
 create_cx,port:,sta:,tcp,udp,bps:,\
@@ -66,6 +67,7 @@ fi
 eval set -- "$OPTS"
 
 # defualts
+netmask="255.255.0.0"
 resource="1"
 mgr="localhost"
 action="list"
@@ -147,6 +149,12 @@ while true; do
       shift;;
     --sta)
       sta="$2"
+      shift 2;;
+    --ip)
+      ip="$2"
+      shift 2;;
+    --netmask)
+      netmask="$2"
       shift 2;;
     --port)
       port="$2"
@@ -289,10 +297,9 @@ case "$action" in
     [ -z "$ssid"      ] && usage && echo "No SSID specified." && exit 1
     [ -z "$security"  ] && usage && echo "No WiFi security specified." && exit 1
     [ -z "$radio"     ] && usage && echo "No radio specified." && exit 1
-    [ "$ip" != "DHCP" ] && echo "$0 --ip option only supports DHCP, use lf_portmod.pl or lf_associate_ap.pl to do advanced station creation" && exit 1
     do_associate --action add \
       --radio "$radio" --security "$security" --ssid "$ssid" --passphrase "$passphrase" \
-      --first_sta "$name" --first_ip "$ip" --num_stations 1
+      --first_sta "$name" --first_ip "$ip" --netmask "$netmask" --num_stations 1
     ;;
    
   delete_sta)

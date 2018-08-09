@@ -29,6 +29,7 @@
 
 use strict;
 use Getopt::Long;
+use Socket;
 
 my $pld_size = 500;
 my $ssid = "wlanpro";
@@ -66,6 +67,9 @@ my $wct_duration_sec = 20; # Duration for each iteration
 my $one_way_test_time = 30;
 my $bi_test_time = 30;
 my $interferer_cx = "inteferer_cx";
+my $ip = "DHCP";
+my $netmask = "255.255.0.0";
+my $ipn = 0;
 
 my $usage = "$0
   [--pld_size { bytes } ]
@@ -91,6 +95,8 @@ my $usage = "$0
   [--gui_host  {LANforge gui_host (127.0.0.1): Must be same as where this script runs.}]
   [--gui_port  {LANforge gui_port (7777):  Start your GUI with -cli-port 7777}]
   [--interferer_cx { name of existing LANforge interferer-cx that we should start for the interference test }]
+  [--ip { DHCP | starting IP address.  Default is to use DHCP. }]
+  [--netmask { Ignored if using DHCP, otherwise something like 255.255.255.0.  Default is $netmask. }]
 
 NOTE:  The total speed will be multiplied by 1.0 for 3x3 and mixed tests, 0.75 for 2x2 testing,
    and 0.5 for 1x1 testing.  This should still attempt near theoretical throughput without
@@ -103,8 +109,13 @@ configured.  By default, the intereferer CX name will be 'interferer_cx'.
 
 Example command:
 
+# Run test case 5, assumes test case 0 (setup) has already been run.
 ./wlanpro_test.pl --ssid mu-mimo-5G --passphrase hello123 --resource 2 --upstream_resource 1 \
   --upstream_port eth4 --manager 192.168.100.182 --gui_port 7777 --interferer_cx inter_r3_w0 --testcase 5
+
+# Run all test cases with Fixed IP addresses (instead of DHCP)
+./wlanpro_test.pl --ssid mu-mimo-5G --passphrase hello123 --resource 2 --upstream_resource 1 --upstream_port eth4 --manager 192.168.100.182 --gui_host 192.168.100.149 --gui_port 7777 --interferer_cx inter_r3_w0 --testcase -1 --ip 5.5.5.1 --netmask 255.255.255.0
+
 
 Interesting bugs:
 
@@ -149,6 +160,8 @@ GetOptions (
 	    'gui_host=s'     => \$gui_host,
 	    'gui_port=i'     => \$gui_port,
 	    'interferer_cx=s' => \$interferer_cx,
+	    'ip=s'           => \$ip,
+	    'netmask=s'      => \$netmask,
 	   ) || (print($usage) && exit(1));
 
 if ($log_name eq "") {
@@ -166,6 +179,10 @@ my $log_prefix = "LANforge wlanpro-test\nConfiguration:\n" .
 my $brief_log = "$log_prefix";
 my $summary_text = "$log_prefix";
 my $mini_summary_text = "$log_prefix";
+
+if ($ip ne "DHCP") {
+  $ipn = ip2ipn($ip);
+}
 
 # Initial setup for test cases, create 40 stations
 my @cxs = ();
@@ -203,6 +220,10 @@ for ($i = 0; $i<@cx_dump; $i++) {
 $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state default_tm $interferer_cx STOPPED\"";
 do_cmd($cmd);
 
+# Set upstream port to DHCP or fixed IP as requested.
+$cmd = "./lf_portmod.pl --quiet $quiet --manager $manager --card $upstream_resource --port_name $upstream_port --ip $ip --netmask $netmask";
+do_cmd($cmd);
+
 # Set radios to 3x3 mode.
 if ($testcase == -1 || $testcase == 0) {
   for ($i = 0; $i<$radio_count; $i++) {
@@ -220,7 +241,8 @@ if ($radio_4a =~ /\S+(\d+)/) {
   my $radio = $radio_4a;
   $sta_on_4a++;
   if ($testcase == -1 || $testcase == 0 || $testcase == 6) {
-    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
+    my $_ip = incr_ip();
+    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk --ip $_ip --netmask $netmask";
     do_cmd($cmd);
 
     # Set to maximum mode.  The stations might have been
@@ -244,7 +266,8 @@ for ($i = 0; $i < $sta_max; $i++) {
   @stations = (@stations, $sta_name);
 
   if ($testcase == -1 || $testcase == 0) {
-    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
+    my $_ip = incr_ip();
+    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk --ip $_ip --netmask $netmask";
     do_cmd($cmd);
 
     # Set to maximum mode.  The stations might have been
@@ -283,7 +306,8 @@ while ($sta_on_4a < $wct_sta_max) {
   $sta_on_4a++;
 
   if ($testcase == -1 || $testcase == 0 || $testcase == 6) {
-    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk";
+    my $_ip = incr_ip();
+    $cmd = "./lf_vue_mod.sh --mgr $manager --create_sta --resource $resource --name $sta_name  --radio $radio --security $security --ssid $ssid --passphrase $psk --ip $_ip --netmask $netmask";
     do_cmd($cmd);
 
     # Set to maximum mode.  The stations might have been
@@ -971,6 +995,23 @@ sub uniq {
   my %seen;
   grep !$seen{$_}++, @_;
 }
+
+sub incr_ip {
+  if ($ip eq "DHCP") {
+    return "DHCP";
+  }
+  $ipn++;
+  return ipn2ip($ipn);
+}
+
+sub ip2ipn {
+     return unpack 'N', inet_aton(shift);
+}
+
+sub ipn2ip {
+    return inet_ntoa( pack 'N', shift );
+}
+
 
 my @array = qw(one two three two three);
 my @filtered = uniq(@array);

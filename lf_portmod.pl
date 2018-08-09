@@ -76,6 +76,10 @@ my $cli_cmd          = "";
 my $log_file         = "";
 my $NOT_FOUND        = "-not found-";
 my $stats_from_file  = "";
+my $ip = "NA";  # DHCP or IP address
+my $netmask = "NA"; # Netmask, only changed when 'IP' is set.
+my $gw = "NA"; # Gateway, only changed when 'IP' is set.
+
 
 ########################################################################
 # Nothing to configure below here, most likely.
@@ -110,6 +114,9 @@ my $usage = "$0  --port_name {name | number}
 [--eap_identity   {value|[BLANK]}]
 [--eap_passwd     {value|[BLANK]}]
 [--log_file       {value}] # disabled by default
+[--ip             { DHCP | IPv4 Address }]
+[--netmask        { network mask, only modified if IP is specified as well.]
+[--gw             { network gateway, only modified if IP is specified as well.]
 [--help|-h        ] # show help
 
 Examples:
@@ -119,6 +126,8 @@ Examples:
 ./lf_portmod.pl --manager 192.168.1.101 --cli_cmd \"scan 1 1 sta0\"
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --cmd reset
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --set_ifstate down
+./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --ip DHCP
+./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --ip 10.1.1.1 --netmask 255.255.0.0 --gw 10.1.1.254
 ./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed \"1 Mbps /b\" \\
                 --ssid fast-ap --passwd \"secret passwd\" --ap DEFAULT
 ./lf_portmod.pl --load my_db
@@ -185,6 +194,9 @@ GetOptions
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|i=s'  => \$eap_identity,
  'eap_passwd|p=s'    => \$eap_passwd,
+ 'ip=s'              => \$ip,
+ 'netmask=s'         => \$netmask,
+ 'gw=s'              => \$gw,
  'log_file|l=s'      => \$log_file,
  'log_cli=s{0,1}'    => \$log_cli,
  'wifi_mode=i'       => \$wifi_mode,
@@ -300,6 +312,43 @@ sub fmt_port_up_down {
    my $cmd = $::utils->fmt_cmd("set_port", 1, $resource, $port_id, "NA",
            "NA", "NA", "NA", "$cur_flags",
            "NA", "NA", "NA", "NA", "$ist_flags");
+   return $cmd;
+}
+
+sub fmt_port_ip {
+   my ($resource, $port_id, $ip, $mask, $gw) = @_;
+
+   my $set_ip = "NA";
+   my $set_mask = "NA";
+   my $set_gw = "NA";
+
+   my $ist_flags        = 0;
+   $ist_flags        |= 0x4000;       # interested in dhcp
+
+   # Specify the interest flags so LANforge knows which flag bits to pay attention to.
+   my $cur_flags        = 0;
+   if ($ip eq "DHCP") {
+     $cur_flags  |= 0x80000000;
+   }
+   else {
+     $set_ip = $ip;
+     $set_mask = $mask;
+     $set_gw = $gw;
+
+     if ($set_ip ne "NA") {
+       $ist_flags        |= (1<<2);       # interested in IP
+     }
+     if ($set_mask ne "NA") {
+       $ist_flags        |= (1<<3);       # interested in netmask
+     }
+     if ($set_gw ne "NA") {
+       $ist_flags        |= (1<<4);       # interested in gateway
+     }
+   }
+
+   my $cmd = $::utils->fmt_cmd("set_port", 1, $resource, $port_id, "$set_ip",
+			       "$set_mask", "$set_gw", "NA", "$cur_flags",
+			       "NA", "NA", "NA", "NA", "$ist_flags");
    return $cmd;
 }
 
@@ -470,6 +519,11 @@ if ($set_speed ne "NA" || $ssid ne "NA" || $passwd ne "NA" || $ap ne "NA") {
 
 if ($eap_identity ne "NA" || $eap_passwd ne "NA") {
    my $cli_cmd = fmt_wifi_extra( $card, $port_name, "$eap_identity", "$eap_passwd");
+   $utils->doCmd($cli_cmd);
+}
+
+if ($ip ne "NA") {
+   my $cli_cmd = fmt_port_ip( $card, $port_name, $ip, $netmask, $gw);
    $utils->doCmd($cli_cmd);
 }
 
