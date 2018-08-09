@@ -2,7 +2,7 @@ package LANforge::GuiJson;
 use strict;
 use warnings;
 use JSON;
-#use base 'Exporter';
+#use Exporter 'import';
 use Scalar::Util 'blessed';
 
 if (defined $ENV{'DEBUG'}) {
