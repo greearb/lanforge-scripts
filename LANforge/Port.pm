@@ -1,4 +1,3 @@
-
 package LANforge::Port;
 use strict;
 
