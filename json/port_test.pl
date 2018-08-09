@@ -16,7 +16,7 @@ use LWP::UserAgent;
 use Data::Dumper;
 use JSON;
 use lib '/home/lanforge/scripts';
-use LANforge::JsonUtils;
+use LANforge::JsonUtils qw(logg err json_request get_links_from);
 
 package main;
 # Default values for ye ole cmd-line args.
@@ -28,6 +28,9 @@ our $HostUri   = "http://$Host:$Port";
 our $Web       = LWP::UserAgent->new;
 our $Decoder   = JSON->new->utf8;
 
+my $usage = qq("$0 --host {ip or hostname} # connect to this
+   --port {port number} # defaults to 8080
+);
 
 
 ##
@@ -37,9 +40,10 @@ our $Decoder   = JSON->new->utf8;
 GetOptions
 (
   'host=s'                   => \$::Host,
+  'port=i'                   => \$::Port,
 ) || (print($usage) && exit(1));
 
-"http://$Host:$Port";
+$::HostUri = "http://$Host:$Port";
 
 my $uri = "/shelf/1";
 my $rh = json_request($uri);
