@@ -76,7 +76,7 @@ for my $rh_alias_link (@$ra_alias_links) {
          && ($rh_alias_link->{'alias'} =~m{^wiphy}));
 }
 logg("\nDestroying these: ");
-#print Dumper(@destroy_me);
+print Dumper(@destroy_me);
 for my $rh_target (@destroy_me) {
    my $alias = $rh_target->{'alias'};
    my @hunks = split(/[\/]/, $rh_target->{'uri'});
@@ -85,13 +85,13 @@ for my $rh_target (@destroy_me) {
    my $rh_data = {
       'shelf'=>1, 'resource'=>$hunks[3], 'port'=>$alias
    };
-   #print Dumper($rh_data);
+   logg(" $alias");
    json_post("/cli-json/rm_vlan", $rh_data);
-   sleep 0.1;
+   sleep 0.015;
 }
 
 # this really should poll for ports to wait for them to disappear
-sleep 5;
+sleep 2;
 
 my @new_stations = ();
 logg("\nCreating new stations on these: ");
@@ -125,10 +125,10 @@ for $rh_radio (@radios) {
       #print Dumper($rh_data);
       logg(" $radio_name/sta$i ");
       json_post("/cli-json/add_sta", $rh_data);
-      sleep 0.1;
+      sleep 0.051;
    }
 }
-sleep 2;
+sleep 1;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
@@ -145,10 +145,10 @@ for $rh_radio (@radios) {
       };
       # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
       json_post("/cli-json/set_port", $rh_data);
-      sleep 0.1;
+      sleep 0.051;
    }
 }
-sleep 2;
+sleep 1;
 for $uri (@$ra_links) {
    $uri =~ s{/resource}{/port}g;
    $uri .= "/list"
@@ -176,7 +176,7 @@ for my $port_uri (@links2) {
    );
    my $rh_response = json_post($set_port, \%post);
 }
-sleep 2;
+sleep 1;
 logg("\nsetting ports up ");
 for my $port_uri (@links2) {
    $rh = json_request($port_uri);
