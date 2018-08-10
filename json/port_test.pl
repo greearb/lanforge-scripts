@@ -22,7 +22,7 @@ package main;
 # Default values for ye ole cmd-line args.
 our $Resource  = 1;
 our $quiet     = "yes";
-our $Host      = "atlas";
+our $Host      = "localhost";
 our $Port      = 8080;
 our $HostUri   = "http://$Host:$Port";
 our $Web       = LWP::UserAgent->new;
