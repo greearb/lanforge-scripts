@@ -25,7 +25,7 @@ if (defined $ENV{'DEBUG'}) {
 
 our $NL="\n";
 use Exporter 'import';
-our @EXPORT_OK=qw(err logg xpand json_request get_links_from);
+our @EXPORT_OK=qw(err logg xpand json_request get_links_from get_thru json_post get_port_names);
 
 sub err {
    my $i;
@@ -38,9 +38,9 @@ sub err {
 sub logg {
    my $i;
    for $i (@_) {
-      print STDOUT "$i";
+      print STDOUT "$i ";
    }
-   print STDOUT $NL;
+   # print STDOUT $NL;
 }
 
 sub xpand {
@@ -55,11 +55,60 @@ sub xpand {
 sub json_request {
    my ($uri) = @_;
    my $url = xpand($uri);
-   logg("$uri becomes $url\n");
-   my $req = new HTTP::Request("GET", $url);
+   #logg("$uri becomes $url\n");
+   my $req = new HTTP::Request("GET" => $url);
    $req->header("Accept" => "application/json");
    my $response = $::Web->request($req);
+   if ($response->code != 200) {
+      err("Status ".$response->code.": ".$response->content."\n");
+      if ($response->content =~ /(Can't connect|Connection refused)/) {
+         exit(1);
+      }
+      return {};
+   }
+   #print Dumper($response);
    return $::Decoder->decode($response->content);
+}
+
+sub json_post {
+   my ($uri, $rh_data) = @_;
+   my $url = xpand($uri);
+   my $req = HTTP::Request->new("POST" => $url);
+   $req->header('Accept' => 'application/json');
+   $req->header('Content-Type' => 'application/json; charset=UTF-8');
+   $req->content(encode_json($rh_data));
+   #print Dumper($req);
+   my $response = $::Web->request($req);
+   #print Dumper($response);
+   if ($response->code != 200) {
+      err("Status ".$response->code.": ".$response->content."\n");
+      if ($response->content =~ /(Can't connect|Connection refused)/) {
+         exit(1);
+      }
+      return {};
+   }
+   return $::Decoder->decode($response->content);
+}
+
+sub get_port_names {
+   my ($rh_gpn, $arrayname) = @_;
+   my $ra_gpn2 = $rh_gpn->{$arrayname};
+   my $ra_gpn_links2 = [];
+   #print Dumper($ra_gpn2);
+   for my $rh_gpn2 (@$ra_gpn2) {
+      #print Dumper($rh_gpn2);
+      for my $key (keys %$rh_gpn2) {
+         my $v = $rh_gpn2->{$key};
+         next if (!(defined $v->{'_links'}));
+         my $rh_i = {
+            'uri' => $v->{'_links'},
+            'alias' => $v->{'alias'}
+         };
+         push(@$ra_gpn_links2, $rh_i);
+      }
+   }
+   #print Dumper($ra_links2);
+   return $ra_gpn_links2;
 }
 
 sub get_links_from {
@@ -75,5 +124,16 @@ sub get_links_from {
    }
    #print Dumper($ra_links2);
    return $ra_glf_links2;
+}
+
+# eg get_thru( 'interface', 'device' )
+sub get_thru {
+   my ($inner, $key, $rh_top) = @_;
+   if (!(defined $rh_top->{$inner})) {
+      print Dumper($rh_top);
+      return -1;
+   }
+   my $rh_inner = $rh_top->{$inner};
+   return $rh_inner->{$key};
 }
 1;
