@@ -76,7 +76,7 @@ for my $rh_alias_link (@$ra_alias_links) {
          && ($rh_alias_link->{'alias'} =~m{^wiphy}));
 }
 logg("\nDestroying these: ");
-print Dumper(@destroy_me);
+#print Dumper(@destroy_me);
 for my $rh_target (@destroy_me) {
    my $alias = $rh_target->{'alias'};
    my @hunks = split(/[\/]/, $rh_target->{'uri'});
@@ -125,7 +125,7 @@ for $rh_radio (@radios) {
       #print Dumper($rh_data);
       logg(" $radio_name/sta$i ");
       json_post("/cli-json/add_sta", $rh_data);
-      sleep 0.051;
+      sleep 0.021;
    }
 }
 sleep 1;
@@ -145,7 +145,7 @@ for $rh_radio (@radios) {
       };
       # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
       json_post("/cli-json/set_port", $rh_data);
-      sleep 0.051;
+      sleep 0.021;
    }
 }
 sleep 1;
@@ -157,7 +157,6 @@ for $uri (@$ra_links) {
    push( @$ra_alias_links, @{get_port_names($rh, 'interfaces')});
    push(@links2, @{get_links_from($rh, 'interfaces')});
 }
-exit;
 
 # ports down
 my $set_port = "/cli-json/set_port";
