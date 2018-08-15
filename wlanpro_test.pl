@@ -31,45 +31,45 @@ use strict;
 use Getopt::Long;
 use Socket;
 
-my $pld_size = 500;
-my $ssid = "wlanpro";
-my $psk = "wlanpro_passwd";
+our $pld_size = 500;
+our $ssid = "wlanpro";
+our $psk = "wlanpro_passwd";
 # Default radio setup for 523b with 2ac, 2ac2.
 # For something like a 522 with 2 radios, set 3a, 3b to wiphy0, and
 # 4a 4b to wiphy1.
-my $radio_3a = "wiphy0";
-my $radio_3b = "wiphy1";
-my $radio_4a = "wiphy2";
-my $radio_4b = "wiphy3";
-my $sta_max = 40; # For upload/download tests
-my $wct_sta_max = 64; # For wifi-capacity-test on single radio (4a)
-my $gui_host = "127.0.0.1"; # auto-wifi-cap script will not work properly if not run on same machine as GUI
-my $gui_port = 7777;
-my $resource = 2;
-my $speed_dl_tot = 1000000000;
-my $speed_ul_tot = 1000000000;
-my $speed_ul_bi_tot = 200000000; # 200Mbps upload speed when in bi-directional mode
-my $testcase = -1;
-my $manager = "localhost";
-my $log_name = "";
+our $radio_3a = "wiphy0";
+our $radio_3b = "wiphy1";
+our $radio_4a = "wiphy2";
+our $radio_4b = "wiphy3";
+our $sta_max = 40; # For upload/download tests
+our $wct_sta_max = 64; # For wifi-capacity-test on single radio (4a)
+our $gui_host = "127.0.0.1"; # auto-wifi-cap script will not work properly if not run on same machine as GUI
+our $gui_port = 7777;
+our $resource = 2;
+our $speed_dl_tot = 1000000000;
+our $speed_ul_tot = 1000000000;
+our $speed_ul_bi_tot = 200000000; # 200Mbps upload speed when in bi-directional mode
+our $testcase = -1;
+our $manager = "localhost";
+our $log_name = "";
 
-my $endp_type = "lf_udp";
-my $security = "wpa2";
-my $upstream_resource = 1;
-my $upstream_port = "eth1";
-my $multicon = 1;
-my $rest_time = 20;
-my $quiet = "yes";
-my $report_timer = 1000; # 1 second report timer
-my $rpt_timer_wct = 3000; # 3-second rpt timer for wifi-capacity test
-my $settle_timer_wct = 10000; # 10-sec wait for connections to get running before clearing and starting the test proper
-my $wct_duration_sec = 20; # Duration for each iteration
-my $one_way_test_time = 30;
-my $bi_test_time = 30;
-my $interferer_cx = "inteferer_cx";
-my $ip = "DHCP";
-my $netmask = "255.255.0.0";
-my $ipn = 0;
+our $endp_type = "lf_udp";
+our $security = "wpa2";
+our $upstream_resource = 1;
+our $upstream_port = "eth1";
+our $multicon = 1;
+our $rest_time = 20;
+our $quiet = "yes";
+our $report_timer = 1000; # 1 second report timer
+our $rpt_timer_wct = 3000; # 3-second rpt timer for wifi-capacity test
+our $settle_timer_wct = 10000; # 10-sec wait for connections to get running before clearing and starting the test proper
+our $wct_duration_sec = 20; # Duration for each iteration
+our $one_way_test_time = 30;
+our $bi_test_time = 30;
+our $interferer_cx = "inteferer_cx";
+our $ip = "DHCP";
+our $netmask = "255.255.0.0";
+our $ipn = 0;
 
 my $usage = "$0
   [--pld_size { bytes } ]
@@ -204,18 +204,22 @@ stop_all_cx();
 
 # Delete any wifi-capacity generated connections at this time, it will clean things
 # up, and it will make parsing reporting data faster.
-my @cx_dump = `./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"show_cx\"`;
-for ($i = 0; $i<@cx_dump; $i++) {
-  my $line = $cx_dump[$i];
-  chomp($line);
-  if (($line =~ /.*CX:\s+(udp\-\-$upstream_resource\.$upstream_port\-\S+).*/) ||
-      ($line =~ /.*CX:\s+(tcp\-\-$upstream_resource\.$upstream_port\-\S+).*/)) {
-    my $cxn = $1;
-    $cmd = "./lf_firemod.pl --mgr $manager --action delete_cxe --cx_name $cxn";
-    do_cmd($cmd);
-  }
+sub remove_cxs {
+   my @cx_dump = `./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"show_cx\"`;
+   for (my $i = 0; $i<@cx_dump; $i++) {
+     my $line = $cx_dump[$i];
+     chomp($line);
+     #print "looking for $upstream_resource, $upstream_port **** $line ****\n";
+     # also match udp--1.eth4-02.sta102-B
+     if ($line =~ /CX:\s+((tcp|udp)\-\-$upstream_resource\.[^-]+-\S+)\b/) {
+       my $cxn = $1;
+       $cmd = "./lf_firemod.pl --mgr $manager --action delete_cxe --cx_name $cxn";
+       do_cmd($cmd);
+     }
+   }
 }
 
+remove_cxs();
 # Stop the interferer, just in case it is already running for some reason
 $cmd = "./lf_firemod.pl --mgr $manager --action do_cmd --cmd \"set_cx_state default_tm $interferer_cx STOPPED\"";
 do_cmd($cmd);
@@ -435,12 +439,21 @@ if ($testcase == 100) {
     $cmd = "./lf_portmod.pl  --quiet $quiet --mgr $manager --resource $resource --cmd delete --port_name $sta_name";
     do_cmd("$cmd\n");
   }
+  
+  for ($i = 0; $i<@stations4a; $i++) {
+    my $sta_name = $stations4a[$i];
+    $cmd = "./lf_portmod.pl  --quiet $quiet --mgr $manager --resource $resource --cmd delete --port_name $sta_name";
+    do_cmd("$cmd\n");
+  }
+
 
   for ($i = 0; $i<@cxs; $i++) {
     my $cxn = $cxs[$i];
     $cmd = "./lf_firemod.pl --mgr $manager --action delete_cxe --cx_name $cxn";
     do_cmd($cmd);
   }
+
+  remove_cxs();
 
   # Set radio back to full antenna capacity
   for ($i = 0; $i<$radio_count; $i++) {
