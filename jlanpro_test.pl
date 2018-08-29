@@ -101,7 +101,7 @@ my $usage = "$0
   [--netmask { Ignored if using DHCP, otherwise something like 255.255.255.0.  Default is $netmask. }]
   [--sta_max {max num stations}]
   [--wct_sta_max {max num stations for capacity test}]
-  [--multicon {0: off|1: default|AUTO: means 0}]
+  [--multicon {0: off|1: default|-1: auto}]
 
 NOTE:  The total speed will be multiplied by 1.0 for 3x3 and mixed tests, 0.75 for 2x2 testing,
    and 0.5 for 1x1 testing.  This should still attempt near theoretical throughput without
