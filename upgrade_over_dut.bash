@@ -4,7 +4,7 @@
 # interface connected to some DUT.  This may be helpful in cases where
 # the management interface is off the network for security or other reasons.
 
-LFVER=4.3.8
+LFVER=5.3.8
 KVER=4.16.18+
 
 # Echo the commands to stdout for debugging purposes.
