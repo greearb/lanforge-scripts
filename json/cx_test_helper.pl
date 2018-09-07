@@ -53,6 +53,12 @@ GetOptions
 $::HostUri = "http://$Host:$Port";
 
 
+# using this is going to want high inotify instances, like mentioned here:
+# sysctl fs.inotify.max_user_instances=256
+# https://forum.proxmox.com/threads/unable-to-create-new-inotify-object-too-many-open-files-at-usr-share-perl5.23700/
+
+
+
 # wait until /tmp/startcx appears
 our $toggle="startcx";
  

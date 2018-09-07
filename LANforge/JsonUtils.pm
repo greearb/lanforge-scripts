@@ -77,6 +77,7 @@ sub json_post {
    $req->header('Accept' => 'application/json');
    $req->header('Content-Type' => 'application/json; charset=UTF-8');
    $req->content(encode_json($rh_data));
+   #print "json_post: ".Dumper($rh_data);
    #print Dumper($req);
    my $response = $::Web->request($req);
    #print Dumper($response);
