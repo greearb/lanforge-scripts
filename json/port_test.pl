@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use diagnostics;
 use Carp;
+use Time::HiRes qw(usleep);
 $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
@@ -87,7 +88,7 @@ for my $rh_target (@destroy_me) {
    };
    logg(" $alias");
    json_post("/cli-json/rm_vlan", $rh_data);
-   sleep 0.015;
+   usleep (15000);
 }
 
 # this really should poll for ports to wait for them to disappear
@@ -100,6 +101,7 @@ my $rh_radio;
 my $radio_name;
 my $resource;
 my $range;
+my $num_sta = 129;
 my $radio_num;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
@@ -108,7 +110,7 @@ for $rh_radio (@radios) {
    $resource = $hunks[3];
    $range = ($resource * 1000) + ($radio_num * 100);
    logg("\n/cli-json/add_sta = ");
-   for (my $i = $range; $i < ($range+20); $i++) {
+   for (my $i = $range; $i < ($range+$num_sta); $i++) {
       # TODO: create JsonUtils::add_sta($eid, $alias...)
       my $rh_data = {
          'shelf'=>1,
@@ -123,9 +125,9 @@ for $rh_radio (@radios) {
          'rate'=>'DEFAULT'
       };
       #print Dumper($rh_data);
-      logg(" $radio_name/sta$i ");
+      logg("1/$resource/$radio_name -> sta$i ");
       json_post("/cli-json/add_sta", $rh_data);
-      sleep 0.021;
+      usleep(15000);
    }
 }
 sleep 1;
@@ -134,7 +136,7 @@ for $rh_radio (@radios) {
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
    $resource = $hunks[3];
    $range = ($resource * 1000) + ($radio_num * 100);
-   for (my $i = $range; $i < ($range+20); $i++) {
+   for (my $i = $range; $i < ($range+$num_sta); $i++) {
       my $rh_data = {
          'shelf'=>1,
          'resource'=>$resource,
@@ -145,7 +147,7 @@ for $rh_radio (@radios) {
       };
       # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
       json_post("/cli-json/set_port", $rh_data);
-      sleep 0.021;
+      usleep(21000);
    }
 }
 sleep 1;
