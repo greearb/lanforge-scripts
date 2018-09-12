@@ -13,8 +13,8 @@ set -x
 # Stop lanforge
 /home/lanforge/serverctl.bash stop
 
-# Remove other LANforge routing rules
-./clean_route_rules.pl
+# Remove other LANforge routing rules, vrf, etc
+(cd /home/lanforge && ./clean_route_rules.pl)
 
 # Remove default route from mgt port
 ip route del 0.0.0.0/0 dev eth0
