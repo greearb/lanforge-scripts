@@ -83,13 +83,23 @@ for my $rh_target (@destroy_me) {
    my @hunks = split(/[\/]/, $rh_target->{'uri'});
 
    # TODO: create JsonUtils::rm_vlan($eid, $alias)
+   # suppress_postexec used to reduce the update traffic concurrent with large set of deletions
    my $rh_data = {
-      'shelf'=>1, 'resource'=>$hunks[3], 'port'=>$alias
+      'shelf'=>1,
+      'resource'=>$hunks[3],
+      'port'=>$alias,
+      'suppress_postexec'=>'true'
    };
    logg(" $alias");
-   json_post("/cli-json/rm_vlan", $rh_data);
+   my $rh_response =  json_post("/cli-json/rm_vlan", $rh_data);
    usleep (15000);
+   #sleep (5);
 }
+my $rh_update = {
+   'shelf'=>1, 'resource'=>'all', 'port'=>'all', 'flags'=>'0x1'
+};
+logg(" updating ");
+my $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 
 # this really should poll for ports to wait for them to disappear
 sleep 2;
@@ -103,6 +113,7 @@ my $resource;
 my $range;
 my $num_sta = 129;
 my $radio_num;
+my $radio_counter = 0;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
@@ -116,40 +127,52 @@ for $rh_radio (@radios) {
          'shelf'=>1,
          'resource'=>$resource,
          'radio'=>$radio_name,
-         'sta_name'=>'sta'.$i,
+         'sta_name'=>'sta'.$radio_counter,
+         'alias'=>'vsta'.$i,
          'flags'=>68862086144, # has port-down set
          'ssid'=>'idtest-1200-wpa2',
          'key'=>'idtest-1200-wpa2',
          'mac'=>'xx:xx:xx:xx:*:xx',
          'mode'=>0,
-         'rate'=>'DEFAULT'
+         'rate'=>'DEFAULT',
+         'suppress_postexec'=>'true'
       };
       #print Dumper($rh_data);
-      logg("1/$resource/$radio_name -> sta$i ");
-      json_post("/cli-json/add_sta", $rh_data);
-      usleep(15000);
+      logg("1/$resource/$radio_name -> sta$radio_counter");
+      my $rh_response = json_post("/cli-json/add_sta", $rh_data);
+      print Dumper($rh_response);
+      usleep(10000);
+      $radio_counter +=1;
    }
 }
-sleep 1;
+logg(" updating ");
+$rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
+sleep 2;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
    $resource = $hunks[3];
    $range = ($resource * 1000) + ($radio_num * 100);
+   $radio_counter = 0;
    for (my $i = $range; $i < ($range+$num_sta); $i++) {
       my $rh_data = {
          'shelf'=>1,
          'resource'=>$resource,
-         'port'=>'sta'.$i,
+         'port'=>'sta'.$radio_counter,
          'cmd_flags'=>0,
          'current_flags'=>2147483648,
+         'suppress_postexec'=>'true',
          'interest'=>16386
       };
       # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
-      json_post("/cli-json/set_port", $rh_data);
+      my $rh_response = json_post("/cli-json/set_port", $rh_data);
+      print Dumper($rh_response);
+      $radio_counter+=1;
       usleep(21000);
    }
 }
+logg(" updating ");
+$rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 sleep 1;
 for $uri (@$ra_links) {
    $uri =~ s{/resource}{/port}g;
@@ -172,11 +195,17 @@ for my $port_uri (@links2) {
    my @hunks = split(/\./, $port);
    my $resource = $hunks[1];
    my %post = (
-      "shelf" => 1, "resource" => 0+$resource, "port" => $device,
-      "current_flags" => 1, "interest" => 8388610
+      "shelf" => 1,
+      "resource" => 0+$resource,
+      "port" => $device,
+      'suppress_postexec'=>'true',
+      "current_flags" => 1,
+      "interest" => 8388610
    );
    my $rh_response = json_post($set_port, \%post);
 }
+logg(" updating ");
+$rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 sleep 1;
 logg("\nsetting ports up ");
 for my $port_uri (@links2) {
@@ -189,10 +218,16 @@ for my $port_uri (@links2) {
    my $resource = $hunks[1];
    # 'shelf=1&resource=2&port=vap2000&cmd_flags=0&current_flags=0&interest=8388610'
    my %post = (
-      "shelf" => 1, "resource" => 0+$resource, "port" => $device,
-      "current_flags" => 0, "interest" => 8388610
+      "shelf" => 1,
+      "resource" => 0+$resource,
+      "port" => $device,
+      'suppress_postexec'=>'true',
+      "current_flags" => 0,
+      "interest" => 8388610
    );
    my $rh_response = json_post($set_port, \%post);
 }
+logg(" updating ");
+$rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 
 #
