@@ -70,10 +70,10 @@ my @radios = ();
 my @destroy_me = ();
 for my $rh_alias_link (@$ra_alias_links) {
    push(@destroy_me, $rh_alias_link)
-      if (($rh_alias_link->{'uri'} =~m{^/port/1/[3678]/})
+      if (($rh_alias_link->{'uri'} =~m{^/port/1/[3]/})
          && ($rh_alias_link->{'alias'} =~m{^sta}));
    push(@radios, $rh_alias_link)
-      if (($rh_alias_link->{'uri'} =~m{^/port/1/[3678]/})
+      if (($rh_alias_link->{'uri'} =~m{^/port/1/[3]/})
          && ($rh_alias_link->{'alias'} =~m{^wiphy}));
 }
 logg("\nDestroying these: ");
@@ -118,6 +118,7 @@ for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
    ($radio_num) = $radio_name =~ /wiphy(\d+)/;
+   next if ($radio_num < 2);
    $resource = $hunks[3];
    $range = ($resource * 1000) + ($radio_num * 100);
    logg("\n/cli-json/add_sta = ");
@@ -140,7 +141,14 @@ for $rh_radio (@radios) {
       #print Dumper($rh_data);
       logg("1/$resource/$radio_name -> sta$radio_counter");
       my $rh_response = json_post("/cli-json/add_sta", $rh_data);
-      print Dumper($rh_response);
+      print Dumper($rh_response)
+         if (  defined $rh_response->{"Resource"}
+            && defined $rh_response->{"Resource"}->{"warnings"});
+      print Dumper($rh_response)
+         if (  defined $rh_response->{"errors"}
+            || defined $rh_response->{"error_list"});
+
+
       usleep(10000);
       $radio_counter +=1;
    }
@@ -151,6 +159,8 @@ sleep 2;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
    my @hunks = split(/[\/]/, $rh_radio->{'uri'});
+   ($radio_num) = $radio_name =~ /wiphy(\d+)/;
+   next if ($radio_num < 2);
    $resource = $hunks[3];
    $range = ($resource * 1000) + ($radio_num * 100);
    $radio_counter = 0;
@@ -166,7 +176,7 @@ for $rh_radio (@radios) {
       };
       # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
       my $rh_response = json_post("/cli-json/set_port", $rh_data);
-      print Dumper($rh_response);
+      #print Dumper($rh_response);
       $radio_counter+=1;
       usleep(21000);
    }
