@@ -15,6 +15,7 @@ use HTTP::Request;
 use LWP;
 use LWP::UserAgent;
 use JSON;
+use Data::Dumper;
 
 if (defined $ENV{'DEBUG'}) {
    use Data::Dumper;
@@ -88,7 +89,15 @@ sub json_post {
       }
       return {};
    }
-   return $::Decoder->decode($response->content);
+   my $rh_response =  $::Decoder->decode($response->content);
+
+   print Dumper($rh_response)
+      if (  defined $rh_response->{"Resource"}
+         && defined $rh_response->{"Resource"}->{"warnings"});
+   print Dumper($rh_response)
+      if (  defined $rh_response->{"errors"}
+         || defined $rh_response->{"error_list"});
+   return $rh_response;
 }
 
 sub get_port_names {
