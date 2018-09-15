@@ -87,8 +87,12 @@ for my $rh_target (@destroy_me) {
    my $rh_data = {
       'shelf'=>1,
       'resource'=>$hunks[3],
+      # 'port'=>'z'.$alias, # use this to force pre_exec check
       'port'=>$alias,
-      'suppress_postexec'=>'true'
+      'suppress_preexec_cli'=>'false',
+      'suppress_preexec_method'=>'false',
+      #'suppress_postexec_cli'=>'true',
+      #'suppress_postexec_method'=>'true'
    };
    logg(" $alias");
    my $rh_response =  json_post("/cli-json/rm_vlan", $rh_data);
@@ -110,7 +114,7 @@ my $rh_radio;
 my $radio_name;
 my $resource;
 my $range;
-my $num_sta = 129;
+my $num_sta = 160;
 my $radio_num;
 my $radio_counter = 0;
 
@@ -128,6 +132,7 @@ for $rh_radio (@radios) {
       my $rh_data = {
          'shelf'=>1,
          'resource'=>$resource,
+         #'radio'=>'x'.$radio_name, # use to prompt radio not found error
          'radio'=>$radio_name,
          'sta_name'=>'sta'.$radio_counter,
          #'alias'=>'vsta'.$i, # deprecated, use set_port_alias
@@ -137,8 +142,11 @@ for $rh_radio (@radios) {
          'key'=>'idtest-1200-wpa2',
          'mac'=>'xx:xx:xx:xx:*:xx',
          'mode'=>0,
-         'rate'=>'DEFAULT'
-         #'suppress_postexec'=>'true' # suppress_postexec now defaults to true
+         'rate'=>'DEFAULT',
+         'suppress_preexec_cli'=>'false',
+         'suppress_preexec_method'=>'false',
+         'suppress_postexec_cli'=>'true',
+         'suppress_postexec_method'=>'true'
       };
       #print Dumper($rh_data);
       logg("1/$resource/$radio_name -> sta$radio_counter");
@@ -164,6 +172,10 @@ for $rh_radio (@radios) {
    for (my $i = $range; $i < ($range+$num_sta); $i++) {
       print "sta$radio_counter = vsta$i [ $range .. ".($range+$num_sta)."] 1/$resource/$radio_num $radio_name \n";
       my $rh_data = {
+         'suppress_preexec_cli'=>'false',
+         'suppress_preexec_method'=>'false',
+         'suppress_postexec_cli'=>'true',
+         'suppress_postexec_method'=>'true',
          'shelf'=>1,
          'resource'=>$resource,
          'port'=>'sta'.$radio_counter,
@@ -174,6 +186,10 @@ for $rh_radio (@radios) {
 
       # set port up + dhcp
       $rh_data = {
+         'suppress_preexec_cli'=>'false',
+         'suppress_preexec_method'=>'false',
+         'suppress_postexec_cli'=>'true',
+         'suppress_postexec_method'=>'true',
          'shelf'=>1,
          'resource'=>$resource,
          'port'=>'sta'.$radio_counter,
@@ -212,6 +228,10 @@ for my $port_uri (@links2) {
    my @hunks = split(/\./, $port);
    my $resource = $hunks[1];
    my %post = (
+      'suppress_preexec_cli'=>'false',
+      'suppress_preexec_method'=>'false',
+      #'suppress_postexec_cli'=>'false',
+      #'suppress_postexec_method'=>'false',
       "shelf" => 1,
       "resource" => 0+$resource,
       "port" => $device,
@@ -236,6 +256,10 @@ for my $port_uri (@links2) {
    my $resource = $hunks[1];
    # 'shelf=1&resource=2&port=vap2000&cmd_flags=0&current_flags=0&interest=8388610'
    my %post = (
+      'suppress_preexec_cli'=>'false',
+      'suppress_preexec_method'=>'false',
+      'suppress_postexec_cli'=>'false',
+      'suppress_postexec_method'=>'false',
       "shelf" => 1,
       "resource" => 0+$resource,
       "port" => $device,
