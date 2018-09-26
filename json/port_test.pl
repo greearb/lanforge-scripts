@@ -229,12 +229,15 @@ sleep 1;
 # wait on ports up
 my $ports_still_down = 1;
 while ($ports_still_down > 0) {
-   $rh = json_request("/port/1/3/list?fields=_links,port,device,down");
+   # this logic has to see if port is phantom and if port is over-subscribed
+   $rh = json_request("/port/1/3/list?fields=_links,port,device,down,phantom,channel");
    flatten_list($rh, 'interfaces');
    $ports_still_down=0;
    for my $rh_p (values %{$rh->{'flat_list'}}) {
       next unless $rh_p->{'device'} =~ /^sta/;
-      #print "$rh_p->{'device'} is $rh_p->{'down'} ";
+      print "$rh_p->{'device'} Down: $rh_p->{'down'} Ph $rh_p->{'phantom'} Channel: $rh_p->{'channel'}";
+      next if ($rh_p->{'phantom'}); # does not count as down
+      next if (!$rh_p->{'channel'}); # probably oversubscribed or misconfigured
       $ports_still_down++
          if ($rh_p->{'down'});
    }
