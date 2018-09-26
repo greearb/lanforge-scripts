@@ -26,7 +26,7 @@ if (defined $ENV{'DEBUG'}) {
 
 our $NL="\n";
 use Exporter 'import';
-our @EXPORT_OK=qw(err logg xpand json_request get_links_from get_thru json_post get_port_names);
+our @EXPORT_OK=qw(err logg xpand json_request get_links_from get_thru json_post get_port_names flatten_list);
 
 sub err {
    my $i;
@@ -100,6 +100,23 @@ sub json_post {
    return $rh_response;
 }
 
+# use this to create a flat hash of $eid ->{result data} when given
+# [ { $eid->{data}}, {}, {} ] which is harder to navigate
+sub flatten_list {
+   my $rh_list = shift;
+   my $list_name = shift;
+   my $rh_irefs = {};
+   for (my $i=0; $i < @{$rh_list->{$list_name}}; $i++) {
+      my @k = keys(%{$rh_list->{$list_name}[$i]});
+      #print Dumper(\@k);
+      my $id = $k[0];
+      #print "ID[$id]\n";
+      $rh_irefs->{$id} = $rh_list->{$list_name}[$i]->{$id};
+   }
+   #print Dumper($rh_irefs);
+   $rh_list->{"flat_list"} = $rh_irefs;
+}
+
 sub get_port_names {
    my ($rh_gpn, $arrayname) = @_;
    my $ra_gpn2 = $rh_gpn->{$arrayname};
@@ -114,6 +131,9 @@ sub get_port_names {
             'uri' => $v->{'_links'},
             'alias' => $v->{'alias'}
          };
+         if (defined $v->{'device'}) {
+            $rh_i->{'device'} = $v->{'device'};
+         }
          push(@$ra_gpn_links2, $rh_i);
       }
    }
