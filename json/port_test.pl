@@ -100,7 +100,7 @@ for my $rh_target (@destroy_me) {
    usleep (15000);
 }
 my $rh_update = {
-   'shelf'=>1, 'resource'=>3, 'port'=>'all', 'flags'=>'0x1'
+   'shelf'=>1, 'resource'=>3, 'port'=>'all', 'probe_flags'=>'0x1'
 };
 logg("\nRefreshing: ");
 my $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
