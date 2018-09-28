@@ -91,7 +91,7 @@ for my $rh_alias_link (@$ra_alias_links) {
 }
 logg(" updating ");
 my $rh_update = {
-   'shelf'=>1, 'resource'=>'all', 'port'=>'all', 'flags'=>'0x1'
+   'shelf'=>1, 'resource'=>'all', 'port'=>'all', 'probe_flags'=>'0x1'
 };
 my $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 
@@ -123,7 +123,7 @@ for $rh_radio (@radios) {
 
    my $rh_stations = json_request("/port/1/$resource/all?fields=port,device,mac");
    flatten_list($rh_stations, "interfaces");
-   
+
    for (my $i = $range; $i < ($range+$num_sta); $i++) {
       print "sta$radio_counter = vsta$i [ $range .. ".($range+$num_sta)."] 1/$resource/$radio_num $radio_name \n";
       my $portname = "sta$radio_counter";
@@ -140,6 +140,10 @@ for $rh_radio (@radios) {
             'resource'=>$resource,
             'port'=>$portname,
             'interest'=>4096,
+            #'suppress_preexec_cli'=>'true',
+            #'suppress_preexec_method'=>'true',
+            #'suppress_postexec_cli'=>'false',
+            #'suppress_postexec_method'=>'false',
             'alias'=>'vsta'.$i
          }; # todo: set_alias
          $rh_response = json_post("/cli-json/set_port", $rh_data);
@@ -147,10 +151,10 @@ for $rh_radio (@radios) {
 
          # set port up + dhcp
          $rh_data = {
-            #'suppress_preexec_cli'=>'false',
-            #'suppress_preexec_method'=>'false',
-            #'suppress_postexec_cli'=>'true',
-            #'suppress_postexec_method'=>'true',
+            #'suppress_preexec_cli'=>'true',
+            #'suppress_preexec_method'=>'true',
+            #'suppress_postexec_cli'=>'false',
+            #'suppress_postexec_method'=>'false',
             'shelf'=>1,
             'resource'=>$resource,
             'port'=>'sta'.$radio_counter,
@@ -158,8 +162,7 @@ for $rh_radio (@radios) {
             'current_flags'=>2147483648,
             'interest'=>16386
          };
-         # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
-   
+      # TODO: create JsonUtils::set_dhcp($eid, $alias, $on_off)
       # set_port - port up, enable dhcp
       # current_flags=2147483648&interest=16386
          my $rh_response = json_post("/cli-json/set_port", $rh_data);
