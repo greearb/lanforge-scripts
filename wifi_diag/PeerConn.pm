@@ -15,7 +15,12 @@ sub new {
 	     };
 
   bless($self, $class);
-  return($self);
+
+  my $mcs_fname = $self->hash_str() . "-rpt.txt";
+  open(my $MCS, ">", $mcs_fname) or die("Can't open $mcs_fname for writing: $!\n");
+  $self->{mcs_fh} = $MCS;
+
+  return $self;
 }
 
 sub hash_str {
@@ -41,6 +46,10 @@ sub add_pkt {
 
   my $tid = $self->find_or_create_tid($tidno);
   $tid->add_pkt($pkt);
+
+  # Generate reporting data for this pkt
+  my $fh = $self->{mcs_fh};
+  print $fh "" . $pkt->timestamp() . "\t$tidno\t" . $pkt->datarate() . "\t" . $pkt->retrans() . "\n";
 }
 
 sub find_or_create_tid {
@@ -53,7 +62,10 @@ sub find_or_create_tid {
     $tid = $self->{tids}[$tidno];
   }
   else {
-    $tid = Tid->new(tidno => $tidno);
+    $tid = Tid->new(tidno => $tidno,
+		    addr_a => $self->local_addr(),
+		    addr_b => $self->peer_addr(),
+		   );
     $self->{tids}[$tidno] = $tid;
   }
   return $tid;
@@ -75,6 +87,24 @@ sub printme {
   }
   #print "Done peer-conn printme\n";
   return;
+}
+
+sub gen_graphs {
+  my $self = shift;
+  my $tid_count = @{$self->{tids}};
+
+  my $i;
+  for ($i = 0; $i < $tid_count; $i++) {
+    #print "Checking tid: $i\n";
+    if (exists $self->{tids}[$i]) {
+      #print "Printing tid: $i\n";
+      $self->{tids}[$i]->printme();
+      #print "Done printing tid: $i\n";
+    }
+  }
+  #print "Done peer-conn printme\n";
+  return;
+
 }
 
 1;

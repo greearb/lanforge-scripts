@@ -37,6 +37,7 @@ if ($cur_pkt->raw_pkt() ne "") {
 # Print out all peer-conns we found
 for my $conn (values %peer_conns) {
   $conn->printme();
+  $conn->gen_graphs();
 }
 
 exit 0;

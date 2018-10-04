@@ -8,6 +8,9 @@ sub new {
   my %options = @_;
 
   my $self = {
+	      retrans => 0,
+	      timestamp => 0,
+	      datarate => 0,
 	      type_subtype => "UNKNOWN",
 	      receiver => "UNKNOWN",
 	      transmitter => "UNKNOWN",
@@ -32,19 +35,25 @@ sub append {
 
   $self->{raw_pkt} .= $ln;
 
-  if ($ln =~ /\s*Transmitter address: .*\((\S+)\)/) {
+  #print "ln: $ln\n";
+
+  if ($ln =~ /^\s*Transmitter address: .*\((\S+)\)/) {
     $self->{transmitter} = $1;
   }
-  elsif ($ln =~ /\s*Receiver address: .*\((\S+)\)/) {
+  elsif ($ln =~ /^\s*Epoch Time:\s+(\S+)/) {
+    #print "timestamp: $1\n";
+    $self->{timestamp} = $1;
+  }
+  elsif ($ln =~ /^\s*Receiver address: .*\((\S+)\)/) {
     $self->{receiver} = $1;
   }
-  elsif ($ln =~ /\s*Fragment number: (\d+)/) {
+  elsif ($ln =~ /^\s*Fragment number: (\d+)/) {
     $self->{fragno} = $1;
   }
-  elsif ($ln =~ /\s*Sequence number: (\d+)/) {
+  elsif ($ln =~ /^\s*Sequence number: (\d+)/) {
     $self->{seqno} = $1;
   }
-  elsif ($ln =~ /\s*Type\/Subtype: (.*)/) {
+  elsif ($ln =~ /^\s*Type\/Subtype: (.*)/) {
     $self->{type_subtype} = $1;
   }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
@@ -53,19 +62,19 @@ sub append {
   elsif ($ln =~ /.* = TID for which a Basic BlockAck frame is requested: (\S+)/) {
     $self->{ba_tid} = $1;
   }
-  elsif ($ln =~ /.*Block Ack Bitmap: (\S+)/) {
+  elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
     $self->{ba_bitmap} = $1;
   }
-  elsif ($ln =~ /\s*Data Rate: (.*)/) {
-    $self->{datarate} = $1;
+  elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
+    $self->{retrans} = 1;
   }
-  elsif ($ln =~ /\s*VHT information/) {
+  elsif ($ln =~ /^\s*VHT information/) {
     $self->{is_vht} = 1;
   }
-  elsif ($ln =~ /\s*Bandwidth: (.*)/) {
+  elsif ($ln =~ /^\s*Bandwidth: (.*)/) {
     $self->{bandwidth} = $1;
   }
-  elsif ($ln =~ /\s*User 0: MCS (.*)/) {
+  elsif ($ln =~ /^\s*User 0: MCS (.*)/) {
     $self->{mcs} = $1;
   }
   elsif ($ln =~ /.* = Spatial streams 0: (.*)/) {
@@ -77,10 +86,18 @@ sub append {
   elsif ($ln =~ /.* = Payload Type: (.*)/) {
     $self->{payload_type} = $1;
   }
-  elsif ($ln =~ /\s+\[Data Rate: (.*)\]/) {
-    $self->{datarate} = $1;
+  elsif (($ln =~ /^\s+\[Data Rate: (.*)\]/) ||
+	 ($ln =~ /^\s*Data Rate: (.*)/)) {
+    my $dr = $1;
+    if ($dr =~ /(\S+) Mb/) {
+      $self->{datarate} = $1 * 1000000;
+    }
+    else {
+      print "ERROR:  Unknown datarate: $dr for frame: " . $self->frame_num() . "\n";
+      $self->{datarate} = 0;
+    }
   }
-  elsif ($ln =~ /\s*SSI Signal: (.*)/) {
+  elsif ($ln =~ /^\s*SSI Signal: (.*)/) {
     if ($self->{ssi_sig_found} == 0) {
       $self->{ssi_combined} = $1;
       $self->{ssi_sig_found}++;
@@ -103,7 +120,7 @@ sub append {
     }
   }
   # AMPDU and such...
-  elsif ($ln =~ /\s*A-MSDU Subframe #(\d+)/) {
+  elsif ($ln =~ /^\s*A-MSDU Subframe #(\d+)/) {
     if ($1 > $self->{amsdu_frame_count}) {
       $self->{amsdu_frame_count} = $1;
     }
@@ -123,6 +140,21 @@ sub type_subtype {
 sub transmitter {
   my $self = shift;
   return $self->{transmitter};
+}
+
+sub datarate {
+  my $self = shift;
+  return $self->{datarate};
+}
+
+sub retrans {
+  my $self = shift;
+  return $self->{retrans};
+}
+
+sub timestamp {
+  my $self = shift;
+  return $self->{timestamp};
 }
 
 sub receiver {
