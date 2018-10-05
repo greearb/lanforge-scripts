@@ -8,16 +8,19 @@ sub new {
   my %options = @_;
 
   my $self = {
+	      seqno => -1, # block-ack will not have a seqno
+	      acked_by => -1,
+	      block_acked_by => -1,
 	      retrans => 0,
 	      timestamp => 0,
 	      datarate => 0,
 	      type_subtype => "UNKNOWN",
 	      receiver => "UNKNOWN",
 	      transmitter => "UNKNOWN",
+	      tid => 17, # anything that does not specify a tid gets this.
 	      %options,
 	      amsdu_frame_count => 0,
 	      ssi_sig_found => 0,
-	      tid => 17, # anything that does not specify a tid gets this.
 	     };
 
   bless($self, $class);
@@ -60,9 +63,10 @@ sub append {
     $self->{ba_starting_seq} = $1;
   }
   elsif ($ln =~ /.* = TID for which a Basic BlockAck frame is requested: (\S+)/) {
-    $self->{ba_tid} = $1;
+    $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
+    #print "ba-bitmap: $1\n";
     $self->{ba_bitmap} = $1;
   }
   elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
@@ -152,6 +156,54 @@ sub retrans {
   return $self->{retrans};
 }
 
+sub seqno {
+  my $self = shift;
+  return $self->{seqno};
+}
+
+sub block_acked_by {
+  my $self = shift;
+  return $self->{block_acked_by};
+}
+
+sub acked_by {
+  my $self = shift;
+  return $self->{acked_by};
+}
+
+sub set_block_acked_by {
+  my $self = shift;
+  $self->{block_acked_by} = shift;
+}
+
+sub set_acked_by {
+  my $self = shift;
+  $self->{acked_by} = shift;
+}
+
+sub was_acked {
+  my $self = shift;
+
+  if ($self->block_acked_by() != -1) {
+    return 1;
+  }
+  if ($self->acked_by() != -1) {
+    return 1;
+  }
+  return 0;
+}
+
+sub wants_ack {
+  my $self = shift;
+  my $rcvr_b0 = substring(self->receiver(), 0, 1);
+  my $rb0 = hex("$rcvr_b0");
+  if ($rb0 & 0x1) {
+    return 0;  # Don't ack bcast/bcast frames
+  }
+  # TODO:  Need to parse QoS no-ack frames too, this will return false positives currently
+  return 1;
+}
+
 sub timestamp {
   my $self = shift;
   return $self->{timestamp};
@@ -164,6 +216,9 @@ sub receiver {
 
 sub tid {
   my $self = shift;
+  if (exists $self->{ba_tid}) {
+    return $self->{ba_tid};
+  }
   return $self->{tid};
 }
 

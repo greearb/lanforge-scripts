@@ -56,6 +56,17 @@ sub processPkt {
   if ($pkt->type_subtype() eq "Acknowledgement (0x001d)") {
     if ($last_pkt->transmitter() eq $pkt->receiver()) {
       $pkt->set_transmitter($last_pkt->receiver());
+      if ($last_pkt->acked_by() != -1) {
+	print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
+		$last_pkt->frame_num() . " already acked by frame: " . $last_pkt->acked_by() . "\n";
+      }
+      elsif ($last_pkt->block_acked_by() != -1) {
+	print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
+		$last_pkt->frame_num() . " already block-acked by frame: " . $last_pkt->block_acked_by() . "\n";
+      }
+      else {
+	$last_pkt->set_acked_by($pkt->frame_num());
+      }
     }
     else {
       print "ERROR:  Frame " . $pkt->frame_num() . " is ACK for unknown packet.\n";
