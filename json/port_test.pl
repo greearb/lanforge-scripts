@@ -34,6 +34,8 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
 );
 
 
+my $num_sta = 30;
+my $des_resource = 6;
 ##
 ##    M A I N
 ##
@@ -72,13 +74,13 @@ my @radios = ();
 my @destroy_me = ();
 for my $rh_alias_link (@$ra_alias_links) {
    for my $rh_link (@$rh_alias_link) {
-      if (  ($rh_link->{'uri'} =~m{^/port/1/[3]/})
+      if (  ($rh_link->{'uri'} =~m{^/port/1/$des_resource/})
          && ($rh_link->{'device'} =~m{^sta})) {
          push(@destroy_me, $rh_link);
       }
 
       push(@radios, $rh_link)
-         if (($rh_link->{'uri'} =~m{^/port/1/[3]/})
+         if (($rh_link->{'uri'} =~m{^/port/1/$des_resource/})
             && ($rh_link->{'device'} =~m{^wiphy}));
    }
 }
@@ -100,13 +102,13 @@ for my $rh_target (@destroy_me) {
    usleep (15000);
 }
 my $rh_update = {
-   'shelf'=>1, 'resource'=>3, 'port'=>'all', 'probe_flags'=>'0x1'
+   'shelf'=>1, 'resource'=>$des_resource, 'port'=>'all', 'probe_flags'=>'0x1'
 };
 logg("\nRefreshing: ");
 my $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 my $remaining = 1;
 while ($remaining > 0) {
-   $rh = json_request("/port/1/3/list");
+   $rh = json_request("/port/1/$des_resource/list");
    flatten_list($rh, 'interfaces');
    $remaining = 0;
    for my $name (keys %{$rh->{'flat_list'}}) {
@@ -129,7 +131,6 @@ my $rh_radio;
 my $radio_name;
 my $resource;
 my $range;
-my $num_sta = 160;
 my $radio_num;
 my $radio_counter = 0;
 $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);

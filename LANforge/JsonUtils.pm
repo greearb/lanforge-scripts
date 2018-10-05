@@ -106,6 +106,22 @@ sub flatten_list {
    my $rh_list = shift;
    my $list_name = shift;
    my $rh_irefs = {};
+   return if (!defined $rh_list);
+      
+   if (!defined $rh_list->{$list_name}) {
+      warn "flatten_list: $list_name not found";
+      return;
+   }
+   if (ref $rh_list->{$list_name} eq "HASH") {
+      return if ( (keys %{$rh_list->{$list_name}} < 1));
+   }
+   if (ref $rh_list->{$list_name} ne "ARRAY") {
+      print "flatten_list: $list_name not Array Ref:\n";
+      print "-------------------------------------------------\n";
+      print Dumper($rh_list);
+      print "-------------------------------------------------\n";
+      return;
+   }
    for (my $i=0; $i < @{$rh_list->{$list_name}}; $i++) {
       my @k = keys(%{$rh_list->{$list_name}[$i]});
       #print Dumper(\@k);
