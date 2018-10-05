@@ -19,15 +19,19 @@ my $start_time = time();
 
 my $cur_pkt = Packet->new(raw_pkt => "");
 my $last_pkt = Packet->new(raw_pkt => "");
-my $glb_fh_ba;
+my $glb_fh_ba_tx;
+my $glb_fh_ba_rx;
 
 my $dut = "";
 my $report_prefix = "wifi-diag-";
 my $non_dut_frames = 0;
 my $show_help = 0;
+my $gen_report = 0;
+my $report_html = "";
 
 my $usage = "$0
 --dut {bssid-of-DUT}   # Orient reports with this as upstream peer (lower-case MAC address)
+--gen_report           # Generate report off previously generated global data
 --report_prefix  {string} # Prefix used for report files (default is $report_prefix)
 --help                 # Show this help info.
 ";
@@ -38,7 +42,8 @@ GetOptions
  'help|h'            => \$show_help,
  'dut=s'             => \$dut,
  'report_prefix=s'   => \$report_prefix,
- ) || (print($usage) && exit(1));
+ 'gen_report'        => \$gen_report,
+ ) || (print STDERR $usage && exit(1));
 
 
 if ($show_help) {
@@ -46,9 +51,17 @@ if ($show_help) {
    exit 0
 }
 
-my $rpt_fname = $report_prefix . "glb-ba-rpt.txt";
-open($glb_fh_ba, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
+my $glb_ba_tx_fname = $report_prefix . "glb-ba-tx-rpt.txt";
+my $glb_ba_rx_fname = $report_prefix . "glb-ba-rx-rpt.txt";
 
+if ($gen_report) {
+  $report_html .= genGlobalReports();
+  saveHtmlReport();
+  exit 0;
+}
+
+open($glb_fh_ba_tx, ">", $glb_ba_tx_fname) or die("Can't open $glb_ba_tx_fname for writing: $!\n");
+open($glb_fh_ba_rx, ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname for writing: $!\n");
 
 while (<>) {
   my $ln = $_;
@@ -70,17 +83,116 @@ if ($cur_pkt->raw_pkt() ne "") {
 
 printProgress();
 
+$report_html .= genGlobalReports();
+
 # Print out all peer-conns we found
 for my $conn (values %peer_conns) {
   $conn->printme();
   $conn->gen_graphs();
 }
 
+saveHtmlReport();
+
 if ($dut ne "") {
   print "NON-DUT frames in capture: $non_dut_frames\n";
 }
 
 exit 0;
+
+sub saveHtmlReport {
+  my $html = "<HTML>
+<HEAD>
+   <TITLE>WiFi Diag Report</TITLE>
+</HEAD>
+<BODY TEXT=\"#3366AA\" BGCOLOR=\"#FFFFFF\" LINK=\"#AA7700\" VLINK=\"#AA7700\"
+ALINK=\"#FF0000\">
+
+<CENTER>
+<br>
+<b><font color=\"006666\">WiFi Diag Report.</font></b>
+<P>
+";
+
+  $html .= $report_html;
+
+  $html .= "</BODY>
+</HTML>\n";
+
+  my $tmp = "$report_prefix/index.html";
+  open(my $IDX, ">", $tmp) or die("Can't open $tmp for writing: $!\n");
+  print $IDX $html;
+  close $IDX;
+
+  print STDERR "Report saved to: $tmp\n";
+}
+
+sub genTimeGnuplot {
+  my $ylabel = shift;
+  my $title = shift;
+  my $cols = shift;
+  my $graph_data = shift;
+
+  my $text ="# auto-generated gnuplot script
+#!/usr/bin/gnuplot
+reset
+set terminal png
+
+set xdata time
+set timefmt \"\%s\"
+set format x \"\%M:\%S\"
+
+set xlabel \"Date\"
+set ylabel \"$ylabel\"
+
+set title \"$title\"
+set key below
+set grid
+plot \"$graph_data\" using $cols title \"$title\"\n";
+  return $text;
+}
+
+sub doTimeGraph {
+  my $ylabel = shift;
+  my $title = shift;
+  my $cols = shift;
+  my $data_file = shift;
+  my $out_file = shift;
+
+  my $html = "";
+
+  my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file);
+  my $png_fname = "$report_prefix$out_file";
+  my $tmp = $report_prefix . "_gnuplot_tmp_script.txt";
+  open(my $GP, ">", $tmp) or die("Can't open $tmp for writing: $!\n");
+  print $GP $text;
+  close $GP;
+  my $cmd = "gnuplot $tmp > $png_fname";
+  print "cmd: $cmd\n";
+  system($cmd);
+
+  $html .= "<img src=\"$out_file\" alt=\"$title\"><br>\n";
+  return $html;
+}
+
+sub genGlobalReports {
+  my $html = "";
+
+  # General idea is to write out gnumeric scripts and run them.
+  # First, block-ack response time graphs.
+  # Local peer sending BA back to DUT
+  $html .= "<P>Block-Acks sent from all local endpoints to DUT.<P>";
+  $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_tx_fname, "glb-ba-tx-latency.png");
+  $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_tx_fname, "glb-ba-tx-pkts-per-ack.png");
+  $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_tx_fname, "glb-ba-tx-pkts-dup-per-ack.png");
+
+  # DUT sending BA to local peer
+  $html .= "<P>Block-Acks sent from DUT to all local endpoints.<P>";
+  $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_rx_fname, "glb-ba-rx-latency.png");
+  $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_rx_fname, "glb-ba-rx-pkts-per-ack.png");
+  $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_rx_fname, "glb-ba-rx-pkts-dup-per-ack.png");
+
+  return $html;
+}
 
 sub printProgress {
   my $now = time();
@@ -151,13 +263,15 @@ sub processPkt {
     }
     else {
       if ($dut eq $pkt->receiver()) {
-	$peer_conn = PeerConn->new(glb_fh_ba => $glb_fh_ba,
+	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
+				   glb_fh_ba_rx => $glb_fh_ba_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->transmitter(),
 				   peer_addr => $pkt->receiver());
       }
       else {
-	$peer_conn = PeerConn->new(glb_fh_ba => $glb_fh_ba,
+	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
+				   glb_fh_ba_rx => $glb_fh_ba_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->receiver(),
 				   peer_addr => $pkt->transmitter());

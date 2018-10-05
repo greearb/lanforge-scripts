@@ -105,7 +105,14 @@ sub add_pkt {
     my $bi_mask = 0;
     my $q;
     my $last_timestamp = 0;
+    my $glb;
 
+    if ($pkt->transmitter() eq $self->{addr_a}) {
+      $glb = $self->{glb_fh_ba_tx};
+    }
+    else {
+      $glb = $self->{glb_fh_ba_rx};
+    }
     for ($q = 0; $q < 8; $q++) {
       my $bmap_octet = substr($bitmap, $q * 2, 2);
       my $bmi = hex($bmap_octet);
@@ -190,7 +197,6 @@ sub add_pkt {
 
     my $new_ba = $ba_tot - $ba_dup;
     my $fh_ba = $self->{fh_ba};
-    my $glb = $self->{glb_fh_ba};
     my $ts_diff;
     if ($last_timestamp == 0) {
       $ts_diff = "0.0";

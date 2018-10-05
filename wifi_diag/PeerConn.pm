@@ -62,7 +62,8 @@ sub find_or_create_tid {
     $tid = $self->{tids}[$tidno];
   }
   else {
-    $tid = Tid->new(glb_fh_ba => $self->{glb_fh_ba},
+    $tid = Tid->new(glb_fh_ba_tx => $self->{glb_fh_ba_tx},
+		    glb_fh_ba_rx => $self->{glb_fh_ba_rx},
 		    tidno => $tidno,
 		    report_prefix => $self->{report_prefix},
 		    addr_a => $self->local_addr(),
