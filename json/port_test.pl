@@ -235,7 +235,7 @@ while ($ports_still_down > 0) {
    $ports_still_down=0;
    for my $rh_p (values %{$rh->{'flat_list'}}) {
       next unless $rh_p->{'device'} =~ /^sta/;
-      print "$rh_p->{'device'} Down: $rh_p->{'down'} Ph $rh_p->{'phantom'} Channel: $rh_p->{'channel'}";
+      #print "$rh_p->{'device'} Down: $rh_p->{'down'} Ph $rh_p->{'phantom'} Channel: $rh_p->{'channel'} \n";
       next if ($rh_p->{'phantom'}); # does not count as down
       next if (!$rh_p->{'channel'}); # probably oversubscribed or misconfigured
       $ports_still_down++
@@ -265,7 +265,7 @@ for my $port_uri (@links2) {
       "shelf" => 1,
       "resource" => 0+$resource,
       "port" => $device,
-      'suppress_postexec'=>'true',
+      'suppress_postexec_cli'=>'true',
       "current_flags" => 1,
       "interest" => 8388610
    );
@@ -293,7 +293,7 @@ for my $port_uri (@links2) {
       "shelf" => 1,
       "resource" => 0+$resource,
       "port" => $device,
-      'suppress_postexec'=>'true',
+      'suppress_postexec_cli'=>'true',
       "current_flags" => 0,
       "interest" => 8388610
    );
