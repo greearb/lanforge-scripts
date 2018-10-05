@@ -16,7 +16,7 @@ sub new {
 
   bless($self, $class);
 
-  my $mcs_fname = $self->hash_str() . "-rpt.txt";
+  my $mcs_fname = $self->{report_prefix} . "conn-" . $self->hash_str() . "-rpt.txt";
   open(my $MCS, ">", $mcs_fname) or die("Can't open $mcs_fname for writing: $!\n");
   $self->{mcs_fh} = $MCS;
 
@@ -62,7 +62,9 @@ sub find_or_create_tid {
     $tid = $self->{tids}[$tidno];
   }
   else {
-    $tid = Tid->new(tidno => $tidno,
+    $tid = Tid->new(glb_fh_ba => $self->{glb_fh_ba},
+		    tidno => $tidno,
+		    report_prefix => $self->{report_prefix},
 		    addr_a => $self->local_addr(),
 		    addr_b => $self->peer_addr(),
 		   );

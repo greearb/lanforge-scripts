@@ -8,6 +8,7 @@ sub new {
   my %options = @_;
 
   my $self = {
+	      raw_pkt => "",
 	      seqno => -1, # block-ack will not have a seqno
 	      acked_by => -1,
 	      block_acked_by => -1,
@@ -63,6 +64,7 @@ sub append {
     $self->{ba_starting_seq} = $1;
   }
   elsif ($ln =~ /.* = TID for which a Basic BlockAck frame is requested: (\S+)/) {
+    #print STDERR "tid: $1\n";
     $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
@@ -195,7 +197,13 @@ sub was_acked {
 
 sub wants_ack {
   my $self = shift;
-  my $rcvr_b0 = substring(self->receiver(), 0, 1);
+  my $rcvr_b0 = substr($self->receiver(), 0, 1);
+  if ($rcvr_b0 eq "U") {
+    #print STDERR "wants-ack, receiver: " . $self->receiver() . "\n";
+    #print STDERR $self->raw_pkt() . "\n";
+    #exit(1);
+    return 0;
+  }
   my $rb0 = hex("$rcvr_b0");
   if ($rb0 & 0x1) {
     return 0;  # Don't ack bcast/bcast frames
