@@ -3,6 +3,9 @@ package Packet;
 use warnings;
 use strict;
 
+use bignum;
+use bigint;
+
 sub new {
   my $class = shift;
   my %options = @_;
@@ -96,7 +99,7 @@ sub append {
 	 ($ln =~ /^\s*Data Rate: (.*)/)) {
     my $dr = $1;
     if ($dr =~ /(\S+) Mb/) {
-      $self->{datarate} = $1 * 1000000;
+      $self->{datarate} = $1;
     }
     else {
       print "ERROR:  Unknown datarate: $dr for frame: " . $self->frame_num() . "\n";

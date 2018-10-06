@@ -21,6 +21,9 @@ my $cur_pkt = Packet->new(raw_pkt => "");
 my $last_pkt = Packet->new(raw_pkt => "");
 my $glb_fh_ba_tx;
 my $glb_fh_ba_rx;
+my $glb_fh_mcs_ps;
+my $glb_fh_mcs_tx;
+my $glb_fh_mcs_rx;
 
 my $dut = "";
 my $report_prefix = "wifi-diag-";
@@ -53,6 +56,9 @@ if ($show_help) {
 
 my $glb_ba_tx_fname = $report_prefix . "glb-ba-tx-rpt.txt";
 my $glb_ba_rx_fname = $report_prefix . "glb-ba-rx-rpt.txt";
+my $glb_mcs_ps_fname = $report_prefix . "glb-mcs-ps-rpt.txt";
+my $glb_mcs_tx_fname = $report_prefix . "glb-mcs-tx-rpt.txt";
+my $glb_mcs_rx_fname = $report_prefix . "glb-mcs-rx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -60,8 +66,11 @@ if ($gen_report) {
   exit 0;
 }
 
-open($glb_fh_ba_tx, ">", $glb_ba_tx_fname) or die("Can't open $glb_ba_tx_fname for writing: $!\n");
-open($glb_fh_ba_rx, ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname for writing: $!\n");
+open($glb_fh_ba_tx,  ">", $glb_ba_tx_fname) or die("Can't open $glb_ba_tx_fname for writing: $!\n");
+open($glb_fh_ba_rx,  ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname for writing: $!\n");
+open($glb_fh_mcs_ps, ">", $glb_mcs_ps_fname) or die("Can't open $glb_mcs_ps_fname for writing: $!\n");
+open($glb_fh_mcs_tx, ">", $glb_mcs_tx_fname) or die("Can't open $glb_mcs_tx_fname for writing: $!\n");
+open($glb_fh_mcs_rx, ">", $glb_mcs_rx_fname) or die("Can't open $glb_mcs_rx_fname for writing: $!\n");
 
 while (<>) {
   my $ln = $_;
@@ -178,15 +187,21 @@ sub genGlobalReports {
   my $html = "";
 
   # General idea is to write out gnumeric scripts and run them.
-  # First, block-ack response time graphs.
+
+  $html .= "\n\n<P>MCS/Encoding Rates over time<P>\n";
+  $html .= doTimeGraph("Encoding Rate", "TX Packet encoding rate over time", "1:3", $glb_mcs_tx_fname, "glb-mcs-tx.png");
+  $html .= doTimeGraph("Encoding Rate", "RX Packet encoding rate over time", "1:3", $glb_mcs_rx_fname, "glb-mcs-rx.png");
+  $html .= doTimeGraph("Retransmits", "TX Packet Retransmits over time", "1:4", $glb_mcs_tx_fname, "glb-mcs-tx-retrans.png");
+  $html .= doTimeGraph("Retransmits", "RX Packet Retransmits over time", "1:4", $glb_mcs_rx_fname, "glb-mcs-rx-retrans.png");
+
   # Local peer sending BA back to DUT
-  $html .= "<P>Block-Acks sent from all local endpoints to DUT.<P>";
+  $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
   $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_tx_fname, "glb-ba-tx-latency.png");
   $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_tx_fname, "glb-ba-tx-pkts-per-ack.png");
   $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_tx_fname, "glb-ba-tx-pkts-dup-per-ack.png");
 
   # DUT sending BA to local peer
-  $html .= "<P>Block-Acks sent from DUT to all local endpoints.<P>";
+  $html .= "\n\n<P>Block-Acks sent from DUT to all local endpoints.<P>\n";
   $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_rx_fname, "glb-ba-rx-latency.png");
   $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_rx_fname, "glb-ba-rx-pkts-per-ack.png");
   $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_rx_fname, "glb-ba-rx-pkts-dup-per-ack.png");
@@ -265,6 +280,9 @@ sub processPkt {
       if ($dut eq $pkt->receiver()) {
 	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
 				   glb_fh_ba_rx => $glb_fh_ba_rx,
+				   glb_fh_mcs_ps => $glb_fh_mcs_ps,
+				   glb_fh_mcs_tx => $glb_fh_mcs_tx,
+				   glb_fh_mcs_rx => $glb_fh_mcs_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->transmitter(),
 				   peer_addr => $pkt->receiver());
@@ -272,6 +290,9 @@ sub processPkt {
       else {
 	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
 				   glb_fh_ba_rx => $glb_fh_ba_rx,
+				   glb_fh_mcs_ps => $glb_fh_mcs_ps,
+				   glb_fh_mcs_tx => $glb_fh_mcs_tx,
+				   glb_fh_mcs_rx => $glb_fh_mcs_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->receiver(),
 				   peer_addr => $pkt->transmitter());
