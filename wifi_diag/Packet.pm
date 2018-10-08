@@ -18,6 +18,8 @@ sub new {
 	      retrans => 0,
 	      timestamp => 0,
 	      datarate => 0,
+	      dummy_tx_pkts => 0,
+	      dummy_rx_pkts => 0,
 	      type_subtype => "UNKNOWN",
 	      receiver => "UNKNOWN",
 	      transmitter => "UNKNOWN",

@@ -24,6 +24,11 @@ my $glb_fh_ba_rx;
 my $glb_fh_mcs_ps;
 my $glb_fh_mcs_tx;
 my $glb_fh_mcs_rx;
+my $glb_fh_rtx_tx;
+my $glb_fh_rtx_rx;
+
+my %glb_mcs_tx_hash = ();
+my %glb_mcs_rx_hash = ();
 
 my $dut = "";
 my $report_prefix = "wifi-diag-";
@@ -59,6 +64,8 @@ my $glb_ba_rx_fname = $report_prefix . "glb-ba-rx-rpt.txt";
 my $glb_mcs_ps_fname = $report_prefix . "glb-mcs-ps-rpt.txt";
 my $glb_mcs_tx_fname = $report_prefix . "glb-mcs-tx-rpt.txt";
 my $glb_mcs_rx_fname = $report_prefix . "glb-mcs-rx-rpt.txt";
+my $glb_rtx_tx_fname = $report_prefix . "glb-rtx-tx-rpt.txt";
+my $glb_rtx_rx_fname = $report_prefix . "glb-rtx-rx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -71,6 +78,39 @@ open($glb_fh_ba_rx,  ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname 
 open($glb_fh_mcs_ps, ">", $glb_mcs_ps_fname) or die("Can't open $glb_mcs_ps_fname for writing: $!\n");
 open($glb_fh_mcs_tx, ">", $glb_mcs_tx_fname) or die("Can't open $glb_mcs_tx_fname for writing: $!\n");
 open($glb_fh_mcs_rx, ">", $glb_mcs_rx_fname) or die("Can't open $glb_mcs_rx_fname for writing: $!\n");
+open($glb_fh_rtx_tx, ">", $glb_rtx_tx_fname) or die("Can't open $glb_rtx_tx_fname for writing: $!\n");
+open($glb_fh_rtx_rx, ">", $glb_rtx_rx_fname) or die("Can't open $glb_rtx_rx_fname for writing: $!\n");
+
+my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
+      "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
+      "period_tx_pkts_ps\tperiod_tx_retrans_pkts_ps\tperiod_tx_amsdu_pkts_ps\tperiod_tx_retrans_amsdu_pkts_ps\tperiod_dummy_tx_pkts_ps\n";
+print $glb_fh_mcs_ps $hdr;
+
+# Global stats logic.
+my $last_ps_timestamp = 0;
+my $tot_pkts = 0;
+my $rx_pkts = 0;
+my $rx_amsdu_pkts = 0;
+my $rx_retrans_pkts = 0;
+my $rx_amsdu_retrans_pkts = 0;
+my $dummy_rx_pkts = 0;
+my $tx_pkts = 0;
+my $tx_amsdu_pkts = 0;
+my $tx_retrans_pkts = 0;
+my $tx_amsdu_retrans_pkts = 0;
+my $dummy_tx_pkts = 0;
+
+my $last_tot_pkts = 0;
+my $last_rx_pkts = 0;
+my $last_rx_amsdu_pkts = 0;
+my $last_rx_retrans_pkts = 0;
+my $last_rx_amsdu_retrans_pkts = 0;
+my $last_dummy_rx_pkts = 0;
+my $last_tx_pkts = 0;
+my $last_tx_amsdu_pkts = 0;
+my $last_tx_retrans_pkts = 0;
+my $last_tx_amsdu_retrans_pkts = 0;
+my $last_dummy_tx_pkts = 0;
 
 while (<>) {
   my $ln = $_;
@@ -183,16 +223,48 @@ sub doTimeGraph {
   return $html;
 }
 
+sub htmlMcsHistogram {
+  my $html = "TX Encoding rate histogram.\n
+<table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, $glb_mcs_tx_hash{$name} / $tx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "RX Ecoding rate histogram.\n
+<table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, $glb_mcs_rx_hash{$name} / $rx_pkts);
+  }
+  $html .= "</table><P>\n";
+  return $html;
+}
+
 sub genGlobalReports {
   my $html = "";
+
+  $html .= htmlMcsHistogram();
 
   # General idea is to write out gnumeric scripts and run them.
 
   $html .= "\n\n<P>MCS/Encoding Rates over time<P>\n";
-  $html .= doTimeGraph("Encoding Rate", "TX Packet encoding rate over time", "1:3", $glb_mcs_tx_fname, "glb-mcs-tx.png");
-  $html .= doTimeGraph("Encoding Rate", "RX Packet encoding rate over time", "1:3", $glb_mcs_rx_fname, "glb-mcs-rx.png");
-  $html .= doTimeGraph("Retransmits", "TX Packet Retransmits over time", "1:4", $glb_mcs_tx_fname, "glb-mcs-tx-retrans.png");
-  $html .= doTimeGraph("Retransmits", "RX Packet Retransmits over time", "1:4", $glb_mcs_rx_fname, "glb-mcs-rx-retrans.png");
+  $html .= doTimeGraph("Encoding Rate Mbps", "TX Packet encoding rate over time", "1:2", $glb_mcs_tx_fname, "glb-mcs-tx.png");
+  $html .= doTimeGraph("Encoding Rate Mbps", "RX Packet encoding rate over time", "1:2", $glb_mcs_rx_fname, "glb-mcs-rx.png");
+  $html .= doTimeGraph("Retransmits", "TX Packet Retransmits over time", "1:2", $glb_rtx_tx_fname, "glb-mcs-tx-retrans.png");
+  $html .= doTimeGraph("Retransmits", "RX Packet Retransmits over time", "1:2", $glb_rtx_rx_fname, "glb-mcs-rx-retrans.png");
+
+  # Global per-second stats
+  $html .= doTimeGraph("Total-pps", "Total Packet per sec", "1:4", $glb_mcs_ps_fname, "glb-mcs-tot-ps.png");
+  $html .= doTimeGraph("RX-pps", "RX Packet per sec", "1:5", $glb_mcs_ps_fname, "glb-mcs-rx-ps.png");
+  $html .= doTimeGraph("RX-retrans-ps", "RX Retrans per sec", "1:6", $glb_mcs_ps_fname, "glb-mcs-rx-amsdu-ps.png");
+  $html .= doTimeGraph("RX-amsdu-pps", "RX AMSDU per sec", "1:7", $glb_mcs_ps_fname, "glb-mcs-rx-amsdu-ps.png");
+  $html .= doTimeGraph("RX-retrans-amsdu-pps", "RX Retrans AMSDU per sec", "1:8", $glb_mcs_ps_fname, "glb-mcs-rx-rtx-amsdu-ps.png");
+  $html .= doTimeGraph("RX-dummy pps", "RX Dummy Packets per sec", "1:9", $glb_mcs_ps_fname, "glb-mcs-rx-dummy-pps.png");
+  $html .= doTimeGraph("TX-pps", "TX Packet per sec", "1:10", $glb_mcs_ps_fname, "glb-mcs-tx-ps.png");
+  $html .= doTimeGraph("TX-retrans-ps", "TX Retrans per sec", "1:11", $glb_mcs_ps_fname, "glb-mcs-tx-amsdu-ps.png");
+  $html .= doTimeGraph("TX-amsdu-pps", "TX AMSDU per sec", "1:12", $glb_mcs_ps_fname, "glb-mcs-tx-amsdu-ps.png");
+  $html .= doTimeGraph("TX-retrans-amsdu-pps", "TX Retrans AMSDU per sec", "1:13", $glb_mcs_ps_fname, "glb-mcs-tx-rtx-amsdu-ps.png");
+  $html .= doTimeGraph("TX-dummy pps", "TX Dummy Packets per sec", "1:14", $glb_mcs_ps_fname, "glb-mcs-tx-dummy-pps.png");
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
@@ -280,9 +352,6 @@ sub processPkt {
       if ($dut eq $pkt->receiver()) {
 	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
 				   glb_fh_ba_rx => $glb_fh_ba_rx,
-				   glb_fh_mcs_ps => $glb_fh_mcs_ps,
-				   glb_fh_mcs_tx => $glb_fh_mcs_tx,
-				   glb_fh_mcs_rx => $glb_fh_mcs_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->transmitter(),
 				   peer_addr => $pkt->receiver());
@@ -290,9 +359,6 @@ sub processPkt {
       else {
 	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
 				   glb_fh_ba_rx => $glb_fh_ba_rx,
-				   glb_fh_mcs_ps => $glb_fh_mcs_ps,
-				   glb_fh_mcs_tx => $glb_fh_mcs_tx,
-				   glb_fh_mcs_rx => $glb_fh_mcs_rx,
 				   report_prefix => $report_prefix,
 				   local_addr => $pkt->receiver(),
 				   peer_addr => $pkt->transmitter());
@@ -302,6 +368,103 @@ sub processPkt {
   }
 
   $peer_conn->add_pkt($pkt);
+
+  # Gather some global stats
+
+  # Add mcs to histogram.
+
+  $tot_pkts++;
+  my $dr = $pkt->{datarate};
+  if ($pkt->{is_rx}) {
+    if (exists $glb_mcs_rx_hash{$dr}) {
+      $glb_mcs_rx_hash{$dr}++;
+    }
+    else {
+      $glb_mcs_rx_hash{$dr} = 1;
+    }
+    $rx_pkts++;
+    $rx_amsdu_pkts += $pkt->{amsdu_frame_count};
+    if ($pkt->retrans()) {
+      $rx_retrans_pkts++;
+      $rx_amsdu_retrans_pkts += $pkt->{amsdu_frame_count};
+    }
+    my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
+    print $glb_fh_mcs_rx $ln;
+    if ($pkt->retrans()) {
+      $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
+      print $glb_fh_rtx_rx $ln;
+    }
+  }
+  else {
+    if (exists $glb_mcs_tx_hash{$dr}) {
+      $glb_mcs_tx_hash{$dr}++;
+    }
+    else {
+      $glb_mcs_tx_hash{$dr} = 1;
+    }
+    $tx_pkts++;
+    $tx_amsdu_pkts += $pkt->{amsdu_frame_count};
+    if ($pkt->retrans()) {
+      $tx_retrans_pkts++;
+      $tx_amsdu_retrans_pkts += $pkt->{amsdu_frame_count};
+    }
+    my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
+    print $glb_fh_mcs_tx $ln;
+    if ($pkt->retrans()) {
+      $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
+      print $glb_fh_rtx_tx $ln;
+    }
+  }
+
+  $dummy_rx_pkts += $pkt->{dummy_rx_pkts};
+  $dummy_tx_pkts += $pkt->{dummy_tx_pkts};
+
+  my $gen_ps = ($last_ps_timestamp + 1.0) < $pkt->{timestamp};
+  if ($gen_ps) {
+    my $diff =  $pkt->{timestamp} - $last_ps_timestamp;
+    my $period_tot_pkts = $tot_pkts - $last_tot_pkts;
+    my $period_rx_pkts = $rx_pkts - $last_rx_pkts;
+    my $period_rx_amsdu_pkts = $rx_amsdu_pkts - $last_rx_amsdu_pkts;
+    my $period_rx_retrans_pkts = $rx_retrans_pkts - $last_rx_retrans_pkts;
+    my $period_rx_retrans_amsdu_pkts = $rx_amsdu_retrans_pkts - $last_rx_amsdu_retrans_pkts;
+    my $period_tx_pkts = $tx_pkts - $last_tx_pkts;
+    my $period_tx_amsdu_pkts = $tx_amsdu_pkts - $last_tx_amsdu_pkts;
+    my $period_tx_retrans_pkts = $tx_retrans_pkts - $last_tx_retrans_pkts;
+    my $period_tx_retrans_amsdu_pkts = $tx_amsdu_retrans_pkts - $last_tx_amsdu_retrans_pkts;
+    my $period_dummy_rx_pkts = $dummy_rx_pkts - $last_dummy_rx_pkts;
+    my $period_dummy_tx_pkts = $dummy_tx_pkts - $last_dummy_tx_pkts;
+
+    my $period_tot_pkts_ps = ($period_tot_pkts + $period_dummy_tx_pkts + $period_dummy_rx_pkts) / $diff;
+    my $period_rx_pkts_ps = ($period_rx_pkts + $period_dummy_rx_pkts) / $diff;
+    my $period_rx_amsdu_pkts_ps = $period_rx_amsdu_pkts / $diff;
+    my $period_rx_retrans_pkts_ps = $period_rx_retrans_pkts / $diff;
+    my $period_rx_retrans_amsdu_pkts_ps = $period_rx_retrans_amsdu_pkts / $diff;
+    my $period_tx_pkts_ps = ($period_tx_pkts + $period_dummy_tx_pkts) / $diff;
+    my $period_tx_amsdu_pkts_ps = $period_tx_amsdu_pkts / $diff;
+    my $period_tx_retrans_pkts_ps = $period_tx_retrans_pkts / $diff;
+    my $period_tx_retrans_amsdu_pkts_ps = $period_tx_retrans_amsdu_pkts / $diff;
+    my $period_dummy_rx_pkts_ps = $period_dummy_rx_pkts / $diff;
+    my $period_dummy_tx_pkts_ps = $period_dummy_tx_pkts / $diff;
+
+    $last_ps_timestamp = $pkt->timestamp();
+    $last_tot_pkts = $tot_pkts;
+    $last_rx_pkts = $rx_pkts;
+    $last_rx_amsdu_pkts = $rx_amsdu_pkts;
+    $last_rx_retrans_pkts = $rx_retrans_pkts;
+    $last_rx_amsdu_retrans_pkts = $rx_amsdu_retrans_pkts;
+    $last_tx_pkts = $tx_pkts;
+    $last_tx_amsdu_pkts = $tx_amsdu_pkts;
+    $last_tx_retrans_pkts = $tx_retrans_pkts;
+    $last_tx_amsdu_retrans_pkts = $tx_amsdu_retrans_pkts;
+    $last_dummy_rx_pkts = $dummy_rx_pkts;
+    $last_dummy_tx_pkts = $dummy_tx_pkts;
+
+    # 'tidno is -1 here, keeping format similar to the per-tid data to make generating reports easier.
+    my $ln =  "" . $pkt->timestamp() . "\t-1\t$diff\t$period_tot_pkts_ps\t" .
+      "$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
+      "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
+    print $glb_fh_mcs_ps $ln;
+  }
 
   $last_pkt = $pkt;
 

@@ -69,11 +69,10 @@ sub tidno {
 sub add_pkt {
   my $self = shift;
   my $pkt = shift;
-  my $fhg;
 
   $self->{tot_pkts}++;
   if ($pkt->receiver() eq $self->{addr_a}) {
-    $fhg = $self->{glb_fh_mcs_rx};
+    $pkt->{is_rx} = 1;
     $self->{rx_pkts}++;
     $self->{rx_amsdu_pkts} += $pkt->{amsdu_frame_count};
     if ($pkt->retrans()) {
@@ -82,7 +81,7 @@ sub add_pkt {
     }
   }
   else {
-    $fhg = $self->{glb_fh_mcs_tx};
+    $pkt->{is_rx} = 0;
     $self->{tx_pkts}++;
     $self->{tx_amsdu_pkts} += $pkt->{amsdu_frame_count};
     if ($pkt->retrans()) {
@@ -185,11 +184,14 @@ sub add_pkt {
 				  tid => $self->tidno());
 	  $dummy->set_block_acked_by($pkt->frame_num());
 	  push(@{$self->{pkts}}, $dummy);
-	  if ($pkt->transmitter() eq $self->{addr_b}) {
+	  # A transmitting block-ack indicates we dropped pkts sent to us.
+	  if ($pkt->transmitter() eq $self->{addr_a}) {
 	    $self->{dummy_rx_pkts}++;
+	    $pkt->{dummy_rx_pkts}++;
 	  }
 	  else {
 	    $self->{dummy_tx_pkts}++;
+	    $pkt->{dummy_tx_pkts}++;
 	  }
 	  #print "pushing dummy pkt, seqno: $missing_seqno\n";
 	  $ba_tot++;
@@ -276,13 +278,11 @@ sub add_pkt {
     $self->{last_dummy_tx_pkts} = $self->{dummy_tx_pkts};
 
     my $fh_ps = $self->{mcs_fh_ps};
-    my $glb_mcs_ps = $self->{glb_fh_mcs_ps};
 
     my $ln =  "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t$diff\t$period_tot_pkts_ps\t" .
       "$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
       "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
     print $fh_ps $ln;
-    print $glb_mcs_ps $ln;
   }
 
   # Generate reporting data for this pkt
@@ -290,7 +290,6 @@ sub add_pkt {
   my $ln = "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t" . $pkt->datarate() . "\t" . $pkt->retrans() . "\n";
 
   print $fh $ln;
-  print $fhg $ln;
 
   push(@{$self->{pkts}}, $pkt);
 }

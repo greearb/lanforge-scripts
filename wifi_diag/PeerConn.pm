@@ -65,9 +65,6 @@ sub find_or_create_tid {
   else {
     $tid = Tid->new(glb_fh_ba_tx => $self->{glb_fh_ba_tx},
 		    glb_fh_ba_rx => $self->{glb_fh_ba_rx},
-		    glb_fh_mcs_ps => $self->{glb_fh_mcs_ps},
-		    glb_fh_mcs_tx => $self->{glb_fh_mcs_tx},
-		    glb_fh_mcs_rx => $self->{glb_fh_mcs_rx},
 		    tidno => $tidno,
 		    report_prefix => $self->{report_prefix},
 		    addr_a => $self->local_addr(),
