@@ -107,8 +107,9 @@ sub flatten_list {
    my $list_name = shift;
    my $rh_irefs = {};
    return if (!defined $rh_list);
-      
+
    if (!defined $rh_list->{$list_name}) {
+      print Dumper($rh_list);
       warn "flatten_list: $list_name not found";
       return;
    }
