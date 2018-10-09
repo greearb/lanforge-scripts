@@ -14,11 +14,17 @@ use Getopt::Long;
 
 my %peer_conns = ();
 
+my $input_line_count = 0;
 my $pkts_sofar = 0;
 my $start_time = time();
 
-my $cur_pkt = Packet->new(raw_pkt => "");
-my $last_pkt = Packet->new(raw_pkt => "");
+my $cur_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $last_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $first_ampdu_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $last_ba_rx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $last_ba_tx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+
+
 my $glb_fh_ba_tx;
 my $glb_fh_ba_rx;
 my $glb_fh_mcs_ps;
@@ -29,6 +35,10 @@ my $glb_fh_rtx_rx;
 
 my %glb_mcs_tx_hash = ();
 my %glb_mcs_rx_hash = ();
+my %glb_pkt_type_tx_hash = ();
+my %glb_pkt_type_rx_hash = ();
+my %glb_ampdu_pkt_count_rx_hash = ();
+my %glb_ampdu_pkt_count_tx_hash = ();
 
 my $dut = "";
 my $report_prefix = "wifi-diag-";
@@ -87,6 +97,29 @@ my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
 print $glb_fh_mcs_ps $hdr;
 
 # Global stats logic.
+my $delta_time_rx_count = 0;
+my $delta_time_rx = 0;
+my $delta_time_tx_count = 0;
+my $delta_time_tx = 0;
+my $ampdu_chain_rx_count = 0;
+my $ampdu_chain_rx_time = 0;
+my $rx_ampdu_chains = 0;
+my $ampdu_chain_tx_count = 0;
+my $ampdu_chain_tx_time = 0;
+my $tx_ampdu_chains = 0;
+
+my $dup_ba_rx = 0;
+my $dup_ba_tx = 0;
+my $ba_ampdu_gap_rx = 0;
+my $ba_ampdu_gap_tx = 0;
+my $ba_ampdu_gap_rx_count = 0;
+my $ba_ampdu_gap_tx_count = 0;
+
+my $delta_ba_to_ampdu_rx = 0;
+my $delta_ba_to_ampdu_tx = 0;
+my $delta_ba_to_ampdu_rx_count = 0;
+my $delta_ba_to_ampdu_tx_count = 0;
+
 my $last_ps_timestamp = 0;
 my $tot_pkts = 0;
 my $rx_pkts = 0;
@@ -114,6 +147,7 @@ my $last_dummy_tx_pkts = 0;
 
 while (<>) {
   my $ln = $_;
+  $input_line_count++;
   if ($ln =~ /^Frame (\d+):/) {
     if ($cur_pkt->raw_pkt() ne "") {
       processPkt($cur_pkt);
@@ -227,16 +261,68 @@ sub htmlMcsHistogram {
   my $html = "TX Encoding rate histogram.\n
 <table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, $glb_mcs_tx_hash{$name} / $tx_pkts);
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
   }
   $html .= "</table><P>\n";
 
-  $html .= "RX Ecoding rate histogram.\n
+  $html .= "RX Encoding rate histogram.\n
 <table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, $glb_mcs_rx_hash{$name} / $rx_pkts);
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
   }
   $html .= "</table><P>\n";
+
+  $html .= "TX Packet Type histogram.\n
+<table><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_pkt_type_tx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "RX Packet Type histogram.\n
+<table><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_pkt_type_rx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "TX AMPDU chain count histogram.\n
+<table><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $tx_ampdu_chains);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "RX AMPDU chain count histogram.\n
+<table><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $rx_ampdu_chains);
+  }
+  $html .= "</table><P>\n";
+
+  if ($delta_time_tx_count) {
+    $html .= "TX average gap between AMPDU frames (ms): " . (($delta_time_tx * 1000.0) / $delta_time_tx_count) . "<br>\n";
+  }
+  if ($delta_time_rx_count) {
+    $html .= "RX average gap between AMPDU frames (ms): " . (($delta_time_rx * 1000.0) / $delta_time_rx_count) . "<br><P>\n";
+  }
+  if ($ampdu_chain_tx_count) {
+    $html .= "TX average AMPDU chain time (ms): " . (($ampdu_chain_tx_time * 1000.0) / $ampdu_chain_tx_count) . "<br>\n";
+  }
+  if ($ampdu_chain_rx_count) {
+    $html .= "RX average AMPDU chain time (ms): " . (($ampdu_chain_rx_time * 1000.0) / $ampdu_chain_rx_count) . "<br>\n";
+  }
+
+  if ($ba_ampdu_gap_rx_count) {
+    $html .= "TX BA to RX AMPDU average gap (ms): " . (($ba_ampdu_gap_rx * 1000.0) / $ba_ampdu_gap_rx_count) . "<br>\n";
+  }
+  if ($ba_ampdu_gap_tx_count) {
+    $html .= "RX BA to TX AMPDU average gap (ms): " . (($ba_ampdu_gap_tx * 1000.0) / $ba_ampdu_gap_tx_count) . "<br>\n";
+  }
+
+  $html .= "Duplicate TX BA without AMPDU between them: $dup_ba_tx<br>\n";
+  $html .= "Duplicate RX BA without AMPDU between them: $dup_ba_rx<br>\n";
+
   return $html;
 }
 
@@ -287,8 +373,11 @@ sub printProgress {
   my $hour = int($diff_sec / (60 * 60));
   my $min = int($diff_sec / 60);
   my $sec = $diff_sec - ($hour * 60 * 60 + $min * 60);
-  my $pps = int($pkts_sofar / $diff_sec);
-  print STDERR "NOTE:  Processed $pkts_sofar packets in $hour:$min:$sec far ($pps pps).\n";
+  my $pps = 0;
+  if ($diff_sec != 0) {
+    $pps = int($pkts_sofar / $diff_sec);
+  }
+  print STDERR "NOTE: Processed $pkts_sofar packets and $input_line_count input lines in $hour:$min:$sec far ($pps pps).\n";
 }
 
 sub processPkt {
@@ -298,6 +387,11 @@ sub processPkt {
   # Add graph point for mcs vs time
   # Add graph point for retransmits
   # Check sequence-no gap
+
+  # Skip malformed packets, cannot trust the contents anyway
+  if ($pkt->{is_malformed}) {
+    return;
+  }
 
   $pkts_sofar++;
   if (($pkts_sofar % 10000) == 0) {
@@ -372,15 +466,138 @@ sub processPkt {
   # Gather some global stats
 
   # Add mcs to histogram.
+  my $delta = -1;
+  if ($last_pkt->seqno() + 1 == $pkt->seqno()) {
+    if (($last_pkt->{is_rx} == $pkt->{is_rx}) && $last_pkt->{tid} == $pkt->{tid}) {
+      # We have two packets in an AMPDU train most likely
+      $delta = $pkt->{timedelta};
+    }
+  }
+
+  my $this_ampdu_pkt_count;
+  my $ampdu_chain_time;
+  my $is_last_ampdu = 0;
+  if ($pkt->{is_ampdu}) {
+    if ($last_pkt->frame_num() != -1 && (!$last_pkt->{is_ampdu})) {
+      # This is first ampdu since a non-ampdu frame.  Calculate diff between that and last BA
+      if ($pkt->{is_rx} && ($last_ba_tx_pkt->frame_num() != -1)) {
+	my $diff = $pkt->timestamp() - $last_ba_tx_pkt->timestamp();
+	$ba_ampdu_gap_rx += $diff;
+	$ba_ampdu_gap_rx_count++;
+	if ($diff > 0.001) {
+	  print "INFO:  TX BA to RX AMPDU gap: $diff between frames: " . $last_ba_tx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
+	}
+	$last_ba_tx_pkt->{frame_num} = -1;
+      }
+      elsif ((!$pkt->{is_rx}) && ($last_ba_rx_pkt->frame_num() != -1)) {
+	my $diff = $pkt->timestamp() - $last_ba_rx_pkt->timestamp();
+	$ba_ampdu_gap_tx += $diff;
+	$ba_ampdu_gap_tx_count++;
+	if ($diff > 0.001) {
+	  print "INFO:  RX BA to TX AMPDU gap: $diff between frames: " . $last_ba_rx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
+	}
+	$last_ba_rx_pkt->{frame_num} = -1;
+      }
+    }
+
+    if ($first_ampdu_pkt->seqno() != -1) {
+      if (($first_ampdu_pkt->{is_rx} == $pkt->{is_rx}) && $pkt->{tid} == $first_ampdu_pkt->{tid}) {
+	# Belongs to same tid, so must be part of the same pkt chain.
+	# Calculate pkt count based on seqno, since sniffer probably misses a lot of frames
+	# at high speed.
+	if ($pkt->seqno() < $first_ampdu_pkt->seqno()) {
+	  # Looks like we have a wrap.
+	  $this_ampdu_pkt_count = 4096 - $first_ampdu_pkt->seqno();
+	  $this_ampdu_pkt_count += $pkt->seqno();
+	}
+	else {
+	  $this_ampdu_pkt_count = $pkt->seqno() - $first_ampdu_pkt->seqno();
+	  $this_ampdu_pkt_count++; # range is inclusive
+	}
+	if ($pkt->{is_last_ampdu}) {
+	  $is_last_ampdu = 1;
+	  $ampdu_chain_time = $pkt->timestamp() - $first_ampdu_pkt->timestamp();
+	  print "First ampdu pkt: " . $first_ampdu_pkt->frame_num() . " last: " . $pkt->frame_num()
+	    . " chain-time: $ampdu_chain_time, chain-count: $this_ampdu_pkt_count.\n";
+	  $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
+	}
+      }
+      else {
+	# We must have not captured the last one, so skip accounting this one.
+	$first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
+      }
+    }
+    else {
+      if (! $pkt->{is_last_ampdu}) {
+	$this_ampdu_pkt_count = 1;
+	$first_ampdu_pkt = $pkt;
+      }
+    }
+  }
+  else {
+    # Not an ampdu frame
+    # One way or another, we are done with ampdu frame sequence, zero this out
+    # in case we didn't sniff the last one.
+    # We must have not captured the last one, so skip accounting this one.
+    $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
+    if ($pkt->type_subtype() eq "802.11 Block Ack (0x0019)") {
+      # Only grab the initial BA in case we have one side ignoring BA
+      if ($pkt->{is_rx}) {
+	if ($last_ba_rx_pkt->{frame_num} == -1) {
+	  $last_ba_rx_pkt = $pkt;
+	}
+	else {
+	  print "NOTE:  Multiple RX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
+	    . " this BA frame num: " . $pkt->frame_num() . "\n";
+	  $dup_ba_rx++;
+	}
+      }
+      else {
+	if ($last_ba_tx_pkt->{frame_num} == -1) {
+	  $last_ba_tx_pkt = $pkt;
+	}
+	else {
+	  print "NOTE:  Multiple TX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
+	    . " this BA frame num: " . $pkt->frame_num() . "\n";
+	  $dup_ba_tx++;
+	}
+      }
+    }
+  }
 
   $tot_pkts++;
   my $dr = $pkt->{datarate};
   if ($pkt->{is_rx}) {
+    if ($delta != -1) {
+      $delta_time_rx_count++;
+      $delta_time_rx += $delta;
+    }
+
+    if ($is_last_ampdu) {
+      $ampdu_chain_rx_count++;
+      $ampdu_chain_rx_time += $ampdu_chain_time;
+      $rx_ampdu_chains++;
+
+      if (exists $glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}) {
+	$glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}++;
+      }
+      else {
+	$glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count} = 1;
+      }
+    }
+
     if (exists $glb_mcs_rx_hash{$dr}) {
       $glb_mcs_rx_hash{$dr}++;
     }
     else {
       $glb_mcs_rx_hash{$dr} = 1;
+    }
+    $dr = $pkt->type_subtype();
+    if (exists $glb_pkt_type_rx_hash{$dr}) {
+      $glb_pkt_type_rx_hash{$dr}++;
+    }
+    else {
+      $glb_pkt_type_rx_hash{$dr} = 1;
     }
     $rx_pkts++;
     $rx_amsdu_pkts += $pkt->{amsdu_frame_count};
@@ -396,11 +613,36 @@ sub processPkt {
     }
   }
   else {
+    if ($delta != -1) {
+      $delta_time_tx_count++;
+      $delta_time_tx += $delta;
+    }
+
+    if ($is_last_ampdu) {
+      $ampdu_chain_tx_count++;
+      $ampdu_chain_tx_time += $ampdu_chain_time;
+      $tx_ampdu_chains++;
+
+      if (exists $glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}) {
+	$glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}++;
+      }
+      else {
+	$glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count} = 1;
+      }
+    }
+
     if (exists $glb_mcs_tx_hash{$dr}) {
       $glb_mcs_tx_hash{$dr}++;
     }
     else {
       $glb_mcs_tx_hash{$dr} = 1;
+    }
+    $dr = $pkt->type_subtype();
+    if (exists $glb_pkt_type_tx_hash{$dr}) {
+      $glb_pkt_type_tx_hash{$dr}++;
+    }
+    else {
+      $glb_pkt_type_tx_hash{$dr} = 1;
     }
     $tx_pkts++;
     $tx_amsdu_pkts += $pkt->{amsdu_frame_count};

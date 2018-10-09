@@ -46,6 +46,7 @@ sub add_pkt {
 
   my $tid = $self->find_or_create_tid($tidno);
   $tid->add_pkt($pkt);
+  $pkt->{tid} = $tid;
 
   # Generate reporting data for this pkt
   my $ln = "" . $pkt->timestamp() . "\t$tidno\t" . $pkt->datarate() . "\t" . $pkt->retrans() . "\n";

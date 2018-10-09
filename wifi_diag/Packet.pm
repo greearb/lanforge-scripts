@@ -20,6 +20,9 @@ sub new {
 	      datarate => 0,
 	      dummy_tx_pkts => 0,
 	      dummy_rx_pkts => 0,
+	      is_last_ampdu => 0,
+	      is_ampdu => 0,
+	      is_malformed => 0,
 	      type_subtype => "UNKNOWN",
 	      receiver => "UNKNOWN",
 	      transmitter => "UNKNOWN",
@@ -53,6 +56,15 @@ sub append {
     #print "timestamp: $1\n";
     $self->{timestamp} = $1;
   }
+  elsif ($ln =~ /^.* = This is the last subframe of this A-MPDU: True/) {
+    $self->{is_last_ampdu} = 1;
+  }
+  elsif ($ln =~ /^.* = Payload Type: A-MSDU/) {
+    $self->{is_ampdu} = 1;
+  }
+  elsif ($ln =~ /^\s*\[Time delta from previous captured frame:\s+(\S+)/) {
+    $self->{timedelta} = $1;
+  }
   elsif ($ln =~ /^\s*Receiver address: .*\((\S+)\)/) {
     $self->{receiver} = $1;
   }
@@ -67,6 +79,9 @@ sub append {
   }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
     $self->{ba_starting_seq} = $1;
+  }
+  elsif ($ln =~ /.*Malformed Packet.*/) {
+    $self->{is_malformed} = 1;
   }
   elsif ($ln =~ /.* = TID for which a Basic BlockAck frame is requested: (\S+)/) {
     #print STDERR "tid: $1\n";
