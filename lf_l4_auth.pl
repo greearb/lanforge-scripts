@@ -253,7 +253,6 @@ for (my $i = $::first_port; $i <= $::last_port; $i++) {
 
    # create live endpoint
    my $ip_addr    = $::port_ips{$i};
-   
    open(my $fh, ">", $::port_file{$i} ) || die "unable to create file $::port_file{$i}";
    print $fh $::port_download{$i};
    close $fh;
