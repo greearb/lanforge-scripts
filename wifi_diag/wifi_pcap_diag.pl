@@ -5,9 +5,30 @@
 
 use strict;
 use warnings;
-use diagnostics;
-use Carp;
-
+# Un-buffer output
+$| = 1;
+use Cwd qw(getcwd);
+my $cwd = getcwd();
+if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
+   use diagnostics;
+   use Carp;
+   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
+   $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
+}
+# this is pedantic necessity for the following use statements
+use lib '/home/lanforge/scripts';
+if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
+   use lib '/home/lanforge/scripts/LANforge';
+   use lib '/home/lanforge/scripts/wifi_diag';
+}
+else {
+   if ( -d "wifi_diag" ) {
+      use lib '.';
+   }
+   else {
+      use lib '.';
+   }
+}
 use PeerConn;
 use Packet;
 use Getopt::Long;
@@ -192,24 +213,67 @@ if ($dut ne "") {
 exit 0;
 
 sub saveHtmlReport {
-  my $html = "<HTML>
-<HEAD>
-   <TITLE>WiFi Diag Report</TITLE>
-</HEAD>
-<BODY TEXT=\"#000000\" BGCOLOR=\"#FFFFFF\" LINK=\"#AA7700\" VLINK=\"#AA7700\"
-ALINK=\"#FF0000\">
+  my $html = qq(<!DOCTYPE html><html lang=\"en\">
+<head>
+   <meta charset="utf-8" />
+   <title>WiFi Diag Report</title>
+   <style>
+   body {
+      font-family: Arial, Helvetica,sans-serif;
+      color: rgb(42,91,41);
+   }
+#main {
+   border:           0;
+   padding:          0;
+   margin:           0;
+   width:            100%;
+   text-align:       left;
+   vertical-align:   top;
+   display:          block;
+   /*white-space:      nowrap;*/
+}
 
-<CENTER>
-<br>
-<b>WiFi Diag Report.</b>
-</CENTER>
+ul#swlinks, #swlinks * {
+   background:    #e0e0e0;
+   font-size:     small;
+   color:         #404040;
+}
+ul#swlinks {
+   border: 4px solid #e0e0e0;
+}
+
+ul#swlinks, #swlinks ul {
+   padding-left:  1.3em;
+   margin-left:   0em;
+}
+#swlinks dt, #swlinks a {
+   font-size:     11pt;
+   font-weight:   bold;
+   margin-left:   0;
+   padding-left:  0;
+}
+#swlinks dd, #swlinks li {
+   padding-left:  0em;
+   margin-left:   0em;
+}
+#swlinks a #swlinks li ul li, #swlinks li ul li a {
+   font-size: 10pt;
+}
+h1, h2 {
+  text-align: center;
+}
+   </style>
+</head>
+<body >
+
+<h1>WiFi Diag Report.</h1>
 <P>
-";
+);
 
   $html .= $report_html;
 
-  $html .= "</BODY>
-</HTML>\n";
+  $html .= "</body>
+</html>\n";
 
   my $tmp = "$report_prefix/index.html";
   open(my $IDX, ">", $tmp) or die("Can't open $tmp for writing: $!\n");
