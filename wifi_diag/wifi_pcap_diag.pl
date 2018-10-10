@@ -40,18 +40,29 @@ my %glb_pkt_type_rx_hash = ();
 my %glb_ampdu_pkt_count_rx_hash = ();
 my %glb_ampdu_pkt_count_tx_hash = ();
 
+my $ampdu_pkt_count_total_tx = 0;
+my $ampdu_pkt_count_total_rx = 0;
+my $wmm_info = "";
+
 my $dut = "";
 my $report_prefix = "wifi-diag-";
 my $non_dut_frames = 0;
 my $show_help = 0;
 my $gen_report = 0;
 my $report_html = "";
+my $html_table_border = "border=1";
 
 my $usage = "$0
 --dut {bssid-of-DUT}   # Orient reports with this as upstream peer (lower-case MAC address)
 --gen_report           # Generate report off previously generated global data
 --report_prefix  {string} # Prefix used for report files (default is $report_prefix)
 --help                 # Show this help info.
+
+Example:
+mkdir -p netgear-up-5s && tshark -V -r /tmp/udp-up-20sta-netgear-5sec.pcapng | ./wifi_pcap_diag.pl --report_prefix \"netgear-up-5s/\" --dut dc:ef:09:e3:b8:7d > netgear-up-5s/foo.txt
+
+View {report-prefix}/index.html for the report, and {report-prefix}/foo.txt for notes and warnings.
+
 ";
 
 
@@ -103,10 +114,8 @@ my $delta_time_tx_count = 0;
 my $delta_time_tx = 0;
 my $ampdu_chain_rx_count = 0;
 my $ampdu_chain_rx_time = 0;
-my $rx_ampdu_chains = 0;
 my $ampdu_chain_tx_count = 0;
 my $ampdu_chain_tx_time = 0;
-my $tx_ampdu_chains = 0;
 
 my $dup_ba_rx = 0;
 my $dup_ba_tx = 0;
@@ -187,12 +196,13 @@ sub saveHtmlReport {
 <HEAD>
    <TITLE>WiFi Diag Report</TITLE>
 </HEAD>
-<BODY TEXT=\"#3366AA\" BGCOLOR=\"#FFFFFF\" LINK=\"#AA7700\" VLINK=\"#AA7700\"
+<BODY TEXT=\"#000000\" BGCOLOR=\"#FFFFFF\" LINK=\"#AA7700\" VLINK=\"#AA7700\"
 ALINK=\"#FF0000\">
 
 <CENTER>
 <br>
-<b><font color=\"006666\">WiFi Diag Report.</font></b>
+<b>WiFi Diag Report.</b>
+</CENTER>
 <P>
 ";
 
@@ -258,47 +268,20 @@ sub doTimeGraph {
 }
 
 sub htmlMcsHistogram {
-  my $html = "TX Encoding rate histogram.\n
-<table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
-  }
-  $html .= "</table><P>\n";
+  my $html = "";
 
-  $html .= "RX Encoding rate histogram.\n
-<table><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+  if ($rx_pkts) {
+    $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == " . ($rx_retrans_pkts * 100.0) / $rx_pkts . "<br>\n";
   }
-  $html .= "</table><P>\n";
-
-  $html .= "TX Packet Type histogram.\n
-<table><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_tx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+  else {
+    $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == 0<br>\n";
   }
-  $html .= "</table><P>\n";
-
-  $html .= "RX Packet Type histogram.\n
-<table><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_rx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+  if ($tx_pkts) {
+    $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == " . ($tx_retrans_pkts * 100.0) / $tx_pkts . "<br>\n";
   }
-  $html .= "</table><P>\n";
-
-  $html .= "TX AMPDU chain count histogram.\n
-<table><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $tx_ampdu_chains);
+  else {
+    $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == 0<br>\n";
   }
-  $html .= "</table><P>\n";
-
-  $html .= "RX AMPDU chain count histogram.\n
-<table><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
-    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $rx_ampdu_chains);
-  }
-  $html .= "</table><P>\n";
 
   if ($delta_time_tx_count) {
     $html .= "TX average gap between AMPDU frames (ms): " . (($delta_time_tx * 1000.0) / $delta_time_tx_count) . "<br>\n";
@@ -323,6 +306,56 @@ sub htmlMcsHistogram {
   $html .= "Duplicate TX BA without AMPDU between them: $dup_ba_tx<br>\n";
   $html .= "Duplicate RX BA without AMPDU between them: $dup_ba_rx<br>\n";
 
+  if ($wmm_info ne "") {
+    $html .= "WMM Info from DUT Beacon<br><pre>\n$wmm_info</pre>";
+  }
+
+  $html .= "TX Encoding rate histogram.\n
+<table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "RX Encoding rate histogram.\n
+<table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "TX Packet Type histogram.\n
+<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_pkt_type_tx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "RX Packet Type histogram.\n
+<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_pkt_type_rx_hash) {
+    $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  if ($ampdu_chain_tx_count) {
+    $html .= "TX AMPDU chain count histogram, average: " . $ampdu_pkt_count_total_tx / $ampdu_chain_tx_count . "\n";
+    $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
+    foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
+      $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
+    }
+    $html .= "</table><P>\n";
+  }
+
+  if ($ampdu_chain_rx_count) {
+    $html .= "RX AMPDU chain count histogram, average: " . $ampdu_pkt_count_total_rx / $ampdu_chain_rx_count . "\n";
+    $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
+    foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
+      $html .= sprintf("<tr><td>%s</dt><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
+    }
+    $html .= "</table><P>\n";
+  }
+
   return $html;
 }
 
@@ -336,8 +369,8 @@ sub genGlobalReports {
   $html .= "\n\n<P>MCS/Encoding Rates over time<P>\n";
   $html .= doTimeGraph("Encoding Rate Mbps", "TX Packet encoding rate over time", "1:2", $glb_mcs_tx_fname, "glb-mcs-tx.png");
   $html .= doTimeGraph("Encoding Rate Mbps", "RX Packet encoding rate over time", "1:2", $glb_mcs_rx_fname, "glb-mcs-rx.png");
-  $html .= doTimeGraph("Retransmits", "TX Packet Retransmits over time", "1:2", $glb_rtx_tx_fname, "glb-mcs-tx-retrans.png");
-  $html .= doTimeGraph("Retransmits", "RX Packet Retransmits over time", "1:2", $glb_rtx_rx_fname, "glb-mcs-rx-retrans.png");
+  $html .= doTimeGraph("TX Retransmits", "TX Packet Retransmits over time", "1:2", $glb_rtx_tx_fname, "glb-mcs-tx-retrans.png");
+  $html .= doTimeGraph("RX Retransmits", "RX Packet Retransmits over time", "1:2", $glb_rtx_rx_fname, "glb-mcs-rx-retrans.png");
 
   # Global per-second stats
   $html .= doTimeGraph("Total-pps", "Total Packet per sec", "1:4", $glb_mcs_ps_fname, "glb-mcs-tot-ps.png");
@@ -354,15 +387,15 @@ sub genGlobalReports {
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
-  $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_tx_fname, "glb-ba-tx-latency.png");
-  $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_tx_fname, "glb-ba-tx-pkts-per-ack.png");
-  $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_tx_fname, "glb-ba-tx-pkts-dup-per-ack.png");
+  $html .= doTimeGraph("BA Latency", "TX Block-Ack latency from last known frame", "1:6", $glb_ba_tx_fname, "glb-ba-tx-latency.png");
+  $html .= doTimeGraph("Packets Acked", "TX Block-Ack packets Acked per Pkt", "1:3", $glb_ba_tx_fname, "glb-ba-tx-pkts-per-ack.png");
+  $html .= doTimeGraph("Duplicate Packets Acked", "TX Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_tx_fname, "glb-ba-tx-pkts-dup-per-ack.png");
 
   # DUT sending BA to local peer
   $html .= "\n\n<P>Block-Acks sent from DUT to all local endpoints.<P>\n";
-  $html .= doTimeGraph("BA Latency", "Block-Ack latency from last known frame", "1:6", $glb_ba_rx_fname, "glb-ba-rx-latency.png");
-  $html .= doTimeGraph("Packets Acked", "Block-Ack packets Acked per Pkt", "1:3", $glb_ba_rx_fname, "glb-ba-rx-pkts-per-ack.png");
-  $html .= doTimeGraph("Duplicate Packets Acked", "Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_rx_fname, "glb-ba-rx-pkts-dup-per-ack.png");
+  $html .= doTimeGraph("BA Latency", "RX Block-Ack latency from last known frame", "1:6", $glb_ba_rx_fname, "glb-ba-rx-latency.png");
+  $html .= doTimeGraph("Packets Acked", "RX Block-Ack packets Acked per Pkt", "1:3", $glb_ba_rx_fname, "glb-ba-rx-pkts-per-ack.png");
+  $html .= doTimeGraph("Duplicate Packets Acked", "RX Block-Ack packets DUP-Acked per Pkt", "1:4", $glb_ba_rx_fname, "glb-ba-rx-pkts-dup-per-ack.png");
 
   return $html;
 }
@@ -428,6 +461,12 @@ sub processPkt {
 	  ($dut eq $pkt->transmitter()))) {
       $non_dut_frames++;
       return;
+    }
+
+    if ($wmm_info eq "") {
+      if ($pkt->type_subtype() eq "Beacon frame (0x0008)") {
+	$wmm_info = $pkt->{wmm_info};
+      }
     }
   }
 
@@ -576,7 +615,7 @@ sub processPkt {
     if ($is_last_ampdu) {
       $ampdu_chain_rx_count++;
       $ampdu_chain_rx_time += $ampdu_chain_time;
-      $rx_ampdu_chains++;
+      $ampdu_pkt_count_total_rx += $this_ampdu_pkt_count;
 
       if (exists $glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}) {
 	$glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}++;
@@ -592,7 +631,7 @@ sub processPkt {
     else {
       $glb_mcs_rx_hash{$dr} = 1;
     }
-    $dr = $pkt->type_subtype();
+    $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_rx_hash{$dr}) {
       $glb_pkt_type_rx_hash{$dr}++;
     }
@@ -621,7 +660,7 @@ sub processPkt {
     if ($is_last_ampdu) {
       $ampdu_chain_tx_count++;
       $ampdu_chain_tx_time += $ampdu_chain_time;
-      $tx_ampdu_chains++;
+      $ampdu_pkt_count_total_tx += $this_ampdu_pkt_count;
 
       if (exists $glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}) {
 	$glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}++;
@@ -637,7 +676,7 @@ sub processPkt {
     else {
       $glb_mcs_tx_hash{$dr} = 1;
     }
-    $dr = $pkt->type_subtype();
+    $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_tx_hash{$dr}) {
       $glb_pkt_type_tx_hash{$dr}++;
     }

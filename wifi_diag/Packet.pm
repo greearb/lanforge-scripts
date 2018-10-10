@@ -11,6 +11,8 @@ sub new {
   my %options = @_;
 
   my $self = {
+	      priority => "",
+	      wmm_info => "",
 	      raw_pkt => "",
 	      seqno => -1, # block-ack will not have a seqno
 	      acked_by => -1,
@@ -58,6 +60,9 @@ sub append {
   }
   elsif ($ln =~ /^.* = This is the last subframe of this A-MPDU: True/) {
     $self->{is_last_ampdu} = 1;
+  }
+  elsif ($ln =~ /^.* = Priority: (.*) \(.*/) {
+    $self->{priority} = " $1";
   }
   elsif ($ln =~ /^.* = Payload Type: A-MSDU/) {
     $self->{is_ampdu} = 1;
@@ -149,6 +154,13 @@ sub append {
   elsif ($ln =~ /^\s*A-MSDU Subframe #(\d+)/) {
     if ($1 > $self->{amsdu_frame_count}) {
       $self->{amsdu_frame_count} = $1;
+    }
+  }
+  else {
+    if ($self->type_subtype() eq "Beacon frame (0x0008)") {
+      if ($ln =~ /^\s+(Ac Parameters ACI.*)/) {
+	$self->{wmm_info} .= $ln;
+      }
     }
   }
 }
