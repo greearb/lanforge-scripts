@@ -10,9 +10,9 @@ sub new {
   my %options = @_;
 
   my $self = {
-	      %options,
-	      tids => [],
-	     };
+         %options,
+         tids => [],
+        };
 
   bless($self, $class);
 
@@ -58,6 +58,11 @@ sub find_or_create_tid {
   my $self = shift;
   my $tidno = shift;
 
+  if ($tidno =~ m/^0x/) {
+     print STDERR "PeerConn::find_or_create_tid: converting hex tidno $tidno to dec: ".hex($tidno)."\n";
+     $tidno = hex($tidno);
+  }
+
   my $tid;
 
   if (exists $self->{tids}[$tidno]) {
@@ -65,12 +70,12 @@ sub find_or_create_tid {
   }
   else {
     $tid = Tid->new(glb_fh_ba_tx => $self->{glb_fh_ba_tx},
-		    glb_fh_ba_rx => $self->{glb_fh_ba_rx},
-		    tidno => $tidno,
-		    report_prefix => $self->{report_prefix},
-		    addr_a => $self->local_addr(),
-		    addr_b => $self->peer_addr(),
-		   );
+          glb_fh_ba_rx => $self->{glb_fh_ba_rx},
+          tidno => $tidno,
+          report_prefix => $self->{report_prefix},
+          addr_a => $self->local_addr(),
+          addr_b => $self->peer_addr(),
+         );
     $self->{tids}[$tidno] = $tid;
   }
   return $tid;
