@@ -228,35 +228,37 @@ my $num_ports = scalar keys(%{$rh_ports->{'flat_list'}});
 my $num_cx = 0;
 my $disp_num = $des_resource * 1000;
 # create dummy port and set it unmanaged
-for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
-   last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
-
-   # create dummy port and set it unmanaged
-   my $end_b_alias = "D_l4json${disp_num}";
-   $rh_endp_B->{'port'} = $rh_p->{'alias'};
-   $rh_endp_B->{'alias'} = $end_b_alias;
-   $num_cx++;
-   $disp_num++;
-   print " +$end_b_alias ";
-   json_post("/cli-json/add_l4_endp${uri_args}", $rh_endp_B);
-}
-sleep 1;
-$num_cx = 0;
-$disp_num = $des_resource * 1000;
-print "\nSetting Endpoint flags: ";
-for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
-   last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
-   my $end_b_alias = "D_l4json${disp_num}";
-   $rh_set_flags_b->{'name'} = $end_b_alias;
-   $num_cx++;
-   $disp_num++;
-   print " $end_b_alias; ";
-   json_post("/cli-json/set_endp_flag${uri_args}", $rh_set_flags_b);
-}
-sleep 1;
+my $create_b_side = 0;
+if ($create_b_side) {
+   for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
+      last if ($num_cx >= ($num_ports-1));
+      next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
    
+      # create dummy port and set it unmanaged
+      my $end_b_alias = "D_l4json${disp_num}";
+      $rh_endp_B->{'port'} = $rh_p->{'alias'};
+      $rh_endp_B->{'alias'} = $end_b_alias;
+      $num_cx++;
+      $disp_num++;
+      print " +$end_b_alias ";
+      json_post("/cli-json/add_l4_endp${uri_args}", $rh_endp_B);
+   }
+   sleep 1;
+   $num_cx = 0;
+   $disp_num = $des_resource * 1000;
+   print "\nSetting Endpoint flags: ";
+   for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
+      last if ($num_cx >= ($num_ports-1));
+      next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
+      my $end_b_alias = "D_l4json${disp_num}";
+      $rh_set_flags_b->{'name'} = $end_b_alias;
+      $num_cx++;
+      $disp_num++;
+      print " ~$end_b_alias ";
+      json_post("/cli-json/set_endp_flag${uri_args}", $rh_set_flags_b);
+   }
+   sleep 1;
+}
 $num_cx = 0;
 $disp_num = $des_resource * 1000;
 print "\nAdding Endpoint A: ";
@@ -268,7 +270,7 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    $rh_endp_A->{'alias'} = $end_a_alias;
    $num_cx++;
    $disp_num++;
-   print "add_l4_endp: $end_a_alias; ";
+   print " +$end_a_alias; ";
    json_post("/cli-json/add_l4_endp${uri_args}", $rh_endp_A);
 }
 $num_cx = 0;
@@ -281,7 +283,7 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    $rh_set_flags_a->{'name'} = $end_a_alias;
    $num_cx++;
    $disp_num++;
-   print " $end_a_alias ";
+   print " ~$end_a_alias ";
    json_post("/cli-json/set_endp_flag${uri_args}", $rh_set_flags_a); 
 }
 print "\nRefreshing...";
@@ -295,7 +297,7 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    last if ($num_cx >= ($num_ports-1));
    next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
    my $end_a_alias = "l4json${disp_num}";
-   my $end_b_alias = "D_l4json${disp_num}";
+   my $end_b_alias = ($create_b_side) ? "D_l4json${disp_num}" : "NA";
    my $cx_alias = "CX_l4json${disp_num}";
    $rh_add_cx->{'alias'} = $cx_alias;
    $rh_add_cx->{'tx_endp'} = $end_a_alias;
@@ -312,23 +314,7 @@ $h = {"test_mgr"=>"all", "cross_connect"=>"all"};
 json_request("/cli-json/show_cxe", $h);
 sleep 1;
 
-print "\nSet report timer CX: ";
-$num_cx = 0;
-$disp_num = $des_resource * 1000;
-for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
-   last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^v*sta/);
-   my $cx_alias = "CX_l4json${disp_num}";
-   my $rh_cx_t = {
-      'test_mgr'  => 'default_tm',
-      'cx_name'   => $cx_alias,
-      'milliseconds'=> 1000,
-      'CXONLY'   => '[BLANK]'
-   };
-   json_post("/cli-json/set_cx_report_timer${uri_args}", $rh_cx_t);
-   $num_cx++;
-}
-# print "\nRefreshing...";
+print "\nRefreshing...";
 $h = {"endpoint"=>"all"};
 json_request("/cli-json/nc_show_endpoints", $h);
 sleep 1;
@@ -345,10 +331,12 @@ while ($num_unfinished > 0) {
    flatten_list($rh_cx, "endpoint");
    @cx_names = sort keys %{$rh_cx->{'flat_list'}};
    for my $cx_alias (sort @cx_names) {
-      print " checking $cx_alias ";
-      $num_unfinished++ if ($cx_alias =~ /^1\./);
+      if ($cx_alias =~ /^1\./) {
+         print " -$cx_alias ";
+         $num_unfinished++ ;
+      }
    }
-   print "Unfinished: $num_unfinished";
+   print " Unfinished: $num_unfinished\n";
    sleep 1 if ($num_unfinished);
 }
 @endp_names = [];
@@ -358,16 +346,22 @@ flatten_list($rh_endp, "endpoint");
 @cx_names = [];
 for my $endp_name (@endp_names) {
    next if ($endp_name =~ m/^D_/);
+   if ($endp_name =~ m/^1\./) {
+      print " what? $endp_name ";
+      next;
+   }
    push(@cx_names, "CX_${endp_name}");
 }
-print "\nSetting timers: ";
-for my $cx_alias (sort @cx_names) {
-   print " $cx_alias ";
-   my $rh_cx_t = {
+
+my $rh_cx_t = {
       'test_mgr'  => 'default_tm',
-      'cx_name'   => $cx_alias,
+      #'cx_name'   => $cx_alias,
       'milliseconds'=> 1000,
    };
+print "\nSetting timers: ";
+for my $cx_alias (sort @cx_names) {
+   $rh_cx_t->{'cx_name'} = $cx_alias;
+   print " ~$cx_alias ";
    json_post("/cli-json/set_cx_report_timer", $rh_cx_t);
 }
 
@@ -377,7 +371,31 @@ json_request("/cli-json/nc_show_endpoints", $h);
 sleep 1;
 $h = {"test_mgr"=>"all", "cross_connect"=>"all"};
 json_request("/cli-json/show_cxe", $h);
+sleep 1;
 
+$rh_cx_t = {
+      'test_mgr'  => 'default_tm',
+      #'cx_name'   => $cx_alias,
+      'cx_state'=> "RUNNING",
+   };
+print "\nStarting cx...";
+for my $cx_alias (sort @cx_names) {
+   $rh_cx_t->{'cx_name'} = $cx_alias; 
+   print " +$cx_alias ";
+   json_post("/cli-json/set_cx_state", $rh_cx_t);
+}
+sleep 5;
 
+print "\nStopping cx...";
+$rh_cx_t = {
+      'test_mgr'  => 'default_tm',
+      #'cx_name'   => $cx_alias,
+      'cx_state'=> "STOPPED",
+   };
+for my $cx_alias (sort @cx_names) {
+   $rh_cx_t->{'cx_name'} = $cx_alias;
+   print " -$cx_alias ";
+   json_post("/cli-json/set_cx_state", $rh_cx_t);
+}
 
 #
