@@ -66,7 +66,7 @@ my $ampdu_pkt_count_total_rx = 0;
 my $wmm_info = "";
 
 my $dut = "";
-my $report_prefix = "wifi-diag-";
+our $report_prefix = "wifi-diag-";
 my $non_dut_frames = 0;
 my $show_help = 0;
 my $gen_report = 0;
@@ -91,7 +91,7 @@ GetOptions
 (
  'help|h'            => \$show_help,
  'dut=s'             => \$dut,
- 'report_prefix=s'   => \$report_prefix,
+ 'report_prefix=s'   => \$::report_prefix,
  'gen_report'        => \$gen_report,
  ) || (print STDERR $usage && exit(1));
 
@@ -100,14 +100,15 @@ if ($show_help) {
    print $usage;
    exit 0
 }
-
-my $glb_ba_tx_fname = $report_prefix . "glb-ba-tx-rpt.txt";
-my $glb_ba_rx_fname = $report_prefix . "glb-ba-rx-rpt.txt";
-my $glb_mcs_ps_fname = $report_prefix . "glb-mcs-ps-rpt.txt";
-my $glb_mcs_tx_fname = $report_prefix . "glb-mcs-tx-rpt.txt";
-my $glb_mcs_rx_fname = $report_prefix . "glb-mcs-rx-rpt.txt";
-my $glb_rtx_tx_fname = $report_prefix . "glb-rtx-tx-rpt.txt";
-my $glb_rtx_rx_fname = $report_prefix . "glb-rtx-rx-rpt.txt";
+$::report_prefix .= "/"
+   if ($report_prefix !~ m{/$});
+my $glb_ba_tx_fname = $::report_prefix . "glb-ba-tx-rpt.txt";
+my $glb_ba_rx_fname = $::report_prefix . "glb-ba-rx-rpt.txt";
+my $glb_mcs_ps_fname = $::report_prefix . "glb-mcs-ps-rpt.txt";
+my $glb_mcs_tx_fname = $::report_prefix . "glb-mcs-tx-rpt.txt";
+my $glb_mcs_rx_fname = $::report_prefix . "glb-mcs-rx-rpt.txt";
+my $glb_rtx_tx_fname = $::report_prefix . "glb-rtx-tx-rpt.txt";
+my $glb_rtx_rx_fname = $::report_prefix . "glb-rtx-rx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -218,55 +219,35 @@ sub saveHtmlReport {
    <meta charset="utf-8" />
    <title>WiFi Diag Report</title>
    <style>
-   body {
-      font-family: Arial, Helvetica,sans-serif;
-      color: rgb(42,91,41);
-   }
-#main {
-   border:           0;
-   padding:          0;
-   margin:           0;
-   width:            100%;
-   text-align:       left;
-   vertical-align:   top;
-   display:          block;
-   /*white-space:      nowrap;*/
+body {
+   font-family: Arial, Helvetica,sans-serif;
+   font-size: 14px;
+   color: #204020;
+}
+table {
+   border-collapse: collapse;
+   background: #e0e0e0;
+}
+table, td, th {
+   border: 1px solid gray;
+   padding: 4px;
+}
+td {
+   background: white;
+}
+td.ar {
+   text-align: right;
 }
 
-ul#swlinks, #swlinks * {
-   background:    #e0e0e0;
-   font-size:     small;
-   color:         #404040;
-}
-ul#swlinks {
-   border: 4px solid #e0e0e0;
-}
-
-ul#swlinks, #swlinks ul {
-   padding-left:  1.3em;
-   margin-left:   0em;
-}
-#swlinks dt, #swlinks a {
-   font-size:     11pt;
-   font-weight:   bold;
-   margin-left:   0;
-   padding-left:  0;
-}
-#swlinks dd, #swlinks li {
-   padding-left:  0em;
-   margin-left:   0em;
-}
-#swlinks a #swlinks li ul li, #swlinks li ul li a {
-   font-size: 10pt;
-}
-h1, h2 {
+h1, h2, th {
+  color: rgb(42,91,41);
   text-align: center;
 }
    </style>
 </head>
 <body >
 
-<h1>WiFi Diag Report.</h1>
+<h1>WiFi Diag Report</h1>
 <P>
 );
 
@@ -275,7 +256,8 @@ h1, h2 {
   $html .= "</body>
 </html>\n";
 
-  my $tmp = "$report_prefix/index.html";
+  my $tmp = "$::report_prefix/index.html";
+  $tmp =~ s{//}{/}g;
   open(my $IDX, ">", $tmp) or die("Can't open $tmp for writing: $!\n");
   print $IDX $html;
   close $IDX;
@@ -289,22 +271,23 @@ sub genTimeGnuplot {
   my $cols = shift;
   my $graph_data = shift;
 
-  my $text ="# auto-generated gnuplot script
-#!/usr/bin/gnuplot
+  my $text =qq(#!/usr/bin/gnuplot
+# auto-generated gnuplot script
 reset
 set terminal png
 
 set xdata time
-set timefmt \"\%s\"
-set format x \"\%M:\%S\"
+set timefmt '\%s'
+set format x '\%M:\%S'
 
-set xlabel \"Date\"
-set ylabel \"$ylabel\"
+set xlabel "Date"
+set ylabel '$ylabel'
 
-set title \"$title\"
+set title '$title'
 set key below
 set grid
-plot \"$graph_data\" using $cols title \"$title\"\n";
+plot '$graph_data' using $cols title '$title'
+);
   return $text;
 }
 
@@ -318,8 +301,10 @@ sub doTimeGraph {
   my $html = "";
 
   my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file);
-  my $png_fname = "$report_prefix$out_file";
+  my $png_fname = "$::report_prefix/$out_file";
+  $png_fname =~ s{//}{/}g;
   my $tmp = $report_prefix . "_gnuplot_tmp_script.txt";
+  $tmp =~ s{//}{/}g;
   open(my $GP, ">", $tmp) or die("Can't open $tmp for writing: $!\n");
   print $GP $text;
   close $GP;
@@ -327,7 +312,7 @@ sub doTimeGraph {
   print "cmd: $cmd\n";
   system($cmd);
 
-  $html .= "<img src=\"$out_file\" alt=\"$title\"><br>\n";
+  $html .= qq(<img src="$out_file" alt="$title"><br>\n);
   return $html;
 }
 
@@ -374,50 +359,50 @@ sub htmlMcsHistogram {
     $html .= "WMM Info from DUT Beacon<br><pre>\n$wmm_info</pre>";
   }
 
-  $html .= "TX Encoding rate histogram.\n
+  $html .= "<h4>TX Encoding rate histogram.</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
-    $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
   }
   $html .= "</table><P>\n";
 
-  $html .= "RX Encoding rate histogram.\n
+  $html .= "<h4>RX Encoding rate histogram</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
-    $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
   }
-  $html .= "</table><P>\n";
+  $html .= "</table>\n";
 
-  $html .= "TX Packet Type histogram.\n
+  $html .= "<h4>TX Packet Type histogram</h4>\n
 <table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort keys %glb_pkt_type_tx_hash) {
-    $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
   }
-  $html .= "</table><P>\n";
+  $html .= "</table>\n";
 
-  $html .= "RX Packet Type histogram.\n
+  $html .= "<h4>RX Packet Type histogram</h4>\n
 <table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort keys %glb_pkt_type_rx_hash) {
-    $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
   }
   $html .= "</table><P>\n";
 
   if ($ampdu_chain_tx_count) {
-    $html .= "TX AMPDU chain count histogram, average: " . $ampdu_pkt_count_total_tx / $ampdu_chain_tx_count . "\n";
+    $html .= "<h4>TX AMPDU chain count histogram<h4>Average: " . $ampdu_pkt_count_total_tx / $ampdu_chain_tx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
-      $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
     }
-    $html .= "</table><P>\n";
+    $html .= "</table>\n";
   }
 
   if ($ampdu_chain_rx_count) {
-    $html .= "RX AMPDU chain count histogram, average: " . $ampdu_pkt_count_total_rx / $ampdu_chain_rx_count . "\n";
+    $html .= "<h4>RX AMPDU chain count histogram</h4> Average: " . $ampdu_pkt_count_total_rx / $ampdu_chain_rx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
-      $html .= sprintf("<tr><td>%s</td><td>%s</td><td>%f</td></tr>\n", $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
     }
-    $html .= "</table><P>\n";
+    $html .= "</table>\n";
   }
 
   return $html;
