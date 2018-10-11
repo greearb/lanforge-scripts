@@ -110,7 +110,7 @@ sub flatten_list {
 
    if (!defined $rh_list->{$list_name}) {
       print Dumper($rh_list);
-      warn "flatten_list: $list_name not found";
+      print "flatten_list: $list_name not found\n";
       return;
    }
    if (ref $rh_list->{$list_name} eq "HASH") {
