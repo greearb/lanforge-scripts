@@ -36,8 +36,9 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
    --port {port number} # defaults to 8080
 );
 
-my $des_resource = 2;
-
+my $des_resource = 3;
+#my $pat_port_type = '^eth\d[#]\d+';
+my $pat_port_type = '^sta\d+';
 ##
 ##    M A I N
 ##
@@ -138,7 +139,7 @@ if (@endp_names > 0) {
       push(@cx_names, "CX_".$endp_name);
    }
 }
-my $rh_req = { 
+my $rh_req = {
    "test_mgr" => "default_tm",
    "suppress_preexec_method" => 1,
    "suppress_preexec_cli" => 1,
@@ -188,14 +189,15 @@ my $rh_endp_A = { # actual endpoint
       #'alias'           => "untitled",
       'shelf'           => 1,
       'resource'        => $des_resource,
-      # port 
       'type'            => 'l4_generic',
       'timeout'         => '2000',
       'url_rate'        => '600',
-      'url'             => 'dl http://10.36.0.1/ /dev/null',
+      'url'             => 'dl http://idtest.candelatech.com/ /dev/null',
       'max_speed'       => '1000000',
+      'http_auth_type'  => 0,
+      'proxy_auth_type' => 512,
    };
-my $rh_endp_B = { # dummy endpoints, 
+my $rh_endp_B = { # dummy endpoints, # we don't actually need
       #'alias'           => "D_untitled",
       'shelf'           => 1,
       'resource'        => $des_resource,
@@ -232,8 +234,8 @@ my $create_b_side = 0;
 if ($create_b_side) {
    for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
       last if ($num_cx >= ($num_ports-1));
-      next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
-   
+      next if ($rh_p->{'alias'} !~ /$pat_port_type/);
+
       # create dummy port and set it unmanaged
       my $end_b_alias = "D_l4json${disp_num}";
       $rh_endp_B->{'port'} = $rh_p->{'alias'};
@@ -249,7 +251,7 @@ if ($create_b_side) {
    print "\nSetting Endpoint flags: ";
    for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
       last if ($num_cx >= ($num_ports-1));
-      next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
+      next if ($rh_p->{'alias'} !~ /$pat_port_type/);
       my $end_b_alias = "D_l4json${disp_num}";
       $rh_set_flags_b->{'name'} = $end_b_alias;
       $num_cx++;
@@ -264,7 +266,7 @@ $disp_num = $des_resource * 1000;
 print "\nAdding Endpoint A: ";
 for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
+   next if ($rh_p->{'alias'} !~ /$pat_port_type/);
    my $end_a_alias = "l4json${disp_num}";
    $rh_endp_A->{'port'} = $rh_p->{'alias'};
    $rh_endp_A->{'alias'} = $end_a_alias;
@@ -278,13 +280,13 @@ $disp_num = $des_resource * 1000;
 print "\nSet_endp_flag: ";
 for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
+   next if ($rh_p->{'alias'} !~ /$pat_port_type/);
    my $end_a_alias = "l4json${disp_num}";
    $rh_set_flags_a->{'name'} = $end_a_alias;
    $num_cx++;
    $disp_num++;
    print " ~$end_a_alias ";
-   json_post("/cli-json/set_endp_flag${uri_args}", $rh_set_flags_a); 
+   json_post("/cli-json/set_endp_flag${uri_args}", $rh_set_flags_a);
 }
 print "\nRefreshing...";
 $h = {"endpoint"=>"all"};
@@ -295,7 +297,7 @@ $num_cx = 0;
 $disp_num = $des_resource * 1000;
 for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    last if ($num_cx >= ($num_ports-1));
-   next if ($rh_p->{'alias'} !~ /^eth\d[#]\d+/);
+   next if ($rh_p->{'alias'} !~ /$pat_port_type/);
    my $end_a_alias = "l4json${disp_num}";
    my $end_b_alias = ($create_b_side) ? "D_l4json${disp_num}" : "NA";
    my $cx_alias = "CX_l4json${disp_num}";
@@ -305,7 +307,7 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    $num_cx++;
    $disp_num++;
    print " $cx_alias ";
-   json_post("/cli-json/add_cx${uri_args}", $rh_add_cx); 
+   json_post("/cli-json/add_cx${uri_args}", $rh_add_cx);
 }
 $h = {"endpoint"=>"all"};
 json_request("/cli-json/nc_show_endpoints", $h);
@@ -339,11 +341,11 @@ while ($num_unfinished > 0) {
    print " Unfinished: $num_unfinished\n";
    sleep 1 if ($num_unfinished);
 }
-@endp_names = [];
+@endp_names = ();
 my $rh_endp = json_request("/layer4/list");
 flatten_list($rh_endp, "endpoint");
 @endp_names = sort keys %{$rh_endp->{'flat_list'}};
-@cx_names = [];
+@cx_names = ();
 for my $endp_name (@endp_names) {
    next if ($endp_name =~ m/^D_/);
    if ($endp_name =~ m/^1\./) {
@@ -360,6 +362,10 @@ my $rh_cx_t = {
    };
 print "\nSetting timers: ";
 for my $cx_alias (sort @cx_names) {
+   if ($cx_alias =~ /^\s*$/ || ref $cx_alias eq "ARRAY") {
+      print "BLANK CX_NAME: ".Dumper(\@cx_names);
+      next;
+   }
    $rh_cx_t->{'cx_name'} = $cx_alias;
    print " ~$cx_alias ";
    json_post("/cli-json/set_cx_report_timer", $rh_cx_t);
@@ -380,7 +386,7 @@ $rh_cx_t = {
    };
 print "\nStarting cx...";
 for my $cx_alias (sort @cx_names) {
-   $rh_cx_t->{'cx_name'} = $cx_alias; 
+   $rh_cx_t->{'cx_name'} = $cx_alias;
    print " +$cx_alias ";
    json_post("/cli-json/set_cx_state", $rh_cx_t);
 }
