@@ -41,10 +41,13 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
 ##    M A I N
 ##
 
+my $des_resource = 6;
+
 GetOptions
 (
   'host=s'        => \$::Host,
-  'port=i'        => \$::Port
+  'port=i'        => \$::Port,
+  'resource=i'    => \$des_resource
 ) || (print($usage) && exit(1));
 
 $::HostUri = "http://$Host:$Port";
@@ -55,17 +58,21 @@ my $ra_links = get_links_from($rh, 'resources');
 my @ports_up= ();
 
 # TODO: make this a JsonUtils::list_ports()
-$uri = "/port/1/3/list?fields=alias,device,down,phantom,port";
-#logg("requesting $uri");
+$uri = "/port/1/${des_resource}/list?fields=alias,device,down,phantom,port";
+logg("requesting $uri");
 $rh = json_request($uri);
+#print Dumper($rh);
 flatten_list($rh, 'interfaces');
+#print Dumper($rh->{'flat_list'});
 for my $rh_p (keys %{$rh->{'flat_list'}}) {
-   if (!$rh->{'flat_list'}->{$rh_p}->{'down'}) {
+   print " $rh_p ".$rh->{'flat_list'}->{$rh_p}->{'down'};
+   if ("false" eq $rh->{'flat_list'}->{$rh_p}->{'down'}) {
       push(@ports_up, $rh_p);
    }
 }
 # find first station
 my $rh_sta;
+print Dumper(\@ports_up);
 for my $rh_up (@ports_up) {
    my $eid = $rh->{'flat_list'}->{$rh_up}->{'port'};
    my @hunks = split(/[.]/, $eid);
@@ -130,7 +137,7 @@ for my $ep_name (@endp_names) {
    #usleep(500000);
    $rh = { "endp_name" => $ep_name };
    json_post($uri, $rh);
-   
+
 }
 
 print "\nRefreshing...";
@@ -144,7 +151,7 @@ json_request("/cli-json/show_cxe", $h);
 # -A and -B are expected convention for endpoint names
 
 # create 10 endpoints
-my $rh_ports = json_request("/port/1/3/list");
+my $rh_ports = json_request("/port/1/$des_resource/list");
 flatten_list($rh_ports, 'interfaces');
 
 my $rh_endp_A = {
@@ -155,7 +162,7 @@ my $rh_endp_A = {
       'type'            => 'lf_udp',
       'ip_port'         => -1,
       'is_rate_bursty'  => 'NO',
-      'min_rate'        => 1000000,
+      'min_rate'        => 100000,
       'min_pkt'         => -1,
       'max_pkt'         => -1,
       'payload_pattern' => 'increasing',
@@ -165,7 +172,7 @@ my $rh_endp_A = {
 my $rh_endp_B = {
       'alias'           => 'udp_json',
       'shelf'           => 1,
-      'resource'        => 3,
+      'resource'        => $des_resource,
       'port'            => 'unset',
       'type'            => 'lf_udp',
       'ip_port'         => -1,
@@ -197,7 +204,7 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    next if ($rh_p->{'alias'} !~ /^v*sta/);
 
    my $end_a_alias = "udp_json_$num_cx-A";
-   my $end_b_alias = "udp_json_$num_cx-B"; 
+   my $end_b_alias = "udp_json_$num_cx-B";
    my $port_b = $rh_p->{'alias'};
    print "$port_b ";
    $rh_endp_B->{'port'} = $port_b;
@@ -219,10 +226,10 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    next if ($rh_p->{'alias'} !~ /^v*sta/);
 
    my $end_a_alias = "udp_json_${num_cx}-A";
-   my $end_b_alias = "udp_json_${num_cx}-B"; 
+   my $end_b_alias = "udp_json_${num_cx}-B";
    my $port_b = $rh_p->{'alias'};
    my $cx_alias = "udp_json_".$num_cx;
-   $rh_cx->{'alias'} = $cx_alias; 
+   $rh_cx->{'alias'} = $cx_alias;
    $rh_cx->{'tx_endp'} = $end_a_alias;
    $rh_cx->{'rx_endp'} = $end_b_alias;
    json_post("/cli-json/add_cx", $rh_cx);
@@ -273,7 +280,7 @@ for my $cxname (@cx_names) {
    $set_state->{'cx_name'} = $cxname;
    json_post("/cli-json/set_cx_state", $set_state);
 }
-sleep 10;
+sleep 1;
 
 $set_state = {
    'test_mgr'  => 'default_tm',
