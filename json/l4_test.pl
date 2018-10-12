@@ -36,7 +36,7 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
    --port {port number} # defaults to 8080
 );
 
-my $des_resource = 3;
+my $des_resource = 6;
 #my $pat_port_type = '^eth\d[#]\d+';
 my $pat_port_type = '^sta\d+';
 ##
@@ -65,7 +65,8 @@ $uri = "/port/1/${des_resource}/list?fields=alias,device,down,phantom,port";
 $rh = json_request($uri);
 flatten_list($rh, 'interfaces');
 for my $rh_p (keys %{$rh->{'flat_list'}}) {
-   if (!$rh->{'flat_list'}->{$rh_p}->{'down'}) {
+   print " down? $rh->{'flat_list'}->{$rh_p}->{'down'} ";
+   if ($rh->{'flat_list'}->{$rh_p}->{'down'} eq "false") {
       push(@ports_up, $rh_p);
    }
 }
