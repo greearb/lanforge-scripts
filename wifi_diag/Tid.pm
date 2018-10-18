@@ -43,20 +43,24 @@ sub new {
 
   bless($self, $class);
 
-  my $rpt_fname = $self->{report_prefix} .
-    "tid-" . $self->tidno() . "-" .
-      $self->{addr_a} . "." .
-	$self->{addr_b} . "-rpt.txt";
-  open(my $MCS, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
-  $self->{mcs_fh} = $MCS;
+  if (0) { # Skip per-tid reporting files for now.
+    # I am seeing failure due to > 1024 files being opened, and we don't
+    # use these anyway...
+    my $rpt_fname = $self->{report_prefix} .
+      "tid-" . $self->tidno() . "-" .
+	$self->{addr_a} . "." .
+	  $self->{addr_b} . "-rpt.txt";
+    open(my $MCS, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
+    $self->{mcs_fh} = $MCS;
 
-  $rpt_fname = $self->{report_prefix} . "tid-" . $self->tidno() . "-" . $self->{addr_a} . "." . $self->{addr_b} . "-ps-rpt.txt";
-  open(my $MCS_PS, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
-  $self->{mcs_fh_ps} = $MCS_PS;
+    $rpt_fname = $self->{report_prefix} . "tid-" . $self->tidno() . "-" . $self->{addr_a} . "." . $self->{addr_b} . "-ps-rpt.txt";
+    open(my $MCS_PS, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
+    $self->{mcs_fh_ps} = $MCS_PS;
 
-  $rpt_fname = $self->{report_prefix} . "tid-" . $self->tidno() . "-" . $self->{addr_a} . "." . $self->{addr_b} . "-ba-rpt.txt";
-  open(my $BA, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
-  $self->{fh_ba} = $BA;
+    $rpt_fname = $self->{report_prefix} . "tid-" . $self->tidno() . "-" . $self->{addr_a} . "." . $self->{addr_b} . "-ba-rpt.txt";
+    open(my $BA, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
+    $self->{fh_ba} = $BA;
+  }
 
   return $self;
 }
@@ -202,7 +206,7 @@ sub add_pkt {
     }
 
     my $new_ba = $ba_tot - $ba_dup;
-    my $fh_ba = $self->{fh_ba};
+    #my $fh_ba = $self->{fh_ba};
     my $ts_diff;
     if ($last_timestamp == 0) {
       $ts_diff = "0.0";
@@ -212,7 +216,7 @@ sub add_pkt {
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t$ba_tot\t$ba_dup\t$new_ba\t$ts_diff\n";
 
-    print $fh_ba $ln; # Tid specific data file
+    #print $fh_ba $ln; # Tid specific data file
     print $glb $ln; # Global data file
   }# if block-ack frame
 
@@ -234,62 +238,64 @@ sub add_pkt {
     last;
   }
 
-  my $tsp1 = $self->{last_ps_timestamp} + 1.0;
-  my $gen_ps = $tsp1 < $pkt->{timestamp};
-  #print STDERR "last-ps-timestamp: " . $self->{last_ps_timestamp} . " tsp1: $tsp1 gen-ps: $gen_ps "
-  #  . $self->{last_ps_timestamp} . " pkt-ts: " . $pkt->{timestamp} . "\n";
-  if ($gen_ps) {
-    my $diff =  $pkt->{timestamp} - $self->{last_ps_timestamp};
-    my $period_tot_pkts = $self->{tot_pkts} - $self->{last_tot_pkts};
-    my $period_rx_pkts = $self->{rx_pkts} - $self->{last_rx_pkts};
-    my $period_rx_amsdu_pkts = $self->{rx_amsdu_pkts} - $self->{last_rx_amsdu_pkts};
-    my $period_rx_retrans_pkts = $self->{rx_retrans_pkts} - $self->{last_rx_retrans_pkts};
-    my $period_rx_retrans_amsdu_pkts = $self->{rx_amsdu_retrans_pkts} - $self->{last_rx_amsdu_retrans_pkts};
-    my $period_tx_pkts = $self->{tx_pkts} - $self->{last_tx_pkts};
-    my $period_tx_amsdu_pkts = $self->{tx_amsdu_pkts} - $self->{last_tx_amsdu_pkts};
-    my $period_tx_retrans_pkts = $self->{tx_retrans_pkts} - $self->{last_tx_retrans_pkts};
-    my $period_tx_retrans_amsdu_pkts = $self->{tx_amsdu_retrans_pkts} - $self->{last_tx_amsdu_retrans_pkts};
-    my $period_dummy_rx_pkts = $self->{dummy_rx_pkts} - $self->{last_dummy_rx_pkts};
-    my $period_dummy_tx_pkts = $self->{dummy_tx_pkts} - $self->{last_dummy_tx_pkts};
+  if (0) { # Skip per-tid reporting files for now...global info seems enough
+    my $tsp1 = $self->{last_ps_timestamp} + 1.0;
+    my $gen_ps = $tsp1 < $pkt->{timestamp};
+    #print STDERR "last-ps-timestamp: " . $self->{last_ps_timestamp} . " tsp1: $tsp1 gen-ps: $gen_ps "
+    #  . $self->{last_ps_timestamp} . " pkt-ts: " . $pkt->{timestamp} . "\n";
+    if ($gen_ps) {
+      my $diff =  $pkt->{timestamp} - $self->{last_ps_timestamp};
+      my $period_tot_pkts = $self->{tot_pkts} - $self->{last_tot_pkts};
+      my $period_rx_pkts = $self->{rx_pkts} - $self->{last_rx_pkts};
+      my $period_rx_amsdu_pkts = $self->{rx_amsdu_pkts} - $self->{last_rx_amsdu_pkts};
+      my $period_rx_retrans_pkts = $self->{rx_retrans_pkts} - $self->{last_rx_retrans_pkts};
+      my $period_rx_retrans_amsdu_pkts = $self->{rx_amsdu_retrans_pkts} - $self->{last_rx_amsdu_retrans_pkts};
+      my $period_tx_pkts = $self->{tx_pkts} - $self->{last_tx_pkts};
+      my $period_tx_amsdu_pkts = $self->{tx_amsdu_pkts} - $self->{last_tx_amsdu_pkts};
+      my $period_tx_retrans_pkts = $self->{tx_retrans_pkts} - $self->{last_tx_retrans_pkts};
+      my $period_tx_retrans_amsdu_pkts = $self->{tx_amsdu_retrans_pkts} - $self->{last_tx_amsdu_retrans_pkts};
+      my $period_dummy_rx_pkts = $self->{dummy_rx_pkts} - $self->{last_dummy_rx_pkts};
+      my $period_dummy_tx_pkts = $self->{dummy_tx_pkts} - $self->{last_dummy_tx_pkts};
 
-    my $period_tot_pkts_ps = $period_tot_pkts / $diff;
-    my $period_rx_pkts_ps = $period_rx_pkts / $diff;
-    my $period_rx_amsdu_pkts_ps = $period_rx_amsdu_pkts / $diff;
-    my $period_rx_retrans_pkts_ps = $period_rx_retrans_pkts / $diff;
-    my $period_rx_retrans_amsdu_pkts_ps = $period_rx_retrans_amsdu_pkts / $diff;
-    my $period_tx_pkts_ps = $period_tx_pkts / $diff;
-    my $period_tx_amsdu_pkts_ps = $period_tx_amsdu_pkts / $diff;
-    my $period_tx_retrans_pkts_ps = $period_tx_retrans_pkts / $diff;
-    my $period_tx_retrans_amsdu_pkts_ps = $period_tx_retrans_amsdu_pkts / $diff;
-    my $period_dummy_rx_pkts_ps = $period_dummy_rx_pkts / $diff;
-    my $period_dummy_tx_pkts_ps = $period_dummy_tx_pkts / $diff;
+      my $period_tot_pkts_ps = $period_tot_pkts / $diff;
+      my $period_rx_pkts_ps = $period_rx_pkts / $diff;
+      my $period_rx_amsdu_pkts_ps = $period_rx_amsdu_pkts / $diff;
+      my $period_rx_retrans_pkts_ps = $period_rx_retrans_pkts / $diff;
+      my $period_rx_retrans_amsdu_pkts_ps = $period_rx_retrans_amsdu_pkts / $diff;
+      my $period_tx_pkts_ps = $period_tx_pkts / $diff;
+      my $period_tx_amsdu_pkts_ps = $period_tx_amsdu_pkts / $diff;
+      my $period_tx_retrans_pkts_ps = $period_tx_retrans_pkts / $diff;
+      my $period_tx_retrans_amsdu_pkts_ps = $period_tx_retrans_amsdu_pkts / $diff;
+      my $period_dummy_rx_pkts_ps = $period_dummy_rx_pkts / $diff;
+      my $period_dummy_tx_pkts_ps = $period_dummy_tx_pkts / $diff;
 
-    $self->{last_ps_timestamp} = $pkt->timestamp();
-    $self->{last_tot_pkts} = $self->{tot_pkts};
-    $self->{last_rx_pkts} = $self->{rx_pkts};
-    $self->{last_rx_amsdu_pkts} = $self->{rx_amsdu_pkts};
-    $self->{last_rx_retrans_pkts} = $self->{rx_retrans_pkts};
-    $self->{last_rx_amsdu_retrans_pkts} = $self->{rx_amsdu_retrans_pkts};
-    $self->{last_tx_pkts} = $self->{tx_pkts};
-    $self->{last_tx_amsdu_pkts} = $self->{tx_amsdu_pkts};
-    $self->{last_tx_retrans_pkts} = $self->{tx_retrans_pkts};
-    $self->{last_tx_amsdu_retrans_pkts} = $self->{tx_amsdu_retrans_pkts};
-    $self->{last_dummy_rx_pkts} = $self->{dummy_rx_pkts};
-    $self->{last_dummy_tx_pkts} = $self->{dummy_tx_pkts};
+      $self->{last_ps_timestamp} = $pkt->timestamp();
+      $self->{last_tot_pkts} = $self->{tot_pkts};
+      $self->{last_rx_pkts} = $self->{rx_pkts};
+      $self->{last_rx_amsdu_pkts} = $self->{rx_amsdu_pkts};
+      $self->{last_rx_retrans_pkts} = $self->{rx_retrans_pkts};
+      $self->{last_rx_amsdu_retrans_pkts} = $self->{rx_amsdu_retrans_pkts};
+      $self->{last_tx_pkts} = $self->{tx_pkts};
+      $self->{last_tx_amsdu_pkts} = $self->{tx_amsdu_pkts};
+      $self->{last_tx_retrans_pkts} = $self->{tx_retrans_pkts};
+      $self->{last_tx_amsdu_retrans_pkts} = $self->{tx_amsdu_retrans_pkts};
+      $self->{last_dummy_rx_pkts} = $self->{dummy_rx_pkts};
+      $self->{last_dummy_tx_pkts} = $self->{dummy_tx_pkts};
 
-    my $fh_ps = $self->{mcs_fh_ps};
+      my $fh_ps = $self->{mcs_fh_ps};
 
-    my $ln =  "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t$diff\t$period_tot_pkts_ps\t" .
-      "$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
-      "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
-    print $fh_ps $ln;
+      my $ln =  "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t$diff\t$period_tot_pkts_ps\t" .
+	"$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
+	  "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
+      print $fh_ps $ln;
+    }
+
+    # Generate reporting data for this pkt
+    my $fh = $self->{mcs_fh};
+    my $ln = "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t" . $pkt->datarate() . "\t" . $pkt->retrans() . "\n";
+
+    print $fh $ln;
   }
-
-  # Generate reporting data for this pkt
-  my $fh = $self->{mcs_fh};
-  my $ln = "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t" . $pkt->datarate() . "\t" . $pkt->retrans() . "\n";
-
-  print $fh $ln;
 
   push(@{$self->{pkts}}, $pkt);
 }
