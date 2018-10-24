@@ -38,7 +38,7 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
 
 my $des_resource = 6;
 #my $pat_port_type = '^eth\d[#]\d+';
-my $pat_port_type = '^sta\d+';
+my $pat_port_type = '^v*sta\d+';
 ##
 ##    M A I N
 ##
@@ -294,10 +294,11 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
 print "\nRefreshing...";
 $h = {"endpoint"=>"all"};
 json_request("/cli-json/nc_show_endpoints${uri_args}", $h);
-sleep 1;
+sleep 4;
 print "\nConstructing new CX: ";
 $num_cx = 0;
 $disp_num = $des_resource * 1000;
+print Dumper($rh_ports->{'flat_list'});
 for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
    last if ($num_cx >= ($num_ports-1));
    next if ($rh_p->{'alias'} !~ /$pat_port_type/);
@@ -314,18 +315,18 @@ for my $rh_p (values %{$rh_ports->{'flat_list'}}) {
 }
 $h = {"endpoint"=>"all"};
 json_request("/cli-json/nc_show_endpoints", $h);
-sleep 1;
+sleep 4;
 $h = {"test_mgr"=>"all", "cross_connect"=>"all"};
 json_request("/cli-json/show_cxe", $h);
-sleep 1;
+sleep 4;
 
 print "\nRefreshing...";
 $h = {"endpoint"=>"all"};
 json_request("/cli-json/nc_show_endpoints", $h);
-sleep 1;
+sleep 4;
 $h = {"test_mgr"=>"all", "cross_connect"=>"all"};
 json_request("/cli-json/show_cxe", $h);
-sleep 1;
+sleep 4;
 
 # wait for data to distribute
 
@@ -333,6 +334,9 @@ my $num_unfinished = 1;
 while ($num_unfinished > 0) {
    $num_unfinished = 0;
    my $rh_cx = json_request("/layer4/list");
+   print "\n- 337 --------------------------------------------------------\n";
+   print Dumper($rh_cx);
+   print "\n- 337 --------------------------------------------------------\n";
    flatten_list($rh_cx, "endpoint");
    @cx_names = sort keys %{$rh_cx->{'flat_list'}};
    for my $cx_alias (sort @cx_names) {
@@ -347,6 +351,9 @@ while ($num_unfinished > 0) {
 @endp_names = ();
 my $rh_endp = json_request("/layer4/list");
 flatten_list($rh_endp, "endpoint");
+   print "\n- 354 --------------------------------------------------------\n";
+   print Dumper($rh_endp);
+   print "\n- 354 --------------------------------------------------------\n";
 @endp_names = sort keys %{$rh_endp->{'flat_list'}};
 @cx_names = ();
 for my $endp_name (@endp_names) {
