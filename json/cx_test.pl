@@ -59,22 +59,42 @@ my @ports_up= ();
 
 # TODO: make this a JsonUtils::list_ports()
 $uri = "/port/1/${des_resource}/list?fields=alias,device,down,phantom,port";
-logg("requesting $uri");
+logg("requesting $uri\n");
 $rh = json_request($uri);
 #print Dumper($rh);
 flatten_list($rh, 'interfaces');
+#print "\n- 1 -------------------------------------------------------------\n";
 #print Dumper($rh->{'flat_list'});
+#print "\n- 2 -------------------------------------------------------------\n";
+#print Dumper(\(keys %{$rh->{'flat_list'}}));
 for my $rh_p (keys %{$rh->{'flat_list'}}) {
-   print " $rh_p ".$rh->{'flat_list'}->{$rh_p}->{'down'};
-   if ("false" eq $rh->{'flat_list'}->{$rh_p}->{'down'}) {
+   #print "\n- 1 -------------------------------------------------------------\n";
+   #print Dumper($rh->{'flat_list'}->{$rh_p});
+   #print "\n".ref ($rh->{'flat_list'}->{$rh_p}->{'down'});
+   #print "\n".$rh->{'flat_list'}->{$rh_p}->{'down'}();
+   #print "\n- 2 -------------------------------------------------------------\n";
+   #.$rh->{'flat_list'}->{$rh_p}->{'down'};
+   
+   my $onoff = $rh->{'flat_list'}->{$rh_p}->{'down'};
+   #print "truth? $onoff\n";
+   if ($onoff) { # should force a truthy value 
       push(@ports_up, $rh_p);
    }
 }
+#print "\n- 3 -------------------------------------------------------------\n";
+#print Dumper(\@ports_up);
+#print "\n- 4 -------------------------------------------------------------\n";
 # find first station
 my $rh_sta;
-print Dumper(\@ports_up);
+#print "\n- 5 -------------------------------------------------------------\n";
+#print Dumper(\@ports_up);
+#print "\n- 5 -------------------------------------------------------------\n";
 for my $rh_up (@ports_up) {
+   #print "\n- 6 -------------------------------------------------------------\n";
+   #print Dumper($rh->{'flat_list'});
+   #print "\n- 6 -------------------------------------------------------------\n";
    my $eid = $rh->{'flat_list'}->{$rh_up}->{'port'};
+   print ("rhup: $rh_up; EID $eid\n");
    my @hunks = split(/[.]/, $eid);
    if ($hunks[1]) {
       $rh_sta = $rh_up;

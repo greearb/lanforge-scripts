@@ -65,8 +65,10 @@ $uri = "/port/1/${des_resource}/list?fields=alias,device,down,phantom,port";
 $rh = json_request($uri);
 flatten_list($rh, 'interfaces');
 for my $rh_p (keys %{$rh->{'flat_list'}}) {
-   print " down? $rh->{'flat_list'}->{$rh_p}->{'down'} ";
-   if ($rh->{'flat_list'}->{$rh_p}->{'down'} eq "false") {
+   # truthy value evaluates better
+   my $onoff = $rh->{'flat_list'}->{$rh_p}->{'down'};
+   print "$rh_p down? $onoff ";
+   if ($onoff) {
       push(@ports_up, $rh_p);
    }
 }

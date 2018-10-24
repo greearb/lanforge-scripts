@@ -67,7 +67,7 @@ sub json_request {
       }
       return {};
    }
-   #print Dumper($response);
+   #print Dumper($response->content);
    return $::Decoder->decode($response->content);
 }
 
@@ -107,9 +107,10 @@ sub flatten_list {
    my $list_name = shift;
    my $rh_irefs = {};
    return if (!defined $rh_list);
-
+   #print "\n- FF ------------------------------------------------------------\n";
+   #print Dumper($rh_list);
+   #print "\n~ FF ------------------------------------------------------------\n";
    if (!defined $rh_list->{$list_name}) {
-      print Dumper($rh_list);
       print "flatten_list: $list_name not found\n";
       return;
    }
@@ -123,14 +124,23 @@ sub flatten_list {
       print "-------------------------------------------------\n";
       return;
    }
-   for (my $i=0; $i < @{$rh_list->{$list_name}}; $i++) {
-      my @k = keys(%{$rh_list->{$list_name}[$i]});
-      #print Dumper(\@k);
-      my $id = $k[0];
-      #print "ID[$id]\n";
-      $rh_irefs->{$id} = $rh_list->{$list_name}[$i]->{$id};
+   #print "\n- FG -------------------------------------------------------------------\n";
+   #print Dumper($rh_list->{$list_name});
+   #print "\n~ FG -------------------------------------------------------------------\n";
+   my $v = @{$rh_list->{$list_name}};
+   my @k = (@{$rh_list->{$list_name}});
+   for (my $i=0; $i < $v; $i++) {
+      my @rh_k = keys %{$k[$i]};
+      my @rh_v = values %{$k[$i]};
+      my $rh_id = $rh_k[0];
+      #print "\n- FG -------------------------------------------------------------------\n";
+      #print Dumper($rh_id);
+      #print "\n~ FG -------------------------------------------------------------------\n";
+      $rh_irefs->{$rh_id} = $rh_v[0];
    }
+   #print "\n- FG -------------------------------------------------------------------\n";
    #print Dumper($rh_irefs);
+   #print "\n~ FG -------------------------------------------------------------------\n";
    $rh_list->{"flat_list"} = $rh_irefs;
 }
 
