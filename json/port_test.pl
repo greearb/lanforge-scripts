@@ -34,7 +34,7 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
 );
 
 
-my $num_sta = 30;
+my $num_sta = 3;
 my $des_resource = 6;
 ##
 ##    M A I N
@@ -165,15 +165,15 @@ for $rh_radio (@radios) {
       };
       logg(" sta$radio_counter");
       my $rh_response = json_post("/cli-json/add_sta", $rh_data);
-      usleep(15000);
+      usleep(300000);
       $radio_counter +=1;
    }
    $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
    sleep 1;
-}
+} # for
 logg("\nUpdating aliases ");
 $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
-sleep 3;
+sleep 5;
 $radio_counter = 0;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
@@ -197,9 +197,11 @@ for $rh_radio (@radios) {
       };
       my $rh_response = json_post("/cli-json/set_port", $rh_data);
       $radio_counter+=1;
-      usleep(10000);
+      usleep(300000);
    }
 }
+$rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
+sleep 5;
 $radio_counter = 0;
 for $rh_radio (@radios) {
    $radio_name = $rh_radio->{'alias'};
@@ -221,17 +223,17 @@ for $rh_radio (@radios) {
       };
       my $rh_response = json_post("/cli-json/set_port", $rh_data);
       $radio_counter+=1;
-      usleep(10000);
+      sleep 1;
    }
 }
 logg("\nRefreshing after setting up... ");
 $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
-sleep 1;
+sleep 4;
 # wait on ports up
 my $ports_still_down = 1;
 while ($ports_still_down > 0) {
    # this logic has to see if port is phantom and if port is over-subscribed
-   $rh = json_request("/port/1/3/list?fields=_links,port,device,down,phantom,channel");
+   $rh = json_request("/port/1/$des_resource/list?fields=_links,port,device,down,phantom,channel");
    flatten_list($rh, 'interfaces');
    $ports_still_down=0;
    for my $rh_p (values %{$rh->{'flat_list'}}) {
@@ -244,13 +246,27 @@ while ($ports_still_down > 0) {
    }
    print "ports down: $ports_still_down ";
    $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
-   sleep 1;
+   sleep 4;
 }
-
+sleep 4;
+my $port_uri = "/port/1/$des_resource?fields=_links,device,alias,port";
 # ports down
 my $set_port = "/cli-json/set_port";
 logg("\nsetting ports down: ");
+$rh = json_request($port_uri);
+flatten_list($rh, 'interfaces');
+@links2 = ();
+for my $k (keys %{$rh->{"flat_list"}}) {
+   print "\n -- 200 ---------------------------------------------------------------\n";
+   print Dumper($rh->{"flat_list"}->{$k});
+   print "\n -- 200 ---------------------------------------------------------------\n";
+   my $Link =  $rh->{"flat_list"}->{$k}->{"_links"};
+   print "LINK $Link\n";
+   push(@links2, $Link);
+}
+
 for my $port_uri (@links2) {
+   print "URI: $port_uri\n";
    $rh = json_request($port_uri);
    my $device = get_thru('interface', 'device', $rh);
    next if ($device !~ /^sta/);
