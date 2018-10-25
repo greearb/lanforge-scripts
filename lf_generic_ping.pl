@@ -52,6 +52,7 @@ $0 --mgr {host-name | IP}
     # You should be able to place 1000 interfaces in the list
    --radio {wiphy} | --parent {eth}
    --match {simple prefix, no stars or questions marks}
+   --cmd {"double quoted command"} # can contain special parameters
 
  Examples:
   $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
@@ -67,6 +68,15 @@ $0 --mgr {host-name | IP}
  All interfaces matching a prefix:
   $0 -m localhost -r 1 -d 192.168.0.1 --match sta3
   This will match sta3 sta30 sta31 sta3000
+
+ Please don't put single quotes in a command. A command can have these expansions:
+   %d destination ip or hostname
+   %i port IPv4 address
+   %p port name
+
+ Example command
+ $0 --cmd "curl -sqL --dns-ipv4-addr %i --dns-interface %p --interface %p --localaddr %i -o /tmp/results-%p http://%d/"
+
 
  The default name of the generic endpoints given will be "lfping_[port]".
  You can create multiple generic connections per port by altering
@@ -262,7 +272,7 @@ Parameters that can be replaced:
    %i port IPv4 address
    %p port name
 
-   curl -L --dns-ipv4-addr %i --dns-interface %p --interface %p --localaddr %i -o /dev/null http://%d/
+   curl -sqL --dns-ipv4-addr %i --dns-interface %p --interface %p --localaddr %i -o /dev/null http://%d/
 
 =cut
 sub create_generic {
