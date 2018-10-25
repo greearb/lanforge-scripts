@@ -97,7 +97,7 @@ our @interfaces   = ();
 our $radio        = '';
 our $pattern      = '';
 our $name_pref    = "lfping";
-
+our $ref_cmd      = ''; # user supplied command
 my $help;
 
 if (@ARGV < 2) {
@@ -115,6 +115,7 @@ GetOptions
   'interface|intf|int|i=s'    => \@::interfaces,
   'dest_ip|dest|d=s'          => \$::dest_ip,
   'name_pref|name|n=s'        => \$::name_pref,
+  'cmd|c=s'                   => \$::ref_cmd,
   'help|h|?'                  => \$help,
 ) || (print($usage), exit(1));
 
@@ -171,7 +172,7 @@ $utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 our @ports_lines = split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $::resource ALL"));
 chomp(@ports_lines);
 our %eid_map = ();
-my ($eid, $card, $port, $type, $mac, $dev, $rh_eid, $parent);
+my ($eid, $card, $port, $type, $mac, $dev, $rh_eid, $parent, $ip);
 foreach my $line (@ports_lines) {
   # collect all stations on that radio add them to @interfaces
   if ($line =~ /^Shelf: /) {
@@ -179,6 +180,7 @@ foreach my $line (@ports_lines) {
     $type = undef; $parent = undef;
     $eid = undef; $mac = undef;
     $dev = undef; $rh_eid = undef;
+    $ip = undef;
   }
 
   # careful about that comma after card!
@@ -191,7 +193,7 @@ foreach my $line (@ports_lines) {
       parent => undef,
       dev => undef,
     };
-    $eid_map{$eid} = $rh_eid;
+    $::eid_map{$eid} = $rh_eid;
   }
 
   ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\S+)/;
@@ -204,6 +206,10 @@ foreach my $line (@ports_lines) {
   if ((defined $parent) && ($parent ne "")) {
     $rh_eid->{parent} = $parent;
   }
+  ($ip) = $line =~ m/ IP: ([^ ]+) +MASK: /;
+  if ((defined $ip) && ($ip ne "")) {
+    $rh_eid->{ip} = $ip;
+  }
 }
 
 #foreach $eid (keys %eid_map) {
@@ -211,7 +217,7 @@ foreach my $line (@ports_lines) {
 #}
 
 if (defined $::radio) {
-  while (($eid, $rh_eid) = each %eid_map) {
+  while (($eid, $rh_eid) = each %::eid_map) {
     if ((defined $rh_eid->{parent}) && ($rh_eid->{parent} eq $::radio)) {
       push(@interfaces, $rh_eid->{dev});
     }
@@ -222,7 +228,7 @@ if (defined $::pattern && $pattern ne "") {
    my $pat = $::pattern;
    $pat =~ s/[+]//g;
    # collect all stations on that resource add them to @interfaces
-   while (($eid, $rh_eid) = each %eid_map) {
+   while (($eid, $rh_eid) = each %::eid_map) {
      if ((defined $rh_eid->{dev}) && ($rh_eid->{dev} =~ /$pat/)) {
        push(@interfaces, $rh_eid->{dev});
      }
@@ -251,12 +257,30 @@ Example of generic created by GUI:
    set_endp_report_timer D_test-1 1000
    set_endp_flag D_test-1 ClearPortOnStart 0
 
+Parameters that can be replaced:
+   %d destination ip or hostname
+   %i port IPv4 address
+   %p port name
+
+   curl -L --dns-ipv4-addr %i --dns-interface %p --interface %p --localaddr %i -o /dev/null http://%d/
+
 =cut
 sub create_generic {
-   my ($name, $port_name)=@_;
+   my ($name, $port_name, $eid)=@_;
    my $endp_name = "${name_pref}_${port_name}";
    my $type = "gen_generic";
+   my $rh_eid = $::eid_map{$eid};
+   my $port_ip = $rh_eid->{ip};
+   #print Dumper($rh_eid);
    my $ping_cmd = "lfping -I $port_name $::dest_ip";
+   if ((defined $::ref_cmd) && ($::ref_cmd ne "")) {
+      $ping_cmd = $::ref_cmd;
+      $ping_cmd =~ s/%d/$::dest_ip/g if ($ping_cmd =~ /%d/);
+      $ping_cmd =~ s/%p/$port_name/g if ($ping_cmd =~ /%p/);
+      $ping_cmd =~ s/%i/$port_ip/g if ($ping_cmd =~ /%i/);
+   }
+   $::command_map{$eid} = $ping_cmd;
+   print "CMD: $ping_cmd\n";
 
    $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
    $::utils->doCmd("set_gen_cmd $endp_name $ping_cmd");
@@ -276,12 +300,22 @@ sub create_generic {
    $::utils->doCmd("set_cx_report_timer default_tm CX_$endp_name $::report_timer cxonly");
 }
 
-my %command_map = ();
+#print Dumper(\@interfaces);
+#print Dumper(\%::eid_map);
+our %command_map = ();
+#my $type = "gen_generic";
 for my $port (sort @interfaces) {
    my $endp_name = "${name_pref}_$port";
-   my $type = "gen_generic";
-   create_generic($endp_name, $port)
+   my $matching_eid = "";
+   while (my ($eid, $rh_eid) = each %eid_map) {
+      if ($rh_eid->{dev} eq $port) {
+         $matching_eid = $eid;
+         last;
+      }
+   }
+   print "EID $matching_eid\n";
+   create_generic($endp_name, $port, $matching_eid);
 }
-
+#print Dumper(\%command_map);
 
 #
