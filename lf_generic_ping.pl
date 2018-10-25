@@ -285,9 +285,25 @@ sub create_generic {
    my $ping_cmd = "lfping -I $port_name $::dest_ip";
    if ((defined $::ref_cmd) && ($::ref_cmd ne "")) {
       $ping_cmd = $::ref_cmd;
+      my $d_ip = '';
+      $d_ip = $::dest_ip if (defined $::dest_ip && $::dest_ip ne "");
       $ping_cmd =~ s/%d/$::dest_ip/g if ($ping_cmd =~ /%d/);
-      $ping_cmd =~ s/%p/$port_name/g if ($ping_cmd =~ /%p/);
-      $ping_cmd =~ s/%i/$port_ip/g if ($ping_cmd =~ /%i/);
+
+      if (defined $port_name && $port_name ne "") {
+         $ping_cmd =~ s/%p/$port_name/g if ($ping_cmd =~ /%p/);
+      }
+      else {
+         print "no name for port $port_name\n";
+         return;
+      }
+
+      if (defined $port_ip && $port_ip ne "") {
+         $ping_cmd =~ s/%i/$port_ip/g if ($ping_cmd =~ /%i/);
+      }
+      else {
+         print "no ip for port $port_name\n";
+         return;
+      }
    }
    $::command_map{$eid} = $ping_cmd;
    print "CMD: $ping_cmd\n";
