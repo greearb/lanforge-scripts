@@ -24,8 +24,8 @@
 # done
 package main;
 use strict;
-use diagnostics;
 use warnings;
+use diagnostics;
 use Carp;
 use Data::Dumper;
 $SIG{ __DIE__ }   = sub { Carp::confess( @_ )};
@@ -53,9 +53,10 @@ $0 --mgr {host-name | IP}
    --radio {wiphy} | --parent {eth}
    --match {simple prefix, no stars or questions marks}
    --cmd {"double quoted command"} # can contain special parameters
+   --name {prefix to name connection, appended with padded number}
 
  Examples:
-  $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000
+  $0 --mgr localhost --resource 1 --dest 192.168.0.1 -i wlan0 -i sta3000 --name "wlan_ping"
   This will match just sta3000
 
  All interfaces on a parent radio or MAC VLANs on parent Ethernet port:
@@ -74,9 +75,13 @@ $0 --mgr {host-name | IP}
    %i port IPv4 address
    %p port name
 
- Example command
- $0 --cmd "curl -sqL --dns-ipv4-addr %i --dns-interface %p --interface %p --localaddr %i -o /tmp/results-%p http://%d/"
+ Example with curl wrapper provides better feedback to LANforge:
+ $0 --mgr cholla-f19 -r 2 -n curl_ex_ --match 'eth2#' \\
+   --cmd './scripts/lf_curl.sh -n 10 -o /tmp/curl_%p.out -i %i -p %p -d %d' --dest http://localhost/
 
+ Example curl command doesn't provide good feedback to LANforge:
+ $0 --cmd "curl -sqL --dns-ipv4-addr %i --dns-interface %p \\
+   --interface %p --localaddr %i -o /tmp/results-%p http://%d/"
 
  The default name of the generic endpoints given will be "lfping_[port]".
  You can create multiple generic connections per port by altering
@@ -108,6 +113,8 @@ our $radio        = '';
 our $pattern      = '';
 our $name_pref    = "lfping";
 our $ref_cmd      = ''; # user supplied command
+our $ref_name     = '';
+our $verbose      = ((defined $ENV{'DEBUG'}) && ($ENV{'DEBUG'} eq "1")) ? 1:0;
 my $help;
 
 if (@ARGV < 2) {
@@ -120,6 +127,7 @@ GetOptions
   'mgr_port|p=i'              => \$lfmgr_port,
   'resource|r=i'              => \$::resource,
   'quiet|q'                   => \$::quiet,
+  'verbose|v'                 => \$::verbose,
   'radio|parent|o=s'          => \$::radio,
   'match=s'                   => \$::pattern,
   'interface|intf|int|i=s'    => \@::interfaces,
@@ -182,22 +190,22 @@ $utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 our @ports_lines = split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $::resource ALL"));
 chomp(@ports_lines);
 our %eid_map = ();
-my ($eid, $card, $port, $type, $mac, $dev, $rh_eid, $parent, $ip);
+my ($eid, $card, $port, $type, $mac, $dev, $parent, $ip);
 foreach my $line (@ports_lines) {
   # collect all stations on that radio add them to @interfaces
   if ($line =~ /^Shelf: /) {
     $card = undef; $port = undef;
     $type = undef; $parent = undef;
     $eid = undef; $mac = undef;
-    $dev = undef; $rh_eid = undef;
+    $dev = undef;
     $ip = undef;
   }
 
   # careful about that comma after card!
-  ($card, $port, $type) = $line =~ m/ Card: (\d+), +Port: (\d+) +Type: (\w+) /;
+  ($card, $port, $type) = $line =~ m/^Shelf: 1, Card: (\d+), +Port: (\d+) +Type: (\w+) /;
   if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "")) {
     $eid = "1.${card}.${port}";
-    $rh_eid = {
+    my $rh_eid = {
       eid => $eid,
       type => $type,
       parent => undef,
@@ -208,26 +216,28 @@ foreach my $line (@ports_lines) {
 
   ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\S+)/;
   if ((defined $mac) && ($mac ne "")) {
-    $rh_eid->{mac} = $mac;
-    $rh_eid->{dev} = $dev;
+    $::eid_map{$eid}->{mac} = $mac;
+    $::eid_map{$eid}->{dev} = $dev;
   }
 
   ($parent) = $line =~ / Parent.Peer: (\S+) /;
   if ((defined $parent) && ($parent ne "")) {
-    $rh_eid->{parent} = $parent;
+    $::eid_map{$eid}->{parent} = $parent;
   }
-  ($ip) = $line =~ m/ IP: ([^ ]+) +MASK: /;
+
+  ($ip) = $line =~ m/ IP: *([^ ]+) */;
   if ((defined $ip) && ($ip ne "")) {
-    $rh_eid->{ip} = $ip;
+    $::eid_map{$eid}->{ip} = $ip;
   }
-}
+} # foreach
 
 #foreach $eid (keys %eid_map) {
 #  print "eid $eid ";
 #}
 
+
 if (defined $::radio) {
-  while (($eid, $rh_eid) = each %::eid_map) {
+  while (my ($eid, $rh_eid) = each %::eid_map) {
     if ((defined $rh_eid->{parent}) && ($rh_eid->{parent} eq $::radio)) {
       push(@interfaces, $rh_eid->{dev});
     }
@@ -238,7 +248,7 @@ if (defined $::pattern && $pattern ne "") {
    my $pat = $::pattern;
    $pat =~ s/[+]//g;
    # collect all stations on that resource add them to @interfaces
-   while (($eid, $rh_eid) = each %::eid_map) {
+   while (my($eid, $rh_eid) = each %::eid_map) {
      if ((defined $rh_eid->{dev}) && ($rh_eid->{dev} =~ /$pat/)) {
        push(@interfaces, $rh_eid->{dev});
      }
@@ -277,11 +287,16 @@ Parameters that can be replaced:
 =cut
 sub create_generic {
    my ($name, $port_name, $eid)=@_;
+   #print "= 1 =====================================================\n";
+   #print Dumper($eid);
    my $endp_name = "${name_pref}_${port_name}";
    my $type = "gen_generic";
-   my $rh_eid = $::eid_map{$eid};
-   my $port_ip = $rh_eid->{ip};
-   #print Dumper($rh_eid);
+   my $rh_idr = $::eid_map{$eid};
+   my $port_ip = $rh_idr->{'ip'};
+   #print Dumper($rh_idr);
+   #print Dumper($rh_idr->{'ip'});
+   #print "$endp_name PORT_IP $port_ip \n";
+   #print "= 2 =====================================================\n";
    my $ping_cmd = "lfping -I $port_name $::dest_ip";
    if ((defined $::ref_cmd) && ($::ref_cmd ne "")) {
       $ping_cmd = $::ref_cmd;
@@ -306,7 +321,8 @@ sub create_generic {
       }
    }
    $::command_map{$eid} = $ping_cmd;
-   print "CMD: $ping_cmd\n";
+   
+   print "CMD: $ping_cmd\n" if ($::verbose);
 
    $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
    $::utils->doCmd("set_gen_cmd $endp_name $ping_cmd");
@@ -329,17 +345,38 @@ sub create_generic {
 #print Dumper(\@interfaces);
 #print Dumper(\%::eid_map);
 our %command_map = ();
-#my $type = "gen_generic";
+my @map_keys = sort keys %eid_map;
 for my $port (sort @interfaces) {
    my $endp_name = "${name_pref}_$port";
    my $matching_eid = "";
-   while (my ($eid, $rh_eid) = each %eid_map) {
-      if ($rh_eid->{dev} eq $port) {
+   #print "Searching for port $port ";
+   #while (my ($eid, $rh_pid) = each %eid_map) {
+   for my $eid (@map_keys) {
+      my $rh_pid = $eid_map{$eid};
+      #print " $port/$rh_pid->{dev} ";
+      if ("$port" eq "$rh_pid->{dev}") {
+         #print " ** ";
          $matching_eid = $eid;
          last;
       }
    }
-   print "EID $matching_eid\n";
+   if ($matching_eid eq "") {
+      print "\nSkipping $port no eid [$matching_eid]\n";
+      next;
+   }
+   #print "\n= 3 =====================================================\n";
+   #print " $matching_eid => ".$eid_map{$matching_eid}->{dev}."\n";
+   #print Dumper($eid_map{$matching_eid});
+   #print "= 4 =====================================================\n";
+
+
+   if (! (defined $eid_map{$matching_eid}->{ip}) 
+      || $eid_map{$matching_eid}->{ip} eq ""
+      || $eid_map{$matching_eid}->{ip} eq "0.0.0.0") {
+      print "\nSkipping $port: ".$eid_map{$matching_eid}->{ip}."\n";
+      sleep 1;
+      next;
+   }
    create_generic($endp_name, $port, $matching_eid);
 }
 #print Dumper(\%command_map);
