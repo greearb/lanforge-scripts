@@ -202,7 +202,8 @@ foreach my $line (@ports_lines) {
   }
 
   # careful about that comma after card!
-  ($card, $port, $type) = $line =~ m/^Shelf: 1, Card: (\d+), +Port: (\d+) +Type: (\w+) /;
+  # NO EID for Shelf: 1, Card: 1, Port: 2  Type: WIFI-Radio  Alias: 
+  ($card, $port, $type) = $line =~ m/^Shelf: 1, Card: (\d+),\s+Port: (\d+)\s+Type: (\w+)/;
   if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "")) {
     $eid = "1.${card}.${port}";
     my $rh_eid = {
@@ -212,21 +213,32 @@ foreach my $line (@ports_lines) {
       dev => undef,
     };
     $::eid_map{$eid} = $rh_eid;
+    #print "\nfound eid $eid\n";
   }
+  #elsif ($line =~ /^Shelf/) {
+  #  #print "NO EID for $line\n";
+  #}
 
+  if (!(defined $eid) || ($eid eq "")) {
+    #print "NO EID for $line\n";
+    next;
+  }
   ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\S+)/;
   if ((defined $mac) && ($mac ne "")) {
+   #print "$eid MAC: $line\n";
     $::eid_map{$eid}->{mac} = $mac;
     $::eid_map{$eid}->{dev} = $dev;
   }
 
   ($parent) = $line =~ / Parent.Peer: (\S+) /;
   if ((defined $parent) && ($parent ne "")) {
+    #print "$eid PARENT: $line\n";
     $::eid_map{$eid}->{parent} = $parent;
   }
 
   ($ip) = $line =~ m/ IP: *([^ ]+) */;
   if ((defined $ip) && ($ip ne "")) {
+    #print "$eid IP: $line\n";
     $::eid_map{$eid}->{ip} = $ip;
   }
 } # foreach
