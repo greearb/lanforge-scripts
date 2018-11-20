@@ -6,6 +6,9 @@
 
 LFVER=5.3.8
 KVER=4.16.18+
+DEV=eth1
+# Use this or similar device if eth1 and eth2 are configured for trunked VLAN configuration.
+#DEV=eth2.2002
 
 # Echo the commands to stdout for debugging purposes.
 set -x
@@ -23,12 +26,12 @@ ip route del 0.0.0.0/0 dev eth0
 rmmod ath10k_pci
 rmmod ath9k
 
-# Assume eth1 is connected to a network that can route to internet
-ifconfig eth1 down
-pkill -f "dhclient eth1"
+# Assume eth1 ($DEV) is connected to a network that can route to internet
+ifconfig $DEV down
+pkill -f "dhclient $DEV"
 
-ifconfig eth1 up
-dhclient eth1
+ifconfig $DEV up
+dhclient $DEV
 curl -o lf_kinstall.pl http://www.candelatech.com/lf_kinstall.txt || exit 1
 chmod a+x lf_kinstall.pl
 
