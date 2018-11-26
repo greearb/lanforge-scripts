@@ -38,7 +38,7 @@ my $pkts_sofar = 0;
 my $start_time = time();
 
 my $cur_pkt = Packet->new(raw_pkt => "", frame_num => -1);
-my $last_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $last_pkt = Packet->new(raw_pkt => "", frame_num => -1, is_rx => 0);
 my $first_ampdu_pkt = Packet->new(raw_pkt => "", frame_num => -1);
 my $last_ba_rx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
 my $last_ba_tx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
@@ -454,7 +454,7 @@ sub printProgress {
   if ($diff_sec != 0) {
     $pps = int($pkts_sofar / $diff_sec);
   }
-  print STDERR "NOTE: Processed $pkts_sofar packets and $input_line_count input lines in $hour:$min:$sec far ($pps pps).\n";
+  print STDERR "NOTE: Processed $pkts_sofar packets and $input_line_count input lines in $hour:$min:$sec so far ($pps pps).\n";
 }
 
 sub processPkt {
@@ -491,7 +491,8 @@ sub processPkt {
       }
     } else {
       print "ERROR:  Frame " . $pkt->frame_num() . " is ACK for unknown packet.\n";
-      $last_pkt = $pkt;
+      $non_dut_frames++;
+      #$last_pkt = $pkt;
       return;
     }
   }
@@ -545,8 +546,14 @@ sub processPkt {
   # Add mcs to histogram.
   my $delta = -1;
   if ($last_pkt->seqno() + 1 == $pkt->seqno()) {
+    #print "seqno seq match...\n";
+    #print "last_pkt is rx: " . $last_pkt->{is_rx} . "\n";
+    #print "pkt is rx: " . $pkt->{is_rx} . "\n";
+    #print "last pkt tid: " . $last_pkt->{tid} . "\n";
+    #print "pkt tid: " . $pkt->{tid} . "\n";
     if (($last_pkt->{is_rx} == $pkt->{is_rx}) && $last_pkt->{tid} == $pkt->{tid}) {
       # We have two packets in an AMPDU train most likely
+      #print "timedelta: " . $pkt->{timedelta} . "\n";
       $delta = $pkt->{timedelta};
     }
   }
