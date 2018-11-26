@@ -318,14 +318,12 @@ sub htmlMcsHistogram {
 
   if ($rx_pkts) {
     $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == " . ($rx_retrans_pkts * 100.0) / $rx_pkts . "<br>\n";
-  }
-  else {
+  } else {
     $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == 0<br>\n";
   }
   if ($tx_pkts) {
     $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == " . ($tx_retrans_pkts * 100.0) / $tx_pkts . "<br>\n";
-  }
-  else {
+  } else {
     $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == 0<br>\n";
   }
 
@@ -483,18 +481,15 @@ sub processPkt {
     if ($last_pkt->transmitter() eq $pkt->receiver()) {
       $pkt->set_transmitter($last_pkt->receiver());
       if ($last_pkt->acked_by() != -1) {
-   print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
-      $last_pkt->frame_num() . " already acked by frame: " . $last_pkt->acked_by() . "\n";
+	print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
+	  $last_pkt->frame_num() . " already acked by frame: " . $last_pkt->acked_by() . "\n";
+      } elsif ($last_pkt->block_acked_by() != -1) {
+	print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
+	  $last_pkt->frame_num() . " already block-acked by frame: " . $last_pkt->block_acked_by() . "\n";
+      } else {
+	$last_pkt->set_acked_by($pkt->frame_num());
       }
-      elsif ($last_pkt->block_acked_by() != -1) {
-   print "WARNING:  ack frame: " . $pkt->frame_num() . " acking frame: " .
-      $last_pkt->frame_num() . " already block-acked by frame: " . $last_pkt->block_acked_by() . "\n";
-      }
-      else {
-   $last_pkt->set_acked_by($pkt->frame_num());
-      }
-    }
-    else {
+    } else {
       print "ERROR:  Frame " . $pkt->frame_num() . " is ACK for unknown packet.\n";
       $last_pkt = $pkt;
       return;
@@ -504,14 +499,14 @@ sub processPkt {
   if ($dut ne "") {
     # Ignore frames not to/from DUT
     if (!(($dut eq $pkt->receiver()) ||
-     ($dut eq $pkt->transmitter()))) {
+	  ($dut eq $pkt->transmitter()))) {
       $non_dut_frames++;
       return;
     }
 
     if ($wmm_info eq "") {
       if ($pkt->type_subtype() eq "Beacon frame (0x0008)") {
-   $wmm_info = $pkt->{wmm_info};
+	$wmm_info = $pkt->{wmm_info};
       }
     }
   }
@@ -522,25 +517,22 @@ sub processPkt {
   my $peer_conn;
   if (exists $peer_conns{$hash}) {
     $peer_conn = $peer_conns{$hash};
-  }
-  else {
+  } else {
     if (exists $peer_conns{$hash2}) {
       $peer_conn = $peer_conns{$hash2};
-    }
-    else {
+    } else {
       if ($dut eq $pkt->receiver()) {
-   $peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
-               glb_fh_ba_rx => $glb_fh_ba_rx,
-               report_prefix => $report_prefix,
-               local_addr => $pkt->transmitter(),
-               peer_addr => $pkt->receiver());
-      }
-      else {
-   $peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
-               glb_fh_ba_rx => $glb_fh_ba_rx,
-               report_prefix => $report_prefix,
-               local_addr => $pkt->receiver(),
-               peer_addr => $pkt->transmitter());
+	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
+				   glb_fh_ba_rx => $glb_fh_ba_rx,
+				   report_prefix => $report_prefix,
+				   local_addr => $pkt->transmitter(),
+				   peer_addr => $pkt->receiver());
+      } else {
+	$peer_conn = PeerConn->new(glb_fh_ba_tx => $glb_fh_ba_tx,
+				   glb_fh_ba_rx => $glb_fh_ba_rx,
+				   report_prefix => $report_prefix,
+				   local_addr => $pkt->receiver(),
+				   peer_addr => $pkt->transmitter());
       }
       $peer_conns{$hash} = $peer_conn;
     }
@@ -566,60 +558,55 @@ sub processPkt {
     if ($last_pkt->frame_num() != -1 && (!$last_pkt->{is_ampdu})) {
       # This is first ampdu since a non-ampdu frame.  Calculate diff between that and last BA
       if ($pkt->{is_rx} && ($last_ba_tx_pkt->frame_num() != -1)) {
-   my $diff = $pkt->timestamp() - $last_ba_tx_pkt->timestamp();
-   $ba_ampdu_gap_rx += $diff;
-   $ba_ampdu_gap_rx_count++;
-   if ($diff > 0.001) {
-     print "INFO:  TX BA to RX AMPDU gap: $diff between frames: " . $last_ba_tx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
-   }
-   $last_ba_tx_pkt->{frame_num} = -1;
-      }
-      elsif ((!$pkt->{is_rx}) && ($last_ba_rx_pkt->frame_num() != -1)) {
-   my $diff = $pkt->timestamp() - $last_ba_rx_pkt->timestamp();
-   $ba_ampdu_gap_tx += $diff;
-   $ba_ampdu_gap_tx_count++;
-   if ($diff > 0.001) {
-     print "INFO:  RX BA to TX AMPDU gap: $diff between frames: " . $last_ba_rx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
-   }
-   $last_ba_rx_pkt->{frame_num} = -1;
+	my $diff = $pkt->timestamp() - $last_ba_tx_pkt->timestamp();
+	$ba_ampdu_gap_rx += $diff;
+	$ba_ampdu_gap_rx_count++;
+	if ($diff > 0.001) {
+	  print "INFO:  TX BA to RX AMPDU gap: $diff between frames: " . $last_ba_tx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
+	}
+	$last_ba_tx_pkt->{frame_num} = -1;
+      } elsif ((!$pkt->{is_rx}) && ($last_ba_rx_pkt->frame_num() != -1)) {
+	my $diff = $pkt->timestamp() - $last_ba_rx_pkt->timestamp();
+	$ba_ampdu_gap_tx += $diff;
+	$ba_ampdu_gap_tx_count++;
+	if ($diff > 0.001) {
+	  print "INFO:  RX BA to TX AMPDU gap: $diff between frames: " . $last_ba_rx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
+	}
+	$last_ba_rx_pkt->{frame_num} = -1;
       }
     }
 
     if ($first_ampdu_pkt->seqno() != -1) {
       if (($first_ampdu_pkt->{is_rx} == $pkt->{is_rx}) && $pkt->{tid} == $first_ampdu_pkt->{tid}) {
-   # Belongs to same tid, so must be part of the same pkt chain.
-   # Calculate pkt count based on seqno, since sniffer probably misses a lot of frames
-   # at high speed.
-   if ($pkt->seqno() < $first_ampdu_pkt->seqno()) {
-     # Looks like we have a wrap.
-     $this_ampdu_pkt_count = 4096 - $first_ampdu_pkt->seqno();
-     $this_ampdu_pkt_count += $pkt->seqno();
-   }
-   else {
-     $this_ampdu_pkt_count = $pkt->seqno() - $first_ampdu_pkt->seqno();
-     $this_ampdu_pkt_count++; # range is inclusive
-   }
-   if ($pkt->{is_last_ampdu}) {
-     $is_last_ampdu = 1;
-     $ampdu_chain_time = $pkt->timestamp() - $first_ampdu_pkt->timestamp();
-     print "First ampdu pkt: " . $first_ampdu_pkt->frame_num() . " last: " . $pkt->frame_num()
-       . " chain-time: $ampdu_chain_time, chain-count: $this_ampdu_pkt_count.\n";
-     $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
-   }
+	# Belongs to same tid, so must be part of the same pkt chain.
+	# Calculate pkt count based on seqno, since sniffer probably misses a lot of frames
+	# at high speed.
+	if ($pkt->seqno() < $first_ampdu_pkt->seqno()) {
+	  # Looks like we have a wrap.
+	  $this_ampdu_pkt_count = 4096 - $first_ampdu_pkt->seqno();
+	  $this_ampdu_pkt_count += $pkt->seqno();
+	} else {
+	  $this_ampdu_pkt_count = $pkt->seqno() - $first_ampdu_pkt->seqno();
+	  $this_ampdu_pkt_count++; # range is inclusive
+	}
+	if ($pkt->{is_last_ampdu}) {
+	  $is_last_ampdu = 1;
+	  $ampdu_chain_time = $pkt->timestamp() - $first_ampdu_pkt->timestamp();
+	  print "First ampdu pkt: " . $first_ampdu_pkt->frame_num() . " last: " . $pkt->frame_num()
+	    . " chain-time: $ampdu_chain_time, chain-count: $this_ampdu_pkt_count.\n";
+	  $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
+	}
+      } else {
+	# We must have not captured the last one, so skip accounting this one.
+	$first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
       }
-      else {
-   # We must have not captured the last one, so skip accounting this one.
-   $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
-      }
-    }
-    else {
+    } else {
       if (! $pkt->{is_last_ampdu}) {
-   $this_ampdu_pkt_count = 1;
-   $first_ampdu_pkt = $pkt;
+	$this_ampdu_pkt_count = 1;
+	$first_ampdu_pkt = $pkt;
       }
     }
-  }
-  else {
+  } else {
     # Not an ampdu frame
     # One way or another, we are done with ampdu frame sequence, zero this out
     # in case we didn't sniff the last one.
@@ -628,24 +615,21 @@ sub processPkt {
     if ($pkt->type_subtype() eq "802.11 Block Ack (0x0019)") {
       # Only grab the initial BA in case we have one side ignoring BA
       if ($pkt->{is_rx}) {
-   if ($last_ba_rx_pkt->{frame_num} == -1) {
-     $last_ba_rx_pkt = $pkt;
-   }
-   else {
-     print "NOTE:  Multiple RX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
-       . " this BA frame num: " . $pkt->frame_num() . "\n";
-     $dup_ba_rx++;
-   }
-      }
-      else {
-   if ($last_ba_tx_pkt->{frame_num} == -1) {
-     $last_ba_tx_pkt = $pkt;
-   }
-   else {
-     print "NOTE:  Multiple TX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
-       . " this BA frame num: " . $pkt->frame_num() . "\n";
-     $dup_ba_tx++;
-   }
+	if ($last_ba_rx_pkt->{frame_num} == -1) {
+	  $last_ba_rx_pkt = $pkt;
+	} else {
+	  print "NOTE:  Multiple RX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
+	    . " this BA frame num: " . $pkt->frame_num() . "\n";
+	  $dup_ba_rx++;
+	}
+      } else {
+	if ($last_ba_tx_pkt->{frame_num} == -1) {
+	  $last_ba_tx_pkt = $pkt;
+	} else {
+	  print "NOTE:  Multiple TX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
+	    . " this BA frame num: " . $pkt->frame_num() . "\n";
+	  $dup_ba_tx++;
+	}
       }
     }
   }
@@ -664,24 +648,21 @@ sub processPkt {
       $ampdu_pkt_count_total_rx += $this_ampdu_pkt_count;
 
       if (exists $glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}) {
-   $glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}++;
-      }
-      else {
-   $glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count} = 1;
+	$glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count}++;
+      } else {
+	$glb_ampdu_pkt_count_rx_hash{$this_ampdu_pkt_count} = 1;
       }
     }
 
     if (exists $glb_mcs_rx_hash{$dr}) {
       $glb_mcs_rx_hash{$dr}++;
-    }
-    else {
+    } else {
       $glb_mcs_rx_hash{$dr} = 1;
     }
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_rx_hash{$dr}) {
       $glb_pkt_type_rx_hash{$dr}++;
-    }
-    else {
+    } else {
       $glb_pkt_type_rx_hash{$dr} = 1;
     }
     $rx_pkts++;
@@ -696,8 +677,7 @@ sub processPkt {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_rx $ln;
     }
-  }
-  else {
+  } else {
     if ($delta != -1) {
       $delta_time_tx_count++;
       $delta_time_tx += $delta;
@@ -709,24 +689,21 @@ sub processPkt {
       $ampdu_pkt_count_total_tx += $this_ampdu_pkt_count;
 
       if (exists $glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}) {
-   $glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}++;
-      }
-      else {
-   $glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count} = 1;
+	$glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count}++;
+      } else {
+	$glb_ampdu_pkt_count_tx_hash{$this_ampdu_pkt_count} = 1;
       }
     }
 
     if (exists $glb_mcs_tx_hash{$dr}) {
       $glb_mcs_tx_hash{$dr}++;
-    }
-    else {
+    } else {
       $glb_mcs_tx_hash{$dr} = 1;
     }
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_tx_hash{$dr}) {
       $glb_pkt_type_tx_hash{$dr}++;
-    }
-    else {
+    } else {
       $glb_pkt_type_tx_hash{$dr} = 1;
     }
     $tx_pkts++;
@@ -789,7 +766,7 @@ sub processPkt {
     # 'tidno is -1 here, keeping format similar to the per-tid data to make generating reports easier.
     my $ln =  "" . $pkt->timestamp() . "\t-1\t$diff\t$period_tot_pkts_ps\t" .
       "$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
-      "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
+	"$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
     print $glb_fh_mcs_ps $ln;
   }
 
