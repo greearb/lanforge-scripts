@@ -10,24 +10,22 @@ $| = 1;
 use Cwd qw(getcwd);
 my $cwd = getcwd();
 if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
-   use diagnostics;
-   use Carp;
-   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
-   $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
+  use diagnostics;
+  use Carp;
+  $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
+  $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 }
 # this is pedantic necessity for the following use statements
 use lib '/home/lanforge/scripts';
 if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
-   use lib '/home/lanforge/scripts/LANforge';
-   use lib '/home/lanforge/scripts/wifi_diag';
-}
-else {
-   if ( -d "wifi_diag" ) {
-      use lib '.';
-   }
-   else {
-      use lib '.';
-   }
+  use lib '/home/lanforge/scripts/LANforge';
+  use lib '/home/lanforge/scripts/wifi_diag';
+} else {
+  if ( -d "wifi_diag" ) {
+    use lib '.';
+  } else {
+    use lib '.';
+  }
 }
 use PeerConn;
 use Packet;
@@ -88,20 +86,20 @@ View {report-prefix}/index.html for the report, and {report-prefix}/foo.txt for 
 
 
 GetOptions
-(
- 'help|h'            => \$show_help,
- 'dut=s'             => \$dut,
- 'report_prefix=s'   => \$::report_prefix,
- 'gen_report'        => \$gen_report,
- ) || (print STDERR $usage && exit(1));
+  (
+   'help|h'            => \$show_help,
+   'dut=s'             => \$dut,
+   'report_prefix=s'   => \$::report_prefix,
+   'gen_report'        => \$gen_report,
+  ) || (print STDERR $usage && exit(1));
 
 
 if ($show_help) {
-   print $usage;
-   exit 0
+  print $usage;
+  exit 0
 }
 $::report_prefix .= "/"
-   if ($report_prefix !~ m{/$});
+  if ($report_prefix !~ m{/$});
 my $glb_ba_tx_fname = $::report_prefix . "glb-ba-tx-rpt.txt";
 my $glb_ba_rx_fname = $::report_prefix . "glb-ba-rx-rpt.txt";
 my $glb_mcs_ps_fname = $::report_prefix . "glb-mcs-ps-rpt.txt";
@@ -125,8 +123,8 @@ open($glb_fh_rtx_tx, ">", $glb_rtx_tx_fname) or die("Can't open $glb_rtx_tx_fnam
 open($glb_fh_rtx_rx, ">", $glb_rtx_rx_fname) or die("Can't open $glb_rtx_rx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
-      "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
-      "period_tx_pkts_ps\tperiod_tx_retrans_pkts_ps\tperiod_tx_amsdu_pkts_ps\tperiod_tx_retrans_amsdu_pkts_ps\tperiod_dummy_tx_pkts_ps\n";
+  "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
+  "period_tx_pkts_ps\tperiod_tx_retrans_pkts_ps\tperiod_tx_amsdu_pkts_ps\tperiod_tx_retrans_amsdu_pkts_ps\tperiod_dummy_tx_pkts_ps\n";
 print $glb_fh_mcs_ps $hdr;
 
 # Global stats logic.
@@ -184,9 +182,8 @@ while (<>) {
       processPkt($cur_pkt);
     }
     $cur_pkt = Packet->new(frame_num => $1,
-            raw_pkt => $ln);
-  }
-  else {
+			   raw_pkt => $ln);
+  } else {
     $cur_pkt->append($ln);
   }
 }
