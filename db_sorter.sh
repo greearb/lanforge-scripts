@@ -1,7 +1,7 @@
 #!/bin/bash
 #This script modifies DB directories so they appear alphabetically in LANforge.
 
-# Script Instructions
+# Script instructions
 # First become root: su -
 # Copy the script to /home/lanforge/scripts/
 # cp db_sorter.sh /home/lanforge/scripts/
