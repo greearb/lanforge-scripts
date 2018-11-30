@@ -32,7 +32,7 @@ resource=1
 num_stas=40
 num_packets=Infinite
 encryption=open
-passphrase=''
+passphrase='[BLANK]'
 rate_A=1000000
 rate_B=1000000
 
