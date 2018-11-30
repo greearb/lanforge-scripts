@@ -19,7 +19,7 @@
 #  -h   Help information.
 
 #  Example usage:
-#  ./lf_wifi_fire.bash -m lf0350-1234 -r 1 -w wiphy0 -n 40 -s test-SSID -e wpa2 -P hello123 -a eth1 -A 56000 -B 2000000 -p 10000
+#  ./lf_wifi_fire.bash -m lf0350-1234 -r 1 -w wiphy0 -n 40 -s test-SSID -e wpa2 -k hello123 -a eth1 -A 56000 -B 2000000 -p 10000
 
 #  Station will always be endpoint B so only the name for endpoint A port is needed.
 
@@ -63,7 +63,7 @@ Required values are SSID, radio, and endpoint A port.
 -h   Help information.
 
 Example usage:
-./lf_wifi_fire.bash -m lf0350-1234 -r 1 -w wiphy0 -n 40 -s test-SSID -e wpa2 -P hello123 -a eth1 -A 56000 -B 2000000 -p 10000
+./lf_wifi_fire.bash -m lf0350-1234 -r 1 -w wiphy0 -n 40 -s test-SSID -e wpa2 -k hello123 -a eth1 -A 56000 -B 2000000 -p 10000
 
 Station will always be endpoint B so only the name for endpoint A port is needed."
 
@@ -81,7 +81,7 @@ while getopts 'm:r:n:p:a:e:k:w:s:A:B:h' OPTION; do
         #num stations
         num_stas="$OPTARG"
         ;;
-      k)
+      p)
         #packets
         num_packets="$OPTARG"
         ;;
@@ -94,7 +94,7 @@ while getopts 'm:r:n:p:a:e:k:w:s:A:B:h' OPTION; do
         #encryption
         encryption="$OPTARG"
         ;;
-      P)
+      k)
         #encryption passphrase
         passphrase="$OPTARG"
         ;;
