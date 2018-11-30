@@ -7,15 +7,15 @@
 #  Required values are SSID, radio, and endpoint A port.
 #  -m   Manager IP or hostname.
 #  -r   Resource number.
-#  -w   Which radio to use i.e wiphy0 wiphy1 etc.
+#  -w   Which radio to use i.e. wiphy0 wiphy1 etc.
 #  -n   Number of stations to create.
 #  -s   SSID for stations.
 #  -e   Encryption type: open|wep|wpa|wpa2.
-#  -P   Passphrase for when AP is encrypted.
-#  -a   Port the station(s) will connect to.
+#  -k   Passphrase for when AP is encrypted.
+#  -a   The upstream port to which station(s) will connect.
 #  -A   Transmit rate for non station side (Endpoint A) of connection.
 #  -B   Transmit rate for station side (Endpoint B) of connection.
-#  -p   Number of packets to send.
+#  -p   Number of default UDP sized packets to send.
 #  -h   Help information.
 
 #  Example usage:
@@ -51,15 +51,15 @@ can all be configured with the below options.
 Required values are SSID, radio, and endpoint A port.
 -m   Manager IP or hostname.
 -r   Resource number.
--w   Which radio to use i.e wiphy0 wiphy1 etc.
+-w   Which radio to use i.e. wiphy0 wiphy1 etc.
 -n   Number of stations to create.
 -s   SSID for stations.
 -e   Encryption type: open|wep|wpa|wpa2.
--P   Passphrase for when AP is encrypted.
--a   Port the station(s) will connect to.
+-k   Passphrase for when AP is encrypted.
+-a   The upstream port to which station(s) will connect.
 -A   Transmit rate for non station side (Endpoint A) of connection.
 -B   Transmit rate for station side (Endpoint B) of connection.
--p   Number of packets to send.
+-p   Number of default UDP sized packets to send.
 -h   Help information.
 
 Example usage:
@@ -67,7 +67,7 @@ Example usage:
 
 Station will always be endpoint B so only the name for endpoint A port is needed."
 
-while getopts 'm:r:n:p:a:e:P:w:s:A:B:h' OPTION; do
+while getopts 'm:r:n:p:a:e:k:w:s:A:B:h' OPTION; do
    case "$OPTION" in
       m)
         #manager
@@ -81,7 +81,7 @@ while getopts 'm:r:n:p:a:e:P:w:s:A:B:h' OPTION; do
         #num stations
         num_stas="$OPTARG"
         ;;
-      p)
+      k)
         #packets
         num_packets="$OPTARG"
         ;;
@@ -128,13 +128,11 @@ shift "$(($OPTIND -1))"
 #check for required getopts
 if [ "$flag_ssid" = false ] || [ "$flag_radio" = false ] || [ "$flag_port" = false ] ;
 then
-   echo "Please provide at minimum the port the station will connect to (-a), ssid (-s), and radio (-w)"
+   echo "Please provide at minimum the port the station will connect to (-a), ssid (-s), and radio (-w). Run the script with -h for more information."
    exit 1
 fi
 
-. $HOME/lanforge.profile
-
-
+echo "Deleting old stations."
 ./lf_associate_ap.pl --mgr $mgr --resource $resource --action del_all_phy --port_del $radio
 
 ./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd \
@@ -142,10 +140,12 @@ fi
 
 sleep 2
 
+echo "Creating new stations."
 ./lf_associate_ap.pl --mgr $mgr --resource $resource \
  --ssid $ssid --security $encryption --passphrase $passphrase \
  --num_stations $num_stas --first_sta "sta$first_sta" \
  --first_ip DHCP --radio $radio --action add
+sleep 2
 
 function new_cx(){
    local cx=$1
@@ -170,6 +170,7 @@ function new_cx(){
 }
 
 # Delete all connections and endpoints that have 'bg' in the name
+echo "Deleting old connections."
 cx_array=( `./lf_firemod.pl --mgr $mgr --resource $resource --action list_cx | awk '/bg/ { print $ 2 }' | sed 's/,$//'`  )
 for i in "${cx_array[@]}"
    do
@@ -183,9 +184,12 @@ for i in "${cx_array[@]}"
 
 sleep 5
 
+echo "Creating new connections."
 last_sta=$((first_sta + num_stas - 1))
 for i in `seq $first_sta $last_sta`; do
    new_cx bg$i $port_A sta$i
 done
+
+echo "All stations and connections have been created."
 
 /lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
