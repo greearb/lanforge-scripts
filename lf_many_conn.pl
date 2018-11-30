@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # This program is used to stress test the LANforge system, and may be used as
 # an example for others who wish to automate LANforge tests.
@@ -17,16 +17,17 @@
 #
 
 use strict;
+use warnings;
+use diagnostics;
 
 # Un-buffer output
 $| = 1;
 
+use lib '/home/lanforge/scripts';
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
-
 use Net::Telnet ();
-
 use Getopt::Long;
 
 my $lfmgr_host = "localhost";
@@ -81,9 +82,9 @@ my $do_run_cxs = 1; #Should usually be 1
 my $fail_msg = "";
 my $manual_check = 0;
 
-my $cmd_log_name = "lf_conn_cmds.txt";
-open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
-print "History of all commands can be found in $cmd_log_name\n";
+#my $cmd_log_name = "lf_conn_cmds.txt";
+#open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
+#print "History of all commands can be found in $cmd_log_name\n";
 
 ########################################################################
 # Nothing to configure below here, most likely.
@@ -100,17 +101,15 @@ my $usage = "$0  [--lf1_port {\"port_num ip mask gateway\"}]
 Example:
  $0 --lf1_port \"1 172.22.22.2 255.255.255.0 172.22.22.1\" --lf2_port \"1 172.22.22.3 255.255.255.0 172.22.22.1\" --init_to_dflts yes\n";
 
-my $i = 0;
-
 GetOptions 
 (
-	'protocol|p=s'		=> \$proto,
-	'start_cx_num|s=i'	=> \$start_cx_num,
+        'protocol|p=s'          => \$proto,
+        'start_cx_num|s=i'      => \$start_cx_num,
         'quiet|q=s'             => \$quiet,
         'num_cxs|n=i'           => \$to_do_at_a_time,
         'init_ports|i=s'        => \$init_to_dflts,
-        'lf1_port|l=s'          => \$lf1_port,
-        'lf2_port|L=s'          => \$lf2_port,
+        'lf1_port|a=s'          => \$lf1_port,
+        'lf2_port|b=s'          => \$lf2_port,
         'init_to_dflts|d=s'     => \$init_to_dflts,
 ) || die("$usage");
 
@@ -129,17 +128,11 @@ $t->open(Host    => $lfmgr_host,
 
 $t->waitfor("/btbits\>\>/");
 
-my $dt = "";
-
-
 # Configure our utils.
 my $utils = new LANforge::Utils();
 $utils->telnet($t);         # Set our telnet object.
 $utils->cli_send_silent(0); # Do show input to CLI
 $utils->cli_rcv_silent(1);  # Repress output from CLI ??
-
-
-my $dt = "";
 
 if ($init_to_dflts eq "yes") {
   initToDefaults();
