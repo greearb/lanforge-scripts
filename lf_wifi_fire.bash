@@ -2,19 +2,20 @@
 
 #  This script is an attempt to simplify the creation of stations and connections for said stations.
 #  One UDP connection will be created for each station.
-#  The number of stations, station SSID, encryption type, number of packets to send, and transmit rates
+#  The number of stations, station SSID, encryption type and passphrase, number of packets to send, and transmit rates
 #  can all be configured with the below options.
 #  Required values are SSID, radio, and endpoint A port.
 #  -m   Manager IP or hostname.
-#  -r   Resource IP or hostname.
+#  -r   Resource number.
+#  -w   Which radio to use i.e wiphy0 wiphy1 etc.
 #  -n   Number of stations to create.
-#  -p   Number of packets to send.
+#  -s   SSID for stations.
 #  -e   Encryption type: open|wep|wpa|wpa2.
 #  -P   Passphrase for when AP is encrypted.
-#  -w   Which radio to use i.e wiphy0 wiphy1 etc.
-#  -s   SSID for stations.
+#  -a   Port the station(s) will connect to.
 #  -A   Transmit rate for non station side (Endpoint A) of connection.
 #  -B   Transmit rate for station side (Endpoint B) of connection.
+#  -p   Number of packets to send.
 #  -h   Help information.
 
 #  Example usage:
@@ -45,19 +46,20 @@ flag_port=false
 
 show_help="This script is an attempt to simplify the creation of stations and connections for said stations.
 One UDP connection will be created for each station.
-The number of stations, station SSID, encryption type, number of packets to send, and transmit rates
+The number of stations, station SSID, encryption type and passphrase, number of packets to send, and transmit rates
 can all be configured with the below options.
 Required values are SSID, radio, and endpoint A port.
 -m   Manager IP or hostname.
--r   Resource IP or hostname.
+-r   Resource number.
+-w   Which radio to use i.e wiphy0 wiphy1 etc.
 -n   Number of stations to create.
--p   Number of packets to send.
+-s   SSID for stations.
 -e   Encryption type: open|wep|wpa|wpa2.
 -P   Passphrase for when AP is encrypted.
--w   Which radio to use i.e wiphy0 wiphy1 etc.
--s   SSID for stations.
+-a   Port the station(s) will connect to.
 -A   Transmit rate for non station side (Endpoint A) of connection.
 -B   Transmit rate for station side (Endpoint B) of connection.
+-p   Number of packets to send.
 -h   Help information.
 
 Example usage:
@@ -69,7 +71,7 @@ while getopts 'm:r:n:p:a:e:P:w:s:A:B:h' OPTION; do
    case "$OPTION" in
       m)
         #manager
-        manager="$OPTARG"
+        mgr="$OPTARG"
         ;;
       r)
         #resource
