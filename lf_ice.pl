@@ -17,10 +17,12 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 $| = 1;
 
 if ( -d "./LANforge" ) {
+   use lib ".";
    use lib "./LANforge";
 }
-elsif ( -d "/home/lanforge/scripts") {
+elsif ( -d "/home/lanforge/scripts/LANforge") {
    use lib "/home/lanforge/scripts";
+   use lib "/home/lanforge/scripts/LANforge";
 }
 use LANforge::Endpoint;
 use LANforge::Port;
