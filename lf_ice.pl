@@ -1,30 +1,34 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # This program is used to stress test the LANforge system, and may be used as
 # an example for others who wish to automate LANforge tests.
 
 # Written by Candela Technologies Inc.
-#  Updated by: hkwynn@candelatech.com
-#
-#
-#
 #  Creates a WanLink with 128 WanPaths for performance testing.
 
-
 use strict;
+use warnings;
+use diagnostics;
+use Carp;
+$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
+$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 # Un-buffer output
 $| = 1;
 
+if ( -d "./LANforge" ) {
+   use lib "./LANforge";
+}
+elsif ( -d "/home/lanforge/scripts") {
+   use lib "/home/lanforge/scripts";
+}
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
-
 use Net::Telnet ();
-
 use Getopt::Long;
 
-my $lfmgr_host = "192.168.100.152";
+my $lfmgr_host = "localhost";
 my $lfmgr_port = 4001;
 
 my $shelf_num = 1;
@@ -75,9 +79,9 @@ my $wp_count = 128;
 my $fail_msg = "";
 my $manual_check = 0;
 
-my $cmd_log_name = "lf_ice.txt";
-open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
-print "History of all commands can be found in $cmd_log_name\n";
+#my $cmd_log_name = "lf_ice.txt";
+#open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
+#print "History of all commands can be found in $cmd_log_name\n";
 
 ########################################################################
 # Nothing to configure below here, most likely.
@@ -89,12 +93,12 @@ my $usage = "$0  [--quiet {yes | no}]
 Example:
  $0 --init_to_dflts yes\n";
 
-my $i = 0;
 
-GetOptions 
-(
-        'quiet|q=s'             => \$quiet,
-        'init_to_dflts|d=s'     => \$init_to_dflts,
+GetOptions (
+   'mgr|m=s'      => \$lfmgr_host,
+   'port|p=i'     => \$lfmgr_port,
+   'quiet|q=s'    => \$quiet,
+   'init_to_dflts|d=s'     => \$init_to_dflts,
 ) || die("$usage");
 
 
@@ -107,13 +111,10 @@ my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/');
 
 
 $t->open(Host    => $lfmgr_host,
-	 Port    => $lfmgr_port,
-	 Timeout => 10);
+         Port    => $lfmgr_port,
+         Timeout => 10);
 
 $t->waitfor("/btbits\>\>/");
-
-my $dt = "";
-
 
 # Configure our utils.
 my $utils = new LANforge::Utils();
