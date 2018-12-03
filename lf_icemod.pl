@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # This program is used to stress test the LANforge system, and may be used as
 # an example for others who wish to automate LANforge tests.
@@ -9,16 +9,28 @@
 #
 
 use strict;
+use warnings;
+use diagnostics;
+use Carp;
+$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
+$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 # Un-buffer output
 $| = 1;
 
+if ( -d "./LANforge" ) {
+   use lib ".";
+   use lib "./LANforge";
+}
+elsif ( -d "/home/lanforge/scripts/LANforge" ) {
+   use lib "/home/lanforge/scripts";
+   use lib "/home/lanforge/scripts/LANforge";
+}
+
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
-
 use Net::Telnet ();
-
 use Getopt::Long;
 
 my $lfmgr_host = "localhost";
@@ -80,6 +92,7 @@ Example:
 ";
 
 my $i = 0;
+my $show_help;
 
 GetOptions 
 (
@@ -91,10 +104,10 @@ GetOptions
    'latency|l=i'     => \$latency,
    'jitter|j=i'      => \$jitter,
    'switch|w=s'      => \$switch,
-   'manager|m=s'     => \$lfmgr_host,
+   'manager|mgr|m=s' => \$lfmgr_host,
    'pcap|p=s'        => \$pcap,
-   'load|L=s'        => \$load,
-   'state|S=s'       => \$state,
+   'load|o=s'        => \$load,
+   'state|a=s'       => \$state,
    'quiet|q=i'       => \$quiet,
 ) || die("$usage");
 
@@ -103,12 +116,12 @@ if ($show_help) {
    exit 0;
 }
 
-if (! ($quiet == 0xffff)) {
-  open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
-  if (! ($quiet & 0x2)) {
-    print "History of all commands can be found in $cmd_log_name\n";
-  }
-}
+#if (! ($quiet == 0xffff)) {
+#  open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
+#  if (! ($quiet & 0x2)) {
+#    print "History of all commands can be found in $cmd_log_name\n";
+#  }
+#}
 
 # Open connection to the LANforge server.
 
