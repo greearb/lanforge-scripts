@@ -26,6 +26,8 @@ set -e
 #set -u
 set -o pipefail
 
+clilog="--log_cli /tmp/clilog.txt"
+
 #default values
 mgr=localhost
 resource=1
@@ -130,15 +132,15 @@ then
 fi
 
 echo "Deleting old stations."
-./lf_associate_ap.pl --mgr $mgr --resource $resource --action del_all_phy --port_del $radio
+./lf_associate_ap.pl --mgr $mgr --resource $resource $clilog --action del_all_phy --port_del $radio
 
-./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd \
+./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd $clilog \
  --cmd "nc_show_ports 1 $resource all 1" &>/dev/null
 
 sleep 2
 
 echo "Creating new stations."
-./lf_associate_ap.pl --mgr $mgr --resource $resource \
+./lf_associate_ap.pl --mgr $mgr --resource $resource $clilog \
  --ssid $ssid --security $encryption --passphrase $passphrase \
  --num_stations $num_stas --first_sta "sta$first_sta" \
  --first_ip DHCP --radio $radio --action add
@@ -150,35 +152,35 @@ function new_cx(){
    local portA=$2
    local portB=$3
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource \
+   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog \
     --action create_endp --endp_name "$cx-A" --port_name $portA \
     --speed $rate_A --endp_type lf_udp --report_timer 1000
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource \
+   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog \
     --action create_endp --endp_name "$cx-B" --port_name $portB \
     --speed $rate_B --endp_type lf_udp --report_timer 1000
 
-   ./lf_firemod.pl --mgr $mgr --action create_cx --cx_name $cx --cx_endps "$cx-A,$cx-B" --report_timer 1000
+   ./lf_firemod.pl --mgr $mgr $clilog  --action create_cx --cx_name $cx --cx_endps "$cx-A,$cx-B" --report_timer 1000
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd \
+   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd \
     --cmd "set_endp_details $cx-A NA NA NA $num_packets" &>/dev/null
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd \
+   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd \
     --cmd "set_endp_details $cx-B NA NA NA $num_packets" &>/dev/null
 }
 
 # Delete all connections and endpoints that have 'bg' in the name
 echo "Deleting old connections."
-cx_array=( `./lf_firemod.pl --mgr $mgr --resource $resource --action list_cx | awk '/bg/ { print $ 2 }' | sed 's/,$//'`  )
+cx_array=( `./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action list_cx | awk '/bg/ { print $ 2 }' | sed 's/,$//'`  )
 for i in "${cx_array[@]}"
    do
       :
-       ./lf_firemod.pl --mgr $mgr --resource $resource --action delete_cx --cx_name $i
-       ./lf_firemod.pl --mgr $mgr --resource $resource --action delete_endp --endp_name "$i-A"
-       ./lf_firemod.pl --mgr $mgr --resource $resource --action delete_endp --endp_name "$i-B"
+       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_cx --cx_name $i
+       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-A"
+       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-B"
    done
 
-./lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
+./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
 
 sleep 5
 
@@ -190,4 +192,6 @@ done
 
 echo "All stations and connections have been created."
 
-/lf_firemod.pl --mgr $mgr --resource $resource --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
+/lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
+
+#
