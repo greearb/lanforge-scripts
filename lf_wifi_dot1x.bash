@@ -140,14 +140,13 @@ echo "Deleting old stations."
 sleep 2
 
 echo "Creating new stations."
-./lf_associate_ap.pl --mgr $mgr --resource $resource $clilog \
- --ssid $ssid --security $encryption --passphrase $passphrase \
- --num_stations $num_stas --first_sta "sta$first_sta" \
- --first_ip DHCP --radio $radio --action add --xsec use-dot1x
+# this command is too limited to be useful for creating roaming stations at the moment
+#./lf_associate_ap.pl --mgr $mgr --resource $resource $clilog \
+# --ssid $ssid --security $encryption --passphrase $passphrase \
+# --num_stations $num_stas --first_sta "sta$first_sta" \
+# --first_ip DHCP --radio $radio --action add --xsec use-dot1x
 
-
-
-sleep 2
+#sleep 2
 
 key_mgt="WPA-EAP"
 pairwise="CCMP"
@@ -160,7 +159,7 @@ identity="lanforge@lanforge.com"
 anon_id=NA
 phase1=NA
 phase2=NA
-eap_passwd=eap_passwd
+eap_passwd=NA
 pin=NA
 pac_file=NA
 private_key="/home/lanforge/apu2-a-client.p12"
@@ -180,6 +179,12 @@ network_auth_type=NA
 anqp_3gpp_cell_net=NA
 
 for n in `seq $first_sta $(($first_sta -1 + $num_stas))` ; do
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action do_cmd --cmd \
+  "add_sta 1 8 wiphy0 sta$n 2181039104 'ja2a-8021x' NA [BLANK] DEFAULT NA 00:0e:8e:41:0d:47 8 NA NA NA NA NA 2181039104"
+
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action do_cmd --cmd \
+  "set_port 1 8 sta100 0.0.0.0 255.255.0.0 NA NA 1424969217212417 '00 0e 8e 03 32 47' NA NA BLANK 8548171820 8000 0 65535 4294967295 -1 -1 -1 -1 255 AUTO AUTO AUTO NA 0 192.168.100.1 0 NONE 9007199254740992 NONE"
+
   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action do_cmd --cmd \
    "set_wifi_extra 1 $resource sta$n $key_mgt $pairwise $group $psk $key $ca_cert $eap $identity $anon_id $phase1 $phase2 $eap_passwd $pin $pac_file $private_key $pk_passwd $hessid $realm $client_cert"
 done
@@ -209,13 +214,11 @@ function new_cx(){
 # Delete all connections and endpoints that have 'bg' in the name
 echo "Deleting old connections."
 cx_array=( `./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action list_cx | awk '/bg/ { print $ 2 }' | sed 's/,$//'`  )
-for i in "${cx_array[@]}"
-   do
-      :
-       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_cx --cx_name $i
-       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-A"
-       ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-B"
-   done
+for i in "${cx_array[@]}"; do
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_cx --cx_name $i
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-A"
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-B"
+done
 
 ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
 
