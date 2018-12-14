@@ -189,49 +189,24 @@ for n in `seq $first_sta $(($first_sta -1 + $num_stas))` ; do
    "set_wifi_extra 1 $resource sta$n $key_mgt $pairwise $group $psk $key $ca_cert $eap $identity $anon_id $phase1 $phase2 $eap_passwd $pin $pac_file $private_key $pk_passwd $hessid $realm $client_cert"
 done
 
-function new_cx(){
-   local cx=$1
-   local portA=$2
-   local portB=$3
+bssid1="00:0e:8e:14:08:da"
+bssid2="00:0e:8e:2e:84:19"
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog \
-    --action create_endp --endp_name "$cx-A" --port_name $portA \
-    --speed $rate_A --endp_type lf_udp --report_timer 1000
+#roam commands: see http://ctlocal/lfcli_ug.php#wifi_cli_cmd
+for n in `seq $first_sta $(($first_sta -1 + $num_stas))` ; do
+  # roam to bssid1
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action do_cmd --cmd \
+  "wifi_cli_cmd 1 $resource sta$n 'roam $bssid1'"
+  sleep 2 # your sleep interval here should match the report timer you set in the GUI
+  # scanning the port before it reports will probably result in stale (previous to roam) data
+  # this is the point you do a 'nc_show_port 1 $resource sta$n' and grep for BSSID
+  # roam to bssid2
+  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action do_cmd --cmd \
+  "wifi_cli_cmd 1 $resource sta$n 'roam $bssid2'"
+  sleep 2 # your sleep interval here should match the report timer you set in the GUI
+  # scanning the port before it reports will probably result in stale (previous to roam) data
+  # this is the point you do a 'nc_show_port 1 $resource sta$n' and grep for BSSID
 
-   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog \
-    --action create_endp --endp_name "$cx-B" --port_name $portB \
-    --speed $rate_B --endp_type lf_udp --report_timer 1000
-
-   ./lf_firemod.pl --mgr $mgr $clilog  --action create_cx --cx_name $cx --cx_endps "$cx-A,$cx-B" --report_timer 1000
-
-   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd \
-    --cmd "set_endp_details $cx-A NA NA NA $num_packets" &>/dev/null
-
-   ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd \
-    --cmd "set_endp_details $cx-B NA NA NA $num_packets" &>/dev/null
-}
-
-# Delete all connections and endpoints that have 'bg' in the name
-echo "Deleting old connections."
-cx_array=( `./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action list_cx | awk '/bg/ { print $ 2 }' | sed 's/,$//'`  )
-for i in "${cx_array[@]}"; do
-  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_cx --cx_name $i
-  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-A"
-  ./lf_firemod.pl --mgr $mgr --resource $resource $clilog --action delete_endp --endp_name "$i-B"
 done
-
-./lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
-
-sleep 5
-
-echo "Creating new connections."
-last_sta=$((first_sta + num_stas - 1))
-for i in `seq $first_sta $last_sta`; do
-   new_cx bg$i $port_A sta$i
-done
-
-echo "All stations and connections have been created."
-
-/lf_firemod.pl --mgr $mgr --resource $resource $clilog --quiet yes --action do_cmd --cmd 'nc_show_endpoints all' &>/dev/null
 
 #
