@@ -14,7 +14,8 @@ use diagnostics;
 use Carp;
 $SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
-
+our $q = q(');
+our $Q = q(");
 # Un-buffer output
 $| = 1;
 
@@ -51,6 +52,8 @@ my $report_timer = 1000; # XX/1000 seconds
 
 # Default values for ye ole cmd-line args.
 
+
+my $port = "";
 my $endp_name = "";
 my $speed = "";
 my $drop_pm = "";
@@ -62,52 +65,72 @@ my $load = "";
 my $state = "";
 my $cx = "";
 my $quiet = 0;
-
+my $description = "";
 my $fail_msg = "";
 my $manual_check = 0;
-
-my $cmd_log_name = "lf_icemod.txt";
+my $cpu_id = "NA";
+my $wle_flags = 0;
 
 ########################################################################
 # Nothing to configure below here, most likely.
 ########################################################################
 
-my $usage = "$0  --endp_name {name}
-                 [--cx {name}]
-                 [--speed {speed in bps}]
-                 [--drop_pm { 0 - 1000000}]
-                 [--latency { 0 - 1000000}]
+my $usage = qq($0  [--manager { hostname or address of LANforge manager } ]
+                 [--resource { resource number } ]
+                 [--port {port name} ]
+                 [--endp_name { name } ]
+                 [--description { ${Q}stuff in quotes${Q} } ]
+                 [--cx { name } ]
+                 [--speed { speed in bps } ]
+                 [--drop_pm { 0 - 1000000 } ]
+                 [--latency { 0 - 1000000 } ]
                  [--switch new_cx_to_run ]
-                 [--manager { network address of LANforge manager} ]
                  [--pcap { dir-name | off } ]
                  [--load { db-name } ]
                  [--state { running | switch | quiesce | stopped | deleted } ]
 
 Example:
- lf_icemod.pl --manager lanforge1 --endp_name t1-A --speed 154000 --drop_pm 10000 --latency 35
- lf_icemod.pl --manager 192.168.100.223 --switch t3
+ lf_icemod.pl --manager lanforge1 --new_endp t1-A --speed 256000 --drop_pm 100 --latency 35 --description ${Q}link one${Q}
+ lf_icemod.pl --mgr lanforge1 --new_cx "t1" --endps t1-A,t1-B
+ lf_icemod.pl --mgr lanforge1 --endp_name t1-A --speed 154000 --drop_pm 10000 --latency 35
+ lf_icemod.pl --mgr 192.168.100.223 --switch t3
  lf_icemod.pl --state running --cx t3
  lf_icemod.pl --pcap /tmp/endp-a --endp_name t1-A
  lf_icemod.pl --load my_db
-";
+);
+
+if (@ARGV < 2) {
+   print "$usage\n";
+   exit 0;
+}
 
 my $i = 0;
 my $show_help;
+my $resource = 1;
+my $new_endp = "";
+my $new_cx = "";
+my $endps = "";
 
-GetOptions 
-(
+GetOptions (
    'help|h'          => \$show_help,
    'endp_name|e=s'   => \$endp_name,
+   'desc|description=s'   => \$description,
    'speed|s=i'       => \$speed,
    'cx|c=s'          => \$cx,
    'drop_pm|d=i'     => \$drop_pm,
    'latency|l=i'     => \$latency,
    'jitter|j=i'      => \$jitter,
    'switch|w=s'      => \$switch,
+   'new_endp=s'      => \$new_endp,
+   'new_cx=s'        => \$new_cx,
+   'endps=s'         => \$endps,
+   'port=s'          => \$port,
    'manager|mgr|m=s' => \$lfmgr_host,
    'pcap|p=s'        => \$pcap,
    'load|o=s'        => \$load,
    'state|a=s'       => \$state,
+   'card|resource|r=i' => \$resource,
+   'wle_flags=i'     => \$wle_flags,
    'quiet|q=i'       => \$quiet,
 ) || die("$usage");
 
@@ -116,35 +139,26 @@ if ($show_help) {
    exit 0;
 }
 
-#if (! ($quiet == 0xffff)) {
-#  open(CMD_LOG, ">$cmd_log_name") or die("Can't open $cmd_log_name for writing...\n");
-#  if (! ($quiet & 0x2)) {
-#    print "History of all commands can be found in $cmd_log_name\n";
-#  }
-#}
-
 # Open connection to the LANforge server.
-
 my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-			Timeout => 20);
+         Timeout => 20);
 
-$t->open(Host    => $lfmgr_host,
-	 Port    => $lfmgr_port,
-	 Timeout => 10);
+$t->open( Host    => $lfmgr_host,
+          Port    => $lfmgr_port,
+          Timeout => 10);
 
 $t->waitfor("/btbits\>\>/");
 
 my $dt = "";
 
-# Configure our utils.
 my $utils = new LANforge::Utils();
-$utils->telnet($t);         # Set our telnet object.
-$utils->cli_send_silent(0); # Do show input to CLI
+$utils->telnet($t);
+$utils->cli_send_silent(0); # Show input to CLI
 if ($quiet & 0x1) {
-  $utils->cli_rcv_silent(1);  # Repress output from CLI ??
+  $utils->cli_rcv_silent(1);
 }
 else {
-  $utils->cli_rcv_silent(0);  # Repress output from CLI ??
+  $utils->cli_rcv_silent(0);
 }
 
 # $utils->doCmd("log_level 63");
@@ -161,6 +175,40 @@ if ($load ne "") {
   exit(0);
 }
 
+if ($new_cx ne "") {
+   die("please set the endpoints for new wanlink cx; $usage")
+      unless ((defined $endps) && ($endps ne ""));
+
+   die("please specify two endpoints joined by a comma: end1-A,end1-B; $usage")
+      unless ($endps =~ /^\S+,\S+$/);
+   my @ends= split(',', $endps);
+   $cmd = "add_cx $new_cx default_tm $ends[0] $ends[1]";
+   $utils->doCmd($cmd);
+   exit(0);
+}
+
+if ($new_endp ne "") {
+   die("please set the resource for new wanlink endpoint; $usage")
+      unless ((defined $resource) && ($resource ne ""));
+   die("please set latency for new wanlink endpoint; $usage")
+      unless ((defined $latency) && ($latency ne ""));
+   die("please set drop_pm for new wanlink endpoint; $usage")
+      unless ((defined $drop_pm) && ($drop_pm ne ""));
+   die("please set port for new wanlink endpoint; $usage")
+      unless ((defined $port) && ($port ne ""));
+
+   $wle_flags = "NA"
+      if (($wle_flags == 0) || ($wle_flags eq ""));
+   $cpu_id = "NA"
+      if ($cpu_id eq "");
+   $description = "NA"
+      if ($description eq "");
+
+   $cmd = "add_wl_endp $new_endp 1 $resource $port $latency $speed '$description' $cpu_id $wle_flags";
+   $utils->doCmd($cmd);
+   exit(0);
+}
+
 if ($switch ne "") {
   $cmd = "set_cx_state all $switch SWITCH";
   $utils->doCmd($cmd);
@@ -173,8 +221,7 @@ if ((length($endp_name) == 0) && (length($cx) == 0)) {
 }
 
 if ($pcap ne "") {
-  if (($pcap eq "OFF") ||
-      ($pcap eq "off")) {
+  if ($pcap =~ /^OFF$/i) {
     $cmd = "set_wanlink_pcap $endp_name off";
   }
   else {
@@ -209,4 +256,3 @@ $cmd = "set_wanlink_info $endp_name $speed $latency $jitter NA NA $drop_pm NA";
 $utils->doCmd($cmd);
 
 exit(0);
-
