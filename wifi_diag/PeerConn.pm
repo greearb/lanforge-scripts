@@ -81,6 +81,42 @@ sub find_or_create_tid {
   return $tid;
 }
 
+sub tx_no_ack_found {
+  my $self = shift;
+  my $tid_count = @{$self->{tids}};
+
+  my $rv = 0;
+
+  my $i;
+  for ($i = 0; $i < $tid_count; $i++) {
+    #print "Checking tid: $i\n";
+    if (exists $self->{tids}[$i]) {
+      #print "Printing tid: $i\n";
+      $rv += $self->{tids}[$i]->tx_no_ack_found();
+      #print "Done printing tid: $i\n";
+    }
+  }
+  return $rv;
+}
+
+sub rx_no_ack_found {
+  my $self = shift;
+  my $tid_count = @{$self->{tids}};
+
+  my $rv = 0;
+
+  my $i;
+  for ($i = 0; $i < $tid_count; $i++) {
+    #print "Checking tid: $i\n";
+    if (exists $self->{tids}[$i]) {
+      #print "Printing tid: $i\n";
+      $rv += $self->{tids}[$i]->rx_no_ack_found();
+      #print "Done printing tid: $i\n";
+    }
+  }
+  return $rv;
+}
+
 sub printme {
   my $self = shift;
   my $tid_count = @{$self->{tids}};

@@ -15,6 +15,8 @@ sub new {
 
   my $self = {
 	      pkts => [],
+	      rx_no_ack_found => 0,
+	      tx_no_ack_found => 0,
 	      tx_retrans_pkts => 0,
 	      rx_retrans_pkts => 0,
 	      tx_amsdu_retrans_pkts => 0,
@@ -129,7 +131,7 @@ sub add_pkt {
 
     for ($i = 0; $i<$pkt_count; $i++) {
       my $tmp = $self->{pkts}[$i];
-      #print "checking tmp-pkt: " . $tmp->seqno();
+      #print "checking tmp-pkt frame: " . $tmp->{frame_num} . " seqno: " . $tmp->seqno();
       #print " transmitter: " . $tmp->transmitter();
       #print " pkt-rcvr: " . $pkt->receiver() . "\n";
       if ($tmp->transmitter() eq $pkt->receiver()) {
@@ -228,6 +230,12 @@ sub add_pkt {
       if (! $tmp->was_acked()) {
 	if ($tmp->wants_ack()) {
 	  print "WARNING:  did not find ack for frame: " . $tmp->frame_num() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+	  if ($tmp->transmitter() eq $self->{addr_a}) {
+	    $self->{tx_no_ack_found}++;
+	  }
+	  else {
+	    $self->{rx_no_ack_found}++;
+	  }
 	}
       }
       $pkt_count--;
@@ -305,11 +313,23 @@ sub get_pkts {
   return @{$self->{pkts}};
 }
 
+sub tx_no_ack_found {
+  my $self = shift;
+  return $self->{tx_no_ack_found};
+}
+
+sub rx_no_ack_found {
+  my $self = shift;
+  return $self->{rx_no_ack_found};
+}
+
 sub printme {
   my $self = shift;
   print "   tidno: " . $self->tidno() . " pkt-count: " . $self->get_pkts()
     . " tx-pkts: " . $self->{tx_pkts} . " tx-retrans: " . $self->{tx_retrans_pkts}
-    . " rx-pkts: " . $self->{rx_pkts} . " rx-retrans: " . $self->{rx_retrans_pkts} . "\n";
+    . " rx-pkts: " . $self->{rx_pkts} . " rx-retrans: " . $self->{rx_retrans_pkts}
+    . " tx-no-acks: " . $self->{tx_no_ack_found} . " rx-no-acks: " . $self->{rx_no_ack_found}
+    . "\n";
 }
 
 1;

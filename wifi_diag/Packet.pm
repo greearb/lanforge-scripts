@@ -15,6 +15,7 @@ sub new {
 	      wmm_info => "",
 	      raw_pkt => "",
 	      seqno => -1, # block-ack will not have a seqno
+	      bytes_on_wire => 0,
 	      acked_by => -1,
 	      block_acked_by => -1,
 	      retrans => 0,
@@ -24,6 +25,7 @@ sub new {
 	      dummy_rx_pkts => 0,
 	      is_last_ampdu => 0,
 	      is_ampdu => 0,
+	      is_msdu => 0,
 	      is_malformed => 0,
 	      type_subtype => "UNKNOWN",
 	      receiver => "UNKNOWN",
@@ -67,16 +69,21 @@ sub append {
   elsif ($ln =~ /^.* = Payload Type: A-MSDU/) {
     $self->{is_ampdu} = 1;
   }
+  elsif ($ln =~ /^.* = Payload Type: MSDU/) {
+    $self->{is_msdu} = 1;
+  }
   elsif ($ln =~ /^\s*\[Time delta from previous captured frame:\s+(\S+)/) {
     $self->{timedelta} = $1;
   }
   elsif ($ln =~ /^\s*Receiver address: .*\((\S+)\)/) {
     $self->{receiver} = $1;
   }
-  elsif ($ln =~ /^\s*Fragment number: (\d+)/) {
+  elsif (($ln =~ /^\s*Fragment number: (\d+)/) ||
+	 ($ln =~ /^.*\s+=\s+Fragment number: (\d+)/)) {
     $self->{fragno} = $1;
   }
-  elsif ($ln =~ /^\s*Sequence number: (\d+)/) {
+  elsif (($ln =~ /^\s*Sequence number: (\d+)/) ||
+	 ($ln =~ /^.*\s+=\s+Sequence number: (\d+)/)) {
     $self->{seqno} = $1;
   }
   elsif ($ln =~ /^\s*Type\/Subtype: (.*)/) {
@@ -128,7 +135,8 @@ sub append {
       $self->{datarate} = 0;
     }
   }
-  elsif ($ln =~ /^\s*SSI Signal: (.*)/) {
+  elsif (($ln =~ /^\s*SSI Signal: (.*)/) ||
+	 ($ln =~ /^\s*Antenna signal: (.*)/)) {
     if ($self->{ssi_sig_found} == 0) {
       $self->{ssi_combined} = $1;
       $self->{ssi_sig_found}++;

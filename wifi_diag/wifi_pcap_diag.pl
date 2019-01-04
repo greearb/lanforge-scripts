@@ -52,6 +52,9 @@ my $glb_fh_mcs_rx;
 my $glb_fh_rtx_tx;
 my $glb_fh_rtx_rx;
 
+my $tx_no_ack_found = 0;
+my $rx_no_ack_found = 0;
+
 my %glb_mcs_tx_hash = ();
 my %glb_mcs_rx_hash = ();
 my %glb_pkt_type_tx_hash = ();
@@ -153,35 +156,38 @@ my $last_ps_timestamp = 0;
 my $tot_pkts = 0;
 my $rx_pkts = 0;
 my $rx_amsdu_pkts = 0;
-my $rx_retrans_pkts = 0;
+my $rx_retrans_pkts_all = 0;
+my $rx_retrans_pkts_big = 0;
 my $rx_amsdu_retrans_pkts = 0;
 my $dummy_rx_pkts = 0;
 my $tx_pkts = 0;
 my $tx_amsdu_pkts = 0;
-my $tx_retrans_pkts = 0;
+my $tx_retrans_pkts_all = 0;
+my $tx_retrans_pkts_big = 0;
 my $tx_amsdu_retrans_pkts = 0;
 my $dummy_tx_pkts = 0;
 
 my $last_tot_pkts = 0;
 my $last_rx_pkts = 0;
 my $last_rx_amsdu_pkts = 0;
-my $last_rx_retrans_pkts = 0;
+my $last_rx_retrans_pkts_all = 0;
 my $last_rx_amsdu_retrans_pkts = 0;
 my $last_dummy_rx_pkts = 0;
 my $last_tx_pkts = 0;
 my $last_tx_amsdu_pkts = 0;
-my $last_tx_retrans_pkts = 0;
+my $last_tx_retrans_pkts_all = 0;
 my $last_tx_amsdu_retrans_pkts = 0;
 my $last_dummy_tx_pkts = 0;
 
 while (<>) {
   my $ln = $_;
   $input_line_count++;
-  if ($ln =~ /^Frame (\d+):/) {
+  if ($ln =~ /^Frame (\d+):\s+(\d+) bytes on wire/) {
     if ($cur_pkt->raw_pkt() ne "") {
       processPkt($cur_pkt);
     }
     $cur_pkt = Packet->new(frame_num => $1,
+			   bytes_on_write => $2,
 			   raw_pkt => $ln);
   } else {
     $cur_pkt->append($ln);
@@ -193,6 +199,12 @@ if ($cur_pkt->raw_pkt() ne "") {
 }
 
 printProgress();
+
+# Sum up some stats
+for my $conn (values %peer_conns) {
+  $tx_no_ack_found += $conn->tx_no_ack_found();
+  $rx_no_ack_found += $conn->rx_no_ack_found();
+}
 
 $report_html .= genGlobalReports();
 
@@ -317,15 +329,20 @@ sub htmlMcsHistogram {
   my $html = "";
 
   if ($rx_pkts) {
-    $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == " . ($rx_retrans_pkts * 100.0) / $rx_pkts . "<br>\n";
+    $html .= "RX (All) Retransmit percentage: $rx_retrans_pkts_all/$rx_pkts == " . ($rx_retrans_pkts_all * 100.0) / $rx_pkts . "<br>\n";
   } else {
-    $html .= "RX Retransmit percentage: $rx_retrans_pkts/$rx_pkts == 0<br>\n";
+    $html .= "RX (All) Retransmit percentage: $rx_retrans_pkts_all/$rx_pkts == 0<br>\n";
   }
+  $html .= "RX (Big) Retransmit count: $rx_retrans_pkts_big<br>\n";
   if ($tx_pkts) {
-    $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == " . ($tx_retrans_pkts * 100.0) / $tx_pkts . "<br>\n";
+    $html .= "TX (All) Retransmit percentage: $tx_retrans_pkts_all/$tx_pkts == " . ($tx_retrans_pkts_all * 100.0) / $tx_pkts . "<br>\n";
   } else {
-    $html .= "TX Retransmit percentage: $tx_retrans_pkts/$tx_pkts == 0<br>\n";
+    $html .= "TX (All) Retransmit percentage: $tx_retrans_pkts_all/$tx_pkts == 0<br>\n";
   }
+  $html .= "TX (Big) Retransmit count: $tx_retrans_pkts_big<br>\n";
+
+  $html .= "RX no-ack-found: $rx_no_ack_found<br>\n";
+  $html .= "TX no-ack-found: $tx_no_ack_found<br>\n";
 
   if ($delta_time_tx_count) {
     $html .= "TX average gap between AMPDU frames (ms): " . (($delta_time_tx * 1000.0) / $delta_time_tx_count) . "<br>\n";
@@ -470,6 +487,9 @@ sub processPkt {
     return;
   }
 
+  #print "processPkt, frame: " . $pkt->{frame_num} . " seqno: " . $pkt->seqno() . " transmitter: " . $pkt->transmitter()
+  #  . " receiver: " . $pkt->receiver() . "\n";
+
   $pkts_sofar++;
   if (($pkts_sofar % 10000) == 0) {
     printProgress();
@@ -561,8 +581,8 @@ sub processPkt {
   my $this_ampdu_pkt_count;
   my $ampdu_chain_time;
   my $is_last_ampdu = 0;
-  if ($pkt->{is_ampdu}) {
-    if ($last_pkt->frame_num() != -1 && (!$last_pkt->{is_ampdu})) {
+  if ($pkt->{is_ampdu} || $pkt->{is_msdu}) {
+    if ($last_pkt->frame_num() != -1 && (!($last_pkt->{is_ampdu} || $last_pkt->{is_msdu}))) {
       # This is first ampdu since a non-ampdu frame.  Calculate diff between that and last BA
       if ($pkt->{is_rx} && ($last_ba_tx_pkt->frame_num() != -1)) {
 	my $diff = $pkt->timestamp() - $last_ba_tx_pkt->timestamp();
@@ -675,7 +695,15 @@ sub processPkt {
     $rx_pkts++;
     $rx_amsdu_pkts += $pkt->{amsdu_frame_count};
     if ($pkt->retrans()) {
-      $rx_retrans_pkts++;
+      $rx_retrans_pkts_all++;
+      if ($pkt->{bytes_on_wire} > 1000) {
+	print "Frame " . $pkt->{frame_num} . " is a BIG RX retransmit frame.\n";
+	$rx_retrans_pkts_big++;
+      }
+      else {
+	print "Frame " . $pkt->{frame_num} . " is an RX retransmit frame.\n";
+      }
+
       $rx_amsdu_retrans_pkts += $pkt->{amsdu_frame_count};
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
@@ -716,7 +744,14 @@ sub processPkt {
     $tx_pkts++;
     $tx_amsdu_pkts += $pkt->{amsdu_frame_count};
     if ($pkt->retrans()) {
-      $tx_retrans_pkts++;
+      $tx_retrans_pkts_all++;
+      if ($pkt->{bytes_on_wire} > 1000) {
+	print "Frame " . $pkt->{frame_num} . " is a BIG TX retransmit frame.\n";
+	$tx_retrans_pkts_big++;
+      }
+      else {
+	print "Frame " . $pkt->{frame_num} . " is a TX retransmit frame.\n";
+      }
       $tx_amsdu_retrans_pkts += $pkt->{amsdu_frame_count};
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
@@ -736,11 +771,11 @@ sub processPkt {
     my $period_tot_pkts = $tot_pkts - $last_tot_pkts;
     my $period_rx_pkts = $rx_pkts - $last_rx_pkts;
     my $period_rx_amsdu_pkts = $rx_amsdu_pkts - $last_rx_amsdu_pkts;
-    my $period_rx_retrans_pkts = $rx_retrans_pkts - $last_rx_retrans_pkts;
+    my $period_rx_retrans_pkts_all = $rx_retrans_pkts_all - $last_rx_retrans_pkts_all;
     my $period_rx_retrans_amsdu_pkts = $rx_amsdu_retrans_pkts - $last_rx_amsdu_retrans_pkts;
     my $period_tx_pkts = $tx_pkts - $last_tx_pkts;
     my $period_tx_amsdu_pkts = $tx_amsdu_pkts - $last_tx_amsdu_pkts;
-    my $period_tx_retrans_pkts = $tx_retrans_pkts - $last_tx_retrans_pkts;
+    my $period_tx_retrans_pkts_all = $tx_retrans_pkts_all - $last_tx_retrans_pkts_all;
     my $period_tx_retrans_amsdu_pkts = $tx_amsdu_retrans_pkts - $last_tx_amsdu_retrans_pkts;
     my $period_dummy_rx_pkts = $dummy_rx_pkts - $last_dummy_rx_pkts;
     my $period_dummy_tx_pkts = $dummy_tx_pkts - $last_dummy_tx_pkts;
@@ -748,11 +783,11 @@ sub processPkt {
     my $period_tot_pkts_ps = ($period_tot_pkts + $period_dummy_tx_pkts + $period_dummy_rx_pkts) / $diff;
     my $period_rx_pkts_ps = ($period_rx_pkts + $period_dummy_rx_pkts) / $diff;
     my $period_rx_amsdu_pkts_ps = $period_rx_amsdu_pkts / $diff;
-    my $period_rx_retrans_pkts_ps = $period_rx_retrans_pkts / $diff;
+    my $period_rx_retrans_pkts_ps = $period_rx_retrans_pkts_all / $diff;
     my $period_rx_retrans_amsdu_pkts_ps = $period_rx_retrans_amsdu_pkts / $diff;
     my $period_tx_pkts_ps = ($period_tx_pkts + $period_dummy_tx_pkts) / $diff;
     my $period_tx_amsdu_pkts_ps = $period_tx_amsdu_pkts / $diff;
-    my $period_tx_retrans_pkts_ps = $period_tx_retrans_pkts / $diff;
+    my $period_tx_retrans_pkts_ps = $period_tx_retrans_pkts_all / $diff;
     my $period_tx_retrans_amsdu_pkts_ps = $period_tx_retrans_amsdu_pkts / $diff;
     my $period_dummy_rx_pkts_ps = $period_dummy_rx_pkts / $diff;
     my $period_dummy_tx_pkts_ps = $period_dummy_tx_pkts / $diff;
@@ -761,11 +796,11 @@ sub processPkt {
     $last_tot_pkts = $tot_pkts;
     $last_rx_pkts = $rx_pkts;
     $last_rx_amsdu_pkts = $rx_amsdu_pkts;
-    $last_rx_retrans_pkts = $rx_retrans_pkts;
+    $last_rx_retrans_pkts_all = $rx_retrans_pkts_all;
     $last_rx_amsdu_retrans_pkts = $rx_amsdu_retrans_pkts;
     $last_tx_pkts = $tx_pkts;
     $last_tx_amsdu_pkts = $tx_amsdu_pkts;
-    $last_tx_retrans_pkts = $tx_retrans_pkts;
+    $last_tx_retrans_pkts_all = $tx_retrans_pkts_all;
     $last_tx_amsdu_retrans_pkts = $tx_amsdu_retrans_pkts;
     $last_dummy_rx_pkts = $dummy_rx_pkts;
     $last_dummy_tx_pkts = $dummy_tx_pkts;
