@@ -37,11 +37,11 @@ my $input_line_count = 0;
 my $pkts_sofar = 0;
 my $start_time = time();
 
-my $cur_pkt = Packet->new(raw_pkt => "", frame_num => -1);
-my $last_pkt = Packet->new(raw_pkt => "", frame_num => -1, is_rx => 0);
-my $first_ampdu_pkt = Packet->new(raw_pkt => "", frame_num => -1);
-my $last_ba_rx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
-my $last_ba_tx_pkt = Packet->new(raw_pkt => "", frame_num => -1);
+my $cur_pkt = Packet->new(raw_pkt => "", frame_num => -1, dbg => "cur_pkt");
+my $last_pkt = Packet->new(raw_pkt => "", frame_num => -1, is_rx => 0, dbg => "last_pkt");
+my $first_ampdu_pkt = Packet->new(raw_pkt => "", frame_num => -1, dbg => "first_ampdu_pkt");
+my $last_ba_rx_pkt = Packet->new(raw_pkt => "", frame_num => -1, dbg => "last_ba_rx_pkt");
+my $last_ba_tx_pkt = Packet->new(raw_pkt => "", frame_num => -1, dbg => "last_ba_tx_pkt");
 
 
 my $glb_fh_ba_tx;
@@ -52,8 +52,10 @@ my $glb_fh_mcs_rx;
 my $glb_fh_rtx_tx;
 my $glb_fh_rtx_rx;
 
-my $tx_no_ack_found = 0;
-my $rx_no_ack_found = 0;
+my $tx_no_ack_found_big = 0;
+my $rx_no_ack_found_big = 0;
+my $tx_no_ack_found_all = 0;
+my $rx_no_ack_found_all = 0;
 
 my %glb_mcs_tx_hash = ();
 my %glb_mcs_rx_hash = ();
@@ -187,8 +189,9 @@ while (<>) {
       processPkt($cur_pkt);
     }
     $cur_pkt = Packet->new(frame_num => $1,
-			   bytes_on_write => $2,
-			   raw_pkt => $ln);
+			   bytes_on_wire => $2,
+			   raw_pkt => $ln,
+			   dbg => "main-$1");
   } else {
     $cur_pkt->append($ln);
   }
@@ -202,8 +205,11 @@ printProgress();
 
 # Sum up some stats
 for my $conn (values %peer_conns) {
-  $tx_no_ack_found += $conn->tx_no_ack_found();
-  $rx_no_ack_found += $conn->rx_no_ack_found();
+  $conn->notify_done();
+  $tx_no_ack_found_big += $conn->tx_no_ack_found_big();
+  $rx_no_ack_found_big += $conn->rx_no_ack_found_big();
+  $tx_no_ack_found_all += $conn->tx_no_ack_found_all();
+  $rx_no_ack_found_all += $conn->rx_no_ack_found_all();
 }
 
 $report_html .= genGlobalReports();
@@ -341,8 +347,10 @@ sub htmlMcsHistogram {
   }
   $html .= "TX (Big) Retransmit count: $tx_retrans_pkts_big<br>\n";
 
-  $html .= "RX no-ack-found: $rx_no_ack_found<br>\n";
-  $html .= "TX no-ack-found: $tx_no_ack_found<br>\n";
+  $html .= "RX (All) no-ack-found: $rx_no_ack_found_all<br>\n";
+  $html .= "RX (Big) no-ack-found: $rx_no_ack_found_big<br>\n";
+  $html .= "TX (All) no-ack-found: $tx_no_ack_found_all<br>\n";
+  $html .= "TX (Big) no-ack-found: $tx_no_ack_found_big<br>\n";
 
   if ($delta_time_tx_count) {
     $html .= "TX average gap between AMPDU frames (ms): " . (($delta_time_tx * 1000.0) / $delta_time_tx_count) . "<br>\n";
@@ -584,22 +592,22 @@ sub processPkt {
   if ($pkt->{is_ampdu} || $pkt->{is_msdu}) {
     if ($last_pkt->frame_num() != -1 && (!($last_pkt->{is_ampdu} || $last_pkt->{is_msdu}))) {
       # This is first ampdu since a non-ampdu frame.  Calculate diff between that and last BA
-      if ($pkt->{is_rx} && ($last_ba_tx_pkt->frame_num() != -1)) {
+      if ($pkt->{is_rx} && ($last_ba_tx_pkt->{ba_valid})) {
 	my $diff = $pkt->timestamp() - $last_ba_tx_pkt->timestamp();
 	$ba_ampdu_gap_rx += $diff;
 	$ba_ampdu_gap_rx_count++;
 	if ($diff > 0.001) {
 	  print "INFO:  TX BA to RX AMPDU gap: $diff between frames: " . $last_ba_tx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
 	}
-	$last_ba_tx_pkt->{frame_num} = -1;
-      } elsif ((!$pkt->{is_rx}) && ($last_ba_rx_pkt->frame_num() != -1)) {
+	$last_ba_tx_pkt->{ba_valid} = 0;
+      } elsif ((!$pkt->{is_rx}) && ($last_ba_rx_pkt->{ba_valid})) {
 	my $diff = $pkt->timestamp() - $last_ba_rx_pkt->timestamp();
 	$ba_ampdu_gap_tx += $diff;
 	$ba_ampdu_gap_tx_count++;
 	if ($diff > 0.001) {
 	  print "INFO:  RX BA to TX AMPDU gap: $diff between frames: " . $last_ba_rx_pkt->frame_num() . " and: " . $pkt->frame_num() . "\n";
 	}
-	$last_ba_rx_pkt->{frame_num} = -1;
+	$last_ba_rx_pkt->{ba_valid} = 0;
       }
     }
 
@@ -642,18 +650,20 @@ sub processPkt {
     if ($pkt->type_subtype() eq "802.11 Block Ack (0x0019)") {
       # Only grab the initial BA in case we have one side ignoring BA
       if ($pkt->{is_rx}) {
-	if ($last_ba_rx_pkt->{frame_num} == -1) {
+	if (!$last_ba_rx_pkt->{ba_valid}) {
 	  $last_ba_rx_pkt = $pkt;
+	  $last_ba_rx_pkt->{ba_valid} = 1;
 	} else {
 	  print "NOTE:  Multiple RX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
 	    . " this BA frame num: " . $pkt->frame_num() . "\n";
 	  $dup_ba_rx++;
 	}
       } else {
-	if ($last_ba_tx_pkt->{frame_num} == -1) {
+	if (!$last_ba_tx_pkt->{ba_valid}) {
 	  $last_ba_tx_pkt = $pkt;
+	  $last_ba_tx_pkt->{ba_valid} = 1;
 	} else {
-	  print "NOTE:  Multiple TX block-acks seen without ampdu between them, first BA frame: " . $last_ba_rx_pkt->frame_num()
+	  print "NOTE:  Multiple TX block-acks seen without ampdu between them, first BA frame: " . $last_ba_tx_pkt->frame_num()
 	    . " this BA frame num: " . $pkt->frame_num() . "\n";
 	  $dup_ba_tx++;
 	}

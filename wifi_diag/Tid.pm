@@ -15,8 +15,10 @@ sub new {
 
   my $self = {
 	      pkts => [],
-	      rx_no_ack_found => 0,
-	      tx_no_ack_found => 0,
+	      rx_no_ack_found_all => 0,
+	      rx_no_ack_found_big => 0,
+	      tx_no_ack_found_all => 0,
+	      tx_no_ack_found_big => 0,
 	      tx_retrans_pkts => 0,
 	      rx_retrans_pkts => 0,
 	      tx_amsdu_retrans_pkts => 0,
@@ -181,7 +183,8 @@ sub add_pkt {
 	  $missing_str .= $missing_seqno . " ";
 
 	  # Add a dummy pkt
-	  my $dummy = Packet->new(frame_num => -1,
+	  my $dummy = Packet->new(dbg => "tid-add-pkt",
+				  frame_num => -1,
 				  receiver => $pkt->transmitter(),
 				  transmitter => $pkt->receiver(),
 				  data_subtype => "DUMMY_BA_ACKED",
@@ -229,12 +232,25 @@ sub add_pkt {
 	($pkt_count > $max_pkt_store)) {
       if (! $tmp->was_acked()) {
 	if ($tmp->wants_ack()) {
-	  print "WARNING:  did not find ack for frame: " . $tmp->frame_num() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
 	  if ($tmp->transmitter() eq $self->{addr_a}) {
-	    $self->{tx_no_ack_found}++;
+	    $self->{tx_no_ack_found_all}++;
+	    if ($tmp->{bytes_on_wire} > 1000) {
+	      print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+	      $self->{tx_no_ack_found_big}++;
+	    }
+	    else {
+	      print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+	    }
 	  }
 	  else {
-	    $self->{rx_no_ack_found}++;
+	    $self->{rx_no_ack_found_all}++;
+	    if ($tmp->{bytes_on_wire} > 1000) {
+	      print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+	      $self->{rx_no_ack_found_big}++;
+	    }
+	    else {
+	      print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+	    }
 	  }
 	}
       }
@@ -308,19 +324,65 @@ sub add_pkt {
   push(@{$self->{pkts}}, $pkt);
 }
 
+sub check_remaining_pkts {
+  my $self = shift;
+
+  my $pkt_count = @{$self->{pkts}};
+
+  # Shift off old frames.
+  while ($pkt_count > 0) {
+    my $tmp = shift(@{$self->{pkts}});
+    if (! $tmp->was_acked()) {
+      if ($tmp->wants_ack()) {
+	if ($tmp->transmitter() eq $self->{addr_a}) {
+	  $self->{tx_no_ack_found_all}++;
+	  if ($tmp->{bytes_on_wire} > 1000) {
+	    print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing at end of file.\n";
+	    $self->{tx_no_ack_found_big}++;
+	  }
+	  else {
+	    print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing at end of file.\n";
+	  }
+	}
+	else {
+	  $self->{rx_no_ack_found_all}++;
+	  if ($tmp->{bytes_on_wire} > 1000) {
+	    print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing at end of file.\n";
+	    $self->{rx_no_ack_found_big}++;
+	  }
+	  else {
+	    print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing at end of file.\n";
+	  }
+	}
+      }
+    }
+    $pkt_count--;
+  }
+}
+
 sub get_pkts {
   my $self = shift;
   return @{$self->{pkts}};
 }
 
-sub tx_no_ack_found {
+sub tx_no_ack_found_all {
   my $self = shift;
-  return $self->{tx_no_ack_found};
+  return $self->{tx_no_ack_found_all};
 }
 
-sub rx_no_ack_found {
+sub tx_no_ack_found_big {
   my $self = shift;
-  return $self->{rx_no_ack_found};
+  return $self->{tx_no_ack_found_big};
+}
+
+sub rx_no_ack_found_all {
+  my $self = shift;
+  return $self->{rx_no_ack_found_all};
+}
+
+sub rx_no_ack_found_big {
+  my $self = shift;
+  return $self->{rx_no_ack_found_big};
 }
 
 sub printme {
@@ -328,7 +390,8 @@ sub printme {
   print "   tidno: " . $self->tidno() . " pkt-count: " . $self->get_pkts()
     . " tx-pkts: " . $self->{tx_pkts} . " tx-retrans: " . $self->{tx_retrans_pkts}
     . " rx-pkts: " . $self->{rx_pkts} . " rx-retrans: " . $self->{rx_retrans_pkts}
-    . " tx-no-acks: " . $self->{tx_no_ack_found} . " rx-no-acks: " . $self->{rx_no_ack_found}
+    . " tx-no-acks-all: " . $self->{tx_no_ack_found_all} . " tx-no-acks-big: " . $self->{tx_no_ack_found_big}
+    . " rx-no-acks-all: " . $self->{rx_no_ack_found_all} . " rx-no-acks-big: " . $self->{rx_no_ack_found_big}
     . "\n";
 }
 

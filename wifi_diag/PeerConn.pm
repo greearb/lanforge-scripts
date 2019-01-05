@@ -81,40 +81,65 @@ sub find_or_create_tid {
   return $tid;
 }
 
-sub tx_no_ack_found {
+sub sum_tids {
   my $self = shift;
+  my $var = shift;
+
   my $tid_count = @{$self->{tids}};
 
   my $rv = 0;
 
   my $i;
   for ($i = 0; $i < $tid_count; $i++) {
-    #print "Checking tid: $i\n";
     if (exists $self->{tids}[$i]) {
-      #print "Printing tid: $i\n";
-      $rv += $self->{tids}[$i]->tx_no_ack_found();
-      #print "Done printing tid: $i\n";
+      if ($var == 0) {
+	$rv += $self->{tids}[$i]->tx_no_ack_found_all();
+      }
+      elsif ($var == 1) {
+	$rv += $self->{tids}[$i]->tx_no_ack_found_big();
+      }
+      elsif ($var == 2) {
+	$rv += $self->{tids}[$i]->rx_no_ack_found_all();
+      }
+      elsif ($var == 3) {
+	$rv += $self->{tids}[$i]->rx_no_ack_found_big();
+      }
     }
   }
   return $rv;
 }
 
-sub rx_no_ack_found {
+sub tx_no_ack_found_all {
+  my $self = shift;
+  return $self->sum_tids(0);
+}
+
+sub tx_no_ack_found_big {
+  my $self = shift;
+  return $self->sum_tids(1);
+}
+
+sub rx_no_ack_found_all {
+  my $self = shift;
+  return $self->sum_tids(2);
+}
+
+sub rx_no_ack_found_big {
+  my $self = shift;
+  return $self->sum_tids(3);
+}
+
+sub notify_done {
   my $self = shift;
   my $tid_count = @{$self->{tids}};
-
-  my $rv = 0;
 
   my $i;
   for ($i = 0; $i < $tid_count; $i++) {
     #print "Checking tid: $i\n";
     if (exists $self->{tids}[$i]) {
-      #print "Printing tid: $i\n";
-      $rv += $self->{tids}[$i]->rx_no_ack_found();
-      #print "Done printing tid: $i\n";
+      $self->{tids}[$i]->check_remaining_pkts();
     }
   }
-  return $rv;
 }
 
 sub printme {

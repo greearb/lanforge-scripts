@@ -6,11 +6,15 @@ use strict;
 use bignum;
 use bigint;
 
+our $d_counter = 0;
+
 sub new {
   my $class = shift;
   my %options = @_;
 
   my $self = {
+	      ba_valid => 0,
+	      dbg => "NA",
 	      priority => "",
 	      wmm_info => "",
 	      raw_pkt => "",
@@ -37,7 +41,26 @@ sub new {
 	     };
 
   bless($self, $class);
+
+  if ($self->frame_num() == -1) {
+    $self->{dummy_counter} = $d_counter;
+    $d_counter++;
+    print "Creating dummy pkt: " . $self->{dummy_counter} . "\n";
+  }
+  else {
+    $self->{dummy_counter} = -1;
+  }
+
   return($self);
+}
+
+sub desc {
+  my $self = shift;
+  my $rv = $self->frame_num() . " len: " . $self->{bytes_on_wire};
+  if ($self->frame_num() == -1) {
+    $rv = $rv . " dummy-counter: " . $self->{dummy_counter} . " dbg: " . $self->{dbg}
+  }
+  return $rv;
 }
 
 sub raw_pkt {
@@ -248,6 +271,35 @@ sub wants_ack {
   if ($rb0 & 0x1) {
     return 0;  # Don't ack bcast/bcast frames
   }
+
+  if ($self->type_subtype() eq "802.11 Block Ack (0x0019)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "802.11 Block Ack Req (0x0018)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "VHT NDP Announcement (0x0015)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "Clear-to-send (0x001c)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "Request-to-send (0x001b)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "Acknowledgement (0x001d)") {
+    return 0;
+  }
+
+  if ($self->type_subtype() eq "Action No Ack (0x000e)") {
+    return 0;
+  }
+
   # TODO:  Need to parse QoS no-ack frames too, this will return false positives currently
   return 1;
 }
