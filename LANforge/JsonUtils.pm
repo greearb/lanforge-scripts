@@ -74,6 +74,7 @@ sub json_request {
 sub json_post {
    my ($uri, $rh_data) = @_;
    my $url = xpand($uri);
+   print STDERR "URI $uri\n";
    my $req = HTTP::Request->new("POST" => $url);
    $req->header('Accept' => 'application/json');
    $req->header('Content-Type' => 'application/json; charset=UTF-8');
