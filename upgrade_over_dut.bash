@@ -29,12 +29,20 @@ rmmod ath9k
 # Assume eth1 ($DEV) is connected to a network that can route to internet
 ifconfig $DEV down
 pkill -f "dhclient $DEV"
+ip a flush $DEV
 
 ifconfig $DEV up
 dhclient $DEV
 curl -o lf_kinstall.pl http://www.candelatech.com/lf_kinstall.txt || exit 1
 chmod a+x lf_kinstall.pl
 
-./lf_kinstall.pl --do_all_ct --lfver $LFVER --kver $KVER  || exit 2
+echo "In another shell, you might need to force the namerver entry:"
+echo "Cut and paste this command:"
+cp /etc/resolv.conf /tmp/resolv.txt
+echo "while :; do echo 'nameserver 10.0.0.1' > /etc/resolv.conf; cat /tmp/resolv.txt >> /etc/resolv.conf; sleep 10; done"
+
+read -p "Ready?"
+
+./lf_kinstall.pl --do_all_ct --lfver $LFVER --kver $KVER --skip_yum_all  || exit 2
 
 echo "Reboot now to complete upgrade."
