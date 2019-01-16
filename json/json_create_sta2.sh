@@ -7,10 +7,10 @@ ajson_h="Accept: application/json"
 cjson_h="Content-type: application/json"
 dbg=""
 #dbg="__debug=1&"
-R=8
+R=3
 W=wiphy0
-M=8000
-N=8001
+M=3100
+N=3120
 SSID="idtest-1100-wpa2"
 KEY="idtest-1100-wpa2"
 #
