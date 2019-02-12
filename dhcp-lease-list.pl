@@ -29,7 +29,7 @@ my @LEASES = ('/var/db/dhcpd.leases', '/var/lib/dhcp/dhcpd.leases', '/var/lib/dh
 my @all_leases;
 my @leases;
 
-my @OUIS = ('/usr/share/misc/oui.txt', '/usr/local/etc/oui.txt');
+my @OUIS = ('/usr/share/hwdata/oui.txt', '/usr/share/misc/oui.txt', '/usr/local/etc/oui.txt');
 my $OUI_URL = 'http://standards.ieee.org/regauth/oui/oui.txt';
 my $oui;
 
