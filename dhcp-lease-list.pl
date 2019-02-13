@@ -107,11 +107,12 @@ sub process_leases() {
 	# skip outdated lines
 	next if ($opt_keep eq 'active'  and  $3 lt $gm_now);
 
-	if ($counter) {
-	    my $percent = (($counter / $total_leases)*100);
-	    printf "Processing: %2d%% complete\r", $percent;
-	    ++$counter;
-	}
+	# I like 'human' output, but this part is not helpful when parsing that human output by another script. --Ben
+	#if ($counter) {
+	#    my $percent = (($counter / $total_leases)*100);
+	#    printf "Processing: %2d%% complete\r", $percent;
+	#    ++$counter;
+	#}
 
 	my $hostname = "-NA-";
 	if ($6) {
