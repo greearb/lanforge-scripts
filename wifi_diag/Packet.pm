@@ -23,6 +23,7 @@ sub new {
 	      acked_by => -1,
 	      block_acked_by => -1,
 	      retrans => 0,
+	      seen_ip => 0,
 	      timestamp => 0,
 	      datarate => 0,
 	      dummy_tx_pkts => 0,
@@ -75,6 +76,21 @@ sub append {
   $self->{raw_pkt} .= $ln;
 
   #print "ln: $ln\n";
+
+  if ($ln =~ /^\s*Internet Protocol Version/) {
+    $self->{seen_ip} = 1;
+    return;
+  }
+
+  if ($self->{seen_ip}) {
+    if ($ln =~ /^\s*A-MSDU Subframe/) {
+      $self->{seen_ip} = 0;
+    }
+    else {
+      # Ignore
+      return;
+    }
+  }
 
   if ($ln =~ /^\s*Transmitter address: .*\((\S+)\)/) {
     $self->{transmitter} = $1;

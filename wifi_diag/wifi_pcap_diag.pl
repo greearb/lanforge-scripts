@@ -195,6 +195,10 @@ while (<>) {
   } else {
     $cur_pkt->append($ln);
   }
+
+  if ($pkts_sofar > 1500) {
+    last;
+  }
 }
 
 if ($cur_pkt->raw_pkt() ne "") {
@@ -627,7 +631,8 @@ sub processPkt {
 	if ($pkt->{is_last_ampdu}) {
 	  $is_last_ampdu = 1;
 	  $ampdu_chain_time = $pkt->timestamp() - $first_ampdu_pkt->timestamp();
-	  print "First ampdu pkt: " . $first_ampdu_pkt->frame_num() . " last: " . $pkt->frame_num()
+	  print "First ampdu pkt: " . $first_ampdu_pkt->frame_num() . " seqno: " . $first_ampdu_pkt->seqno()
+	    . " last: " . $pkt->frame_num() . " seqno: " . $pkt->seqno()
 	    . " chain-time: $ampdu_chain_time, chain-count: $this_ampdu_pkt_count.\n";
 	  $first_ampdu_pkt->{seqno} = -1; # Initialize to invalid again.
 	}
