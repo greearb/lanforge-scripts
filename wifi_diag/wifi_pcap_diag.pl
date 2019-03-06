@@ -196,9 +196,9 @@ while (<>) {
     $cur_pkt->append($ln);
   }
 
-  if ($pkts_sofar > 1500) {
-    last;
-  }
+  #if ($pkts_sofar > 1500) {
+  #  last;
+  #}
 }
 
 if ($cur_pkt->raw_pkt() ne "") {
