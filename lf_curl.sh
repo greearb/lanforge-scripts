@@ -27,10 +27,8 @@ Best if used from lf_generic_ping.pl to construct commands referencing this scri
 
 while getopts ":d:hi:n:o:p:" OPT ; do
    #echo "OPT[$OPT] OPTARG[$OPTARG]"
-   
    case $OPT in
    h)
-      
       echo $help
       exit 0
       ;;
@@ -84,7 +82,7 @@ for N in `seq 1 $NUM_LOOPS`; do
       echo "Failed $DEST_HOST"
       head -1 /tmp/lf_curl_se.$$
    else
-      NUM_GOOD=$(( $NUM_GOOD++))
+      NUM_GOOD=$(( $NUM_GOOD +1))
       head -1 /tmp/lf_curl_so.$$
       head -1 /tmp/lf_curl_h.$$
    fi
