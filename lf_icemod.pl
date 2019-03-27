@@ -82,11 +82,21 @@ my $usage = qq($0  [--manager { hostname or address of LANforge manager } ]
                  [--description { ${Q}stuff in quotes${Q} } ]
                  [--cx { name } ]
                  [--speed { speed in bps } ]
-                 [--drop_pm { 0 - 1000000 } ]
-                 [--latency { 0 - 1000000 } ]
-                 [--switch new_cx_to_run ]
-                 [--pcap { dir-name | off } ]
-                 [--load { db-name } ]
+                 [--latency { 0 - 1000000 }        # in milliseconds ]
+                 [--max_jitter { 0 - 1000000 }     # in milliseconds ]
+                 [--reorder_freq { 0 - 1000000 }   # packets per million ]
+                 [--extra_buffer { -1 - 1000000 }  # extra bytes to buffer, -1: AUTO, units of 1024 ]
+                 [--drop_pm { 0 - 1000000 }        # drop packets per million ]
+                 [--dup_pm { 0 - 1000000 }         # duplication packets per million ]
+                 [--jitter_freq { 0 - 10000000 }   # jitter these many packets per million ]
+                 [--min_drop_amnt { 1 - 1000 }     # drop at least this many packets in a row, default 1
+                 [--max_drop_amnt { 1 - 1000 }     # drop at most this many packets in a row, default 1
+                 [--min_reorder_amt { 1 - 1000 }   # reorder at least this many packets, default 1
+                 [--max_reorder_amt { 1 - 1000 }   # reorder at most this many packets, default 10
+                 [--max_lateness { -1 - 1000000 }  # maximum amount of unintentional delay before pkt is dropped -1=AUTO
+                 [--switch new_cx_to_run ]         # activate named CX
+                 [--pcap { dir-name | off } ]      # specify a packet capture to replay
+                 [--load { db-name } ]             # load a database
                  [--state { running | switch | quiesce | stopped | deleted } ]
 
 Example:
@@ -113,23 +123,33 @@ my $endps = "";
 
 GetOptions (
    'help|h'          => \$show_help,
+   'manager|mgr|m=s' => \$lfmgr_host,
+   'card|resource|r=i' => \$resource,
    'endp_name|e=s'   => \$endp_name,
    'desc|description=s'   => \$description,
-   'speed|s=i'       => \$speed,
    'cx|c=s'          => \$cx,
-   'drop_pm|d=i'     => \$drop_pm,
+   'speed|s=i'       => \$speed,
    'latency|l=i'     => \$latency,
-   'jitter|j=i'      => \$jitter,
+   'max_jitter=i'    => \$max_jitter,
+   'reorder_freq=i'  => \$reorder_freq,
+   'extra_buffer=i'  => \$extra_buffer,
+   'drop_pm|d=i'     => \$drop_pm,
+   'dup_pm=i'        => \$dup_pm,
+   'jitter_freq|j=i' => \$jitter_freq,
+   'min_drop_amt=i'  => \$min_drop_amt,
+   'max_drop_amt=i'  => \$max_drop_amt,
+   'min_reorder_amt=i'  => \$min_reorder_amt,
+   'max_reorder_amt=i'  => \$max_reorder_amt,
+   'max_lateness=i'  => \$max_lateness,
    'switch|w=s'      => \$switch,
    'new_endp=s'      => \$new_endp,
    'new_cx=s'        => \$new_cx,
    'endps=s'         => \$endps,
    'port=s'          => \$port,
-   'manager|mgr|m=s' => \$lfmgr_host,
    'pcap|p=s'        => \$pcap,
    'load|o=s'        => \$load,
    'state|a=s'       => \$state,
-   'card|resource|r=i' => \$resource,
+
    'wle_flags=i'     => \$wle_flags,
    'quiet|q=i'       => \$quiet,
 ) || die("$usage");
