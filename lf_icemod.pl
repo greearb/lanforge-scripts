@@ -34,37 +34,33 @@ use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
 
+my $shelf_num = 1;
 my $lfmgr_host = "localhost";
 my $lfmgr_port = 4001;
-
-my $shelf_num = 1;
-
-# Specify 'card' numbers for this configuration.
-my $ice_card = 1;
-
-# The ICE ports, on ice_card
-my $ice1 = 1;
-my $ice2 = 2;
-
-my $test_mgr = "vanilla-ice"; # Couldn't resist!
-
 my $report_timer = 1000; # XX/1000 seconds
 
 # Default values for ye ole cmd-line args.
-
-
 my $port = "";
 my $endp_name = "";
 my $speed = "";
-my $drop_pm = "";
 my $latency = "";
-my $jitter = "";
+my $max_jitter = "";
+my $reorder_freq = "";
+my $extra_buffer = "";
+my $drop_pm = "";
+my $dup_pm = "";
+my $jitter_freq = "";
+my $min_drop_amt = "";
+my $max_drop_amt = "";
+my $min_reorder_amt = "";
+my $max_reorder_amt = "";
+my $max_lateness = "";
 my $switch = "";
 my $pcap = "";
 my $load = "";
 my $state = "";
 my $cx = "";
-my $quiet = 0;
+our $quiet = 0;
 my $description = "";
 my $fail_msg = "";
 my $manual_check = 0;
@@ -89,8 +85,8 @@ my $usage = qq($0  [--manager { hostname or address of LANforge manager } ]
                  [--drop_pm { 0 - 1000000 }        # drop packets per million ]
                  [--dup_pm { 0 - 1000000 }         # duplication packets per million ]
                  [--jitter_freq { 0 - 10000000 }   # jitter these many packets per million ]
-                 [--min_drop_amnt { 1 - 1000 }     # drop at least this many packets in a row, default 1
-                 [--max_drop_amnt { 1 - 1000 }     # drop at most this many packets in a row, default 1
+                 [--min_drop_amt { 1 - 1000 }     # drop at least this many packets in a row, default 1
+                 [--max_drop_amt { 1 - 1000 }     # drop at most this many packets in a row, default 1
                  [--min_reorder_amt { 1 - 1000 }   # reorder at least this many packets, default 1
                  [--max_reorder_amt { 1 - 1000 }   # reorder at most this many packets, default 10
                  [--max_lateness { -1 - 1000000 }  # maximum amount of unintentional delay before pkt is dropped -1=AUTO
@@ -122,36 +118,35 @@ my $new_cx = "";
 my $endps = "";
 
 GetOptions (
-   'help|h'          => \$show_help,
-   'manager|mgr|m=s' => \$lfmgr_host,
-   'card|resource|r=i' => \$resource,
-   'endp_name|e=s'   => \$endp_name,
-   'desc|description=s'   => \$description,
-   'cx|c=s'          => \$cx,
-   'speed|s=i'       => \$speed,
-   'latency|l=i'     => \$latency,
-   'max_jitter=i'    => \$max_jitter,
-   'reorder_freq=i'  => \$reorder_freq,
-   'extra_buffer=i'  => \$extra_buffer,
-   'drop_pm|d=i'     => \$drop_pm,
-   'dup_pm=i'        => \$dup_pm,
-   'jitter_freq|j=i' => \$jitter_freq,
-   'min_drop_amt=i'  => \$min_drop_amt,
-   'max_drop_amt=i'  => \$max_drop_amt,
-   'min_reorder_amt=i'  => \$min_reorder_amt,
-   'max_reorder_amt=i'  => \$max_reorder_amt,
-   'max_lateness=i'  => \$max_lateness,
-   'switch|w=s'      => \$switch,
-   'new_endp=s'      => \$new_endp,
-   'new_cx=s'        => \$new_cx,
-   'endps=s'         => \$endps,
-   'port=s'          => \$port,
-   'pcap|p=s'        => \$pcap,
-   'load|o=s'        => \$load,
-   'state|a=s'       => \$state,
-
-   'wle_flags=i'     => \$wle_flags,
-   'quiet|q=i'       => \$quiet,
+   'help|h'                => \$show_help,
+   'manager|mgr|m=s'       => \$lfmgr_host,
+   'card|resource|r=i'     => \$resource,
+   'endp_name|e=s'         => \$endp_name,
+   'desc|description=s'    => \$description,
+   'cx|c=s'                => \$cx,
+   'speed|s=i'             => \$speed,
+   'latency|l=i'           => \$latency,
+   'max_jitter=i'          => \$max_jitter,
+   'reorder_freq=i'        => \$reorder_freq,
+   'extra_buffer=i'        => \$extra_buffer,
+   'drop_pm|d=i'           => \$drop_pm,
+   'dup_pm=i'              => \$dup_pm,
+   'jitter_freq|j=i'       => \$jitter_freq,
+   'min_drop_amt=i'        => \$min_drop_amt,
+   'max_drop_amt=i'        => \$max_drop_amt,
+   'min_reorder_amt=i'     => \$min_reorder_amt,
+   'max_reorder_amt=i'     => \$max_reorder_amt,
+   'max_lateness=i'        => \$max_lateness,
+   'switch|w=s'            => \$switch,
+   'new_endp=s'            => \$new_endp,
+   'new_cx=s'              => \$new_cx,
+   'endps=s'               => \$endps,
+   'port=s'                => \$port,
+   'pcap|p=s'              => \$pcap,
+   'load|o=s'              => \$load,
+   'state|a=s'             => \$state,
+   'wle_flags=i'           => \$wle_flags,
+   'quiet|q=i'             => \$quiet,
 ) || die("$usage");
 
 if ($show_help) {
@@ -184,7 +179,25 @@ else {
 # $utils->doCmd("log_level 63");
 my $cmd;
 
-if ($load ne "") {
+
+$speed = "NA" if ($speed eq "");
+$latency = "NA" if ($latency eq "");
+$max_jitter = "NA" if ($max_jitter eq "");
+$reorder_freq = "NA" if ($reorder_freq eq "");
+$extra_buffer = "NA" if ($extra_buffer eq "");
+$drop_pm = "NA" if ($drop_pm eq "");
+$dup_pm = "NA" if ($dup_pm eq "");
+$pcap = "NA" if ($pcap eq "");
+$jitter_freq = "NA" if ($jitter_freq eq "");
+$min_drop_amt = "NA" if ($min_drop_amt eq "");
+$max_drop_amt = "NA" if ($max_drop_amt eq "");
+$min_reorder_amt = "NA" if ($min_reorder_amt eq "");
+$max_reorder_amt = "NA" if ($max_reorder_amt eq "");
+$max_lateness = "NA" if ($max_lateness eq "");
+
+
+
+if (($load ne "") && ($load ne "NA")) {
   $cmd = "load $load overwrite";
   $utils->doCmd($cmd);
   my @rslt = $t->waitfor("/LOAD-DB:  Load attempt has been completed./");
@@ -195,19 +208,19 @@ if ($load ne "") {
   exit(0);
 }
 
-if ($new_cx ne "") {
+if (($new_cx ne "") && ($new_cx ne "NA")) {
    die("please set the endpoints for new wanlink cx; $usage")
       unless ((defined $endps) && ($endps ne ""));
 
    die("please specify two endpoints joined by a comma: end1-A,end1-B; $usage")
       unless ($endps =~ /^\S+,\S+$/);
    my @ends= split(',', $endps);
-   $cmd = "add_cx $new_cx default_tm $ends[0] $ends[1]";
+   $cmd = $utils->fmt_cmd("add_cx", $new_cx, "default_tm", $ends[0], $ends[1]);
    $utils->doCmd($cmd);
    exit(0);
 }
 
-if ($new_endp ne "") {
+if (($new_endp ne "") && ($new_endp ne "NA")) {
    die("please set the resource for new wanlink endpoint; $usage")
       unless ((defined $resource) && ($resource ne ""));
    die("please set latency for new wanlink endpoint; $usage")
@@ -217,19 +230,23 @@ if ($new_endp ne "") {
    die("please set port for new wanlink endpoint; $usage")
       unless ((defined $port) && ($port ne ""));
 
-   $wle_flags = "NA"
-      if (($wle_flags == 0) || ($wle_flags eq ""));
-   $cpu_id = "NA"
-      if ($cpu_id eq "");
-   $description = "NA"
-      if ($description eq "");
+   $wle_flags = "NA" if (($wle_flags == 0) || ($wle_flags eq ""));
+   $cpu_id = "NA" if ($cpu_id eq "");
+   $description = "NA" if ($description eq "");
 
-   $cmd = "add_wl_endp $new_endp 1 $resource $port $latency $speed '$description' $cpu_id $wle_flags";
+   $cmd = $utils->fmt_cmd("add_wl_endp", $new_endp, 1, $resource, $port,
+      $latency, $speed, $description, $cpu_id, $wle_flags);
+   $utils->doCmd($cmd);
+
+   $cmd = $utils->fmt_cmd("set_wanlink_info", $new_endp, $speed, $latency,
+      $max_jitter, $reorder_freq, $extra_buffer, $drop_pm, $dup_pm, $pcap,
+      $jitter_freq, $min_drop_amt, $max_drop_amt, $min_reorder_amt,
+      $max_reorder_amt, $max_lateness );
    $utils->doCmd($cmd);
    exit(0);
 }
 
-if ($switch ne "") {
+if (($switch ne "") && ($switch ne "NA")) {
   $cmd = "set_cx_state all $switch SWITCH";
   $utils->doCmd($cmd);
   exit(0);
@@ -240,7 +257,8 @@ if ((length($endp_name) == 0) && (length($cx) == 0)) {
   die("$usage");
 }
 
-if ($pcap ne "") {
+if ((defined $pcap) && ($pcap ne "")&& ($pcap ne "NA")) {
+   print STDERR "pcap has value??? [$pcap]\n";
   if ($pcap =~ /^OFF$/i) {
     $cmd = "set_wanlink_pcap $endp_name off";
   }
@@ -251,28 +269,20 @@ if ($pcap ne "") {
   exit(0);
 }
 
-if ($state ne "") {
+if (($state ne "") || ($state ne "NA")){
   $cmd = "set_cx_state all $cx $state";
   $utils->doCmd($cmd);
   exit(0);
 }
 
+
+die ("requires endp_name to be set")
+   unless ((defined $endp_name) && ($endp_name ne ""));
 # Assumes that the endpoint already exists.
-if ($latency eq "") {
-  $latency = "NA";
-}
-if ($speed eq "") {
-  $speed = "NA";
-}
-if ($jitter eq "") {
-  $jitter = "NA";
-}
-
-if ($drop_pm eq "") {
-  $drop_pm = "NA";
-}
-
-$cmd = "set_wanlink_info $endp_name $speed $latency $jitter NA NA $drop_pm NA";
+$cmd = Utils::fmt_cmd("set_wanlink_info", $endp_name, $speed, $latency,
+   $max_jitter, $reorder_freq, $extra_buffer, $drop_pm, $dup_pm, $pcap,
+   $jitter_freq, $min_drop_amt, $max_drop_amt, $min_reorder_amt,
+   $max_reorder_amt, $max_lateness );
 $utils->doCmd($cmd);
 
 exit(0);
