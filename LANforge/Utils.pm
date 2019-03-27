@@ -321,9 +321,12 @@ sub fmt_cmd {
    my $rv;
    my $mod_hunk;
    my $show_err = 0;
+   my $item = 1;
+   my $prev_item;
    for my $hunk (@_) {
       if (defined $hunk && $hunk eq '') {
-         print STDERR "\nfmt_cmd() found blank argument. Converting to NA\n";
+         print STDERR "\nfmt_cmd() arg $item blank, converting to NA\n";
+         print STDERR "            prev argument was [$prev_item]\n" if (defined $prev_item);
          $show_err = 1;
       }
       die("rv[${rv}]\n --> fmt_cmd passed an array, bye.")  if (ref($hunk) eq 'ARRAY');
@@ -337,6 +340,8 @@ sub fmt_cmd {
          #print "hunk[".$hunk."]\n";
          #print "fmt_cmd: warning: hunk was blank, now NA. Prev hunks: $rv\n"
       }
+      $prev_item = $hunk;
+      $item++;
       $rv .= ( $mod_hunk =~m/ +/) ? "'$mod_hunk' " : "$mod_hunk ";
    }
    chomp $rv;
