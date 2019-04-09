@@ -19,6 +19,7 @@
 package main;
 use strict;
 use warnings;
+use diagnostics;
 #use Carp;
 # Un-buffer output
 $| = 1;
@@ -180,13 +181,13 @@ GetOptions
  'help|h'            => \$show_help,
  'ap=s'              => \$ap,
  'port_name|e=s'     => \$port_name,
- 'cmd|c=s'           => \$cmd,
- 'cli_cmd|i=s'       => \$cli_cmd,
+ 'cmd=s'             => \$cmd,
+ 'cli_cmd=s'         => \$cli_cmd,
  'manager|mgr|m=s'   => \$lfmgr_host,
  'manager_port=i'    => \$lfmgr_port,
- 'load|L=s'          => \$load,
+ 'load_db|load=s'    => \$load,
  'quiet|q=s'         => \$::quiet,
- 'resource|card|res|r|C=i' => \$card,
+ 'resource|card|res|r=i' => \$card,
  'amt_resets=i'      => \$amt_resets,
  'max_port_name=i'   => \$max_port_name,
  'min_sleep=i'       => \$min_sleep,
@@ -198,10 +199,10 @@ GetOptions
  'list_port_names!'  => \$list_port_names,
  'list_ports!'       => \$list_ports,
  'filter_ports|filter|f=s' => \$filter_ports,
- 'show_port|s'       => \$show_port,
+ 'show_port'         => \$show_port,
  'stats_from_file=s' => \$stats_from_file,
  'port_stats=s{1,}'  => \@port_stats,
- 'eap_identity|i=s'  => \$eap_identity,
+ 'eap_identity|eapid=s'  => \$eap_identity,
  'eap_passwd|p=s'    => \$eap_passwd,
  'ip=s'              => \$ip,
  'netmask=s'         => \$netmask,
@@ -448,6 +449,63 @@ if ((defined $list_port_names) && ($list_port_names ne "")) {
    }
    exit(0);
 }
+
+if ((defined $filter_ports) && ($filter_ports ne "")) {
+   my @lines =split("\n", $utils->doAsyncCmd("nc_show_ports 1 $card all"));
+   my @keys = split(/,/, $filter_ports);
+   my $note = "";
+   my $eid = "";
+   my $next_eid = "";
+   my $ip = "";
+   my @out = ();
+   my $dev = "";
+   my %matches = ();
+   for(my $i=0; $i <= $#keys; $i++) {
+      $keys[$i] =~ tr/ |-/./;
+   }
+   my $pattern =join("|", @keys);
+   my $pattern_la = "(?=".join("|", @keys).": )";
+   my $pattern_lb = "(?<  |, |$)";
+
+   for my $line (@lines) {
+      my $saw_shelf = 0;
+      if ($line =~ /^Shelf: 1, /) {
+         $saw_shelf = 1;
+         my ($r, $p) = ($line =~ /Card: (\d+), Port: (\d+) /);
+         $next_eid ="1.${r}.${p}";
+      }
+      print "Looking for $pattern in $line\n";
+      if ($line =~ / (${pattern}): /i) {
+         for my $k (@keys) {
+            if (my ($m) = ($line =~ / (?:${k}): ([^ ]+)/i)) {
+               $matches{$k} = $m;
+            }
+         }
+      }
+      if ($line =~ / MAC: .* DEV: /) {
+         ($dev) = ($line =~ / DEV: ([^ ]+) /);
+      }
+      if ($saw_shelf == 1) {
+         if (keys(%matches) > 0) {
+            for my $k (sort keys(%matches)) {
+               $note .="; " if ($note ne "");
+               $note .= "$k: $matches{$k}";
+            }
+            push(@out, "$eid\t$dev\t$note");
+            %matches = ();
+         }
+         $eid = $next_eid;
+         $dev = "";
+         $note = "";
+         $saw_shelf = 0;
+      }
+   }
+
+   if (@out > 0) {
+      print("EID\tDEV\t".join("\t", @keys)."\n");
+      print (join("\n", sort(@out))."\n");
+   }
+   exit(0);}
 
 if ((defined $list_ports) && ($list_ports ne "")) {
    print $utils->doAsyncCmd("nc_show_ports 1 $card all");
