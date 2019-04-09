@@ -49,10 +49,12 @@ my $shelf_num        = 1;
 my $card             = 1;
 
 # Default values for ye ole cmd-line args.
-my $list_ports       = "";
+my $list_port_names;
+my $list_ports;
+my $filter_ports;
 my $port_name        = "";
 my $cmd              = "";
-our $quiet            = 1;
+our $quiet           = 1;
 my $load             = "";
 my $amt_resets       = 1;
 my $max_port_name    = 0;
@@ -85,80 +87,85 @@ my $gw = "NA"; # Gateway, only changed when 'IP' is set.
 # Nothing to configure below here, most likely.
 ########################################################################
 
-my $usage = "$0  --port_name {name | number}
---cmd             { reset | delete }
-[--manager        { network address of LANforge manager} ]
-[--cli_cmd        { lf-cli-command text } ]
-[--amt_resets     { number (0 means forever) } ]
-[--max_port_name  { number } ]
-[--min_sleep      { number (seconds) } ]
-[--max_sleep      { number (seconds) } ]
-[--load           { db-name } ]
-[--card           { card-id } ]
-[--quiet          { level } ]
-[--set_ifstate    {up | down} ]
-[--show_port      [key,key,key]]
+my $usage = << "EOF"
+   $0  --port_name {name | number}
+--cmd                { reset | delete }
+[--manager|--mgr|-m  { network address of LANforge manager} ]
+[--cli_cmd           { lf-cli-command text } ]
+[--amt_resets        { number (0 means forever) } ]
+[--max_port_name     { number } ]
+[--min_sleep         { number (seconds) } ]
+[--max_sleep         { number (seconds) } ]
+[--load              { db-name } ]
+[--card|--resource|-r { resource-id } ]
+[--quiet             { 0|no|1|yes } ]
+[--set_ifstate       { up|down } ]
+[--list_port_names   # prints port names for resource  ]
+[--list_ports        # shows all ports and port details for resource]
+[--filter_ports      { keyword } # prints port name and matching value for all ports for resource ]
+[--show_port [key,key,key] ]
    # show all port stats or just those matching /key:value/
 [--stats_from_file [file-name]
    # Read 'show-port' ouput from a file instead of direct query from LANforge.
    # This can save a lot of time if we already have the show-port output available.
-[--set_speed      {wifi port speed, see GUI port-modify drop-down for possible values. Common
+[--set_speed      { wifi port speed, see GUI port-modify drop-down for possible values. Common
                    examples: 'OS Defaults', '6 Mbps a/g', '1 Stream  /n', '2 Streams /n', MCS-0 (x1 15 M), MCS-10 (x2 90 M),
                              'v-MCS-0 (x1 32.5 M)', 'v-1 Stream  /AC', 'v-2 Streams /AC', ... }
-[--wifi_mode      {wifi mode: 0: AUTO, 1: 802.11a, 2: b, 3: g, 4: abg, 5: abgn,
+[--wifi_mode      { wifi mode: 0: AUTO, 1: 802.11a, 2: b, 3: g, 4: abg, 5: abgn,
                               6: bgn 7: bg, 8: abgnAC, 9 anAC, 10 an}
                   # wifi-mode option is applied when --set_speed is used.
-[--passwd         {WiFi WPA/WPA2/ password}
-[--ssid           {WiFi SSID}
-[--ap             {BSSID of AP, or 'DEFAULT' for any.}
-[--eap_identity   {value|[BLANK]}]
-[--eap_passwd     {value|[BLANK]}]
-[--log_file       {value}] # disabled by default
+[--passwd         { WiFi WPA/WPA2/ password}
+[--ssid           { WiFi SSID}
+[--ap             { BSSID of AP, or 'DEFAULT' for any.}
+[--eap_identity   { value | [BLANK]}]
+[--eap_passwd     { value | [BLANK]}]
+[--log_file       { value }] # disabled by default
 [--ip             { DHCP | IPv4 Address }]
 [--netmask        { network mask, only modified if IP is specified as well.]
 [--gw             { network gateway, only modified if IP is specified as well.]
 [--help|-h        ] # show help
 
 Examples:
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --show_port
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta1 --show_port AP,ESSID,bps_rx,bps_tx
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta1 --stats_from_file /tmp/ports.txt --show_port AP,ESSID,bps_rx,bps_tx
-./lf_portmod.pl --manager 192.168.1.101 --cli_cmd \"scan 1 1 sta0\"
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --cmd reset
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --set_ifstate down
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --ip DHCP
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name eth2 --ip 10.1.1.1 --netmask 255.255.0.0 --gw 10.1.1.254
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed \"1 Mbps /b\" \\
-                --ssid fast-ap --passwd \"secret passwd\" --ap DEFAULT
+./lf_portmod.pl --manager 192.168.1.101 --resource 1 --list_ports
+./lf_portmod.pl --mgr 192.168.1.101 --card 1 --port_name eth2 --show_port
+./lf_portmod.pl -m 192.168.1.101 -r 1 --port_name sta1 --show_port AP,ESSID,bps_rx,bps_tx
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta1 --stats_from_file /tmp/ports.txt --show_port AP,ESSID,bps_rx,bps_tx
+./lf_portmod.pl -m 192.168.1.101 --cli_cmd "scan 1 1 sta0"
+./lf_portmod.pl - 192.168.1.101 --card 1 --port_name eth2 --cmd reset
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name eth2 --set_ifstate down
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name eth2 --ip DHCP
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name eth2 --ip 10.1.1.1 --netmask 255.255.0.0 --gw 10.1.1.254
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed "1 Mbps /b" \\
+                --ssid fast-ap --passwd "secret passwd" --ap DEFAULT
 ./lf_portmod.pl --load my_db
-./lf_portmod.pl --manager 192.168.100.138 --cmd reset --port_name 2 --amt_resets 5 --max_port_name 8 --card 1 --min_sleep 10 --max_sleep 20
-./lf_portmod.pl --manager 192.168.1.101 --card 1 --port_name sta11 --cmd set_wifi_extra --eap_identity 'adams' --eap_passwd 'family'
+./lf_portmod.pl -m 192.168.100.138 --cmd reset --port_name 2 --amt_resets 5 --max_port_name 8 --card 1 --min_sleep 10 --max_sleep 20
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta11 --cmd set_wifi_extra --eap_identity 'adams' --eap_passwd 'family'
 
 # Set wlan0 to /a/b/g mode, 1Mbps encoding rate
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed \"1 Mbps /b\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed "1 Mbps /b"
 
 # Set wlan0 to /a/b/g mode, default encoding rates
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed \"DEFAULT\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 4 --set_speed "DEFAULT"
 
 # Set wlan0 to /a/b/g/n mode, default encoding rates for 1 antenna stations (1x1)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"1 Stream  /n\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed "1 Stream  /n"
 
 # Set wlan0 to /a/b/g/n mode, default encoding rates for 2 antenna stations (2x2)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"2 Streams /n\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed "2 Streams /n"
 
 # Set wlan0 to /a/b/g/n mode, default encoding rates for 3 antenna stations (3x3)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed \"DEFAULT\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 5 --set_speed "DEFAULT"
 
 # Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 1 antenna stations (1x1)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"v-1 Stream  /AC\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed "v-1 Stream  /AC"
 
 # Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 2 antenna stations (2x2)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"v-2 Streams /AC\"
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed "v-2 Streams /AC"
 
 # Set wlan0 to /a/b/g/n/AC mode, default encoding rates for 3 antenna stations (3x3)
-./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed \"DEFAULT\"
-
-";
+./lf_portmod.pl --manager localhost --card 1 --port_name wlan0 --wifi_mode 8 --set_speed "DEFAULT"
+EOF
+;
 
 my $i = 0;
 my $log_cli = 'unset';
@@ -179,7 +186,7 @@ GetOptions
  'manager_port=i'    => \$lfmgr_port,
  'load|L=s'          => \$load,
  'quiet|q=s'         => \$::quiet,
- 'card|resource|res|r|C=i' => \$card,
+ 'resource|card|res|r|C=i' => \$card,
  'amt_resets=i'      => \$amt_resets,
  'max_port_name=i'   => \$max_port_name,
  'min_sleep=i'       => \$min_sleep,
@@ -188,8 +195,10 @@ GetOptions
  'set_ifstate|s=s'   => \$if_state,
  'set_speed=s'       => \$set_speed,
  'ssid=s'            => \$ssid,
- 'list_ports'        => \$list_ports,
- 'show_port:s'       => \$show_port,
+ 'list_port_names!'  => \$list_port_names,
+ 'list_ports!'       => \$list_ports,
+ 'filter_ports|filter|f=s' => \$filter_ports,
+ 'show_port|s'       => \$show_port,
  'stats_from_file=s' => \$stats_from_file,
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|i=s'  => \$eap_identity,
@@ -223,22 +232,22 @@ if ($stats_from_file eq "") {
     if ($log_cli ne "unset") {
       # here is how we reset the variable if it was used as a flag
       if ($log_cli eq "") {
-	$ENV{'LOG_CLI'} = 1;
+         $ENV{'LOG_CLI'} = 1;
       }
       else {
-	$ENV{'LOG_CLI'} = $log_cli;
+         $ENV{'LOG_CLI'} = $log_cli;
       }
     }
   }
 
   # Open connection to the LANforge server.
 
-  $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-			  Timeout => 20);
+  $t = new Net::Telnet(Prompt    => '/default\@btbits\>\>/',
+                        Timeout  => 20);
 
-  $t->open(Host => $lfmgr_host,
-	   Port    => $lfmgr_port,
-	   Timeout => 10);
+  $t->open(Host      => $lfmgr_host,
+            Port     => $lfmgr_port,
+            Timeout  => 10);
 
   $t->waitfor("/btbits\>\>/");
 
@@ -261,7 +270,8 @@ if ($stats_from_file eq "") {
     $::utils->cli_rcv_silent(0);  # Show output from telnet
   }
   $::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
-}
+} # ~if stats_from_file
+
 
 if (defined $log_file && ($log_file ne "")) {
    open(CMD_LOG, ">$log_file") or die("Can't open $log_file for writing...\n");
@@ -275,6 +285,7 @@ if (defined $log_file && ($log_file ne "")) {
 # please use utils->fmt_cmd nowadays
 sub fmt_cmd {
    my $rv;
+   print STDERR "this fmt_cmd() subroutine deprecated, see Utils::fmt_cmd\n";
    if ($::utils->can('fmt_cmd')) {
      $rv = $::utils->fmt_cmd(@_);
      return $rv;
@@ -347,8 +358,8 @@ sub fmt_port_ip {
    }
 
    my $cmd = $::utils->fmt_cmd("set_port", 1, $resource, $port_id, "$set_ip",
-			       "$set_mask", "$set_gw", "NA", "$cur_flags",
-			       "NA", "NA", "NA", "NA", "$ist_flags");
+                "$set_mask", "$set_gw", "NA", "$cur_flags",
+                "NA", "NA", "NA", "NA", "$ist_flags");
    return $cmd;
 }
 
@@ -408,8 +419,38 @@ if ($load ne "") {
    exit(0);
 }
 
-if ((defined $list_ports) && $list_ports) {
-   $utils->doAsyncCmd("nc_show_ports 1 $card all");
+if ((defined $list_port_names) && ($list_port_names ne "")) {
+   my @lines =split("\n", $utils->doAsyncCmd("nc_show_ports 1 $card all"));
+   my $note = "";
+   my $eid = "";
+   my $ip = "";
+   my @out = ();
+   for my $line (@lines) {
+      if ($line =~ /^Shelf: 1, /) {
+         my ($r, $n) = ($line =~ /Card: (\d+), Port: (\d+) /);
+         $eid .="1.${r}.${n} ";
+      }
+      if ($line =~ / IP: /) {
+         my ($i) = ($line =~ / IP: ([^ ]+) /);
+         $ip .=" $i";
+      }
+      if ($line =~ / MAC: .* DEV: /) {
+         my ($mac, $dev) = ($line =~ / MAC: ([^ ]+)\s*DEV: ([^ ]+) /);
+         push(@out, "$eid\t$dev\t$mac\t$ip");
+         $eid = "";
+         $ip = "";
+      }
+   }
+
+   if (@out > 0) {
+      print("EID\tDEV\tMAC               \tIP\n");
+      print (join("\n", sort(@out))."\n");
+   }
+   exit(0);
+}
+
+if ((defined $list_ports) && ($list_ports ne "")) {
+   print $utils->doAsyncCmd("nc_show_ports 1 $card all");
    exit(0);
 }
 
@@ -599,23 +640,23 @@ sub get_stats_from_file {
       my $m3 = $3;
 
       if ($port_text ne "") {
-	# See if existing port entry matches?
-	if ($s == $shelf && $c == $resource) {
-	  my $pname = "";
-	  my $palias = "";
-	  if ($port_text =~ /\s+DEV:\s+(\S+)/) {
-	    $pname = $1;
-	  }
-	  if ($port_text =~ /\s+Alias:\s+(\S+)/) {
-	    $palias = $1;
-	  }
-	  #print("search for port_name: $port_name p: $p  palias: $palias  pname: $pname\n");
-	  if (("$p" eq $port_name) ||
-	      ($palias eq $port_name) ||
-	      ($pname eq $port_name)) {
-	    return $port_text;
-	  }
-	}
+   # See if existing port entry matches?
+   if ($s == $shelf && $c == $resource) {
+     my $pname = "";
+     my $palias = "";
+     if ($port_text =~ /\s+DEV:\s+(\S+)/) {
+       $pname = $1;
+     }
+     if ($port_text =~ /\s+Alias:\s+(\S+)/) {
+       $palias = $1;
+     }
+     #print("search for port_name: $port_name p: $p  palias: $palias  pname: $pname\n");
+     if (("$p" eq $port_name) ||
+         ($palias eq $port_name) ||
+         ($pname eq $port_name)) {
+       return $port_text;
+     }
+   }
       }
 
       $port_text = "$line\n";
@@ -625,7 +666,7 @@ sub get_stats_from_file {
     }
     else {
       if ($port_text ne "") {
-	$port_text .= "$line\n";
+   $port_text .= "$line\n";
       }
     }
   }
