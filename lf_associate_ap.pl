@@ -73,6 +73,8 @@ my  $log_cli            = "unset"; # use ENV{'LOG_CLI'}
 # and we're assuming the port is on the same resource (1).
 our $upstream_port      = "eth1";      # Step 1 upstream port
 our $sta_wiphy          = "wiphy0";    # physical parent (radio) of virtual stations
+our $phy_channel        = -1; # channel number
+our $phy_antenna        = 0; # number of antennas, all
 our %wiphy_bssids       = ();
 our $admin_down_on_add  = 0;
 our $ssid;
@@ -116,6 +118,31 @@ our %cx_types           = (
    "tcp6"   =>    "lf_tcp6",
    "udp6"   =>    "lf_udp6",
 );
+our %antenna_table = (
+    0       => 0,
+    "0"     => 0,
+    -1      => 0,
+    '0'     => 0,
+    '-1'    => 0,
+    'ALL'   => 0,
+
+    '1'     => 1,
+    '1x1'   => 1,
+    'A'     => 1,
+
+    '2'     => 4,
+    '2x2'   => 4,
+    'AB'    => 4,
+
+    '3'     => 7,
+    '3x3'   => 7,
+    'ABC'   => 7,
+
+    '4'     => 8,
+    '4x4'   => 8,
+    'ABCD'  => 8,
+  );
+
 our $duration           = 30; # seconds to transmit in step 1
 our $db_preload         = ""; # use for loading before station creation
 our $db_save            = ""; # use for saving a scenario that we just ran
@@ -151,6 +178,10 @@ my $usage = qq($0   [--mgr {host-name | IP}]
                                  # same effect when setting env var LOG_CLI=STDOUT
       ##       AP selection
       [--radio {name}]           # e.g. wiphy2
+      [--channel {channel}]      # e.g. 52, 161, 153
+                                 # please check the LANforge GUI to verify resulting selection
+                                 # center channels might be selected differently than you intended
+      [--antenna {1,2,3,4}]      # select number of antennas
       [--ssid {ssid}]            # e.g. jedtest
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2}] # station authentication type, Default is open
@@ -295,51 +326,53 @@ our $vrad_chan          = -1;                # default channel (AUTO)
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 my $lfmgr_port          = 4001;              # LANforge manager port
 our $quiesce_sec        = 3;                 # pretty standard
- #if(Scalar::Util::looks_like_number( $hunk) && $hunk == 0);
- # please use $::utils->fmt_cmd
-sub fmt_cmd {
-   my $rv;
-   if ($::utils->can('fmt_cmd')) {
-      #print "fmt_cmd passing down to Utils::fmt_cmd()\n";
-      $rv = $::utils->fmt_cmd(@_);
-      return $rv;
-   }
 
-   for my $hunk (@_) {
-      die("fmt_cmd called with empty space or null argument, bye.") unless(defined $hunk && $hunk ne '');
-      die("rv[${rv}]\n --> fmt_cmd passed an array, bye.")  if(ref($hunk) eq 'ARRAY');
-      die("rv[${rv}]\n --> fmt_cmd passed a hash, bye.")    if(ref($hunk) eq 'HASH');
-      $hunk = "0" if($hunk eq "0" || $hunk eq "+0");
-
-      if( $hunk eq "" ) {
-         #print "hunk[".$hunk."] --> ";
-         $hunk = 'NA';
-         #print "hunk[".$hunk."]\n";
-         #print "fmt_cmd: warning: hunk was blank, now NA. Prev hunks: $rv\n"
-      }
-      $rv .= ( $hunk =~m/ +/) ? "'$hunk' " : "$hunk ";
-   }
-   chomp $rv;
-   print "cmd formatted to: $rv\n" unless($::utils->isQuiet());
-   return $rv;
-}
+=pod
+this fmt_cmd subroutine is now disabled, please use utils->fmt_cmd
+=cut
+#sub fmt_cmd {
+#   my $rv;
+#   if ($::utils->can('fmt_cmd')) {
+#      #print "fmt_cmd passing down to Utils::fmt_cmd()\n";
+#      $rv = $::utils->fmt_cmd(@_);
+#      return $rv;
+#   }
+#
+#   for my $hunk (@_) {
+#      die("fmt_cmd called with empty space or null argument, bye.") unless(defined $hunk && $hunk ne '');
+#      die("rv[${rv}]\n --> fmt_cmd passed an array, bye.")  if(ref($hunk) eq 'ARRAY');
+#      die("rv[${rv}]\n --> fmt_cmd passed a hash, bye.")    if(ref($hunk) eq 'HASH');
+#      $hunk = "0" if($hunk eq "0" || $hunk eq "+0");
+#
+#      if( $hunk eq "" ) {
+#         #print "hunk[".$hunk."] --> ";
+#         $hunk = 'NA';
+#         #print "hunk[".$hunk."]\n";
+#         #print "fmt_cmd: warning: hunk was blank, now NA. Prev hunks: $rv\n"
+#      }
+#      $rv .= ( $hunk =~m/ +/) ? "'$hunk' " : "$hunk ";
+#   }
+#   chomp $rv;
+#   print "cmd formatted to: $rv\n" unless($::utils->isQuiet());
+#   return $rv;
+#}
 
 # deprecated, please use utils->doCmd()
-sub doCmd {
-  my $cmd = shift;
-  die("doCmd: Blank command, bye.") unless ($cmd);
-  die("doCmd: Telnet uninitialized, check that '\$t' is set. Bye." ) unless ($main::t);
-
-  if ($::utils->can('doCmd')) {
-     #print "doCmd passing down to Utils::doCmd($cmd)\n";
-     $::utils->doCmd($cmd);
-   }
-   else {
-     $main::t->print($cmd);
-     my @rslt = $::t->waitfor('/ \>\>RSLT:(.*)/');
-     print "**************\n @rslt ................\n\n"  unless($::utils->isQuiet());
-   }
-}
+#sub doCmd {
+#  my $cmd = shift;
+#  die("doCmd: Blank command, bye.") unless ($cmd);
+#  die("doCmd: Telnet uninitialized, check that '\$t' is set. Bye." ) unless ($main::t);
+#
+#  if ($::utils->can('doCmd')) {
+#     #print "doCmd passing down to Utils::doCmd($cmd)\n";
+#     $::utils->doCmd($cmd);
+#   }
+#   else {
+#     $main::t->print($cmd);
+#     my @rslt = $::t->waitfor('/ \>\>RSLT:(.*)/');
+#     print "**************\n @rslt ................\n\n"  unless($::utils->isQuiet());
+#   }
+#}
 
 sub db_exists {
    my $db_name = shift;
@@ -357,7 +390,7 @@ sub load_db {
    my $db_name = shift;
    die ("::load_db: called with blank database name. Did you mean EMPTY?") if ($db_name eq "");
    print "Loading database $db_name ...";
-   doCmd(fmt_cmd("load", $db_name, "overwrite"));
+   $::utils->doCmd(fmt_cmd("load", $db_name, "overwrite"));
 
    for (my $i = 20 ; $i>0; $i--) {
       sleep(1);
@@ -391,10 +424,10 @@ sub save_db {
    my $db_name = shift;
    die ("::save_db: called with blank database name. Please debug.") if ($db_name eq "");
    print "Saving database $db_name ...";
-   if (db_exists($db_name)==1){
+   if (db_exists($db_name)==1) {
       print "Warning: will over-write database $db_name! ";
    }
-   doCmd(fmt_cmd("save", $db_name));
+   $::utils->doCmd($::utils->fmt_cmd("save", $db_name));
    print "done\n";
 }
 
@@ -406,7 +439,7 @@ sub get_radio_bssid {
       if (exists($::wiphy_bssids{ $radio_name }));
 
    #print "* looking up $radio_name for bssid...";
-   my @status_lines  = split("\n", $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $radio_name)));
+   my @status_lines  = split("\n", $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $radio_name)));
    my @mac_lines     = grep { / MAC: [^ ]+/ } @status_lines;
    die ("::get_radio_bssid: failed to find radio bssid, no MAC lines")
       if (@mac_lines < 1);
@@ -494,7 +527,7 @@ sub fmt_vsta_cmd {
    $flags      = "+0" if ($flags       == 0); # perl goes funny on zeros
    $flags_mask = "+0" if ($flags_mask  == 0);
    $flags      = "NA" if ($flags eq "");
-   return fmt_cmd("add_sta", 1, $resource, $sta_wiphy, $sta_name, "$flags",
+   return $::utils->fmt_cmd("add_sta", 1, $resource, $sta_wiphy, $sta_name, "$flags",
                   "$ssid", "NA", "$key", $ap, $cfg_file, $mac,
                   $mode, $rate, $amsdu, $ampdu_factor, $ampdu_density,
                   $sta_br_id, "$flags_mask" );
@@ -514,7 +547,7 @@ sub fmt_vrad_cmd {
    my $antenna          = "NA";
    my $flags            = "0x1";
    my $flags_mask       = "NA";
-   return fmt_cmd("set_wifi_radio", 1, $resource, $sta_wiphy, $mode, $vrad_chan,
+   return $::utils->fmt_cmd("set_wifi_radio", 1, $resource, $sta_wiphy, $mode, $vrad_chan,
                   $country, $frequency, $frag_thresh, $rate, $rts, $txpower,
                   $mac, "$antenna", "$flags", "$flags_mask" );
 }
@@ -553,23 +586,23 @@ sub createEpPair {
    die("createEpPair: wants ep1 name, bye.")          unless(defined $ep1     && $ep1     ne '');
    die("createEpPair: wants ep2 name, bye.")          unless(defined $ep2     && $ep2     ne '');
 
-   my $cmd = fmt_cmd("add_endp", $ep1, 1, $::resource, $port_a, $cxtype,
+   my $cmd = $::utils->fmt_cmd("add_endp", $ep1, 1, $::resource, $port_a, $cxtype,
                      -1, "NA", "$rate_min", "$rate_max", "NA",
                      $min_pkt_szs{$::cx_type}[0],  @{$max_pkt_szs{$::cx_type}}[0],
                      "increasing", "NO", "NA", "NA", "NA");
    print "EP1: $cmd\n" unless($::utils->isQuiet());
-   doCmd($cmd);
+   $::utils->doCmd($cmd);
 
-   $cmd = fmt_cmd("add_endp", $ep2, 1, $::resource2, $port_b, $cxtype,
+   $cmd = $::utils->fmt_cmd("add_endp", $ep2, 1, $::resource2, $port_b, $cxtype,
                      -1, "NA", "$rate_min", "$rate_max", "NA",
                      $min_pkt_szs{$::cx_type}[1],  @{$max_pkt_szs{$::cx_type}}[1],
                      "increasing", "NO", "NA", "NA", "NA");
    print "EP2: $cmd\n"  unless($::utils->isQuiet());
-   doCmd($cmd);
+   $::utils->doCmd($cmd);
 
    # Now, add the cross-connect
-   doCmd(fmt_cmd("add_cx", $cx_name, $::test_mgr, $ep1, $ep2));
-   doCmd(fmt_cmd("set_cx_report_timer", $::test_mgr, $cx_name, $::report_timer));
+   $::utils->doCmd($::utils->fmt_cmd("add_cx", $cx_name, $::test_mgr, $ep1, $ep2));
+   $::utils->doCmd($::utils->fmt_cmd("set_cx_report_timer", $::test_mgr, $cx_name, $::report_timer));
 }
 
 sub fmt_port_cmd {
@@ -599,7 +632,7 @@ sub fmt_port_cmd {
    $cur_flags = "+0" if(!$cur_flags);
    $cmd_flags = "+0" if(!$cmd_flags);
    $ist_flags = "+0" if(!$ist_flags);
-   my $cmd = fmt_cmd("set_port", 1, $::resource, $port_id, $ip, $::netmask,
+   my $cmd = $::utils->fmt_cmd("set_port", 1, $::resource, $port_id, $ip, $::netmask,
                      $gateway, "$cmd_flags", "$cur_flags",
                      "$mac_addr", "NA", "NA", "NA", "$ist_flags", $::report_timer, "$flags2",
                      "NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA",
@@ -633,7 +666,7 @@ sub fmt_port_down {
    $cmd_flags  = "+0" if(!$cmd_flags); # zeros are falsy in perl
    $cur_flags  = "+0" if(!$cur_flags);
    $ist_flags  = "+0" if(!$ist_flags);
-   my $cmd = fmt_cmd("set_port", 1, $resource, $port_id, $ip_addr,
+   my $cmd = $::utils->fmt_cmd("set_port", 1, $resource, $port_id, $ip_addr,
                      $netmask, $gateway, "$cmd_flags", "$cur_flags",
                      "NA", "NA", "NA", "NA", "$ist_flags", $::report_timer, "$flags2",
                      "NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA",
@@ -682,7 +715,7 @@ sub new_wifi_station {
    print "## new-wifi-station, sta-name: $sta_name  change-mac: $change_mac" unless($::utils->isQuiet());
 
    if (! $::change_mac) {
-     my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+     my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
      if ($status =~ /MAC:\s+(\S+)\s+/) {
        $mac_addr = $1;
      }
@@ -734,16 +767,16 @@ sub new_wifi_station {
    my $sta1_cmd   = fmt_vsta_cmd($::resource, $::sta_wiphy, $sta_name,
                                  "$flags", "$::ssid", "$::passphrase",
                                  $mac_addr, "$flagsmask", $wifi_m, $::bssid);
-   doCmd($sta1_cmd);
+   $::utils->doCmd($sta1_cmd);
    $sta1_cmd   = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
-   doCmd($sta1_cmd);
+   $::utils->doCmd($sta1_cmd);
    if ($::admin_down_on_add) {
      my $cur_flags = 0x1; # port down
      my $ist_flags = 0x800000; # port down
-     $sta1_cmd = fmt_cmd("set_port", 1, $resource, $sta_name, "NA",
-			 "NA", "NA", "NA", "$cur_flags",
-			 "NA", "NA", "NA", "NA", "$ist_flags");
-     doCmd($sta1_cmd);
+     $sta1_cmd = $::utils->fmt_cmd("set_port", 1, $resource, $sta_name, "NA",
+                         "NA", "NA", "NA", "$cur_flags",
+                         "NA", "NA", "NA", "NA", "$ist_flags");
+     $::utils->doCmd($sta1_cmd);
    }
 
    if ($sleep_amt > 0) {
@@ -755,13 +788,13 @@ sub new_wifi_station {
 
 sub new_wifi_radio {
    my $cmd = fmt_vrad_cmd($::resource, $::sta_wiphy, $::vrad_chan );
-   doCmd($cmd);
+   $::utils->doCmd($cmd);
 }
 
 sub delete_port {
    if (defined $::port_del) {
       print "deleting port $::port_del\n" unless($::utils->isQuiet());
-      $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $::port_del));
+      $::utils->doCmd($::utils->fmt_cmd("rm_vlan", 1, $::resource, $::port_del));
    }
 }
 
@@ -832,12 +865,12 @@ sub awaitStationRemoval {
       $old_sta_count = (keys %::sta_names);
       for my $sta_name (sort(keys %::sta_names)) {
          print " $sta_name,";
-         my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+         my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
          $old_sta_count-- if( $status =~ m/Could not find/);
       }
       if ($old_sta_count > 0) {
-	#print "$old_sta_count...";
-	sleep 1;
+        #print "$old_sta_count...";
+        sleep 1;
       }
    }
    print " Old stations removed\n";
@@ -850,9 +883,9 @@ sub removeOldCrossConnects {
       my $cx_name = $::cx_names{$sta_name}->{"cx"};
       my $ep1     = $::cx_names{$sta_name}->{"ep1"};
       my $ep2     = $::cx_names{$sta_name}->{"ep2"};
-      doCmd("rm_cx $::test_mgr $cx_name");
-      doCmd("rm_endp $ep1");
-      doCmd("rm_endp $ep2");
+      $::utils->doCmd("rm_cx $::test_mgr $cx_name");
+      $::utils->doCmd("rm_endp $ep1");
+      $::utils->doCmd("rm_endp $ep2");
       print " $cx_name ($ep1 - $ep2)...";
    }
    print " done.\n";
@@ -861,12 +894,12 @@ sub removeOldCrossConnects {
 sub removeOldStations {
    print "Deleting ports:";
    foreach my $sta_name (reverse sort(keys %::sta_names)) {
-      my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+      my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
       if ($status =~ /Type:/) {
-	# It exists, remove it
-	#
-	print "...$sta_name ";
-	$::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
+        # It exists, remove it
+        #
+        print "...$sta_name ";
+        $::utils->doCmd($::utils->fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
       }
    }
    print " done.\n";
@@ -881,7 +914,7 @@ sub awaitNewStations {
       my @are_assoc        = ();
       my @not_assoc        = ();
       for my $sta_name (sort(keys(%::sta_names))) {
-         my $status     = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+         my $status     = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
          my %sta_status = get_sta_state(\$status);
          #print " $sta_name ".$sta_status{"assoc"};
          if( $sta_status{"assoc"} ne "Not-Associated") {
@@ -904,7 +937,7 @@ sub endpointReport {
    my $ep = shift;
    my ($ep_name, $tx_rate, $rx_rate,$rx_bps);
    die("endpointReport: should be passed name of endpoint, bye.") unless ( $ep ne '' );
-   my $blob = $::utils->doAsyncCmd(fmt_cmd("nc_show_endpoints", "$ep"), "\n");
+   my $blob = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endpoints", "$ep"), "\n");
    #print "BLOB: $blob\n\n\n";
    ( $ep_name ) = ($blob =~ m/^Endpoint \[(.*?)\] /mg);
    ( $tx_rate ) = ($blob =~ m/(Tx Bytes: .*$)/mg);
@@ -978,17 +1011,17 @@ sub adjustForSimultaneous {
       my $ep1  = $::cx_names{$sta_name}->{"ep1"};
       my $ep2  = $::cx_names{$sta_name}->{"ep2"};
 
-      #print "UPLOAD: ".fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max")."\n";
-      #print "UPLOAD: ".fmt_cmd("set_endp_tx_bounds", $ep2, "$no_rate", "$no_rate")."\n";
+      #print "UPLOAD: ".$::utils->fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max")."\n";
+      #print "UPLOAD: ".$::utils->fmt_cmd("set_endp_tx_bounds", $ep2, "$no_rate", "$no_rate")."\n";
 
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max"));
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep2, "$rate_min",  "$rate_max"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep2, "$rate_min",  "$rate_max"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
    }
    for my $sta_name (sort(keys(%::sta_names))) {
       my $cx   = $::cx_names{$sta_name}->{"cx"};
-      doCmd(fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
+      $::utils->doCmd($::utils->fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
       print " $cx...";
    }
    print "done.\n";
@@ -1016,14 +1049,14 @@ sub adjustForUpload {
       #print "UPLOAD: ".fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max")."\n";
       #print "UPLOAD: ".fmt_cmd("set_endp_tx_bounds", $ep2, "$no_rate", "$no_rate")."\n";
 
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max"));
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep2, "$no_rate",  "$no_rate"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep1, "$rate_min", "$rate_max"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep2, "$no_rate",  "$no_rate"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
    }
    for my $sta_name (sort(keys(%::sta_names))) {
       my $cx   = $::cx_names{$sta_name}->{"cx"};
-      doCmd(fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
+      $::utils->doCmd($::utils->fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
       print " $cx...";
    }
    print "done.\n";
@@ -1078,9 +1111,9 @@ sub awaitTransfers {
             my $ep1  = $::cx_names{$sta_name}->{"ep1"};
             my $ep2  = $::cx_names{$sta_name}->{"ep2"};
 
-            $lines = $::utils->doAsyncCmd(fmt_cmd("nc_show_endpoints", "$ep1"), "\n");
+            $lines = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endpoints", "$ep1"), "\n");
             printShowEndpointStats($lines);
-            $lines = $::utils->doAsyncCmd(fmt_cmd("nc_show_endpoints", "$ep2"), "\n");
+            $lines = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endpoints", "$ep2"), "\n");
             printShowEndpointStats($lines);
             print " |";
          }
@@ -1109,14 +1142,14 @@ sub adjustForDownload {
       #print "Download: ".fmt_cmd("set_endp_tx_bounds", $ep1, "$no_rate", "$no_rate")."\n";
       #print "Download: ".fmt_cmd("set_endp_tx_bounds", $ep2, "$rate_min", "$rate_max")."\n";
 
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep1, "$no_rate", "$no_rate"));
-      doCmd(fmt_cmd("set_endp_tx_bounds", $ep2, "$rate_min", "$rate_max"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
-      doCmd(fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep1, "$no_rate", "$no_rate"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_tx_bounds", $ep2, "$rate_min", "$rate_max"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep1, "$::quiesce_sec"));
+      $::utils->doCmd($::utils->fmt_cmd("set_endp_quiesce",   $ep2, "$::quiesce_sec"));
    }
    for my $sta_name (sort(keys(%::sta_names))) {
       my $cx   = $::cx_names{$sta_name}->{"cx"};
-      doCmd(fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
+      $::utils->doCmd($::utils->fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
       print " $cx..."
    }
    print "done\n";
@@ -1125,16 +1158,16 @@ sub adjustForDownload {
 sub quiesceConnections {
   for my $sta_name (sort(keys(%::sta_names))) {
       my $cx   = $::cx_names{$sta_name}->{"cx"};
-      doCmd(fmt_cmd("set_cx_state", $::test_mgr, $cx, "QUIESCE"));
+      $::utils->doCmd($::utils->fmt_cmd("set_cx_state", $::test_mgr, $cx, "QUIESCE"));
   }
 }
 
 sub resetCounters {
    for my $sta_name (sort(keys(%::sta_names))) {
       my $cx   = $::cx_names{$sta_name}->{"cx"};
-      doCmd("clear_cx_counters $cx");
+      $::utils->doCmd("clear_cx_counters $cx");
    }
-   doCmd("clear_endp_counters all");
+   $::utils->doCmd("clear_endp_counters all");
 }
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -1226,9 +1259,9 @@ sub doStep_2 {
    print "Removing old stations...";
    for my $sta_name (sort(keys %::sta_names)) {
       # if we have a port eid for this station, let's delete the port so we can start fresh
-      my $del_cmd = fmt_cmd("rm_vlan", 1, $::resource, $sta_name);
+      my $del_cmd = $::utils->fmt_cmd("rm_vlan", 1, $::resource, $sta_name);
       print "$sta_name " unless($::utils->isQuiet());
-      doCmd($del_cmd);
+      $::utils->doCmd($del_cmd);
    }
    # poll until they are gone
    my $old_sta_count = (keys(%::sta_names));
@@ -1236,7 +1269,7 @@ sub doStep_2 {
       $old_sta_count = (keys(%::sta_names));
       sleep 1;
       for my $sta_name (sort(keys %::sta_names)) {
-         my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+         my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
          #print ">>status>>$status\n";
          $old_sta_count-- if( $status =~ /Could not find/); # ??
       }
@@ -1280,7 +1313,7 @@ sub doStep_2 {
       $num_assoc     = 0;
       $num_ip        = 0;
       for my $sta_name (sort(keys %::sta_names)) {
-         my $status  =  $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
+         my $status  =  $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
          my %state   = get_sta_state(\$status);
          #print $state{"name"}.": ".$state{"assoc"}." ";
          $num_assoc++ if($state{"assoc"} ne "Not-Associated");
@@ -1297,12 +1330,11 @@ sub doStep_2 {
    print "Bringing those stations down now: ";
    for my $sta_name (keys %::sta_names) {
       my $cmd = fmt_port_down($::resource, $sta_name, "0.0.0.0", "0.0.0.0"); #$::netmask
-      doCmd($cmd);
+      $::utils->doCmd($cmd);
       print "$sta_name " unless ($::utils->isQuiet());
    }
    print "...stations down. Done.\n"
 }
-
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##
 ##    Create a station
@@ -1314,9 +1346,9 @@ sub doAdd {
       my %results2 = ();
 
       for my $sta_name (sort(keys %::sta_names)) {
-	 die("misconfiguration! ") if( ref($sta_name) eq "HASH");
-	 my $ip = $::sta_names{$sta_name};
-	 new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
+         die("misconfiguration! ") if( ref($sta_name) eq "HASH");
+         my $ip = $::sta_names{$sta_name};
+         new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
       }
    }
    elsif (defined $::sta_wiphy) {
@@ -1335,23 +1367,23 @@ sub doDelWiphyVdevs {
       # a parent.
       my $q;
       for ($q = 0; $q < 5; $q++) {
-	my @ports = $::utils->getPortListing(1, $::resource);
+        my @ports = $::utils->getPortListing(1, $::resource);
         my $found = 0;
-	my $i;
-	for ($i = 0; $i<@ports; $i++) {
-	  my $dev = $ports[$i]->dev();
-	  my $parent = $ports[$i]->parent();
-	  if ($parent eq $::port_del) {
-	    print "deleting port $dev\n" unless($::utils->isQuiet());
-	    $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $dev));
-	    $found++;
-	  }
-	}
+        my $i;
+        for ($i = 0; $i<@ports; $i++) {
+          my $dev = $ports[$i]->dev();
+          my $parent = $ports[$i]->parent();
+          if ($parent eq $::port_del) {
+            print "deleting port $dev\n" unless($::utils->isQuiet());
+            $::utils->doCmd($::utils->fmt_cmd("rm_vlan", 1, $::resource, $dev));
+            $found++;
+          }
+        }
 
-	if ($found == 0) {
-	  last;
-	}
-	sleep(10);
+        if ($found == 0) {
+          last;
+        }
+        sleep(10);
       }
    }
 }
@@ -1398,10 +1430,10 @@ sub initStationAddr {
       my $suffix     = 0 + $i + $offset;
       my $name;
       if ($i == 0) {
-	$name = $::first_sta;
+        $name = $::first_sta;
       }
       else {
-	$name       = sprintf("sta%03d",    $suffix);
+        $name       = sprintf("sta%03d",    $suffix);
       }
       my $ep_name1   = sprintf("ep-A%03d",   $suffix);
       my $ep_name2   = sprintf("ep-B%03d",   $suffix);
@@ -1425,6 +1457,68 @@ sub initStationAddr {
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##
+##    Set phy channel, antennas
+##
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+sub set_channel {
+    my $res = shift;
+    my $phy = shift;
+    my $chan = shift;
+
+    die("set_channel: unset resource") unless ((defined $res) && ("" ne $res));
+    die("set_channel: unset radio") unless ((defined $phy) && ("" ne $phy));
+    die("set_channel: unset channel") unless ((defined $chan) && ("" ne $chan));
+
+    my $mode = 'NA';
+    my $cmd = $::utils->fmt_cmd("set_wifi_radio", 1, $res,
+                                 $phy,
+                                 $mode,
+                                 $chan);
+    $::utils->doAsyncCmd($cmd);
+    sleep 1;
+}
+
+sub set_antenna {
+  my $res = shift;
+  my $phy = shift;
+  my $ant = shift;
+  die("set_channel: unset resource") unless ((defined $res) && ("" ne $res));
+  die("set_channel: unset radio") unless ((defined $phy) && ("" ne $phy));
+  die("Antenna mode [$ant] does not exist.")
+    if (! exists $::antenna_table{$ant});
+  my $mode = 'NA';
+  my $chan = ((defined $::phy_channel) && ($::phy_channel > 0))
+            ? $::phy_channel : 'NA';
+  my $country = 'NA';
+  my $freq = 'NA'; #'0xFFFF' will override channel
+  my $frag = 'NA';
+  my $rate = 'NA';
+  my $rts = 'NA';
+  my $txpower = 'NA';
+  my $mac = 'NA';
+
+  my $antenna = $::antenna_table{$ant};
+  #print "ANTENNA: $ant -> $antenna\n";
+  my $cmd = $::utils->fmt_cmd("set_wifi_radio", 1, $::resource,
+                               $phy,
+                               $mode,
+                               $chan,
+                               $country,
+                               $freq,
+                               $frag,
+                               $rate,
+                               $rts,
+                               $txpower,
+                               $mac,
+                               $antenna);
+  $::utils->doAsyncCmd($cmd);
+  sleep 1;
+}
+
+
+
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+##
 ##                         M A I N
 ##
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -1443,6 +1537,8 @@ GetOptions
   'resource2|r2=i'            => \$::resource2,
   'quiet|q=s'                 => \$::quiet,
   'radio|o=s'                 => \$::sta_wiphy,
+  'channel|chan=i'            => \$::phy_channel,
+  'antenna|ant=s'             => \$::phy_antenna,
   'ssid|s=s'                  => \$::ssid,
   'security=s'                => \$::security,
   'xsec=s'                    => \$::xsec,
@@ -1575,6 +1671,15 @@ if (!($action =~ /del/)) { # Below steps are unrelated to deleting objects
    }
 }
 
+if ($action =~ /step|add/) {
+  if (defined $::phy_channel && $::phy_channel > 0) {
+    set_channel($::resource, $::sta_wiphy, $::phy_channel);
+  }
+  if (defined $::phy_antenna) {
+    set_antenna($::resource, $::sta_wiphy, $::phy_antenna);
+  }
+}
+
 # take first station and associate it or fail
 if ($action eq "step1" ) {
    if ($traffic_type !~ /^(concurrent|separate)$/ ) {
@@ -1615,7 +1720,7 @@ elsif ($action eq "del_all_phy" ) {
    }
 }
 elsif ($action eq "show_port") {
-   print $utils->doAsyncCmd(fmt_cmd("nc_show_port", 1, $resource, (sort(keys %sta_names))[0])) . "\n";
+   print $utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $resource, (sort(keys %sta_names))[0])) . "\n";
 }
 
 exit(0);
