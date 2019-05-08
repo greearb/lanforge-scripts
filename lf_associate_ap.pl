@@ -73,6 +73,8 @@ my  $log_cli            = "unset"; # use ENV{'LOG_CLI'}
 # and we're assuming the port is on the same resource (1).
 our $upstream_port      = "eth1";      # Step 1 upstream port
 our $sta_wiphy          = "wiphy0";    # physical parent (radio) of virtual stations
+our $phy_channel            = -1; # channel number
+our $phy_antenna            = -1; # number of antennas
 our %wiphy_bssids       = ();
 our $admin_down_on_add  = 0;
 our $ssid;
@@ -151,6 +153,9 @@ my $usage = qq($0   [--mgr {host-name | IP}]
                                  # same effect when setting env var LOG_CLI=STDOUT
       ##       AP selection
       [--radio {name}]           # e.g. wiphy2
+      [--chan {channel}]         # e.g. 52, 161, 153
+                                 # please check the LANforge GUI to verify resulting selection
+      [--antenna {1,2,3,4}]      # select number of antennas
       [--ssid {ssid}]            # e.g. jedtest
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2}] # station authentication type, Default is open
@@ -741,8 +746,8 @@ sub new_wifi_station {
      my $cur_flags = 0x1; # port down
      my $ist_flags = 0x800000; # port down
      $sta1_cmd = fmt_cmd("set_port", 1, $resource, $sta_name, "NA",
-			 "NA", "NA", "NA", "$cur_flags",
-			 "NA", "NA", "NA", "NA", "$ist_flags");
+                         "NA", "NA", "NA", "$cur_flags",
+                         "NA", "NA", "NA", "NA", "$ist_flags");
      doCmd($sta1_cmd);
    }
 
@@ -836,8 +841,8 @@ sub awaitStationRemoval {
          $old_sta_count-- if( $status =~ m/Could not find/);
       }
       if ($old_sta_count > 0) {
-	#print "$old_sta_count...";
-	sleep 1;
+        #print "$old_sta_count...";
+        sleep 1;
       }
    }
    print " Old stations removed\n";
@@ -863,10 +868,10 @@ sub removeOldStations {
    foreach my $sta_name (reverse sort(keys %::sta_names)) {
       my $status = $::utils->doAsyncCmd(fmt_cmd("show_port", 1, $::resource, $sta_name));
       if ($status =~ /Type:/) {
-	# It exists, remove it
-	#
-	print "...$sta_name ";
-	$::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
+        # It exists, remove it
+        #
+        print "...$sta_name ";
+        $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
       }
    }
    print " done.\n";
@@ -1314,9 +1319,9 @@ sub doAdd {
       my %results2 = ();
 
       for my $sta_name (sort(keys %::sta_names)) {
-	 die("misconfiguration! ") if( ref($sta_name) eq "HASH");
-	 my $ip = $::sta_names{$sta_name};
-	 new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
+         die("misconfiguration! ") if( ref($sta_name) eq "HASH");
+         my $ip = $::sta_names{$sta_name};
+         new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
       }
    }
    elsif (defined $::sta_wiphy) {
@@ -1335,23 +1340,23 @@ sub doDelWiphyVdevs {
       # a parent.
       my $q;
       for ($q = 0; $q < 5; $q++) {
-	my @ports = $::utils->getPortListing(1, $::resource);
+        my @ports = $::utils->getPortListing(1, $::resource);
         my $found = 0;
-	my $i;
-	for ($i = 0; $i<@ports; $i++) {
-	  my $dev = $ports[$i]->dev();
-	  my $parent = $ports[$i]->parent();
-	  if ($parent eq $::port_del) {
-	    print "deleting port $dev\n" unless($::utils->isQuiet());
-	    $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $dev));
-	    $found++;
-	  }
-	}
+        my $i;
+        for ($i = 0; $i<@ports; $i++) {
+          my $dev = $ports[$i]->dev();
+          my $parent = $ports[$i]->parent();
+          if ($parent eq $::port_del) {
+            print "deleting port $dev\n" unless($::utils->isQuiet());
+            $::utils->doCmd(fmt_cmd("rm_vlan", 1, $::resource, $dev));
+            $found++;
+          }
+        }
 
-	if ($found == 0) {
-	  last;
-	}
-	sleep(10);
+        if ($found == 0) {
+          last;
+        }
+        sleep(10);
       }
    }
 }
@@ -1398,10 +1403,10 @@ sub initStationAddr {
       my $suffix     = 0 + $i + $offset;
       my $name;
       if ($i == 0) {
-	$name = $::first_sta;
+        $name = $::first_sta;
       }
       else {
-	$name       = sprintf("sta%03d",    $suffix);
+        $name       = sprintf("sta%03d",    $suffix);
       }
       my $ep_name1   = sprintf("ep-A%03d",   $suffix);
       my $ep_name2   = sprintf("ep-B%03d",   $suffix);
@@ -1443,6 +1448,8 @@ GetOptions
   'resource2|r2=i'            => \$::resource2,
   'quiet|q=s'                 => \$::quiet,
   'radio|o=s'                 => \$::sta_wiphy,
+  'channel|chan=i'            => \$::phy_channel,
+  'antenna|ant=i'             => \$::phy_antenna,
   'ssid|s=s'                  => \$::ssid,
   'security=s'                => \$::security,
   'xsec=s'                    => \$::xsec,
