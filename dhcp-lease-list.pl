@@ -127,7 +127,8 @@ sub process_leases() {
 	    'date_end' => $date_end,
 	    'mac' => $mac,
 	    'hostname' => $hostname,
-	    'manu' => get_manufactorer_for_mac($mac),
+# Too slow. --Ben	    'manu' => get_manufactorer_for_mac($mac),
+	    'manu' => "",
 	    );
 
 	$entry{'date_begin'} =~ s#\/#-#g; # long live ISO 8601
@@ -213,7 +214,7 @@ sub cli_processing() {
 # main()
 #
 cli_processing();
-check_oui_file();
+#check_oui_file();
 read_dhcpd_leases();
 process_leases();
 output_leases();
