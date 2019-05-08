@@ -1475,6 +1475,7 @@ sub set_channel {
                                  $mode,
                                  $chan);
     $::utils->doAsyncCmd($cmd);
+    sleep 1;
 }
 
 sub set_antenna {
@@ -1486,13 +1487,14 @@ sub set_antenna {
   die("Antenna mode [$ant] does not exist.")
     if (! exists $::antenna_table{$ant});
   my $mode = 'NA';
-  my $chan = 'NA';
+  my $chan = ((defined $::phy_channel) && ($::phy_channel > 0))
+            ? $::phy_channel : 'NA';
   my $country = 'NA';
-  my $freq = '0xFFFF';
+  my $freq = 'NA'; #'0xFFFF' will override channel
   my $frag = 'NA';
   my $rate = 'NA';
   my $rts = 'NA';
-  my $txpower = 'DEFAULT';
+  my $txpower = 'NA';
   my $mac = 'NA';
 
   my $antenna = $::antenna_table{$ant};
@@ -1510,8 +1512,7 @@ sub set_antenna {
                                $mac,
                                $antenna);
   $::utils->doAsyncCmd($cmd);
-  sleep 2;
-  exit 1;
+  sleep 1;
 }
 
 
