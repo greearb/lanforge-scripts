@@ -6,11 +6,13 @@ use diagnostics;
 use Carp;
 use Data::Dumper;
 
+
 my @idhunks = split(' ', `id`);
 my @hunks = grep { /uid=/ } @idhunks;
 die ("Must be root to use this")
    unless( $hunks[0] eq "uid=0(root)" );
-
+@idhunks = undef;
+@hunks = undef;
 my $MgrHostname = "lanforge-srv";
 
 my $config_v = "/home/lanforge/config.values";
@@ -63,4 +65,40 @@ print $fh join("\n", @host_lines);
 close $fh;
 
 print "Updated /etc/hosts\n";
+
+
 # grab the 0000-default.conf file
+my @places_to_check = (
+   "/etc/apache2/sites-available/0000-default.conf",
+   "/etc/httpd/conf/http.conf",
+   "/etc/httpd/conf/httpd.conf",
+   "/etc/httpd/conf.d/ssl.conf",
+);
+foreach my $file (@places_to_check) {
+   if ( -f $file) {
+      print "Checking $file...\n";
+      my @lines = `cat $file`;
+      # we want to match Listen 80$ or Listen 443 https$
+      # we want to replace with Listen lanforge-mgr:80$ or Listen lanforge-mgr:443 https$
+      @hunks = grep { /^\s*Listen\s+(?:80|443) */ } @lines;
+      if (@hunks) {
+         my @newlines = ();
+         @hunks = (@hunks, "\n");
+         print "Something to change in $file\n";
+         print "These lines are interesting:\n";
+         print join("\n", @hunks);
+         foreach my $confline (@lines) {
+            if ($confline !~ /^\s*Listen\s+(?:80|443) */) {
+            }
+            else {
+               $confline =~ s/Listen /Listen ${MgrHostname}:/;
+               print "$confline\n";
+            }
+         }
+      }
+      else {
+         print "Nothing to change in $file\n";
+      }
+   }
+}
+#
