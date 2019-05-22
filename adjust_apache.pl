@@ -45,10 +45,16 @@ my @host_lines = `cat /etc/hosts`;
 chomp (@host_lines);
 @host_lines = ("127.0.0.1 localhost", @host_lines)
    if (@host_lines < 1);
+my $removed = 0;
 for (my $i =$#host_lines-1; $i>=0; $i--) {
    my $line = $host_lines[$i];
    if ($line =~ /$MgrHostname/) {
      splice(@host_lines, $i, 1);
+     $removed++;
+   }
+   if (($removed < 2) && ( $line eq "" || $line eq "\n")) {
+     splice(@host_lines, $i, 1);
+     $removed++;
    }
 }
 @host_lines = (@host_lines, ("$ip $MgrHostname", "\n"));
