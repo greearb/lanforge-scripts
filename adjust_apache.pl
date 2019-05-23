@@ -75,6 +75,8 @@ print "Updated /etc/hosts\n";
 
 # grab the 0000-default.conf file
 my @places_to_check = (
+   "/etc/apache2/apache2.conf",
+   "/etc/apache2/ports.conf",
    "/etc/apache2/sites-available/0000-default.conf",
    "/etc/httpd/conf/http.conf",
    "/etc/httpd/conf/httpd.conf",
@@ -84,27 +86,35 @@ foreach my $file (@places_to_check) {
    if ( -f $file) {
       print "Checking $file...\n";
       my @lines = `cat $file`;
+      chomp @lines;
       # we want to match Listen 80$ or Listen 443 https$
       # we want to replace with Listen lanforge-mgr:80$ or Listen lanforge-mgr:443 https$
       @hunks = grep { /^\s*Listen\s+(?:80|443) */ } @lines;
       if (@hunks) {
+         my $edited = 0;
          my @newlines = ();
          @hunks = (@hunks, "\n");
          print "Something to change in $file\n";
          print "These lines are interesting:\n";
          print join("\n", @hunks);
          foreach my $confline (@lines) {
-            if ($confline !~ /^\s*Listen\s+(?:80|443) */) {
-            }
-            else {
+            if ($confline =~ /^\s*Listen\s+(?:80|443) */) {
                $confline =~ s/Listen /Listen ${MgrHostname}:/;
                print "$confline\n";
             }
+            push @newlines, $confline;
+            $edited++ if ($confline =~ /# modified by lanforge/);
          }
+         push(@newlines, "# modified by lanforge\n") if ($edited == 0);
+         
+         die ($!) unless open($fh, ">", $file);
+         print $fh join("\n", @newlines);
+         close $fh;
       }
       else {
          print "Nothing to change in $file\n";
       }
    }
-}
+} # ~for places_to_check
+
 #
