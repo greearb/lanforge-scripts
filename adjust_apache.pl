@@ -60,17 +60,17 @@ for (my $i =$#host_lines-1; $i>=0; $i--) {
 @host_lines = (@host_lines, ("$ip $MgrHostname", "\n"));
 my $dt = `date +%Y%m%d-%H%M%s`;
 chomp $dt;
-print "dt[$dt]\n";
-print "cp /etc/hosts /etc/.hosts.$dt\n";
-print "=======================================\n";
-print join("\n", @host_lines);
-print "=======================================\n";
+#print "dt[$dt]\n";
+#print "cp /etc/hosts /etc/.hosts.$dt\n";
+#print "=======================================\n";
+#print join("\n", @host_lines);
+#print "=======================================\n";
 die ("Unable to write to /etc/hosts: $!")
    unless open(my $fh, ">", "/etc/hosts");
 print $fh join("\n", @host_lines);
 close $fh;
 
-print "Updated /etc/hosts\n";
+#print "Updated /etc/hosts\n";
 
 
 # grab the 0000-default.conf file
