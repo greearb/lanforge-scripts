@@ -1,0 +1,6 @@
+ETC=/usr/local/etc
+WAN_IF=eth1
+WAN_IP=10.1.99.1
+WAN_CONCENTRATOR_IP=10.1.99.1
+XIF_IP=10.9.99.1
+SWAN_LIBX=/usr/local/libexec/ipsec
