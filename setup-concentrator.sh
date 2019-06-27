@@ -1,12 +1,22 @@
 #!/bin/bash
 set -x
 set -e
-SWAN="/etc/strongswan"
-SWAND="$SWAN/strongswand"
-SWANC="$SWAN/swanctl"
-NOWSEC=`date +%s`
 [ -f /root/strongswan-config ] && . /root/strongswan-config
+ETC=${ETC:=/etc/strongswan
+SWAND="$ETC/strongswan.d"
+IPSECD="$ETC/ipsec.d"
+SWANC="$ETC/swanctl"
+NOWSEC=`date +%s`
+SWAN_LIBX=${SWAN_LIBX:=/usr/libexec/strongswan}
+[ -d $SWAN_LIBX ] || {
+  echo "SWAN_LIBX $SWAN_LIBX not found. Plese set SWAN_LIBX in /root/strongswan-config"
+  exit 1
+}
+export LD_LIBRARY_PATH="$SWAN_LIBX:$LD_LIBRARY_PATH"
+WAN_IF=${WAN_IF:=eth1}
+WAN_IP=${WAN_IP:=10.1.99.1}
 WAN_CONCENTRATOR_IP=${WAN_CONCENTRATOR_IP:=10.1.99.1}
+XIF_IP=${XIF_IP:=10.9.99.1}
 
 function initialize() {
   [ -d "$SWANC/peers-available" ] || mkdir "$SWANC/peers-available"
@@ -19,6 +29,8 @@ function initialize() {
     journalctl -xe
   }
 }
+
+
 
 function backup_keys() {
   if  [ -f $SWANC/secrets.conf ]; then
@@ -107,6 +119,7 @@ function create_station_key() {
     echo "$SWANC/secrets.conf not found!"
     exit 1
   }
+  backup_keys
   k=`dd if=/dev/urandom bs=20 count=1 skip=1004 | base64`
   cat >> "$SWANC/secrets.conf" <<EOF
   ike-${1}-master {
@@ -116,7 +129,22 @@ function create_station_key() {
 EOF
 }
 
-# backup_keys
+function get_vrf_for_if() {
+  echo "1";
+}
+
+function enable_ipsec_if() {
+  vrfnum=$(get_vrf_for_if $WAN_IF)
+  xif="xfrm${vrfnum}"
+  $SWAN_LIBX/xfrmi -n $xif  -i ${vrfnum} -d $WAN_IF
+
+  ip link set dev $xif up
+  ip link set dev $xif master vrf${vrfnum}
+  ip address add $XIF_IP/32 dev $xif scope link
+  ip route add default dev $xif vrf $vrfnum
+  ip route add 10.0.0.0/8 dev $xif vrf $vrfnum
+}
+
 function check_arg() {
   if [ ! -f "$SWANC/secrets.conf" ] ; then
     echo "$SWANC/secrets.conf not found. Suggest running $0 -i, bye."
@@ -133,7 +161,7 @@ function check_arg() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-while getopts "ic:a:d:" arg; do
+while getopts "ibc:a:d:" arg; do
   case $arg in
     i)
       initialize
@@ -156,7 +184,9 @@ while getopts "ic:a:d:" arg; do
       echo "Deactivating $OPTARG"
       deactivate_peer $OPTARG
       ;;
-
+    b)
+      enable_ipsec_if $WLAN_IF
+      ;;
     *) echo "Unknown option: $arg"
   esac
 done
