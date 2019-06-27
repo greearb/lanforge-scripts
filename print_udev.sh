@@ -22,7 +22,7 @@ while read line ; do
             fi
          done
          #echo "Hi! $ifname has [$mac]"
-         echo 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'$mac'", ATTR{dev_id}=="0x0", ATTR{type}=="1", NAME="'$ifname'"'
+         echo 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="'$mac'", ATTR{dev_id}=="0x0", ATTR{type}=="1", NAME="'$ifname'" ENV{NM_UNMANAGED}="1"'
          ;;
       *)
          #echo "IGNORING: $line"
