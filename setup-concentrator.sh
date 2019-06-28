@@ -1,8 +1,8 @@
 #!/bin/bash
 set -x
 set -e
-[ -f /root/strongswan-config ] && . /root/strongswan-config
-ETC=${ETC:=/etc/strongswan
+[ -f /root/strongswan-config ] && . /root/strongswan-config ||:
+ETC=${ETC:=/etc/strongswan}
 SWAND="$ETC/strongswan.d"
 IPSECD="$ETC/ipsec.d"
 SWANC="$ETC/swanctl"
@@ -18,6 +18,47 @@ WAN_IP=${WAN_IP:=10.1.99.1}
 WAN_CONCENTRATOR_IP=${WAN_CONCENTRATOR_IP:=10.1.99.1}
 XIF_IP=${XIF_IP:=10.9.99.1}
 
+function initialize_vrf() {
+  local WANDEV=$WAN_IF
+  local VRFID=$1
+  local VRFDEV=vrf$VRFID
+  local XFRMDEV=xfrm$VRFID
+
+  # do you need this?
+  #sysctl -w net.ipv4.ip_forward=1
+  #sysctl -w net.ipv4.conf.all.rp_filter=0
+
+  # setup vrf
+  ip link add $VRFDEV type vrf table $VRFID
+  ip link set dev $VRFDEV up
+  ip route add unreachable default metric 4278198272 vrf $VRFDEV
+
+  # create tunnel device
+  ip li del $XFRMDEV >/dev/null 2>&1
+  $SWAN_LIBX/xfrmi -n $XFRMDEV -i $VRFID -d $WANDEV
+  ip li set dev $XFRMDEV up
+  ip li set dev $XFRMDEV master $VRFDEV
+  ip add add 169.254.24.201/32 dev $XFRMDEV scope link
+  ip ro add default dev $XFRMDEV vrf $VRFDEV
+  ip -6 ro add default dev $XFRMDEV vrf $VRFDEV
+}
+
+function initialize_fake_client_netns() {
+  local VRFID=$1
+  sysctl  net.ipv4.conf.all.rp_filter=0
+  sysctl  net.ipv4.conf.default.rp_filter=0
+  ip netns add ts-vrf-${VRFID}
+  ip netns exec ts-vrf-${VRFID} ip li set dev lo up
+  ip li del ts-vrf-${VRFID}a
+  ip link add ts-vrf-${VRFID}a type veth peer name ts-vrf-${VRFID}b netns ts-vrf-${VRFID}
+  ip netns exec ts-vrf-${VRFID} ip link set dev ts-vrf-${VRFID}b up
+  ip netns exec ts-vrf-${VRFID} ip add add dev ts-vrf-${VRFID}b 10.0.201.2/24
+  ip netns exec ts-vrf-${VRFID} ip ro add default via 10.0.201.1
+  ip li set dev ts-vrf-${VRFID}a up
+  ip li set dev ts-vrf-${VRFID}a master vrf${VRFID}
+  ip add add 10.0.201.1/24 dev ts-vrf-${VRFID}a
+}
+
 function initialize() {
   [ -d "$SWANC/peers-available" ] || mkdir "$SWANC/peers-available"
   [ -d "$SWANC/peers-enabled" ] || mkdir "$SWANC/peers-enabled"
@@ -30,6 +71,10 @@ function initialize() {
   }
 }
 
+function vrf_ping() {
+  local vrfid=$1
+  ip netns exec ts-vrf-$vrfid ping 10.0.201.2 
+}
 
 
 function backup_keys() {
@@ -136,13 +181,13 @@ function get_vrf_for_if() {
 function enable_ipsec_if() {
   vrfnum=$(get_vrf_for_if $WAN_IF)
   xif="xfrm${vrfnum}"
-  $SWAN_LIBX/xfrmi -n $xif  -i ${vrfnum} -d $WAN_IF
+  $SWAN_LIBX/xfrmi -n $xif  -i ${vrfnum} -d $WAN_IF ||:
 
-  ip link set dev $xif up
-  ip link set dev $xif master vrf${vrfnum}
-  ip address add $XIF_IP/32 dev $xif scope link
-  ip route add default dev $xif vrf $vrfnum
-  ip route add 10.0.0.0/8 dev $xif vrf $vrfnum
+  ip link set dev $xif up ||:
+  ip link set dev $xif master vrf${vrfnum} ||:
+  ip address add $XIF_IP/32 dev $xif scope link ||:
+  ip route add default dev $xif vrf $vrfnum ||:
+  ip route add 10.0.0.0/8 dev $xif vrf $vrfnum ||:
 }
 
 function check_arg() {
@@ -156,12 +201,25 @@ function check_arg() {
   }
 }
 
+function activate_all() {
+  local f
+  for f in $SWANC/*.conf; do
+    echo "CONF $f"
+    f=`basename $f`
+    [[ $f = secrets.conf ]] && continue ||:
+    [[ $f = swanctl.conf ]] && continue ||:
+    [[ $f = *.conf ]] && f=${f%.conf}
+    echo "f now $f"
+    activate_peer $f
+  done
+}
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #     M   A   I   N
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-while getopts "ibc:a:d:" arg; do
+while getopts "ibec:a:d:" arg; do
   case $arg in
     i)
       initialize
@@ -186,6 +244,9 @@ while getopts "ibc:a:d:" arg; do
       ;;
     b)
       enable_ipsec_if $WLAN_IF
+      ;;
+    e)
+      activate_all
       ;;
     *) echo "Unknown option: $arg"
   esac
