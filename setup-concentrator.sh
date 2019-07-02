@@ -116,13 +116,56 @@ function activate_peer() {
   fi
 }
 
-function create_station_peer() {
+function create_concentrator_peer() {
   if [ -f "$SWANC/peers-available/${1}.conf" ]; then
     echo "Peer $1 config already exists."
     return;
   fi
 
   cat > "$SWANC/peers-available/${1}.conf" <<EOF
+$1 {
+  local_addrs = %any
+  remote_addrs = %any
+  unique = replace
+  local {
+    auth = psk
+    id = @${1}-slave.loc # identifier, use VRF ID
+  }
+  remote {
+    auth = psk
+    id = @${1}-master.loc # remote id, use VRF ID
+  }
+  children {
+    ${1}_sa {
+      local_ts = 0.0.0.0/0, ::/0
+      remote_ts = 0.0.0.0/0, ::/0
+      if_id_out = 1 # xfrm interface id, use VRF ID
+      if_id_in = 1  # xfrm interface id, use VRF ID
+      start_action = trap
+      life_time = 1h
+      rekey_time = 55m
+      esp_proposals = aes256gcm128-modp3072 # good for Intel HW
+      dpd_action = trap
+    }
+  }
+  keyingtries = 0
+  dpd_delay = 30
+  version = 2
+  mobike = yes
+  rekey_time = 23h
+  over_time = 1h
+  proposals = aes256-sha256-modp3072
+}
+EOF
+}
+
+function create_station_peer() {
+  if [ -f "$SWANC/peers-available/${1}.conf-remote" ]; then
+    echo "Peer $1 remote config already exists."
+    return;
+  fi
+
+  cat > "$SWANC/peers-available/${1}.conf-remote" <<EOF
 $1 {
   local_addrs = %any # use any local ip to connect to remote
   remote_addrs = $WAN_CONCENTRATOR_IP
@@ -159,23 +202,50 @@ $1 {
 EOF
 }
 
+function create_concentrator_key() {
+  [ -f "$SWANC/secrets.conf" ] || {
+    echo "$SWANC/secrets.conf not found!"
+    exit 1
+  }
+  backup_keys
+  k=`dd if=/dev/urandom bs=20 count=1 | base64`
+  cat >> "$SWANC/secrets.conf" <<EOF
+ike-${1}-master {
+  id = ${1}-master.loc # use remote id specified in tunnel config
+  secret = "$k"
+}
+EOF
+  echo "created $1 key"
+}
+
 function create_station_key() {
   [ -f "$SWANC/secrets.conf" ] || {
     echo "$SWANC/secrets.conf not found!"
     exit 1
   }
   backup_keys
-  k=`dd if=/dev/urandom bs=20 count=1 skip=1004 | base64`
-  cat >> "$SWANC/secrets.conf" <<EOF
-  ike-${1}-master {
-    id = ${1}-slave.loc # use remote id specified in tunnel config
-    secret = "$k"
-  }
-EOF
+  local conc_keys=(`egrep -B4 "^ike-${1}-master \{" $SWANC/secrets.conf`)
+  local lines=()
+  local foundit=0
+  local line
+  for line in "${conc_keys[@]}"; do
+    echo "LINE $line"
+    [[ $line = *-master.loc ]] && {
+      line=${line/master.loc/slave.loc}
+    } ||:
+    lines+=($line)
+  done
+  for line in "${lines}"; do
+    echo "L1NE $line"
+    echo "$line"
+  done > $SWANC/remote-${1}-secrets.conf
+  echo "created $SWANC/remote-${1}-secrets.conf"
 }
 
 function get_vrf_for_if() {
-  echo "1";
+  local ifmaster=`ip -o li show $1 | egrep -o '(master \S+)'`
+  [[ x$ifmaster = x ]] && echo "No master found for $1"
+  echo ${ifmaster#master }
 }
 
 function enable_ipsec_if() {
@@ -219,34 +289,56 @@ function activate_all() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-while getopts "ibec:a:d:" arg; do
+while getopts "a:c:d:p:v:behi" arg; do
   case $arg in
-    i)
-      initialize
-      echo "Initialized."
-      exit 0;
-      ;;
-    c)
-      check_arg $OPTARG
-      echo "Creating $OPTARG"
-      create_station_peer $OPTARG
-      create_station_key $OPTARG
-      ;;
     a)
       check_arg $OPTARG
       echo "Activating $OPTARG"
       activate_peer $OPTARG
+      ;;
+    b)
+      enable_ipsec_if $WLAN_IF
+      ;;
+    c)
+      check_arg $OPTARG
+      echo "Creating $OPTARG"
+      create_concentrator_peer $OPTARG
+      create_station_peer $OPTARG
+      create_concentrator_key $OPTARG
+      create_station_key $OPTARG
       ;;
     d)
       check_arg $OPTARG
       echo "Deactivating $OPTARG"
       deactivate_peer $OPTARG
       ;;
-    b)
-      enable_ipsec_if $WLAN_IF
-      ;;
     e)
       activate_all
+      ;;
+    
+    h)
+      cat <<EOF
+$0 -i       : initialize /etc/strongswan directories
+  -b        : enable ipsec transform interface on [$WLAN_IF]
+  -c peer   : create_station_peer then create_station_key
+  -a peer   : activate peer
+  -d peer   : deactivate peer
+  -e        : activate all peers
+  -p        : print peers
+EOF
+      ;;
+    i)
+      initialize
+      echo "Initialized."
+      exit 0;
+      ;;
+    p)
+      #echo " print peers"
+      strongswan list
+      ;;
+    v)
+      check_arg $OPTARG
+      get_vrf_for_if $OPTARG
       ;;
     *) echo "Unknown option: $arg"
   esac
