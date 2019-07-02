@@ -162,7 +162,8 @@ EOF
 function create_station_peer() {
   if [ -f "$SWANC/peers-available/${1}.conf-remote" ]; then
     echo "Peer $1 remote config already exists."
-    return;
+    echo "Remove $SWANC/peers-available/${1}.conf-remote to continue."
+    exit 1;
   fi
 
   cat > "$SWANC/peers-available/${1}.conf-remote" <<EOF
@@ -236,10 +237,9 @@ function create_station_key() {
     lines+=($line)
   done
   for line in "${lines}"; do
-    echo "L1NE $line"
     echo "$line"
-  done > $SWANC/remote-${1}-secrets.conf
-  echo "created $SWANC/remote-${1}-secrets.conf"
+  done > $SWANC/${1}-secrets.conf-remote
+  echo "created $SWANC/${1}-secrets.conf-remote"
 }
 
 function get_vrf_for_if() {
@@ -284,12 +284,18 @@ function activate_all() {
   done
 }
 
+function copy_config() {
+  local vrf=`get_vrf_for_if $WAN_IF`
+  ip vrf exec $vrf scp $WAN_IP:$SWANC/${1}-secrets.conf-remote $SWANC/${1}-secrets.conf
+  ip vrf exec $vrf scp $WAN_IP:$SWANC/peers-available/${1}.conf-remote $SWANC/peers-available/${1}.conf
+}
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #     M   A   I   N
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-while getopts "a:c:d:p:v:behi" arg; do
+while getopts "a:c:d:f:p:v:behi" arg; do
   case $arg in
     a)
       check_arg $OPTARG
@@ -297,7 +303,7 @@ while getopts "a:c:d:p:v:behi" arg; do
       activate_peer $OPTARG
       ;;
     b)
-      enable_ipsec_if $WLAN_IF
+      enable_ipsec_if $WAN_IF
       ;;
     c)
       check_arg $OPTARG
@@ -315,16 +321,22 @@ while getopts "a:c:d:p:v:behi" arg; do
     e)
       activate_all
       ;;
-    
+    f)
+      check_arg $OPTARG
+      copy_config $OPTARG
+      ;;
     h)
       cat <<EOF
 $0 -i       : initialize /etc/strongswan directories
-  -b        : enable ipsec transform interface on [$WLAN_IF]
+  -b        : enable ipsec transform interface on [$WAN_IF]
   -c peer   : create_station_peer then create_station_key
   -a peer   : activate peer
   -d peer   : deactivate peer
   -e        : activate all peers
+  -f peer   : copy config files from $WAN_IF:/etc/strongswan/swanctl/\$peer.conf-remote
   -p        : print peers
+  -v intf   : get vrf for interface
+  -h        : help
 EOF
       ;;
     i)
@@ -340,6 +352,7 @@ EOF
       check_arg $OPTARG
       get_vrf_for_if $OPTARG
       ;;
+
     *) echo "Unknown option: $arg"
   esac
 done
