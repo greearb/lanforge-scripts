@@ -44,7 +44,7 @@ if (@sqnc != 12) {
   die("sqn must have 12 ascii bytes.");
 }
 if (@akc != 12) {
-  die("ack must have 12 ascii bytes.");
+  die("akc must have 12 ascii bytes.");
 }
 
 for ($i = 0; $i<12; $i++) {
