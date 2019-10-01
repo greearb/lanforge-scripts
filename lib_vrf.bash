@@ -4,7 +4,9 @@
 
 IFLINES=()
 declare -A IFNAMES
+export IFNAMES
 declare -A VRFNAMES
+export VRFNAMES
 
 while read line; do
    IFLINES+=("$line")
