@@ -16,47 +16,93 @@ export LD_LIBRARY_PATH="$SWAN_LIBX:$LD_LIBRARY_PATH"
 WAN_IF=${WAN_IF:=eth1}
 WAN_IP=${WAN_IP:=10.1.99.1}
 WAN_CONCENTRATOR_IP=${WAN_CONCENTRATOR_IP:=10.1.99.1}
-XIF_IP=${XIF_IP:=10.9.99.1}
+# most for the concentrator
+XIF_IP=${XIF_IP:=10.9.99.1} # for concentrator
+XIF_CLIENT_IP=${XIF_IP:=10.9.99.2} # for station
+CLIENT_OUTTER_IP=${CLIENT_OUTTER_IP:=10.4.99.1}
+CLIENT_NETNS_IP=${CLIENT_NETNS_IP:=10.4.99.2}
 
 function initialize_vrf() {
   local WANDEV=$WAN_IF
-  local VRFID=$1
-  local VRFDEV=vrf$VRFID
-  local XFRMDEV=xfrm$VRFID
+  local vrfid=$1
+
+  [[ $vrfid = _* ]] && vrfid=${vrfid#_}
+  [[ $vrfid = vrf* ]] && vrfid=${vrfid#vrf}
+  local vrf_if="vrf${vrfid}"
+  local xfrm_if="xfrm${vrfid}"
 
   # do you need this?
   #sysctl -w net.ipv4.ip_forward=1
   #sysctl -w net.ipv4.conf.all.rp_filter=0
 
   # setup vrf
-  ip link add $VRFDEV type vrf table $VRFID
-  ip link set dev $VRFDEV up
-  ip route add unreachable default metric 4278198272 vrf $VRFDEV
+  ip link add $vrf_if type vrf table $vrfid ||:
+  ip link set dev $vrf_if up ||:
+  ip route add unreachable default metric 4278198272 vrf $vrf_if ||:
 
   # create tunnel device
-  ip li del $XFRMDEV >/dev/null 2>&1
-  $SWAN_LIBX/xfrmi -n $XFRMDEV -i $VRFID -d $WANDEV
-  ip li set dev $XFRMDEV up
-  ip li set dev $XFRMDEV master $VRFDEV
-  ip add add 169.254.24.201/32 dev $XFRMDEV scope link
-  ip ro add default dev $XFRMDEV vrf $VRFDEV
-  ip -6 ro add default dev $XFRMDEV vrf $VRFDEV
+  ip li del $xfrm_if >/dev/null 2>&1 ||:
+  $SWAN_LIBX/xfrmi -n $xfrm_if -i $vrfid -d $WANDEV ||:
+  ip li set dev $xfrm_if up
+  ip li set dev $xfrm_if master $vrf_if ||:
+  ip a add 169.254.24.201/32 dev $xfrm_if scope link ||:
+  ip ro add default dev $xfrm_if vrf $vrf_if ||:
+  #ip -6 ro add default dev $xfrm_if vrf $vrf_if
+}
+
+function initialize_client_if() {
+  local intf=$1
+  local vrfid=`get_vrf_for_if $1`
+
+  [[ $vrfid = _* ]] && vrfid=${vrfid#_}
+  [[ $vrfid = vrf* ]] && vrfid=${vrfid#vrf}
+  local vrf_if="vrf${vrfid}"
+  local xfrm_if="xfrm${vrfid}"
+
+  # do you need this?
+  #sysctl -w net.ipv4.ip_forward=1
+  #sysctl -w net.ipv4.conf.all.rp_filter=0
+
+  # setup vrf
+  ip link add $vrf_if type vrf table $vrfid ||:
+  ip link set dev $vrf_if up ||:
+  ip route add unreachable default metric 4278198272 vrf $vrf_if ||:
+
+  # create tunnel device
+  ip li del $xfrm_if >/dev/null 2>&1 ||:
+  $SWAN_LIBX/xfrmi -n $xfrm_if -i $vrfid -d $intf ||:
+  ip li set dev $xfrm_if up
+  ip li set dev $xfrm_if master $vrf_if ||:
+  ip a add 169.254.24.201/32 dev $xfrm_if scope link ||:
+  ip ro add default dev $xfrm_if vrf $vrf_if ||:
+  #ip -6 ro add default dev $xfrm_if vrf $vrf_if
 }
 
 function initialize_fake_client_netns() {
-  local VRFID=$1
+   local vrfid=$1
+   local wan_if=$1
+   [[ x$vrfid = x ]] && echo "cannot use blank argument" && exit 1
+   if [[ $1 != *vrf* ]]; then
+      vrfid=`get_vrf_for_if $1`
+   fi
+
+  [[ $vrfid = _* ]] && vrfid=${vrfid#_}
+  [[ $vrfid = vrf* ]] && vrfid=${vrfid#vrf}
+
+  echo "VRFID $vrfid"
+  sleep 5
   sysctl  net.ipv4.conf.all.rp_filter=0
   sysctl  net.ipv4.conf.default.rp_filter=0
-  ip netns add ts-vrf-${VRFID}
-  ip netns exec ts-vrf-${VRFID} ip li set dev lo up
-  ip li del ts-vrf-${VRFID}a
-  ip link add ts-vrf-${VRFID}a type veth peer name ts-vrf-${VRFID}b netns ts-vrf-${VRFID}
-  ip netns exec ts-vrf-${VRFID} ip link set dev ts-vrf-${VRFID}b up
-  ip netns exec ts-vrf-${VRFID} ip add add dev ts-vrf-${VRFID}b 10.0.201.2/24
-  ip netns exec ts-vrf-${VRFID} ip ro add default via 10.0.201.1
-  ip li set dev ts-vrf-${VRFID}a up
-  ip li set dev ts-vrf-${VRFID}a master vrf${VRFID}
-  ip add add 10.0.201.1/24 dev ts-vrf-${VRFID}a
+  ip netns add ts-vrf-${vrfid} ||:
+  ip netns exec ts-vrf-${vrfid} ip li set dev lo up ||:
+  ip li del ts-vrf-${vrfid}a ||:
+  ip link add ts-vrf-${vrfid}a type veth peer name ts-vrf-${vrfid}b netns ts-vrf-${vrfid} ||:
+  ip netns exec ts-vrf-${vrfid} ip link set dev ts-vrf-${vrfid}b up ||:
+  ip netns exec ts-vrf-${vrfid} ip a add dev ts-vrf-${vrfid}b $CLIENT_NETNS_IP/24 ||:
+  ip netns exec ts-vrf-${vrfid} ip ro add default via $CLIENT_OUTTER_IP ||:
+  ip li set dev ts-vrf-${vrfid}a up
+  ip li set dev ts-vrf-${vrfid}a master vrf${vrfid} ||:
+  ip a add $CLIENT_OUTTER_IP/24 dev ts-vrf-${vrfid}a ||:
 }
 
 function initialize() {
@@ -244,20 +290,63 @@ function create_station_key() {
 
 function get_vrf_for_if() {
   local ifmaster=`ip -o li show $1 | egrep -o '(master \S+)'`
-  [[ x$ifmaster = x ]] && echo "No master found for $1"
+  [[ x${ifmaster} = x ]] && echo "\nNo master found for $1" && exit 1
   echo ${ifmaster#master }
 }
 
-function enable_ipsec_if() {
-  vrfnum=$(get_vrf_for_if $WAN_IF)
-  xif="xfrm${vrfnum}"
+function enable_concentrator_ipsec_if() {
+  local vrf_if=$1
+  if [[ $vrf_if != vrf* ]]; then
+    vrf_if=$(get_vrf_for_if $1)
+  fi
+  local vrfnum=${vrf_if#vrf}
+  local xif="xfrm${vrfnum}"
+  sleep 1
   $SWAN_LIBX/xfrmi -n $xif  -i ${vrfnum} -d $WAN_IF ||:
 
+  sleep 1
   ip link set dev $xif up ||:
-  ip link set dev $xif master vrf${vrfnum} ||:
+  ip link set dev $xif master $vrf_if ||:
   ip address add $XIF_IP/32 dev $xif scope link ||:
-  ip route add default dev $xif vrf $vrfnum ||:
-  ip route add 10.0.0.0/8 dev $xif vrf $vrfnum ||:
+
+  #ip route add default dev $xif vrf $vrfnum ||: # doesn't work quite this way
+  #ip route add 10.0.0.0/8 dev $xif vrf $vrfnum ||: # not quite
+
+  ip route add default dev $xif vrf $vrf_if ||:
+  sleep 1
+}
+
+function enable_station_ipsec_if() {
+  local vrf_if=$1
+  local wan_if=$1
+
+  if [[ $wan_if = *vrf* ]]; then
+     echo "enable_station_ipsec_if wants L2 interface, not vrf"
+     exit 1
+  fi
+  if [[ $vrf_if != vrf* ]]; then
+    vrf_if=$(get_vrf_for_if $1)
+  fi
+  [[ $vrf_if = _* ]] && vrf_if=${vrf_if#_}
+  local vrfnum=${vrf_if#vrf}
+
+  local xif="xfrm${vrfnum}"
+  sleep 1
+  $SWAN_LIBX/xfrmi -n $xif  -i ${vrfnum} -d $wan_if ||:
+
+  sleep 1
+  ip link set dev $xif up ||:
+  ip link set dev $xif master $vrf_if ||:
+  ip address add $XIF_CLIENT_IP/32 dev $xif scope link ||:
+
+  #ip route add default dev $xif vrf $vrfnum ||: # doesn't work quite this way
+  #ip route add 10.0.0.0/8 dev $xif vrf $vrfnum ||: # not quite
+
+  sleep 1
+  ip route add 10.4.99.1/32 dev $xif vrf $vrf_if ||:
+  ip route add 10.9.99.1/32 dev $xif vrf $vrf_if ||:
+  ip route add 10.1.99.0/24 dev $xif vrf $vrf_if ||:
+  sleep 1
 }
 
 function check_arg() {
@@ -295,7 +384,7 @@ function copy_config() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-while getopts "a:c:d:f:p:v:behi" arg; do
+while getopts "a:c:d:f:g:p:v:b:ehi" arg; do
   case $arg in
     a)
       check_arg $OPTARG
@@ -303,7 +392,13 @@ while getopts "a:c:d:f:p:v:behi" arg; do
       activate_peer $OPTARG
       ;;
     b)
-      enable_ipsec_if $WAN_IF
+      check_arg $OPTARG
+      initialize_vrf $OPTARG
+      enable_concentrator_ipsec_if $OPTARG
+      initialize_fake_client_netns $OPTARG
+      swanctl --load-all
+      sleep 1
+      swanctl --list-conns
       ;;
     c)
       check_arg $OPTARG
@@ -320,20 +415,33 @@ while getopts "a:c:d:f:p:v:behi" arg; do
       ;;
     e)
       activate_all
+      swanctl --load-all
+      sleep 1
+      swanctl --list-conns
       ;;
     f)
       check_arg $OPTARG
       copy_config $OPTARG
       ;;
+    g)
+      check_arg $OPTARG
+      initialize_client_if $OPTARG
+      enable_station_ipsec_if $OPTARG
+      initialize_fake_client_netns $OPTARG
+      swanctl --load-all
+      sleep 1
+      swanctl --list-conns
+      ;;
     h)
       cat <<EOF
 $0 -i       : initialize /etc/strongswan directories
-  -b        : enable ipsec transform interface on [$WAN_IF]
-  -c peer   : create_station_peer then create_station_key
-  -a peer   : activate peer
-  -d peer   : deactivate peer
+  -b vrfX   : enable ipsec transform intf on concentrator vrfX
+  -c vrfX   : create_station_peer then create_station_key
+  -a vrfX   : activate peer
+  -d vrfX   : deactivate peer
   -e        : activate all peers
-  -f peer   : copy config files from $WAN_IF:/etc/strongswan/swanctl/\$peer.conf-remote
+  -f vrfX   : copy config files from $WAN_IF:/etc/strongswan/swanctl/\$peer.conf-remote
+  -g ethX   : enable ipsec transform intf on station ethX
   -p        : print peers
   -v intf   : get vrf for interface
   -h        : help
