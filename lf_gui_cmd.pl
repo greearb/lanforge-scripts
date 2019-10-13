@@ -85,20 +85,20 @@ if ($cmd ne "") {
 }
 
 if ($ttype ne "") {
-  doCmd("cv create '$ttype' '$tname'");
+  print doCmd("cv create '$ttype' '$tname'");
   if ($tconfig ne "") {
-    doCmd("cv load 'tname' '$tconfig'");
+    print doCmd("cv load '$tname' '$tconfig'");
   }
-  doCmd("cv click '$tname' 'Auto Save Report'");
-  doCmd("cv click '$tname' 'Start'");
+  print doCmd("cv click '$tname' 'Auto Save Report'");
+  print doCmd("cv click '$tname' 'Start'");
   while (1) {
     my $rslt = doCmd("cv get '$tname' 'Report Location:'");
-    print "Result-:$rslt:-\n";
+    #print "Result-:$rslt:-\n";
     if ($rslt =~ /^\s*Report Location:::(.*)/) {
       my $loc = $1;
       if ($loc eq "") {
 	# Wait longer
-	sleep(1);
+	sleep(3);
       }
       else {
 	# Copy some place it can be seen easily?
@@ -109,6 +109,9 @@ if ($ttype ne "") {
 	}
 	last;
       }
+    }
+    else {
+      sleep(3);
     }
   }
 }
