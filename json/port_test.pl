@@ -35,7 +35,7 @@ my $usage = qq("$0 --host {ip or hostname} # connect to this
 
 
 my $num_sta = 3;
-my $des_resource = 6;
+my $des_resource = 1;
 ##
 ##    M A I N
 ##
