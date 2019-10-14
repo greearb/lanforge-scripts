@@ -46,7 +46,7 @@ GetOptions
 
 $::HostUri = "http://$Host:$Port";
 my $rh_update = {
-   'shelf'=>1, 'resource'=>3, 'port'=>'all', 'flags'=>'0x1'
+   'shelf'=>1, 'resource'=>1, 'port'=>'all', 'probe_flags'=>'0x9'
 };
 my $uri = "/shelf/1";
 my $rh = json_request($uri);
@@ -59,7 +59,7 @@ my $rh_response =  json_post("/cli-json/nc_show_ports", $rh_update);
 # wait on ports up
 my $ports_still_down = 1;
 while ($ports_still_down > 0) {
-   $rh = json_request("/port/1/3/list?fields=_links,port,device,down");
+   $rh = json_request("/port/1/1/list?fields=_links,port,device,down");
    flatten_list($rh, 'interfaces');
    $ports_still_down=0;
    for my $rh_p (values %{$rh->{'flat_list'}}) {
