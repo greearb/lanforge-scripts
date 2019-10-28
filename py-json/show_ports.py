@@ -9,6 +9,7 @@ if sys.version_info[0] != 3:
     exit()
 
 import json
+import pprint
 from LANforge import LFRequest
 
 
@@ -18,7 +19,10 @@ def main():
 
    lf_r = LFRequest.LFRequest(url)
    json_response = lf_r.getAsJson()
-   print(json_response)
+   #print(json_response)
+   j_printer = pprint.PrettyPrinter(indent=2)
+   for record in json_response['interfaces']:
+        j_printer.pprint(record)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == "__main__":
