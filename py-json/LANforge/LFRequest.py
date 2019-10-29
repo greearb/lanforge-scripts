@@ -8,6 +8,7 @@ if sys.version_info[0] != 3:
     exit()
 
 import urllib.request
+import urllib.parse
 import json
 
 
@@ -22,22 +23,41 @@ class LFRequest:
       self.requested_urls.append(urls)
 
    # request first url on stack
-   def post(self):
-      try:
-         myrequest = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
-         if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
-            myrequest.data = self.post_datas.pop(0)
-            myrequest.headers['Content-type'] = 'application/json'
+   def formPost(self):
+      responses = []
+      urlenc_data = ""
+      if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
+         urlenc_data = urllib.parse.urlencode(self.post_datas.pop(0)).encode("utf-8")
+         print("data looks like:"+str(urlenc_data))
+         request = urllib.request.Request(url=self.requested_urls.pop(0),
+                                          data=urlenc_data,
+                                          headers=self.default_headers)
+      else:
+         request = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
+         print("No data for this jsonPost?")
 
-         myresponse = urllib.request.urlopen(myrequest)
-         # print(json_response)
-         return myresponse
-      finally:
-         print("Error: %s" % myresponse.error_code)
+      request.headers['Content-type'] = 'application/x-www-form-urlencoded'
+      responses.append(urllib.request.urlopen(request))
+      return responses[0]
+
+   def jsonPost(self):
+      responses = []
+      if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
+         request = urllib.request.Request(url=self.requested_urls.pop(0),
+                                          data=self.post_datas.pop(0),
+                                          headers=self.default_headers)
+      else:
+         request = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
+         print("No data for this jsonPost?")
+
+      request.headers['Content-type'] = 'application/json'
+      responses.append(urllib.request.urlopen(request))
+      return responses[0]
 
    def get(self):
       myrequest = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
       myresponses = []
+      #print(responses[0].__dict__.keys()) is how you would see parts of response
       try:
          myresponses.append(urllib.request.urlopen(myrequest))
          return myresponses[0]
@@ -48,14 +68,13 @@ class LFRequest:
       return None
 
 
-
    def getAsJson(self):
       responses = []
       responses.append(self.get())
       if (len(responses) < 1):
          return None
 
-      if ((responses[0] == None) or (responses[0].status_code != 200)):
+      if ((responses[0] == None) or (responses[0].status != 200)):
          print("Item not found")
          return None
 
