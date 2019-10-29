@@ -106,7 +106,7 @@ def main():
             "flags":68727874560,
             "ssid": ssid,
             "key": passphrase,
-            "mac": "NA", #gen_mac(parent_radio_mac, random_hex.pop(0)), #"xx:xx:xx:*:xx",
+            "mac": "xx:xx:xx:xx:*:xx", # "NA", #gen_mac(parent_radio_mac, random_hex.pop(0))
             "mode": 0,
             "rate": "DEFAULT"
         })
@@ -116,7 +116,7 @@ def main():
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # example 2                                                 -
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -d
     # uses URLs /cli-json/rm_vlan, /cli-json/add_sta
     # and those accept POST in json formatted text
 
@@ -150,7 +150,7 @@ def main():
             "flags":68727874560,
             "ssid": ssid,
             "key": passphrase,
-            "mac": gen_mac(parent_radio_mac, octet), #"xx:xx:xx:*:xx",
+            "mac": "xx:xx:xx:xx:*:xx", #gen_mac(parent_radio_mac, octet)
             "mode": 0,
             "rate": "DEFAULT"
         })
