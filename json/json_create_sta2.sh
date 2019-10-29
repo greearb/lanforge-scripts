@@ -7,12 +7,13 @@ ajson_h="Accept: application/json"
 cjson_h="Content-type: application/json"
 dbg=""
 #dbg="__debug=1&"
-R=3
+R=1
 W=wiphy0
-M=3100
-N=3120
-SSID="idtest-1100-wpa2"
-KEY="idtest-1100-wpa2"
+M="10200"
+N="10202"
+SSID="jedway-wpa2-x2048-4-1"
+KEY="jedway-wpa2-x2048-4-1"
+
 #
 # works for ifdown:
 # set_port 1 8 sta8000 NA NA NA NA 1 NA NA NA NA 8388610
@@ -21,6 +22,7 @@ KEY="idtest-1100-wpa2"
 #
 echo -n "Removing: "
 for n in `seq $M $N`; do
+   n=${n:1}
    echo -n "sta$n "
    echo "shelf=1&resource=$R&port=sta$n" > /tmp/curl_data
    curl -sq -H "$ajson_h" -X POST -d '@/tmp/curl_data' http://localhost:8080/cli-form/rm_vlan ||:
@@ -30,6 +32,7 @@ echo "."
 sleep 2
 echo -n "Adding: "
 for n in `seq $M $N`; do
+   n=${n:1}
    echo -n "${dbg}shelf=1&resource=$R&radio=$W" > /tmp/curl_data
    echo -n "&sta_name=sta$n" >> /tmp/curl_data
    echo -n "&flags=68727874560&ssid=idtest-1100-wpa2&key=idtest-1100-wpa2" >> /tmp/curl_data
@@ -39,6 +42,7 @@ done
 
 sleep 2
 for n in `seq $M $N`; do
+   n=${n:1}
    echo -n "${dbg}shelf=1&resource=$R&port=sta$n" > /tmp/curl_data
    echo -n '&current_flags=2147483648&interest=16384' >> /tmp/curl_data
    curl -sq -H "$ajson_h" -X POST -d '@/tmp/curl_data' http://localhost:8080/cli-form/set_port ||:
@@ -48,6 +52,7 @@ echo "."
 sleep 1
 echo -n "Bringing ports up "
 for n in `seq $M $N`; do
+   n=${n:1}
    echo -n "${dbg}shelf=1&resource=$R&port=sta$n" > /tmp/curl_data
    echo -n '&current_flags=0&interest=8388611' >> /tmp/curl_data
    curl -sq -H "$ajson_h" -X POST -d '@/tmp/curl_data' http://localhost:8080/cli-form/set_port ||:
