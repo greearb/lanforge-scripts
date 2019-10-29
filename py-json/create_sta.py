@@ -12,6 +12,19 @@ if sys.version_info[0] != 3:
 import json
 import pprint
 from LANforge import LFRequest
+from random import seed
+from random import randint
+import time
+
+
+def gen_mac(parent_mac, random_octet):
+    print("************ random_octet: %s **************"%(random_octet))
+    my_oct = random_octet
+    if (len(random_octet) == 4):
+        my_oct = random_octet[2:]
+    octets = parent_mac.split(":")
+    octets[4] = my_oct
+    return ":".join(octets)
 
 def main():
     base_url = "http://localhost:8080"
@@ -25,10 +38,26 @@ def main():
     passphrase = "jedway-wpa2-x2048-4-1"
     j_printer = pprint.PrettyPrinter(indent=2)
 
+    lf_r = LFRequest.LFRequest(base_url+"/port/1/1/wiphy0")
+    wiphy0_json = lf_r.getAsJson()
+    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    print("# radio wiphy0                                              -")
+    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    j_printer.pprint(wiphy0_json['interface'])
+    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    parent_radio_mac = wiphy0_json['interface']['mac']
+
+    # generate a few random numbers and convert them into hex:
+    random_hex = []
+    seed( int(round(time.time() * 1000)))
+    for rn in range(0, 254):
+        random_dec = randint(0, 254)
+        random_hex.append(hex(random_dec))
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # example 2                                                 -
+    # example 1                                                 -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # uses URL /cli-form/rm_vlan
+    # uses URLs /cli-form/rm_vlan, /cli-form/add_sta
     # for each of the station names, delete them if they exist
     # NOTE: the ID field of the EID is ephemeral, so best stick to
     # requesting the station name. The station name can be formatted
@@ -77,7 +106,7 @@ def main():
             "flags":68727874560,
             "ssid": ssid,
             "key": passphrase,
-            "mac": "xx:xx:xx:*:xx",
+            "mac": "NA", #gen_mac(parent_radio_mac, random_hex.pop(0)), #"xx:xx:xx:*:xx",
             "mode": 0,
             "rate": "DEFAULT"
         })
@@ -88,8 +117,8 @@ def main():
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # example 2                                                 -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # uses URL /cli-jsoin/rm_vlan
-    # and that accepts json formatted POSTS
+    # uses URLs /cli-json/rm_vlan, /cli-json/add_sta
+    # and those accept POST in json formatted text
 
     for i in range((padding_number+start_id), (padding_number+end_id)):
         sta_name = "sta"+str(i)[1:]
@@ -112,6 +141,7 @@ def main():
         lf_r = LFRequest.LFRequest(base_url+"/cli-form/add_sta")
 
         # see notes from example 1 on flags and mac address patterns
+        octet = random_hex.pop(0)[2:]
         lf_r.addPostData( {
             "shelf":1,
             "resource": resource_id,
@@ -120,7 +150,7 @@ def main():
             "flags":68727874560,
             "ssid": ssid,
             "key": passphrase,
-            "mac": "xx:xx:xx:*:xx",
+            "mac": gen_mac(parent_radio_mac, octet), #"xx:xx:xx:*:xx",
             "mode": 0,
             "rate": "DEFAULT"
         })
