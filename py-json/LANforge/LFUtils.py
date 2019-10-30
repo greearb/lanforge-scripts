@@ -18,6 +18,8 @@ from LANforge import LFRequest
 debug_printer = pprint.PrettyPrinter(indent=2)
 base_url = "http://localhost:8080"
 
+ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
+
 class PortEID:
     shelf: 1
     resource: 1
@@ -42,10 +44,45 @@ class PortEID:
         port_name = json_s['name']
 # end class PortEID
 
+# for use with set_port
+def portDhcpUpRequest(resource_id, port_name):
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name,
+        "current_flags": 2147483648, # 0x1 = interface down + 2147483648 use DHCP values
+        "interest": 75513859 # includes use_command_flags + use_current_flags + dhcp + dhcp_rls + ifdown
+    }
+    return data
 
+# for use with set_port
+def portDownRequest(resource_id, port_name):
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name,
+        "current_flags": 1, # 0x0 = interface up
+
+        "interest": 75513859
+    }
+    return data
+
+
+def generateMac(parent_mac, random_octet):
+    print("************ random_octet: %s **************"%(random_octet))
+    my_oct = random_octet
+    if (len(random_octet) == 4):
+        my_oct = random_octet[2:]
+    octets = parent_mac.split(":")
+    octets[4] = my_oct
+    return ":".join(octets)
+
+# this produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
+# the padding_number is added to the start and end numbers and the resulting sum
+# has the first digit trimmed, so f(0, 1, 10000) => {0000, 0001}
 def portNameSeries(prefix="sta", start_id=0, end_id=1, padding_number=1000):
     name_list = []
-    for i in range((padding_number+start_id), (padding_number+end_id)):
+    for i in range((padding_number+start_id), (padding_number+end_id+1)):
         sta_name = prefix+str(i)[1:]
         name_list.append(sta_name)
     return name_list

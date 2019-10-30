@@ -17,14 +17,7 @@ from time import sleep
 from LANforge import LFRequest
 from LANforge import LFUtils
 
-def gen_mac(parent_mac, random_octet):
-    print("************ random_octet: %s **************"%(random_octet))
-    my_oct = random_octet
-    if (len(random_octet) == 4):
-        my_oct = random_octet[2:]
-    octets = parent_mac.split(":")
-    octets[4] = my_oct
-    return ":".join(octets)
+
 
 def main():
     base_url = "http://localhost:8080"
@@ -32,31 +25,32 @@ def main():
     radio = "wiphy0"
     start_id = 200
     end_id = 202
+    # station numbers are heavily manipulated strings, often using manual padding
+    # sta200 is not sta0200 nor sta00200, and we can format these numbers by adding
+    # a 1000 or 10000 to the station id, and trimming the first digit off
     padding_number = 10000 # the first digit of this will be deleted
     ssid = "jedway-wpa2-x2048-4-1"
     passphrase = "jedway-wpa2-x2048-4-1"
     j_printer = pprint.PrettyPrinter(indent=2)
     json_post = ""
     json_response = ""
-
+    found_stations = []
     lf_r = LFRequest.LFRequest(base_url+"/port/1/1/wiphy0")
     wiphy0_json = lf_r.getAsJson()
     if (wiphy0_json is None) or (wiphy0_json['interface'] is None):
         print("Unable to find radio. Are we connected?")
         exit(1)
 
-    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-    print("# radio wiphy0                                              -")
-    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-    LFUtils.debug_printer.pprint(wiphy0_json['interface']['alias'])
+    # If you need to inspect a radio....
+    #print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    #print("# radio wiphy0                                              -")
+    #print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    #LFUtils.debug_printer.pprint(wiphy0_json['interface']['alias'])
     #parent_radio_mac = wiphy0_json['interface']['mac']
-    print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-
-    found_stations = []
-
+    #print("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # example 1                                                 -
+    # Example 1                                                 -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # This section uses URLs /cli-form/rm_vlan, /cli-form/add_sta
     # The /cli-form URIs take URL-encoded form posts
@@ -71,6 +65,7 @@ def main():
     # and != {sta0001, sta001, sta01, or sta1}
 
     desired_stations = LFUtils.portNameSeries("sta", start_id, end_id, padding_number)
+    LFUtils.debug_printer.pprint(desired_stations)
 
     for sta_name in desired_stations:
         url = base_url+"/port/1/%s/%s" % (resource_id, sta_name)
@@ -94,6 +89,7 @@ def main():
     LFUtils.waitUntilPortsDisappear(resource_id, found_stations)
 
     print("Example 1: Next we create stations...")
+    #68727874560 was previous flags
     for sta_name in desired_stations:
         print("Example 1: Next we create station %s"%sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-form/add_sta")
@@ -122,7 +118,7 @@ def main():
             "resource": resource_id,
             "radio": radio,
             "sta_name": sta_name,
-            "flags":68727874560,
+            "flags": LFUtils.ADD_STA_FLAGS_DOWN_WPA2,  # note flags for add_sta do not match set_port
             "ssid": ssid,
             "key": passphrase,
             "mac": "xx:xx:xx:xx:*:xx", # "NA", #gen_mac(parent_radio_mac, random_hex.pop(0))
@@ -130,12 +126,30 @@ def main():
             "rate": "DEFAULT"
         })
         json_response = lf_r.formPost()
-        print(json_response)
-        sleep(1)
 
-    LFUtils.waitUntilPortsAppear()
+
+    # the LANforge API separates STA creation and ethernet port settings
+    # We need to revisit the stations we create and amend flags to add
+    # things like DHCP or ip+gateway, admin-{up,down}
+    sleep(1)
+    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+    for sta_name in desired_stations:
+        print("Ex 1: station up %s"%sta_name)
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        data = LFUtils.portDhcpUpRequest(resource_id, sta_name)
+        lf_r.addPostData(data)
+        lf_r.jsonPost()
+
+    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+    sleep(1)
+    for sta_name in desired_stations:
+        print("Ex 1: sta down %s"%sta_name)
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        data = LFUtils.portDownRequest(resource_id, sta_name)
+        lf_r.addPostData(data)
+        lf_r.jsonPost()
     print("...done with example 1\n\n")
-
+    sleep(2)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Example 2                                                 -
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -147,6 +161,7 @@ def main():
         desired_stations.append("sta"+str(i)[1:])
 
     print("Example 2: using port list to find stations")
+    sleep(1)
     url = base_url+"/port/1/%s/list?fields=alias" % (resource_id)
     lf_r = LFRequest.LFRequest(url)
     json_response = lf_r.getAsJson()
@@ -156,14 +171,14 @@ def main():
     port_map = LFUtils.portAliasesInList(json_response)
     #LFUtils.debug_printer.pprint(port_map)
     for sta_name in desired_stations:
-        print("Example 2: checking for station : "+sta_name)
+        print("Ex 2: checking for station : "+sta_name)
         #LFUtils.debug_printer.pprint(port_map.keys())
         if sta_name in port_map.keys():
             print("found station : "+sta_name)
             found_stations.append(sta_name)
 
     for sta_name in found_stations:
-        print("Example 2: delete station %s ..."%sta_name)
+        print("Ex 2: delete station %s ..."%sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_vlan")
         lf_r.addPostData({
                 "shelf":1,
@@ -176,7 +191,7 @@ def main():
     LFUtils.waitUntilPortsDisappear(resource_id, found_stations)
 
     for sta_name in desired_stations:
-        print("Example 2: create station %s"%sta_name)
+        print("Ex 2: create station %s"%sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
         # see notes from example 1 on flags and mac address patterns
         #octet = random_hex.pop(0)[2:] is a method
@@ -186,7 +201,7 @@ def main():
             "resource": resource_id,
             "radio": radio,
             "sta_name": sta_name,
-            "flags":68727874560,
+            "flags": LFUtils.ADD_STA_FLAGS_DOWN_WPA2,
             "ssid": ssid,
             "key": passphrase,
             "mac": "xx:xx:xx:xx:*:xx",
@@ -194,7 +209,63 @@ def main():
             "rate": "DEFAULT"
         })
         lf_r.jsonPost()
+    # the LANforge API separates STA creation and ethernet port settings
+    # We need to revisit the stations we create and amend flags to add
+    # things like DHCP or ip+gateway, admin-{up,down}
+    for sta_name in desired_stations:
+        print("Ex 2: create station %s"%sta_name)
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        data = LFUtils.portDhcpUpRequest(resource_id, sta_name)
+        lf_r.addPostData(data)
+        lf_r.jsonPost()
     print("...done with Example 2")
+    sleep(1)
+
+    print("Example 3: bring ports up and down")
+    sleep(1)
+    print("Ex 3: setting ports up...")
+    wait_for_these = []
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s?fields=port,device,down"%(resource_id, sta_name))
+        json_response = lf_r.getAsJson()
+        if json_response['interface']['down'] is 'true':
+            data = LFUtils.portUpRequest(resource_id, sta_name)
+            url = base_url+"/cli-json/set_port"
+            lf_r = LFRequest.LFRequest(url)
+            lf_r.addPostData(data)
+            print("setting %s up"%sta_name)
+            json_response = lf_r.jsonPost()
+            wait_for_these.append(sta_name)
+    LFUtils.waitUntilPortsAppear(resource_id, wait_for_these)
+    exit(0) ######################################################
+    sleep(1)
+    print("Ex 3: setting ports down...")
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s?fields=port,device,down"%(resource_id, sta_name))
+        json_response = lf_r.getAsJson()
+        if json_response['interface']['down'] is 'false':
+            data = LFUtils.portDownRequest(resource_id, sta_name)
+            url = base_url+"/cli-json/set_port"
+            lf_r = LFRequest.LFRequest(url)
+            lf_r.addPostData(data)
+            print("setting %s down"%sta_name)
+            json_response = lf_r.jsonPost()
+            wait_for_these.append(sta_name)
+    LFUtils.waitUntilPortsDisappear(resource_id, wait_for_these)
+    print("...ports are down")
+    sleep(1)
+    print("Example 4: Modify stations from type /ac to /n")
+    sleep(1)
+    sleep(1)
+    print("Example 5: change station encryption from wpa2, wpa3, to open")
+    sleep(1)
+    sleep(1)
+    print("Example 6: change station auto from open")
+    sleep(1)
+    sleep(1)
+    print("Example 7: alter TX power:")
+    sleep(1)
+    sleep(1)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == "__main__":
