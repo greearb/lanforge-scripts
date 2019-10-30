@@ -8,74 +8,114 @@ if sys.version_info[0] != 3:
     exit()
 
 import urllib.request
+from urllib import error
 import urllib.parse
 import json
-
+import LANforge
+from LANforge import LFUtils
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
-    requested_urls = []
+    requested_url = ""
     post_datas = []
     default_headers = {
         'Accept': 'application/json'}
 
-    def __init__(self, urls):
-        self.requested_urls.append(urls)
+    def __init__(self, url):
+        self.requested_url = url
 
     # request first url on stack
-    def formPost(self):
+    def formPost(self, show_error=True):
         responses = []
         urlenc_data = ""
         if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
             urlenc_data = urllib.parse.urlencode(self.post_datas.pop(0)).encode("utf-8")
             #print("data looks like:" + str(urlenc_data))
-            request = urllib.request.Request(url=self.requested_urls.pop(0),
+            request = urllib.request.Request(url=self.requested_url,
                                              data=urlenc_data,
                                              headers=self.default_headers)
         else:
-            request = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
+            request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
             print("No data for this jsonPost?")
 
         request.headers['Content-type'] = 'application/x-www-form-urlencoded'
-        responses.append(urllib.request.urlopen(request))
-        return responses[0]
+        try:
+            responses.append(urllib.request.urlopen(request))
+            return responses[0]
+        except urllib.error.HTTPError:
+            if (show_error):
+                print("-------------------------------------------------------------")
+                print("Request URL:")
+                LFUtils.debug_printer.pprint(request.get_full_url())
+                print("Request Content-type:")
+                LFUtils.debug_printer.pprint(request.get_header('Content-type'))
+                print("Request Accept:")
+                LFUtils.debug_printer.pprint(request.get_header('Accept'))
+                print("Request Data:")
+                LFUtils.debug_printer.pprint(request.data)
+                if (len(responses) > 0):
+                    print("-------------------------------------------------------------")
+                    print("Response:")
+                    LFUtils.debug_printer.pprint(responses[0].reason)
+                    print("-------------------------------------------------------------")
 
-    def jsonPost(self):
+        return None
+
+    def jsonPost(self, show_error=True):
         responses = []
         if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
-            request = urllib.request.Request(url=self.requested_urls.pop(0),
+            request = urllib.request.Request(url=self.requested_url,
                                              data=json.dumps(self.post_datas.pop(0)).encode("utf-8"),
                                              headers=self.default_headers)
         else:
-            request = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
+            request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
             print("No data for this jsonPost?")
 
         request.headers['Content-type'] = 'application/json'
-        responses.append(urllib.request.urlopen(request))
-        return responses[0]
+        try:
+            responses.append(urllib.request.urlopen(request))
+            return responses[0]
+        except urllib.error.HTTPError:
+            if (show_error):
+                print("-------------------------------------------------------------")
+                print("Request URL:")
+                LFUtils.debug_printer.pprint(request.get_full_url())
+                print("Request Content-type:")
+                LFUtils.debug_printer.pprint(request.get_header('Content-type'))
+                print("Request Accept:")
+                LFUtils.debug_printer.pprint(request.get_header('Accept'))
+                print("Request Data:")
+                LFUtils.debug_printer.pprint(request.data)
+                if (len(responses) > 0):
+                    print("-------------------------------------------------------------")
+                    print("Response:")
+                    LFUtils.debug_printer.pprint(responses[0].reason)
+                    print("-------------------------------------------------------------")
+        return None
 
-    def get(self):
-        myrequest = urllib.request.Request(url=self.requested_urls.pop(0), headers=self.default_headers)
+
+    def get(self, show_error=True):
+        myrequest = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
         myresponses = []
-        # print(responses[0].__dict__.keys()) is how you would see parts of response
         try:
             myresponses.append(urllib.request.urlopen(myrequest))
             return myresponses[0]
         except:
-            print("Error: ", sys.exc_info()[0])
+            if (show_error):
+                print("Url: "+myrequest.get_full_url())
+                print("Error: ", sys.exc_info()[0])
 
         return None
 
-    def getAsJson(self):
+    def getAsJson(self, show_error=True):
         responses = []
-        responses.append(self.get())
+        responses.append(self.get(show_error))
         if (len(responses) < 1):
             return None
-
-        if ((responses[0] == None) or (responses[0].status != 200)):
-            print("Item not found")
+        if (responses[0] == None):
+            if (show_error):
+                print("No response from "+self.requested_url)
             return None
-
         json_data = json.loads(responses[0].read())
         return json_data
 

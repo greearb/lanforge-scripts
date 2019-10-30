@@ -44,27 +44,92 @@ class PortEID:
         port_name = json_s['name']
 # end class PortEID
 
-# for use with set_port
-def portDhcpUpRequest(resource_id, port_name):
+
+
+def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", flags=ADD_STA_FLAGS_DOWN_WPA2, ssid="", passphrase="", debug_on=False):
+    """
+    For use with add_sta. If you don't want to generate mac addresses via patterns (xx:xx:xx:xx:81:*)
+    you can generate octets using random_hex.pop(0)[2:] and gen_mac(parent_radio_mac, octet)
+    See http://localhost:8080/help/add_sta
+    :param passphrase:
+    :param ssid:
+    :type sta_name: str
+    """
     data = {
-        "shelf": 1,
+        "shelf":1,
         "resource": resource_id,
-        "port": port_name,
-        "current_flags": 2147483648, # 0x1 = interface down + 2147483648 use DHCP values
-        "interest": 75513859 # includes use_command_flags + use_current_flags + dhcp + dhcp_rls + ifdown
+        "radio": radio,
+        "sta_name": sta_name,
+        "flags": ADD_STA_FLAGS_DOWN_WPA2,  # note flags for add_sta do not match set_port
+        "ssid": ssid,
+        "key": passphrase,
+        "mac": "xx:xx:xx:xx:*:xx", # "NA", #gen_mac(parent_radio_mac, random_hex.pop(0))
+        "mode": 0,
+        "rate": "DEFAULT"
     }
+    if (debug_on):
+        debug_printer.pprint(data)
     return data
 
-# for use with set_port
-def portDownRequest(resource_id, port_name):
+
+def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
+    """
+    See http://localhost:8080/help/set_port
+    :param resource_id:
+    :param port_name:
+    :return:
+    """
     data = {
         "shelf": 1,
         "resource": resource_id,
         "port": port_name,
-        "current_flags": 1, # 0x0 = interface up
-
-        "interest": 75513859
+        "current_flags": 2147483649, # 0x1 = interface down + 2147483648 use DHCP values
+        "interest": 75513858, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+        "report_timer": 3000
     }
+    if (debug_on):
+        debug_printer.pprint(data)
+    return data
+
+
+def portDhcpUpRequest(resource_id, port_name, debug_on=False):
+    """
+    See http://localhost:8080/help/set_port
+    :param resource_id:
+    :param port_name:
+    :return:
+    """
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name,
+        "current_flags": 2147483648, # vs 0x1 = interface down + use_dhcp
+        "interest": 75513858, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+        "report_timer": 2200,
+    }
+    if (debug_on):
+        debug_printer.pprint(data)
+    return data
+
+
+def portDownRequest(resource_id, port_name, debug_on=False):
+    """
+    Does not change the use_dhcp flag
+    See http://localhost:8080/help/set_port
+    :param resource_id:
+    :param port_name:
+    :return:
+    """
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name,
+        "report_timer": 3000,
+        "current_flags": 1, # vs 0x0 = interface up
+        "interest": 8388610 # = current_flags + ifdown
+    }
+    if (debug_on):
+        debug_printer.pprint(data)
     return data
 
 
@@ -124,11 +189,9 @@ def portAliasesInList(json_list):
         k2 = ""
         for k in record_keys:
             k2 = k
-
         if k2.__contains__("Unknown"):
             #debug_printer.pprint("skipping: "+k2)
             continue
-
         port_json = record[k2]
         reverse_map[port_json['alias']] = record
     #print("resulting map: ")
@@ -161,9 +224,8 @@ def waitUntilPortsDisappear(resource_id=1, port_list=()):
         for port_name in port_list:
             sleep(1)
             url = base_url+"/port/1/%s/%s" % (resource_id, port_name)
-            print("Example 2: checking for station : "+url)
             lf_r = LFRequest.LFRequest(url)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
                 found_stations.append(port_name)
     return None
@@ -177,9 +239,9 @@ def waitUntilPortsAppear(resource_id=1, port_list=()):
         for port_name in port_list:
             sleep(1)
             url = base_url+"/port/1/%s/%s" % (resource_id, port_name)
-            print("Example 2: checking for station : "+url)
             lf_r = LFRequest.LFRequest(url)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
                 found_stations.append(port_name)
+    sleep(1)
     return None
