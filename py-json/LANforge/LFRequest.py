@@ -16,8 +16,9 @@ from LANforge import LFUtils
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
+    No_Data = {'No Data':0}
     requested_url = ""
-    post_datas = []
+    post_data = No_Data
     default_headers = {
         'Accept': 'application/json'}
 
@@ -28,8 +29,8 @@ class LFRequest:
     def formPost(self, show_error=True):
         responses = []
         urlenc_data = ""
-        if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
-            urlenc_data = urllib.parse.urlencode(self.post_datas.pop(0)).encode("utf-8")
+        if ((self.post_data != None) and (self.post_data is not self.No_Data)):
+            urlenc_data = urllib.parse.urlencode(self.post_data).encode("utf-8")
             #print("data looks like:" + str(urlenc_data))
             request = urllib.request.Request(url=self.requested_url,
                                              data=urlenc_data,
@@ -45,6 +46,8 @@ class LFRequest:
         except urllib.error.HTTPError:
             if (show_error):
                 print("-------------------------------------------------------------")
+                print("Url: "+request.get_full_url())
+                print("Error: ", sys.exc_info()[0])
                 print("Request URL:")
                 LFUtils.debug_printer.pprint(request.get_full_url())
                 print("Request Content-type:")
@@ -63,9 +66,9 @@ class LFRequest:
 
     def jsonPost(self, show_error=True):
         responses = []
-        if ((len(self.post_datas) > 0) and (self.post_datas[0] != None)):
+        if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             request = urllib.request.Request(url=self.requested_url,
-                                             data=json.dumps(self.post_datas.pop(0)).encode("utf-8"),
+                                             data=json.dumps(self.post_data).encode("utf-8"),
                                              headers=self.default_headers)
         else:
             request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
@@ -78,6 +81,8 @@ class LFRequest:
         except urllib.error.HTTPError:
             if (show_error):
                 print("-------------------------------------------------------------")
+                print("Url: "+request.get_full_url())
+                print("Error: ", sys.exc_info()[0])
                 print("Request URL:")
                 LFUtils.debug_printer.pprint(request.get_full_url())
                 print("Request Content-type:")
@@ -119,7 +124,7 @@ class LFRequest:
         json_data = json.loads(responses[0].read())
         return json_data
 
-    def addPostData(self, post_data):
-        self.post_datas.append(post_data)
+    def addPostData(self, data):
+        self.post_data = data
 
 # ~LFRequest
