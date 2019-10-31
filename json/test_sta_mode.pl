@@ -45,7 +45,7 @@ GetOptions
 
 $HostUri   = "http://$Host:$Port";
 
-my $uri = "/port/1/3/sta3100";
+my $uri = "/port/1/1/sta0200";
 my $rh = json_request($uri);
 print Dumper($rh);
 
