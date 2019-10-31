@@ -18,7 +18,11 @@ from LANforge import LFRequest
 debug_printer = pprint.PrettyPrinter(indent=2)
 base_url = "http://localhost:8080"
 
+NA = "NA" # used to indicate parameter to skip
 ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
+REPORT_TIMER_MS_FAST = 2000
+REPORT_TIMER_MS_SLOW = 8000
+
 
 class PortEID:
     shelf: 1
@@ -85,7 +89,7 @@ def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
         "port": port_name,
         "current_flags": 2147483649, # 0x1 = interface down + 2147483648 use DHCP values
         "interest": 75513858, # includes use_current_flags + dhcp + dhcp_rls + ifdown
-        "report_timer": 3000
+        "report_timer": REPORT_TIMER_MS_SLOW
     }
     if (debug_on):
         debug_printer.pprint(data)
@@ -105,12 +109,31 @@ def portDhcpUpRequest(resource_id, port_name, debug_on=False):
         "port": port_name,
         "current_flags": 2147483648, # vs 0x1 = interface down + use_dhcp
         "interest": 75513858, # includes use_current_flags + dhcp + dhcp_rls + ifdown
-        "report_timer": 2200,
+        "report_timer": REPORT_TIMER_MS_FAST,
     }
     if (debug_on):
         debug_printer.pprint(data)
     return data
 
+
+def portUpRequest(resource_id, port_name, debug_on=False):
+    """
+    See http://localhost:8080/help/set_port
+    :param resource_id:
+    :param port_name:
+    :return:
+    """
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name,
+        "current_flags": 0, # vs 0x1 = interface down
+        "interest": 8388610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
+        "report_timer": REPORT_TIMER_MS_FAST,
+    }
+    if (debug_on):
+        debug_printer.pprint(data)
+    return data
 
 def portDownRequest(resource_id, port_name, debug_on=False):
     """
@@ -124,9 +147,9 @@ def portDownRequest(resource_id, port_name, debug_on=False):
         "shelf": 1,
         "resource": resource_id,
         "port": port_name,
-        "report_timer": 3000,
         "current_flags": 1, # vs 0x0 = interface up
-        "interest": 8388610 # = current_flags + ifdown
+        "interest": 8388610, # = current_flags + ifdown
+        "report_timer": REPORT_TIMER_MS_SLOW,
     }
     if (debug_on):
         debug_printer.pprint(data)
@@ -145,7 +168,7 @@ def generateMac(parent_mac, random_octet):
 # this produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
 # the padding_number is added to the start and end numbers and the resulting sum
 # has the first digit trimmed, so f(0, 1, 10000) => {0000, 0001}
-def portNameSeries(prefix="sta", start_id=0, end_id=1, padding_number=1000):
+def portNameSeries(prefix="sta", start_id=0, end_id=1, padding_number=10000):
     name_list = []
     for i in range((padding_number+start_id), (padding_number+end_id+1)):
         sta_name = prefix+str(i)[1:]
@@ -213,6 +236,44 @@ def findPortEids(resource_id=1, port_names=(), base_url="http://localhost:8080")
             port_eids.append(PortEID(response))
         except:
             print("Not found: "+port_name)
+    return None
+
+def waitUntilPortsAdminDown(resource_id=1, port_list=()):
+    up_stations = port_list.copy()
+    sleep(1)
+    while len(up_stations) > 0:
+        up_stations = []
+        for port_name in port_list:
+            url = base_url+"/port/1/%s/%s?fields=device,down" % (resource_id, port_name)
+            lf_r = LFRequest.LFRequest(url)
+            json_response = lf_r.getAsJson(show_error=False)
+            if json_response == None:
+                print("port %s disappeared"%port_name)
+                continue
+            if "interface" in json_response:
+                json_response = json_response['interface']
+            if json_response['down'] is "false":
+                up_stations.append(port_name)
+        sleep(1)
+    return None
+
+def waitUntilPortsAdminUp(resource_id=1, port_list=()):
+    down_stations = port_list.copy()
+    sleep(1)
+    while len(down_stations) > 0:
+        down_stations = []
+        for port_name in port_list:
+            url = base_url+"/port/1/%s/%s?fields=device,down" % (resource_id, port_name)
+            lf_r = LFRequest.LFRequest(url)
+            json_response = lf_r.getAsJson(show_error=False)
+            if json_response == None:
+                print("port %s disappeared"%port_name)
+                continue
+            if "interface" in json_response:
+                json_response = json_response['interface']
+            if json_response['down'] is "true":
+                down_stations.append(port_name)
+        sleep(1)
     return None
 
 
