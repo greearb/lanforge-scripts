@@ -15,6 +15,8 @@ import pprint
 import LANforge
 from LANforge import LFRequest
 from LANforge import LFUtils
+from LANforge.LFUtils import NA
+
 
 
 
@@ -171,7 +173,7 @@ def main():
     for sta_name in desired_stations:
         print("Ex 2: checking for station : "+sta_name)
         if sta_name in port_map.keys():
-            print("found station : "+sta_name)
+            #print("found station : "+sta_name)
             found_stations.append(sta_name)
 
     for sta_name in found_stations:
@@ -225,36 +227,105 @@ def main():
             print("setting %s up"%sta_name)
             lf_r.jsonPost()
             wait_for_these.append(sta_name)
-    LFUtils.waitUntilPortsAppear(resource_id, wait_for_these)
-    exit(0) ######################################################
-    sleep(1)
+    LFUtils.waitUntilPortsAdminUp(resource_id, wait_for_these)
+    sleep(4)
     print("Ex 3: setting ports down...")
     for sta_name in desired_stations:
         lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s?fields=port,device,down"%(resource_id, sta_name))
         json_response = lf_r.getAsJson()
         if json_response['interface']['down'] is 'false':
-            data = LFUtils.portDownRequest(resource_id, sta_name)
             url = base_url+"/cli-json/set_port"
             lf_r = LFRequest.LFRequest(url)
-            lf_r.addPostData(data)
+            lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
             print("setting %s down"%sta_name)
-            json_response = lf_r.jsonPost()
+            lf_r.jsonPost()
             wait_for_these.append(sta_name)
-    LFUtils.waitUntilPortsDisappear(resource_id, wait_for_these)
+    LFUtils.waitUntilPortsAdminDown(resource_id, wait_for_these)
     print("...ports are down")
+    sleep(4)
+
+
+
+    print("Example 4: Modify stations to mode /a")
     sleep(1)
-    print("Example 4: Modify stations from type /ac to /n")
+    for sta_name in desired_stations:
+        #lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s"%(resource_id, sta_name))
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
+        lf_r.get()
+    LFUtils.waitUntilPortsAdminDown(resource_id, desired_stations)
+
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
+        lf_r.addPostData({
+            "shelf":1,
+            "resource": resource_id,
+            "radio": radio,
+            "sta_name": sta_name,
+            "mode": 1, # 802.11a see http://www.candelatech.com/lfcli_ug.php#add_sta
+        })
+        print("using add_sta to set %s mode"%sta_name)
+        lf_r.jsonPost()
+        sleep(0.5)
+
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        lf_r.addPostData(LFUtils.portUpRequest(resource_id, sta_name))
+        lf_r.get()
+    LFUtils.waitUntilPortsAdminUp(resource_id, desired_stations)
+    print("...done")
+    sleep(4)
+
+
+    print("Example 5: change station encryption from wpa2 to wpa3...")
     sleep(1)
+    for sta_name in desired_stations:
+        #lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s"%(resource_id, sta_name))
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
+        lf_r.get()
+    LFUtils.waitUntilPortsAdminDown(resource_id, desired_stations)
+
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
+        lf_r.addPostData({
+            "shelf":1,
+            "resource": resource_id,
+            "radio": radio,
+            "sta_name": sta_name,
+            "mode": 0, # mode AUTO
+            "flags": 1099511627776, # sets use-wpa3
+            "flags_mask": 1099511628800 # sets interest in use-wpa3, wpa2_enable (becomes zero)
+        })
+        print("using add_sta to set %s wpa3"%sta_name)
+        lf_r.jsonPost()
+        sleep(0.5)
+
+    for sta_name in desired_stations:
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
+        lf_r.addPostData(LFUtils.portUpRequest(resource_id, sta_name))
+        lf_r.get()
+    LFUtils.waitUntilPortsAdminUp(resource_id, desired_stations)
+    print("...done")
+    sleep(4)
+
+
+    print("Example 7: alter TX power on %s..."%radio)
+    # virtual stations do not have individual tx power states
     sleep(1)
-    print("Example 5: change station encryption from wpa2, wpa3, to open")
-    sleep(1)
-    sleep(1)
-    print("Example 6: change station auto from open")
-    sleep(1)
-    sleep(1)
-    print("Example 7: alter TX power:")
-    sleep(1)
-    sleep(1)
+    # see http://www.candelatech.com/lfcli_ug.php#set_wifi_radio
+    lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_wifi_radio")
+    lf_r.addPostData({
+        "shelf":1,
+        "resource":resource_id,
+        "radio":radio,
+        "mode":NA,
+        # tx power see: man 8 iwconfig, power is in dBm, auto or off
+        "txpower": "auto",
+        # meta flag tells lfclient to not check port before issuing command
+        "suppress_preexec_method": "true",
+    })
+    lf_r.jsonPost()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == "__main__":
