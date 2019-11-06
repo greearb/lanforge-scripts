@@ -43,7 +43,7 @@ use Carp;
 use POSIX qw(ceil floor);
 use Scalar::Util; #::looks_like_number;
 use Getopt::Long;
-
+no warnings 'portable';  # Support for 64-bit ints required
 use Socket;
 
 # Un-buffer output
@@ -109,6 +109,16 @@ our %sec_options        = (
    "no-ht80"               =>    0x8000000,  # Disable HT80 (for AC chipset NICs only)
    "use-ibss"              =>    0x20000000, # Station should be in IBSS mode.
    "use-osen"              =>    0x40000000, # Enable OSEN protocol (OSU Server-only Auth)
+   "disable_roam"          =>    0x80000000,    # Disable automatic station roaming based on scan results.
+   "ht160_enable"          =>    0x100000000,   # Enable HT160 mode.
+   "disable_fast_reauth"   =>    0x200000000,   # Disable fast_reauth option for virtual stations.
+   "mesh_mode"             =>    0x400000000,   # Station should be in MESH mode.
+   "power_save_enable"     =>    0x800000000,   # Station should enable power-save.  May not work in all drivers/configurations.
+   "create_admin_down"     =>    0x1000000000,  # Station should be created admin-down.
+   "wds-mode"              =>    0x2000000000,  # WDS station (sort of like a lame mesh), not supported on ath10k
+   "no-supp-op-class-ie"   =>    0x4000000000,  # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+   "txo-enable"            =>    0x8000000000,  # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+   "wpa3"                  =>    0x10000000000, # Enable WPA-3 (SAE Personal) mode.
 );
 
 our $cx_type            = "tcp";
@@ -166,6 +176,10 @@ our %wifi_modes = (
    "abgnAC" => "8",
    "anAC"   => "9",
    "an"     => "10",
+   "bgnAC"  => "11",
+   "abgnAX" => "12",
+   "bgnAX"  => "13",
+   "anAX"   => "14"
 );
 our $wifi_mode ="";
 our $bssid = "";
@@ -184,7 +198,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--antenna {1,2,3,4}]      # select number of antennas
       [--ssid {ssid}]            # e.g. jedtest
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
-      [--security {open|wep|wpa|wpa2}] # station authentication type, Default is open
+      [--security {open|wep|wpa|wpa2|wpa3}] # station authentication type, Default is open
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
       [--passphrase {...}]       # implies wpa2 if --security not set
       [--wifi_mode {$mode_list}]
@@ -751,7 +765,8 @@ sub new_wifi_station {
    # $flagsmask     |= $::sec_options{$::security};
    # We are always configuring security to one thing or another, so we need to
    # mask all of the bits properly.
-   $flagsmask |= (0x10 | 0x200 | 0x400);
+   $flagsmask |= (0x10 | 0x200 | 0x400 | 0x10000000000);
+   $flagsmask |= 0x1000000000 if ($::admin_down_on_add);
 
    if (defined $::xsec && "$::xsec" ne "") {
       for my $sec_op (split(',', $::xsec)) {
@@ -841,7 +856,9 @@ sub get_sta_state {
          @hunks   = split(/: /, $line);
          $channel = (split(/ /, $hunks[1]))[0];
          $freq    = (split(/ /, $hunks[3]))[0];
-         $assoc   = (split(/ /, $hunks[4]))[0];
+         if ((@hunks > 3) && (defined $hunks[4])) {
+           $assoc   = (split(/ /, $hunks[4]))[0];
+         }
          #print " assoc:".$assoc;
          last;
       }
