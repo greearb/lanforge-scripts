@@ -9,6 +9,16 @@
 if __name__ == '__main__':
     import ctypes
     import sys
+    import os
+
+    # test for  QT_X11_NO_MITSHM=1
+    if 'QT_X11_NO_MITSHM' not in os.environ:
+        print "QT_X11_NO_MITSHM not set. Please export QT_X11_NO_MITSHM=1"
+        exit(1);
+    if os.environ['QT_X11_NO_MITSHM'] is not "1":
+        print "QT_X11_NO_MITSHM not 1. Please export QT_X11_NO_MITSHM=1"
+        exit(1);
+
     if sys.platform.startswith('linux'):
         try:
             x11 = ctypes.cdll.LoadLibrary('libX11.so')
@@ -25,11 +35,13 @@ from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
 from optparse import OptionParser
 import osmosdr
+import os
 import sip
 import sys
 import time
 from gnuradio import qtgui
 
+# test for  QT_X11_NO_MITSHM=1
 
 class pulse_detect(gr.top_block, Qt.QWidget):
 
@@ -67,7 +79,7 @@ class pulse_detect(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
-        	100000, #size
+        	100000, #size into variable
         	samp_rate, #samp_rate
         	"", #name
         	1 #number of inputs
@@ -114,9 +126,9 @@ class pulse_detect(gr.top_block, Qt.QWidget):
 
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_grid_layout.addWidget(self._qtgui_time_sink_x_0_win)
-        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + 'hackrf=000000000000000087c867dc2a44625f' )
+        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + 'hackrf=000000000000000087c867dc2a44625f' ) # serno into variable
         self.osmosdr_source_0.set_sample_rate(samp_rate)
-        self.osmosdr_source_0.set_center_freq(5180e6, 0)
+        self.osmosdr_source_0.set_center_freq(5180e6, 0) # turn into variable
         self.osmosdr_source_0.set_freq_corr(0, 0)
         self.osmosdr_source_0.set_dc_offset_mode(0, 0)
         self.osmosdr_source_0.set_iq_balance_mode(0, 0)
