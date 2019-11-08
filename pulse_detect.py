@@ -5,18 +5,21 @@
 # Title: Pulse Detect
 # GNU Radio version: 3.7.13.5
 ##################################################
+hackrf_sn='000000000000000087c867dc2a44625f'
+center_freq=5180e6
 
 if __name__ == '__main__':
     import ctypes
     import sys
     import os
+    import argparse
 
     # test for  QT_X11_NO_MITSHM=1
     if 'QT_X11_NO_MITSHM' not in os.environ:
-        print "QT_X11_NO_MITSHM not set. Please export QT_X11_NO_MITSHM=1"
+        print("QT_X11_NO_MITSHM not set. Please export QT_X11_NO_MITSHM=1")
         exit(1);
     if os.environ['QT_X11_NO_MITSHM'] is not "1":
-        print "QT_X11_NO_MITSHM not 1. Please export QT_X11_NO_MITSHM=1"
+        print("QT_X11_NO_MITSHM not 1. Please export QT_X11_NO_MITSHM=1")
         exit(1);
 
     if sys.platform.startswith('linux'):
@@ -24,7 +27,16 @@ if __name__ == '__main__':
             x11 = ctypes.cdll.LoadLibrary('libX11.so')
             x11.XInitThreads()
         except:
-            print "Warning: failed to XInitThreads()"
+            print("Warning: failed to XInitThreads()")
+
+    unixOptions = "f:s:"
+    gnuOptions = [ "freq=", "serno=" ]
+    parser = argparse.ArgumentParser(description='pulse watcher')
+    parser.add_argument("--serno", type=str, help="hackrf serial number")
+    parser.add_argument("--freq", type=int, help="center frequency")
+    args = parser.parse_args()
+    hackrf_sn = args.serno
+    center_freq = args.freq
 
 from PyQt4 import Qt
 from gnuradio import blocks
@@ -38,12 +50,14 @@ import osmosdr
 import os
 import sip
 import sys
+import argparse
 import time
 from gnuradio import qtgui
 
-# test for  QT_X11_NO_MITSHM=1
-
 class pulse_detect(gr.top_block, Qt.QWidget):
+
+    # divide sample rate by point to get time scale in millisec
+    gnuradio_points = 100000
 
     def __init__(self):
         gr.top_block.__init__(self, "Pulse Detect")
@@ -79,10 +93,10 @@ class pulse_detect(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
-        	100000, #size into variable
-        	samp_rate, #samp_rate
-        	"", #name
-        	1 #number of inputs
+            self.gnuradio_points,
+            samp_rate, #samp_rate
+            "", #name
+            1 #number of inputs
         )
         self.qtgui_time_sink_x_0.set_update_time(0.10)
         self.qtgui_time_sink_x_0.set_y_axis(0, 2)
@@ -126,9 +140,10 @@ class pulse_detect(gr.top_block, Qt.QWidget):
 
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_grid_layout.addWidget(self._qtgui_time_sink_x_0_win)
-        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + 'hackrf=000000000000000087c867dc2a44625f' ) # serno into variable
+        osmodr_source_args = "numchan=1 hackrf=%s"%(hackrf_sn)
+        self.osmosdr_source_0 = osmosdr.source( args=osmodr_source_args ) # serno into variable
         self.osmosdr_source_0.set_sample_rate(samp_rate)
-        self.osmosdr_source_0.set_center_freq(5180e6, 0) # turn into variable
+        self.osmosdr_source_0.set_center_freq(center_freq, 0) # turn into variable
         self.osmosdr_source_0.set_freq_corr(0, 0)
         self.osmosdr_source_0.set_dc_offset_mode(0, 0)
         self.osmosdr_source_0.set_iq_balance_mode(0, 0)
