@@ -29,11 +29,12 @@ if __name__ == '__main__':
         except:
             print("Warning: failed to XInitThreads()")
 
-    unixOptions = "f:s:"
-    gnuOptions = [ "freq=", "serno=" ]
+    unixOptions = "f:s:p:"
+    gnuOptions = [ "freq=", "serno=", "points=" ]
     parser = argparse.ArgumentParser(description='pulse watcher')
     parser.add_argument("--serno", type=str, help="hackrf serial number")
-    parser.add_argument("--freq", type=int, help="center frequency")
+    parser.add_argument("--freq", type=int, help="center frequency in Hz")
+    parser.add_argument("--points", type=int, help="number of x-axis points")
     args = parser.parse_args()
     hackrf_sn = args.serno
     center_freq = args.freq
@@ -56,8 +57,8 @@ from gnuradio import qtgui
 
 class pulse_detect(gr.top_block, Qt.QWidget):
 
-    # divide sample rate by point to get time scale in millisec
-    gnuradio_points = 100000
+    # divide sample rate by points to get time scale in millisec
+    gnuradio_points = args.points
 
     def __init__(self):
         gr.top_block.__init__(self, "Pulse Detect")
