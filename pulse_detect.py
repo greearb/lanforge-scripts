@@ -7,6 +7,7 @@
 ##################################################
 hackrf_sn='000000000000000087c867dc2a44625f'
 center_freq=5180e6
+gnuradio_points=100000
 
 if __name__ == '__main__':
     import ctypes
@@ -38,6 +39,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     hackrf_sn = args.serno
     center_freq = args.freq
+    gnuradio_points = args.points
 
 from PyQt4 import Qt
 from gnuradio import blocks
