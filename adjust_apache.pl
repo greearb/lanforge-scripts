@@ -13,7 +13,10 @@ die ("Must be root to use this")
    unless( $hunks[0] eq "uid=0(root)" );
 @idhunks = undef;
 @hunks = undef;
-my $MgrHostname = "lanforge-srv";
+my $MgrHostname = `cat /etc/hostname`;
+chomp($MgrHostname);
+print "Will be setting hostname to $MgrHostname\n";
+sleep 3;
 
 my $config_v = "/home/lanforge/config.values";
 # grab the config.values file
@@ -70,17 +73,35 @@ die ("Unable to write to /etc/hosts: $!")
 print $fh join("\n", @host_lines);
 close $fh;
 
-#print "Updated /etc/hosts\n";
+my $local_crt ="";
+my $local_key ="";
+my $hostname_crt ="";
+my $hostname_key ="";
+# check for hostname shaped cert files
+if ( -f "/etc/pki/tls/certs/localhost.crt") {
+   $local_crt = "/etc/pki/tls/certs/localhost.crt";
+}
+if ( -f "/etc/pki/tls/private/localhost.key") {
+   $local_key = "/etc/pki/tls/private/localhost.key";
+}
 
+if ( -f "/etc/pki/tls/certs/$MgrHostname.crt") {
+   $hostname_crt = "/etc/pki/tls/certs/$MgrHostname.crt";
+}
+if ( -f "/etc/pki/tls/private/$MgrHostname.key") {
+   $hostname_key = "/etc/pki/tls/private/$MgrHostname.key";
+}
 
 # grab the 0000-default.conf file
 my @places_to_check = (
    "/etc/apache2/apache2.conf",
    "/etc/apache2/ports.conf",
+   "/etc/apache2/sites-available/000-default.conf",
    "/etc/apache2/sites-available/0000-default.conf",
    "/etc/httpd/conf/http.conf",
    "/etc/httpd/conf/httpd.conf",
    "/etc/httpd/conf.d/ssl.conf",
+   "/etc/httpd/conf.d/00-ServerName.conf",
 );
 foreach my $file (@places_to_check) {
    if ( -f $file) {
@@ -89,7 +110,7 @@ foreach my $file (@places_to_check) {
       chomp @lines;
       # we want to match Listen 80$ or Listen 443 https$
       # we want to replace with Listen lanforge-mgr:80$ or Listen lanforge-mgr:443 https$
-      @hunks = grep { /^\s*Listen\s+(?:80|443) */ } @lines;
+      @hunks = grep { /^\s*(Listen|SSLCertificate)/ } @lines;
       if (@hunks) {
          my $edited = 0;
          my @newlines = ();
@@ -102,17 +123,26 @@ foreach my $file (@places_to_check) {
                $confline =~ s/Listen /Listen ${MgrHostname}:/;
                print "$confline\n";
             }
+            elsif ($confline =~ /^\s*Listen\s+(?:[^:]+:(80|443)) */) {
+               $confline =~ s/Listen [^:]+:/Listen ${MgrHostname}:/;
+               print "$confline\n";
+            }
+            if ($confline =~ /^\s*SSLCertificateFile /) {
+               $confline = "SSLCertificateFile $hostname_crt" if ("" ne $hostname_crt);
+            }
+            if ($confline =~ /^\s*SSLCertificateKeyFile /) {
+               $confline = "SSLCertificateKeyFile $hostname_key" if ("" ne $hostname_key);
+            }
             push @newlines, $confline;
             $edited++ if ($confline =~ /# modified by lanforge/);
          }
          push(@newlines, "# modified by lanforge\n") if ($edited == 0);
-         
          die ($!) unless open($fh, ">", $file);
          print $fh join("\n", @newlines);
          close $fh;
       }
       else {
-         print "Nothing to change in $file\n";
+         print "Nothing looking like [Listen 80|443] in $file\n";
       }
    }
 } # ~for places_to_check
