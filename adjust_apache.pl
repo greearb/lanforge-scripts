@@ -35,12 +35,16 @@ die ("Unable to parse config.values")
    unless ((keys %configv) > 5);
 die ("no mgt_dev in config.values")
    unless defined $configv{'mgt_dev'};
-print "Found mgt_dev $configv{'mgt_dev'}\n";
+print "LANforge config states mgt_dev $configv{'mgt_dev'}\n";
 
+if ( ! -d "/sys/class/net/$configv{'mgt_dev'}") {
+   print "Please run lfconfig again with your updated mgt_port value.\n";
+   exit(1);
+}
 my $ipline = `ip -o a show $configv{"mgt_dev"}`;
 #print "IPLINE[$ipline]\n";
 my ($ip) = $ipline =~ / inet ([0-9.]+)(\/\d+)? /g;
-die ("No ip found for mgt_dev")
+die ("No ip found for mgt_dev; your config.values file is out of date: $!")
    unless ((defined $ip) && ($ip ne ""));
 
 print "ip: $ip\n";
