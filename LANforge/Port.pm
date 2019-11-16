@@ -386,6 +386,20 @@ sub decode {
             $i++;
             $ln = $ta[$i];
          }
+         # IPSec-Concentartor: 0.0.0.0  IPSec-Password: NONE  IPSec-Local-ID: NONE  IPSec-Remote-ID: NONE
+         # careful, Concentrator is mis-spelled and will get corrected
+         if ($ln =~
+/IPSec-Con[a-z]+r:\s+([0-9.]+)\s+IPSec-Password:\s+([^ ]+)\s+IPSec-Local-ID:\s+([^ ])+\s+IPSec-Remote-ID:\s+([^ ]+)/
+            )
+         {
+            $self->{'IPSec-Concentrator'} = $1 if (defined $1);
+            $self->{'IPSec-Password'} = $1 if (defined $2);
+            $self->{'IPSec-Local-ID'} = $1 if (defined $3);
+            $self->{'IPSec-Remote-ID'} = $1 if (defined $4);
+            $i++;
+            $ln = $ta[$i];
+         }
+
         #     pps_tx: 0  pps_rx: 0  bps_tx: 0  bps_rx: 0
          if ( $ln =~
 /\s+pps_tx:\s+(\d+)\s+pps_rx:\s+(\d+)\s+bps_tx:\s+(\d+)\s+bps_rx:\s+(\d+)/
