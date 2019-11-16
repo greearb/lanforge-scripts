@@ -65,7 +65,7 @@ my $if_state         = "unset";
 my $fail_msg         = "";
 my $manual_check     = 0;
 my $amt_resets_sofar = 0;
-my $show_port        = undef;
+my $show_port        = "NA";
 my @port_stats       = ();
 my $cmd_log_name     = ""; #= "lf_portmod.txt";
 my $set_speed        = "NA";
@@ -199,7 +199,7 @@ GetOptions
  'list_port_names!'  => \$list_port_names,
  'list_ports!'       => \$list_ports,
  'filter_ports|filter|f=s' => \$filter_ports,
- 'show_port'         => \$show_port,
+ 'show_port:s'       => \$show_port,
  'stats_from_file=s' => \$stats_from_file,
  'port_stats=s{1,}'  => \@port_stats,
  'eap_identity|eapid=s'  => \$eap_identity,
@@ -518,7 +518,9 @@ if (length($port_name) == 0) {
 }
 
 # this is the --show_port options ("")
-if ((defined $show_port) && ("$show_port" eq "")) {
+if ((defined $show_port) && (($show_port eq "1") || ($show_port eq ""))) {
+   #$::quiet = 0;
+   #$utils->cli_rcv_silent(0);
    print $utils->doAsyncCmd("nc_show_port 1 $card $port_name") . "\n";
    exit(0);
 }
