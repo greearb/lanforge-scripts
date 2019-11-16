@@ -162,9 +162,6 @@ our $traffic_type       = "separate"; # separate: download then upload, concurre
 our $default_mac_pat    = "xx:xx:xx:*:*:xx";
 our $mac_pattern        = $::default_mac_pat;
 
-## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-##                   Usage                                     #
-## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 our %wifi_modes = (
    "a"      => "1",
    "b"      => "2",
@@ -184,6 +181,10 @@ our %wifi_modes = (
 our $wifi_mode ="";
 our $bssid = "";
 my $mode_list = join("|", sort keys %wifi_modes);
+
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+##                   Usage                                     #
+## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 my $usage = qq($0   [--mgr {host-name | IP}]
       [--mgr_port {ip port}]     # use if on non-default management port
       [--resource {resource}]    # use if multiple lanforge systems; defaults to 1
