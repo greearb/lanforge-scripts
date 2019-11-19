@@ -26,24 +26,49 @@ use JSON;
 use Data::Dumper;
 use LANforge::JsonUtils;
 
-
 our $LFUtils;
 our $lfmgr_host = "ct524-debbie";
-our $lf_mgr = $lfmgr_host;
 our $lfmgr_port = 4001;
 our $resource = 1;
 our $quiet = 1;
+our @specific_tests = ();
+our %test_subs = ();
+my $help = 0;
+my $list = 0;
+my $usage = qq($0 --mgr {lanforge hostname/IP}
+  --mgr_port|p {lf socket (4001)}
+  --resource|r {resource number (1)}
+  --quiet {0,1,yes,no}
+  --test|t {test-name} # repeat for test names
+  --list|l # list test names
+);
 
+GetOptions (
+   'mgr|m=s'            => \$::lfmgr_host,
+   'mgr_port|p:s'       => \$::lfmgr_port,
+   'card|resource|r:i'  => \$resource,
+   'quiet|q:s'          => \$quiet,
+   'test|t:s'           => \@specific_tests,
+   'help|h'             => \$help,
+   'list|l'             => \$list,
+) || (print($usage) && exit(1));
+
+if ($help) {
+  print($usage) && exit(0);
+}
+
+our $lf_mgr;
+$lf_mgr = $lfmgr_host;
 #----------------------------------------------------------------------
 #   Tests
 #----------------------------------------------------------------------
 
-sub t_00_create_telnet {
+sub t_create_telnet {
   my $rv = 0;
   print "This is a test!\n";
   my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
             Timeout => 20);
-  $t->open(Host    => $::lfmgr_host,
+  $t->open(Host    => $::lf_mgr,
            Port    => $::lfmgr_port,
            Timeout => 10);
   $t->waitfor("/btbits\>\>/");
@@ -73,7 +98,7 @@ sub t_00_create_telnet {
 # * shell out to perl script
 #----------------------------------------------------------------------
 
-sub t_01_query_port {
+sub t_query_port {
   my $expected = 4;
   my $rv = 0;
   my $cmd = $::LFUtils->fmt_cmd("nc_show_port", 1, $::resource, "eth0");
@@ -114,53 +139,53 @@ sub t_01_query_port {
   return ($rv == $expected) ? 1 : 0;
 }
 
-sub t_02_set_port_up {
+sub t_set_port_up {
 }
 
-sub t_03_set_port_down {
+sub t_set_port_down {
 }
 
-sub t_04_create_mvlan {
+sub t_create_mvlan {
 }
 
-sub t_05_destroy_mvlan {
+sub t_destroy_mvlan {
 }
 
-sub t_06_query_radio {
+sub t_query_radio {
 }
 
-sub t_07_del_all_stations {
+sub t_del_all_stations {
 }
 
-sub t_08_add_station_to_radio {
+sub t_add_station_to_radio {
 }
 
-sub t_09_station_up {
+sub t_station_up {
 }
 
-sub t_10_station_down {
+sub t_station_down {
 }
 
-sub t_11_remove_radio {
+sub t_remove_radio {
 }
 
-sub t_12_add_sta_L3_udp {
+sub t_add_sta_L3_udp {
 }
 
-sub t_13_sta_L3_start {
+sub t_sta_L3_start {
 }
 
-sub t_14_sta_L3_stop {
+sub t_sta_L3_stop {
 }
 
-sub t_15_rm_sta_L3 {
+sub t_rm_sta_L3 {
 }
 
 #----------------------------------------------------------------------
 #----------------------------------------------------------------------
-our %test_subs = (
-  '00_create_telnet'          => \&{'t_00_create_telnet'},
-  '01_query_port'             => \&{'t_01_query_port'},
+%test_subs = (
+  '00_create_telnet'          => \&{'t_create_telnet'},
+  '01_query_port'             => \&{'t_query_port'},
   '02_set_port_up'            => 0,
   '03_set_port_down'          => 0,
   '04_create_mvlan'           => 0,
@@ -180,31 +205,50 @@ our %test_subs = (
 
 sub RunTests {
   my $rf_test = undef;
-  print "Building test references\n";
-#  for my $test_name (sort keys %::test_subs) {
-#    my $rh_test_name = "t_${test_name}";
-#    if (defined &$rh_test_name) {
-#      print "$test_name is $rh_test_name\n";
-#      $test_subs{$test_name} = &{$rh_test_name};
-#    }
-#  }
 
-  print "Running tests...\n";
-  for my $test_name (sort keys %::test_subs) {
-    if (defined &{$::test_subs{$test_name}}) {
-      print "test $test_name found...";
-      #&{$test_subs{$test_name}}->();
-      die("Failed on $test_name") unless &{$::test_subs{$test_name}}();
-    }
-    else {
-      print "test $test_name not found ";
-    }
+  if (@specific_tests > 0) {
+      for my $test_name (sort @specific_tests) {
+          if (defined &{$::test_subs{$test_name}}) {
+            print "test $test_name found...";
+            die("Failed on $test_name")
+               unless &{$::test_subs{$test_name}}();
+          }
+          else {
+            print "test $test_name not found ";
+          }
+      }
   }
+  else {
+     for my $test_name (sort keys %::test_subs) {
+       if (defined &{$::test_subs{$test_name}}) {
+         print "test $test_name found...";
+         die("Failed on $test_name")
+            unless &{$::test_subs{$test_name}}();
+       }
+       else {
+         print "test $test_name not found ";
+       }
+     }
+  }
+
 }
 
 # ====== ====== ====== ====== ====== ====== ====== ======
 #   M A I N
 # ====== ====== ====== ====== ====== ====== ====== ======
+
+if ($list) {
+  my $av="";
+  print "Test names:\n";
+  for my $test_name (sort keys %::test_subs) {
+      $av=" ";
+      if (defined &{$::test_subs{$test_name}}) {
+         $av='*';
+      }
+      print " ${av} ${test_name}\n";
+  }
+  exit(0);
+}
 
 RunTests();
 print "done\n";
