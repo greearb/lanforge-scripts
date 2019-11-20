@@ -9,14 +9,10 @@ $SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 $| = 1;
 
-#use JSON;
-package main;
 use Net::Telnet;
 use lib '.';
 use lib './LANforge';
-use LANforge::Utils;
-use LANforge::Port;
-use LANforge::Endpoint;
+
 use Getopt::Long;
 use JSON::XS;
 use HTTP::Request;
@@ -24,17 +20,28 @@ use LWP;
 use LWP::UserAgent;
 use JSON;
 use Data::Dumper;
-use LANforge::JsonUtils;
 
+use LANforge::Utils;
+use LANforge::Port;
+use LANforge::Endpoint;
+use LANforge::JsonUtils qw(err logg xpand json_request get_links_from get_thru json_post get_port_names flatten_list);
+
+package main;
 our $LFUtils;
-our $lfmgr_host = "ct524-debbie";
-our $lfmgr_port = 4001;
-our $resource = 1;
-our $quiet = 1;
-our @specific_tests = ();
-our %test_subs = ();
-my $help = 0;
-my $list = 0;
+our $lfmgr_host       = "ct524-debbie";
+our $lfmgr_port       = 4001;
+our $http_port        = 4001;
+our $resource         = 1;
+our $quiet            = 1;
+our @specific_tests   = ();
+our %test_subs        = ();
+our $lf_mgr           = undef;
+our $HostUri          = undef;
+our $Web              = undef;
+our $Decoder          = undef;
+our @test_errs        = ();
+my $help              = 0;
+my $list              = 0;
 my $usage = qq($0 --mgr {lanforge hostname/IP}
   --mgr_port|p {lf socket (4001)}
   --resource|r {resource number (1)}
@@ -57,17 +64,27 @@ if ($help) {
   print($usage) && exit(0);
 }
 
-our $lf_mgr;
+
 $lf_mgr = $lfmgr_host;
+$::HostUri   = "http://$lf_mgr:$http_port";
+$::Web       = LWP::UserAgent->new;
+$::Decoder   = JSON->new->utf8;
+
+sub test_err {
+  for my $e (@_) {
+    my $ref = "".(caller(1))[3].":".(caller(1))[2]."";
+    
+    push (@test_errs, "$ref: $e");
+  }
+}
 #----------------------------------------------------------------------
 #   Tests
 #----------------------------------------------------------------------
 
 sub t_create_telnet {
   my $rv = 0;
-  print "This is a test!\n";
   my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-            Timeout => 20);
+                          Timeout => 20);
   $t->open(Host    => $::lf_mgr,
            Port    => $::lfmgr_port,
            Timeout => 10);
@@ -99,86 +116,153 @@ sub t_create_telnet {
 #----------------------------------------------------------------------
 
 sub t_query_port {
-  my $expected = 4;
+  my $expected = 3;
   my $rv = 0;
+  ## test CLI
   my $cmd = $::LFUtils->fmt_cmd("nc_show_port", 1, $::resource, "eth0");
   my $res = $::LFUtils->doAsyncCmd($cmd);
   #die "Insufficient results $!" if (@res < 5);
   my ($port_ip) = $res =~ / IP:\s+([^ ]+) /;
   if ((defined $port_ip) && length($port_ip) >= 7) {
-    $rv++
+    $rv++;
   }
   else {
-    print "port_ip [$port_ip] incorrect\n";
+    test_err("port_ip [$port_ip] incorrect\n");
   }
 
+  ## test LANforge::Port
   my $lf_port = LANforge::Port->new;
   $lf_port->decode($res);
   if ($lf_port->ip_addr() eq $port_ip) {
-    $rv++
+    $rv++;
   }
   else {
-    print "port_ip ".$lf_port->ip_addr()." doesn't match above $port_ip\n";
+    test_err( "port_ip ".$lf_port->ip_addr()." doesn't match above $port_ip");
   }
 
-  my $port_json = JsonUtils->json_request("http://$::{lf_mgr}:8080/port/1/1/eth0");
+  ## test JsonUtils/port
+  print "http://".$::lf_mgr.":8080/port/1/1/eth0 \n";
+  my $port_json = json_request("http://".$::lf_mgr.":8080/port/1/1/eth0");
 
+  ## test lf_portmod.pl
+  print "Trying: ./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port\n";
   $res = `./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port`;
   if ($res) {
     my ($port_ip2) = $res =~ / IP:\s+([^ ]+) /;
     if ((defined $port_ip2) && length($port_ip2) >= 7) {
-      $rv++
+      $rv++;
     }
     else {
-      print "port_ip [$port_ip] incorrect\n";
+      test_err("port_ip [$port_ip] incorrect\n");
     }
   }
   else {
-    print "Insufficient output from lf_portmod.pl.\n";
+    test_err("Insufficient output from lf_portmod.pl.\n");
   }
-  return ($rv == $expected) ? 1 : 0;
+  
+  if ($rv == $expected) {
+    return 1;
+  }
+  test_err("Insuffient tests run");
+  return 0;
 }
 
 sub t_set_port_up {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_set_port_down {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_create_mvlan {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_destroy_mvlan {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_query_radio {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_del_all_stations {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_add_station_to_radio {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_station_up {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_station_down {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_remove_radio {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_add_sta_L3_udp {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_sta_L3_start {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_sta_L3_stop {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 sub t_rm_sta_L3 {
+  ## test CLI
+  ## test LANforge::Port
+  ## test JsonUtils/port
+  ## test lf_portmod.pl
 }
 
 #----------------------------------------------------------------------
@@ -209,28 +293,24 @@ sub RunTests {
   if (@specific_tests > 0) {
       for my $test_name (sort @specific_tests) {
           if (defined &{$::test_subs{$test_name}}) {
-            print "test $test_name found...";
-            die("Failed on $test_name")
-               unless &{$::test_subs{$test_name}}();
+            test_err("Failed on $test_name") unless &{$::test_subs{$test_name}}();
           }
           else {
-            print "test $test_name not found ";
+            test_err( "test $test_name not found");
           }
       }
   }
   else {
      for my $test_name (sort keys %::test_subs) {
        if (defined &{$::test_subs{$test_name}}) {
-         print "test $test_name found...";
-         die("Failed on $test_name")
+         test_err("Failed on $test_name")
             unless &{$::test_subs{$test_name}}();
        }
        else {
-         print "test $test_name not found ";
+         test_err("test $test_name not found");
        }
      }
   }
-
 }
 
 # ====== ====== ====== ====== ====== ====== ====== ======
@@ -249,7 +329,12 @@ if ($list) {
   }
   exit(0);
 }
-
-RunTests();
-print "done\n";
+else {
+  RunTests();
+}
+if (@test_errs > 1) {
+  print "Test errors:\n";
+  print join("\n", @::test_errs);
+}
+print "\ndone\n";
 #
