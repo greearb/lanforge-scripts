@@ -48,34 +48,34 @@ die ("No ip found for mgt_dev; your config.values file is out of date: $!")
    unless ((defined $ip) && ($ip ne ""));
 
 print "ip: $ip\n";
-my @host_lines = `cat /etc/hosts`;
-chomp (@host_lines);
-@host_lines = ("127.0.0.1 localhost", @host_lines)
-   if (@host_lines < 1);
-my $removed = 0;
-for (my $i =$#host_lines-1; $i>=0; $i--) {
-   my $line = $host_lines[$i];
-   if ($line =~ /$MgrHostname/) {
-     splice(@host_lines, $i, 1);
-     $removed++;
-   }
-   if (($removed < 2) && ( $line eq "" || $line eq "\n")) {
-     splice(@host_lines, $i, 1);
-     $removed++;
-   }
+
+# This must be kept in sync with similar code in lf_kinstall.
+my $fname = "/etc/hosts";
+if (-f "$fname") {
+  my @lines = `cat $fname`;
+  open(FILE, ">$fname") or die "Couldn't open file: $fname for writing: $!\n\n";
+  my $foundit = 0;
+  my $i;
+
+  for ($i = 0; $i<@lines; $i++) {
+    my $ln =$lines[$i];
+    chomp($ln);
+    if ($ln =~ /^###-LF-HOSTAME-NEXT-###/) {
+      print FILE "$ln\n";
+      print FILE "$ip $MgrHostname\n";
+      $i++;
+      $foundit = 1;
+    }
+    else {
+      print FILE "$ln\n";
+    }
+  }
+  if (!$foundit) {
+    print FILE "###-LF-HOSTAME-NEXT-###\n";
+    print FILE "$ip $MgrHostname";
+  }
+  close FILE;
 }
-@host_lines = (@host_lines, ("$ip $MgrHostname", "\n"));
-my $dt = `date +%Y%m%d-%H%M%s`;
-chomp $dt;
-#print "dt[$dt]\n";
-#print "cp /etc/hosts /etc/.hosts.$dt\n";
-#print "=======================================\n";
-#print join("\n", @host_lines);
-#print "=======================================\n";
-die ("Unable to write to /etc/hosts: $!")
-   unless open(my $fh, ">", "/etc/hosts");
-print $fh join("\n", @host_lines);
-close $fh;
 
 my $local_crt ="";
 my $local_key ="";
@@ -141,6 +141,8 @@ foreach my $file (@places_to_check) {
             $edited++ if ($confline =~ /# modified by lanforge/);
          }
          push(@newlines, "# modified by lanforge\n") if ($edited == 0);
+
+	 my $fh;
          die ($!) unless open($fh, ">", $file);
          print $fh join("\n", @newlines);
          close $fh;
