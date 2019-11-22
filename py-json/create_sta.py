@@ -252,7 +252,7 @@ def main():
         #lf_r = LFRequest.LFRequest(base_url+"/port/1/%s/%s"%(resource_id, sta_name))
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
-        lf_r.get()
+        lf_r.jsonPost()
     LFUtils.waitUntilPortsAdminDown(resource_id, desired_stations)
 
     for sta_name in desired_stations:
