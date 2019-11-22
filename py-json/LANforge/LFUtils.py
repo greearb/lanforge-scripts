@@ -48,8 +48,6 @@ class PortEID:
         port_name = json_s['name']
 # end class PortEID
 
-
-
 def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", flags=ADD_STA_FLAGS_DOWN_WPA2, ssid="", passphrase="", debug_on=False):
     """
     For use with add_sta. If you don't want to generate mac addresses via patterns (xx:xx:xx:xx:81:*)
@@ -291,10 +289,10 @@ def waitUntilPortsDisappear(resource_id=1, port_list=()):
                 found_stations.append(port_name)
     return None
 
-###
+
 def waitUntilPortsAppear(resource_id=1, port_list=()):
     found_stations = []
-    sleep(1)
+    sleep(2)
     while len(found_stations) < len(port_list):
         found_stations = []
         for port_name in port_list:
@@ -304,5 +302,7 @@ def waitUntilPortsAppear(resource_id=1, port_list=()):
             json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
                 found_stations.append(port_name)
-    sleep(1)
+    sleep(2)
     return None
+
+ ###
