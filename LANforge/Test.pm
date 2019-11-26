@@ -4,7 +4,12 @@ use strict;
 use warnings;
 use diagnostics;
 use Carp;
-use Test2::V0;
+
+# Ubuntu: libtest2-suite-perl
+use Test2::V0 qw(ok fail done_testing);
+use Test2::Tools::Basic qw(plan);
+
+
 $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
@@ -22,8 +27,10 @@ if (defined $ENV{'DEBUG'}) {
 require Exporter;
 our @EXPORT_OK=qw(new test);
 
-our $FAIL   = 0;
-our $OK     = 1;
+#our $FAIL   = 'fail';
+#our $OK     = 'pass';
+#our $PASS     = 'pass';
+our @test_errors = ();
 
 sub new {
    my $class = shift;
@@ -44,18 +51,27 @@ sub new {
    return $self;
 }
 
+sub run {
+  my $self = shift;
+  print "Run $self->{Name}\n";
+  my $result = shift;
+  
+  ok($result, $self->{'Name'}) || fail($self->{'Name'});
+}
+
 sub test {
    my $self = shift;
    if (! (defined $self->{'Test'})) {
+      print "LANforge::test lacks self->Test, please rewrite your script.\n";
       return $::FAIL;
    }
-   return &{$self->{'Test'}}();
+   return  $self->{'Test'}();
 }
 sub test_err {
   my $self = shift;
   for my $e (@_) {
     my $ref = "".(caller(1))[3].":".(caller(1))[2]."";
-    push (@{$self->{'Errors'}}, "$ref: $e");
+    push (@test_errors, "$ref: $e");
   }
 }
 1;
