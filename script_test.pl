@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use diagnostics;
 use Carp;
-
+use Time::HiRes qw(usleep);
 $SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 $| = 1;
@@ -15,14 +15,16 @@ use lib './LANforge';
 # Ubuntu: libtry-tiny-smartcatch-perlq
 use Try::Tiny;
 use Getopt::Long;
-use JSON::XS;
+
 use HTTP::Request;
 use LWP;
 use LWP::UserAgent;
-use JSON;
+require JSON;
+require JSON::PP;
+use JSON::XS;
 use Data::Dumper;
 # Ubuntu: libtest2-suite-perl
-use Test2::V0 qw(ok fail done_testing);
+use Test2::V0 qw(ok fail done_testing is);
 use Test2::Tools::Basic qw(plan);
 
 use constant NA => "NA";
@@ -122,7 +124,7 @@ $tests{'query_port_cli'} = LANforge::Test->new(Name=>'query_port_cli',
      my $resp = $::LFUtils->doAsyncCmd($cmd);
      ($::port_ip) = $resp =~ / IP:\s+([^ ]+) /;
      fail($self->{Name}) if (!(defined $::port_ip));
-     $self->run((length($::port_ip) >= 7));
+     ok((length($::port_ip) >= 7));
      # || fail($self->{Name}."port_ip [$::port_ip] incorrect\n");
    });
 
@@ -134,7 +136,7 @@ $tests{'query_port_class_port'} = LANforge::Test->new(Name=>'query_port_class_po
      my $resp = $::LFUtils->doAsyncCmd($cmd);
      my $lf_port = LANforge::Port->new;
      $lf_port->decode($resp);
-     $self->run($lf_port->ip_addr() eq $::port_ip);
+     ok($lf_port->ip_addr() eq $::port_ip);
      
      #$self->test_err( "port_ip ".$lf_port->ip_addr()." doesn't match above $::port_ip");
      #return $LANforge::Test::FAIL;
@@ -147,110 +149,260 @@ $tests{'query_port_jsonutils'} = LANforge::Test->new(Name=>'query_port_jsonutils
       my $url = "http://".$::lf_mgr.":8080/port/1/1/eth0";
       my $port_json = json_request($url);
       #print Dumper($port_json);
-      $self->run($port_json->{interface}->{ip} eq $::port_ip);
+      ok($port_json->{interface}->{ip} eq $::port_ip);
    });
 
 ## test lf_portmod.pl
 $tests{'query_port_lfportmod'} = LANforge::Test->new(Name=>'query_port_lfportmod',
    Desc=>'query port using lfportmod', Test=>sub {
       my $self = pop;
-      print "Trying: ./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port\n";
-      fail("lf_portmod.pl not found in ".cwd()) if (-f "./lf_portmod.pl");
+      print "\nTrying: ./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port\n";
+      fail("lf_portmod.pl not found in ".cwd()) if (! -f "./lf_portmod.pl");
       my $resp = `./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port`;
-      fail(!(defined $resp));
-      #$self->test_err("Insufficient output from lf_portmod.pl.\n");
+      if (length($resp) < 250) {
+        note($resp);
+        fail("response too short") ;
+      }
 
       my ($port_ip2) = $resp =~ / IP:\s+([^ ]+) /;
-      $self->run((defined $port_ip2) && length($port_ip2) >= 7);
+      print "port_ip2: $port_ip2\n";
+      ok((defined $port_ip2) && length($port_ip2) >= 7);
       #$self->test_err("port_ip [$port_ip2] incorrect\n");
       #return $::FAIL;
    });
 
-$tests{'port_down_up_down_cli'} = LANforge::Test->new(Name=>'t_set_port_up',
+$tests{'port_down_up_down_cli'} = LANforge::Test->new(Name=>'port_down_up_down_cli',
    Desc=>'port_down_up_down, cli', Test=>sub {
      my $self = pop;
-     my $up = 1;
-     my $down = 0;
-     my $report_timer = 1;
+     my $up = 0;
+     my $down = 1;
+     my $report_timer = 1000; # ms
      my $status = -1;
      my $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
        NA, NA, NA, NA, $down, NA, NA, NA, NA, 8421378, $report_timer);
+     
      my $resp = $::LFUtils->doAsyncCmd($cmd);
      my $begin = time();
      until ($status == $down) {
        sleep 1;
+       print ".";
        $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
        my @lines = split("\n", $resp);
        my @matching = grep { /^\s+Current:\s+/ } @lines;
        fail("eth1 has multiple lines starting with Current")
-        if (@matching > 1);
+         if (@matching > 1);
+       print "Matching Current: $matching[0]\n";
        my ($updown) = $matching[0] =~ /Current:\s+(\w+)\s+/;
-       $status = ($updown eq "UP") ? 1: (($updown eq "DOWN") ? 0 : -1);
-       print $matching[0] 
-        if ($status == -1);
+       $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+       print $matching[0] if ($status == -1);
        if ((time() - $begin) > 15) {
-           fail("port does not report down in 15 seconds");
-           die("stupid thing wont admin down");
+          note($resp);
+          fail("port does not report down in 15 seconds");
        }
      }
-     print "Port is down\n";
+     print "port is down\n";
      ok(1);
-     sleep 1;
+     sleep 2;
+     
      $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
        NA, NA, NA, NA, $up, NA, NA, NA, NA, 8421378, $report_timer);
      $resp = $::LFUtils->doAsyncCmd($cmd);
      $begin = time();
      until ($status == $up) {
        sleep 1;
+       print ".";
        $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
        my @lines = split("\n", $resp);
        my @matching = grep { /^\s+Current:\s+/ } @lines;
        fail("eth1 has multiple lines starting with Current") 
-        if (@matching > 1);
+         if (@matching > 1);
        my ($updown) = $matching[0] =~ /Current:\s+(\w+)\s+/;
-       $status = ($updown eq "UP") ? 1: (($updown eq "DOWN") ? 0 : -1);
-       print $matching[0] 
-        if ($status == -1);
+       $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+       print $matching[0] if ($status == -1);
        if ((time() - $begin) > 15) {
-           fail("port does not report up in 15 seconds");
-           die("stupid thing wont admin up");
+         note($resp);
+         fail("port does not report up in 15 seconds");
        }
      }
-     print "Port is up\n";
+     print "port is up\n";
      ok(1);
+     sleep 2;
+     
+     
      $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
        NA, NA, NA, NA, $down, NA, NA, NA, NA, 8421378, $report_timer);
      $resp = $::LFUtils->doAsyncCmd($cmd);
      $begin = time();
      until ($status == $down) {
        sleep 1;
+       print ".";
        $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
        my @lines = split("\n", $resp);
        my @matching = grep { /^\s+Current:\s+/ } @lines;
        fail("eth1 has multiple lines starting with Current") 
         if (@matching > 1);
        my ($updown) = $matching[0] =~ /Current:\s+(\w+)\s+/;
-       $status = ($updown eq "UP") ? 1: (($updown eq "DOWN") ? 0 : -1);
-       print $matching[0] 
-        if ($status == -1);
+       $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+       print $matching[0] if ($status == -1);
        if ((time() - $begin) > 15) {
-           fail("port does not report down in 15 seconds");
-           die("stupid thing wont admin down");
+         note($resp);
+         fail("port does not report down in 15 seconds");
        }
      }
-     print "Port is down\n";
+     print "port is down\n";
      ok(1);
    });
 
-$tests{'port_up_class_port'} = LANforge::Test->new(Name=>'t_set_port_up',
-   Desc=>'set port up, cli', Test=>sub {
+$tests{'port_down_up_down_class_port'} = LANforge::Test->new(Name=>'port_down_up_down_class_port',
+   Desc=>'set port up, class Port', Test=>sub {
    my $self = pop;
-   #my $cmd = 
-  ## test LANforge::Port
-  ## test JsonUtils/port
-  ## test lf_portmod.pl
+   my $report_timer = 1000; # ms
+   my $up = 0;
+   my $down = 1;
+   my $status = -1;
+   
+   # this class cannot actually manipulate anything and has no commands
+   my $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
+   my $lfport = LANforge::Port->new;
+   $lfport->decode($resp);
+   print ("cur flags: ".$lfport->cur_flags()."\n");
+   my $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
+     NA, NA, NA, NA, $down, NA, NA, NA, NA, 8421378, $report_timer);
+   
+   $resp = $::LFUtils->doAsyncCmd($cmd);
+   my $begin = time();
+   until ($status == $down) {
+     sleep 1;
+     print ".";
+     $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
+     $lfport->decode($resp);
+     print ("cur flags: ".$lfport->cur_flags()."\n");
+     #my @lines = split("\n", $resp);
+     #my @matching = grep { /^\s+Current:\s+/ } @lines;
+     #fail("eth1 has multiple lines starting with Current")
+     #  if (@matching > 1);
+     #print "Matching Current: $matching[0]\n";
+     my ($updown) = $lfport->cur_flags() =~ /(DOWN|UP)\s+LINK-/;
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     #print $matching[0] if ($status == -1);
+     if ((time() - $begin) > 15) {
+        note($resp);
+        fail("port does not report down in 15 seconds");
+     }
+   }
+   print "port is down\n";
+   ok(1);
+   sleep 2;
+     
+   $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
+     NA, NA, NA, NA, $up, NA, NA, NA, NA, 8421378, $report_timer);
+   $resp = $::LFUtils->doAsyncCmd($cmd);
+   $begin = time();
+   until ($status == $up) {
+     sleep 1;
+     print ".";
+     $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
+     $lfport->decode($resp);
+     print ("cur flags: ".$lfport->cur_flags()."\n");
+     #my @lines = split("\n", $resp);
+     #my @matching = grep { /^\s+Current:\s+/ } @lines;
+     #fail("eth1 has multiple lines starting with Current") 
+     #  if (@matching > 1);
+     my ($updown) = $lfport->cur_flags() =~ /(DOWN|UP)\s+LINK-/;
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     #print $matching[0] if ($status == -1);
+     if ((time() - $begin) > 15) {
+       note($resp);
+       fail("port does not report up in 15 seconds");
+     }
+   }
+   print "port is up\n";
+   ok(1);
+   sleep 2;
+   
+     
+   $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, "eth1",
+     NA, NA, NA, NA, $down, NA, NA, NA, NA, 8421378, $report_timer);
+   $resp = $::LFUtils->doAsyncCmd($cmd);
+   $begin = time();
+   until ($status == $down) {
+     sleep 1;
+     print ".";
+     $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource eth1");
+     $lfport->decode($resp);
+     print ("cur flags: ".$lfport->cur_flags()."\n");
+     #my @lines = split("\n", $resp);
+     #my @matching = grep { /^\s+Current:\s+/ } @lines;
+     #fail("eth1 has multiple lines starting with Current") 
+     #if (@matching > 1);
+     my ($updown) = $lfport->cur_flags() =~ /(DOWN|UP)\s+LINK-/;
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     #print $matching[0] if ($status == -1);
+     if ((time() - $begin) > 15) {
+       note($resp);
+       fail("port does not report down in 15 seconds");
+     }
+   }
+   print "port is down\n";
+   ok(1);
    });
 
+$tests{'port_down_up_down_jsonutils'} = LANforge::Test->new(Name=>'port_down_up_down_jsonutils',
+   Desc=>'set port up, jsonutils', Test=>sub {
+   my $self = pop;
+   my $report_timer = 1000; # ms
+   my $up = 0;
+   my $down = 1;
+   my $status = -1;
+   
+   my $url = "http://".$::lf_mgr.":8080/port/1/1/eth0";
+   #my $port_json = json_request($url);
+   #print Dumper($port_json);
+   #is($port_json->{interface}->{phantom}, JSON::PP::true);
+   #is($port_json->{interface}->{down}, JSON::PP::true);
+   
+   my $rh_data = {
+     'shelf'    => 1,
+     'resource' => $::resource,
+     'port'     => 'eth1',
+     'current_flags' => $down,
+     'interest' => 8421378,
+     'report_timer' => 1000,
+     
+   };
+   my $rh_response = json_post("http://".$::lf_mgr.":8080/cli-json/set_port", $rh_data);
+   sleep(4);
+   my $port_json = json_request($url);
+   #print Dumper($port_json);
+   #is($port_json->{interface}->{phantom}, JSON::PP::true);
+   print Dumper($port_json->{interface}->{down});
+   ok($port_json->{interface}->{down}, "should have set port down");
+   $port_json = undef;
+   sleep(1);
+   
+   
+   $rh_data->{current_flags} = $up;
+   $rh_response = json_post("http://".$::lf_mgr.":8080/cli-json/set_port", $rh_data);
+   sleep(4);
+   $port_json = json_request($url);
+   print Dumper($port_json->{interface}->{down});
+   ok(! $port_json->{interface}->{down}, "should have set port up");
+   $port_json = undef;
+   sleep(1);
+   
+   # and down again
+   $rh_data->{current_flags} = $down;
+   $rh_response = json_post("http://".$::lf_mgr.":8080/cli-json/set_port", $rh_data);
+   sleep(4);
+   $port_json = json_request($url);
+   print Dumper($port_json->{interface}->{down});
+   ok($port_json->{interface}->{down}, "should have set port down");
+  });
+
+$tests{'port_down_up_down_lfportmod'} = 0;
+  ## test lf_portmod.pl
+  
+  
 sub t_set_port_down {
   ## test CLI
   ## test LANforge::Port
@@ -349,6 +501,10 @@ our @test_list = (
  'query_port_class_port',
  'query_port_jsonutils',
  'query_port_lfportmod',
+ 'port_down_up_down_cli',
+ 'port_down_up_down_class_port',
+ 'port_down_up_down_jsonutils',
+ 'port_down_up_down_lfportmod',
   
   #'03_set_port_down'          => 0,
   #'04_create_mvlan'           => 0,
@@ -367,20 +523,25 @@ our @test_list = (
 
 
 sub RunTests {
-    my $rf_test = undef;
-    
-    #if (@specific_tests > 0) {
-    #    for my $test_name (sort @specific_tests) {
-    #        if (defined &{$::test_subs{$test_name}}) {
-    #          test_err("Failed on $test_name") unless &{$::test_subs{$test_name}}();
-    #        }
-    #        else {
-    #          test_err( "test $test_name not found");
-    #        }
-    #    }
-    #}
-    #else {
-    plan(0+@::test_list);
+  my $rf_test = undef;
+  
+  if (@specific_tests > 0) {
+    for my $test_name (@specific_tests) {
+      if (! (defined $::tests{$test_name})) {
+        die("test $test_name not found");
+      }
+      my $r_test = $::tests{$test_name};
+      try {
+        print "$test_name...";
+        my $rv = $r_test->test();
+        print "$rv\n";
+      }
+      catch {
+        print("Error:".$_ );
+      }
+    } #~for
+  } # ~if specific tests
+  else {
     for my $test_name (@::test_list) {
       if (! (defined $::tests{$test_name})) {
          die("test $test_name not found");
@@ -392,10 +553,10 @@ sub RunTests {
         print "$rv\n";
       }
       catch {
-        $r_test->test_err($_);
+        print("Error:".$_ );
       }
     }
-  #}
+  }
 }
 
 # ====== ====== ====== ====== ====== ====== ====== ======
@@ -407,7 +568,7 @@ if ($list) {
   print "Test names:\n";
   for my $test_name (@::test_list) {
       $av=" ";
-      if (defined &{$::tests{$test_name}}) {
+      if (defined $::tests{$test_name}) {
          $av='*';
       }
       print " ${av} ${test_name}\n";
@@ -417,7 +578,7 @@ if ($list) {
 else {
   RunTests();
 }
-done_testing();
+#done_testing();
 #if (@test_errs > 1) {
 #  print "Test errors:\n";
 #  print join("\n", @::test_errs);
