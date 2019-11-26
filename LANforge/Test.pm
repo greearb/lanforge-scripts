@@ -52,11 +52,13 @@ sub new {
 }
 
 sub run {
+  plan(1);
   my $self = shift;
   print "Run $self->{Name}\n";
   my $result = shift;
   
   ok($result, $self->{'Name'}) || fail($self->{'Name'});
+  done_testing();
 }
 
 sub test {
@@ -71,7 +73,7 @@ sub test_err {
   my $self = shift;
   for my $e (@_) {
     my $ref = "".(caller(1))[3].":".(caller(1))[2]."";
-    push (@test_errors, "$ref: $e");
+    push (@::test_errors, "$ref: $e");
   }
 }
 1;
