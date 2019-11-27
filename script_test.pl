@@ -157,7 +157,7 @@ $tests{'query_port_lfportmod'} = LANforge::Test->new(Name=>'query_port_lfportmod
       my $self = shift;
       fail("lf_portmod.pl not found in ".cwd()) if (! -f "./lf_portmod.pl");
       #print "\nTrying: ./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --show_port\n";
-      my $resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name eth0 --show_port`;
+      my $resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --show_port`;
       if (length($resp) < 250) {
         note($resp);
         fail("response too short") ;
@@ -259,7 +259,7 @@ $tests{'port_down_up_down_class_port'} = LANforge::Test->new(Name=>'port_down_up
    my $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource $::testport");
    my $lfport = LANforge::Port->new;
    $lfport->decode($resp);
-   print ("cur flags: ".$lfport->cur_flags()."\n");
+   #print ("cur flags: ".$lfport->cur_flags()."\n");
    my $cmd = $::LFUtils->fmt_cmd("set_port", 1, $::resource, $::testport,
      NA, NA, NA, NA, $down, NA, NA, NA, NA, 8421378, $report_timer);
 
@@ -410,8 +410,72 @@ $tests{'port_down_up_down_jsonutils'} = LANforge::Test->new(Name=>'port_down_up_
    ok($status == $down, "$updown {CF: ".$lfport->cur_flags()."\n");
   });
 
-$tests{'port_down_up_down_lfportmod'} = 0;
-  ## test lf_portmod.pl
+$tests{'port_down_up_down_lfportmod'} = LANforge::Test->new(Name=>'port_down_up_down_lfportmod',
+   Desc=>'set port up, lfportmod', Test=>sub {
+   my $self = shift;
+   my $up = 0;
+   my $down = 1;
+   my $status = -1;
+   my $updown = "";
+   my $begin = time();
+   my $lfport = LANforge::Port->new;
+   print "----------------------------------------------\n";
+   print "./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --set_ifstat down\n";
+   my $cmd_resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --set_ifstat down`;
+   print "----------------------------------------------\n";
+   until( $status == $down ) {
+     sleep 1;
+     my $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource $::testport");
+     $lfport->decode($resp);
+     ($updown) = $lfport->cur_flags() =~ /^\s*(DOWN|UP)\s+/;
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     if ((time() - $begin) > 15) {
+        note($resp);
+        fail("port does not report down in 15 seconds");
+        last;
+     }
+   }
+   #print "$updown {CF: ".$lfport->cur_flags()."\n";
+   ok($updown eq "DOWN", "$updown {CF: ".$lfport->cur_flags()."\n");
+   ok($status == $down, "$updown {CF: ".$lfport->cur_flags()."\n");
+   
+   $cmd_resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --set_ifstat up`;
+   $begin = time();
+   until( $status == $up ) {
+     sleep 1;
+     my $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource $::testport");
+     $lfport->decode($resp);
+     ($updown) = $lfport->cur_flags() =~ /^\s*(DOWN|UP)\s+/;
+     #print "$updown <CF: ".$lfport->cur_flags()."\n";
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     if ((time() - $begin) > 15) {
+        note($resp);
+        fail("port does not report up in 15 seconds");
+     }
+   }
+   ok($updown eq "UP", "$updown {CF: ".$lfport->cur_flags()."\n");
+   ok($status == $up, "$updown {CF: ".$lfport->cur_flags()."\n");
+   
+   $cmd_resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name $::testport --set_ifstat down`;
+   $begin = time();
+   until( $status == $down ) {
+     sleep 1;
+     my $resp = $::LFUtils->doAsyncCmd("nc_show_port 1 $resource $::testport");
+     $lfport->decode($resp);
+     ($updown) = $lfport->cur_flags() =~ /^\s*(DOWN|UP)\s+/;
+
+     $status = ($updown eq "DOWN") ? $down : (($updown eq "UP") ? $up : -1);
+     last if ($status == $down);
+     if ((time() - $begin) > 15) {
+        note($resp);
+        fail("port does not report down in 15 seconds");
+     }
+   }
+   #print "$updown {CF: ".$lfport->cur_flags()."\n";
+   ok($updown eq "DOWN", "$updown {CF: ".$lfport->cur_flags()."\n");
+   ok($status == $down, "$updown {CF: ".$lfport->cur_flags()."\n");
+  });
+
   
   
 sub t_set_port_down {
