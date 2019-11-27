@@ -39,6 +39,7 @@ sub new {
 	      %options,
 	      amsdu_frame_count => 0,
 	      ssi_sig_found => 0,
+              ba_bitmap => "0000000000000000", # empty bitmap
 	     };
 
   bless($self, $class);
@@ -139,7 +140,8 @@ sub append {
     $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
-    #print "ba-bitmap: $1\n";
+    #print "ba-bitmap: $1\n"; # this bitmap needs to be 16 bytes
+    warn("ba_bitmap only ".length($1)." bytes: ".$1) if (length($1) != 16);
     $self->{ba_bitmap} = $1;
   }
   elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
