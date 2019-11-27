@@ -20,7 +20,11 @@ package main;
 use strict;
 use warnings;
 use diagnostics;
-#use Carp;
+if ((defined $ENV{'DEBUG'}) && ($ENV{'DEBUG'} eq "1")) {
+   use Carp;
+   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
+   $SIG{ __WARN__  } = sub { Carp::confess( @_ ) };
+}
 # Un-buffer output
 $| = 1;
 
@@ -184,7 +188,7 @@ GetOptions
  'cmd=s'             => \$cmd,
  'cli_cmd=s'         => \$cli_cmd,
  'manager|mgr|m=s'   => \$lfmgr_host,
- 'manager_port=i'    => \$lfmgr_port,
+ 'manager_port|mgr_port|mp:i' => \$lfmgr_port,
  'load_db|load=s'    => \$load,
  'quiet|q=s'         => \$::quiet,
  'resource|card|res|r=i' => \$card,
