@@ -42,6 +42,7 @@ sub new {
    $self->{'ExpectedNumber'} = 1;
    $self->{'Test'} = undef;
    if (defined $parm{'Test'}) {
+      #print "new: Creating Test $self->{'Name'}\n";
       $self->{'Test'} = $parm{'Test'};
    }
    if (defined $parm{'ExpectedNumber'}) {
@@ -67,7 +68,7 @@ sub test {
       print "LANforge::test lacks self->Test, please rewrite your script.\n";
       return $::FAIL;
    }
-   return  $self->{'Test'}();
+   return  $self->{'Test'}($self, @_);
 }
 sub test_err {
   my $self = shift;
