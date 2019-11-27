@@ -156,15 +156,16 @@ $tests{'query_port_jsonutils'} = LANforge::Test->new(Name=>'query_port_jsonutils
 $tests{'query_port_lfportmod'} = LANforge::Test->new(Name=>'query_port_lfportmod',
    Desc=>'query port using lfportmod', Test=>sub {
       my $self = pop;
-      print "\nTrying: ./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port\n";
       fail("lf_portmod.pl not found in ".cwd()) if (! -f "./lf_portmod.pl");
-      my $resp = `./lf_portmod.pl --manager $::lf_mgr --card $::resource --port_name eth0 --show_port`;
+      print "\nTrying: ./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name eth0 --show_port\n";
+      my $resp = `./lf_portmod.pl --mgr $::lf_mgr --mgr_port $::lfmgr_port --card $::resource --port_name eth0 --show_port`;
       if (length($resp) < 250) {
         note($resp);
         fail("response too short") ;
       }
 
       my ($port_ip2) = $resp =~ / IP:\s+([^ ]+) /;
+      ok(defined $port_ip2);
       print "port_ip2: $port_ip2\n";
       ok((defined $port_ip2) && length($port_ip2) >= 7);
       #$self->test_err("port_ip [$port_ip2] incorrect\n");
