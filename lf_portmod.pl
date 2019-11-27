@@ -509,7 +509,8 @@ if ((defined $filter_ports) && ($filter_ports ne "")) {
       print("EID\tDEV\t".join("\t", @keys)."\n");
       print (join("\n", sort(@out))."\n");
    }
-   exit(0);}
+   exit(0);
+}
 
 if ((defined $list_ports) && ($list_ports ne "")) {
    print $utils->doAsyncCmd("nc_show_ports 1 $card all");
@@ -522,14 +523,14 @@ if (length($port_name) == 0) {
 }
 
 # this is the --show_port options ("")
-if ((defined $show_port) && (($show_port eq "1") || ($show_port eq ""))) {
+if (($show_port ne "NA") && (($show_port eq "1") || ($show_port eq ""))) {
    #$::quiet = 0;
    #$utils->cli_rcv_silent(0);
    print $utils->doAsyncCmd("nc_show_port 1 $card $port_name") . "\n";
    exit(0);
 }
 # this is the --show_port "ssss" options (key,key,key)
-elsif((defined $show_port) && ("$show_port" ne "")) {
+elsif(($show_port ne "NA") && ($show_port ne "")) {
    my %option_map    = ();
    my $option        = '';
    for $option (split(',', $show_port)) {
