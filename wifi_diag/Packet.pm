@@ -40,6 +40,7 @@ sub new {
 	      amsdu_frame_count => 0,
 	      ssi_sig_found => 0,
               ba_bitmap => "0000000000000000", # empty bitmap
+              ba_starting_seq => 0, # needs to be initialized
 	     };
 
   bless($self, $class);

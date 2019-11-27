@@ -1,10 +1,13 @@
 package Tid;
 
-use warnings;
 use strict;
-
+use warnings;
+use diagnostics;
 use bigint;
 use bignum;
+use Carp;
+$SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
+$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 my $warn_dup_ba_once = 1;
 my $max_pkt_store = 250;
@@ -14,36 +17,36 @@ sub new {
   my %options = @_;
 
   my $self = {
-	      pkts => [],
-	      rx_no_ack_found_all => 0,
-	      rx_no_ack_found_big => 0,
-	      tx_no_ack_found_all => 0,
-	      tx_no_ack_found_big => 0,
-	      tx_retrans_pkts => 0,
-	      rx_retrans_pkts => 0,
-	      tx_amsdu_retrans_pkts => 0,
-	      rx_amsdu_retrans_pkts => 0,
-	      rx_pkts => 0,
-	      tx_pkts => 0,
-	      rx_amsdu_pkts => 0,
-	      tx_amsdu_pkts => 0,
-	      dummy_rx_pkts => 0,
-	      dummy_tx_pkts => 0,
-	      tot_pkts => 0,
-	      last_tot_pkts => 0,
-	      last_rx_pkts => 0,
-	      last_tx_pkts => 0,
-	      last_rx_retrans_pkts => 0,
-	      last_tx_retrans_pkts => 0,
-	      last_dummy_rx_pkts => 0,
-	      last_dummy_tx_pkts => 0,
-	      last_ps_timestamp => 0,
-	      last_rx_amsdu_pkts => 0,
-	      last_tx_amsdu_pkts => 0,
-	      last_tx_amsdu_retrans_pkts => 0,
-	      last_rx_amsdu_retrans_pkts => 0,
-	      %options,
-	     };
+              pkts => [],
+              rx_no_ack_found_all => 0,
+              rx_no_ack_found_big => 0,
+              tx_no_ack_found_all => 0,
+              tx_no_ack_found_big => 0,
+              tx_retrans_pkts => 0,
+              rx_retrans_pkts => 0,
+              tx_amsdu_retrans_pkts => 0,
+              rx_amsdu_retrans_pkts => 0,
+              rx_pkts => 0,
+              tx_pkts => 0,
+              rx_amsdu_pkts => 0,
+              tx_amsdu_pkts => 0,
+              dummy_rx_pkts => 0,
+              dummy_tx_pkts => 0,
+              tot_pkts => 0,
+              last_tot_pkts => 0,
+              last_rx_pkts => 0,
+              last_tx_pkts => 0,
+              last_rx_retrans_pkts => 0,
+              last_tx_retrans_pkts => 0,
+              last_dummy_rx_pkts => 0,
+              last_dummy_tx_pkts => 0,
+              last_ps_timestamp => 0,
+              last_rx_amsdu_pkts => 0,
+              last_tx_amsdu_pkts => 0,
+              last_tx_amsdu_retrans_pkts => 0,
+              last_rx_amsdu_retrans_pkts => 0,
+              %options,
+             };
 
   bless($self, $class);
 
@@ -52,8 +55,8 @@ sub new {
     # use these anyway...
     my $rpt_fname = $self->{report_prefix} .
       "tid-" . $self->tidno() . "-" .
-	$self->{addr_a} . "." .
-	  $self->{addr_b} . "-rpt.txt";
+        $self->{addr_a} . "." .
+          $self->{addr_b} . "-rpt.txt";
     open(my $MCS, ">", $rpt_fname) or die("Can't open $rpt_fname for writing: $!\n");
     $self->{mcs_fh} = $MCS;
 
@@ -136,40 +139,40 @@ sub add_pkt {
       #print "checking tmp-pkt frame: " . $tmp->{frame_num} . " seqno: " . $tmp->seqno();
       #print " transmitter: " . $tmp->transmitter();
       #print " pkt-rcvr: " . $pkt->receiver() . "\n";
+      #print "Starting_seqno:$starting_seqno\n";
       if ($tmp->transmitter() eq $pkt->receiver()) {
-	if ($tmp->seqno() >= $starting_seqno && $tmp->seqno() < ($starting_seqno + 64)) {
-	  # tmp pkt might match this BA bitmap..check closer.
-	  my $diff = $tmp->seqno() - $starting_seqno;
-	  
-	  if ($bi_as_long & (1 << $diff)) {
-	    # Found a matching frame.
-	    $bi_mask |= (1 << $diff);
+        if (($tmp->seqno() >= $starting_seqno) && ($tmp->seqno() < ($starting_seqno + 64))) {
+          # tmp pkt might match this BA bitmap..check closer.
+          my $diff = $tmp->seqno() - $starting_seqno;
+          if ($bi_as_long & (1 << $diff)) {
+            # Found a matching frame.
+            $bi_mask |= (1 << $diff);
 
-	    if ($tmp->block_acked_by() != -1) {
-	      # This seems to be a common thing, warn once and not again.
-	      if ($warn_dup_ba_once) {
-		print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acking frame: " .
-		  $tmp->frame_num() . " already block-acked by frame: " . $tmp->block_acked_by() . ".  This warning will not be shown again.\n";
-		$warn_dup_ba_once = 0;
-	      }
-	      $ba_dup++;
-	    }
-	    elsif ($tmp->acked_by() != -1) {
-	      print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acking frame: " .
-		$tmp->frame_num() . " already acked by frame: " . $tmp->acked_by() . "\n";
-	    }
-	    $tmp->set_block_acked_by($pkt->frame_num());
-	    $ba_tot++;
+            if ($tmp->block_acked_by() != -1) {
+              # This seems to be a common thing, warn once and not again.
+              if ($warn_dup_ba_once) {
+                print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acking frame: " .
+                  $tmp->frame_num() . " already block-acked by frame: " . $tmp->block_acked_by() . ".  This warning will not be shown again.\n";
+                $warn_dup_ba_once = 0;
+              }
+              $ba_dup++;
+            }
+            elsif ($tmp->acked_by() != -1) {
+              print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acking frame: " .
+                $tmp->frame_num() . " already acked by frame: " . $tmp->acked_by() . "\n";
+            }
+            $tmp->set_block_acked_by($pkt->frame_num());
+            $ba_tot++;
 
-	    # Only calculate timestamp if previous packet was last one ACKd and it is not a dummy
-	    # otherwise we probably failed to capture some frames.
-	    if ($i == ($pkt_count - 1)) {
-	      if ($tmp->{raw_pkt} ne "") {
-		$last_timestamp = $tmp->timestamp();
-	      }
-	    }
-	  }
-	}
+            # Only calculate timestamp if previous packet was last one ACKd and it is not a dummy
+            # otherwise we probably failed to capture some frames.
+            if ($i == ($pkt_count - 1)) {
+              if ($tmp->{raw_pkt} ne "") {
+                $last_timestamp = $tmp->timestamp();
+              }
+            }
+          }
+        }
       }
     }# for all pkts
 
@@ -178,36 +181,36 @@ sub add_pkt {
       my $missing = $bi_mask ^ $bi_as_long;
       my $missing_str = "";
       for ($i = 0; $i<64; $i++) {
-	if ($missing & (1<<$i)) {
-	  my $missing_seqno = $starting_seqno + $i;
-	  $missing_str .= $missing_seqno . " ";
+        if ($missing & (1<<$i)) {
+          my $missing_seqno = $starting_seqno + $i;
+          $missing_str .= $missing_seqno . " ";
 
-	  # Add a dummy pkt
-	  my $dummy = Packet->new(dbg => "tid-add-pkt",
-				  frame_num => -1,
-				  receiver => $pkt->transmitter(),
-				  transmitter => $pkt->receiver(),
-				  data_subtype => "DUMMY_BA_ACKED",
-				  timestamp => $pkt->timestamp(),
-				  seqno => $missing_seqno,
-				  tid => $self->tidno());
-	  $dummy->set_block_acked_by($pkt->frame_num());
-	  push(@{$self->{pkts}}, $dummy);
-	  # A transmitting block-ack indicates we dropped pkts sent to us.
-	  if ($pkt->transmitter() eq $self->{addr_a}) {
-	    $self->{dummy_rx_pkts}++;
-	    $pkt->{dummy_rx_pkts}++;
-	  }
-	  else {
-	    $self->{dummy_tx_pkts}++;
-	    $pkt->{dummy_tx_pkts}++;
-	  }
-	  #print "pushing dummy pkt, seqno: $missing_seqno\n";
-	  $ba_tot++;
-	}
+          # Add a dummy pkt
+          my $dummy = Packet->new(dbg => "tid-add-pkt",
+                                  frame_num => -1,
+                                  receiver => $pkt->transmitter(),
+                                  transmitter => $pkt->receiver(),
+                                  data_subtype => "DUMMY_BA_ACKED",
+                                  timestamp => $pkt->timestamp(),
+                                  seqno => $missing_seqno,
+                                  tid => $self->tidno());
+          $dummy->set_block_acked_by($pkt->frame_num());
+          push(@{$self->{pkts}}, $dummy);
+          # A transmitting block-ack indicates we dropped pkts sent to us.
+          if ($pkt->transmitter() eq $self->{addr_a}) {
+            $self->{dummy_rx_pkts}++;
+            $pkt->{dummy_rx_pkts}++;
+          }
+          else {
+            $self->{dummy_tx_pkts}++;
+            $pkt->{dummy_tx_pkts}++;
+          }
+          #print "pushing dummy pkt, seqno: $missing_seqno\n";
+          $ba_tot++;
+        }
       }
       print "WARNING:  block-ack frame: " . $pkt->frame_num() . " acked frames we did not capture, found-these: " . $bi_mask->as_hex .
-	" acked these: " . $bi_as_long->as_hex . " missing: " . $missing->as_hex . "($missing_str), starting-seq-no: $starting_seqno\n";
+        " acked these: " . $bi_as_long->as_hex . " missing: " . $missing->as_hex . "($missing_str), starting-seq-no: $starting_seqno\n";
     }
 
     my $new_ba = $ba_tot - $ba_dup;
@@ -229,30 +232,30 @@ sub add_pkt {
   while ($pkt_count > 0) {
     my $tmp = shift(@{$self->{pkts}});
     if (($tmp->timestamp() + 60 < $pkt->timestamp()) ||
-	($pkt_count > $max_pkt_store)) {
+        ($pkt_count > $max_pkt_store)) {
       if (! $tmp->was_acked()) {
-	if ($tmp->wants_ack()) {
-	  if ($tmp->transmitter() eq $self->{addr_a}) {
-	    $self->{tx_no_ack_found_all}++;
-	    if ($tmp->{bytes_on_wire} > 1000) {
-	      print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
-	      $self->{tx_no_ack_found_big}++;
-	    }
-	    else {
-	      print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
-	    }
-	  }
-	  else {
-	    $self->{rx_no_ack_found_all}++;
-	    if ($tmp->{bytes_on_wire} > 1000) {
-	      print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
-	      $self->{rx_no_ack_found_big}++;
-	    }
-	    else {
-	      print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
-	    }
-	  }
-	}
+        if ($tmp->wants_ack()) {
+          if ($tmp->transmitter() eq $self->{addr_a}) {
+            $self->{tx_no_ack_found_all}++;
+            if ($tmp->{bytes_on_wire} > 1000) {
+              print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+              $self->{tx_no_ack_found_big}++;
+            }
+            else {
+              print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+            }
+          }
+          else {
+            $self->{rx_no_ack_found_all}++;
+            if ($tmp->{bytes_on_wire} > 1000) {
+              print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+              $self->{rx_no_ack_found_big}++;
+            }
+            else {
+              print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing after processing frame: " . $pkt->frame_num() . "\n";
+            }
+          }
+        }
       }
       $pkt_count--;
       next; # Drop frames when we have more than $max_pkt_store or they are older than 1 minute ago
@@ -309,8 +312,8 @@ sub add_pkt {
       my $fh_ps = $self->{mcs_fh_ps};
 
       my $ln =  "" . $pkt->timestamp() . "\t" . $self->tidno() . "\t$diff\t$period_tot_pkts_ps\t" .
-	"$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
-	  "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
+        "$period_rx_pkts_ps\t$period_rx_retrans_pkts_ps\t$period_rx_amsdu_pkts_ps\t$period_rx_retrans_amsdu_pkts_ps\t$period_dummy_rx_pkts_ps\t" .
+          "$period_tx_pkts_ps\t$period_tx_retrans_pkts_ps\t$period_tx_amsdu_pkts_ps\t$period_tx_retrans_amsdu_pkts_ps\t$period_dummy_tx_pkts_ps\n";
       print $fh_ps $ln;
     }
 
@@ -334,26 +337,26 @@ sub check_remaining_pkts {
     my $tmp = shift(@{$self->{pkts}});
     if (! $tmp->was_acked()) {
       if ($tmp->wants_ack()) {
-	if ($tmp->transmitter() eq $self->{addr_a}) {
-	  $self->{tx_no_ack_found_all}++;
-	  if ($tmp->{bytes_on_wire} > 1000) {
-	    print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing at end of file.\n";
-	    $self->{tx_no_ack_found_big}++;
-	  }
-	  else {
-	    print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing at end of file.\n";
-	  }
-	}
-	else {
-	  $self->{rx_no_ack_found_all}++;
-	  if ($tmp->{bytes_on_wire} > 1000) {
-	    print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing at end of file.\n";
-	    $self->{rx_no_ack_found_big}++;
-	  }
-	  else {
-	    print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing at end of file.\n";
-	  }
-	}
+        if ($tmp->transmitter() eq $self->{addr_a}) {
+          $self->{tx_no_ack_found_all}++;
+          if ($tmp->{bytes_on_wire} > 1000) {
+            print "WARNING:  did not find ack for BIG TX frame: " . $tmp->desc() . ", removing at end of file.\n";
+            $self->{tx_no_ack_found_big}++;
+          }
+          else {
+            print "WARNING:  did not find ack for small TX frame: " . $tmp->desc() . ", removing at end of file.\n";
+          }
+        }
+        else {
+          $self->{rx_no_ack_found_all}++;
+          if ($tmp->{bytes_on_wire} > 1000) {
+            print "WARNING:  did not find ack for BIG RX frame: " . $tmp->desc() . ", removing at end of file.\n";
+            $self->{rx_no_ack_found_big}++;
+          }
+          else {
+            print "WARNING:  did not find ack for small RX frame: " . $tmp->desc() . ", removing at end of file.\n";
+          }
+        }
       }
     }
     $pkt_count--;
