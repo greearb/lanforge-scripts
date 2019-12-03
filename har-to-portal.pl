@@ -104,15 +104,20 @@ for my $request_start ( sort keys %ordered_entries ) {
   #print Dumper($entry);
   #print "REF: ".ref($entry);
   my $request = $$entry->{request};
-  print Dumper($request);
+  #print Dumper($request);
   my $ra_headers = $request->{headers}; 
   
   my $url = $request->{url};
-  print "URL: $url\n";
+  my $method = $request->{method};
+  print "$method: $url\n";
+  #print Dumper($request) if ($method eq "POST");
+  
   for my $header_e (@$ra_headers) {
-    print "H: ".$header_e->{name} .": ".$header_e->{value} .NL;
+    print "    H: ".$header_e->{name} .": ".$header_e->{value} .NL;
   }
-  last;
+  if ($method eq "POST") {
+    print "    D: ".$request->{'postData'}->{text} .NL;
+  }
 }
 
 #die("unable to open $::outfile: $!")  unless open($fh, ">", $::outfile);
