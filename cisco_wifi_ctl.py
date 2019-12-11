@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 '''
 LANforge 192.168.100.178
+Controller at 192.168.100.112 admin/Cisco123
 Controller is 192.1.0.10
 AP is 192.1.0.2
 
@@ -10,6 +11,7 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
+./cisco_wifi_ctl.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22
 '''
 
 
@@ -18,6 +20,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
+import re
 import logging
 import time
 from time import sleep
@@ -36,6 +39,7 @@ NL = "\n"
 CR = "\r\n"
 Q = '"'
 A = "'"
+FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
 def usage():
    print("$0 used connect to controller:")
@@ -47,12 +51,20 @@ def usage():
    print("-l|--log file: log messages here")
    print("-h|--help")
 
+# see https://stackoverflow.com/a/13306095/11014343
+class FileAdapter(object):
+    def __init__(self, logger):
+        self.logger = logger
+    def write(self, data):
+        # NOTE: data can be a partial line, multiple lines
+        data = data.strip() # ignore leading/trailing whitespace
+        if data: # non-blank
+           self.logger.info(data)
+    def flush(self):
+        pass  # leave it to logging to flush properly
 
 def main():
-   logg = logging.getLogger(__name__)
-   logg.setLevel(logging.DEBUG)
-   flog = None; # log file
-   parser = argparse.ArgumentParser(description="Ciscos AP Control Script")
+   parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
    parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
@@ -66,21 +78,28 @@ def main():
       host = args.dest
       scheme = args.scheme
       port = (default_ports[scheme], args.port)[args.port != None]
-
       user = args.user
       passwd = args.passwd
       logfile = args.log
-
+      filehandler = None
    except Exception as e:
       logging.exception(e);
       usage()
       exit(2);
 
+   console_handler = logging.StreamHandler()
+   formatter = logging.Formatter(FORMAT)
+   logg = logging.getLogger(__name__)
+   logg.setLevel(logging.DEBUG)
+   file_handler = None
    if (logfile is not None):
-      flog = logg.FileHandler(logfile);
+      file_handler = logging.FileHandler(logfile, "w")
+      file_handler.setLevel(logging.DEBUG)
+      file_handler.setFormatter(formatter)
+      logg.addHandler(file_handler)
 
+   logging.basicConfig(format=FORMAT, handlers=[console_handler, file_handler])
 
-   #connect = None
    egg = None # think "eggpect"
    try:
       if (scheme == "serial"):
@@ -89,38 +108,58 @@ def main():
          from pexpect_serial import SerialSpawn
          with serial.Serial('/dev/ttyUSB0', 115200, timeout=5) as ser:
             egg = SerialSpawn(ser);
+            egg.logfile = FileAdapter(logg)
+            egg.sendline(NL)
+            time.sleep(0.1)
+            egg.expect('login:', timeout=3)
+            time.sleep(0.1)
+            egg.sendline(user)
+            time.sleep(0.1)
+            egg.expect('password:')
+
       elif (scheme == "ssh"):
          if (port is None):
             port = 22
          cmd = "ssh -p%d %s@%s"%(port, user, host)
-         print ("Spawn: "+cmd+NL)
+         logg.info("Spawn: "+cmd+NL)
          egg = pexpect.spawn(cmd)
+         #egg.logfile_read = sys.stdout.buffer
+         egg.logfile = FileAdapter(logg)
+         i = egg.expect(["password:", "continue connecting (yes/no)?"], timeout=3)
+         time.sleep(0.1)
+         if i == 1:
+            egg.sendline('yes')
+            egg.expect('password:')
+         sleep(0.1)
+         egg.sendline(passwd)
+
       elif (scheme == "telnet"):
          if (port is None):
             port = 23
          cmd = "telnet %s %d"%(host, port)
-         print ("Spawn: "+cmd+NL)
-         egg = pexpect.spawn()
+         logg.info("Spawn: "+cmd+NL)
+         egg = pexpect.spawn(cmd)
+         egg.logfile = FileAdapter(logg)
+         egg.expect('login:', timeout=3)
+         time.sleep(0.1)
+         egg.sendline(user)
+         time.sleep(0.1)
+         egg.expect('password:')
+         time.sleep(0.1)
+         egg.sendline(passwd)
       else:
          usage()
          exit(1)
    except Exception as e:
       logging.exception(e);
 
-   # print("will %s to %s:%d\n"%(scheme, host, port));
-   if (flog is not None):
-      egg.logfile = flog
-
-   egg.expect("password:")
    time.sleep(0.1)
-   egg.sendline(passwd)
-   egg.expect("(Cisco Controller) .*>")
+   CCPROMPT = '\(Cisco Controller\) >'
+   egg.expect(CCPROMPT)
    egg.sendline("show ap summary");
-   egg.expect("(Cisco Controller) .*>")
-   time.sleep(0.1)
+   egg.expect(CCPROMPT)
    egg.sendline("logout");
-   egg.expect("Would you like to save them now? (y/N)")
-   time.sleep(0.1)
+   egg.expect("Would you like to save them now\? \(y/N\)")
    egg.sendline("y");
 
 
