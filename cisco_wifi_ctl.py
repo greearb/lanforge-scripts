@@ -72,7 +72,14 @@ def main():
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages")
+   #parser.add_argument("-r", "--radio",   type=str, help="select radio")
+   parser.add_argument("-a", "--ap",      type=str, help="select AP")
+   parser.add_argument("--action",        type=str, help="perform action",
+      choices=["config", "country", "enable", "disable", "summary", "advanced",
+      "cmd", "txPower", "show" ])
+   parser.add_argument("--value",       type=str, help="set value")
 
+   args = None
    try:
       args = parser.parse_args()
       host = args.dest
@@ -153,14 +160,57 @@ def main():
    except Exception as e:
       logging.exception(e);
 
+   command = None
    time.sleep(0.1)
    CCPROMPT = '\(Cisco Controller\) >'
+   EXITPROMPT = "Would you like to save them now\? \(y/N\)"
    egg.expect(CCPROMPT)
-   egg.sendline("show ap summary");
-   egg.expect(CCPROMPT)
-   egg.sendline("logout");
-   egg.expect("Would you like to save them now\? \(y/N\)")
-   egg.sendline("y");
+
+   logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
+
+   if ((args.action == "show") and (args.value is None)):
+      raise Exception("show requires value, like 'country' or 'ap summary'")
+
+   if (args.action == "show"):
+      print ("HI")
+      command = "show "+args.value
+
+   if (args.action == "summary"):
+      command = "show ap summary"
+
+   if (args.action == "advanced"):
+      command = "show advanced 802.11a summary"
+
+   if ((args.action == "set_country") and ((args.value is None) or (args.ap is None))):
+      raise  Exception("set_country requires country and AP name")
+
+   if (args.action == "set_country"):
+      command = "config ap country %s %s"%(args.value, args.ap)
+
+   if (args.action in ["enable", "disable" ] and (args.ap is None)):
+      raise Exception("action requires AP name")
+   if (args.action == "enable"):
+      command = "config 802.11a enable "+args.ap
+   if (args.action == "disable"):
+      command = "config 802.11a disable "+args.ap
+
+   if (args.action == "txPower" and ((args.ap is None) or (args.value is None))):
+      raise Exception("txPower requires ap and value")
+   if (args.action == "txPower"):
+      command = "config 802.11a txPower ap %s %s"%(args.ap, args.value)
+
+
+
+   if (command is None):
+      logg.info("Going to log out.")
+   else:
+      logg.info("Command[%s]"%command)
+      egg.sendline(command);
+      egg.expect(CCPROMPT)
+
+   egg.sendline("logout")
+   egg.expect(EXITPROMPT)
+   egg.sendline("y")
 
 
 
