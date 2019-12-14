@@ -32,11 +32,11 @@ use Cwd qw(getcwd);
 my $cwd = getcwd();
 
  # this is pedantic necessity for the following use statements
-if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
-   use lib '/home/lanforge/scripts'
+if ( -f "LANforge/Endpoint.pm" ) {
+   use lib "./";
 }
-elsif ( -f "LANforge/Endpoint.pm" ) {
-   use lib "./LANforge";
+elsif ( $cwd =~ q(.*LANforge-Server\scripts$)) {
+   use lib '/home/lanforge/scripts'
 }
 else {
    use lib '/home/lanforge/scripts';
