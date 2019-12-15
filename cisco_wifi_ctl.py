@@ -166,6 +166,7 @@ def main():
    EXITPROMPT = "Would you like to save them now\? \(y/N\)"
    AREYOUSURE = "Are you sure you want to continue\? \(y/n\)"
    CLOSEDBYREMOTE = "closed by remote host."
+   CLOSEDCX = "Connection to .* closed."
    egg.expect(CCPROMPT)
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
@@ -228,7 +229,7 @@ def main():
           egg.sendline("y")
 
    egg.sendline("logout")
-   i = egg.expect([EXITPROMPT, CLOSEDBYREMOTE])
+   i = egg.expect([EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX])
    if i == 0:
        egg.sendline("y")
 
