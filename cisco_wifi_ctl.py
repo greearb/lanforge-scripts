@@ -71,7 +71,7 @@ def main():
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
-   parser.add_argument("-l", "--log",     type=str, help="logfile for messages")
+   parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
    parser.add_argument("--action",        type=str, help="perform action",
@@ -100,12 +100,15 @@ def main():
    logg.setLevel(logging.DEBUG)
    file_handler = None
    if (logfile is not None):
-      file_handler = logging.FileHandler(logfile, "w")
-      file_handler.setLevel(logging.DEBUG)
-      file_handler.setFormatter(formatter)
-      logg.addHandler(file_handler)
-
-   logging.basicConfig(format=FORMAT, handlers=[console_handler, file_handler])
+       if (logfile != "stdout"):
+           file_handler = logging.FileHandler(logfile, "w")
+           file_handler.setLevel(logging.DEBUG)
+           file_handler.setFormatter(formatter)
+           logg.addHandler(file_handler)
+           logging.basicConfig(format=FORMAT, handlers=[file_handler])
+       else:
+           # stdout logging
+           logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
    egg = None # think "eggpect"
    try:
@@ -225,6 +228,7 @@ def main():
       logg.info("Command[%s]"%command)
       egg.sendline(command);
       i = egg.expect([CCPROMPT, AREYOUSURE])
+      print (egg.before.decode('utf-8', 'ignore'))
       if i == 1:
           egg.sendline("y")
 
