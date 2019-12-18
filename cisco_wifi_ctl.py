@@ -40,6 +40,7 @@ CR = "\r\n"
 Q = '"'
 A = "'"
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
+band = "a"
 
 def usage():
    print("$0 used connect to controller:")
@@ -49,6 +50,7 @@ def usage():
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file: log messages here")
+   print("-b|--band:  a (5Ghz) or b (2.4Ghz)")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -74,9 +76,11 @@ def main():
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
+   parser.add_argument("-b", "--band",    type=str, help="Select band (a | b)",
+                       choices=["a", "b"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "show" ])
+      "cmd", "txPower", "bandwidth", "channel", "show" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -88,6 +92,10 @@ def main():
       user = args.user
       passwd = args.passwd
       logfile = args.log
+      if (args.band != None):
+          band = args.band
+      else:
+          band = "a"
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -190,7 +198,7 @@ def main():
       command = "show ap summary"
 
    if (args.action == "advanced"):
-      command = "show advanced 802.11a summary"
+      command = "show advanced 802.11%s summary"%(band)
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
       raise  Exception("ap_country requires country and AP name")
@@ -207,19 +215,24 @@ def main():
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
-      command = "config 802.11a enable "+args.ap
+      command = "config 802.11%s enable %s"%(band, args.ap)
    if (args.action == "disable"):
-      command = "config 802.11a disable "+args.ap
+      command = "config 802.11%s disable %s"%(band, args.ap)
 
    if (args.action == "txPower" and ((args.ap is None) or (args.value is None))):
       raise Exception("txPower requires ap and value")
    if (args.action == "txPower"):
-      command = "config 802.11a txPower ap %s %s"%(args.ap, args.value)
+      command = "config 802.11%s txPower ap %s %s"%(band, args.ap, args.value)
 
    if (args.action == "bandwidth" and ((args.ap is None) or (args.value is None))):
       raise Exception("bandwidth requires ap and value (20, 40, 80, 160)")
    if (args.action == "bandwidth"):
-      command = "config 802.11a chan_width %s %s"%(args.ap, args.value)
+      command = "config 802.11%s chan_width %s %s"%(band, args.ap, args.value)
+
+   if (args.action == "channel" and ((args.ap is None) or (args.value is None))):
+      raise Exception("channel requires ap and value")
+   if (args.action == "channel"):
+      command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
 
 
    if (command is None):
