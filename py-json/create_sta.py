@@ -1,9 +1,9 @@
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# example of how to create a LANforge station                                       -
-#                                                                                   -
-# two examples, first using the URL-Encoded POST
-# second using JSON POST data
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# example of how to create a LANforge station                                 -
+#                                                                             -
+# two examples, first using the URL-Encoded POST                              -
+# second using JSON POST data                                                 -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
