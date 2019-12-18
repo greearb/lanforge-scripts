@@ -186,7 +186,7 @@ def main():
       raise Exception("show requires value, like 'country' or 'ap summary'")
 
    if (args.action == "show"):
-      print ("HI")
+      #print ("HI")
       command = "show "+args.value
 
    if (args.action == "cmd"):

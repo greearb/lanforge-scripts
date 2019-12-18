@@ -61,6 +61,7 @@ def usage():
    print("--lfmgr: LANforge manager IP address")
    print("--lfresourcer: LANforge resource ID")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
+   print("--band:  Select band (a | b), a means 5Ghz, b means 2.4")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -91,17 +92,19 @@ def main():
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
-   parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test")
-   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test")
-   parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test")
-   parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test")
+   parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test. NA means no change")
+   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test. NA means no change")
+   parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
+   parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
 
    parser.add_argument("--station",        type=str, help="LANforge station to use")
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
    parser.add_argument("--outfile",     type=str, help="Output file for csv data")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
-
+   parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
+                       choices=["a", "b"])
+   
    args = None
    try:
       args = parser.parse_args()
@@ -118,6 +121,10 @@ def main():
           lfresource = args.lfresource
       if (args.outfile != None):
           outfile = args.outfile
+      if (args.band != None):
+          band = args.band
+      else:
+          band = "a"
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -169,9 +176,45 @@ def main():
    nss = args.nss.split()
    txpowers = args.txpower.split()
 
+   # Find LANforge station parent radio
+   parent = None
+   port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
+                                "--show_port", "Parent/Peer"], capture_output=True);
+   pss = port_stats.stdout.decode('utf-8', 'ignore');
+   for line in pss.splitlines():
+       m = re.search('Parent/Peer:\s+(.*)', line)
+       if (m != None):
+           parent = m.group(1)
+
    for ch in channels:
        for n in nss:
            for bw in bandwidths:
+               if (n != "NA"):
+                   if (parent == None):
+                       print("ERROR:  Skipping setting the spatial streams because cannot find Parent radio for station.")
+                   else:
+                       # Set nss on LANforge Station, not sure it can be done on AP
+                       ni = int(n);
+                       if (bw == "160"):
+                           # 9984 hardware needs 2 chains to do one NSS at 160Mhz
+                           if (ni > 2):
+                               print("NOTE: Skipping NSS %s for 160Mhz, LANforge radios do not support more than 2NSS at 160Mhz currently."%(n))
+                               continue
+                           else:
+                               # Set radio to 2x requested value for 160Mhz
+                               ni *= 2
+                   antset = 0 # all available
+                   if (ni == 1):
+                       antset = 1
+                   if (ni == 2):
+                       antset = 4
+                   if (ni == 3):
+                       antset = 7
+                   set_cmd = "set_wifi_radio 1 %s %s NA NA NA NA NA NA NA NA NA %s"%(lfresource, parent, antset)
+                   print("Setting LANforge radio to %s NSS with command: %s"%(ni, set_cmd))
+                   subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", parent,
+                                   "--cli_cmd", set_cmd], capture_output=True)
+               
                for tx in txpowers:
 
                    # TODO:  Down station
@@ -179,31 +222,36 @@ def main():
                                                 "--set_ifstate", "down"]);
                    
                    # Disable AP, apply settings, enable AP
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "disable"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11a disable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11b disable network"])
 
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
-                                   "--action", "txPower", "--value", tx])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
-                                   "--action", "bandwidth", "--value", bw])
-                   # TODO:  Set nss, could do so on LANforge STA if not on AP
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
-                                   "--action", "channel", "--value", ch])
+                   if (tx != "NA"):
+                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                                       "--action", "txPower", "--value", tx])
+                   if (bw != "NA"):
+                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                                       "--action", "bandwidth", "--value", bw])
+
+                   # NSS is set on the station earlier...
+                       
+                   if (ch != "NA"):
+                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                                       "--action", "channel", "--value", ch])
                    
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11a enable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11b enable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "enable"])
 
                    # Wait a bit for AP to come back up
                    time.sleep(1);
-                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "-s", "ssh",
+                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                               "--action", "advanced"], capture_output=True)
                    pss = advanced.stdout.decode('utf-8', 'ignore');
                    print(pss)
@@ -366,9 +414,15 @@ def main():
                    pi = int(args.pathloss)
                    calc_dbm = int(sig) + pi
                    calc_ant1 = int(ants[0]) + pi
-                   calc_ant2 = int(ants[1]) + pi
-                   calc_ant3 = int(ants[2]) + pi
-                   calc_ant4 = int(ants[3]) + pi
+                   calc_ant2 = 0
+                   calc_ant3 = 0
+                   calc_ant4 = 0
+                   if (len(ants) > 1):
+                       calc_ant2 = int(ants[1]) + pi
+                   if (len(ants) > 2):
+                       calc_ant3 = int(ants[2]) + pi
+                   if (len(ants) > 3):
+                       calc_ant4 = int(ants[3]) + pi
 
                    diff_a1 = ""
                    diff_a2 = ""
@@ -405,10 +459,6 @@ def main():
                    csv.write("\t");
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
-                       print(err)
-                       csv.write(err)
-                   if (_ch != cc_ch):
-                       err = "ERROR:  Station channel: %s != AP's reported channel: %s.  "%(_ch, cc_ch)
                        print(err)
                        csv.write(err)
                    if (_nss != n):
