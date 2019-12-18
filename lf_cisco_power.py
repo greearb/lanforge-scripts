@@ -161,7 +161,7 @@ def main():
        exit(1)
 
    csv = open(outfile, "w")
-   csv.write("Cfg-Pathloss\tCfg-Channel\tCfg-NSS\tCfg-BW\tCfg-Power\tCombined-Signal\tAnt-0\tAnt-1\tAnt-2\tAnt-3\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tWarnings-and-Errors")
+   csv.write("Cfg-Pathloss\tCfg-Channel\tCfg-NSS\tCfg-BW\tCfg-Power\tCombined-Signal\tAnt-0\tAnt-1\tAnt-2\tAnt-3\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tCalc-Ant-1\tCalc-Ant-2\tCalc-Ant-3\tCalc-Ant-4\tDiff-dBm-Combined\tDiff-Ant-1\tDiff-Ant-2\tDiff-Ant-3\tDiff-Ant-4\tWarnings-and-Errors")
    csv.write("\n");
 
    bandwidths = args.bandwidth.split()
@@ -225,7 +225,7 @@ def main():
                                cc_mac = m.group(1)
                                cc_ch = m.group(2);
                                cc_power = m.group(3)
-                               cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
+                               cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
                                cc_dbm = m.group(4)
                                break
 
@@ -296,6 +296,10 @@ def main():
                            if (m != None):
                                sig = m.group(1)
                                ants = m.group(2).split();
+                               q = 0
+                               for a in ants:
+                                   ants[q] = ants[q].replace(",", "", 1)
+                                   q += 1
 
                                #print("sig: %s  ants: %s ants-len: %s n: %s"%(sig, m.group(2), len(ants), n))
 
@@ -359,9 +363,42 @@ def main():
                        if (m != None):
                            _rxrate = m.group(1)
 
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(args.pathloss, ch, n, bw, tx, sig,
-                                                                                                antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
-                                                                                                cc_mac, cc_ch, cc_power, cc_dbm)
+                   pi = int(args.pathloss)
+                   calc_dbm = int(sig) + pi
+                   calc_ant1 = int(ants[0]) + pi
+                   calc_ant2 = int(ants[1]) + pi
+                   calc_ant3 = int(ants[2]) + pi
+                   calc_ant4 = int(ants[3]) + pi
+
+                   diff_a1 = ""
+                   diff_a2 = ""
+                   diff_a3 = ""
+                   diff_a4 = ""
+
+                   cc_dbmi = int(cc_dbm)
+                   diff_dbm = calc_dbm - cc_dbmi
+                   if (int(_nss) == 1):
+                       diff_a1 = calc_ant1 - cc_dbmi
+                   if (int(_nss) == 2):
+                       diff_a1 = calc_ant1 - (cc_dbmi - 3)
+                       diff_a2 = calc_ant2 - (cc_dbmi - 3)
+                   if (int(_nss) == 3):
+                       diff_a1 = calc_ant1 - (cc_dbmi - 5)
+                       diff_a2 = calc_ant2 - (cc_dbmi - 5)
+                       diff_a3 = calc_ant3 - (cc_dbmi - 5)
+                   if (int(_nss) == 4):
+                       diff_a1 = calc_ant1 - (cc_dbmi - 6)
+                       diff_a2 = calc_ant2 - (cc_dbmi - 6)
+                       diff_a3 = calc_ant3 - (cc_dbmi - 6)
+                       diff_a4 = calc_ant4 - (cc_dbmi - 6)
+                       
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       args.pathloss, ch, n, bw, tx, sig,
+                       antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
+                       cc_mac, cc_ch, cc_power, cc_dbm,
+                       calc_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
+                       diff_dbm, diff_a1, diff_a2, diff_a3, diff_a4
+                     )
 
                    print("RESULT: %s"%(ln))
                    csv.write(ln)
@@ -381,10 +418,10 @@ def main():
                    
                    csv.write("\n");
 
-
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
+    print("Results stored in %s"%(outfile))
 
 ####
 ####
