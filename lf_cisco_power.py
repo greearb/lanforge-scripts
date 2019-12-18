@@ -168,8 +168,9 @@ def main():
        exit(1)
 
    csv = open(outfile, "w")
-   csv.write("Cfg-Pathloss\tCfg-Channel\tCfg-NSS\tCfg-BW\tCfg-Power\tCombined-Signal\tAnt-0\tAnt-1\tAnt-2\tAnt-3\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tCalc-Ant-1\tCalc-Ant-2\tCalc-Ant-3\tCalc-Ant-4\tDiff-dBm-Combined\tDiff-Ant-1\tDiff-Ant-2\tDiff-Ant-3\tDiff-Ant-4\tWarnings-and-Errors")
+   csv.write("Cfg-Pathloss\tCfg-Channel\tCfg-NSS\tCfg-BW\tCfg-Power\tCombined-Signal\tAnt-0\tAnt-1\tAnt-2\tAnt-3\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tCalc-Ant-1\tCalc-Ant-2\tCalc-Ant-3\tCalc-Ant-4\tDiff-Ant-1\tDiff-Ant-2\tDiff-Ant-3\tDiff-Ant-4\tWarnings-and-Errors")
    csv.write("\n");
+   csv.flush()
 
    bandwidths = args.bandwidth.split()
    channels = args.channel.split()
@@ -324,7 +325,7 @@ def main():
                        time.sleep(1)
 
                    # Wait 10 more seconds
-                   print("Waiting 10 seconds to let traffic run for a bit.")
+                   print("Waiting 10 seconds to let traffic run for a bit, Channel %s NSS %s BW %s TX-Power %s"%(ch, n, bw, tx))
                    time.sleep(10)
 
                    # Gather probe results and record data, verify NSS, BW, Channel
@@ -450,11 +451,11 @@ def main():
                        args.pathloss, ch, n, bw, tx, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
-                       calc_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                       diff_dbm, diff_a1, diff_a2, diff_a3, diff_a4
+                       calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
+                       diff_a1, diff_a2, diff_a3, diff_a4
                      )
 
-                   print("RESULT: %s"%(ln))
+                   #print("RESULT: %s"%(ln))
                    csv.write(ln)
                    csv.write("\t");
                    if (_bw != bw):
@@ -467,6 +468,7 @@ def main():
                        csv.write(err)
                    
                    csv.write("\n");
+                   csv.flush()
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
