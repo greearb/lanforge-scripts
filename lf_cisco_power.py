@@ -19,6 +19,10 @@ $ pip3 install pexpect-serial
 
 '''
 
+# TODO:  Report beacon signal avg from probe results
+# TODO:  Add summary csv output report
+# TODO:  Maybe HTML output too?
+# TODO:  Allow selecting tabs or commands for output files
 
 import sys
 if sys.version_info[0] != 3:
