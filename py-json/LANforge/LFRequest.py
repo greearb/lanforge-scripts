@@ -43,17 +43,14 @@ class LFRequest:
         try:
             responses.append(urllib.request.urlopen(request))
             return responses[0]
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as error:
             if (show_error):
                 print("-------------------------------------------------------------")
-                print("Url: "+request.get_full_url())
-                print("Error: ", sys.exc_info()[0])
-                print("Request URL:")
-                LFUtils.debug_printer.pprint(request.get_full_url())
-                print("Request Content-type:")
-                LFUtils.debug_printer.pprint(request.get_header('Content-type'))
-                print("Request Accept:")
-                LFUtils.debug_printer.pprint(request.get_header('Accept'))
+                print("%s URL: %s"%(error.code, request.get_full_url()))
+                #print("Error: ", sys.exc_info()[0])
+                print("Request URL:", request.get_full_url())
+                print("Request Content-type:", request.get_header('Content-type'))
+                print("Request Accept:", request.get_header('Accept'))
                 print("Request Data:")
                 LFUtils.debug_printer.pprint(request.data)
                 if (len(responses) > 0):
@@ -78,17 +75,14 @@ class LFRequest:
         try:
             responses.append(urllib.request.urlopen(request))
             return responses[0]
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as error:
             if (show_error):
                 print("-------------------------------------------------------------")
-                print("Url: "+request.get_full_url())
-                print("Error: ", sys.exc_info()[0])
-                print("Request URL:")
-                LFUtils.debug_printer.pprint(request.get_full_url())
-                print("Request Content-type:")
-                LFUtils.debug_printer.pprint(request.get_header('Content-type'))
-                print("Request Accept:")
-                LFUtils.debug_printer.pprint(request.get_header('Accept'))
+                print("%s URL: %s"%(error.code, request.get_full_url()))
+                #print("Error: ", sys.exc_info()[0])
+                print("Request URL:", request.get_full_url())
+                print("Request Content-type:", request.get_header('Content-type'))
+                print("Request Accept:", request.get_header('Accept'))
                 print("Request Data:")
                 LFUtils.debug_printer.pprint(request.data)
                 if (len(responses) > 0):
