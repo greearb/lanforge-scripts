@@ -50,7 +50,7 @@ def usage():
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file: log messages here")
-   print("-b|--band:  a (5Ghz) or b (2.4Ghz)")
+   print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -76,8 +76,8 @@ def main():
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
-   parser.add_argument("-b", "--band",    type=str, help="Select band (a | b)",
-                       choices=["a", "b"])
+   parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
+                       choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "channel", "show" ])
@@ -94,6 +94,8 @@ def main():
       logfile = args.log
       if (args.band != None):
           band = args.band
+          if (band == "abgn"):
+              band = "-abgn"
       else:
           band = "a"
       filehandler = None

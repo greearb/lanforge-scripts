@@ -65,7 +65,7 @@ def usage():
    print("--lfmgr: LANforge manager IP address")
    print("--lfresourcer: LANforge resource ID")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
-   print("--band:  Select band (a | b), a means 5Ghz, b means 2.4")
+   print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -107,7 +107,7 @@ def main():
    parser.add_argument("--outfile",     type=str, help="Output file for csv data")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
-                       choices=["a", "b"])
+                       choices=["a", "b", "abgn"])
    
    args = None
    try:
