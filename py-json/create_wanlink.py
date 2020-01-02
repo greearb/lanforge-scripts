@@ -35,7 +35,7 @@ def main():
       LFUtils.debug_printer.pprint(json_response)
       for key,value in json_response.items():
          if (isinstance(value, dict) and "_links" in value):
-            num_wanlinks =+ 1
+            num_wanlinks = 1
    except urllib.error.HTTPError as error:
       num_wanlinks = 0;
 
@@ -187,7 +187,7 @@ def main():
    })
    lf_r.jsonPost()
    running = 1
-   while (running > 1):
+   while (running > 0):
       sleep(1)
       lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1?fields=name,eid,state,_links")
       LFUtils.debug_printer.pprint(json_response)
