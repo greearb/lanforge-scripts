@@ -106,7 +106,7 @@ def main():
    seen = 0
    while (seen < 1):
       sleep(1)
-      lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1?fields=name,eid,state,_links")
+      lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1?fields=name,state,_links")
       try:
          json_response = lf_r.getAsJson()
          if (json_response is None):
@@ -141,7 +141,7 @@ def main():
    running = 0
    while (running < 1):
       sleep(1)
-      lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1?fields=name,eid,state,_links")
+      lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1?fields=name,state,_links")
       try:
          json_response = lf_r.getAsJson()
          if (json_response is None):
