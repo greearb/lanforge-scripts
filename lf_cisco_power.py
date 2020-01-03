@@ -57,6 +57,7 @@ outfile = "cisco_power_results.txt"
 full_outfile = "full_cisco_power_results.txt"
 outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
+pf_dbm = 6
 
 def usage():
    print("$0 used connect to controller:")
@@ -70,13 +71,16 @@ def usage():
    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160")
    print("-c|--channel: List of channels to test: 36 100")
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
+   print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
    print("--outfile: Write results here.")
-   print("--station: LANforge station name")
+   print("--station: LANforge station name (sta00000)")
+   print("--upstream_port: LANforge upstream port name (eth1)")
    print("--lfmgr: LANforge manager IP address")
    print("--lfresource: LANforge resource ID for station")
    print("--lfresource2: LANforge resource ID for upstream port")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
+   print("--pf_dbm: Pass/Fail range, default is 6")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -100,6 +104,7 @@ def main():
    global outfile_xlsx
    global full_outfile
    global upstream_port
+   global pf_dbm
     
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
@@ -125,6 +130,7 @@ def main():
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
+   parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
    
    args = None
    try:
@@ -152,6 +158,8 @@ def main():
           band = args.band
       else:
           band = "a"
+      if (args.pf_dbm != None):
+          pf_dbm = args.pf_dbm
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -196,13 +204,13 @@ def main():
 
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Cabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-3dB)\tWarnings-and-Errors")
+   csv.write("Cabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
    csv.write("\n");
    csv.flush()
 
    # Summary spread-sheet data
    csvs = open(outfile, "w")
-   csvs.write("Cabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-3dB)\tWarnings-and-Errors")
+   csvs.write("Cabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
    csvs.write("\n");
    csvs.flush()
 
@@ -263,6 +271,7 @@ def main():
    green_left.set_border(1)
 
    worksheet.set_row(0, 45) # Set height
+   worksheet.set_column(18, 18, 10) # Set width
    worksheet.set_column(19, 19, 100) # Set width
 
    worksheet.write('A1', 'AP\nChannel', dblue_bold)
@@ -283,7 +292,7 @@ def main():
    worksheet.write('P1', 'Offset\n2', dyel_bold)
    worksheet.write('Q1', 'Offset\n3', dyel_bold)
    worksheet.write('R1', 'Offset\n4', dyel_bold)
-   worksheet.write('S1', 'PASS\n/\nFAIL', dgreen_bold)
+   worksheet.write('S1', "PASS /\nFAIL\n(+-%s dBm)"%(pf_dbm), dgreen_bold)
    worksheet.write('T1', 'Warnings and Errors', dgreen_bold_left)
 
    bandwidths = args.bandwidth.split()
@@ -571,7 +580,7 @@ def main():
                    diff_dbm = calc_dbm - cc_dbmi
                    pf = 1
                    pfs = "PASS"
-                   pfrange = 3;
+                   pfrange = pf_dbm;
                    allowed_per_path = cc_dbmi
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
