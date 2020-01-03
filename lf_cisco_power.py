@@ -7,9 +7,11 @@ AP is 192.1.0.2
 
 make sure pexpect is installed:
 $ sudo yum install python3-pexpect
+$ sudo yum install python3-xlsxwriter
 
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
+$ pip3 install XlsxWriter
 
 This script will automatically create and start a layer-3 UDP connection between the
 configured upstream port and station.
@@ -39,6 +41,7 @@ from time import sleep
 import pprint
 import argparse
 import subprocess
+import xlsxwriter
 
 NL = "\n"
 CR = "\r\n"
@@ -52,6 +55,7 @@ lfresource = "1"
 lfresource2 = "1"
 outfile = "cisco_power_results.txt"
 full_outfile = "full_cisco_power_results.txt"
+outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 
 def usage():
@@ -93,6 +97,7 @@ def main():
    global lfresource
    global lfresource2
    global outfile
+   global outfile_xlsx
    global full_outfile
    global upstream_port
     
@@ -142,6 +147,7 @@ def main():
       if (args.outfile != None):
           outfile = args.outfile
           full_outfile = "full-%s"%(outfile)
+          outfile_xlsx = "%s.xlsx"%(outfile)
       if (args.band != None):
           band = args.band
       else:
@@ -199,6 +205,86 @@ def main():
    csvs.write("Cabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-3dB)\tWarnings-and-Errors")
    csvs.write("\n");
    csvs.flush()
+
+   # XLSX file
+   row = 1 # Skip header line, we write it below
+   workbook = xlsxwriter.Workbook(outfile_xlsx)
+   worksheet = workbook.add_worksheet()
+
+   bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dblue_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dblue_bold.set_bg_color("#b8cbe4")
+   dblue_bold.set_border(1)
+   dtan_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dtan_bold.set_bg_color("#dcd8c3")
+   dtan_bold.set_border(1)
+   dpeach_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dpeach_bold.set_bg_color("#ffd8bb")
+   dpeach_bold.set_border(1)
+   dpink_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dpink_bold.set_bg_color("#fcc8ca")
+   dpink_bold.set_border(1)
+   dyel_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dyel_bold.set_bg_color("#ffe699")
+   dyel_bold.set_border(1)
+   dgreen_bold = workbook.add_format({'bold': True, 'align': 'center'})
+   dgreen_bold.set_bg_color("#c6e0b4")
+   dgreen_bold.set_border(1)
+   dgreen_bold_left = workbook.add_format({'bold': True, 'align': 'left'})
+   dgreen_bold_left.set_bg_color("#c6e0b4")
+   dgreen_bold_left.set_border(1)
+   center = workbook.add_format({'align': 'center'})
+   center_blue = workbook.add_format({'align': 'center'})
+   center_blue.set_bg_color("#dbe5f1")
+   center_blue.set_border(1)
+   center_tan = workbook.add_format({'align': 'center'})
+   center_tan.set_bg_color("#edede1")
+   center_tan.set_border(1)
+   center_peach = workbook.add_format({'align': 'center'})
+   center_peach.set_bg_color("#fce4d6")
+   center_peach.set_border(1)
+   center_yel = workbook.add_format({'align': 'center'})
+   center_yel.set_bg_color("#fdf2cc")
+   center_yel.set_border(1)
+   center_pink = workbook.add_format({'align': 'center'})
+   center_pink.set_bg_color("ffd2d3")
+   center_pink.set_border(1)
+   red = workbook.add_format({'color': 'red', 'align': 'center'})
+   red.set_bg_color("#e0efda")
+   red.set_border(1)
+   red_left = workbook.add_format({'color': 'red', 'align': 'left'})
+   red_left.set_bg_color("#e0efda")
+   red_left.set_border(1)
+   green = workbook.add_format({'color': 'green', 'align': 'center'})
+   green.set_bg_color("#e0efda")
+   green.set_border(1)
+   green_left = workbook.add_format({'color': 'green', 'align': 'left'})
+   green_left.set_bg_color("#e0efda")
+   green_left.set_border(1)
+
+   worksheet.set_row(0, 45) # Set height
+   worksheet.set_column(19, 19, 100) # Set width
+
+   worksheet.write('A1', 'AP\nChannel', dblue_bold)
+   worksheet.write('B1', 'NSS', dblue_bold)
+   worksheet.write('C1', 'AP\nBW', dblue_bold)
+   worksheet.write('D1', 'Tx\nPower', dtan_bold)
+   worksheet.write('E1', 'Allowed\nPer\nPath', dtan_bold)
+   worksheet.write('F1', 'Cabling\nPathloss', dtan_bold)
+   worksheet.write('G1', 'RSSI\n1', dpeach_bold)
+   worksheet.write('H1', 'RSSI\n2', dpeach_bold)
+   worksheet.write('I1', 'RSSI\n3', dpeach_bold)
+   worksheet.write('J1', 'RSSI\n4', dpeach_bold)
+   worksheet.write('K1', 'Ant\n1', dpink_bold)
+   worksheet.write('L1', 'Ant\n2', dpink_bold)
+   worksheet.write('M1', 'Ant\n3', dpink_bold)
+   worksheet.write('N1', 'Ant\n4', dpink_bold)
+   worksheet.write('O1', 'Offset\n1', dyel_bold)
+   worksheet.write('P1', 'Offset\n2', dyel_bold)
+   worksheet.write('Q1', 'Offset\n3', dyel_bold)
+   worksheet.write('R1', 'Offset\n4', dyel_bold)
+   worksheet.write('S1', 'PASS\n/\nFAIL', dgreen_bold)
+   worksheet.write('T1', 'Warnings and Errors', dgreen_bold_left)
 
    bandwidths = args.bandwidth.split()
    channels = args.channel.split()
@@ -532,7 +618,7 @@ def main():
 
                    #print("RESULT: %s"%(ln))
                    csv.write(ln)
-                   csv.write("\t");
+                   csv.write("\t")
 
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
                        args.pathloss, _ch, _nss, _bw, tx, allowed_per_path,
@@ -543,8 +629,35 @@ def main():
                    csvs.write(ln)
                    csvs.write("\t")
 
+                   col = 0
+                   worksheet.write(row, col, _ch, center_blue); col += 1
+                   worksheet.write(row, col, _nss, center_blue); col += 1
+                   worksheet.write(row, col, _bw, center_blue); col += 1
+                   worksheet.write(row, col, tx, center_tan); col += 1
+                   worksheet.write(row, col, allowed_per_path, center_tan); col += 1
+                   worksheet.write(row, col, args.pathloss, center_tan); col += 1
+                   for x in range(4):
+                       if (x < int(n), center):
+                           worksheet.write(row, col, ants[x], center_peach); col += 1
+                       else:
+                           worksheet.write(row, col, " ", center_peach); col += 1
+                   worksheet.write(row, col, calc_ant1, center_pink); col += 1
+                   worksheet.write(row, col, calc_ant2, center_pink); col += 1
+                   worksheet.write(row, col, calc_ant3, center_pink); col += 1
+                   worksheet.write(row, col, calc_ant4, center_pink); col += 1
+                   worksheet.write(row, col, diff_a1, center_yel); col += 1
+                   worksheet.write(row, col, diff_a2, center_yel); col += 1
+                   worksheet.write(row, col, diff_a3, center_yel); col += 1
+                   worksheet.write(row, col, diff_a4, center_yel); col += 1
+                   if (pfs == "FAIL"):
+                       worksheet.write(row, col, pfs, red); col += 1
+                   else:
+                       worksheet.write(row, col, pfs, green); col += 1
+
+                   e_tot = ""
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
+                       e_tot += err
                        print(err)
                        csv.write(err)
                        csvs.write(err)
@@ -553,17 +666,27 @@ def main():
                        print(err)
                        csv.write(err)
                        csvs.write(err)
-                   
+                       e_tot += err
+
+                   if (e_tot == ""):
+                       worksheet.write(row, col, e_tot, green_left); col += 1
+                   else:
+                       worksheet.write(row, col, e_tot, red_left); col += 1
+                   row += 1
+
                    csv.write("\n");
                    csv.flush()
 
                    csvs.write("\n");
                    csvs.flush()
 
+   workbook.close()
+
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
-    print("Summary results stored in %s, full results in %s"%(outfile, full_outfile))
+    print("Summary results stored in %s, full results in %s, xlsx file in %s"%(outfile, full_outfile, outfile_xlsx))
 
 ####
 ####
