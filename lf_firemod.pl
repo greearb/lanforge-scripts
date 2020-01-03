@@ -17,7 +17,12 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 # Un-buffer output
 $| = 1;
-use lib '/home/lanforge/scripts';
+if ( -f "LANforge/Endpoint.pm" ) {
+   use lib "./";
+}
+else {
+  use lib '/home/lanforge/scripts';
+}
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;

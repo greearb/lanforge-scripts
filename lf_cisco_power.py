@@ -11,18 +11,21 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
+This script will automatically create and start a layer-3 UDP connection between the
+configured upstream port and station.
+
+The user is responsible for setting up the station oustide of this script, however.
+
 # Example run to cycle through all 8 power settings
 # See cisco_power_results.txt when complete.
 
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54
-
+  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 \
+  --band a --upstream_port eth2 --lfresource2 2
 '''
 
-# TODO:  Report beacon signal avg from probe results
-# TODO:  Add summary csv output report
 # TODO:  Maybe HTML output too?
-# TODO:  Allow selecting tabs or commands for output files
+# TODO:  Allow selecting tabs or commas for output files
 
 import sys
 if sys.version_info[0] != 3:
@@ -46,7 +49,10 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 lfmgr = "127.0.0.1"
 lfstation = "sta00000"
 lfresource = "1"
+lfresource2 = "1"
 outfile = "cisco_power_results.txt"
+full_outfile = "full_cisco_power_results.txt"
+upstream_port = "eth1"
 
 def usage():
    print("$0 used connect to controller:")
@@ -63,7 +69,8 @@ def usage():
    print("--outfile: Write results here.")
    print("--station: LANforge station name")
    print("--lfmgr: LANforge manager IP address")
-   print("--lfresourcer: LANforge resource ID")
+   print("--lfresource: LANforge resource ID for station")
+   print("--lfresource2: LANforge resource ID for upstream port")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("-h|--help")
@@ -84,7 +91,10 @@ def main():
    global lfmgr
    global lfstation
    global lfresource
+   global lfresource2
    global outfile
+   global full_outfile
+   global upstream_port
     
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
@@ -101,9 +111,11 @@ def main():
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
 
-   parser.add_argument("--station",        type=str, help="LANforge station to use")
+   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
+   parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
+   parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
    parser.add_argument("--outfile",     type=str, help="Output file for csv data")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
@@ -119,12 +131,17 @@ def main():
       logfile = args.log
       if (args.station != None):
           lfstation = args.station
+      if (args.upstream_port != None):
+          upstream_port = args.upstream_port
       if (args.lfmgr != None):
           lfmgr = args.lfmgr
       if (args.lfresource != None):
           lfresource = args.lfresource
+      if (args.lfresource2 != None):
+          lfresource2 = args.lfresource2
       if (args.outfile != None):
           outfile = args.outfile
+          full_outfile = "full-%s"%(outfile)
       if (args.band != None):
           band = args.band
       else:
@@ -171,10 +188,17 @@ def main():
        print("ERROR:  Pathloss must be specified.")
        exit(1)
 
-   csv = open(outfile, "w")
-   csv.write("Cfg-Pathloss\tCfg-Channel\tCfg-NSS\tCfg-BW\tCfg-Power\tCombined-Signal\tAnt-0\tAnt-1\tAnt-2\tAnt-3\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tCalc-Ant-1\tCalc-Ant-2\tCalc-Ant-3\tCalc-Ant-4\tDiff-Ant-1\tDiff-Ant-2\tDiff-Ant-3\tDiff-Ant-4\tWarnings-and-Errors")
+   # Full spread-sheet data
+   csv = open(full_outfile, "w")
+   csv.write("Cabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-3dB)\tWarnings-and-Errors")
    csv.write("\n");
    csv.flush()
+
+   # Summary spread-sheet data
+   csvs = open(outfile, "w")
+   csvs.write("Cabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-3dB)\tWarnings-and-Errors")
+   csvs.write("\n");
+   csvs.flush()
 
    bandwidths = args.bandwidth.split()
    channels = args.channel.split()
@@ -190,6 +214,25 @@ def main():
        m = re.search('Parent/Peer:\s+(.*)', line)
        if (m != None):
            parent = m.group(1)
+
+   # Create downstream connection
+   # First, delete any old one
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "rm_cx all c-udp-power"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "rm_endp c-udp-power-A"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource2, "--action", "do_cmd",
+                   "--cmd", "rm_endp c-udp-power-B"], capture_output=True);
+
+   # Now, create the new connection
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "create_endp", "--port_name", lfstation,
+                   "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+                   "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
+                   "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
 
    for ch in channels:
        for n in nss:
@@ -334,6 +377,7 @@ def main():
 
                    # Gather probe results and record data, verify NSS, BW, Channel
                    i = 0;
+                   beacon_sig = None
                    sig = None
                    ants = []
                    while True:                       
@@ -358,10 +402,13 @@ def main():
 
                                if (len(ants) == int(n)):
                                    foundit = True
-                                   break
                                else:
                                    print("Looking for %s spatial streams, signal avg reported fewer: %s"%(n, m.group(1)))
 
+                           m = re.search('beacon signal avg:\s+(\S+)\s+dBm', line)
+                           if (m != None):
+                               beacon_sig = m.group(1)
+                               
                        if (foundit):
                            break
 
@@ -436,48 +483,87 @@ def main():
 
                    cc_dbmi = int(cc_dbm)
                    diff_dbm = calc_dbm - cc_dbmi
+                   pf = 1
+                   pfs = "PASS"
+                   pfrange = 3;
+                   allowed_per_path = cc_dbmi
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
+                       if (abs(diff_a1) > pfrange):
+                           pf = 0
                    if (int(_nss) == 2):
-                       diff_a1 = calc_ant1 - (cc_dbmi - 3)
-                       diff_a2 = calc_ant2 - (cc_dbmi - 3)
+                       allowed_per_path = cc_dbmi - 3
+                       diff_a1 = calc_ant1 - allowed_per_path
+                       diff_a2 = calc_ant2 - allowed_per_path
+                       if ((abs(diff_a1) > pfrange) or
+                           (abs(diff_a2) > pfrange)):
+                           pf = 0
                    if (int(_nss) == 3):
-                       diff_a1 = calc_ant1 - (cc_dbmi - 5)
-                       diff_a2 = calc_ant2 - (cc_dbmi - 5)
-                       diff_a3 = calc_ant3 - (cc_dbmi - 5)
+                       allowed_per_path = cc_dbmi - 5
+                       diff_a1 = calc_ant1 - allowed_per_path
+                       diff_a2 = calc_ant2 - allowed_per_path
+                       diff_a3 = calc_ant3 - allowed_per_path
+                       if ((abs(diff_a1) > pfrange) or
+                           (abs(diff_a2) > pfrange) or
+                           (abs(diff_a3) > pfrange)):
+                           pf = 0
                    if (int(_nss) == 4):
-                       diff_a1 = calc_ant1 - (cc_dbmi - 6)
-                       diff_a2 = calc_ant2 - (cc_dbmi - 6)
-                       diff_a3 = calc_ant3 - (cc_dbmi - 6)
-                       diff_a4 = calc_ant4 - (cc_dbmi - 6)
+                       allowed_per_path = cc_dbmi - 6
+                       diff_a1 = calc_ant1 - allowed_per_path
+                       diff_a2 = calc_ant2 - allowed_per_path
+                       diff_a3 = calc_ant3 - allowed_per_path
+                       diff_a4 = calc_ant4 - allowed_per_path
+                       if ((abs(diff_a1) > pfrange) or
+                           (abs(diff_a2) > pfrange) or
+                           (abs(diff_a3) > pfrange) or
+                           (abs(diff_a4) > pfrange)):
+                           pf = 0
+
+                   if (pf == 0):
+                       pfs = "FAIL"
                        
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       args.pathloss, ch, n, bw, tx, sig,
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       args.pathloss, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
                        calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                       diff_a1, diff_a2, diff_a3, diff_a4
+                       diff_a1, diff_a2, diff_a3, diff_a4, pfs
                      )
 
                    #print("RESULT: %s"%(ln))
                    csv.write(ln)
                    csv.write("\t");
+
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       args.pathloss, _ch, _nss, _bw, tx, allowed_per_path,
+                       antstr,
+                       calc_ant1, calc_ant2, calc_ant3, calc_ant4,
+                       diff_a1, diff_a2, diff_a3, diff_a4, pfs
+                       )
+                   csvs.write(ln)
+                   csvs.write("\t")
+
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
                        print(err)
                        csv.write(err)
+                       csvs.write(err)
                    if (_nss != n):
                        err = "ERROR:  Station NSS: %s != configured: %s.  "%(_nss, n)
                        print(err)
                        csv.write(err)
+                       csvs.write(err)
                    
                    csv.write("\n");
                    csv.flush()
 
+                   csvs.write("\n");
+                   csvs.flush()
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
-    print("Results stored in %s"%(outfile))
+    print("Summary results stored in %s, full results in %s"%(outfile, full_outfile))
 
 ####
 ####
