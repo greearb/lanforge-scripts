@@ -57,6 +57,4 @@ for my $rh_e (@{$rh->{interfaces}}) {
    sleep 0.1;
 }
 
-
-
 #
