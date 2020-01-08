@@ -210,6 +210,7 @@ def main():
    print("Wanlink is stopped.")
 
    print("Wanlink info:")
+<<<<<<< HEAD
    lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1")
    json_response = lf_r.getAsJson()
    LFUtils.debug_printer.pprint(json_response)
@@ -221,6 +222,9 @@ def main():
    lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-B")
    json_response = lf_r.getAsJson()
    LFUtils.debug_printer.pprint(json_response)
+=======
+   json_response = LFRequest.LFRequest(base_url+"/")
+>>>>>>> create_wanlink fixes perl dict values
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == '__main__':
