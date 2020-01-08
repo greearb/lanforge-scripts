@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # example of how to create a LANforge station                                 -
 #                                                                             -
@@ -8,7 +9,8 @@ import sys
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
-
+import argparse
+import logging
 import time
 from time import sleep
 import pprint
@@ -17,21 +19,52 @@ from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge.LFUtils import NA
 
-
-
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def main():
-    base_url = "http://localhost:8080"
+    host = "localhost"
+    base_url = "http://%s:8080"%host
     resource_id = 1     # typically you're using resource 1 in stand alone realm
     radio = "wiphy0"
     start_id = 200
     end_id = 202
-    # station numbers are heavily manipulated strings, often using manual padding
-    # sta200 is not sta0200 nor sta00200, and we can format these numbers by adding
-    # a 1000 or 10000 to the station id, and trimming the first digit off
     padding_number = 10000 # the first digit of this will be deleted
     ssid = "jedway-wpa2-x2048-4-1"
     passphrase = "jedway-wpa2-x2048-4-1"
+
+    parser = argparse.ArgumentParser(description="test creating a station")
+    parser.add_argument("-m", "--host", type=str, help="json host to connect to")
+    parser.add_argument("-r", "--radio", type=str, help="radio to create a station on")
+    parser.add_argument("-a", "--start_id", type=int, help="starting station id")
+    parser.add_argument("-b", "--end_id", type=int, help="ending station id")
+    parser.add_argument("-s", "--ssid", type=str, help="station ssid")
+    parser.add_argument("-p", "--passwd", type=str, help="password for ssid")
+
+    args = None
+    try:
+      args = parser.parse_args()
+      if (args.host is not None):
+         host = args.host,
+         baseurl = base_url = "http://%s:8080"%host
+      if (args.radio is not None):
+         radio = args.radio
+      if (args.start_id is not None):
+         start_id = args.start_id
+      if (args.end_id is not None):
+         end_id = args.end_id
+      if (args.ssid is not None):
+         ssid = args.ssid
+      if (args.passwd is not None):
+         passphrase = args.passwd
+    except Exception as e:
+      logging.exception(e)
+      usage()
+      exit(2)
+
+    # station numbers are heavily manipulated strings, often using manual padding
+    # sta200 is not sta0200 nor sta00200, and we can format these numbers by adding
+    # a 1000 or 10000 to the station id, and trimming the first digit off
+
     j_printer = pprint.PrettyPrinter(indent=2)
     json_post = ""
     json_response = ""
@@ -87,7 +120,7 @@ def main():
         json_response = lf_r.formPost()
         sleep(0.05) # best to give LANforge a few millis between rm_vlan commands
 
-    LFUtils.waitUntilPortsDisappear(resource_id, found_stations)
+    LFUtils.waitUntilPortsDisappear(resource_id, base_url, found_stations)
 
     print("Ex 1: Next we create stations...")
     #68727874560 was previous flags
@@ -111,34 +144,37 @@ def main():
         # this pattern to randomize a section of octets. XX: keep parent, *: randomize, and
         # chars [0-9a-f]: use this digit
         #
-        # If you get errors like "X is invalid hex character", this indicates a previous
+        # If you get errors like "X is invalid hex chara cter", this indicates a previous
         # rm_vlan call has not removed your station yet: you cannot rewrite mac addresses
         # with this call, just create new stations
         lf_r.addPostData( LFUtils.staNewDownStaRequest(sta_name, resource_id=resource_id, radio=radio, ssid=ssid, passphrase=passphrase))
         lf_r.formPost()
-        sleep(0.05)
+        sleep(0.1)
 
-    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAppear(resource_id, base_url, desired_stations)
     for sta_name in desired_stations:
+        sleep(1)
+        print("doing portSetDhcpDownRequest on "+sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-form/set_port")
         lf_r.addPostData( LFUtils.portSetDhcpDownRequest(resource_id, sta_name))
         lf_r.formPost()
-        sleep(0.05)
+
 
     # the LANforge API separates STA creation and ethernet port settings
     # We need to revisit the stations we create and amend flags to add
     # things like DHCP or ip+gateway, admin-{up,down}
 
-    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAppear(resource_id, base_url, desired_stations)
     for sta_name in desired_stations:
+        sleep(1)
         print("Ex 1: station up %s"%sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         data = LFUtils.portDhcpUpRequest(resource_id, sta_name)
         lf_r.addPostData(data)
         lf_r.jsonPost()
-        sleep(0.05)
 
-    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+
+    LFUtils.waitUntilPortsAppear(resource_id, base_url, desired_stations)
     # for sta_name in desired_stations:
     #     print("Ex 1: sta down %s"%sta_name)
     #     lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
@@ -187,15 +223,15 @@ def main():
         lf_r.jsonPost(show_error=False)
         sleep(0.05)
 
-    LFUtils.waitUntilPortsDisappear(resource_id, found_stations)
+    LFUtils.waitUntilPortsDisappear(resource_id, base_url, found_stations)
     for sta_name in desired_stations:
         print("Ex 2: create station %s"%sta_name)
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
         lf_r.addPostData(LFUtils.staNewDownStaRequest(sta_name, resource_id=resource_id, radio=radio, ssid=ssid, passphrase=passphrase))
         lf_r.jsonPost()
-        sleep(0.05)
+        sleep(1)
 
-    LFUtils.waitUntilPortsAppear(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAppear(resource_id, base_url, desired_stations)
     # the LANforge API separates STA creation and ethernet port settings
     # We need to revisit the stations we create and amend flags to add
     # things like DHCP or ip+gateway, admin-{up,down}
@@ -227,7 +263,7 @@ def main():
             print("setting %s up"%sta_name)
             lf_r.jsonPost()
             wait_for_these.append(sta_name)
-    LFUtils.waitUntilPortsAdminUp(resource_id, wait_for_these)
+    LFUtils.waitUntilPortsAdminUp(resource_id, base_url, wait_for_these)
     sleep(4)
     print("Ex 3: setting ports down...")
     for sta_name in desired_stations:
@@ -240,7 +276,7 @@ def main():
             print("setting %s down"%sta_name)
             lf_r.jsonPost()
             wait_for_these.append(sta_name)
-    LFUtils.waitUntilPortsAdminDown(resource_id, wait_for_these)
+    LFUtils.waitUntilPortsAdminDown(resource_id, base_url, wait_for_these)
     print("...ports are down")
     sleep(4)
 
@@ -253,7 +289,7 @@ def main():
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
         lf_r.jsonPost()
-    LFUtils.waitUntilPortsAdminDown(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAdminDown(resource_id, base_url, desired_stations)
 
     for sta_name in desired_stations:
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
@@ -272,7 +308,7 @@ def main():
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         lf_r.addPostData(LFUtils.portUpRequest(resource_id, sta_name))
         lf_r.get()
-    LFUtils.waitUntilPortsAdminUp(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAdminUp(resource_id, base_url, desired_stations)
     print("...done")
     sleep(4)
 
@@ -284,7 +320,7 @@ def main():
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         lf_r.addPostData(LFUtils.portDownRequest(resource_id, sta_name))
         lf_r.get()
-    LFUtils.waitUntilPortsAdminDown(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAdminDown(resource_id, base_url, desired_stations)
 
     for sta_name in desired_stations:
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_sta")
@@ -305,7 +341,7 @@ def main():
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_port")
         lf_r.addPostData(LFUtils.portUpRequest(resource_id, sta_name))
         lf_r.get()
-    LFUtils.waitUntilPortsAdminUp(resource_id, desired_stations)
+    LFUtils.waitUntilPortsAdminUp(resource_id, base_url, desired_stations)
     print("...done")
     sleep(4)
 
