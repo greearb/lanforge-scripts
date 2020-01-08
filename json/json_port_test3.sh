@@ -47,10 +47,11 @@ function Kuurl() {
    set -x
    curl "$@" ||:
    set +x
-   grep 'HTTP/1.1 200' $headers || (echo "${@:$#}"; cat $headers)
+   grep 'HTTP/1.1 200' $headers || (echo "${@:$#}"; cat $headers; exit 1)
 }
 
-url="http://jedtest.jbr:8080"
+HOST=${1:-jedtest.jbr}
+url="http://${HOST}:8080"
 #url="http://127.0.0.1:8080"
 
 function PortDown() {
@@ -120,9 +121,10 @@ for eidcx in "${series[@]}" ; do
    Kuurl $switches  -H "$accept_json" "$url/cx/udp-$eidcx?fields=name,state"
 done
 
-sleep 5
-while true; do
+sleep 4
+for try in 1 2; do
    for eidcx in "${series[@]}" ; do
+      sleep 1
       CxToggle "udp-$eidcx" "STOPPED"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-A?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-B?fields=name,run"
@@ -131,17 +133,19 @@ while true; do
    for sta in "${series[@]}"; do
       PortDown "vsta$sta"
    done
+   sleep 5
    for sta in "${series[@]}"; do
       PortUp "vsta$sta"
    done
-   sleep 4
+   sleep 5
    for eidcx in "${series[@]}" ; do
+      sleep 1
       CxToggle "udp-$eidcx" "RUNNING"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-A?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-B?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/cx/udp-$eidcx?fields=name,state"
    done
-   sleep 14
+   sleep 20
 done
-
+echo "DONE"
 #
