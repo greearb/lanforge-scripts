@@ -33,8 +33,8 @@ function Jurl() {
    echo "=J====================================================================================="
 }
 
-#url="http://jed-f24m64-9119:8080"
-url="http://127.0.0.1:8080"
+url="http://jedtest.jbr:8080"
+#url="http://127.0.0.1:8080"
 data_file="/var/tmp/data.$$"
 result_file="/var/tmp/result_file.$$"
 
@@ -45,7 +45,7 @@ function PortDown() {
    for f in `seq 1 10`; do
       echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\"}" > $data_file
       curl $switches -H "$accept_json" -H "$content_json" -X POST -d"@$data_file" "$url/cli-json/nc_show_ports"
-      sleep 0.5 
+      sleep 0.5
       curl $switches "$url/port/1/3/$1?fields=alias,ip,down" | json_reformat > $result_file
       egrep '"down" *: "?true"?' $result_file && break || :
    done
@@ -55,12 +55,12 @@ function PortUp() {
    #set_port 1 3 sta3101 NA NA NA NA 0 NA NA NA NA 8388610
    echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\",\"current_flags\":0, \"interest\":8388610}" > $data_file
    curl $switches -H "$accept_json" -H "$content_json" -X POST  -d"@$data_file" "$url/cli-json/set_port"
-   sleep 1 
+   sleep 1
    for f in `seq 1 100`; do
       echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\"}" > $data_file
       #Jurl -d"@$data_file" "$url/cli-json/nc_show_ports"
       curl $switches -H "$accept_json" -H "$content_json" -X POST -d"@$data_file" "$url/cli-json/nc_show_ports"
-      sleep 0.5 
+      sleep 0.5
       curl $switches "$url/port/1/3/$1?fields=alias,ip,down" | json_reformat > $result_file
       #cat $result_file
       egrep '"down" : "?false"?' $result_file && break || :
