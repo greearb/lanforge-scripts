@@ -5,8 +5,9 @@ unset http_proxy
 Q='"'
 q="'"
 S='*'
-m=40
-n=42
+series=(10000 10001 10002 11000 11001 11002 12000 12001 12002)
+ra=1
+rb=2
 application_json="application/json"
 accept_json="Accept: $application_json"
 accept_html='Accept: text/html'
@@ -49,20 +50,20 @@ function Kuurl() {
    grep 'HTTP/1.1 200' $headers || (echo "${@:$#}"; cat $headers)
 }
 
-#url="http://jed-f24m64-9119:8080"
-url="http://127.0.0.1:8080"
+url="http://jedtest.jbr:8080"
+#url="http://127.0.0.1:8080"
 
 function PortDown() {
    switches="-s -D $headers -o $result"
-   echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\",\"current_flags\":1, \"interest\":8388610}" > $data_file
+   echo "{\"shelf\":1,\"resource\":$ra,\"port\":\"$1\",\"current_flags\":1, \"interest\":8388610}" > $data_file
    Kuurl $switches -H "$accept_json" -H "$content_json" -X POST  -d"@$data_file" "$url/cli-json/set_port"
    sleep 0.3
-   for f in `seq 1 10`; do
-      echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\"}" > $data_file
+   for try in `seq 1 100`; do
+      echo "{\"shelf\":1,\"resource\":$ra,\"port\":\"$1\"}" > $data_file
       cat $data_file
       Kuurl $switches -H "$accept_json" -H "$content_json" -X POST -d"@$data_file" "$url/cli-json/nc_show_ports"
       sleep 0.5
-      Kuurl $switches "$url/port/1/3/$1?fields=alias,ip,down"
+      Kuurl $switches "$url/port/1/$ra/$1?fields=alias,ip,down"
       json_pp < $result || cat $result
       grep '"down".*true' $result && break || :
    done
@@ -70,15 +71,15 @@ function PortDown() {
 
 function PortUp() {
    #set_port 1 3 sta3101 NA NA NA NA 0 NA NA NA NA 8388610
-   echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\",\"current_flags\":0, \"interest\":8388610}" > $data_file
+   echo "{\"shelf\":1,\"resource\":$ra,\"port\":\"$1\",\"current_flags\":0, \"interest\":8388610}" > $data_file
    curl $switches -H "$accept_json" -H "$content_json" -X POST  -d"@$data_file" "$url/cli-json/set_port"
    sleep 1
-   for f in `seq 1 100`; do
-      echo "{\"shelf\":1,\"resource\":3,\"port\":\"$1\"}" > $data_file
+   for try in `seq 1 100`; do
+      echo "{\"shelf\":1,\"resource\":$ra,\"port\":\"$1\"}" > $data_file
       #Jurl -d"@$data_file" "$url/cli-json/nc_show_ports"
       curl $switches -H "$accept_json" -H "$content_json" -X POST -d"@$data_file" "$url/cli-json/nc_show_ports"
       sleep 0.5
-      curl $switches "$url/port/1/3/$1?fields=alias,ip,down"
+      curl $switches "$url/port/1/$ra/$1?fields=alias,ip,down"
       json_pp < $result || cat $result
       grep '"down".*false' $result && break || :
    done
@@ -91,11 +92,11 @@ function CxToggle() {
 }
 
 function CxCreate() { # alias, port
-   echo "{\"alias\":\"$1-A\",\"shelf\":1,\"resource\":3,\"port\":\"$2\",\"type\":\"lf_udp\",\"ip_port\":\"AUTO\",\"is_rate_bursty\":\"NO\",\"min_rate\":164000,\"min_pkt\":-1,\"max_pkt\":0}" > $data_file
+   echo "{\"alias\":\"$1-A\",\"shelf\":1,\"resource\":$ra,\"port\":\"$2\",\"type\":\"lf_udp\",\"ip_port\":\"AUTO\",\"is_rate_bursty\":\"NO\",\"min_rate\":164000,\"min_pkt\":-1,\"max_pkt\":0}" > $data_file
    cat $data_file
    Kuurl $switches -H "$accept_json" -H "$content_json" -X POST  -d"@$data_file" "$url/cli-json/add_endp"
 
-   echo "{\"alias\":\"$1-B\",\"shelf\":1,\"resource\":2,\"port\":\"b2000\",\"type\":\"lf_udp\",\"ip_port\":\"AUTO\",\"is_rate_bursty\":\"NO\",\"min_rate\":64000,\"min_pkt\":-1,\"max_pkt\":0}" > $data_file
+   echo "{\"alias\":\"$1-B\",\"shelf\":1,\"resource\":$rb,\"port\":\"b2000\",\"type\":\"lf_udp\",\"ip_port\":\"AUTO\",\"is_rate_bursty\":\"NO\",\"min_rate\":64000,\"min_pkt\":-1,\"max_pkt\":0}" > $data_file
    cat $data_file
    Kuurl $switches -H "$accept_json" -H "$content_json" -X POST  -d"@$data_file" "$url/cli-json/add_endp"
 
@@ -111,8 +112,8 @@ function CxCreate() { # alias, port
 }
 
 # create some cx
-for eidcx in `seq $m $n` ; do
-   CxCreate "udp-$eidcx" "sta$((3060 + $eidcx))"
+for eidcx in "${series[@]}" ; do
+   CxCreate "udp-$eidcx" "vsta$eidcx"
    sleep 1
    Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-A?fields=name,run"
    Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-B?fields=name,run"
@@ -121,22 +122,20 @@ done
 
 sleep 5
 while true; do
-   for eidcx in `seq $m $n` ; do
+   for eidcx in "${series[@]}" ; do
       CxToggle "udp-$eidcx" "STOPPED"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-A?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-B?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/cx/udp-$eidcx?fields=name,state"
    done
-   for sta in `seq 100 120`; do
-      stb=$(( $sta + 3000))
-      PortDown "sta$stb"
+   for sta in "${series[@]}"; do
+      PortDown "vsta$sta"
    done
-   for sta in `seq 100 120`; do
-      stb=$(( $sta + 3000))
-      PortUp "sta$stb"
+   for sta in "${series[@]}"; do
+      PortUp "vsta$sta"
    done
    sleep 4
-   for eidcx in `seq $m $n` ; do
+   for eidcx in "${series[@]}" ; do
       CxToggle "udp-$eidcx" "RUNNING"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-A?fields=name,run"
       Kuurl $switches  -H "$accept_json" "$url/endp/udp-$eidcx-B?fields=name,run"
