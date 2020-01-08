@@ -16,12 +16,12 @@ from random import randint
 from LANforge import LFRequest
 
 debug_printer = pprint.PrettyPrinter(indent=2)
-base_url = "http://localhost:8080"
+#global base_url # = "http://localhost:8080"
 
 NA = "NA" # used to indicate parameter to skip
 ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
-REPORT_TIMER_MS_FAST = 2000
-REPORT_TIMER_MS_SLOW = 8000
+REPORT_TIMER_MS_FAST = 1500
+REPORT_TIMER_MS_SLOW = 3000
 
 
 class PortEID:
@@ -81,13 +81,14 @@ def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
+    print("portSetDhcpDownRequest")
     data = {
         "shelf": 1,
         "resource": resource_id,
         "port": port_name,
         "current_flags": 2147483649, # 0x1 = interface down + 2147483648 use DHCP values
         "interest": 75513858, # includes use_current_flags + dhcp + dhcp_rls + ifdown
-        "report_timer": REPORT_TIMER_MS_SLOW
+        "report_timer": REPORT_TIMER_MS_FAST
     }
     if (debug_on):
         debug_printer.pprint(data)
@@ -101,6 +102,7 @@ def portDhcpUpRequest(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
+    print("portDhcpUpRequest")
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -129,6 +131,7 @@ def portUpRequest(resource_id, port_name, debug_on=False):
         "interest": 8388610, # includes use_current_flags + dhcp + dhcp_rls + ifdown
         "report_timer": REPORT_TIMER_MS_FAST,
     }
+    print("portUpRequest")
     if (debug_on):
         debug_printer.pprint(data)
     return data
@@ -141,13 +144,14 @@ def portDownRequest(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
+    print("portDownRequest")
     data = {
         "shelf": 1,
         "resource": resource_id,
         "port": port_name,
         "current_flags": 1, # vs 0x0 = interface up
         "interest": 8388610, # = current_flags + ifdown
-        "report_timer": REPORT_TIMER_MS_SLOW,
+        "report_timer": REPORT_TIMER_MS_FAST,
     }
     if (debug_on):
         debug_printer.pprint(data)
@@ -220,7 +224,7 @@ def portAliasesInList(json_list):
     return reverse_map
 
 
-def findPortEids(resource_id=1, port_names=(), base_url="http://localhost:8080"):
+def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=()):
     port_eids = []
     if len(port_names) < 0:
         return []
@@ -236,7 +240,8 @@ def findPortEids(resource_id=1, port_names=(), base_url="http://localhost:8080")
             print("Not found: "+port_name)
     return None
 
-def waitUntilPortsAdminDown(resource_id=1, port_list=()):
+def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    print("waitUntilPortsAdminDown")
     up_stations = port_list.copy()
     sleep(1)
     while len(up_stations) > 0:
@@ -255,7 +260,8 @@ def waitUntilPortsAdminDown(resource_id=1, port_list=()):
         sleep(1)
     return None
 
-def waitUntilPortsAdminUp(resource_id=1, port_list=()):
+def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    print("waitUntilPortsAdminUp")
     down_stations = port_list.copy()
     sleep(1)
     while len(down_stations) > 0:
@@ -275,7 +281,8 @@ def waitUntilPortsAdminUp(resource_id=1, port_list=()):
     return None
 
 
-def waitUntilPortsDisappear(resource_id=1, port_list=()):
+def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    print("waitUntilPortsDisappear")
     found_stations = port_list.copy()
     sleep(1)
     while len(found_stations) > 0:
@@ -290,7 +297,8 @@ def waitUntilPortsDisappear(resource_id=1, port_list=()):
     return None
 
 
-def waitUntilPortsAppear(resource_id=1, port_list=()):
+def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    print("waitUntilPortsAppear")
     found_stations = []
     sleep(2)
     while len(found_stations) < len(port_list):
@@ -302,7 +310,12 @@ def waitUntilPortsAppear(resource_id=1, port_list=()):
             json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
                 found_stations.append(port_name)
+            else:
+               lf_r = LFRequest.LFRequest(base_url+"/cli-form/nc_show_ports")
+               lf_r.addPostData({"shelf":1, "resource":resource_id, "port":port_name, "flags":1})
+               lr_r.formPost()
     sleep(2)
+    print("These stations appeared: "+", ".join(found_stations))
     return None
 
  ###
