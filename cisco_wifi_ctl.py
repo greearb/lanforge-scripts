@@ -242,10 +242,17 @@ def main():
    else:
       logg.info("Command[%s]"%command)
       egg.sendline(command);
-      i = egg.expect([CCPROMPT, AREYOUSURE])
-      print (egg.before.decode('utf-8', 'ignore'))
-      if i == 1:
-          egg.sendline("y")
+      while True:
+          i = egg.expect([CCPROMPT, AREYOUSURE, '--More-- or'])
+          print (egg.before.decode('utf-8', 'ignore'))
+          if i == 0:
+              break
+          if i == 1:
+              egg.sendline("y")
+              break
+          if i == 2:
+              egg.sendline(NL)
+          
 
    egg.sendline("logout")
    i = egg.expect([EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX])

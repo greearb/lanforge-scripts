@@ -24,6 +24,9 @@ The user is responsible for setting up the station oustide of this script, howev
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
   --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 \
   --band a --upstream_port eth2 --lfresource2 2
+
+Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
+
 '''
 
 # TODO:  Maybe HTML output too?
@@ -204,13 +207,13 @@ def main():
 
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Cabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
+   csv.write("Regulatory Domain\tCabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
    csv.write("\n");
    csv.flush()
 
    # Summary spread-sheet data
    csvs = open(outfile, "w")
-   csvs.write("Cabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
+   csvs.write("Regulatory Domain\tCabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
    csvs.write("\n");
    csvs.flush()
 
@@ -271,29 +274,32 @@ def main():
    green_left.set_border(1)
 
    worksheet.set_row(0, 45) # Set height
-   worksheet.set_column(18, 18, 10) # Set width
-   worksheet.set_column(19, 19, 100) # Set width
+   worksheet.set_column(21, 21, 10) # Set width
+   worksheet.set_column(22, 22, 100) # Set width
 
-   worksheet.write('A1', 'AP\nChannel', dblue_bold)
-   worksheet.write('B1', 'NSS', dblue_bold)
-   worksheet.write('C1', 'AP\nBW', dblue_bold)
-   worksheet.write('D1', 'Tx\nPower', dtan_bold)
-   worksheet.write('E1', 'Allowed\nPer\nPath', dtan_bold)
-   worksheet.write('F1', 'Cabling\nPathloss', dtan_bold)
-   worksheet.write('G1', 'RSSI\n1', dpeach_bold)
-   worksheet.write('H1', 'RSSI\n2', dpeach_bold)
-   worksheet.write('I1', 'RSSI\n3', dpeach_bold)
-   worksheet.write('J1', 'RSSI\n4', dpeach_bold)
-   worksheet.write('K1', 'Ant\n1', dpink_bold)
-   worksheet.write('L1', 'Ant\n2', dpink_bold)
-   worksheet.write('M1', 'Ant\n3', dpink_bold)
-   worksheet.write('N1', 'Ant\n4', dpink_bold)
-   worksheet.write('O1', 'Offset\n1', dyel_bold)
-   worksheet.write('P1', 'Offset\n2', dyel_bold)
-   worksheet.write('Q1', 'Offset\n3', dyel_bold)
-   worksheet.write('R1', 'Offset\n4', dyel_bold)
-   worksheet.write('S1', "PASS /\nFAIL\n(+-%s dBm)"%(pf_dbm), dgreen_bold)
-   worksheet.write('T1', 'Warnings and Errors', dgreen_bold_left)
+   worksheet.write('A1', 'Regulatory\nDomain', dblue_bold)
+   worksheet.write('B1', 'AP\nChannel', dblue_bold)
+   worksheet.write('C1', 'NSS', dblue_bold)
+   worksheet.write('D1', 'AP\nBW', dblue_bold)
+   worksheet.write('E1', 'Tx\nPower', dtan_bold)
+   worksheet.write('F1', 'Allowed\nPer\nPath', dtan_bold)
+   worksheet.write('G1', 'Cabling\nPathloss', dtan_bold)
+   worksheet.write('H1', 'Beacon\nRSSI\n1', dpeach_bold)
+   worksheet.write('I1', 'Combined\nRSSI\n1', dpeach_bold)
+   worksheet.write('J1', 'RSSI\n1', dpeach_bold)
+   worksheet.write('K1', 'RSSI\n2', dpeach_bold)
+   worksheet.write('L1', 'RSSI\n3', dpeach_bold)
+   worksheet.write('M1', 'RSSI\n4', dpeach_bold)
+   worksheet.write('N1', 'Ant\n1', dpink_bold)
+   worksheet.write('O1', 'Ant\n2', dpink_bold)
+   worksheet.write('P1', 'Ant\n3', dpink_bold)
+   worksheet.write('Q1', 'Ant\n4', dpink_bold)
+   worksheet.write('R1', 'Offset\n1', dyel_bold)
+   worksheet.write('S1', 'Offset\n2', dyel_bold)
+   worksheet.write('T1', 'Offset\n3', dyel_bold)
+   worksheet.write('U1', 'Offset\n4', dyel_bold)
+   worksheet.write('V1', "PASS /\nFAIL\n(+-%s dBm)"%(pf_dbm), dgreen_bold)
+   worksheet.write('W1', 'Warnings and Errors', dgreen_bold_left)
 
    bandwidths = args.bandwidth.split()
    channels = args.channel.split()
@@ -329,6 +335,26 @@ def main():
    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
 
+   myrd = ""
+   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                              "--action", "summary"], capture_output=True)
+   pss = advanced.stdout.decode('utf-8', 'ignore');
+   print(pss)
+
+   # Find our current regulatory domain so we can report it properly
+   searchap = False
+   for line in pss.splitlines():
+       if (line.startswith("---------")):
+           searchap = True
+           continue
+
+       if (searchap):
+           pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  (\S+)\s+\S+\s*\S+\s+\["%(args.ap)
+           m = re.search(pat, line)
+           if (m != None):
+               myrd = m.group(1)
+
+   # Loop through all iterations and run txpower tests.
    for ch in channels:
        for n in nss:
            for bw in bandwidths:
@@ -460,8 +486,9 @@ def main():
                                wait_assoc_print = True
 
                        i += 1
-                       if (i > 60):
-                           print("ERROR:  Station did not connect within 60 seconds.")
+                       # We wait a fairly long time since AP will take a long time to start on a CAC channel.
+                       if (i > 180):
+                           print("ERROR:  Station did not connect within 180 seconds.")
                            break
 
                        time.sleep(1)
@@ -512,12 +539,12 @@ def main():
                            print("Tried and failed 10 times to find correct spatial streams, continuing.")
                            while (len(ants) < int(n)):
                                ants.append("")
-                               break
                            break
 
                    antstr = ""
                    for x in range(4):
                        if (x < int(n)):
+                           print("x: %s n: %s  len(ants): %s"%(x, n, len(ants)))
                            antstr += ants[x]
                        else:
                            antstr += " "
@@ -617,8 +644,8 @@ def main():
                    if (pf == 0):
                        pfs = "FAIL"
                        
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       args.pathloss, ch, n, bw, tx, beacon_sig, sig,
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       myrd, args.pathloss, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
                        calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
@@ -629,8 +656,8 @@ def main():
                    csv.write(ln)
                    csv.write("\t")
 
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       args.pathloss, _ch, _nss, _bw, tx, allowed_per_path,
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       myrd, args.pathloss, _ch, _nss, _bw, tx, allowed_per_path,
                        antstr,
                        calc_ant1, calc_ant2, calc_ant3, calc_ant4,
                        diff_a1, diff_a2, diff_a3, diff_a4, pfs
@@ -639,14 +666,17 @@ def main():
                    csvs.write("\t")
 
                    col = 0
+                   worksheet.write(row, col, myrd, center_blue); col += 1
                    worksheet.write(row, col, _ch, center_blue); col += 1
                    worksheet.write(row, col, _nss, center_blue); col += 1
                    worksheet.write(row, col, _bw, center_blue); col += 1
                    worksheet.write(row, col, tx, center_tan); col += 1
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
                    worksheet.write(row, col, args.pathloss, center_tan); col += 1
+                   worksheet.write(row, col, beacon_sig, center_tan); col += 1
+                   worksheet.write(row, col, sig, center_tan); col += 1
                    for x in range(4):
-                       if (x < int(n), center):
+                       if (x < int(n)):
                            worksheet.write(row, col, ants[x], center_peach); col += 1
                        else:
                            worksheet.write(row, col, " ", center_peach); col += 1
