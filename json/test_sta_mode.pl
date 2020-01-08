@@ -45,9 +45,18 @@ GetOptions
 
 $HostUri   = "http://$Host:$Port";
 
-my $uri = "/port/1/1/sta0200";
+my $uri = "/port/1/1/list";
 my $rh = json_request($uri);
-print Dumper($rh);
+#print Dumper($rh->{interfaces});
+for my $rh_e (@{$rh->{interfaces}}) {
+   my @keys = keys(%$rh_e);
+   my $rh_val = $rh_e->{$keys[0]};
+   next if ($keys[0] !~ /sta/);
+   my $resp = json_request($rh_val->{_links}."?fields=alias,port,mode");
+   print Dumper($resp->{interface});
+   sleep 0.1;
+}
+
 
 
 #
