@@ -21,6 +21,7 @@ use LANforge::JsonUtils qw(logg err json_request get_links_from get_thru json_po
 
 package main;
 # Default values for ye ole cmd-line args.
+
 our $Resource  = 1;
 our $quiet     = "yes";
 our $Host      = "localhost";
@@ -28,9 +29,13 @@ our $Port      = 8080;
 our $HostUri   = "http://$Host:$Port";
 our $Web       = LWP::UserAgent->new;
 our $Decoder   = JSON->new->utf8;
+our $use_ssid  = "kedtest-wpa2";
+our $use_pass  = "kedtest-wpa2";
 
 my $usage = qq("$0 --host {ip or hostname} # connect to this
    --port {port number} # defaults to 8080
+   --ssid {ssid}
+   --pass {passwd}
 );
 
 
@@ -42,8 +47,10 @@ my $des_resource = 1;
 
 GetOptions
 (
-  'host=s'                   => \$::Host,
-  'port=i'                   => \$::Port,
+  'host=s'  => \$::Host,
+  'port=i'  => \$::Port,
+  'ssid=s'  => \$::use_ssid,
+  'pass=s'  => \$::use_pass,
 ) || (print($usage) && exit(1));
 
 $::HostUri = "http://$Host:$Port";
@@ -69,7 +76,7 @@ for $uri (@$ra_links) {
    }
 }
 
-# destroy stations on resource 3
+# destroy stations
 my @radios = ();
 my @destroy_me = ();
 for my $rh_alias_link (@$ra_alias_links) {
@@ -112,7 +119,7 @@ while ($remaining > 0) {
    flatten_list($rh, 'interfaces');
    $remaining = 0;
    for my $name (keys %{$rh->{'flat_list'}}) {
-      $remaining ++ 
+      $remaining ++
          if ($name =~ /^v*sta/);
    }
    print "Remaining stations: $remaining, ";
@@ -157,8 +164,8 @@ for $rh_radio (@radios) {
          #'alias'=>'vsta'.$i, # deprecated, use set_port + interest.set_alias
          #'flags'=>68862086144, # has port-down set
          'flags'=>142609408,
-         'ssid'=>'idtest-1200-wpa2',
-         'key'=>'idtest-1200-wpa2',
+         'ssid'=> $::use_ssid,
+         'key'=> $::use_pass,
          'mac'=>'xx:xx:xx:xx:*:xx',
          'mode'=>0,
          'rate'=>'DEFAULT'
