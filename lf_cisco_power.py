@@ -218,7 +218,6 @@ def main():
    csvs.flush()
 
    # XLSX file
-   row = 1 # Skip header line, we write it below
    workbook = xlsxwriter.Workbook(outfile_xlsx)
    worksheet = workbook.add_worksheet()
 
@@ -274,32 +273,40 @@ def main():
    green_left.set_border(1)
 
    worksheet.set_row(0, 45) # Set height
-   worksheet.set_column(21, 21, 10) # Set width
-   worksheet.set_column(22, 22, 100) # Set width
+   worksheet.set_column(0, 0, 10) # Set width
+   worksheet.set_column(8, 8, 15) # Set width
+   worksheet.set_column(10, 10, 10) # Set width
+   worksheet.set_column(23, 23, 10) # Set width
+   worksheet.set_column(24, 24, 100) # Set width
 
-   worksheet.write('A1', 'Regulatory\nDomain', dblue_bold)
-   worksheet.write('B1', 'AP\nChannel', dblue_bold)
-   worksheet.write('C1', 'NSS', dblue_bold)
-   worksheet.write('D1', 'AP\nBW', dblue_bold)
-   worksheet.write('E1', 'Tx\nPower', dtan_bold)
-   worksheet.write('F1', 'Allowed\nPer\nPath', dtan_bold)
-   worksheet.write('G1', 'Cabling\nPathloss', dtan_bold)
-   worksheet.write('H1', 'Beacon\nRSSI\n1', dpeach_bold)
-   worksheet.write('I1', 'Combined\nRSSI\n1', dpeach_bold)
-   worksheet.write('J1', 'RSSI\n1', dpeach_bold)
-   worksheet.write('K1', 'RSSI\n2', dpeach_bold)
-   worksheet.write('L1', 'RSSI\n3', dpeach_bold)
-   worksheet.write('M1', 'RSSI\n4', dpeach_bold)
-   worksheet.write('N1', 'Ant\n1', dpink_bold)
-   worksheet.write('O1', 'Ant\n2', dpink_bold)
-   worksheet.write('P1', 'Ant\n3', dpink_bold)
-   worksheet.write('Q1', 'Ant\n4', dpink_bold)
-   worksheet.write('R1', 'Offset\n1', dyel_bold)
-   worksheet.write('S1', 'Offset\n2', dyel_bold)
-   worksheet.write('T1', 'Offset\n3', dyel_bold)
-   worksheet.write('U1', 'Offset\n4', dyel_bold)
-   worksheet.write('V1', "PASS /\nFAIL\n(+-%s dBm)"%(pf_dbm), dgreen_bold)
-   worksheet.write('W1', 'Warnings and Errors', dgreen_bold_left)
+   col = 0
+   row = 0
+   worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold); col += 1
+   worksheet.write(row, col, 'AP\nChannel', dblue_bold); col += 1
+   worksheet.write(row, col, 'NSS', dblue_bold); col += 1
+   worksheet.write(row, col, 'AP\nBW', dblue_bold); col += 1
+   worksheet.write(row, col, 'Tx\nPower', dtan_bold); col += 1
+   worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold); col += 1
+   worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold); col += 1
+   worksheet.write(row, col, 'Noise\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Last\nMCS\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Beacon\nRSSI\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Combined\nRSSI\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'RSSI\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'RSSI\n2', dpeach_bold); col += 1
+   worksheet.write(row, col, 'RSSI\n3', dpeach_bold); col += 1
+   worksheet.write(row, col, 'RSSI\n4', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Ant\n1', dpink_bold); col += 1
+   worksheet.write(row, col, 'Ant\n2', dpink_bold); col += 1
+   worksheet.write(row, col, 'Ant\n3', dpink_bold); col += 1
+   worksheet.write(row, col, 'Ant\n4', dpink_bold); col += 1
+   worksheet.write(row, col, 'Offset\n1', dyel_bold); col += 1
+   worksheet.write(row, col, 'Offset\n2', dyel_bold); col += 1
+   worksheet.write(row, col, 'Offset\n3', dyel_bold); col += 1
+   worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
+   worksheet.write(row, col, "PASS /\nFAIL\n( += 1-%s dBm)"%(pf_dbm), dgreen_bold); col += 1
+   worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
+   row += 1
 
    bandwidths = args.bandwidth.split()
    channels = args.channel.split()
@@ -482,7 +489,7 @@ def main():
                                    wait_ip_print = True
                        else:
                            if (not wait_assoc_print):
-                               print("Waiting for station to associate.")
+                               print("Waiting up to 180s for station to associate.")
                                wait_assoc_print = True
 
                        i += 1
@@ -673,6 +680,8 @@ def main():
                    worksheet.write(row, col, tx, center_tan); col += 1
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
                    worksheet.write(row, col, args.pathloss, center_tan); col += 1
+                   worksheet.write(row, col, _noise, center_tan); col += 1
+                   worksheet.write(row, col, _rxrate, center_tan); col += 1
                    worksheet.write(row, col, beacon_sig, center_tan); col += 1
                    worksheet.write(row, col, sig, center_tan); col += 1
                    for x in range(4):
