@@ -93,6 +93,7 @@ def usage():
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
+   print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -143,6 +144,7 @@ def main():
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
+   parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    
    args = None
    try:
@@ -265,6 +267,9 @@ def main():
    center_yel = workbook.add_format({'align': 'center'})
    center_yel.set_bg_color("#fdf2cc")
    center_yel.set_border(1)
+   center_yel_red = workbook.add_format({'align': 'center', 'color': 'red'})
+   center_yel_red.set_bg_color("#fdf2cc")
+   center_yel_red.set_border(1)
    center_pink = workbook.add_format({'align': 'center'})
    center_pink.set_bg_color("ffd2d3")
    center_pink.set_border(1)
@@ -289,7 +294,9 @@ def main():
    worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold); col += 1
    worksheet.write(row, col, 'AP\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'NSS', dblue_bold); col += 1
-   worksheet.write(row, col, 'AP\nBW', dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Controller\nBW', dblue_bold); col += 1
+   worksheet.write(row, col, 'STA\nRpt\nBW', dblue_bold); col += 1
    worksheet.write(row, col, 'Tx\nPower', dtan_bold); col += 1
    worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold); col += 1
    worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold); col += 1
@@ -314,7 +321,7 @@ def main():
    worksheet.write(row, col, 'Offset\n2', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n3', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
-   worksheet.set_column(col, col, 10) # Set width
+   worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += 1-%s dBm)"%(pf_dbm), dgreen_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
@@ -405,6 +412,8 @@ def main():
                
                for tx in txpowers:
 
+                   e_tot = ""
+
                    # TODO:  Down station
                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                                 "--set_ifstate", "down"]);
@@ -447,6 +456,7 @@ def main():
                    searchap = False
                    cc_mac = ""
                    cc_ch = ""
+                   cc_bw = ""
                    cc_power = ""
                    cc_dbm = ""
                    for line in pss.splitlines():
@@ -459,10 +469,13 @@ def main():
                            m = re.search(pat, line)
                            if (m != None):
                                cc_mac = m.group(1)
-                               cc_ch = m.group(2);
+                               cc_ch = m.group(2);  # (132,136,140,144)
                                cc_power = m.group(3)
                                cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
                                cc_dbm = m.group(4)
+
+                               ch_count = cc_ch.count(",")
+                               cc_bw = 20 * (ch_count + 1)
                                break
 
                    # Up station
@@ -507,11 +520,19 @@ def main():
                        i += 1
                        # We wait a fairly long time since AP will take a long time to start on a CAC channel.
                        if (i > 180):
-                           print("ERROR:  Station did not connect within 180 seconds.")
-                           break
+                           err = "ERROR:  Station did not connect within 180 seconds."
+                           print(err)
+                           e_tot += err
+                           e_tot += "  "
+                           if (args.wait_forever):
+                               print("Will continue waiting, you may wish to debug the system...")
+                               i = 0
+                           else:
+                               break
 
                        time.sleep(1)
 
+                   
                    # Wait 10 more seconds
                    print("Waiting 10 seconds to let traffic run for a bit, Channel %s NSS %s BW %s TX-Power %s"%(ch, n, bw, tx))
                    time.sleep(10)
@@ -555,7 +576,10 @@ def main():
 
                        i += 1
                        if (i > 10):
-                           print("Tried and failed 10 times to find correct spatial streams, continuing.")
+                           err = "Tried and failed 10 times to find correct spatial streams, continuing."
+                           print(err);
+                           e_tot += err
+                           e_tot += "  "
                            while (len(ants) < int(n)):
                                ants.append("")
                            break
@@ -563,7 +587,7 @@ def main():
                    antstr = ""
                    for x in range(4):
                        if (x < int(n)):
-                           print("x: %s n: %s  len(ants): %s"%(x, n, len(ants)))
+                           #print("x: %s n: %s  len(ants): %s"%(x, n, len(ants)))
                            antstr += ants[x]
                        else:
                            antstr += " "
@@ -611,19 +635,29 @@ def main():
                    rssi_adj = 0
                    if (_noise_bare != None):
                        _noise_i = int(_noise_bare)
-                       rssi_adj = (_noise_i - nf_at_calibration)
+                       if (_noise_i == 0):
+                           # Guess we could not detect noise properly?
+                           e_tot += "WARNING:  Invalid noise-floor, calculations may be inaccurate.  "
+                       else:
+                           rssi_adj = (_noise_i - nf_at_calibration)
+
+                   if (sig == None):
+                       e_tot += "ERROR:  Could not detect signal level.  "
+                       sig = -100
 
                    pi = int(args.pathloss)                   
                    calc_dbm = int(sig) + pi + rssi_adj
-                   calc_ant1 = int(ants[0]) + pi + rssi_adj
+                   calc_ant1 = 0
+                   if (ants[0] != ""):
+                       calc_ant1 = int(ants[0]) + pi + rssi_adj
                    calc_ant2 = 0
                    calc_ant3 = 0
                    calc_ant4 = 0
-                   if (len(ants) > 1):
+                   if (len(ants) > 1 and ants[1] != ""):
                        calc_ant2 = int(ants[1]) + pi + rssi_adj
-                   if (len(ants) > 2):
+                   if (len(ants) > 2 and ants[2] != ""):
                        calc_ant3 = int(ants[2]) + pi + rssi_adj
-                   if (len(ants) > 3):
+                   if (len(ants) > 3 and ants[3] != ""):
                        calc_ant4 = int(ants[3]) + pi + rssi_adj
 
                    diff_a1 = ""
@@ -697,6 +731,7 @@ def main():
                    worksheet.write(row, col, myrd, center_blue); col += 1
                    worksheet.write(row, col, _ch, center_blue); col += 1
                    worksheet.write(row, col, _nss, center_blue); col += 1
+                   worksheet.write(row, col, cc_bw, center_blue); col += 1
                    worksheet.write(row, col, _bw, center_blue); col += 1
                    worksheet.write(row, col, tx, center_tan); col += 1
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
@@ -715,16 +750,29 @@ def main():
                    worksheet.write(row, col, calc_ant2, center_pink); col += 1
                    worksheet.write(row, col, calc_ant3, center_pink); col += 1
                    worksheet.write(row, col, calc_ant4, center_pink); col += 1
-                   worksheet.write(row, col, diff_a1, center_yel); col += 1
-                   worksheet.write(row, col, diff_a2, center_yel); col += 1
-                   worksheet.write(row, col, diff_a3, center_yel); col += 1
-                   worksheet.write(row, col, diff_a4, center_yel); col += 1
+
+                   if (diff_a1 != "" and abs(diff_a1) > pfrange):
+                       worksheet.write(row, col, diff_a1, center_yel_red); col += 1
+                   else:
+                       worksheet.write(row, col, diff_a1, center_yel); col += 1
+                   if (diff_a2 != "" and abs(diff_a2) > pfrange):
+                       worksheet.write(row, col, diff_a2, center_yel_red); col += 1
+                   else:
+                       worksheet.write(row, col, diff_a2, center_yel); col += 1
+                   if (diff_a3 != "" and abs(diff_a3) > pfrange):
+                       worksheet.write(row, col, diff_a3, center_yel_red); col += 1
+                   else:
+                       worksheet.write(row, col, diff_a3, center_yel); col += 1
+                   if (diff_a4 != "" and abs(diff_a4) > pfrange):
+                       worksheet.write(row, col, diff_a4, center_yel_red); col += 1
+                   else:
+                       worksheet.write(row, col, diff_a4, center_yel); col += 1
+                       
                    if (pfs == "FAIL"):
                        worksheet.write(row, col, pfs, red); col += 1
                    else:
                        worksheet.write(row, col, pfs, green); col += 1
 
-                   e_tot = ""
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
                        e_tot += err
