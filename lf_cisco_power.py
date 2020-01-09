@@ -62,6 +62,15 @@ outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
 
+# Noise floor on ch 36 where we calibrated -54 path loss
+nf_at_calibration = -105
+# ath10k driver hard-codes noise-floor to -95 when calculating RSSI
+# RSSI = NF + reported_power
+# Shift RSSI by difference in actual vs calibrated noise-floor since driver hard-codes
+# the noise floor.
+
+# rssi_adjust = (current_nf - nf_at_calibration)
+
 def usage():
    print("$0 used connect to controller:")
    print("-a|--ap:  AP to act upon")
@@ -274,10 +283,6 @@ def main():
 
    worksheet.set_row(0, 45) # Set height
    worksheet.set_column(0, 0, 10) # Set width
-   worksheet.set_column(8, 8, 15) # Set width
-   worksheet.set_column(10, 10, 10) # Set width
-   worksheet.set_column(23, 23, 10) # Set width
-   worksheet.set_column(24, 24, 100) # Set width
 
    col = 0
    row = 0
@@ -288,10 +293,15 @@ def main():
    worksheet.write(row, col, 'Tx\nPower', dtan_bold); col += 1
    worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold); col += 1
    worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold); col += 1
-   worksheet.write(row, col, 'Noise\n1', dpeach_bold); col += 1
-   worksheet.write(row, col, 'Last\nMCS\n1', dpeach_bold); col += 1
-   worksheet.write(row, col, 'Beacon\nRSSI\n1', dpeach_bold); col += 1
-   worksheet.write(row, col, 'Combined\nRSSI\n1', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Noise\n', dpeach_bold); col += 1
+   worksheet.write(row, col, 'Noise\nAdjust\n(vs -105)', dpeach_bold); col += 1
+
+   worksheet.set_column(col, col, 15) # Set width
+   worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold); col += 1
+   
+   worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n1', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n2', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n3', dpeach_bold); col += 1
@@ -304,7 +314,9 @@ def main():
    worksheet.write(row, col, 'Offset\n2', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n3', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += 1-%s dBm)"%(pf_dbm), dgreen_bold); col += 1
+   worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
    row += 1
 
@@ -568,6 +580,7 @@ def main():
                    _nss = None
                    _noise = None
                    _rxrate = None
+                   _noise_bare = None
 
                    for line in pss.splitlines():
                        m = re.search('AP:\s+(.*)', line)
@@ -588,22 +601,30 @@ def main():
                        m = re.search('Noise:\s+(.*)', line)
                        if (m != None):
                            _noise = m.group(1)
+                       m = re.search('Noise:\s+(.*)dBm', line)
+                       if (m != None):
+                           _noise_bare = m.group(1)
                        m = re.search('RX-Rate:\s+(.*)', line)
                        if (m != None):
                            _rxrate = m.group(1)
 
-                   pi = int(args.pathloss)
-                   calc_dbm = int(sig) + pi
-                   calc_ant1 = int(ants[0]) + pi
+                   rssi_adj = 0
+                   if (_noise_bare != None):
+                       _noise_i = int(_noise_bare)
+                       rssi_adj = (_noise_i - nf_at_calibration)
+
+                   pi = int(args.pathloss)                   
+                   calc_dbm = int(sig) + pi + rssi_adj
+                   calc_ant1 = int(ants[0]) + pi + rssi_adj
                    calc_ant2 = 0
                    calc_ant3 = 0
                    calc_ant4 = 0
                    if (len(ants) > 1):
-                       calc_ant2 = int(ants[1]) + pi
+                       calc_ant2 = int(ants[1]) + pi + rssi_adj
                    if (len(ants) > 2):
-                       calc_ant3 = int(ants[2]) + pi
+                       calc_ant3 = int(ants[2]) + pi + rssi_adj
                    if (len(ants) > 3):
-                       calc_ant4 = int(ants[3]) + pi
+                       calc_ant4 = int(ants[3]) + pi + rssi_adj
 
                    diff_a1 = ""
                    diff_a2 = ""
@@ -681,6 +702,7 @@ def main():
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
                    worksheet.write(row, col, args.pathloss, center_tan); col += 1
                    worksheet.write(row, col, _noise, center_tan); col += 1
+                   worksheet.write(row, col, rssi_adj, center_tan); col += 1
                    worksheet.write(row, col, _rxrate, center_tan); col += 1
                    worksheet.write(row, col, beacon_sig, center_tan); col += 1
                    worksheet.write(row, col, sig, center_tan); col += 1
