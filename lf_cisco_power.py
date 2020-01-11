@@ -22,7 +22,7 @@ The user is responsible for setting up the station oustide of this script, howev
 # See cisco_power_results.txt when complete.
 
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 \
+  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2
 
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
@@ -62,9 +62,10 @@ outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
 
-# Noise floor on ch 36 where we calibrated -54 path loss
+# This below is only used when --adjust_nf is used.
+# Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
 nf_at_calibration = -105
-# ath10k driver hard-codes noise-floor to -95 when calculating RSSI
+# older ath10k driver hard-codes noise-floor to -95 when calculating RSSI
 # RSSI = NF + reported_power
 # Shift RSSI by difference in actual vs calibrated noise-floor since driver hard-codes
 # the noise floor.
@@ -94,6 +95,7 @@ def usage():
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
    print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+   print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -145,6 +147,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+   parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    
    args = None
    try:
@@ -301,7 +304,8 @@ def main():
    worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold); col += 1
    worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold); col += 1
    worksheet.write(row, col, 'Noise\n', dpeach_bold); col += 1
-   worksheet.write(row, col, 'Noise\nAdjust\n(vs -105)', dpeach_bold); col += 1
+   if (args.adjust_nf):
+       worksheet.write(row, col, 'Noise\nAdjust\n(vs -105)', dpeach_bold); col += 1
 
    worksheet.set_column(col, col, 15) # Set width
    worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold); col += 1
@@ -633,7 +637,7 @@ def main():
                            _rxrate = m.group(1)
 
                    rssi_adj = 0
-                   if (_noise_bare != None):
+                   if (args.adjust_nf and _noise_bare != None):
                        _noise_i = int(_noise_bare)
                        if (_noise_i == 0):
                            # Guess we could not detect noise properly?
@@ -737,7 +741,8 @@ def main():
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
                    worksheet.write(row, col, args.pathloss, center_tan); col += 1
                    worksheet.write(row, col, _noise, center_tan); col += 1
-                   worksheet.write(row, col, rssi_adj, center_tan); col += 1
+                   if (args.adjust_nf):
+                       worksheet.write(row, col, rssi_adj, center_tan); col += 1
                    worksheet.write(row, col, _rxrate, center_tan); col += 1
                    worksheet.write(row, col, beacon_sig, center_tan); col += 1
                    worksheet.write(row, col, sig, center_tan); col += 1
