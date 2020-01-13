@@ -61,6 +61,9 @@ full_outfile = "full_cisco_power_results.txt"
 outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
+# Allow one chain to have a lower signal, since customer's DUT has
+# lower tx-power on one chain when doing high MCS at 4x4.
+pf_a4_dropoff = 5
 
 # This below is only used when --adjust_nf is used.
 # Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
@@ -94,6 +97,7 @@ def usage():
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
+   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 5")
    print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("-h|--help")
@@ -120,6 +124,7 @@ def main():
    global full_outfile
    global upstream_port
    global pf_dbm
+   global pf_a4_dropoff
     
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
@@ -146,6 +151,7 @@ def main():
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
+   parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 5")
    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    
@@ -177,6 +183,8 @@ def main():
           band = "a"
       if (args.pf_dbm != None):
           pf_dbm = args.pf_dbm
+      if (args.pf_a4_dropoff != None):
+          pf_a4_dropoff = args.pf_p4_dropoff
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -326,7 +334,7 @@ def main():
    worksheet.write(row, col, 'Offset\n3', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 12) # Set width
-   worksheet.write(row, col, "PASS /\nFAIL\n( += 1-%s dBm)"%(pf_dbm), dgreen_bold); col += 1
+   worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
    row += 1
@@ -701,10 +709,36 @@ def main():
                        diff_a2 = calc_ant2 - allowed_per_path
                        diff_a3 = calc_ant3 - allowed_per_path
                        diff_a4 = calc_ant4 - allowed_per_path
-                       if ((abs(diff_a1) > pfrange) or
-                           (abs(diff_a2) > pfrange) or
-                           (abs(diff_a3) > pfrange) or
-                           (abs(diff_a4) > pfrange)):
+                       # DUT transmits one chain at lower powe when using higher MCS, so allow
+                       # for that as passing result.
+                       failed_low = 0
+                       least = 0
+                       if (diff_a1 < -pfrange):
+                           failed_low += 1
+                           least = diff_a1
+                       if (diff_a2 < -pfrange):
+                           failed_low += 1
+                           least = min(least, diff_a2)
+                       if (diff_a2 < -pfrange):
+                           failed_low += 1
+                           least = min(least, diff_a2)
+                       if (diff_a3 < -pfrange):
+                           failed_low += 1
+                           least = min(least, diff_a2)
+                       if (diff_a4 < -pfrange):
+                           failed_low += 1
+                           least = min(least, diff_a2)
+
+                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low > 1)):
+                           pf = 0
+
+                       if (diff_a1 > pfrange):
+                           pf = 0
+                       if (diff_a2 > pfrange):
+                           pf = 0
+                       if (diff_a3 > pfrange):
+                           pf = 0
+                       if (diff_a4 > pfrange):
                            pf = 0
 
                    if (pf == 0):
