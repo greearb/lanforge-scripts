@@ -719,15 +719,12 @@ def main():
                        if (diff_a2 < -pfrange):
                            failed_low += 1
                            least = min(least, diff_a2)
-                       if (diff_a2 < -pfrange):
-                           failed_low += 1
-                           least = min(least, diff_a2)
                        if (diff_a3 < -pfrange):
                            failed_low += 1
-                           least = min(least, diff_a2)
+                           least = min(least, diff_a3)
                        if (diff_a4 < -pfrange):
                            failed_low += 1
-                           least = min(least, diff_a2)
+                           least = min(least, diff_a4)
 
                        if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low > 1)):
                            pf = 0
