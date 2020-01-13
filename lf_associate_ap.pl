@@ -46,6 +46,29 @@ use Getopt::Long;
 no warnings 'portable';  # Support for 64-bit ints required
 use Socket;
 
+our $binsleep = 0;
+if ( -x "/bin/sleep" || -x "/usr/bin/sleep") {
+   $::binsleep = 1;
+}
+
+sub altsleep {
+   my ($time) = @_;
+   if ($::binsleep) {
+      `sleep $time`;
+   }
+   elsif ( $time < 1) {
+      sleep(1);
+   }
+   elsif (int($time) != $time) {
+      $time += 1.0;
+      $time = int($time);
+      sleep($time);
+   }
+   else {
+      sleep($time);
+   }
+}
+
 # Un-buffer output
 $| = 1;
 use Cwd qw(getcwd);
@@ -786,6 +809,7 @@ sub new_wifi_station {
    $::utils->doCmd($sta1_cmd);
    $sta1_cmd   = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
    $::utils->doCmd($sta1_cmd);
+   #$::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
    if ($::admin_down_on_add) {
      my $cur_flags = 0x1; # port down
      my $ist_flags = 0x800000; # port down
@@ -919,6 +943,11 @@ sub removeOldStations {
         print "...$sta_name ";
         $::utils->doCmd($::utils->fmt_cmd("rm_vlan", 1, $::resource, $sta_name));
       }
+   }
+   sleep(1);
+   # force a refresh on them so phantom doesn't show
+   foreach my $sta_name (reverse sort(keys %::sta_names)) {
+      my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
    }
    print " done.\n";
 }
@@ -1216,12 +1245,25 @@ sub doStep_1 {
 
    # create stations
    print " Creating new stations: ";
+   my $i = 0;
    for $sta_name (sort(keys %::sta_names)) {
       # sta, ip, rh, $ip_addr
       print " $sta_name ";
       new_wifi_station( $sta_name, $::sta_names{$sta_name}, \%results1, $::wifi_mode, 0);
+      altsleep(0.12);
+      altsleep(0.6) if (($i % 5) == 0);
+      $i++;
    }
+   sleep(1);
+   #print "**************************************************\n";
+   foreach my $sta_name (sort(keys %::sta_names)) {
+      my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
+   }
+   sleep(1);
+   #print "**************************************************\n";
+
    print " Created $::num_stations stations\n";
+   sleep(1);
 
    my $new_sta_count    = keys %results1;
    my $found_stations   = 0;
