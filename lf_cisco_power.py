@@ -63,7 +63,7 @@ upstream_port = "eth1"
 pf_dbm = 6
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_a4_dropoff = 5
+pf_a4_dropoff = 3
 
 # This below is only used when --adjust_nf is used.
 # Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
@@ -97,7 +97,7 @@ def usage():
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
-   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 5")
+   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("-h|--help")
@@ -151,7 +151,7 @@ def main():
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
-   parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 5")
+   parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    
