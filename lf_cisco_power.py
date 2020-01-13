@@ -125,6 +125,8 @@ def main():
    global upstream_port
    global pf_dbm
    global pf_a4_dropoff
+
+   scheme = "ssh"
     
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
@@ -159,7 +161,8 @@ def main():
    try:
       args = parser.parse_args()
       host = args.dest
-      scheme = args.scheme
+      if (args.scheme != None):
+         scheme = args.scheme
       user = args.user
       passwd = args.passwd
       logfile = args.log
@@ -374,7 +377,7 @@ def main():
                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
 
    myrd = ""
-   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                               "--action", "summary"], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
@@ -431,36 +434,36 @@ def main():
                                                 "--set_ifstate", "down"]);
                    
                    # Disable AP, apply settings, enable AP
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "disable"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11a disable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11b disable network"])
 
                    if (tx != "NA"):
-                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                       subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                        "--action", "txPower", "--value", tx])
                    if (bw != "NA"):
-                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                       subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                        "--action", "bandwidth", "--value", bw])
 
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
-                       subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                       subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                        "--action", "channel", "--value", ch])
                    
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11a enable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "cmd", "--value", "config 802.11b enable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                    "--action", "enable"])
 
                    # Wait a bit for AP to come back up
                    time.sleep(1);
-                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
+                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "-s", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band, "-s", "ssh",
                                               "--action", "advanced"], capture_output=True)
                    pss = advanced.stdout.decode('utf-8', 'ignore');
                    print(pss)
