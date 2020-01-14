@@ -493,6 +493,13 @@ def main():
                                cc_bw = 20 * (ch_count + 1)
                                break
 
+                   if (cc_dbm == ""):
+                      # Could not talk to controller?
+                      err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                      print(err)
+                      e_tot += err
+                      e_tot += "  "
+
                    # Up station
                    subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                    "--set_ifstate", "up"]);
@@ -680,7 +687,10 @@ def main():
                    diff_a3 = ""
                    diff_a4 = ""
 
-                   cc_dbmi = int(cc_dbm)
+                   if (cc_dbm == ""):
+                      cc_dbmi = 0
+                   else:
+                      cc_dbmi = int(cc_dbm)
                    diff_dbm = calc_dbm - cc_dbmi
                    pf = 1
                    pfs = "PASS"
