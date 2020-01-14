@@ -373,8 +373,6 @@ def main():
                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=True);
    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True);
-   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
-                   "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
 
    myrd = ""
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -428,6 +426,10 @@ def main():
                for tx in txpowers:
 
                    e_tot = ""
+
+                   # Stop traffic
+                   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                                   "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True);
 
                    # TODO:  Down station
                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
@@ -554,7 +556,10 @@ def main():
 
                        time.sleep(1)
 
-                   
+                   # Start traffic
+                   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                                   "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
+
                    # Wait 10 more seconds
                    print("Waiting 10 seconds to let traffic run for a bit, Channel %s NSS %s BW %s TX-Power %s"%(ch, n, bw, tx))
                    time.sleep(10)
@@ -606,6 +611,24 @@ def main():
                                ants.append("")
                            break
 
+                   endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--endp_vals", "rx_bps",
+                                                "--cx_name", "c-udp-power"], capture_output=True);
+                   pss = endp_stats.stdout.decode('utf-8', 'ignore');
+
+                   for line in pss.splitlines():
+                       #print("probe-line: %s"%(line))
+                       m = re.search('Rx Bytes:\s+(\d+)', line)
+                       if (m != None):
+                           rx_bytes = int(m.group(1))
+                           if (rx_bytes == 0):
+                               err = "ERROR:  No bytes received by data connection, test results may not be valid."
+                               e_tot += err
+                               e_tot += "  "
+
+                   # Stop traffic
+                   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                                   "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True);
+
                    antstr = ""
                    for x in range(4):
                        if (x < int(n)):
@@ -616,7 +639,7 @@ def main():
                        antstr += "\t"
 
                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
-                                                    "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True);
+                                                "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True);
                    pss = port_stats.stdout.decode('utf-8', 'ignore');
 
                    _ap = None
@@ -848,6 +871,49 @@ def main():
                    csvs.flush()
 
    workbook.close()
+
+   # Set things back to defaults
+   # Disable AP, apply settings, enable AP
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "disable"])
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11a disable network"])
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11b disable network"])
+
+   if (tx != "NA"):
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "txPower", "--value", "1"])
+   if (bw != "NA"):
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "bandwidth", "--value", "20"])
+
+   # NSS is set on the station earlier...
+                       
+   if (ch != "NA"):
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "channel", "--value", "36"])
+                   
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11a enable network"])
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11b enable network"])
+   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "enable"])
+
+   # Remove LANforge traffic connection
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "set_cx_state all c-udp-power DELETED"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "rm_endp c-udp-power-A"], capture_output=True);
+   subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
+                   "--cmd", "rm_endp c-udp-power-B"], capture_output=True);
+
+   # Show controller status
+   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                              "--action", "advanced"], capture_output=True)
+   pss = advanced.stdout.decode('utf-8', 'ignore');
+   print(pss)
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
