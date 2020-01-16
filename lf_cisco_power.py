@@ -25,6 +25,11 @@ The user is responsible for setting up the station oustide of this script, howev
   --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2
 
+# Per-channel path-loss example
+./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
+  --station sta00000 --bandwidth "20" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
+  --band a --upstream_port eth2 --lfresource2 2
+
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
 '''
@@ -85,7 +90,7 @@ def usage():
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file: log messages here")
    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160")
-   print("-c|--channel: List of channels to test: 36 100")
+   print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60")
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
    print("--outfile: Write results here.")
@@ -139,7 +144,7 @@ def main():
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test. NA means no change")
-   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test. NA means no change")
+   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
 
@@ -395,6 +400,12 @@ def main():
 
    # Loop through all iterations and run txpower tests.
    for ch in channels:
+       pathloss = args.pathloss
+       ch_colon = ch.count(":")
+       if (ch_colon == 1):
+           cha = ch.split(":")
+           pathloss = cha[1]
+           ch = cha[0]
        for n in nss:
            for bw in bandwidths:
                if (n != "NA"):
@@ -690,7 +701,7 @@ def main():
                        e_tot += "ERROR:  Could not detect signal level.  "
                        sig = -100
 
-                   pi = int(args.pathloss)                   
+                   pi = int(pathloss)                   
                    calc_dbm = int(sig) + pi + rssi_adj
                    calc_ant1 = 0
                    if (ants[0] != ""):
@@ -778,7 +789,7 @@ def main():
                        pfs = "FAIL"
                        
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       myrd, args.pathloss, ch, n, bw, tx, beacon_sig, sig,
+                       myrd, pathloss, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
                        calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
@@ -790,7 +801,7 @@ def main():
                    csv.write("\t")
 
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       myrd, args.pathloss, _ch, _nss, _bw, tx, allowed_per_path,
+                       myrd, pathloss, _ch, _nss, _bw, tx, allowed_per_path,
                        antstr,
                        calc_ant1, calc_ant2, calc_ant3, calc_ant4,
                        diff_a1, diff_a2, diff_a3, diff_a4, pfs
@@ -806,7 +817,7 @@ def main():
                    worksheet.write(row, col, _bw, center_blue); col += 1
                    worksheet.write(row, col, tx, center_tan); col += 1
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
-                   worksheet.write(row, col, args.pathloss, center_tan); col += 1
+                   worksheet.write(row, col, pathloss, center_tan); col += 1
                    worksheet.write(row, col, _noise, center_tan); col += 1
                    if (args.adjust_nf):
                        worksheet.write(row, col, rssi_adj, center_tan); col += 1
