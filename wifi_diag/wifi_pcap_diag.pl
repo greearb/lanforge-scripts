@@ -356,6 +356,9 @@ sub htmlMcsHistogram {
   $html .= "TX (All) no-ack-found: $tx_no_ack_found_all<br>\n";
   $html .= "TX (Big) no-ack-found: $tx_no_ack_found_big<br>\n";
 
+  $html .= "TX Packets acked but not captured: $dummy_tx_pkts<br>\n";
+  $html .= "RX Packets acked but not captured: $dummy_rx_pkts<br>\n";
+
   if ($delta_time_tx_count) {
     $html .= "TX average gap between AMPDU frames (ms): " . (($delta_time_tx * 1000.0) / $delta_time_tx_count) . "<br>\n";
   }
