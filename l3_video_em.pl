@@ -6,6 +6,7 @@ use diagnostics;
 use Carp;
 $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
 $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
+use Data::Dumper;
 
 # Un-buffer output
 $| = 1;
@@ -157,9 +158,10 @@ our %avail_stream_res = (
 
 our $avail_stream_desc = join(", ", keys(%avail_stream_res));
 our $resolution = "720p";
-my $list_streams = 0;
+my $list_streams = undef;
 
-our $usage = "$0  # modulates a Layer 3 CX to emulate a video server
+our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
+    # Expects an existing L3 connection
   --mgr         {hostname | IP}
   --mgr_port    {ip port}
   --tx_style    { constant | bufferfill }
@@ -174,32 +176,34 @@ our $usage = "$0  # modulates a Layer 3 CX to emulate a video server
                   # default $resolution
   --log_cli {0|1} # use this to record cli commands
 
-  Example: $0  --cx_name bursty-udp --stream 720p --buf_size 8M --max_tx 40000000
+  Example:
+  1) create the L3 connection:
+    ./lf_firemod.pl --resource 1 --action create_endp bursty-udp-A --speed 0 --endp_type lf_udp --port_name eth1 --report_timer 500
+    ./lf_firemod.pl --resource 1 --action create_endp bursty-udp-B --speed 0 --endp_type lf_udp --port_name eth2 --report_timer 500
+    ./lf_firemod.pl --resource 1 --action create_cx --cx_name bursty-udp  --cx_endps bursty-udp-A,bursty-udp-B
+   $0  --cx_name bursty-udp --stream 720p --buf_size 8M --max_tx 40M
 ";
 #  --frame_rate {$frame_rates_desc} # not really applicable
 # the stream resolution (kbps) is really a better burn rate
 
-my $show_help = 0;
+my $show_help = undef;
 
-if (@ARGV < 2) {
-   print $usage;
-   exit 0;
-}
+
 GetOptions
 (
    'help|h'               => \$show_help,
    'mgr|m=s'              => \$::lfmgr_host,
-   'mgr_port|p=i'         => \$::lfmgr_port,
-   'log_cli=s{0,1}'       => \$log_cli,
-   'tx_style|style=s'     => \$::tx_style,
+   'mgr_port|p:i'         => \$::lfmgr_port,
+   'log_cli:s{0,1}'       => \$log_cli,
+   'tx_style|style:s'     => \$::tx_style,
    'cx_name|e=s'          => \$::cx_name,
-   'tx_side|side|s=s'      => \$::tx_side,
+   'tx_side|side|s:s'     => \$::tx_side,
    'max_tx=s'             => \$::max_tx,
-   'min_tx=s'             => \$::min_tx,
+   'min_tx:s'             => \$::min_tx,
    'buf_size|buf=s'       => \$::buf_size,
    'stream_res|stream=s'  => \$::stream_key,
-   'list_streams'         => \$list_streams,
-) || die($::usage);
+   'list_streams+'        => \$list_streams,
+) || die($!);
 
 
 if ($show_help) {
@@ -278,6 +282,7 @@ sub cleanexit {
 if ($::quiet eq "1" ) {
    $::quiet = "yes";
 }
+
 # Wait up to 60 seconds when requesting info from LANforge.
 my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
           Timeout => 60);
@@ -367,7 +372,8 @@ $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
 my $fill_time = $::buf_size / $max_tx;
 my $drain_time = $::buf_size / $stream_bps;
-print "Filling $::buf_size buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n";
+print "Filling $::buf_size buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n"
+  unless($::quiet eq "yes");
 
 
 die ("Please provide cx_name")
@@ -378,30 +384,17 @@ my @matches = grep {/Could not find/} @lines;
 die($matches[0])
   unless (@matches == 0);
 
-print "Stopping and configuring $::cx_name...";
+print "Stopping and configuring $::cx_name\n" unless($quiet eq "yes");
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
 
 my $endp = "$::cx_name-${tx_side}";
 @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endp", $endp)));
-#print "=" x 72, "\n";
-#print join("\n", @lines), "\n";
-#print "=" x 72, "\n";
-
-
 
 @matches = grep {/ Shelf: 1, Card: /} @lines;
 die ("No matches for show endp $endp")
   unless($matches[0]);
 
-#print "=" x 72, "\n";
-#print $matches[0], "\n";
-#print "=" x 72, "\n";
-
 my ($res, $port, $type) = $matches[0] =~ /, Card: (\d+)\s+Port: (\d+)\s+Endpoint: \d+ Type: ([^ ]+)\s+/;
-#print "=" x 72, "\n";
-#print join("\n", @lines), "\n";
-#print "=" x 72, "\n";
-
 
 my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
     $NA, # ip_port
@@ -409,19 +402,19 @@ my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
     $::min_tx, # min_rate
     $::min_tx # max_rate
   );
-#print "CMD: $cmd\n";
-$::utils->doAsyncCmd($cmd);
 
+$::utils->doAsyncCmd($cmd);
+print "Starting $::cx_name..." unless($quiet eq "yes");
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
 
 do {
   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
-  print "+";
+  print "+" unless ($quiet eq "yes");
   $::utils->doAsyncCmd($cmd);
   `sleep $fill_time`;
 
   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
-  print "-";
+  print "-" unless($quiet eq "yes");
   $::utils->doAsyncCmd($cmd);
   my $drain_wait = $drain_time - $fill_time;
   `sleep $drain_wait`;
