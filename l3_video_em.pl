@@ -20,7 +20,7 @@ use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
-
+my  $NA              ='NA';
 our $resource        = 1;
 our $quiet           = "yes";
 our $endp_name       = "";
@@ -32,16 +32,16 @@ our $lfmgr_port      = 4001;
 our $tx_style        = "";
 our $cx_name         = "";
 our $tx_side         = "B";
-our $min_tx          = undef;
+our $min_tx          = 0;
 our $max_tx          = -1;
 our $buf_size        = -1;
 our $log_cli         = "unset"; # do not set to 0, it turns into logfile "./0"
-our $stream_res      = undef;
-our @frame_rates     = ( 10, 12, 15, 24, 25, 29.97, 30, 50, 59.94, 60);
-our $frame_rates_desc = join(", ", @::frame_rates);
-our $frame_rate      = 30;
-our $audio_rate      = 32000; # 128k is used on Blueray DVDs
-our @audio_rates      = 128000; # 128k
+our $stream_key      = undef;
+#our @frame_rates     = ( 10, 12, 15, 24, 25, 29.97, 30, 50, 59.94, 60);
+#our $frame_rates_desc = join(", ", @::frame_rates);
+#our $frame_rate      = 30;
+#our $audio_rate      = 32000; # 128k is used on Blueray DVDs
+#our @audio_rates     = 128000; # 128k
 
 # https://en.wikipedia.org/wiki/Standard-definition_television
 # https://www.adobe.com/devnet/adobe-media-server/articles/dynstream_live/popup.html
@@ -160,21 +160,21 @@ our $resolution = "720p";
 my $list_streams = 0;
 
 our $usage = "$0  # modulates a Layer 3 CX to emulate a video server
-  --mgr        {hostname | IP}
-  --mgr_port   {ip port}
-  --tx_style   { constant | bufferfill }
-  --cx_name    {name}
-  --set_tx     {A|B}          # which side is emulating the server,
-    # default $tx_side
-  --min_tx     {speed in bps}
-  --max_tx     {speed in bps|SAME}
-  --buf_size   {kilobytes}  # fill a buffer at max_tx for this long
+  --mgr         {hostname | IP}
+  --mgr_port    {ip port}
+  --tx_style    { constant | bufferfill }
+  --cx_name     {name}
+  --tx_side     {A|B} # which side is emulating the server,
+                      # default $tx_side
+  --max_tx      {speed in bps [K|M|G]} # use this to fill buffer
+  --min_tx      {speed in bps [K|M|G]} # use when not filling buffer, default 0
+  --buf_size    {size[K|M|G]}  # fill a buffer at max_tx for this long
+  --stream_res  {$avail_stream_desc}
+  --list_streams  # show stream bps table and exit
+                  # default $resolution
+  --log_cli {0|1} # use this to record cli commands
 
-    # default $frame_rate
-  --stream_res {$avail_stream_desc}
-  --list_streams # show stream bps table and exit
-    # default $resolution
-  --log_cli {0|1}
+  Example: $0  --cx_name bursty-udp --stream 720p --buf_size 8M --max_tx 40000000
 ";
 #  --frame_rate {$frame_rates_desc} # not really applicable
 # the stream resolution (kbps) is really a better burn rate
@@ -187,18 +187,18 @@ if (@ARGV < 2) {
 }
 GetOptions
 (
-   'help|h'             => \$show_help,
-   'mgr|m=s'            => \$::lfmgr_host,
-   'mgr_port|p=i'       => \$::lfmgr_port,
-   'log_cli=s{0,1}'     => \$log_cli,
-   'tx_style|style=s'   => \$::tx_style,
-   'cx_name|e=s'        => \$::cx_name,
-   'set_tx|side|s=s'    => \$::tx_side,
-   'min_tx=i'           => \$::min_tx,
-   'max_tx=i'           => \$::max_tx,
-   'buf_size|buf=i'     => \$::buf_size,
-   'stream_res=s'       => \$::stream_res,
-   'list_streams'       => \$list_streams,
+   'help|h'               => \$show_help,
+   'mgr|m=s'              => \$::lfmgr_host,
+   'mgr_port|p=i'         => \$::lfmgr_port,
+   'log_cli=s{0,1}'       => \$log_cli,
+   'tx_style|style=s'     => \$::tx_style,
+   'cx_name|e=s'          => \$::cx_name,
+   'tx_side|side|s=s'      => \$::tx_side,
+   'max_tx=s'             => \$::max_tx,
+   'min_tx=s'             => \$::min_tx,
+   'buf_size|buf=s'       => \$::buf_size,
+   'stream_res|stream=s'  => \$::stream_key,
+   'list_streams'         => \$list_streams,
 ) || die($::usage);
 
 
@@ -209,8 +209,8 @@ if ($show_help) {
 
 if ($list_streams) {
   print "Predefined Video Streams\n";
-  print "=" x 72;
-  print "\n";
+  print "=" x 72, "\n";
+  print "         Stream         W      H         Audio+Video\n";
   my %sortedkeys = ();
   foreach my $oldkey (keys(%::avail_stream_res)) {
     my $ra_row  = $::avail_stream_res{$oldkey};
@@ -228,7 +228,7 @@ if ($list_streams) {
     my $bps     = int(@$ra_row1[$stream_keys{stream_bps}]);
     my $bps_sum = int(@$ra_row1[$stream_keys{video_bps}]) + int(@$ra_row1[$stream_keys{audio_bps}]);
     #my $warning = "";
-    printf("[ %15s ]  %5s x %5s using %13s", $key, $x, $y, $bps);
+    printf("[ %15s ]  %4s x %4s using %8s kbps", $key, $x, $y, ($bps/1000));
     if ($bps != $bps_sum) {
       print " Invalid BPS $bps, correct to $bps_sum";
     }
@@ -258,6 +258,23 @@ if (defined $log_cli) {
   }
 }
 
+
+$SIG{INT} = \&cleanexit;
+
+sub cleanexit {
+  if ((defined $::cx_name) && ("" ne $::cx_name)) {
+    if (defined $::utils->telnet) {
+      print STDERR "Stopping $::cx_name\n";
+      $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
+      # prolly want to set tx rate back to min-tx
+      #$::utils->doCmd($::utils->fmt_cmd("add_endp",
+      #sleep 1;
+    }
+  }
+  exit 0;
+}
+
+
 if ($::quiet eq "1" ) {
    $::quiet = "yes";
 }
@@ -266,8 +283,8 @@ my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
           Timeout => 60);
 
 $t->open(Host    => $::lfmgr_host,
-   Port    => $::lfmgr_port,
-   Timeout => 10);
+         Port    => $::lfmgr_port,
+         Timeout => 10);
 
 $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
 $t->waitfor("/btbits\>\>/");
@@ -291,8 +308,124 @@ else {
 $::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
 
 
+die ("Please provide buffer size")
+  unless((defined $buf_size) && ("" ne $buf_size));
+if ($buf_size =~ /[kmg]$/i) {
+  my($n) = $buf_size =~ /(\d+)/;
+  if ($buf_size =~ /k$/i) {
+    $buf_size = $n * 1024;
+  }
+  elsif ($buf_size =~ /m$/i) {
+    $buf_size = $n * 1024 * 1024;
+  }
+  elsif ($buf_size =~ /g$/i) {
+    $buf_size = $n * 1024 * 1024 * 1024;
+  }
+  else {
+    die("Whhhhhuuuuuut?");
+  }
+}
+
+die("Please specify max tx bps")
+  unless("" ne $::max_tx);
+if ($::max_tx =~ /[kmg]$/i) {
+  my($n) = $::max_tx =~ /(\d+)/;
+  if ($::max_tx =~ /k$/i) {
+    $::max_tx = $n * 1000;
+  }
+  elsif ($::max_tx =~ /m$/i) {
+    $::max_tx = $n * 1000 * 1000;
+  }
+  elsif ($::max_tx =~ /g$/i) {
+    $::max_tx = $n * 1000 * 1000 * 1000;
+  }
+  else {
+    die("Whhhhhuuuuuut?");
+  }
+}
+if ($::min_tx =~ /[kmg]$/i) {
+  my($n) = $::min_tx =~ /(\d+)/;
+  if ($::min_tx =~ /k$/i) {
+    $::min_tx = $n * 1000;
+  }
+  elsif ($::min_tx =~ /m$/i) {
+    $::min_tx = $n * 1000 * 1000;
+  }
+  elsif ($::min_tx =~ /g$/i) {
+    $::min_tx = $n * 1000 * 1000 * 1000;
+  }
+  else {
+    die("Whhhhhuuuuuut?");
+  }
+}
+
+my $stream_bps = 0;
+die("Unknown stream key $::stream_key")
+  unless(exists $::avail_stream_res{$::stream_key});
+
+$stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
+
+my $fill_time = $::buf_size / $max_tx;
+my $drain_time = $::buf_size / $stream_bps;
+print "Filling $::buf_size buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n";
+
+
 die ("Please provide cx_name")
   unless((defined $::cx_name) && ("" ne $::cx_name));
 # print out choices for now
-print $::utils->doAsyncCmd($::utils->fmt_cmd("show_cx", "all", $::cx_name));
+my @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("show_cx", "all", $::cx_name)));
+my @matches = grep {/Could not find/} @lines;
+die($matches[0])
+  unless (@matches == 0);
+
+print "Stopping and configuring $::cx_name...";
+$::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
+
+my $endp = "$::cx_name-${tx_side}";
+@lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endp", $endp)));
+#print "=" x 72, "\n";
+#print join("\n", @lines), "\n";
+#print "=" x 72, "\n";
+
+
+
+@matches = grep {/ Shelf: 1, Card: /} @lines;
+die ("No matches for show endp $endp")
+  unless($matches[0]);
+
+#print "=" x 72, "\n";
+#print $matches[0], "\n";
+#print "=" x 72, "\n";
+
+my ($res, $port, $type) = $matches[0] =~ /, Card: (\d+)\s+Port: (\d+)\s+Endpoint: \d+ Type: ([^ ]+)\s+/;
+#print "=" x 72, "\n";
+#print join("\n", @lines), "\n";
+#print "=" x 72, "\n";
+
+
+my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
+    $NA, # ip_port
+    $NA, # is_rate_bursty
+    $::min_tx, # min_rate
+    $::min_tx # max_rate
+  );
+#print "CMD: $cmd\n";
+$::utils->doAsyncCmd($cmd);
+
+$::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
+
+do {
+  $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
+  print "+";
+  $::utils->doAsyncCmd($cmd);
+  `sleep $fill_time`;
+
+  $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
+  print "-";
+  $::utils->doAsyncCmd($cmd);
+  my $drain_wait = $drain_time - $fill_time;
+  `sleep $drain_wait`;
+
+} while(1);
+
 #
