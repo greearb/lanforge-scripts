@@ -375,9 +375,17 @@ die("Unknown stream key $::stream_key")
 
 $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
-my $fill_time = $::buf_size / $max_tx;
-my $drain_time = $::buf_size / $stream_bps;
-print "Filling $::buf_size buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n"
+my $fill_time = (8 * $::buf_size) / $max_tx;
+my $drain_time = (8 * $::buf_size) / $stream_bps;
+my $drain_wait = $drain_time - $fill_time;
+if ($drain_wait <= 0) {
+  my $stream_k = $stream_bps / 1000;
+  print "Warning: constant transmit! Raise max_tx to at least $stream_k Kbps\n";
+  $drain_wait = 0;
+}
+
+my $bufk = $::buf_size / 1024;
+print "Filling $bufk KB buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n"
   unless($::silent);
 
 
@@ -411,18 +419,19 @@ my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
 $::utils->doAsyncCmd($cmd);
 print "Starting $::cx_name..." unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
-
+$cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
+$::utils->doAsyncCmd($cmd);
 do {
-  $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
   print "+" unless ($silent);
-  $::utils->doAsyncCmd($cmd);
   `sleep $fill_time`;
-
-  $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
-  print "-" unless($silent);
-  $::utils->doAsyncCmd($cmd);
-  my $drain_wait = $drain_time - $fill_time;
-  `sleep $drain_wait`;
+  if ($drain_wait > 0) {
+    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
+    print "-" unless($silent);
+    $::utils->doAsyncCmd($cmd);
+    `sleep $drain_wait`;
+    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
+    $::utils->doAsyncCmd($cmd);
+  }
 
 } while(1);
 
