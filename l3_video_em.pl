@@ -48,7 +48,7 @@ our @audio_rates      = 128000; # 128k
 # https://en.wikipedia.org/wiki/ISDB-T_International
 # https://en.wikipedia.org/wiki/Frame_rate
 # https://en.wikipedia.org/wiki/List_of_broadcast_video_formats
-https://blog.forret.com/2006/09/27/hd-720p-1080i-and-1080p/
+# https://blog.forret.com/2006/09/27/hd-720p-1080i-and-1080p/
 # Framerate is highly subjective in digital formats, because there are
 # variable frame rates dictated by min- and max-frame rate.
 our %avail_stream_res = (
@@ -135,7 +135,7 @@ our %avail_stream_res = (
 
 );
 
-our $avail_stream_desc = join(", ", keys(%avail_strem_res));
+our $avail_stream_desc = join(", ", keys(%avail_stream_res));
 our $resolution = "720p";
 
 our $usage = "$0  # modulates a Layer 3 CX to emulate a video server
