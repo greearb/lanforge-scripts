@@ -24,6 +24,7 @@ use Getopt::Long;
 my  $NA              ='NA';
 our $resource        = 1;
 our $quiet           = "yes";
+our $silent          = 0;
 our $endp_name       = "";
 our $speed           = "-1";
 our $action          = "";
@@ -175,6 +176,8 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
   --list_streams  # show stream bps table and exit
                   # default $resolution
   --log_cli {0|1} # use this to record cli commands
+  --quiet {0|1|yes|no} # print CLI commands
+  --silent        # do not print status output
 
   Example:
   1) create the L3 connection:
@@ -192,6 +195,8 @@ my $show_help = undef;
 GetOptions
 (
    'help|h'               => \$show_help,
+   'quiet|q=s'            => \$::quiet,
+   'silent+'              => \$::silent,
    'mgr|m=s'              => \$::lfmgr_host,
    'mgr_port|p:i'         => \$::lfmgr_port,
    'log_cli:s{0,1}'       => \$log_cli,
@@ -373,7 +378,7 @@ $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 my $fill_time = $::buf_size / $max_tx;
 my $drain_time = $::buf_size / $stream_bps;
 print "Filling $::buf_size buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n"
-  unless($::quiet eq "yes");
+  unless($::silent);
 
 
 die ("Please provide cx_name")
@@ -384,7 +389,7 @@ my @matches = grep {/Could not find/} @lines;
 die($matches[0])
   unless (@matches == 0);
 
-print "Stopping and configuring $::cx_name\n" unless($quiet eq "yes");
+print "Stopping and configuring $::cx_name\n" unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
 
 my $endp = "$::cx_name-${tx_side}";
@@ -404,17 +409,17 @@ my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
   );
 
 $::utils->doAsyncCmd($cmd);
-print "Starting $::cx_name..." unless($quiet eq "yes");
+print "Starting $::cx_name..." unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
 
 do {
   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
-  print "+" unless ($quiet eq "yes");
+  print "+" unless ($silent);
   $::utils->doAsyncCmd($cmd);
   `sleep $fill_time`;
 
   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
-  print "-" unless($quiet eq "yes");
+  print "-" unless($silent);
   $::utils->doAsyncCmd($cmd);
   my $drain_wait = $drain_time - $fill_time;
   `sleep $drain_wait`;
