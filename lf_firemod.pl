@@ -2,9 +2,7 @@
 
 # This program is used to create, show, and modify existing connections
 # and get some basic information from LANforge.
-
-# Written by Candela Technologies Inc.
-#  Udated by:
+# (C) 2020 Candela Technologies Inc.
 #
 #
 
@@ -257,11 +255,11 @@ my $t = undef;
 if ($stats_from_file eq "") {
   # Wait up to 60 seconds when requesting info from LANforge.
   $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-		       Timeout => 60);
+           Timeout => 60);
 
   $t->open(Host    => $::lfmgr_host,
-	   Port    => $::lfmgr_port,
-	   Timeout => 10);
+     Port    => $::lfmgr_port,
+     Timeout => 10);
 
   $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
   $t->waitfor("/btbits\>\>/");
@@ -286,7 +284,7 @@ if ($stats_from_file eq "") {
 }
 
 if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
-	$::max_speed = $::speed if( $::max_speed eq "-1");
+  $::max_speed = $::speed if( $::max_speed eq "-1");
    if ($::action eq "list_endp") {
       my @lines = split(NL, $::utils->doAsyncCmd("nc_show_endpoints all"));
       for my $line (@lines) {
@@ -333,20 +331,20 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          # options are reformatted
 
          my $i;
-	 my @lines = ();
-	 if ($stats_from_file ne "") {
-	   @lines = split(NL, get_stats_from_file($stats_from_file, $endp_name));
-	 }
+         my @lines = ();
+         if ($stats_from_file ne "") {
+           @lines = split(NL, get_stats_from_file($stats_from_file, $endp_name));
+         }
          else {
-	   @lines = split(NL, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
-	 }
+           @lines = split(NL, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
+         }
 
          for($i=0; $i<@lines; $i++) {
             $lines[$i] = $lines[$i]." #";
          }
-         my $matcher       = " (".join('|', keys %option_map)."):";
+         my $matcher = " (".join('|', keys %option_map)."):";
          my @parts;
-         my @matches       = grep( /$matcher/, @lines);
+         my @matches = grep( /$matcher/, @lines);
          my $match;
          #print "MATCHER $matcher  matches:\n" . join("\n", @matches) . NL;
          for my $end_val (split(',', $::endp_vals)) {
@@ -463,7 +461,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   }
                }
                else {
-		  #print "Default case...\n";
+      #print "Default case...\n";
 
                   # special case
                   $match =~ s/Shelf: (\d+), /Shelf: $1  /
@@ -487,16 +485,16 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      if ($match =~/CWND: (\d+) /);
                   # ~specials
 
-		  #print "  match: $match\n";
-		  if ($match =~ /.*$end_val:\s+(\S+)/) {
-		    my $value = $1;
-		    #print " Found value: $value for key: $end_val\n";
-		    $option_map{ $end_val } = $value;
-		    $endval_done++;
-		  }
+      #print "  match: $match\n";
+      if ($match =~ /.*$end_val:\s+(\S+)/) {
+        my $value = $1;
+        #print " Found value: $value for key: $end_val\n";
+        $option_map{ $end_val } = $value;
+        $endval_done++;
+      }
 
-		  # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
-		  # --Ben
+      # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
+      # --Ben
                   #@parts         = ($match =~ m/( *[^ ]+):( *\S+ [^ #]*)(?! #|\S+:)/g);
                   #for (my $i=0; $i < @parts; $i+=2) {
                   #   $option     = $parts[$i];
@@ -524,12 +522,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          }
       }
       else {
-	if ($stats_from_file ne "") {
-	  print get_stats_from_file($stats_from_file, $endp_name);
-	}
-	else {
-	  print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
-	}
+  if ($stats_from_file ne "") {
+    print get_stats_from_file($stats_from_file, $endp_name);
+  }
+  else {
+    print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
+  }
       }
    }
    elsif ($::action eq "create_arm") {
@@ -560,7 +558,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 
      if ($::endp_type eq "generic") {
        if ($::endp_cmd eq "") {
-	 die("Must specify endp_cmd if creating a generic endpoint.\n");
+         die("Must specify endp_cmd if creating a generic endpoint.\n");
        }
        $cmd = $::utils->fmt_cmd("add_gen_endp",   $::endp_name,  shelf_num,     $::resource,
                                  $::port_name,  "gen_generic");
@@ -651,12 +649,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
       # Set endp
       if ($speed ne "NA") {
          # Read the endpoint in...
-	 #my $endp1 = new LANforge::Endpoint();
+         #my $endp1 = new LANforge::Endpoint();
          #$::utils->updateEndpoint($endp1, $endp_name);
 
          # Assume Layer-3 for now
          $cmd = $::utils->fmt_cmd("add_endp", $endp_name, NA, NA, NA, NA, NA, NA, $speed,  $max_speed);
-	 #print("cmd: $cmd\n");
+         #print("cmd: $cmd\n");
          $::utils->doCmd($cmd);
       }
    }
@@ -811,27 +809,25 @@ sub get_stats_from_file {
     my $line = $lines[$i];
     chomp($line);
     if (($line =~ /Endpoint\s+\[(.*)\]/) ||
-	($line =~ /WanLink\s+\[(.*)\]/) ||
-	($line =~ /ArmEndp\s+\[(.*)\]/) ||
-	# TODO: Layer-4 ?
-	($line =~ /VoipEndp\s+\[(.*)\]/)) {
+        ($line =~ /WanLink\s+\[(.*)\]/) ||
+        ($line =~ /ArmEndp\s+\[(.*)\]/) ||
+        # TODO: Layer-4 ?
+        ($line =~ /VoipEndp\s+\[(.*)\]/)) {
+
       my $m1 = $1;
-
       #print "Found starting line: $line  name: $m1  endp_name: $endp_name\n";
-
       if ($endp_text ne "") {
-	# See if existing endp entry matches?
-	if ($ep eq $endp_name) {
-	  return $endp_text;
-	}
+        # See if existing endp entry matches?
+        if ($ep eq $endp_name) {
+          return $endp_text;
+        }
       }
-
       $endp_text = "$line\n";
       $ep = $m1;
     }
     else {
       if ($endp_text ne "") {
-	$endp_text .= "$line\n";
+        $endp_text .= "$line\n";
       }
     }
   }
