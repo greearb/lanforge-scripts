@@ -14,12 +14,12 @@
 #
 # Or all interfaces matching a prefix:
 # ./lf_generic_ping.pl -m $mgr -r 1 -d 10.1.1.1 --match sta3
-# 
-# The default name will be lfping_$endp name, use the --name 
+#
+# The default name will be lfping_$endp name, use the --name
 # switch to alter the generic endpoint name, This allows multiple
 # generic connections to be created per port:
 #
-# for n in one two three four five six seven eight nine ten; do 
+# for n in one two three four five six seven eight nine ten; do
 #  ./lf_generic_ping.pl -m 192.168.1.100 -r 1 -d 10.1.1.1 --match sta -name $n
 # done
 package main;
@@ -87,9 +87,17 @@ $0 --mgr {host-name | IP}
  You can create multiple generic connections per port by altering
  the endpoint name with the --name switch.
  Example of creating multiple connections per port in a loop:
-  for n in one two three four five six seven eight nine ten; do 
+  for n in one two three four five six seven eight nine ten; do
    $0 -m localhost -r 1 -d 10.1.1.1 --match sta -name \$n
   done
+
+ Example iperf3 server on eth1, 10.1.1.2:
+      iperf3 --forceflush --format k --precision 4 -s \\
+        --bind_dev %p -i 1 --pidfile /tmp/lf_helper_iperf_%p.pid
+
+ Example iperf3 client on sta0 as 10.1.1.3:
+      iperf3 --forceflush --format k --precision 4 -c %d -t 60 --tos 0 -b 1K \\
+        --bind_dev %p -i 1 --pidfile /tmp/lf_helper_iperf_%p.pid
 
  If only a few of your generic commands start, check journalctl for
  errors containing: 'cgroup: fork rejected by pids controller'
@@ -202,7 +210,7 @@ foreach my $line (@ports_lines) {
   }
 
   # careful about that comma after card!
-  # NO EID for Shelf: 1, Card: 1, Port: 2  Type: WIFI-Radio  Alias: 
+  # NO EID for Shelf: 1, Card: 1, Port: 2  Type: WIFI-Radio  Alias:
   ($card, $port, $type) = $line =~ m/^Shelf: 1, Card: (\d+),\s+Port: (\d+)\s+Type: (\w+)/;
   if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "")) {
     $eid = "1.${card}.${port}";
@@ -333,7 +341,7 @@ sub create_generic {
       }
    }
    $::command_map{$eid} = $ping_cmd;
-   
+
    print "CMD: $ping_cmd\n" if ($::verbose);
 
    $::utils->doCmd($::utils->fmt_cmd("add_gen_endp", $endp_name, 1, $::resource, $port_name, $type));
@@ -382,7 +390,7 @@ for my $port (sort @interfaces) {
    #print "= 4 =====================================================\n";
 
 
-   if (! (defined $eid_map{$matching_eid}->{ip}) 
+   if (! (defined $eid_map{$matching_eid}->{ip})
       || $eid_map{$matching_eid}->{ip} eq ""
       || $eid_map{$matching_eid}->{ip} eq "0.0.0.0") {
       print "\nSkipping $port: ".$eid_map{$matching_eid}->{ip}."\n";
