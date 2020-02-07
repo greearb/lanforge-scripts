@@ -255,11 +255,11 @@ my $t = undef;
 if ($stats_from_file eq "") {
   # Wait up to 60 seconds when requesting info from LANforge.
   $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-           Timeout => 60);
+                        Timeout => 60);
 
   $t->open(Host    => $::lfmgr_host,
-     Port    => $::lfmgr_port,
-     Timeout => 10);
+           Port    => $::lfmgr_port,
+           Timeout => 10);
 
   $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
   $t->waitfor("/btbits\>\>/");
