@@ -21,6 +21,35 @@ use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
+
+
+sub sleep_ms {
+  my ($millis) = @_;
+  return if (!(defined $millis) || ($millis == 0));
+
+  my $secs = $millis / 1000;
+
+  if ($::has_usleep) {
+    usleep($millis);
+  }
+  else {
+    select(undef, undef, undef, $secs);
+  }
+}
+sub sleep_sec {
+  my ($secs) = @_;
+  return if (!(defined $secs) || ($secs == 0));
+
+  if ($::has_usleep) {
+    usleep($secs);
+  }
+  else {
+    select(undef, undef, undef, $secs);
+  }
+}
+
+
+
 my  $NA              ='NA';
 our $resource        = 1;
 our $quiet           = "yes";
@@ -266,15 +295,13 @@ if (defined $log_cli) {
     }
   }
 }
-
-
 $SIG{INT} = \&cleanexit;
 
 sub cleanexit {
   if ((defined $::cx_name) && ("" ne $::cx_name)) {
     if (defined $::utils->telnet) {
       print STDERR "Stopping $::cx_name\n";
-      $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
+      $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "QUIESCED"));
       # prolly want to set tx rate back to min-tx
       #$::utils->doCmd($::utils->fmt_cmd("add_endp",
       #sleep 1;
@@ -375,17 +402,18 @@ die("Unknown stream key $::stream_key")
 
 $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
-my $fill_time = (8 * $::buf_size) / $max_tx;
-my $drain_time = (8 * $::buf_size) / $stream_bps;
-my $drain_wait = $drain_time - $fill_time;
-if ($drain_wait <= 0) {
-  my $stream_k = $stream_bps / 1000;
-  print "Warning: constant transmit! Raise max_tx to at least $stream_k Kbps\n";
-  $drain_wait = 0;
+my $fill_time_sec  = (8 * $::buf_size) / $max_tx;
+my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
+my $drain_wait_sec = $drain_time_sec - $fill_time_sec;
+
+if ($drain_wait_sec <= 0) {
+  my $stream_kbps = $stream_bps / 1000;
+  print "Warning: constant transmit! Raise max_tx to at least $stream_kbps Kbps\n";
+  $drain_wait_sec = 0;
 }
 
-my $bufk = $::buf_size / 1024;
-print "Filling $bufk KB buffer for $::stream_key takes $fill_time s, empties in $drain_time s\n"
+my $buf_kB = $::buf_size / 1024;
+print "Filling $buf_kB KB buffer for $::stream_key takes $fill_time_sec s, empties in $drain_time_sec s\n"
   unless($::silent);
 
 
@@ -423,12 +451,12 @@ $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::
 $::utils->doAsyncCmd($cmd);
 do {
   print "+" unless ($silent);
-  `sleep $fill_time`;
-  if ($drain_wait > 0) {
+  sleep_sec($fill_time_sec);
+  if ($drain_wait_sec > 0) {
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
     print "-" unless($silent);
     $::utils->doAsyncCmd($cmd);
-    `sleep $drain_wait`;
+    sleep_sec($drain_wait_sec);
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
     $::utils->doAsyncCmd($cmd);
   }
