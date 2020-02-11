@@ -349,6 +349,42 @@ sub fmt_cmd {
    return $rv;
 }
 
+##
+## Check if usleep() exists
+##
+our $has_usleep = 0;
+if (defined &usleep) {
+   print("I see usleep\n");
+   $LANforge::Utils::has_usleep=1;
+}
+
+
+sub sleep_ms {
+  my ($millis) = @_;
+  return if (!(defined $millis) || ($millis == 0));
+
+  my $secs = $millis / 1000;
+
+  if ($LANforge::Utils::has_usleep) {
+    usleep($millis);
+  }
+  else {
+    select(undef, undef, undef, $secs);
+  }
+}
+sub sleep_sec {
+  my ($secs) = @_;
+  return if (!(defined $secs) || ($secs == 0));
+
+  if ($LANforge::Utils::has_usleep) {
+    usleep($secs);
+  }
+  else {
+    select(undef, undef, undef, $secs);
+  }
+}
+
+
 1; # So the require or use succeeds (perl stuff)
 __END__
 
