@@ -124,7 +124,6 @@ our %avail_stream_res = (
   "hd-1800k-16:9" => [ 1280,  720,    0,         64000,  1736000,      1800000,    59.94],
   "hd-2400k-16:9" => [ 1280,  720,    0,         64000,  2272000,      2336000,    59.94],
 
-
   "108p4:3"       => [  144,  108,    0,         16000,    32000,        48000,    30],
   "144p16:9"      => [  192,  144,    0,         16000,    80000,        96000,    30],
   "216p4:3"       => [  288,  216,    0,         32000,   268000,       300000,    30],
@@ -138,7 +137,6 @@ our %avail_stream_res = (
 
   # unadopted standard
   #"720i"          => [ 1280,  720,    1,        64000,  1736000,    1800000,    30],
-
   # 0.92 megapixels, 2.76MB per frame
   "720p"          => [ 1280,  720,    0,         64000,   1736000,     1800000,    59.94],
 
@@ -157,7 +155,6 @@ our %avail_stream_res = (
   "yt-sdr-1080p60" => [ 1920, 1080,    0,       384000,  12000000,    12384000,    60],
   "yt-sdr-1440p60" => [ 2560, 1440,    0,       512000,  24000000,    24512000,    60],
   "yt-sdr-2160p60" => [ 3840, 2160,    0,       512000,  61000000,    61512000,    60],
-
   #"yt-hdr-360p60"  => [ 1280,  720,    0,        32000,  1000000,   1800000,    60], # yt unsupported
   #"yt-hdr-480p60"  => [ 1280,  720,    0,        32000,  1000000,   1800000,    60], # yt unsupported
 
@@ -170,7 +167,6 @@ our %avail_stream_res = (
   "yt-hdr-1080p60" => [ 1920, 1080,    0,       384000,  15000000,    15384000,    60],
   "yt-hdr-1440p60" => [ 2560, 1440,    0,       512000,  30000000,    30512000,    60],
   "yt-hdr-2160p60" => [ 3840, 2160,    0,       512000,  75500000,    76012000,    60],
-
 
   "raw720p30"      => [ 1280,  720,    0,        64000,  221120000,  221184000,    30],
   "raw720p60"      => [ 1280,  720,    0,        64000,  442304000,  442368000,    60],
@@ -310,6 +306,26 @@ sub cleanexit {
   exit 0;
 }
 
+sub sentbytes {
+  my ($endp) = @_;
+  die ("called sentbytes with no endp name, bye")
+    unless((defined $endp) && ("" ne $endp));
+
+  @lines = split("\n", $::utils->doCmd("nc_show_endpoints $endp"));
+  #Tx Bytes:           Total: 0           Time: 60s   Cur: 0         0/s
+  my $bytes = 0;
+  @matches = grep {/^\s+Tx Bytes:\s+Total: \d+ /} @lines;
+  if (@matches < 1) {
+    warn "tx-bytes not found for [$endp]\n"
+    return 0;
+  }
+  ($bytes) = $matches[0] =~ /Tx Bytes:\s+Total: (\d+)/;
+  if (!(defined $bytes)) {
+    warn "no tx-bytes for [$endp]\n";
+    return 0;
+  }
+  return $bytes;
+}
 
 if ($::quiet eq "1" ) {
    $::quiet = "yes";
@@ -449,18 +465,24 @@ print "Starting $::cx_name..." unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
 $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
 $::utils->doAsyncCmd($cmd);
+my $waiting = 1;
 do {
   print "+" unless ($silent);
-  sleep_sec($fill_time_sec);
+  my $bytes = 0;
+  while($bytes < $buf_size) {
+    $bytes = sentbytes($endp)
+    sleep_ms(250);
+    print "+" unless ($silent);
+  }
+
   if ($drain_wait_sec > 0) {
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
     print "-" unless($silent);
-    $::utils->doAsyncCmd($cmd);
+    $::utils->doCmd($cmd);
     sleep_sec($drain_wait_sec);
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
-    $::utils->doAsyncCmd($cmd);
+    $::utils->doCmd($cmd);
   }
-
 } while(1);
 
 #
