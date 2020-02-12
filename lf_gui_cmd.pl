@@ -37,8 +37,10 @@ my $show_help = 0;
 ########################################################################
 
 my $usage = qq($0  [--manager { hostname or address of LANforge GUI machine } ]
-                 [--port {port name} ]
+                 [--port {port name} ] # cli-socket port default 3990
+                                       # careful, your cli-socket might be 3390!
                  [--ttype {test instance type} ]
+                    # likely types: "cv", "WiFi Capacity", "Port Bringup", "Port Reset"
                  [--tname {test instance name} ]
                  [--tconfig {test configuration name, use defaults if not specified} ]
                  [--rpt_dest {Copy report to destination once it is complete} ]
@@ -70,6 +72,10 @@ if ($show_help) {
    exit 0;
 }
 
+if ((defined $port) && ($port > 0)) {
+  $lfmgr_port = $port;
+}
+
 # Open connection to the LANforge server.
 my $t = new Net::Telnet(Prompt => '/lfgui\# /',
          Timeout => 20);
@@ -97,17 +103,17 @@ if ($ttype ne "") {
     if ($rslt =~ /^\s*Report Location:::(.*)/) {
       my $loc = $1;
       if ($loc eq "") {
-	# Wait longer
-	sleep(3);
+        # Wait longer
+        sleep(3);
       }
       else {
-	# Copy some place it can be seen easily?
-	if ($rpt_dest ne "") {
-	  my $cp = "cp -ar $loc $rpt_dest";
-	  print "Copy test results: $cp\n";
-	  system($cp);
-	}
-	last;
+        # Copy some place it can be seen easily?
+        if ($rpt_dest ne "") {
+          my $cp = "cp -ar $loc $rpt_dest";
+          print "Copy test results: $cp\n";
+          system($cp);
+        }
+        last;
       }
     }
     else {
