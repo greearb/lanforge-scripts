@@ -21,7 +21,8 @@ use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
-
+use Time::HiRes qw(usleep gettimeofday);
+our $has_usleep = (defined &usleep) ? 1 : 0;
 
 sub sleep_ms {
   my ($millis) = @_;
@@ -30,9 +31,11 @@ sub sleep_ms {
   my $secs = $millis / 1000;
 
   if ($::has_usleep) {
-    usleep($millis);
+    #print ",";
+    usleep($millis * 1000);
   }
   else {
+    print ";";
     select(undef, undef, undef, $secs);
   }
 }
@@ -41,14 +44,14 @@ sub sleep_sec {
   return if (!(defined $secs) || ($secs == 0));
 
   if ($::has_usleep) {
-    usleep($secs);
+    #print ",";
+    usleep($secs * 1000000);
   }
   else {
+    print ";";
     select(undef, undef, undef, $secs);
   }
 }
-
-
 
 my  $NA              ='NA';
 our $resource        = 1;
@@ -183,7 +186,7 @@ our %avail_stream_res = (
 );
 
 our $avail_stream_desc = join(", ", keys(%avail_stream_res));
-our $resolution = "720p";
+our $resolution = "yt-sdr-1080p30";
 my $list_streams = undef;
 
 our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
@@ -216,7 +219,7 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
 
 my $show_help = undef;
 
-
+$::stream_key = $resolution;
 GetOptions
 (
    'help|h'               => \$show_help,
@@ -292,40 +295,86 @@ if (defined $log_cli) {
   }
 }
 $SIG{INT} = \&cleanexit;
-
+# ========================================================================
 sub cleanexit {
   if ((defined $::cx_name) && ("" ne $::cx_name)) {
     if (defined $::utils->telnet) {
-      print STDERR "Stopping $::cx_name\n";
-      $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "QUIESCED"));
-      # prolly want to set tx rate back to min-tx
-      #$::utils->doCmd($::utils->fmt_cmd("add_endp",
-      #sleep 1;
+      print STDERR "\nStopping $::cx_name\n";
+      $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
     }
   }
   exit 0;
 }
 
-sub sentbytes {
+# ========================================================================
+our $est_fill_time_sec = 0;
+our $last_fill_time_sec = 0;
+
+sub filltime {
+  my () = @_;
+
+}
+
+# ========================================================================
+
+sub rxbytes {
   my ($endp) = @_;
-  die ("called sentbytes with no endp name, bye")
+  die ("called rxbytes with no endp name, bye")
     unless((defined $endp) && ("" ne $endp));
 
-  @lines = split("\n", $::utils->doCmd("nc_show_endpoints $endp"));
+  my @lines = split("\n", $::utils->doAsyncCmd("nc_show_endpoints $endp"));
   #Tx Bytes:           Total: 0           Time: 60s   Cur: 0         0/s
   my $bytes = 0;
-  @matches = grep {/^\s+Tx Bytes:\s+Total: \d+ /} @lines;
+  my @matches = grep {/^\s+Rx Bytes/} @lines;
   if (@matches < 1) {
-    warn "tx-bytes not found for [$endp]\n"
+    warn "rx-bytes not found for [$endp]\n";
+    print join("\n> ", @lines), "\n";
     return 0;
   }
-  ($bytes) = $matches[0] =~ /Tx Bytes:\s+Total: (\d+)/;
+  ($bytes) = $matches[0] =~ /Rx Bytes:\s+Total: (\d+)/;
   if (!(defined $bytes)) {
-    warn "no tx-bytes for [$endp]\n";
+    warn "no rx-bytes match for [$endp]\n";
+    print "="x72, "\n";
+    print $matches[0], "\n";
+    print "="x72, "\n";
+    print join("\n> ", @lines), "\n";
     return 0;
   }
   return $bytes;
 }
+
+
+# ========================================================================
+
+sub txbytes {
+  my ($endp) = @_;
+  die ("called txbytes with no endp name, bye")
+    unless((defined $endp) && ("" ne $endp));
+
+  my @lines = split("\n", $::utils->doAsyncCmd("nc_show_endpoints $endp"));
+  #Tx Bytes:           Total: 0           Time: 60s   Cur: 0         0/s
+  my $bytes = 0;
+  my @matches = grep {/^\s+Tx Bytes/} @lines;
+  if (@matches < 1) {
+    warn "tx-bytes not found for [$endp]\n";
+    print join("\n> ", @lines), "\n";
+    return 0;
+  }
+  ($bytes) = $matches[0] =~ /Tx Bytes:\s+Total: (\d+)/;
+  if (!(defined $bytes)) {
+    warn "no tx-bytes match for [$endp]\n";
+    print "="x72, "\n";
+    print $matches[0], "\n";
+    print "="x72, "\n";
+    print join("\n> ", @lines), "\n";
+    return 0;
+  }
+  return $bytes;
+}
+
+# ========================================================================
+#     M A I N
+# ========================================================================
 
 if ($::quiet eq "1" ) {
    $::quiet = "yes";
@@ -418,9 +467,9 @@ die("Unknown stream key $::stream_key")
 
 $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
-my $fill_time_sec  = (8 * $::buf_size) / $max_tx;
+$::est_fill_time_sec  = (8 * $::buf_size) / $max_tx;
 my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
-my $drain_wait_sec = $drain_time_sec - $fill_time_sec;
+my $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
 
 if ($drain_wait_sec <= 0) {
   my $stream_kbps = $stream_bps / 1000;
@@ -429,7 +478,7 @@ if ($drain_wait_sec <= 0) {
 }
 
 my $buf_kB = $::buf_size / 1024;
-print "Filling $buf_kB KB buffer for $::stream_key takes $fill_time_sec s, empties in $drain_time_sec s\n"
+print "Filling $buf_kB KB buffer for $::stream_key takes $est_fill_time_sec s, empties in $drain_time_sec s\n"
   unless($::silent);
 
 
@@ -441,7 +490,7 @@ my @matches = grep {/Could not find/} @lines;
 die($matches[0])
   unless (@matches == 0);
 
-print "Stopping and configuring $::cx_name\n" unless($silent);
+print "\nStopping and configuring $::cx_name\n" unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
 
 my $endp = "$::cx_name-${tx_side}";
@@ -465,21 +514,35 @@ print "Starting $::cx_name..." unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
 $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
 $::utils->doAsyncCmd($cmd);
-my $waiting = 1;
+
+my $startbytes = txbytes($endp);
 do {
   print "+" unless ($silent);
+  my ($starttime_sec, $starttime_usec) = gettimeofday();
+  my $starttime = $starttime_sec + ($starttime_usec / 1000000 );
   my $bytes = 0;
-  while($bytes < $buf_size) {
-    $bytes = sentbytes($endp)
-    sleep_ms(250);
-    print "+" unless ($silent);
+  while($bytes < ($buf_size + $startbytes)) {
+    $bytes = txbytes($endp);
+    sleep_ms(200);
+    #print " +$bytes" unless ($silent);
   }
+  my ($finishtime_sec, $finishtime_usec) = gettimeofday();
+  $last_fill_time_sec = ($finishtime_sec + ($finishtime_usec / 1000000)) - $starttime;
+  if ($bytes > $buf_size) {
+    print "\n +", ($bytes - $startbytes), " took $last_fill_time_sec\n";
+  }
+  $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
+  if ($drain_wait_sec < 0) {
+    print "\n Constant TX\n";
+  }
+  print "\n drain_wait_seconds now $drain_wait_sec v $est_fill_time_sec = ", ($est_fill_time_sec - $last_fill_time_sec ), "\n";
 
   if ($drain_wait_sec > 0) {
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
     print "-" unless($silent);
     $::utils->doCmd($cmd);
     sleep_sec($drain_wait_sec);
+    $startbytes = txbytes($endp);
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
     $::utils->doCmd($cmd);
   }
