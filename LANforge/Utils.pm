@@ -27,6 +27,38 @@ sub new {
    return $self;
 }
 
+sub connect {
+   my ($self, ) = @_;
+   # Open connection to the LANforge server.
+   my $t = undef;
+
+   # Wait up to 60 seconds when requesting info from LANforge.
+   $t = new Net::Telnet(Prompt  => '/default\@btbits\>\>/',
+                        Timeout => 60);
+
+   $t->open(Host    => $::lfmgr_host,
+            Port    => $::lfmgr_port,
+            Timeout => 10);
+   $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
+   $t->waitfor("/btbits\>\>/");
+
+   $self->telnet($t);         # Set our telnet object.
+   if ($self->isQuiet()) {
+      if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
+         $self->cli_send_silent(0);
+         $self->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
+      }
+      else {
+         $self->cli_send_silent(1); # Do not show input to telnet
+      }
+      $self->cli_rcv_silent(1);  # Repress output from telnet
+   }
+   else {
+      $self->cli_send_silent(0); # Show input to telnet
+      $self->cli_rcv_silent(0);  # Show output from telnet
+   }
+}
+
 # This submits the command and returns the success/failure
 # of the command.  If the results from the command are not
 # immediately available (say, if LANforge needs to query a remote
