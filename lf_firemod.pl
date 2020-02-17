@@ -27,9 +27,9 @@ use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
 
-use constant      NA          => "NA";
-use constant      NL          => "\n";
-use constant      shelf_num   => 1;
+our $NA        = 'NA';
+our $NL        = "\n";
+our $shelf_num = 1;
 
 # Default values for ye ole cmd-line args.
 our $resource         = 1;
@@ -506,7 +506,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
       $::min_pkt_sz = "1472" if ($::min_pkt_sz eq "-1");
       $::max_pkt_sz = $::min_pkt_sz if ($::max_pkt_sz eq "-1");
       my $ip_port   = "-1"; # let lf choose
-      $cmd = $::utils->fmt_cmd("add_arm_endp",   $::endp_name,  shelf_num,     $::resource,
+      $cmd = $::utils->fmt_cmd("add_arm_endp",   $::endp_name,  $shelf_num,     $::resource,
                               $::port_name,     "arm_udp",     $::arm_pps,
                               $::min_pkt_sz,    $::max_pkt_sz, $::arm_cpu_id, $::tos);
       $::utils->doCmd($cmd);
@@ -529,7 +529,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
        if ($::endp_cmd eq "") {
          die("Must specify endp_cmd if creating a generic endpoint.\n");
        }
-       $cmd = $::utils->fmt_cmd("add_gen_endp",   $::endp_name,  shelf_num,     $::resource,
+       $cmd = $::utils->fmt_cmd("add_gen_endp",   $::endp_name,  $shelf_num,     $::resource,
                                  $::port_name,  "gen_generic");
        $::utils->doCmd($cmd);
 
@@ -549,7 +549,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
        $cmd = "add_cx " . $::cx_name . " " . $::test_mgr . " " . $::endp_name;
        $::utils->doCmd($cmd);
 
-       my $cxonly = NA;
+       my $cxonly = $::NA;
        $cmd = $::utils->fmt_cmd("set_cx_report_timer", $::test_mgr, $::cx_name, $::report_timer, $cxonly);
        $::utils->doCmd($cmd);
      }
@@ -559,9 +559,9 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
        # set_mc_endp mcast-xmit-eth1 32 224.9.9.9 9999 NO
        # Assume Layer-3 for now
 
-       $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,     shelf_num,     $::resource,
-                                 $::port_name,  $::endp_type,     $::mcast_port, NA,
-                                 "$::speed",    "$::max_speed",   NA,            $::min_pkt_sz,
+       $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,     $shelf_num,     $::resource,
+                                 $::port_name,  $::endp_type,     $::mcast_port, $::NA,
+                                 "$::speed",    "$::max_speed",   $::NA,            $::min_pkt_sz,
                                  $::max_pkt_sz, "increasing",     $::use_csums,  "$::ttl", "0", "0");
        $::utils->doCmd($cmd);
 
@@ -576,7 +576,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
             if (!defined $::port_name || $port_name eq "" || $port_name eq "0" );
 
         die("Please set port speed: --speed")
-            if ($::speed eq "-1"|| $::speed eq NA);
+            if ($::speed eq "-1"|| $::speed eq $::NA);
 
         if ($::min_pkt_sz =~ /^\s*auto\s*$/i) {
             $::min_pkt_sz = "-1";
@@ -589,12 +589,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
         }
 
         # Assume Layer-3 for now
-        my $bursty    = NA;
-        my $random_sz = NA;
+        my $bursty    = $::NA;
+        my $random_sz = $::NA;
         my $payld_pat = "increasing";
-        $::ttl        = NA;
+        $::ttl        = $::NA;
         my $bad_ppm   = "0";
-        $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,  shelf_num,   $::resource,
+        $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,  $shelf_num,   $::resource,
                                  $::port_name,  $::endp_type,  $::ip_port,   $bursty,
                                  $::speed,      $::max_speed,
                                  $random_sz,    $::min_pkt_sz, $::max_pkt_sz,
@@ -622,7 +622,8 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          #$::utils->updateEndpoint($endp1, $endp_name);
 
          # Assume Layer-3 for now
-         $cmd = $::utils->fmt_cmd("add_endp", $endp_name, NA, NA, NA, NA, NA, NA, $speed,  $max_speed);
+         $cmd = $::utils->fmt_cmd("add_endp", $endp_name, $::NA, $::NA, $::NA,
+            $::NA, $::NA, $::NA, $speed,  $max_speed);
          #print("cmd: $cmd\n");
          $::utils->doCmd($cmd);
       }
@@ -647,7 +648,7 @@ elsif ($::action eq "do_cmd") {
   print $::utils->doAsyncCmd("$::do_cmd") . "\n";
 }
 elsif ($::action eq "list_ports") {
-  my @ports = $::utils->getPortListing(shelf_num, $::resource);
+  my @ports = $::utils->getPortListing($::shelf_num, $::resource);
   my $i;
   for ($i = 0; $i<@ports; $i++) {
     my $cur = $ports[$i]->cur_flags();
@@ -733,7 +734,7 @@ elsif ($::action eq "create_cx") {
 
    my $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, $::test_mgr, $end_a, $end_b);
    $::utils->doCmd($cmd);
-   my $cxonly = NA;
+   my $cxonly = $::NA;
    $cmd = $::utils->fmt_cmd("set_cx_report_timer", $::test_mgr, $::cx_name, $::report_timer, $cxonly);
    $::utils->doCmd($cmd);
 }
