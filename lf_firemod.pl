@@ -61,18 +61,18 @@ our $tos              = "";
 our $arm_pps          = "";
 our $arm_cpu_id       = "NA";
 # For cross connects
-our $cx_name         = "";
-our $cx_endps        = "";
-our $list_cx_name    = "all";
-our $test_mgr        = "default_tm";
-our $list_test_mgr   = "all";
-our $stats_from_file = "";
+our $cx_name          = "";
+our $cx_endps         = "";
+our $list_cx_name     = "all";
+our $test_mgr         = "default_tm";
+our $list_test_mgr    = "all";
+our $stats_from_file  = "";
 
 our $fail_msg         = "";
 our $manual_check     = 0;
 
-our @known_endp_types = split(',', "lf_udp,lf_udp6,lf_tcp,lf_tcp6,mc_udp,mc_udp6,generic");
-our @known_tos       = split(',', "DONT-SET,LOWDELAY,THROUGHPUT,RELIABILITY,LOWCOST");
+our @known_endp_types = qw(generic lf_tcp lf_tcp6 lf_udp lf_udp6 mc_udp mc_udp6);
+our @known_tos        = qw(DONT-SET LOWCOST LOWDELAY  RELIABILITY THROUGHPUT);
 
 ########################################################################
 # Nothing to configure below here, most likely.
