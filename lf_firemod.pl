@@ -228,8 +228,12 @@ if (defined $log_cli) {
 if ($::do_cmd ne "NA") {
   $::action = "do_cmd";
 }
-our @valid_actions = split(/,/, "show_endp,set_endp,start_endp,stop_endp,delete_endp,create_endp,create_arm,"
-       ."show_port,do_cmd,list_ports,list_endp,create_cx,list_cx,show_cx,delete_cx,delete_cxe" );
+our @valid_actions = qw(
+   create_arm create_cx create_endp
+   delete_cx delete_cxe delete_endp do_cmd
+   list_cx list_endp list_ports
+   set_endp show_cx show_endp show_port start_endp stop_endp
+   );
 
 if (($::action eq "") && ((defined $::endp_vals) && ("$::endp_vals" ne ""))) {
   $::action = "show_endp";
@@ -238,7 +242,11 @@ if (($::action eq "") && ((defined $::endp_vals) && ("$::endp_vals" ne ""))) {
 if (! (grep {$_ eq $::action} @::valid_actions )) {
   die("Invalid action: $::action\n$::usage\n");
 }
-our @actions_needing_endp = split(/,/, "set_endp,start_endp,stop_endp,delete_endp,create_endp,create_arm");
+our @actions_needing_endp = qw(
+   create_arm create_endp
+   delete_endp
+   set_endp start_endp stop_endp
+   );
 if (grep {$_ eq $::action} @actions_needing_endp) {
   if (length($::endp_name) == 0) {
     print "ERROR:  Must specify endp_name.\n";
