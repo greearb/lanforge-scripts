@@ -15,7 +15,7 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 
 # Un-buffer output
 $| = 1;
-if ( -f "LANforge/Endpoint.pm" ) {
+if (-f "LANforge/Endpoint.pm" ) {
    use lib "./";
 }
 else {
@@ -168,37 +168,37 @@ if (@ARGV < 2) {
 
 GetOptions
 (
-   'help|h'        => \$show_help,
-   'endp_name|e=s' => \$::endp_name,
-   'endp_cmd=s'    => \$::endp_cmd,
-   'endp_vals|o=s' => \$::endp_vals,
-   'stats_from_file=s' => \$::stats_from_file,
-   'action|a=s'    => \$::action,
-   'cmd|c=s'       => \$::do_cmd,
-   'manager|mgr|m=s'       => \$::lfmgr_host,
-   'mgr_port|p=i'  => \$::lfmgr_port,
-   'resource|r=i'  => \$::resource,
-   'port_name=s'   => \$::port_name,
-   'speed|s=i'     => \$::speed,
-   'max_speed=s'   => \$::speed,
-   'quiet|q=s'     => \$::quiet,
-   'endp_type=s'   => \$::endp_type,
-   'mcast_addr=s'  => \$::mcast_addr,
-   'mcast_port=s'  => \$::mcast_port,
-   'min_pkt_sz=s'  => \$::min_pkt_sz,
-   'max_pkt_sz=s'  => \$::max_pkt_sz,
-   'rcv_mcast=s'   => \$::rcv_mcast,
-   'use_csums=s'   => \$::use_csums,
-   'ttl=i'         => \$::ttl,
-   'report_timer=i' => \$::report_timer,
-   'cx_name=s'     => \$::cx_name,
-   'cx_endps=s'    => \$::cx_endps,
-   'test_mgr=s'    => \$::test_mgr,
-   'tos=s'         => \$::tos,
-   'arm_pps=i'     => \$::arm_pps,
-   'ip_port=i'     => \$::ip_port,
-   'multicon=i'    => \$::multicon,
-   'log_cli=s{0,1}'=> \$log_cli,
+   'help|h'             => \$show_help,
+   'endp_name|e=s'      => \$::endp_name,
+   'endp_cmd=s'         => \$::endp_cmd,
+   'endp_vals|o=s'      => \$::endp_vals,
+   'stats_from_file=s'  => \$::stats_from_file,
+   'action|a=s'         => \$::action,
+   'cmd|c=s'            => \$::do_cmd,
+   'manager|mgr|m=s'    => \$::lfmgr_host,
+   'mgr_port|p=i'       => \$::lfmgr_port,
+   'resource|r=i'       => \$::resource,
+   'port_name=s'        => \$::port_name,
+   'speed|s=i'          => \$::speed,
+   'max_speed=s'        => \$::speed,
+   'quiet|q=s'          => \$::quiet,
+   'endp_type=s'        => \$::endp_type,
+   'mcast_addr=s'       => \$::mcast_addr,
+   'mcast_port=s'       => \$::mcast_port,
+   'min_pkt_sz=s'       => \$::min_pkt_sz,
+   'max_pkt_sz=s'       => \$::max_pkt_sz,
+   'rcv_mcast=s'        => \$::rcv_mcast,
+   'use_csums=s'        => \$::use_csums,
+   'ttl=i'              => \$::ttl,
+   'report_timer=i'     => \$::report_timer,
+   'cx_name=s'          => \$::cx_name,
+   'cx_endps=s'         => \$::cx_endps,
+   'test_mgr=s'         => \$::test_mgr,
+   'tos=s'              => \$::tos,
+   'arm_pps=i'          => \$::arm_pps,
+   'ip_port=i'          => \$::ip_port,
+   'multicon=i'         => \$::multicon,
+   'log_cli=s{0,1}'     => \$log_cli,
 ) || die("$::usage");
 
 if ($show_help) {
@@ -248,10 +248,9 @@ if (grep {$_ eq $::action} @actions_needing_endp) {
 if ($::quiet eq "1" ) {
    $::quiet = "yes";
 }
+
 # Open connection to the LANforge server.
-
 my $t = undef;
-
 if ($stats_from_file eq "") {
   # Wait up to 60 seconds when requesting info from LANforge.
   $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
@@ -284,7 +283,7 @@ if ($stats_from_file eq "") {
 }
 
 if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
-  $::max_speed = $::speed if( $::max_speed eq "-1");
+  $::max_speed = $::speed if ($::max_speed eq "-1");
    if ($::action eq "list_endp") {
       my @lines = split(NL, $::utils->doAsyncCmd("nc_show_endpoints all"));
       for my $line (@lines) {
@@ -300,28 +299,28 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          my $option        = '';
          for $option (split(',', $::endp_vals)) {
             #print "OPTION[$option]\n";
-            next if( $option =~ /Latency/);
-            next if( $option =~ /Pkt-Gaps/);
-            #next if( $option =~ /\s/);
-            if( $option =~ /rx_pps/    ) { $option = "Rx Pkts"; }
-            if( $option =~ /tx_pps/    ) { $option = "Tx Pkts"; }
-            if( $option =~ /rx_pkts/   ) { $option = "Rx Pkts"; }
-            if( $option =~ /tx_pkts/   ) { $option = "Tx Pkts"; }
+            next if ($option =~ /Latency/);
+            next if ($option =~ /Pkt-Gaps/);
+            #next if ($option =~ /\s/);
+            if ($option =~ /rx_pps/    ) { $option = "Rx Pkts"; }
+            if ($option =~ /tx_pps/    ) { $option = "Tx Pkts"; }
+            if ($option =~ /rx_pkts/   ) { $option = "Rx Pkts"; }
+            if ($option =~ /tx_pkts/   ) { $option = "Tx Pkts"; }
 
             # we don't know if we're armageddon or layer 3
-            if( $option =~ /tx_bytes/  ) {
+            if ($option =~ /tx_bytes/  ) {
                $option_map{ "Tx Bytes" } = '';
                $option = "Bytes Transmitted";
             }
-            if( $option =~ /rx_b(ps|ytes)/  ) {
+            if ($option =~ /rx_b(ps|ytes)/  ) {
                $option_map{ "Rx Bytes" } = '';
                $option = "Bytes Rcvd";
             }
-            if( $option =~ /tx_packets/) {
+            if ($option =~ /tx_packets/) {
                $option_map{ "Tx Pkts" } = '';
                $option = "Packets Transmitted";
             }
-            if( $option =~ /rx_packets/) {
+            if ($option =~ /rx_packets/) {
                $option_map{ "Rx Pkts" } = '';
                $option = "Packets Rcvd";
             }
@@ -363,20 +362,20 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
                ##    special cases                                                  #
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-               if (  $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
+               if ( $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
                   my $value = 0;
                   ($option) = ($match =~ /(Rx (Bytes|Pkts))/);
                   #print "# case 1, Option: $option" . NL;
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n RX: ".join(",",@parts)."\n";
-                  if ( defined $option_map{ $option } ) {
+                  if (defined $option_map{ $option } ) {
                      if ($end_val =~ /rx_(bps|pps)/ ) {
                         $value = 0 + $parts[2];
                      }
                      elsif ($end_val =~ /rx_(byte|pkt|packet)s/ ) {
                         $value = 0 + $parts[0];
                      }
-                     if ( $option eq "Rx Bytes") {
+                     if ($option eq "Rx Bytes") {
                         if ($end_val =~ /rx_bps/ ) {
                            $value   *= 8;
                         }
@@ -387,24 +386,24 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      last;
                   }
                }
-               elsif (  $match =~ /Cx Detected/) {
+               elsif ($match =~ /Cx Detected/) {
                   my $value = 0;
                   #print "# case 2\n";
                   ($option) = ($match =~ /(Cx Detected)/);
-                  if ( defined $option_map{ $option } ) {
+                  if (defined $option_map{ $option } ) {
                      $value = 0 + ($match =~ /:\s+(\d+)/)[0];
                      $option_map{ $option } = $value;
                      $endval_done++;
                      last;
                   }
                }
-               elsif (  $match =~ /Tx (Bytes|Pkts)/ && $end_val =~ /tx_/) {
+               elsif ($match =~ /Tx (Bytes|Pkts)/ && $end_val =~ /tx_/) {
                   my $value = 0;
                   ($option) = ($match =~ /(Tx (Bytes|Pkts))/);
                   #print "# case 3, Option: $option" . NL;
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n TX: ".join(",",@parts)."\n";
-                  if ( defined $option_map{ $option } ) {
+                  if (defined $option_map{ $option } ) {
                      if ($end_val =~ /tx_(bps|pps)/ ) {
                         $value = 0 + $parts[2];
                      }
@@ -422,13 +421,13 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      last;
                   }
                }
-               elsif (  $match =~ / [TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)/
+               elsif ($match =~ / [TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)/
                      || $match =~ /Conn (Established|Timeouts)|TCP Retransmits/) {
                   my $value = 0;
                   ($option) = ($match =~ /([TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)|Conn (Established|Timeouts)|TCP Retransmits)/);
                   @parts      = $match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$};
                   #print "\n# case 4 TX: ".join(",",@parts)."\n";
-                  if ( defined $option_map{ $option } ) {
+                  if (defined $option_map{ $option } ) {
                      #print "$match\n";
                      $match =~ s/""/ /g;
                      ($option_map{ $option }) = $match =~/.*?:\s+(.*?)\s+\#$/;
@@ -436,12 +435,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      last;
                   }
                }
-               elsif (  $match =~ /(Bytes|Packets) (Rcvd|Transmitted)/ ) {
+               elsif ($match =~ /(Bytes|Packets) (Rcvd|Transmitted)/ ) {
                   ($option) = ($match =~ /((Bytes|Packets) (Rcvd|Transmitted))/);
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n# case 5 TX: ".join(",",@parts)."\n";
                   my $value = 0;
-                  if ( defined $option_map{ $option } ) {
+                  if (defined $option_map{ $option } ) {
                      if ($end_val =~ /rx_(bps|pps)/ ) {
                         $value = 0 + $parts[2];
                      }
@@ -454,16 +453,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                         }
                      }
 
-                     #print "\n      C end_val[$end_val] option[$option] now ".$value."\n";
                      $option_map{ $option } = $value;
                      $endval_done++;
                      last;
                   }
                }
                else {
-      #print "Default case...\n";
-
-                  # special case
                   $match =~ s/Shelf: (\d+), /Shelf: $1  /
                      if ($match =~ /^\s*Shelf:/ );
 
@@ -485,22 +480,22 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      if ($match =~/CWND: (\d+) /);
                   # ~specials
 
-      #print "  match: $match\n";
-      if ($match =~ /.*$end_val:\s+(\S+)/) {
-        my $value = $1;
-        #print " Found value: $value for key: $end_val\n";
-        $option_map{ $end_val } = $value;
-        $endval_done++;
-      }
+                  #print "  match: $match\n";
+                  if ($match =~ /.*$end_val:\s+(\S+)/) {
+                    my $value = $1;
+                    #print " Found value: $value for key: $end_val\n";
+                    $option_map{ $end_val } = $value;
+                    $endval_done++;
+                  }
 
-      # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
-      # --Ben
+                  # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
+                  # --Ben
                   #@parts         = ($match =~ m/( *[^ ]+):( *\S+ [^ #]*)(?! #|\S+:)/g);
                   #for (my $i=0; $i < @parts; $i+=2) {
                   #   $option     = $parts[$i];
                   #   $option     =~ s/^\s*(.*)\s*$/$1/;  # Trim whitespace
                   #   print "     parts[$option] ";
-                  #   if ( defined $option_map{ $option } ) {
+                  #   if (defined $option_map{ $option } ) {
                   #      my $value = $parts[ $i + 1 ];
                   #      if ($value =~ /^\s*([^ ]+):\s+/) {
                   #         $value   = "-";
@@ -602,7 +597,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
        $cmd = "set_endp_report_timer $::endp_name $::report_timer";
        $::utils->doCmd($cmd);
      }
-     elsif ( grep { $_ eq $::endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6")) {
+     elsif (grep { $_ eq $::endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6")) {
         die("Which port is this? --port_name")
             if (!defined $::port_name || $port_name eq "" || $port_name eq "0" );
 
