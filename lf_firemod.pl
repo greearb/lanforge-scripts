@@ -250,36 +250,10 @@ if ($::quiet eq "1" ) {
 }
 
 # Open connection to the LANforge server.
-my $t = undef;
-if ($stats_from_file eq "") {
-  # Wait up to 60 seconds when requesting info from LANforge.
-  $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-                        Timeout => 60);
+our $utils = new LANforge::Utils();
 
-  $t->open(Host    => $::lfmgr_host,
-           Port    => $::lfmgr_port,
-           Timeout => 10);
-
-  $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
-  $t->waitfor("/btbits\>\>/");
-
-  # Configure our utils.
-  our $utils = new LANforge::Utils();
-  $::utils->telnet($t);         # Set our telnet object.
-  if ($::utils->isQuiet()) {
-    if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
-      $::utils->cli_send_silent(0);
-    }
-    else {
-      $::utils->cli_send_silent(1); # Do not show input to telnet
-    }
-    $::utils->cli_rcv_silent(1);  # Repress output from telnet
-  }
-  else {
-    $::utils->cli_send_silent(0); # Show input to telnet
-    $::utils->cli_rcv_silent(0);  # Show output from telnet
-  }
-  $::utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
+if (!(defined $::stats_from_file) && ($::stats_from_file eq "")) {
+   $::utils->connect();
 }
 
 if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
