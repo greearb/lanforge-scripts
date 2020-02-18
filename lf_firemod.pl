@@ -180,6 +180,8 @@ my $cmd;
 
 my $log_cli = "unset"; # use ENV{LOG_CLI} elsewhere
 my $show_help = 0;
+my $use_speeds_str;
+my $use_ports_str;
 our @use_ports = ();
 our @use_speeds = ();
 
@@ -219,7 +221,8 @@ GetOptions
    'stats_from_file=s'  => \$::stats_from_file,
    'ttl=i'              => \$::ttl,
    'use_csums=s'        => \$::use_csums,
-   'use_ports=s'        => \@::use_ports,
+   'use_ports=s'        => \$::use_ports_str,
+   'use_speeds=s'       => \$::use_speeds_str,
    'test_mgr=s'         => \$::test_mgr,
    'tos=s'              => \$::tos,
 
@@ -493,28 +496,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                     $option_map{ $end_val } = $value;
                     $endval_done++;
                   }
-
-                  # This below just does not work right, for instance with L3 endp and these values:  RealRxRate,RealTxRate,MinTxRate
-                  # --Ben
-                  #@parts         = ($match =~ m/( *[^ ]+):( *\S+ [^ #]*)(?! #|\S+:)/g);
-                  #for (my $i=0; $i < @parts; $i+=2) {
-                  #   $option     = $parts[$i];
-                  #   $option     =~ s/^\s*(.*)\s*$/$1/;  # Trim whitespace
-                  #   print "     parts[$option] ";
-                  #   if (defined $option_map{ $option } ) {
-                  #      my $value = $parts[ $i + 1 ];
-                  #      if ($value =~ /^\s*([^ ]+):\s+/) {
-                  #         $value   = "-";
-                  #      }
-                  #      else {
-                  #         $value   =~ s/^\s*(.*)\s*$/$1/;
-                  #      }
-                  #      #print "\n      D end_val[$end_val] option[$option] now ".$value."\n";
-                  #      $option_map{ $option } = $value;
-                  #      $endval_done++;
-                  #      last;
-                  #   }
-                  #}
                }
             } # ~matches
          } # ~endp_vals
@@ -523,12 +504,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          }
       }
       else {
-  if ($stats_from_file ne "") {
-    print get_stats_from_file($stats_from_file, $endp_name);
-  }
-  else {
-    print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
-  }
+        if ($stats_from_file ne "") {
+          print get_stats_from_file($stats_from_file, $endp_name);
+        }
+        else {
+          print $::utils->doAsyncCmd("nc_show_endp $::endp_name");
+        }
       }
    }
    elsif ($::action eq "create_arm") {
