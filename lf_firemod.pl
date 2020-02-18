@@ -78,10 +78,13 @@ our @known_tos        = qw(DONT-SET LOWCOST LOWDELAY  RELIABILITY THROUGHPUT);
 # Nothing to configure below here, most likely.
 ########################################################################
 
-our $usage = "$0  --action { list_ports | show_port
-                            | list_endp | create_endp | create_arm | show_endp | set_endp
-                            | do_cmd | start_endp | stop_endp | delete_endp
-                            | create_cx | list_cx | show_cx | delete_cx | delete_cxe } ]
+our $usage = qq^$0 [ --action {
+     create_cx | create_endp  | create_arm   |
+     delete_cx | delete_cxe   | delete_endp  | do_cmd    |
+     list_cx   |  list_endp   | list_ports   |
+     set_endp  |show_cx       | show_endp    | show_port |
+     start_cx  | start_endp   | stop_cx      | stop_endp
+  } ]
   [--endp_vals {key,key,key,key}]
       # show_endp output can be narrowed with key-value arguments
       # Examples:
@@ -90,41 +93,41 @@ our $usage = "$0  --action { list_ports | show_port
       # Special Keys:
       #  --endp_vals tx_bps         (Tx Bytes)
       #  --endp_vals rx_bps         (Rx Bytes)
-  [--stats_from_file [file-name]
+  [--stats_from_file {file-name}]
       # Read 'show-endp' ouput from a file instead of direct query from LANforge.
       # This can save a lot of time if we already have the output available.
-  [--mgr       {host-name | IP}]
-  [--mgr_port  {ip port}]
-  [--cmd       {lf-cli-command text}]
-  [--endp_name {name}]
-  [--endp_cmd  {generic-endp-command}]
-  [--port_name {name}]
-  [--resource  {number}]
-  [--speed     {speed in bps}]
-  [--tos       { ".join(' | ', @::known_tos)." },{priority}]
-  [--max_speed {speed in bps}]
-  [--quiet     { yes | no }]
-  [--endp_type { ".join(' | ', @::known_endp_types)." }]
-  [--mcast_addr {multicast address, for example: 224.4.5.6}]
-  [--mcast_port {multicast port number}]
-  [--min_pkt_sz {minimum payload size in bytes}]
-  [--max_pkt_sz {maximum payload size in bytes}]
-  [--rcv_mcast { yes (receiver) | no (transmitter) }]
-  [--use_csums { yes | no, should we checksum the payload }]
-  [--ttl       {time-to-live}]
+  [--mgr          {host-name | IP}]
+  [--mgr_port     {ip port}]
+  [--cmd          {lf-cli-command text}]
+  [--endp_name    {name}]
+  [--endp_cmd     {generic-endp-command}]
+  [--port_name    {name}]
+  [--resource     {number}]
+  [--speed        {speed in bps}]
+  [--tos          { ".join(' | ', @::known_tos)." },{priority}]
+  [--max_speed    {speed in bps}]
+  [--quiet        { yes | no }]
+  [--endp_type    { ".join(' | ', @::known_endp_types)." }]
+  [--mcast_addr   {multicast address, for example: 224.4.5.6}]
+  [--mcast_port   {multicast port number}]
+  [--min_pkt_sz   {minimum payload size in bytes}]
+  [--max_pkt_sz   {maximum payload size in bytes}]
+  [--rcv_mcast    {yes (receiver) | no (transmitter)}]
+  [--use_csums    {yes | no, should we checksum the payload}]
+  [--ttl          {time-to-live}]
   [--report_timer {miliseconds}]
-  [--cx_name   {connection name}]
-  [--cx_endps  {endp1},{endp2}]
-  [--test_mgr  {default_tm|all|other-tm-name}]
-  [--arm_pps   {packets per second}]
-  [--ip_port   {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
-  [--multicon  {0 (no multi-conn, Normal) | number of connections (TCP only)}]
-  [--log_cli   {1|filename}]
+  [--cx_name      {connection name}]
+  [--cx_endps     {endp1},{endp2}]
+  [--test_mgr     {default_tm|all|other-tm-name}]
+  [--arm_pps      {packets per second}]
+  [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
+  [--multicon     {0 (no multi-conn, Normal) | number of connections (TCP only)}]
+  [--log_cli      {1|filename}]
 Example:
  $0 --action set_endp --endp_name udp1-A --speed 154000
 
  $0 --action create_endp --endp_name mcast_xmit_1 --speed 154000 \\
-   --endp_type mc_udp   --mcast_addr 224.9.9.8 --mcast_port 9998 \\
+   --endp_type mc_udp   --mcast_addr 224.9.9.8    --mcast_port 9998 \\
    --rcv_mcast NO       --port_name eth1 \\
    --min_pkt_sz 1072    --max_pkt_sz 1472 \\
    --use_csums NO       --ttl 32 \\
@@ -153,7 +156,7 @@ Example:
    --endp_type lf_tcp --port_name wlan2 --multicon 1
 
  $0 --mgr localhost --action create_cx --cx_name test1 --cx_endps test1a,test1b
-";
+^;
 
 my $i = 0;
 my $cmd;
