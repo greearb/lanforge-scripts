@@ -92,7 +92,7 @@ $0 [ --action {
   [--cx_endps     {endp1},{endp2}]
   [--endp_cmd     {generic-endp-command}]
   [--endp_name    {name}]
-  [--endp_type    { ".join(' | ', @::known_endp_types)." }]
+  [--endp_type    { ".join(' | ', @{::known_endp_types})." }]
   [--endp_vals {key,key,key,key}]
       # show_endp output can be narrowed with key-value arguments
       # Examples:
@@ -119,7 +119,7 @@ $0 [ --action {
   [--stats_from_file {file-name}]
       # Read 'show-endp' ouput from a file instead of direct query from LANforge.
       # This can save a lot of time if we already have the output available.
-  [--tos          { ".join(' | ', @::known_tos)." },{priority}]
+  [--tos          { ".join(' | ', @{::known_tos})." },{priority}]
   [--use_csums    {yes | no, should we checksum the payload}]
   [--log_cli      {1|filename}]
   [--test_mgr     {default_tm|all|other-tm-name}]
