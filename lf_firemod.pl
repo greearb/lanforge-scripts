@@ -78,7 +78,7 @@ our @known_tos        = qw(DONT-SET LOWCOST LOWDELAY  RELIABILITY THROUGHPUT);
 # Nothing to configure below here, most likely.
 ########################################################################
 
-our $usage = <<__EndOfUsage__
+our $usage = <<'__EndOfUsage__';
 $0 [ --action {
      create_cx | create_endp  | create_arm   |
      delete_cx | delete_cxe   | delete_endp  | do_cmd    |
@@ -157,7 +157,7 @@ Example:
    --endp_type lf_tcp --port_name wlan2 --multicon 1
 
  $0 --mgr localhost --action create_cx --cx_name test1 --cx_endps test1a,test1b
-__EndOfUsage__;
+__EndOfUsage__
 
 my $i = 0;
 my $cmd;
