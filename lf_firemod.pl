@@ -82,10 +82,17 @@ our $usage = <<'__EndOfUsage__';
 $0 [ --action {
      create_cx | create_endp  | create_arm   |
      delete_cx | delete_cxe   | delete_endp  | do_cmd    |
-     list_cx   |  list_endp   | list_ports   |
-     set_endp  |show_cx       | show_endp    | show_port |
+     list_cx   | list_endp    | list_ports   |
+     set_endp  | show_cx      | show_endp    | show_port |
      start_cx  | start_endp   | stop_cx      | stop_endp
   } ]
+  [--arm_pps      {packets per second}]
+  [--cmd          {lf-cli-command text}]
+  [--cx_name      {connection name}]
+  [--cx_endps     {endp1},{endp2}]
+  [--endp_cmd     {generic-endp-command}]
+  [--endp_name    {name}]
+  [--endp_type    { ".join(' | ', @::known_endp_types)." }]
   [--endp_vals {key,key,key,key}]
       # show_endp output can be narrowed with key-value arguments
       # Examples:
@@ -94,36 +101,30 @@ $0 [ --action {
       # Special Keys:
       #  --endp_vals tx_bps         (Tx Bytes)
       #  --endp_vals rx_bps         (Rx Bytes)
+  [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
+  [--max_pkt_sz   {maximum payload size in bytes}]
+  [--max_speed    {speed in bps}]
+  [--min_pkt_sz   {minimum payload size in bytes}]
+  [--mcast_addr   {multicast address, for example: 224.4.5.6}]
+  [--mcast_port   {multicast port number}]
+  [--mgr          {host-name | IP}]
+  [--mgr_port     {ip port}]
+  [--multicon     {0 (no multi-conn, Normal) | number of connections (TCP only)}]
+  [--port_name    {name}]
+  [--quiet        { yes | no }]
+  [--rcv_mcast    {yes (receiver) | no (transmitter)}]
+  [--report_timer {miliseconds}]
+  [--resource     {number}]
+  [--speed        {speed in bps}]
   [--stats_from_file {file-name}]
       # Read 'show-endp' ouput from a file instead of direct query from LANforge.
       # This can save a lot of time if we already have the output available.
-  [--mgr          {host-name | IP}]
-  [--mgr_port     {ip port}]
-  [--cmd          {lf-cli-command text}]
-  [--endp_name    {name}]
-  [--endp_cmd     {generic-endp-command}]
-  [--port_name    {name}]
-  [--resource     {number}]
-  [--speed        {speed in bps}]
   [--tos          { ".join(' | ', @::known_tos)." },{priority}]
-  [--max_speed    {speed in bps}]
-  [--quiet        { yes | no }]
-  [--endp_type    { ".join(' | ', @::known_endp_types)." }]
-  [--mcast_addr   {multicast address, for example: 224.4.5.6}]
-  [--mcast_port   {multicast port number}]
-  [--min_pkt_sz   {minimum payload size in bytes}]
-  [--max_pkt_sz   {maximum payload size in bytes}]
-  [--rcv_mcast    {yes (receiver) | no (transmitter)}]
   [--use_csums    {yes | no, should we checksum the payload}]
-  [--ttl          {time-to-live}]
-  [--report_timer {miliseconds}]
-  [--cx_name      {connection name}]
-  [--cx_endps     {endp1},{endp2}]
-  [--test_mgr     {default_tm|all|other-tm-name}]
-  [--arm_pps      {packets per second}]
-  [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
-  [--multicon     {0 (no multi-conn, Normal) | number of connections (TCP only)}]
   [--log_cli      {1|filename}]
+  [--test_mgr     {default_tm|all|other-tm-name}]
+  [--ttl          {time-to-live}]
+
 Example:
  $0 --action set_endp --endp_name udp1-A --speed 154000
 
@@ -164,6 +165,8 @@ my $cmd;
 
 my $log_cli = "unset"; # use ENV{LOG_CLI} elsewhere
 my $show_help = 0;
+our @use_ports = ();
+our @use_speeds = ();
 
 if (@ARGV < 2) {
    print $usage;
@@ -172,37 +175,39 @@ if (@ARGV < 2) {
 
 GetOptions
 (
-   'help|h'             => \$show_help,
-   'endp_name|e=s'      => \$::endp_name,
-   'endp_cmd=s'         => \$::endp_cmd,
-   'endp_vals|o=s'      => \$::endp_vals,
-   'stats_from_file=s'  => \$::stats_from_file,
    'action|a=s'         => \$::action,
+   'arm_pps=i'          => \$::arm_pps,
    'cmd|c=s'            => \$::do_cmd,
-   'manager|mgr|m=s'    => \$::lfmgr_host,
-   'mgr_port|p=i'       => \$::lfmgr_port,
-   'resource|r=i'       => \$::resource,
-   'port_name=s'        => \$::port_name,
-   'speed|s=i'          => \$::speed,
-   'max_speed=s'        => \$::speed,
-   'quiet|q=s'          => \$::quiet,
+   'cx_endps=s'         => \$::cx_endps,
+   'cx_name=s'          => \$::cx_name,
+   'help|h'             => \$show_help,
+   'ip_port=i'          => \$::ip_port,
+   'endp_cmd=s'         => \$::endp_cmd,
+   'endp_name|e=s'      => \$::endp_name,
    'endp_type=s'        => \$::endp_type,
-   'mcast_addr=s'       => \$::mcast_addr,
-   'mcast_port=s'       => \$::mcast_port,
+   'endp_vals|o=s'      => \$::endp_vals,
+   'log_cli=s{0,1}'     => \$log_cli,
+   'manager|mgr|m=s'    => \$::lfmgr_host,
+   'max_speed=s'        => \$::speed,
    'min_pkt_sz=s'       => \$::min_pkt_sz,
    'max_pkt_sz=s'       => \$::max_pkt_sz,
+   'mcast_addr=s'       => \$::mcast_addr,
+   'mcast_port=s'       => \$::mcast_port,
+   'mgr_port|p=i'       => \$::lfmgr_port,
+   'multicon=i'         => \$::multicon,
+   'port_name=s'        => \$::port_name,
+   'quiet|q=s'          => \$::quiet,
    'rcv_mcast=s'        => \$::rcv_mcast,
-   'use_csums=s'        => \$::use_csums,
-   'ttl=i'              => \$::ttl,
    'report_timer=i'     => \$::report_timer,
-   'cx_name=s'          => \$::cx_name,
-   'cx_endps=s'         => \$::cx_endps,
+   'resource|r=i'       => \$::resource,
+   'speed|s=i'          => \$::speed,
+   'stats_from_file=s'  => \$::stats_from_file,
+   'ttl=i'              => \$::ttl,
+   'use_csums=s'        => \$::use_csums,
+   'use_ports=s'        => \@::use_ports
    'test_mgr=s'         => \$::test_mgr,
    'tos=s'              => \$::tos,
-   'arm_pps=i'          => \$::arm_pps,
-   'ip_port=i'          => \$::ip_port,
-   'multicon=i'         => \$::multicon,
-   'log_cli=s{0,1}'     => \$log_cli,
+
 ) || die("$::usage");
 
 if ($show_help) {
