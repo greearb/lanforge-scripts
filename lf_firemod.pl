@@ -180,8 +180,8 @@ my $cmd;
 
 my $log_cli = "unset"; # use ENV{LOG_CLI} elsewhere
 my $show_help = 0;
-my $use_speeds_str;
-my $use_ports_str;
+our $use_ports_str;
+our $use_speeds_str;
 our @use_ports = ();
 our @use_speeds = ();
 
@@ -528,104 +528,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
       $::utils->doCmd($cmd);
    }
    elsif ($::action eq "create_endp") {
-     die("Must choose endpoint protocol type: --endp_type\n$::usage")
-         if (! defined $::endp_type|| $::endp_type eq "");
-
-     $::endp_type  = "lf_tcp" if ($::endp_type eq "tcp");
-     $::endp_type  = "lf_udp" if ($::endp_type eq "udp");
-
-     die("Endpoint protocol type --endp_type must be among "
-        .join(', ', @::known_endp_types)."\n".$::usage)
-         if (! grep {$_ eq $::endp_type } @::known_endp_types);
-
-     if ($::endp_type eq "generic") {
-       if ($::endp_cmd eq "") {
-         die("Must specify endp_cmd if creating a generic endpoint.\n");
-       }
-       $cmd = $::utils->fmt_cmd("add_gen_endp",   $::endp_name,  $shelf_num,     $::resource,
-                                 $::port_name,  "gen_generic");
-       $::utils->doCmd($cmd);
-
-       # Create the dummy
-       #my $dname = "D_" . $::endp_name;
-       #$cmd = $::utils->fmt_cmd("add_gen_endp",   $dname,  shelf_num,     $::resource,
-       #                          $::port_name,  "gen_generic");
-       #$::utils->doCmd($cmd);
-
-       $cmd = "set_gen_cmd " . $::endp_name . " " . $::endp_cmd;
-       $::utils->doCmd($cmd);
-
-       $cmd = "set_endp_report_timer $::endp_name $::report_timer";
-       $::utils->doCmd($cmd);
-
-       $::cx_name = "CX_" . $::endp_name;
-       $cmd = "add_cx " . $::cx_name . " " . $::test_mgr . " " . $::endp_name;
-       $::utils->doCmd($cmd);
-
-       my $cxonly = $::NA;
-       $cmd = $::utils->fmt_cmd("set_cx_report_timer", $::test_mgr, $::cx_name, $::report_timer, $cxonly);
-       $::utils->doCmd($cmd);
-     }
-     elsif ($::endp_type eq "mc_udp") {
-       # For instance:
-       # add_endp mcast-xmit-eth1 1 3 eth1 mc_udp 9999 NO 9600 0 NO 1472 1472 INCREASING NO 32 0 0
-       # set_mc_endp mcast-xmit-eth1 32 224.9.9.9 9999 NO
-       # Assume Layer-3 for now
-
-       $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,     $shelf_num,     $::resource,
-                                 $::port_name,  $::endp_type,     $::mcast_port, $::NA,
-                                 "$::speed",    "$::max_speed",   $::NA,            $::min_pkt_sz,
-                                 $::max_pkt_sz, "increasing",     $::use_csums,  "$::ttl", "0", "0");
-       $::utils->doCmd($cmd);
-
-       $cmd = $::utils->fmt_cmd("set_mc_endp", $::endp_name, $::ttl, $::mcast_addr, $::mcast_port, $::rcv_mcast);
-       $::utils->doCmd($cmd);
-
-       $cmd = "set_endp_report_timer $::endp_name $::report_timer";
-       $::utils->doCmd($cmd);
-     }
-     elsif (grep { $_ eq $::endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6")) {
-        die("Which port is this? --port_name")
-            if (!defined $::port_name || $port_name eq "" || $port_name eq "0" );
-
-        die("Please set port speed: --speed")
-            if ($::speed eq "-1"|| $::speed eq $::NA);
-
-        if ($::min_pkt_sz =~ /^\s*auto\s*$/i) {
-            $::min_pkt_sz = "-1";
-        }
-        if ($::max_pkt_sz =~ /^\s*same\s*$/i ) {
-           $::max_pkt_sz = "0";
-        }
-        elsif ($::max_pkt_sz =~ /^\s*auto\s*$/i) {
-           $::max_pkt_sz = "-1";
-        }
-
-        # Assume Layer-3 for now
-        my $bursty    = $::NA;
-        my $random_sz = $::NA;
-        my $payld_pat = "increasing";
-        $::ttl        = $::NA;
-        my $bad_ppm   = "0";
-        $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,  $shelf_num,   $::resource,
-                                 $::port_name,  $::endp_type,  $::ip_port,   $bursty,
-                                 $::speed,      $::max_speed,
-                                 $random_sz,    $::min_pkt_sz, $::max_pkt_sz,
-                                 $payld_pat,    $::use_csums,  $::ttl,
-                                 $bad_ppm,      $::multicon);
-        $::utils->doCmd($cmd);
-
-        $cmd = "set_endp_report_timer $::endp_name $::report_timer";
-        $::utils->doCmd($cmd);
-
-        if ($::tos ne "") {
-           my($service, $priority) = split(',', $::tos);
-           $::utils->doCmd($::utils->fmt_cmd("set_endp_tos", $::endp_name, $service, $priority));
-        }
-     }
-     else {
-       die( "ERROR:  Endpoint type: $::endp_type is not currently supported.");
-     }
+     create_endpoint();
    }
    else {
       # Set endp
@@ -738,13 +641,26 @@ elsif ($::action eq "show_cx") {
 }
 elsif ($::action eq "create_cx") {
    # require cx_name, test_mgr, two endpoints
-   die("Please name your cross connect: --cx_name\n$::usage")  if ($::cx_name  eq "");
-   die("Please name two endpoints: --cx_endps\n$::usage")      if ($::cx_endps eq "");
+   my $end_a = "";
+   my $end_b = "";
+   print "USE PORTS STR [$::use_ports_str]\n";
+   print "USE PORTS STR [$::use_speeds_str]\n";
+   @use_speeds = split(',', $::use_speeds_str);
+   @use_ports = split(',', $::use_ports_str);
+   if (!(defined $::use_ports_str) || ("" eq $::use_ports_str)) {
+      die("Please name your cross connect: --cx_name\n$::usage")  if ($::cx_name  eq "");
+      die("Please name two endpoints: --cx_endps\n$::usage")      if ($::cx_endps eq "");
 
-   my ($end_a, $end_b) = split(/,/, $::cx_endps);
-   die("Specify two endpoints like: eth1,eth2 \n$::usage")
-      if ((length($end_a) < 1) || (length($end_b) < 1));
-
+      my ($end_a, $end_b) = split(/,/, $::cx_endps);
+      die("Specify two endpoints like: eth1,eth2 \n$::usage")
+         if ((length($end_a) < 1) || (length($end_b) < 1));
+   }
+   else { # create endpoints
+      $end_a = "${cx_name}-A";
+      $end_b = "${cx_name}-B";
+      create_endp();
+      create_endp();
+   }
    my $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, $::test_mgr, $end_a, $end_b);
    $::utils->doCmd($cmd);
    my $cxonly = $::NA;
@@ -770,7 +686,110 @@ else {
 }
 
 exit(0);
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+sub create_endp {
+   die("Must choose endpoint protocol type: --endp_type\n$::usage")
+         if (! defined $::endp_type|| $::endp_type eq "");
 
+  $::endp_type  = "lf_tcp" if ($::endp_type eq "tcp");
+  $::endp_type  = "lf_udp" if ($::endp_type eq "udp");
+
+  die("Endpoint protocol type --endp_type must be among "
+     .join(', ', @::known_endp_types)."\n".$::usage)
+      if (! grep {$_ eq $::endp_type } @::known_endp_types);
+
+  if ($::endp_type eq "generic") {
+    if ($::endp_cmd eq "") {
+      die("Must specify endp_cmd if creating a generic endpoint.\n");
+    }
+    $cmd = $::utils->fmt_cmd("add_gen_endp",   $::endp_name,  $shelf_num,     $::resource,
+                              $::port_name,  "gen_generic");
+    $::utils->doCmd($cmd);
+
+    # Create the dummy
+    #my $dname = "D_" . $::endp_name;
+    #$cmd = $::utils->fmt_cmd("add_gen_endp",   $dname,  shelf_num,     $::resource,
+    #                          $::port_name,  "gen_generic");
+    #$::utils->doCmd($cmd);
+
+    $cmd = "set_gen_cmd " . $::endp_name . " " . $::endp_cmd;
+    $::utils->doCmd($cmd);
+
+    $cmd = "set_endp_report_timer $::endp_name $::report_timer";
+    $::utils->doCmd($cmd);
+
+    $::cx_name = "CX_" . $::endp_name;
+    $cmd = "add_cx " . $::cx_name . " " . $::test_mgr . " " . $::endp_name;
+    $::utils->doCmd($cmd);
+
+    my $cxonly = $::NA;
+    $cmd = $::utils->fmt_cmd("set_cx_report_timer", $::test_mgr, $::cx_name, $::report_timer, $cxonly);
+    $::utils->doCmd($cmd);
+  }
+  elsif ($::endp_type eq "mc_udp") {
+    # For instance:
+    # add_endp mcast-xmit-eth1 1 3 eth1 mc_udp 9999 NO 9600 0 NO 1472 1472 INCREASING NO 32 0 0
+    # set_mc_endp mcast-xmit-eth1 32 224.9.9.9 9999 NO
+    # Assume Layer-3 for now
+
+    $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,     $shelf_num,     $::resource,
+                              $::port_name,  $::endp_type,     $::mcast_port, $::NA,
+                              "$::speed",    "$::max_speed",   $::NA,            $::min_pkt_sz,
+                              $::max_pkt_sz, "increasing",     $::use_csums,  "$::ttl", "0", "0");
+    $::utils->doCmd($cmd);
+
+    $cmd = $::utils->fmt_cmd("set_mc_endp", $::endp_name, $::ttl, $::mcast_addr, $::mcast_port, $::rcv_mcast);
+    $::utils->doCmd($cmd);
+
+    $cmd = "set_endp_report_timer $::endp_name $::report_timer";
+    $::utils->doCmd($cmd);
+  }
+  elsif (grep { $_ eq $::endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6")) {
+     die("Which port is this? --port_name")
+         if (!defined $::port_name || $port_name eq "" || $port_name eq "0" );
+
+     die("Please set port speed: --speed")
+         if ($::speed eq "-1"|| $::speed eq $::NA);
+
+     if ($::min_pkt_sz =~ /^\s*auto\s*$/i) {
+         $::min_pkt_sz = "-1";
+     }
+     if ($::max_pkt_sz =~ /^\s*same\s*$/i ) {
+        $::max_pkt_sz = "0";
+     }
+     elsif ($::max_pkt_sz =~ /^\s*auto\s*$/i) {
+        $::max_pkt_sz = "-1";
+     }
+
+     # Assume Layer-3 for now
+     my $bursty    = $::NA;
+     my $random_sz = $::NA;
+     my $payld_pat = "increasing";
+     $::ttl        = $::NA;
+     my $bad_ppm   = "0";
+     $cmd = $::utils->fmt_cmd("add_endp",   $::endp_name,  $shelf_num,   $::resource,
+                              $::port_name,  $::endp_type,  $::ip_port,   $bursty,
+                              $::speed,      $::max_speed,
+                              $random_sz,    $::min_pkt_sz, $::max_pkt_sz,
+                              $payld_pat,    $::use_csums,  $::ttl,
+                              $bad_ppm,      $::multicon);
+     $::utils->doCmd($cmd);
+
+     $cmd = "set_endp_report_timer $::endp_name $::report_timer";
+     $::utils->doCmd($cmd);
+
+     if ($::tos ne "") {
+        my($service, $priority) = split(',', $::tos);
+        $::utils->doCmd($::utils->fmt_cmd("set_endp_tos", $::endp_name, $service, $priority));
+     }
+  }
+  else {
+    die( "ERROR:  Endpoint type: $::endp_type is not currently supported.");
+  }
+} # ~create_endp()
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 sub get_stats_from_file {
   my $fname = shift;
   my $endp_name = shift;
