@@ -124,6 +124,11 @@ $0 [ --action {
       # This can save a lot of time if we already have the output available.
   [--tos          { $tos_str },{priority}]
   [--use_csums    {yes | no, should we checksum the payload}]
+  [--use_ports    {port-A,port-B}     # Example: 1.1.eth1,1.2.sta0
+      # notation is <shelf>.<resource>.<port-name>
+      # if this option is present, you can skip the create_endp action
+  [--use_speeds   {speed-A,speed-B}    # Example: 54000,1000000
+      # if this option is present, you can skip the create_endp action
   [--log_cli      {1|filename}]
   [--test_mgr     {default_tm|all|other-tm-name}]
   [--ttl          {time-to-live}]
@@ -146,14 +151,21 @@ Example:
 
  $0 --action list_cx --test_mgr all --cx_name all
 
+ # Unlikely example of creating a CX from differently named endpoints:
  $0 --action create_cx --cx_name L301 \\
    --cx_endps ep_rd0a,ep_rd1a --report_timer 1000
 
+   # Or, skip explicit endpoint creation with the using-ports feature:
+ $0 --action create_cx --cx_name banana \\
+   --use_ports sta0,eth1 --use_speeds 15000,10000000 --report_timer 1200
+
+ Example of creating an Armageddon connection:
  $0 --action create_arm --endp_name arm01-A --port_name eth1 \\
    --arm_pps 80000 --min_pkt_sz 1472 --max_pkt_sz 1514 --tos LOWDELAY,100
 
  $0 --mgr jedtest --action create_cx --cx_name arm-01 --cx_endps arm01-A,arm01-B
 
+ Example of creating endpoints and joining them:
  $0 --mgr localhost --action create_endp --endp_name test1a --speed 10000000 \\
    --endp_type lf_tcp --port_name eth5 --ip_port 0 --multicon 10
 
