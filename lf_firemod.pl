@@ -180,8 +180,8 @@ my $cmd;
 
 my $log_cli = "unset"; # use ENV{LOG_CLI} elsewhere
 my $show_help = 0;
-our $use_ports_str;
-our $use_speeds_str;
+our $use_ports_str = "NA";
+our $use_speeds_str = "NA";
 our @use_ports = ();
 our @use_speeds = ();
 
@@ -190,6 +190,8 @@ if (@ARGV < 2) {
    exit 0;
 }
 
+our $debug = 0;
+
 GetOptions
 (
    'action|a=s'         => \$::action,
@@ -197,6 +199,7 @@ GetOptions
    'cmd|c=s'            => \$::do_cmd,
    'cx_endps=s'         => \$::cx_endps,
    'cx_name=s'          => \$::cx_name,
+   'debug|d'            => \$::debug,
    'help|h'             => \$show_help,
    'ip_port=i'          => \$::ip_port,
    'endp_cmd=s'         => \$::endp_cmd,
@@ -231,6 +234,11 @@ GetOptions
 if ($show_help) {
    print $usage;
    exit 0;
+}
+
+if ($::debug) {
+  use Data::Dumper;
+  $ENV{DEBUG} = 1;
 }
 
 if ($::quiet eq "0") {
@@ -286,18 +294,20 @@ if ($::quiet eq "1" ) {
 
 # Open connection to the LANforge server.
 our $utils = new LANforge::Utils();
-
-if (!(defined $::stats_from_file) && ($::stats_from_file eq "")) {
-   $::utils->connect();
+if (!defined $::stats_from_file || ("" eq $::stats_from_file)) {
+   $::utils->connect($lfmgr_host, $lfmgr_port);
 }
 
 if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
-  $::max_speed = $::speed if ($::max_speed eq "-1");
+
+   $::max_speed = $::speed if ($::max_speed eq "-1");
    if ($::action eq "list_endp") {
+      $::utils->cli_rcv_silent(0);
+      $::quiet = "no";
       my @lines = split(NL, $::utils->doAsyncCmd("nc_show_endpoints all"));
       for my $line (@lines) {
          if ($line =~ /^([A-Z]\w+)\s+\[(.*?)\]/) {
-            print "$line\n";
+            print "** $line\n";
          }
       }
    }
@@ -500,7 +510,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
             } # ~matches
          } # ~endp_vals
          for $option ( sort keys %option_map ) {
-            print $option.": ".$option_map{ $option }.NL;
+            print $option.": ".$option_map{ $option }.$::NL;
          }
       }
       else {
@@ -643,24 +653,36 @@ elsif ($::action eq "create_cx") {
    # require cx_name, test_mgr, two endpoints
    my $end_a = "";
    my $end_b = "";
-   print "USE PORTS STR [$::use_ports_str]\n";
-   print "USE PORTS STR [$::use_speeds_str]\n";
-   @use_speeds = split(',', $::use_speeds_str);
-   @use_ports = split(',', $::use_ports_str);
-   if (!(defined $::use_ports_str) || ("" eq $::use_ports_str)) {
-      die("Please name your cross connect: --cx_name\n$::usage")  if ($::cx_name  eq "");
-      die("Please name two endpoints: --cx_endps\n$::usage")      if ($::cx_endps eq "");
-
-      my ($end_a, $end_b) = split(/,/, $::cx_endps);
-      die("Specify two endpoints like: eth1,eth2 \n$::usage")
+   my $port_a = "";
+   my $port_b = "";
+   my $speed_a = "";
+   my $speed_b = "";
+   if ("NA" ne $::use_ports_str) {
+     print "USE PORTS STR [$::use_ports_str]\n";
+     @use_ports = split(',', $::use_ports_str);
+     die("Please name your cross connect: --cx_name\n$::usage")  if ($::cx_name  eq "");
+     $end_a = "${main::cx_name}-A";
+     $end_b = "${main::cx_name}-B";
+     $::cx_endps = "$end_a,$end_b";
+   }
+   elsif ((defined $::cx_endps) && ("" ne $::cx_endps)) {
+     print "zzzzzzzzzzzzzzzzzzzzzzzz\n";
+     ($end_a, $end_b) = split(/,/, $::cx_endps);
+     die("Specify two endpoints like: eth1,eth2 \n$::usage")
          if ((length($end_a) < 1) || (length($end_b) < 1));
    }
-   else { # create endpoints
-      $end_a = "${cx_name}-A";
-      $end_b = "${cx_name}-B";
-      create_endp();
-      create_endp();
+   else {
+     die("please use --cx_endps a,b or --use_ports portA,portB");
    }
+
+   if ("NA" ne $::use_speeds_str) {
+     print "Use speeds str\n";
+   }
+   # create endpoints
+
+    create_endp($end_a, $port_a, $::endp_type, $speed_a);
+    create_endp($end_b, $port_b, $::endp_type, $speed_b);
+
    my $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, $::test_mgr, $end_a, $end_b);
    $::utils->doCmd($cmd);
    my $cxonly = $::NA;
