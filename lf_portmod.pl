@@ -21,6 +21,7 @@ use strict;
 use warnings;
 use diagnostics;
 if ((defined $ENV{'DEBUG'}) && ($ENV{'DEBUG'} eq "1")) {
+   use Data::Dumper;
    use Carp;
    $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
    $SIG{ __WARN__  } = sub { Carp::confess( @_ ) };
@@ -246,21 +247,12 @@ if ($stats_from_file eq "") {
   }
 
   # Open connection to the LANforge server.
-
-  $t = new Net::Telnet(Prompt    => '/default\@btbits\>\>/',
-                        Timeout  => 20);
-
-  $t->open(Host      => $lfmgr_host,
-            Port     => $lfmgr_port,
-            Timeout  => 10);
-
-  $t->waitfor("/btbits\>\>/");
-
   my $dt = "";
 
   # Configure our utils.
-  $utils = new LANforge::Utils();
-  $::utils->telnet($t);
+  $::utils = new LANforge::Utils();
+  my $t = $::utils->connect($lfmgr_host, $lfmgr_port);
+
   if ($::utils->isQuiet()) {
     if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
       $::utils->cli_send_silent(0);
@@ -284,31 +276,6 @@ if (defined $log_file && ($log_file ne "")) {
    if (!$::utils->isQuiet()) {
       print "History of all commands can be found in $log_file\n";
    }
-}
-
-
-# please use utils->fmt_cmd nowadays
-sub fmt_cmd {
-   my $rv;
-   print STDERR "this fmt_cmd() subroutine deprecated, see Utils::fmt_cmd\n";
-   if ($::utils->can('fmt_cmd')) {
-     $rv = $::utils->fmt_cmd(@_);
-     return $rv;
-   }
-
-   for my $hunk (@_) {
-      die("fmt_cmd called with empty space or null argument.") unless(defined $hunk && $hunk ne '');
-      die("rv[${rv}]\n --> fmt_cmd passed an array. Please pass strings.")  if(ref($hunk) eq 'ARRAY');
-      die("rv[${rv}]\n --> fmt_cmd passed a hash. Please pass strings.")    if(ref($hunk) eq 'HASH');
-      $hunk = "0" if($hunk eq "0" || $hunk eq "+0");
-
-      if( $hunk eq "" ) {
-         $hunk = 'NA';
-      }
-      $rv .= ( $hunk =~m/ +/) ? "'$hunk' " : "$hunk ";
-   }
-   chomp $rv;
-   return $rv;
 }
 
 
@@ -404,19 +371,19 @@ sub fmt_wifi_extra {
    return $cmd;
 }
 
-# $utils->doCmd("log_level 63");
+# $::utils->doCmd("log_level 63");
 
 if ($cli_cmd ne "") {
-   print $utils->doAsyncCmd($cli_cmd) ."\n";
+   print $::utils->doAsyncCmd($cli_cmd) ."\n";
    close(CMD_LOG);
    exit(0);
 }
 
 if ($load ne "") {
    $cli_cmd = "load $load overwrite";
-   $utils->doCmd($cli_cmd);
+   $::utils->doCmd($cli_cmd);
    my @rslt = $t->waitfor("/LOAD-DB:  Load attempt has been completed./");
-   if (!$utils->isQuiet()) {
+   if (!$::utils->isQuiet()) {
       print @rslt;
       print "\n";
    }
@@ -424,8 +391,10 @@ if ($load ne "") {
    exit(0);
 }
 
+
 if ((defined $list_port_names) && ($list_port_names ne "")) {
-   my @lines =split("\n", $utils->doAsyncCmd("nc_show_ports 1 $card all"));
+   my @lines =split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $card all"));
+   print "---------------------------- ~x:\n";
    my $note = "";
    my $eid = "";
    my $ip = "";
@@ -455,7 +424,7 @@ if ((defined $list_port_names) && ($list_port_names ne "")) {
 }
 
 if ((defined $filter_ports) && ($filter_ports ne "")) {
-   my @lines =split("\n", $utils->doAsyncCmd("nc_show_ports 1 $card all"));
+   my @lines =split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $card all"));
    my @keys = split(/,/, $filter_ports);
    my $note = "";
    my $eid = "";
@@ -513,7 +482,7 @@ if ((defined $filter_ports) && ($filter_ports ne "")) {
 }
 
 if ((defined $list_ports) && ($list_ports ne "")) {
-   print $utils->doAsyncCmd("nc_show_ports 1 $card all");
+   print $::utils->doAsyncCmd("nc_show_ports 1 $card all");
    exit(0);
 }
 
@@ -525,8 +494,8 @@ if (length($port_name) == 0) {
 # this is the --show_port options ("")
 if (($show_port ne "NA") && (($show_port eq "1") || ($show_port eq ""))) {
    #$::quiet = 0;
-   #$utils->cli_rcv_silent(0);
-   print $utils->doAsyncCmd("nc_show_port 1 $card $port_name") . "\n";
+   #$::utils->cli_rcv_silent(0);
+   print $::utils->doAsyncCmd("nc_show_port 1 $card $port_name") . "\n";
    exit(0);
 }
 # this is the --show_port "ssss" options (key,key,key)
@@ -546,7 +515,7 @@ elsif(($show_port ne "NA") && ($show_port ne "")) {
      @lines = split("\n", get_stats_from_file($stats_from_file, 1, $card, $port_name));
    }
    else {
-     @lines = split("\n", $utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
+     @lines = split("\n", $::utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
    }
 
    # trick here is to place a ; before anything that looks like a keyword
@@ -610,7 +579,7 @@ elsif(($show_port ne "NA") && ($show_port ne "")) {
 if ($if_state ne "unset") {
   if ($if_state eq "up" || $if_state eq "down") {
     $cli_cmd = fmt_port_up_down($card, $port_name, $if_state);
-    $utils->doCmd($cli_cmd);
+    $::utils->doCmd($cli_cmd);
   }
   else {
     print "ERROR:  ifstate must be 'up' or 'down', value was: $if_state.\n";
@@ -620,17 +589,17 @@ if ($if_state ne "unset") {
 
 if ($set_speed ne "NA" || $ssid ne "NA" || $passwd ne "NA" || $ap ne "NA") {
   $cli_cmd = "add_vsta 1 $card NA $port_name NA '$ssid' NA '$passwd' '$ap' NA NA $wifi_mode '$set_speed'";
-  $utils->doCmd($cli_cmd);
+  $::utils->doCmd($cli_cmd);
 }
 
 if ($eap_identity ne "NA" || $eap_passwd ne "NA") {
    my $cli_cmd = fmt_wifi_extra( $card, $port_name, "$eap_identity", "$eap_passwd");
-   $utils->doCmd($cli_cmd);
+   $::utils->doCmd($cli_cmd);
 }
 
 if ($ip ne "NA") {
    my $cli_cmd = fmt_port_ip( $card, $port_name, $ip, $netmask, $gw);
-   $utils->doCmd($cli_cmd);
+   $::utils->doCmd($cli_cmd);
 }
 
 if ($cmd eq "reset") {
@@ -645,7 +614,7 @@ if ($cmd eq "reset") {
       }
       print("Resetting port: ${shelf_num}.${card}.${pname}\n");
       $cli_cmd = "reset_port $shelf_num $card $pname";
-      $utils->doCmd($cli_cmd);
+      $::utils->doCmd($cli_cmd);
       $amt_resets_sofar++;
       if ($amt_resets != 0) {
          if ($amt_resets_sofar >= $amt_resets) {
@@ -668,7 +637,7 @@ if ($cmd eq "reset") {
 if ($cmd eq "delete") {
   print("Deleting port: ${shelf_num}.${card}.${port_name}\n");
   $cli_cmd = "rm_vlan $shelf_num $card $port_name";
-  $utils->doCmd($cli_cmd);
+  $::utils->doCmd($cli_cmd);
 }
 
 close(CMD_LOG);
