@@ -2,9 +2,13 @@ package LANforge::Utils;
 use strict;
 use warnings;
 use Carp;
+use Net::Telnet;
+$| = 1;
 #$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 #$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
-#use Data::Dumper;
+if ($ENV{DEBUG}) {
+  use Data::Dumper;
+}
 
 ##################################################
 ## the object constructor                       ##
@@ -21,28 +25,23 @@ sub new {
    $self->{cli_send_silent} = 0;
    $self->{cli_rcv_silent}  = 0;
    $self->{error}           = "";
-   $self->{async_waitfor}   = '/default\@btbits\>\>/';
+   $self->{async_waitfor}   = '/btbits>> $/';
+   $self->{prompt}          = '/btbits>> $/';
 
    bless( $self, $class );
    return $self;
 }
 
 sub connect {
-   my ($self, ) = @_;
-   # Open connection to the LANforge server.
-   my $t = undef;
-
-   # Wait up to 60 seconds when requesting info from LANforge.
-   $t = new Net::Telnet(Prompt  => '/default\@btbits\>\>/',
-                        Timeout => 60);
-
-   $t->open(Host    => $::lfmgr_host,
-            Port    => $::lfmgr_port,
-            Timeout => 10);
+   my ($self, $host, $port) = @_;
+   my $t = new Net::Telnet(Prompt   => '/btbits>> $/',
+                           Timeout  => 2);
+   $self->{telnet} = \$t;
+   $t->open(Host     => $host,
+            Port     => $port,
+            Timeout  => 2);
    $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
-   $t->waitfor("/btbits\>\>/");
-
-   $self->telnet($t);         # Set our telnet object.
+   $t->waitfor($self->{prompt});
    if ($self->isQuiet()) {
       if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
          $self->cli_send_silent(0);
@@ -57,6 +56,20 @@ sub connect {
       $self->cli_send_silent(0); # Show input to telnet
       $self->cli_rcv_silent(0);  # Show output from telnet
    }
+   return ${$self->{telnet}};
+}
+
+sub telnet {
+  my $self = shift;
+
+  die("Utils::telnet -- telnet object undefined")
+    if (!(defined $self->{telnet}));
+  my $t = ${$self->{telnet}};
+  $t->max_buffer_length(50 * 1024 * 1024);
+  $t->print("\n");
+  $t->waitfor($self->{prompt});
+
+  return $t;
 }
 
 # This submits the command and returns the success/failure
@@ -71,17 +84,17 @@ sub connect {
 sub doCmd {
    my $self = shift;
    my $cmd  = shift;
-   my $t    = $self->telnet();
+   print "CMD[[$cmd]]\n";
+   my $t = ${$self->{telnet}};
    if ( !$self->cli_send_silent() || (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "")) {
       $self->log_cli($cmd);
    }
-
    $t->print($cmd);
-   my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
+
+   my @rslt = $t->waitfor('/ >>RSLT:(.*)/');
    if ( !$self->cli_rcv_silent() ) {
       print "**************\n@rslt\n................\n\n";
    }
-
    return join( "\n", @rslt );
 }
 
@@ -98,14 +111,14 @@ sub doAsyncCmd {
    }
    $t->print($cmd);
    my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
-   my @rslt2 = $t->waitfor( $self->async_waitfor() ); #'/default\@btbits\>\>/');
+   my @rslt2 = $t->waitfor( $self->async_waitfor() );
    @rv = ( @rslt, @rslt2 );
 
    if ( !$self->cli_rcv_silent() ) {
       print "**************\n @rv \n................\n\n";
    }
    return join( "\n", @rv );
-}    #doAsyncCmd
+} # ~doAsyncCmd
 
 #  Uses cached values (so it will show Phantom ones too)
 sub getPortListing {
@@ -139,7 +152,7 @@ sub getPortListing {
       }
    }
    return @rv;
-}    #getPortListing
+} #~getPortListing
 
 sub updatePortRetry {
    my $self = shift;
@@ -313,14 +326,6 @@ sub isQuiet {
   }
   #print "textual and verbose [$::quiet]\n";
   return 0;
-}
-
-sub telnet {
-   my $self = shift;
-   if (@_) { $self->{telnet} = shift }
-
-   $self->{telnet}->max_buffer_length(50 * 1024 * 1024);
-   return $self->{telnet};
 }
 
 sub async_waitfor {
