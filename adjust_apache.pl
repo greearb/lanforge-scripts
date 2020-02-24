@@ -56,24 +56,44 @@ if (-f "$fname") {
   open(FILE, ">$fname") or die "Couldn't open file: $fname for writing: $!\n\n";
   my $foundit = 0;
   my $i;
+  chomp(@lines);
+  # we want to consolidate the $ip $hostname entry for MgrHostname
+  my @newlines = ();
+  my %more_hostnames = ("lanforge-srv" => 1);
+  my $new_entry = "$ip ";
+  my $blank = 0;
+  my $was_blank = 0;
 
-  for ($i = 0; $i<@lines; $i++) {
-    my $ln =$lines[$i];
-    chomp($ln);
-    if ($ln =~ /^###-LF-HOSTAME-NEXT-###/) {
-      print FILE "$ln\n";
-      print FILE "$ip $MgrHostname\n";
-      $i++;
-      $foundit = 1;
+  for my $ln (@lines) {
+    $was_blank = $blank;
+    $blank = ($ln =~ /^\s*$/) ? 1 : 0;
+    next if ($blank && $was_blank);
+    next if ($ln =~/^$ip $MgrHostname$/);
+    next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/);
+    if ($ln =~ /\b($MgrHostname|lanforge-srv|$ip)\b/) {
+       print "Matching LINE $ln\n";
+       my @hunks = split(/\s+/, $ln);
+       for my $hunk (@hunks) {
+         #print "HUNK{$hunk} ";
+         next if ($hunk =~ /^($ip|lanforge-srv|$MgrHostname)$/);
+         $more_hostnames{$hunk} = 1;
+       }
+       next;
     }
-    else {
-      print FILE "$ln\n";
-    }
+    print "ok ln[$ln]\n";
+    push(@newlines, $ln);
   }
-  if (!$foundit) {
-    print FILE "###-LF-HOSTAME-NEXT-###\n";
-    print FILE "$ip $MgrHostname";
+  push(@newlines, "###-LF-HOSTAME-NEXT-###");
+
+  for my $ln (@newlines) {
+    print FILE "$ln\n";
   }
+
+  print FILE "$ip $MgrHostname";
+  for my $name (keys %more_hostnames) {
+    print FILE " $name";
+  }
+  print FILE "\n\n";
   close FILE;
 }
 
