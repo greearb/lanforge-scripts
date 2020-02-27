@@ -19,6 +19,7 @@ import logging
 import time
 from time import sleep
 import websocket
+import re
 try:
     import thread
 except ImportError:
@@ -28,28 +29,33 @@ import LANforge
 from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge.LFUtils import NA
+
+ignore=[
+    "scan finished",
+    "scan started"
+    "CTRL-EVENT-SCAN-STARTED",
+    "-EVENT-SSID-TEMP-DISABLED",
+    "new station",
+    "del station",
+    "ping",
+    "deleted-alert",
+]
+interesting=[
+    "Trying to authenticate",
+    "auth: timed out",
+    "link DOWN",
+    "link UP",
+    'wifi-event'
+]
+
+rebank = {
+    "ifname" : re.compile("IFNAME=(\S+)")
+}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def main():
     host = "ct524-debbie.jbr.candelatech.com"
     base_url = "ws://%s:8081"%host
     websock = None
-
-    ignore=(
-        "scan finished",
-        "scan started"
-        "CTRL-EVENT-SCAN-STARTED",
-        "CTRL-EVENT-SSID-TEMP-DISABLED",
-        "new station",
-        "delstation",
-        "ping",
-        )
-    interesting=(
-        "Trying to authenticate",
-        "auth: timed out",
-        'link DOWN',
-        'link UP',
-        'wifi-event'
-        )
 
     # open websocket
     start_websocket(base_url, websock)
@@ -61,31 +67,60 @@ def main():
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 def sock_filter(wsock, text):
-    debug = 1
+    global ignore
+    global interesting
+    global rebank
+    debug = 0
     for test in ignore:
-        print (".")
         if (test in text):
             if (debug):
-                print ("ignoring ",text)
+                print ("                ignoring ",text)
             return;
 
     try:
         message = json.loads(text)
-        #if (("time" in message) and ("timestamp" in message)):
-        #    return
+        if (("time" in message) and ("timestamp" in message)):
+            return
+        if ("event_type" in message):
+            if (message["is_alert"]):
+                print ("alert: ", message["details"]);
+                return
+            else:
+                print ("event: ", message["details"]);
+                return
+
         if ("wifi-event" in message):
             for test in ignore:
                 if (test in message["wifi-event"]):
+                    if (debug):
+                        print ("                ignoring ",text)
                     return;
-            print (message["wifi-event"], "\n")
+            #group = rebank["ifname"].match(message["wifi-event"]).group()
+            #if (group):
+            #    print ("IFname: ",group)
+
+            if ("disconnected" in message["wifi-event"]):
+                print ("Station down")
+                return
+            if ("Trying to authenticate" in message["wifi-event"]):
+                print ("station authenticating")
+                return
+            print ("wifi-event: ", message["wifi-event"])
         else:
             print ("\nUnhandled: ")
             LFUtils.debug_printer.pprint(message)
 
-    except Exception:
-        print ("# ----- Not JSON: ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n")
+    except json.JSONDecodeError as derr:
+        print ("# ----- Decode err: ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
         print (text)
-        print ("# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n")
+        print (derr)
+        print ("# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
+        return
+    except Exception as ex:
+        print ("# ----- Not JSON: ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
+        print (text)
+        print (ex)
+        print ("# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
         return
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
