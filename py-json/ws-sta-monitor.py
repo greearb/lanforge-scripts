@@ -45,13 +45,6 @@ ignore=[
     "deleted-alert",
     "regulatory domain change",
 ]
-interesting=[
-    "Trying to authenticate",
-    "auth: timed out",
-    "link DOWN",
-    "link UP",
-    'wifi-event'
-]
 
 rebank = {
     "ifname" : re.compile("IFNAME=(\S+)")
