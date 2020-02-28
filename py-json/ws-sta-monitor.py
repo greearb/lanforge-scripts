@@ -63,6 +63,21 @@ def main():
     global websock
     host = "localhost"
     base_url = "ws://%s:8081"%host
+    resource_id = 1     # typically you're using resource 1 in stand alone realm
+
+    parser = argparse.ArgumentParser(description="test creating a station")
+    parser.add_argument("-m", "--host", type=str, help="json host to connect to")
+
+    args = None
+    try:
+      args = parser.parse_args()
+      if (args.host is not None):
+         host = args.host,
+         baseurl = base_url = "ws://%s:8081"%host
+    except Exception as e:
+      logging.exception(e)
+      usage()
+      exit(2)
 
     # open websocket
     websock = start_websocket(base_url, websock)
