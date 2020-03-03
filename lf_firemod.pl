@@ -670,7 +670,10 @@ elsif ($::action eq "create_cx") {
    my $max_speed_b = $::max_speed;
 
    if ("NA" ne $::use_ports_str) {
-     ($port_a,$port_b) = split(',', $::use_ports_str);
+     ($port_a, $port_b) = split(',', $::use_ports_str);
+     if (!(defined $port_a) || !(defined $port_b)) {
+       die("Error with port names. Please format as short EIDs: 1.1.sta0000,1.2.eth1");
+     }
      die("Please name your cross connect: --cx_name\n$::usage")
         if ($::cx_name  eq "");
      $end_a = "${main::cx_name}-A";
@@ -678,9 +681,8 @@ elsif ($::action eq "create_cx") {
      $::cx_endps = "$end_a,$end_b";
    }
    elsif ((defined $::cx_endps) && ("" ne $::cx_endps)) {
-     print "zzzzzzzzzzzzzzzzzzzzzzzz\n";
      ($end_a, $end_b) = split(/,/, $::cx_endps);
-     die("Specify two endpoints like: eth1,eth2 \n$::usage")
+     die("Specify two endpoints like: tcp123-A,tcp123-B \n$::usage")
         if ((length($end_a) < 1) || (length($end_b) < 1));
    }
    else {
@@ -697,9 +699,22 @@ elsif ($::action eq "create_cx") {
    }
 
    # create endpoints
-
-   create_endp($end_a, $::resource, $port_a, $::endp_type, $speed_a, $max_speed_a);
-   create_endp($end_b, $::resource, $port_b, $::endp_type, $speed_b, $max_speed_b);
+   my $resource_a = $::resource;
+   my $resource_b = $::resource;
+   my $shelf;
+   my @hunks;
+   if ($port_a =~ /1\.\d+\.\S+/) {
+     @hunks = split(/[.]/, $port_a);
+     ($shelf, $resource_a, $port_a) = @hunks;
+   }
+   if ($port_b =~ /1\.\d+\.\S+/) {
+     @hunks = split(/[.]/, $port_b);
+     ($shelf, $resource_b, $port_b) = @hunks;
+   }
+   print ("end_a[$end_a] resource_a[$resource_a] port_a[$port_a], type[$::endp_type] speed[$speed_a] max[$max_speed_a]\n");
+   print ("end_b[$end_b] resource_b[$resource_b] port_b[$port_b], type[$::endp_type] speed[$speed_b] max[$max_speed_b]\n");
+   create_endp($end_a, $resource_a, $port_a, $::endp_type, $speed_a, $max_speed_a);
+   create_endp($end_b, $resource_b, $port_b, $::endp_type, $speed_b, $max_speed_b);
 
    my $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, $::test_mgr, $end_a, $end_b);
    $::utils->doCmd($cmd);
