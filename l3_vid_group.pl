@@ -35,7 +35,7 @@ our $action          = "";
 our $buffer_size     = (3 * 1024 * 1024);
 our $clear_group     = -1;
 my $cmd;
-our $cx_name         = "NA";
+our $cx_name         = "";
 our $upstream        = "";
 
 our $endp_type       = "tcp";
@@ -171,7 +171,7 @@ if (!(defined $::test_grp) || ("" eq $::test_grp) || ("NA" eq $::test_grp)) {
 
 # get a list of test groups
 my @tg_lines = split(/\r?\n/, $::utils->doCmd("show_group all"));
-print Dumper(\@tg_lines) if ($::debug);
+#print Dumper(\@tg_lines) if ($::debug);
 
 if ($::clear_group > 0) {
    if (@tg_lines < 1) {
@@ -179,7 +179,7 @@ if ($::clear_group > 0) {
      exit(1);
    }
    my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+/} @tg_lines;
-   print Dumper(\@matches) if ($::debug);
+   #print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "No test group matching name [$::test_grp], bye.";
      exit(1);
@@ -190,7 +190,7 @@ if ($::clear_group > 0) {
 
 if ($::action eq "create") {
    my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @tg_lines;
-   print Dumper(\@matches) if ($::debug);
+   #print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "Creating test group matching name [$::test_grp]...";
      $::utils->doCmd($::utils->fmt_cmd("add_group", $::test_grp));
@@ -223,6 +223,42 @@ if ($::action eq "create") {
      print "Please set your upstream port: --upstream 1.1.eth1; bye.";
      exit(1);
    }
+   elsif ($::upstream !~ /^1.\d+\.\S+$/) {
+     print "Upstream port should be named 1.<resource>.<name>\n EG: --upstream 1.1.eth1\nbye.";
+     exit(1);
+   }
+
+   if ( ! -x "./lf_firemod.pl" ) {
+     print "I don't see ./lf_firemod.pl, bye.";
+     exit(1);
+   }
+   my $upstream_resource = $::resource;
+   my $rh_eid_map = $::utils->get_eid_map($::resource);
+   my $rh_upstream_map = $rh_eid_map;
+   if ($::upstream !~ /^1\.$::resource\.\S+$/) {
+     $upstream_resource = (split('.', $::upstream))[1];
+     if (!(defined $upstream_resource) || ("" eq $upstream_resource)) {
+       die("Problem with upstream resource name");
+     }
+     $rh_upstream_map = $::utils->get_eid_map($upstream_resource);
+   }
+   #print Dumper($rh_eid_map);
+
+   for (my $i=0; $i < $::num_cx; $i++) {
+     my $j = 10000 + $i;
+     my $name = $::cx_name . substr("$j", 1);
+     my $sta =
+     my $ports = join('.', 1, $::resource, $::first_sta).",".$::upstream;
+
+     print "Connection name $name uses $ports\n";
+     my $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --port $::lfmgr_port )
+      .qq(--action create_cx --cx_name $name --endp_type $::endp_type )
+      .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
+     print "CMD: $cmd\n";
+     `$cmd`;
+     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::test_grp, $name));
+   }
+
    exit 0;
 }
 if ($::action eq "destroy") {
