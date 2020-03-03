@@ -15,7 +15,7 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 # Un-buffer output
 $| = 1;
 if (-f "LANforge/Endpoint.pm" ) {
-   use lib "./";
+  use lib "./";
 }
 else {
   use lib '/home/lanforge/scripts';
@@ -25,26 +25,29 @@ use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
-our $resource   = 1;
+
 our $quiet           = "yes";
-our $action          = "";
 our $lfmgr_host      = "localhost";
 our $lfmgr_port      = 4001;
+our $resource        = 1;
+
+our $action          = "";
 our $buffer_size     = (3 * 1024 * 1024);
-our $upstream        = "";
 our $clear_group     = -1;
 my $cmd;
 our $cx_name         = "NA";
+our $upstream        = "";
+
 our $endp_type       = "tcp";
 our $first_sta       = "";
 my $log_cli          = "unset"; # use ENV{LOG_CLI} elsewhere
-our $num_cx          = 1;
+our $num_cx          = -1;
 my $show_help        = 0;
 our $speed           = 1000 * 1000 * 1000;
+our $test_grp;
 our $use_ports_str   = "NA";
 our $use_speeds_str  = "NA";
 our $use_max_speeds  = "NA";
-our $test_grp;
 
 our $usage = <<"__EndOfUsage__";
 Usage: $0 # create a large group of Layer 3 creations that emulate video traffic
@@ -149,6 +152,8 @@ if (defined $log_cli) {
   }
 }
 
+our $utils = new LANforge::Utils;
+$::utils->connect($lfmgr_host, $lfmgr_port);
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 #     M  A  I  N
@@ -164,13 +169,60 @@ if (!(defined $::test_grp) || ("" eq $::test_grp) || ("NA" eq $::test_grp)) {
    $::test_grp = $::cx_name ."_tg";
 }
 
-if ($::clear_group) {
+# get a list of test groups
+my @tg_lines = split(/\r?\n/, $::utils->doCmd("show_group all"));
+print Dumper(\@tg_lines) if ($::debug);
+
+if ($::clear_group > 0) {
+   if (@tg_lines < 1) {
+     print "No test groups defined, bye.";
+     exit(1);
+   }
+   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+/} @tg_lines;
+   print Dumper(\@matches) if ($::debug);
+   if (@matches < 1) {
+     print "No test group matching name [$::test_grp], bye.";
+     exit(1);
+   }
    print "will clear group $::test_grp\n";
-   $::utils->doCmd(
+   $::utils->doCmd("clear_group $::test_grp");
 }
 
 if ($::action eq "create") {
-   print "we will create!";
+   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @tg_lines;
+   print Dumper(\@matches) if ($::debug);
+   if (@matches < 1) {
+     print "Creating test group matching name [$::test_grp]...";
+     $::utils->doCmd($::utils->fmt_cmd("add_group", $::test_grp));
+   }
+   if (!(defined $::cx_name) or ("" eq $::cx_name)) {
+     $::cx_name = $::test_grp."-";
+   }
+   if (!(defined $::buffer_size) or ($::buffer_size < 0)) {
+     print ("Please set --buffer_size, bye.");
+     exit(1);
+   }
+   if (!(defined $::endp_type) or ("" eq $::endp_type)) {
+     print ("Please set --endp_type {tcp|udp}");
+   }
+   elsif ($::endp_type eq "tcp") {
+     $::endp_type = "lf_tcp";
+   }
+   elsif ($::endp_type eq "udp") {
+     $::endp_type = "lf_udp";
+   }
+   if ($::num_cx < 1) {
+     print "How many connections should we create? --num_cx 1? Bye.\n";
+     exit(1);
+   }
+   if (!(defined $::first_sta) or ("" eq $::first_sta)) {
+     print "Please set first station name: --first_sta 200; bye.";
+     exit(1);
+   }
+   if (!(defined $::upstream) or ("" eq $::upstream)) {
+     print "Please set your upstream port: --upstream 1.1.eth1; bye.";
+     exit(1);
+   }
    exit 0;
 }
 if ($::action eq "destroy") {
