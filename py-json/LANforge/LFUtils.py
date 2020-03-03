@@ -25,10 +25,10 @@ REPORT_TIMER_MS_SLOW = 3000
 
 
 class PortEID:
-    shelf: 1
-    resource: 1
-    port_id: 0
-    port_name: ""
+    shelf       = 1
+    resource    = 1
+    port_id     = 0
+    port_name   = ""
 
     def __init__(self, p_resource=1, p_port_id=0, p_port_name=""):
         resource = p_resource
