@@ -428,8 +428,9 @@ sub sleep_sec {
 
 sub get_eid_map {
   my ($self, $resource) = @_;
-  my %eid_map = ();
+  my $rh_eid_map = {};
   my @ports_lines = split("\n", $self->doAsyncCmd("nc_show_ports 1 $resource ALL"));
+  sleep 1;
   chomp(@ports_lines);
 
   my ($eid, $card, $port, $type, $mac, $dev, $parent, $ip);
@@ -446,16 +447,15 @@ sub get_eid_map {
     # careful about that comma after card!
     # NO EID for Shelf: 1, Card: 1, Port: 2  Type: WIFI-Radio  Alias:
     ($card, $port, $type) = $line =~ m/^Shelf: 1, Card: (\d+),\s+Port: (\d+)\s+Type: (\w+)/;
-    if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "")) {
-      $eid = "1.${card}.${port}";
+    if ((defined $card) && ($card ne "") && (defined $port) && ($port ne "") && ($type ne "VRF")) {
+      $eid = "1.".$card.".".$port;
       my $rh_eid = {
         eid => $eid,
         type => $type,
         parent => undef,
         dev => undef,
       };
-      $eid_map{$eid} = $rh_eid;
-      #print "\nfound eid $eid\n";
+      $rh_eid_map->{$eid} = $rh_eid;
     }
     #elsif ($line =~ /^Shelf/) {
     #  #print "NO EID for $line\n";
@@ -467,28 +467,42 @@ sub get_eid_map {
     }
     ($mac, $dev) = $line =~ / MAC: ([0-9:a-fA-F]+)\s+DEV: (\S+)/;
     if ((defined $mac) && ($mac ne "")) {
-     #print "$eid MAC: $line\n";
-      $eid_map{$eid}->{mac} = $mac;
-      $eid_map{$eid}->{dev} = $dev;
+      #print "$eid MAC: $line\n";
+      $rh_eid_map->{$eid}->{mac} = $mac;
+      $rh_eid_map->{$eid}->{dev} = $dev;
     }
 
     ($parent) = $line =~ / Parent.Peer: (\S+) /;
     if ((defined $parent) && ($parent ne "")) {
       #print "$eid PARENT: $line\n";
-      $eid_map{$eid}->{parent} = $parent;
+      $rh_eid_map->{$eid}->{parent} = $parent;
     }
 
     ($ip) = $line =~ m/ IP: *([^ ]+) */;
     if ((defined $ip) && ($ip ne "")) {
       #print "$eid IP: $line\n";
-      $eid_map{$eid}->{ip} = $ip;
+      $rh_eid_map->{$eid}->{ip} = $ip;
     }
   } # foreach
 
   #foreach $eid (keys %eid_map) {
   #  print "eid $eid ";
   #}
-  return \%eid_map;
+  return $rh_eid_map;
+}
+
+##
+##
+##
+sub find_by_name {
+  my ($self, $rh_eid_map, $devname) = @_;
+  while (my ($eid, $rh_rec) = each %{$rh_eid_map}) {
+    #print "fbn: ".$rh_rec->{dev}."\n";
+    if ((defined $rh_rec->{dev}) && ($rh_rec->{dev} eq $devname)) {
+      return $rh_rec;
+    }
+  }
+  return -1;
 }
 
 ##
@@ -496,15 +510,20 @@ sub get_eid_map {
 ## EG: $ra_interfaces = $u->ports_on_radio($rh_eid_map, $radio_name);
 ##
 sub ports_on_radio {
-  my ($self, $rh_eid_map, $radio) = @_;
-  my @interfaces = ();
-  while (my ($eid, $rh_eid) = each %$rh_eid_map) {
-    if ((defined $rh_eid->{parent}) && ($rh_eid->{parent} eq $radio)) {
-      push(@interfaces, $rh_eid->{dev});
+  my ($self, $rh_rec2_map, $radio) = @_;
+  my $ra_ifs = [];
+  #print "PARENT IS $radio\n";
+
+  foreach my $rh_rec2 (values %{$rh_rec2_map}) {
+    next if (!(defined $rh_rec2->{parent}));
+    #print "\npor: ".$rh_rec2->{parent}.">".$rh_rec2->{dev}."\n";
+    if ($rh_rec2->{parent} eq $radio) {
+      #print $rh_rec2->{dev}."<-".$rh_rec2->{parent}." ";
+      my $devn = $rh_rec2->{dev};
+      push(@$ra_ifs, $devn);
     }
   }
-
-  return \@interfaces;
+  return $ra_ifs;
 }
 
 1; # So the require or use succeeds (perl stuff)
