@@ -69,7 +69,8 @@ if (-f "$fname") {
     $blank = ($ln =~ /^\s*$/) ? 1 : 0;
     next if ($blank && $was_blank);
     next if ($ln =~/^$ip $MgrHostname$/);
-    next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/);
+    next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/); # old typo
+    next if ($ln =~ /^###-LF-HOSTNAME-NEXT-###/);
     if ($ln =~ /\b($MgrHostname|lanforge-srv|$ip)\b/) {
        print "Matching LINE $ln\n";
        my @hunks = split(/\s+/, $ln);
@@ -83,7 +84,7 @@ if (-f "$fname") {
     print "ok ln[$ln]\n";
     push(@newlines, $ln);
   }
-  push(@newlines, "###-LF-HOSTAME-NEXT-###");
+  push(@newlines, "###-LF-HOSTNAME-NEXT-###");
 
   for my $ln (@newlines) {
     print FILE "$ln\n";
