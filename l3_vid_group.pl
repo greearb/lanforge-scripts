@@ -19,7 +19,7 @@ $| = 1;
 # This is before run-time, so cannot condition this with normal 'if' logic.
 use lib '/home/lanforge/scripts';
 use lib "./";
-
+use Data::Dumper;
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
@@ -124,12 +124,7 @@ if ($show_help) {
    exit 0;
 }
 
-if (defined $ENV{DEBUG}) {
-  use Data::Dumper;
-}
-
 if ($::debug) {
-  use Data::Dumper;
   $ENV{DEBUG} = 1 if (!(defined $ENV{DEBUG}));
 }
 
