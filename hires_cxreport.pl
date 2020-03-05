@@ -9,12 +9,12 @@ if (defined $ENV{DEBUG}) {
 }
 use Time::HiRes qw(usleep ualarm gettimeofday stat lstat utime);
 #use Time::Format qw/%time/;
-if ( -f "./LANforge/Utils.pm" ) {
-   use lib '.';
-}
-elsif ( -f "/home/lanforge/scripts/LANforge/Utils.pm" ) {
-   use lib "/home/lanforge/scripts/LANforge";
-}
+
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
+use lib '/home/lanforge/scripts';
+use lib "./";
+
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;

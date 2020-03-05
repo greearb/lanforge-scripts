@@ -33,7 +33,12 @@ $SIG{ __WARN__ }  = sub { Carp::confess( @_ )};
 use Getopt::Long;
 use Cwd qw(getcwd);
 my $cwd = getcwd();
+
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
 use lib '/home/lanforge/scripts';
+use lib "./";
+
 use List::Util qw(first);
 use LANforge::Endpoint;
 use LANforge::Port;

@@ -17,13 +17,12 @@ package main;
 
 # Un-buffer output
 $| = 1;
- # this is pedantic necessity for the following use statements
-if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
-   use lib '/home/lanforge/scripts'
-}
-else {
-   use lib '/home/lanforge/scripts';
-}
+
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
+use lib '/home/lanforge/scripts';
+use lib "./";
+
 use List::Util qw(first);
 use LANforge::Endpoint;
 use LANforge::Utils;

@@ -16,6 +16,8 @@ use LWP::UserAgent;
 use Data::Dumper;
 use JSON;
 use lib '/home/lanforge/scripts';
+use lib "../";
+use lib "./";
 use LANforge::JsonUtils qw(logg err json_request get_links_from get_thru json_post get_port_names);
 
 package main;

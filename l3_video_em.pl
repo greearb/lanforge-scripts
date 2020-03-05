@@ -10,12 +10,12 @@ use Data::Dumper;
 
 # Un-buffer output
 $| = 1;
-if ( -f "LANforge/Endpoint.pm" ) {
-  use lib "./";
-}
-else {
-  use lib '/home/lanforge/scripts';
-}
+
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
+use lib '/home/lanforge/scripts';
+use lib "./";
+
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;

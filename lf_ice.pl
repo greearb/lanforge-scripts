@@ -16,14 +16,11 @@ $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 # Un-buffer output
 $| = 1;
 
-if ( -d "./LANforge" ) {
-   use lib ".";
-   use lib "./LANforge";
-}
-elsif ( -d "/home/lanforge/scripts/LANforge") {
-   use lib "/home/lanforge/scripts";
-   use lib "/home/lanforge/scripts/LANforge";
-}
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
+use lib '/home/lanforge/scripts';
+use lib "./";
+
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;

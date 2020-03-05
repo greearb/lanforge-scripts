@@ -11,7 +11,12 @@ use strict;
 use warnings;
 use Carp;
 $| = 1;# Un-buffer output
+
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
 use lib '/home/lanforge/scripts';
+use lib "./";
+
 use Getopt::Long;
 use LANforge::Endpoint;
 use LANforge::Port;

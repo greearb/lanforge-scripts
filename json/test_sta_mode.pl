@@ -17,6 +17,8 @@ use LWP::UserAgent;
 use Data::Dumper;
 use JSON;
 use lib '/home/lanforge/scripts';
+use lib "../";
+use lib "./";
 use LANforge::JsonUtils qw(err logg xpand json_request);
 
 
