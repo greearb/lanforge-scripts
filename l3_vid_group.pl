@@ -234,6 +234,8 @@ if ($::action eq "create") {
    }
    my $upstream_resource = $::resource;
    my $rh_eid_map = $::utils->get_eid_map($::resource);
+   die("Unable to find keys in rh_eid_map") if ((keys(%$rh_eid_map)) < 1);
+
    my $rh_upstream_map = $rh_eid_map;
    if ($::upstream !~ /^1\.$::resource\.\S+$/) {
      $upstream_resource = (split('.', $::upstream))[1];
@@ -244,11 +246,35 @@ if ($::action eq "create") {
    }
    #print Dumper($rh_eid_map);
 
+   # build a list of ports -n ports long starting at -first_port
+   my @ports = ();
+   my $rh_first_dev = $::utils->find_by_name($rh_eid_map, $::first_sta);
+   die("Unable to find dev record for port $::first_sta on resource $::resource")
+     if ($rh_first_dev == -1);
+   my $parent_name = $rh_first_dev->{parent};
+   die("Unable to find parent of $::first_sta, bye.")
+     if (!(defined $parent_name));
+   my $ra_interfaces = $::utils->ports_on_radio($rh_eid_map, $parent_name);
+   die("Unable to find any subinterfaces of $parent_name")
+     if (@$ra_interfaces < 1);
+
+   # want a pattern that matches Qvlan and Mvlan patterns, not just stations
+   # things like eth1.3 or rd0#0 or r0b#0
+   my ($prefix) = $::first_sta =~ /^(.*?[^0-9]+)\d+$/i;
+   #print "PREFIX IS $prefix\n";
+   my @selected_list = ();
+
+   foreach my $iface (sort @$ra_interfaces) {
+     #print "iface[$iface] ";
+     next if ($iface !~ /^$prefix/);
+     push(@selected_list, $iface);
+     last if (@selected_list >= $::num_cx);
+   }
+
    for (my $i=0; $i < $::num_cx; $i++) {
      my $j = 10000 + $i;
      my $name = $::cx_name . substr("$j", 1);
-     my $sta =
-     my $ports = join('.', 1, $::resource, $::first_sta).",".$::upstream;
+     my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
 
      print "Connection name $name uses $ports\n";
      my $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --port $::lfmgr_port )
