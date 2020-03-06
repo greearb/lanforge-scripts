@@ -170,9 +170,10 @@ if (!(defined $::test_grp) || ("" eq $::test_grp) || ("NA" eq $::test_grp)) {
 }
 
 # get a list of test groups
-my @tg_lines = split(/\r?\n/, $::utils->doCmd("show_group all"));
+my @tg_names = $::utils->cx_for_group($::test_grp);
 #print Dumper(\@tg_lines) if ($::debug);
 
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::clear_group > 0) {
    if (@tg_lines < 1) {
      print "No test groups defined, bye.";
@@ -187,7 +188,7 @@ if ($::clear_group > 0) {
    print "will clear group $::test_grp\n";
    $::utils->doCmd("clear_group $::test_grp");
 }
-
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "create") {
    my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @tg_lines;
    #print Dumper(\@matches) if ($::debug);
@@ -287,18 +288,33 @@ if ($::action eq "create") {
 
    exit 0;
 }
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "destroy") {
    print "we will destroy!";
    exit 0;
 }
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "start") {
    print "we will start!";
+
+   if (!(defined $::test_grp) || ()) {
+     print "Please specify test group to start: --test_grp foo; bye.";
+     exit(1);
+   }
+
+   # collect all cx names in the test group and start up the
+   # video pulser on them
+   my @lines = split(/\r?\n/, $::utils->doAsyncCmd("show_group '$::test_group'"));
+   $::utils->sleep_ms(100);
+
    exit 0;
 }
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "stop") {
    print "we will stop!";
    exit 0;
 }
+# ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 else {
    die "What kind of action is [$::action]?";
 }
