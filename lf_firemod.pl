@@ -217,7 +217,7 @@ GetOptions
    'max_pkt_sz=s'       => \$::max_pkt_sz,
    'mcast_addr=s'       => \$::mcast_addr,
    'mcast_port=s'       => \$::mcast_port,
-   'mgr_port|p=i'       => \$::lfmgr_port,
+   'lfmgr_port|mgr_port|port|p=i' => \$::lfmgr_port,
    'multicon=i'         => \$::multicon,
    'port_name=s'        => \$::port_name,
    'quiet|q=s'          => \$::quiet,
