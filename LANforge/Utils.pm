@@ -409,6 +409,7 @@ sub sleep_ms {
     select(undef, undef, undef, $secs);
   }
 }
+
 sub sleep_sec {
   my ($secs) = @_;
   return if (!(defined $secs) || ($secs == 0));
@@ -526,7 +527,17 @@ sub ports_on_radio {
   return $ra_ifs;
 }
 
-sub cx_for_group {
+sub test_groups {
+  my ($self) = @_;
+  my $ra = [split(/\r?\n/, $self->doAsyncCmd("show_group all"))];
+  sleep_ms(50);
+  print Dumper($ra);
+  my @tg_matches = grep {/^TestGroup name:\s+${main::test_grp}\s+/} @$ra;
+  print Dumper(\@tg_matches);
+  return \@tg_matches;
+}
+
+sub list_groups {
   my ($self, $testg_name) = @_;
   die("cx_for_group needs test group name, bye.")
     if (!(defined $testg_name) || ("" eq $testg_name));
