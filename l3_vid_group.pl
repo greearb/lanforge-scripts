@@ -103,7 +103,7 @@ GetOptions
    'clear_group|z'      => \$::clear_group,
    'cx_name|c=s'        => \$::cx_name,
    'debug|d'            => \$::debug,
-   'endp_type=s'        => \$::endp_type,
+   'endp_type|type|t=s' => \$::endp_type,
    'first_sta|i=s'      => \$::first_sta,
    'help|h'             => \$show_help,
 
@@ -153,6 +153,7 @@ if (defined $log_cli) {
 }
 
 our $utils = new LANforge::Utils;
+
 $::utils->connect($lfmgr_host, $lfmgr_port);
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
@@ -170,17 +171,17 @@ if (!(defined $::test_grp) || ("" eq $::test_grp) || ("NA" eq $::test_grp)) {
 }
 
 # get a list of test groups
-my @tg_names = $::utils->cx_for_group($::test_grp);
-#print Dumper(\@tg_lines) if ($::debug);
+my $ra_tg_list = $::utils->test_groups();
+print Dumper($ra_tg_list) if ($::debug);
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::clear_group > 0) {
-   if (@tg_lines < 1) {
+   if (@$ra_tg_list < 1) {
      print "No test groups defined, bye.";
      exit(1);
    }
-   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+/} @tg_lines;
-   #print Dumper(\@matches) if ($::debug);
+   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @$ra_tg_list;
+   print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "No test group matching name [$::test_grp], bye.";
      exit(1);
@@ -190,8 +191,8 @@ if ($::clear_group > 0) {
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "create") {
-   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @tg_lines;
-   #print Dumper(\@matches) if ($::debug);
+   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @$ra_tg_list;
+   print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "Creating test group matching name [$::test_grp]...";
      $::utils->doCmd($::utils->fmt_cmd("add_group", $::test_grp));
@@ -278,7 +279,7 @@ if ($::action eq "create") {
      my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
 
      print "Connection name $name uses $ports\n";
-     my $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --port $::lfmgr_port )
+     my $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
       .qq(--action create_cx --cx_name $name --endp_type $::endp_type )
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
      print "CMD: $cmd\n";
@@ -304,7 +305,7 @@ if ($::action eq "start") {
 
    # collect all cx names in the test group and start up the
    # video pulser on them
-   my @lines = split(/\r?\n/, $::utils->doAsyncCmd("show_group '$::test_group'"));
+   my @lines = split(/\r?\n/, $::utils->doAsyncCmd("show_group '$::test_grp'"));
    $::utils->sleep_ms(100);
 
    exit 0;
