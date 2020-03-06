@@ -430,7 +430,7 @@ sub get_eid_map {
   my ($self, $resource) = @_;
   my $rh_eid_map = {};
   my @ports_lines = split("\n", $self->doAsyncCmd("nc_show_ports 1 $resource ALL"));
-  sleep 1;
+  sleep_ms(100);
   chomp(@ports_lines);
 
   my ($eid, $card, $port, $type, $mac, $dev, $parent, $ip);
@@ -526,6 +526,15 @@ sub ports_on_radio {
   return $ra_ifs;
 }
 
+sub cx_for_group {
+  my ($self, $testg_name) = @_;
+  die("cx_for_group needs test group name, bye.")
+    if (!(defined $testg_name) || ("" eq $testg_name));
+
+  my $ra = [split(/\r?\n/, $::utils->doCmd("show_group all"))];
+  print Dumper($ra);
+  die("testing");
+}
 1; # So the require or use succeeds (perl stuff)
 __END__
 
