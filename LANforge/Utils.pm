@@ -42,6 +42,7 @@ sub connect {
             Timeout  => 2);
    $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
    $t->waitfor($self->{prompt});
+   $t->print("set_flag brief 0"); # If we leave it brief, RSLT prompt is not shown.
    if ($self->isQuiet()) {
       if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
          $self->cli_send_silent(0);
