@@ -313,7 +313,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
    if ($::action eq "list_endp") {
       $::utils->cli_rcv_silent(0);
       $::quiet = "no";
-      my @lines = split(NL, $::utils->doAsyncCmd("nc_show_endpoints all"));
+      my @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endpoints all"));
       for my $line (@lines) {
          if ($line =~ /^([A-Z]\w+)\s+\[(.*?)\]/) {
             print "** $line\n";
@@ -360,10 +360,10 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          my $i;
          my @lines = ();
          if ($stats_from_file ne "") {
-           @lines = split(NL, get_stats_from_file($stats_from_file, $endp_name));
+           @lines = split(/\r?\n/, get_stats_from_file($stats_from_file, $endp_name));
          }
          else {
-           @lines = split(NL, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
+           @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
          }
 
          for($i=0; $i<@lines; $i++) {
@@ -620,7 +620,7 @@ elsif ($::action eq "list_cx") {
    $::test_mgr = $::list_test_mgr   if ($::test_mgr eq "");
 
    my $cmd = $::utils->fmt_cmd("show_cxe", $::test_mgr, $::cx_name );
-   my @lines = split(NL, $::utils->doAsyncCmd($cmd));
+   my @lines = split(/\r?\n/, $::utils->doAsyncCmd($cmd));
    my $out = '';
    my $num_ep = 0;
    for my $line (@lines) {
