@@ -72,7 +72,7 @@ our $fail_msg         = "";
 our $manual_check     = 0;
 
 our @known_endp_types = qw(generic lf_tcp lf_tcp6 lf_udp lf_udp6 mc_udp mc_udp6);
-our @known_tos        = qw(DONT-SET LOWCOST LOWDELAY  RELIABILITY THROUGHPUT);
+our @known_tos        = qw(DONT-SET LOWCOST LOWDELAY  RELIABILITY THROUGHPUT BK BE VI VO);
 
 ########################################################################
 # Nothing to configure below here, most likely.
@@ -241,6 +241,20 @@ if ($show_help) {
    exit 0;
 }
 
+# Convert some TOS values that the server likely doesn't understand.
+if ($tos eq "BK") {
+  $tos = 64;
+}
+elsif ($tos eq "BE") {
+  $tos = 96;
+}
+elsif ($tos eq "VI") {
+  $tos = 128;
+}
+elsif ($tos eq "VO") {
+  $tos = 192;
+}
+
 if (defined $ENV{DEBUG}) {
   use Data::Dumper;
 }
@@ -388,7 +402,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
                ##    special cases                                                  #
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-	       if ($match =~ /Latency/) {
+	       if ($end_val =~ /Latency/) {
 		 if ($match =~ /.*Latency:\s+(.*)\s+#/) {
 		   my $val = $1;
 		   #print "val -:$val:-\n";
@@ -397,7 +411,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   $option_map{"Latency-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
-	       elsif ($match =~ /Pkt-Gaps/) {
+	       elsif ($end_val =~ /Pkt-Gaps/) {
 		 if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
 		   my $val = $1;
 		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
@@ -405,7 +419,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   $option_map{"Pkt-Gaps-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
-	       elsif ($match =~ /RX-Silence/) {
+	       elsif ($end_val =~ /RX-Silence/) {
 		 if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
 		   my $val = $1;
 		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
@@ -413,7 +427,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   $option_map{"RX-Silence-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
-               elsif ($match =~ /Cx Detected/) {
+               elsif ($end_val =~ /Cx Detected/) {
                   my $value = 0;
                   #print "# case 2\n";
                   ($option) = ($match =~ /(Cx Detected)/);
@@ -424,8 +438,8 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      last;
                   }
                }
-               elsif (($match =~ /Tx (Bytes|Pkts)/ || $match =~ /tx_(bps|pps)/) ||
-		      ( $match =~ /Rx (Bytes|Pkts)/ || $end_val =~ /rx_(bps|pps)/)) {
+               elsif (($match =~ /Tx (Bytes|Pkts)/ && (($end_val =~ /tx_(bps|pps)/) || ($end_val =~ /Tx (Bytes|Pkts)/) || ($end_val =~ /(Pkts|Bytes) Sent/))) ||
+		      ($match =~ /Rx (Bytes|Pkts)/ && (($end_val =~ /rx_(bps|pps)/) || ($end_val =~ /Rx (Bytes|Pkts)/)|| ($end_val =~ /(Pkts|Bytes) Rcvd/)))) {
                   my $value = 0;
                   ($option) = ($match =~ /([TR]x (Bytes|Pkts))/);
                   #print "# case 3, Option: $option" . NL;
@@ -434,7 +448,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   if (defined $option_map{ $option } ) {
                      if (($end_val =~ /tx_(bps|pps)/ ) ||
                          ($end_val =~ /rx_(bps|pps)/ )) {
-                        $value = 0 + $parts[2];
+		        $value = 0 + $parts[2];
                         if ($end_val =~ /bps/) {
                           $value *= 8;
                         }
@@ -553,7 +567,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
       $::utils->doCmd($cmd);
    }
    elsif ($::action eq "create_endp") {
-     create_endpoint();
+     create_endp($::endp_name, $::resource, $::port_name, $::endp_type, $::speed, $::max_speed);
    }
    else {
       # Set endp
@@ -756,12 +770,18 @@ sub create_endp {
    die("Must choose endpoint protocol type: --endp_type\n$::usage")
          if (! defined $::endp_type|| $::endp_type eq "");
 
-  $my_endp_type  = "lf_tcp" if ($my_endp_type eq "tcp");
-  $my_endp_type  = "lf_udp" if ($my_endp_type eq "udp");
+   if ($my_endp_type eq "tcp") {
+     $my_endp_type = "lf_tcp";
+   }
+   if ($my_endp_type eq "udp") {
+     $my_endp_type = "lf_udp";
+   }
 
-  die("Endpoint protocol type --endp_type must be among "
-     .join(', ', @::known_endp_types)."\n".$::usage)
-      if (! grep {$_ eq $my_endp_type } @::known_endp_types);
+   if ($my_endp_type ne "NA") {
+     die("Endpoint protocol type --endp_type must be among "
+	 .join(', ', @::known_endp_types)."\n".$::usage)
+       if (! grep {$_ eq $my_endp_type } @::known_endp_types);
+   }
 
   if ($my_endp_type eq "generic") {
     if ($::endp_cmd eq "") {
@@ -809,7 +829,7 @@ sub create_endp {
     $cmd = "set_endp_report_timer $::endp_name $::report_timer";
     $::utils->doCmd($cmd);
   }
-  elsif (grep { $_ eq $my_endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6")) {
+  elsif (grep { $_ eq $my_endp_type} split(/,/, "lf_udp,lf_tcp,lf_udp6,lf_tcp6,NA")) {
      if ($::use_ports_str ne "NA") {
        ($::port_name,) = split(',', $::use_ports_str);
      }
@@ -851,7 +871,10 @@ sub create_endp {
 
      if ($::tos ne "") {
         my($service, $priority) = split(',', $::tos);
-        $::utils->doCmd($::utils->fmt_cmd("set_endp_tos", $my_endp_name, $service, $priority));
+	if (!$priority) {
+	  $priority = "NA";
+	}
+        $::utils->doCmd("set_endp_tos $my_endp_name $service $priority");
      }
   }
   else {

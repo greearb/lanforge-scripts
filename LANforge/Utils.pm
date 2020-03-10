@@ -154,10 +154,11 @@ sub normalize_bucket {
     }
     else {
       my @bkts = split(/\s+/, $bks);
+      @bkts = (@bkts, "0");
       my $i;
       my $rv = "$min $max $avg ";
       #print "bkts len: " . @bkts . "\n";
-      my @nbkts = (0) x (@bkts + 1);
+      my @nbkts = (0) x (@bkts);
       for ($i = 0; $i<@bkts; $i++) {
 	# Figure out the bkt range
 	my $minv = 0;
@@ -177,18 +178,22 @@ sub normalize_bucket {
 	  if ($maxv < (2 ** $z)) {
 	    #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
 	    $idx = $z;
+	    # Everything else falls in the last bucket
+	    if ($idx >= @bkts) {
+	      $idx = (@bkts - 1);
+	    }
 	    last;
 	  }
 	}
 
 	#print "idx: $idx i: $i ";
 	#print "nbkts: " . $nbkts[$idx];
-	#print " bkts: " . $bkts[$i] . "\n";
+        #print " bkts: " . $bkts[$i] . "\n";
 	my $nv = $nbkts[$idx] + $bkts[$i];
 	@nbkts[$idx] = $nv;
       }
 
-      for ($i = 0; $i<@bkts; $i++) {
+      for ($i = 0; $i < @nbkts; $i++) {
 	$rv .= ($nbkts[$i] . " ");
       }
       return $rv;
