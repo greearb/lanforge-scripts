@@ -102,8 +102,8 @@ $0 [ --action {
       #  --action show_endp --endp_vals MinTxRate,DestMAC,Avg-Jitter
       # Not available: Latency,Pkt-Gaps, or rows below steps-failed.
       # Special Keys:
-      #  --endp_vals tx_bps         (Tx Bytes)
-      #  --endp_vals rx_bps         (Rx Bytes)
+      #  --endp_vals tx_bytes         (Tx Bytes)
+      #  --endp_vals rx_bytes         (Rx Bytes)
   [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
   [--max_pkt_sz   {maximum payload size in bytes}]
   [--max_speed    {speed in bps}]
@@ -327,8 +327,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          my $option        = '';
          for $option (split(',', $::endp_vals)) {
             #print "OPTION[$option]\n";
-            next if ($option =~ /Latency/);
-            next if ($option =~ /Pkt-Gaps/);
             #next if ($option =~ /\s/);
             if ($option =~ /rx_pps/    ) { $option = "Rx Pkts"; }
             if ($option =~ /tx_pps/    ) { $option = "Tx Pkts"; }
@@ -390,7 +388,22 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
                ##    special cases                                                  #
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-               if ( $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
+	       if ($match =~ /Latency/) {
+		 if ($match =~ /.*Latency:\s+(.*)\s+#/) {
+		   $option_map{"Latency"} = $1;
+		 }
+	       }
+	       elsif ($match =~ /Pkt-Gaps/) {
+		 if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
+		   $option_map{"Pkt-Gaps"} = $1;
+		 }
+	       }
+	       elsif ($match =~ /RX-Silence/) {
+		 if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
+		   $option_map{"RX-Silence"} = $1;
+		 }
+	       }
+               elsif ( $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
                   my $value = 0;
                   ($option) = ($match =~ /(Rx (Bytes|Pkts))/);
                   #print "# case 1, Option: $option" . NL;
