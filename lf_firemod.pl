@@ -413,30 +413,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   $option_map{"RX-Silence-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
-               elsif ( $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
-                  my $value = 0;
-                  ($option) = ($match =~ /(Rx (Bytes|Pkts))/);
-                  #print "# case 1, Option: $option" . NL;
-                  @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
-                  #print "\n RX: ".join(",",@parts)."\n";
-                  if (defined $option_map{ $option } ) {
-                     if ($end_val =~ /rx_(bps|pps)/ ) {
-                        $value = 0 + $parts[2];
-                     }
-                     elsif ($end_val =~ /rx_(byte|pkt|packet)s/ ) {
-                        $value = 0 + $parts[0];
-                     }
-                     if ($option eq "Rx Bytes") {
-                        if ($end_val =~ /rx_bps/ ) {
-                           $value   *= 8;
-                        }
-                     }
-                     #print "\n    A end_val[$end_val] option[$option] now ".$value."\n";
-                     $option_map{ $option } = $value;
-                     $endval_done++;
-                     last;
-                  }
-               }
                elsif ($match =~ /Cx Detected/) {
                   my $value = 0;
                   #print "# case 2\n";
@@ -448,26 +424,33 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      last;
                   }
                }
-               elsif ($match =~ /Tx (Bytes|Pkts)/ && $end_val =~ /tx_/) {
+               elsif (($match =~ /Tx (Bytes|Pkts)/ || $match =~ /tx_(bps|pps)/) ||
+		      ( $match =~ /Rx (Bytes|Pkts)/ || $end_val =~ /rx_(bps|pps)/)) {
                   my $value = 0;
-                  ($option) = ($match =~ /(Tx (Bytes|Pkts))/);
+                  ($option) = ($match =~ /([TR]x (Bytes|Pkts))/);
                   #print "# case 3, Option: $option" . NL;
                   @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
                   #print "\n TX: ".join(",",@parts)."\n";
                   if (defined $option_map{ $option } ) {
-                     if ($end_val =~ /tx_(bps|pps)/ ) {
+                     if (($end_val =~ /tx_(bps|pps)/ ) ||
+                         ($end_val =~ /rx_(bps|pps)/ )) {
                         $value = 0 + $parts[2];
-                     }
-                     elsif ($end_val =~ /tx_(byte|pkt|packet)s/ ) {
-                        $value = 0 + $parts[0];
-                     }
-                     if ($option eq "Tx Bytes") {
-                        if ($end_val =~ /tx_bps/ ) {
-                           $value   *= 8;
+                        if ($end_val =~ /bps/) {
+                          $value *= 8;
                         }
                      }
+                     else {
+                        $value = 0 + $parts[0];
+                     }
                      #print "\n    B end_val[$end_val] option[$option] now ".$value."\n";
-                     $option_map{ $option } = $value;
+                     $option_map{ $end_val } = $value;
+
+                     # For backwards compat with older logic
+                     if (defined($option_map{"Bytes Rcvd"})) {
+                       if ($end_val eq "Rx Bytes") {
+                         $option_map{"Bytes Rcvd"} = $value;
+                       }
+                     }
                      $endval_done++;
                      last;
                   }
