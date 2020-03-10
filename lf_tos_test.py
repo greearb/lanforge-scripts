@@ -173,24 +173,29 @@ def main():
    green_left.set_border(1)
 
    worksheet.set_row(0, 45) # Set height
-   worksheet.set_column(0, 0, 10) # Set width
 
    bucket_hdrs = "0-0 1-1 2-3 4-7 8-15 16-31 32-63 64-127 128-255 256-511 512-1023 1024-2047 2048-4095 4096-8191 8192-16383 16384-32767 32768-65535".split()
    col = 0
    row = 0
+
+   worksheet.set_column(0, 35, 13) # Set width to 14 for all columns by default
    worksheet.write(row, col, 'CX-Name', dblue_bold); col += 1
-   worksheet.write(row, col, 'Station', dblue_bold); col += 1
+   worksheet.set_column(col, col, 15)
+   worksheet.write(row, col, 'Endp-Name', dblue_bold); col += 1
+   worksheet.set_column(col, col, 12)
+   worksheet.write(row, col, 'Port', dblue_bold); col += 1
    worksheet.write(row, col, 'Protocol', dblue_bold); col += 1
    worksheet.write(row, col, 'ToS', dblue_bold); col += 1
+   worksheet.set_column(col, col, 20)
    worksheet.write(row, col, 'AP BSSID', dblue_bold); col += 1
-   worksheet.write(row, col, 'Bandwidth', dblue_bold); col += 1
+   worksheet.write(row, col, 'Band\nwidth', dblue_bold); col += 1
    worksheet.write(row, col, 'Mode', dblue_bold); col += 1
    worksheet.write(row, col, 'Last MCS\nRx', dblue_bold); col += 1
    worksheet.write(row, col, 'Combined\nRSSI', dpeach_bold); col += 1
    worksheet.write(row, col, 'Endpoint\nOffered\nLoad', dblue_bold); col += 1
-   worksheet.write(row, col, 'Endpoint\n\Rx\nThroughput', dblue_bold); col += 1
+   worksheet.write(row, col, 'Endpoint\nRx\nThroughput', dblue_bold); col += 1
    worksheet.write(row, col, 'Cx\nOffered\nLoad', dblue_bold); col += 1
-   worksheet.write(row, col, 'Cx\n\Rx\nThroughput', dblue_bold); col += 1
+   worksheet.write(row, col, 'Cx\nRx\nThroughput', dblue_bold); col += 1
    worksheet.write(row, col, 'Avg\nLatency', dblue_bold); col += 1
    worksheet.write(row, col, 'Min\nLatency', dblue_bold); col += 1
    worksheet.write(row, col, 'Max\nLatency', dblue_bold); col += 1
@@ -376,11 +381,11 @@ def main():
                    results = [""] * 7
 
                    endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--endp_vals", "tx_bps,rx_bps,Tx Bytes,Rx Bytes,Tx Pkts,Rx Pkts,Latency",
-                                                "--endp_name", ena], capture_output=True);
+                                                "--endp_name", ename], capture_output=True);
                    pss = endp_stats.stdout.decode('utf-8', 'ignore');
 
                    for line in pss.splitlines():
-                       print("probe-line: %s"%(line))
+                       print("probe-line, endp: %s: %s"%(ename, line))
                        m = re.search('Rx Bytes:\s+(\d+)', line)
                        if (m != None):
                            results[1] = int(m.group(1))
@@ -412,7 +417,7 @@ def main():
                        if (m != None):
                            results[5] = m.group(1)
 
-                       m = re.search('Latency-Normalized:\s+(.*)', line)
+                       m = re.search('Latency:\s+(.*)', line)
                        if (m != None):
                            results[6] = m.group(1)
 
@@ -421,30 +426,65 @@ def main():
                        else:
                            resultsB = results.copy()
 
+               # Now that we know both latencies, we can normalize them.
+               endp_statsA = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "normalize_latency",
+                                             "--lat1", resultsA[6], "--lat2", resultsB[6]], capture_output=True);
+               pssA = endp_statsA.stdout.decode('utf-8', 'ignore');
+               endp_statsB = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "normalize_latency",
+                                             "--lat1", resultsB[6], "--lat2", resultsA[6]], capture_output=True);
+               pssB = endp_statsB.stdout.decode('utf-8', 'ignore');
+
+               print("latA: %s"%resultsA[6])
+               print("latB: %s"%resultsB[6])
+               print("pssA: %s"%pssA)
+               print("pssB: %s"%pssB)
+
+               for line in pssA.splitlines():
+                   m = re.search('Normalized-Latency:\s+(.*)', line)
+                   if (m != None):
+                       resultsA[6] = m.group(1);
+
+               for line in pssB.splitlines():
+                   m = re.search('Normalized-Latency:\s+(.*)', line)
+                   if (m != None):
+                       resultsB[6] = m.group(1);
+
                for ename in enames:
                    col = 0
 
                    if (ena == ename):
-                       results = resultsA
+                       results = resultsA.copy()
                    else:
-                       results = resultsB
+                       results = resultsB.copy()
 
                    lat_cols = results[6].split() # min, max, avg, columns....
 
                    worksheet.write(row, col, cxn, center_blue); col += 1
                    worksheet.write(row, col, ename, center_blue); col += 1
-                   worksheet.write(row, col, "%s.%s"%(sta_resource, sta_name), center_blue); col += 1
+                   if ename == ena:
+                       worksheet.write(row, col, "%s.%s"%(sta_resource, sta_name), center_blue); col += 1
+                   else:
+                       worksheet.write(row, col, "%s.%s"%(u_resource, u_name), center_blue); col += 1
                    worksheet.write(row, col, proto, center_blue); col += 1
                    worksheet.write(row, col, tos, center_blue); col += 1
-                   worksheet.write(row, col, _ap, center_blue); col += 1
-                   worksheet.write(row, col, _bw, center_blue); col += 1
-                   worksheet.write(row, col, _mode, center_blue); col += 1
-                   worksheet.write(row, col, _rxrate, center_blue); col += 1
-                   worksheet.write(row, col, _signal, center_blue); col += 1
-                   worksheet.write(row, col, results[2], center_blue); col += 1
-                   worksheet.write(row, col, results[3], center_tan); col += 1
-                   worksheet.write(row, col, "%s"%(int(resultsA[2]) + int(resultsB[2])), center_blue); col += 1
-                   worksheet.write(row, col, "%s"%(int(resultsA[3]) + int(resultsB[3])), center_tan); col += 1
+                   if ename == ena:
+                       worksheet.write(row, col, _ap, center_blue); col += 1
+                       worksheet.write(row, col, _bw, center_blue); col += 1
+                       worksheet.write(row, col, _mode, center_blue); col += 1
+                       worksheet.write(row, col, _rxrate, center_blue); col += 1
+                       worksheet.write(row, col, _signal, center_blue); col += 1
+                   else:
+                       # Upstream is likely wired, don't print station info
+                       worksheet.write(row, col, "", center_blue); col += 1
+                       worksheet.write(row, col, "", center_blue); col += 1
+                       worksheet.write(row, col, "", center_blue); col += 1
+                       worksheet.write(row, col, "", center_blue); col += 1
+                       worksheet.write(row, col, "", center_blue); col += 1
+
+                   worksheet.write(row, col, float(results[2]) / 1000000, center_blue); col += 1
+                   worksheet.write(row, col, float(results[3]) / 1000000, center_tan); col += 1
+                   worksheet.write(row, col, "%s"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_blue); col += 1
+                   worksheet.write(row, col, "%s"%((float(resultsA[3]) + float(resultsB[3])) / 1000000), center_tan); col += 1
                    worksheet.write(row, col, lat_cols[2], center_tan); col += 1
                    worksheet.write(row, col, lat_cols[0], center_tan); col += 1
                    worksheet.write(row, col, lat_cols[1], center_tan); col += 1

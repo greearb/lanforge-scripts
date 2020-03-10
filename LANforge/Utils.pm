@@ -137,13 +137,53 @@ sub normalize_bucket_hdr {
   return $rv;
 }
 
+# Normalize lat1, taking peer latency (lat2) into account for negative latency and such.
+sub normalize_latency {
+  my $self = shift;
+  my $lat1 = shift;
+  my $lat2 = shift;
+
+  #print "lat1 -:$lat1:-\n";
+  #print "lat2 -:$lat2:-\n";
+
+  my $min1 = 0;
+  my $min2 = 0;
+
+  # Looks like this: 5 -:5:- 6  [ 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ] (1)
+  if ($lat1 =~ /(\S+)\s+-:(\S+):-\s+(\S+)\s+\[\s+(.*)\s+\]\s+\((\S+)\)/) {
+    $min1 = $1;
+  }
+  if ($lat2 =~ /(\S+)\s+-:(\S+):-\s+(\S+)\s+\[\s+(.*)\s+\]\s+\((\S+)\)/) {
+    $min2 = $1;
+  }
+
+  # For instance, min1 is -5, min2 is 25, rt-latency is 20.
+  # Adjust lat1 by (25 - -5) / 2
+  # For instance, min1 is 25, min2 is -5, rt-latency is 20.
+  # Adjust lat1 by (-5 -25) / 2
+  #print "min1: $min1  min2: $min2  half: " . int(($min2 - $min1) / 2) . "\n";
+  # So, the above seems nice, but often we have a small negative value due to
+  # clock drift in one direction, and large latency in the other (due to real one-way latency)
+  # So, we will just adjust enough to make the smallest value positive.
+  my $adjust = 0;
+  if ($min1 < 0) {
+    $adjust = -$min1;
+  }
+  elsif ($min2 < 0) {
+    $adjust = -$min2;
+  }
+  return $self->normalize_bucket($lat1, $adjust);
+}
+
 sub normalize_bucket {
   my $self = shift;
   my $line = shift;
+  my $adjust = shift;
+
   #print "line -:$line:-\n";
 
   # Looks like this: 5 -:5:- 6  [ 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ] (1)
-  if ($line =~ /(\d+)\s+-:(\d+):-\s+(\d+)\s+\[\s+(.*)\s+\]\s+\((\d+)\)/) {
+  if ($line =~ /(\S+)\s+-:(\S+):-\s+(\S+)\s+\[\s+(.*)\s+\]\s+\((\S+)\)/) {
     my $min = $1;
     my $avg = $2;
     my $max = $3;
@@ -156,7 +196,7 @@ sub normalize_bucket {
       my @bkts = split(/\s+/, $bks);
       @bkts = (@bkts, "0");
       my $i;
-      my $rv = "$min $max $avg ";
+      my $rv = ($min + $adjust) . " " . ($max + $adjust) . " " . ($avg + $adjust) . " ";
       #print "bkts len: " . @bkts . "\n";
       my @nbkts = (0) x (@bkts);
       for ($i = 0; $i<@bkts; $i++) {
@@ -169,6 +209,10 @@ sub normalize_bucket {
 	# Adjust by the min value, which is treated as an offset
 	$minv += $min;
 	$maxv += $min;
+
+	# And adjust based on round-trip time to deal with clock lag
+	$minv += $adjust;
+	$maxv += $adjust;
 
 	# And now find the normalized bucket this fits in
 	#print "maxv: $maxv\n";

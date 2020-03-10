@@ -58,6 +58,8 @@ our $use_csums        = "NO";  # Use LANforge checksums in payload?
 our $ttl              = 32;
 our $report_timer     = 5000;
 our $tos              = "";
+our $lat1             = "";
+our $lat2             = "";
 our $arm_pps          = "";
 our $arm_cpu_id       = "NA";
 # For cross connects
@@ -135,6 +137,8 @@ $0 [ --action {
 
 Example:
  $0 --action set_endp --endp_name udp1-A --speed 154000
+
+ $0 --action normalize_latency --lat1 "latency-buckets info for endpA" --lat2 "latency-buckets-info for endpB"
 
  $0 --action create_endp --endp_name mcast_xmit_1 --speed 154000 \\
    --endp_type mc_udp   --mcast_addr 224.9.9.8    --mcast_port 9998 \\
@@ -233,6 +237,8 @@ GetOptions
    'use_max_speeds=s'   => \$::use_max_speeds,
    'test_mgr=s'         => \$::test_mgr,
    'tos=s'              => \$::tos,
+   'lat1=s'             => \$::lat1,
+   'lat2=s'             => \$::lat2,
 
 ) || die("$::usage");
 
@@ -287,7 +293,7 @@ if ($::do_cmd ne "NA") {
   $::action = "do_cmd";
 }
 our @valid_actions = qw(
-   create_arm create_cx create_endp
+   create_arm create_cx create_endp normalize_latency
    delete_cx delete_cxe delete_endp do_cmd
    list_cx list_endp list_ports
    set_endp show_cx show_endp show_port start_endp stop_endp
@@ -321,10 +327,14 @@ if (!defined $::stats_from_file || ("" eq $::stats_from_file)) {
    $::utils->connect($lfmgr_host, $lfmgr_port);
 }
 
-if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp")) {
+if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm,list_endp,normalize_latency")) {
 
    $::max_speed = $::speed if ($::max_speed eq "-1");
-   if ($::action eq "list_endp") {
+   if ($::action eq "normalize_latency") {
+      my $val = $::utils->normalize_latency($::lat1, $::lat2);
+      print("Normalized-Latency: $val\n");
+   }
+   elsif ($::action eq "list_endp") {
       $::utils->cli_rcv_silent(0);
       $::quiet = "no";
       my @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endpoints all"));
@@ -408,7 +418,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   #print "val -:$val:-\n";
 		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
 		   $option_map{"Latency"} = $val;
-		   $option_map{"Latency-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
 	       elsif ($end_val =~ /Pkt-Gaps/) {
@@ -416,7 +425,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   my $val = $1;
 		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
 		   $option_map{"Pkt-Gaps"} = $val;
-		   $option_map{"Pkt-Gaps-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
 	       elsif ($end_val =~ /RX-Silence/) {
@@ -424,7 +432,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 		   my $val = $1;
 		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
 		   $option_map{"RX-Silence"} = $val;
-		   $option_map{"RX-Silence-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
                elsif ($end_val =~ /Cx Detected/) {
@@ -456,7 +463,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                      else {
                         $value = 0 + $parts[0];
                      }
-                     #print "\n    B end_val[$end_val] option[$option] now ".$value."\n";
+                     print "\n    B end_val[$end_val] option[$option] now ".$value."\n";
                      $option_map{ $end_val } = $value;
 
                      # For backwards compat with older logic
