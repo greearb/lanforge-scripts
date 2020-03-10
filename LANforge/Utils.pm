@@ -121,6 +121,84 @@ sub doAsyncCmd {
    return join( "\n", @rv );
 } # ~doAsyncCmd
 
+sub normalize_bucket_hdr {
+  my $self  = shift;
+  my $amt = shift;
+  my $rv = "Min Max Avg ";
+  my $i;
+  for ($i = 0; $i<$amt; $i++) {
+    if ($i == 0) {
+      $rv .= "0-0 ";
+    }
+    else {
+      $rv .= 2**($i-1) . "-" . (2**($i) - 1) . " ";
+    }
+  }
+  return $rv;
+}
+
+sub normalize_bucket {
+  my $self = shift;
+  my $line = shift;
+  #print "line -:$line:-\n";
+
+  # Looks like this: 5 -:5:- 6  [ 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ] (1)
+  if ($line =~ /(\d+)\s+-:(\d+):-\s+(\d+)\s+\[\s+(.*)\s+\]\s+\((\d+)\)/) {
+    my $min = $1;
+    my $avg = $2;
+    my $max = $3;
+    my $bks = $4;
+    my $width = $5; # Assumes one currently
+    if (!($width eq "1")) {
+      return $line;
+    }
+    else {
+      my @bkts = split(/\s+/, $bks);
+      my $i;
+      my $rv = "$min $max $avg ";
+      #print "bkts len: " . @bkts . "\n";
+      my @nbkts = (0) x (@bkts + 1);
+      for ($i = 0; $i<@bkts; $i++) {
+	# Figure out the bkt range
+	my $minv = 0;
+	my $maxv = 2 ** $i;
+	if ($i > 0) {
+	  $minv = 2 ** ($i - 1);
+	}
+	# Adjust by the min value, which is treated as an offset
+	$minv += $min;
+	$maxv += $min;
+
+	# And now find the normalized bucket this fits in
+	#print "maxv: $maxv\n";
+	my $z;
+	my $idx = 0;
+	for ($z = 1; $z < 32; $z++) {
+	  if ($maxv < (2 ** $z)) {
+	    #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
+	    $idx = $z;
+	    last;
+	  }
+	}
+
+	#print "idx: $idx i: $i ";
+	#print "nbkts: " . $nbkts[$idx];
+	#print " bkts: " . $bkts[$i] . "\n";
+	my $nv = $nbkts[$idx] + $bkts[$i];
+	@nbkts[$idx] = $nv;
+      }
+
+      for ($i = 0; $i<@bkts; $i++) {
+	$rv .= ($nbkts[$i] . " ");
+      }
+      return $rv;
+    }
+  }
+  else {
+    return $line;
+  }
+}
+
 #  Uses cached values (so it will show Phantom ones too)
 sub getPortListing {
    my $self  = shift;

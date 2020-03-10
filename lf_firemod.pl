@@ -390,17 +390,27 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 	       if ($match =~ /Latency/) {
 		 if ($match =~ /.*Latency:\s+(.*)\s+#/) {
-		   $option_map{"Latency"} = $1;
+		   my $val = $1;
+		   #print "val -:$val:-\n";
+		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+		   $option_map{"Latency"} = $val;
+		   $option_map{"Latency-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
 	       elsif ($match =~ /Pkt-Gaps/) {
 		 if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
-		   $option_map{"Pkt-Gaps"} = $1;
+		   my $val = $1;
+		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+		   $option_map{"Pkt-Gaps"} = $val;
+		   $option_map{"Pkt-Gaps-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
 	       elsif ($match =~ /RX-Silence/) {
 		 if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
-		   $option_map{"RX-Silence"} = $1;
+		   my $val = $1;
+		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+		   $option_map{"RX-Silence"} = $val;
+		   $option_map{"RX-Silence-Normalized"} = $::utils->normalize_bucket($val);
 		 }
 	       }
                elsif ( $match =~ /Rx (Bytes|Pkts)/ && $end_val =~ /rx_/) {
