@@ -32,6 +32,7 @@ our $lfmgr_port      = 4001;
 our $resource        = 1;
 
 our $action          = "";
+our $vid_mode        = "yt-sdr-1080p30";
 our $buffer_size     = (3 * 1024 * 1024);
 our $clear_group     = -1;
 my $cmd;
@@ -293,15 +294,23 @@ if ($::action eq "destroy") {
 if ($::action eq "start") {
    print "we will start!";
 
-   if (!(defined $::test_grp) || ()) {
+   if (!(defined $::test_grp) || ("" eq $::test_grp)) {
      print "Please specify test group to start: --test_grp foo; bye.";
      exit(1);
    }
 
    # collect all cx names in the test group and start up the
    # video pulser on them
-   my @lines = split(/\r?\n/, $::utils->doAsyncCmd("show_group '$::test_grp'"));
-   $::utils->sleep_ms(100);
+   print "==========================================\n";
+   my $ra_items = $::utils->group_items($::test_grp);
+
+   print Dumper($ra_items) if ($::debug);
+   foreach my $name (@$ra_items) {
+     my $CMD = "./l3_vid_ stuff $::vid_mode ect";
+     print "$CMD\n";
+   }
+   print "==========================================\n";
+   #$::utils->sleep_ms(100);
 
    exit 0;
 }
