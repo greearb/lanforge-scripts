@@ -481,7 +481,14 @@ if (defined &usleep) {
 
 
 sub sleep_ms {
-  my ($millis) = @_;
+  my $self;
+  my $millis = 0;
+  if (@_ > 1) {
+    ($self, $millis) = @_;
+  }
+  else {
+    $millis = pop(@_);
+  }
   return if (!(defined $millis) || ($millis == 0));
 
   my $secs = $millis / 1000;
@@ -495,7 +502,14 @@ sub sleep_ms {
 }
 
 sub sleep_sec {
-  my ($secs) = @_;
+  my $self;
+  my $secs = 0;
+  if (@_ > 1) {
+    ($self, $secs) = @_;
+  }
+  else {
+    ($secs) = @_;
+  }
   return if (!(defined $secs) || ($secs == 0));
 
   if ($LANforge::Utils::has_usleep) {
@@ -613,32 +627,40 @@ sub ports_on_radio {
 
 sub test_groups {
   my ($self) = @_;
-  my $ra = [split(/\r?\n/, $self->doAsyncCmd("show_group all"))];
-  sleep_ms(50);
-  print Dumper($ra);
-  my @tg_matches = grep {/^TestGroup name:\s+${main::test_grp}\s+/} @$ra;
-  print Dumper(\@tg_matches);
-  return \@tg_matches;
+  my @group_lines = split(/\r?\n/, $self->doAsyncCmd("show_group all"));
+  sleep_ms(10);
+
+  #print Dumper(\@group_lines);
+  my @matches = grep {/TestGroup name:\s+/} @group_lines;
+  #print Dumper(\@matches);
+  my $ra_group_names = [];
+  for my $line (@matches) {
+    push(@$ra_group_names, ($line =~ /TestGroup name:\s+(\S+)\s+\[/));
+  }
+  #print Dumper($ra_group_names);
+
+  return $ra_group_names;
 }
 
-sub list_groups {
-  my ($self, $testg_name) = @_;
-  die("cx_for_group needs test group name, bye.")
-    if (!(defined $testg_name) || ("" eq $testg_name));
-
-  my $ra = [split(/\r?\n/, $::utils->doCmd("show_group all"))];
-  print Dumper($ra);
-  die("testing");
-}
 sub group_items {
    my ($self, $tg_name) = @_;
    die("Utils::group_items wants a test group name, bye.")
       if (!(defined $tg_name) || ("" eq $tg_name));
-   my @lines = split(/\r?\n/, $self->doAsyncCmd( $self->fmt_cmd("show_group", $tg_name)));
-   $self->sleep_ms(100);
-   print Dumper(\@lines);
-   die("testing");
+   my @lines = split(/\r?\n/, $self->doAsyncCmd( "show_group '$tg_name'"));
+   sleep_ms(100);
+
+   my @cx_line = grep {/\s*Cross Connects:/} @lines;
+   if (@cx_line < 1) {
+     print "No cross connects found for test group $::test_grp. Bye.\n";
+     exit(1);
+   }
+   my $trimmed = $cx_line[0];
+   $trimmed =~ s/^\s*Cross Connects:\s*//;
+   my $ra_items = [split(/\s+/, $trimmed)];
+   #print Dumper($ra_items);
+   return $ra_items;
 }
+
 ####
 1;
 __END__
