@@ -12,6 +12,11 @@
 # Un-buffer output
 $| = 1;
 
+# use lib prepends to @INC, so put lower priority first
+# This is before run-time, so cannot condition this with normal 'if' logic.
+use lib '/home/lanforge/scripts';
+use lib "./";
+
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
@@ -26,14 +31,14 @@ my $shelf_num = 1;
 
 # This sets up connections between 2 LANforge machines
 my $lf1 = 1;
-my $lf2 = 4;
+my $lf2 = 2;
 
 # Port pairs.  These are the ports that should be talking to each other.
 # Ie, the third column in lf1_ports talks to the third column in lf2_ports.
-my @lf1_ports = (4, 5, 2); # ,7);
-my @lf2_ports = (5, 6, 4); # ,5);
+my @lf1_ports = ("wlan0");
+my @lf2_ports = ("vap0000");
 
-my $ports_are_connected = 1; # Connected to each other.  If true, we can test some
+my $ports_are_connected = 0; # Connected to each other.  If true, we can test some
                              # ethernet driver settings more precisely.
 
 my $manual_check = 0; # If this is true, then user input will be asked for each time
@@ -75,20 +80,9 @@ my @cx_names = ();
 
 my $fail_msg = "";
 
-# Open connection to the LANforge server.
-
-my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/');
-
-
-$t->open(Host    => $lfmgr_host,
-	 Port    => $lfmgr_port,
-	 Timeout => 10);
-
-$t->waitfor("/btbits\>\>/");
-
 # Configure our utils.
-my $utils = new LANforge::Utils();
-$utils->telnet($t);         # Set our telnet object.
+our $utils = new LANforge::Utils();
+$::utils->connect($lfmgr_host, $lfmgr_port);
 $utils->cli_send_silent(0); # Do show input to CLI
 $utils->cli_rcv_silent(0);  # Repress output from CLI ??
 
