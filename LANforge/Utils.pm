@@ -35,7 +35,7 @@ sub new {
 sub connect {
    my ($self, $host, $port) = @_;
    my $t = new Net::Telnet(Prompt   => '/btbits>> $/',
-                           Timeout  => 2);
+                           Timeout  => 10);
    $self->{telnet} = \$t;
    $t->open(Host     => $host,
             Port     => $port,
@@ -104,16 +104,16 @@ sub doCmd {
 sub doAsyncCmd {
    my $self = shift;
    my $cmd  = shift;
-   my $t    = $self->telnet();
+   my $t    = ${$self->{telnet}};
    my @rv   = ();
 
    if ( !$self->cli_send_silent() || (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "")) {
       $self->log_cli($cmd);
    }
    $t->print($cmd);
-   my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
+   #my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
    my @rslt2 = $t->waitfor( $self->async_waitfor() );
-   @rv = ( @rslt, @rslt2 );
+   @rv = ( @rslt2 );
 
    if ( !$self->cli_rcv_silent() ) {
       print "**************\n @rv \n................\n\n";
