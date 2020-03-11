@@ -412,28 +412,28 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
                ##    special cases                                                  #
                ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-	       if ($end_val =~ /Latency/) {
-		 if ($match =~ /.*Latency:\s+(.*)\s+#/) {
-		   my $val = $1;
-		   #print "val -:$val:-\n";
-		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-		   $option_map{"Latency"} = $val;
-		 }
-	       }
-	       elsif ($end_val =~ /Pkt-Gaps/) {
-		 if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
-		   my $val = $1;
-		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-		   $option_map{"Pkt-Gaps"} = $val;
-		 }
-	       }
-	       elsif ($end_val =~ /RX-Silence/) {
-		 if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
-		   my $val = $1;
-		   $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-		   $option_map{"RX-Silence"} = $val;
-		 }
-	       }
+               if ($end_val =~ /Latency/) {
+                  if ($match =~ /.*Latency:\s+(.*)\s+#/) {
+                     my $val = $1;
+                     #print "val -:$val:-\n";
+                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                     $option_map{"Latency"} = $val;
+                  }
+               }
+               elsif ($end_val =~ /Pkt-Gaps/) {
+                  if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
+                     my $val = $1;
+                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                     $option_map{"Pkt-Gaps"} = $val;
+                  }
+               }
+               elsif ($end_val =~ /RX-Silence/) {
+                  if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
+                     my $val = $1;
+                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                     $option_map{"RX-Silence"} = $val;
+                  }
+               }
                elsif ($end_val =~ /Cx Detected/) {
                   my $value = 0;
                   #print "# case 2\n";
@@ -446,7 +446,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   }
                }
                elsif (($match =~ /Tx (Bytes|Pkts)/ && (($end_val =~ /tx_(bps|pps)/) || ($end_val =~ /Tx (Bytes|Pkts)/) || ($end_val =~ /(Pkts|Bytes) Sent/))) ||
-		      ($match =~ /Rx (Bytes|Pkts)/ && (($end_val =~ /rx_(bps|pps)/) || ($end_val =~ /Rx (Bytes|Pkts)/)|| ($end_val =~ /(Pkts|Bytes) Rcvd/)))) {
+                     ($match =~ /Rx (Bytes|Pkts)/ && (($end_val =~ /rx_(bps|pps)/) || ($end_val =~ /Rx (Bytes|Pkts)/)|| ($end_val =~ /(Pkts|Bytes) Rcvd/)))) {
                   my $value = 0;
                   ($option) = ($match =~ /([TR]x (Bytes|Pkts))/);
                   #print "# case 3, Option: $option" . NL;
@@ -455,7 +455,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                   if (defined $option_map{ $option } ) {
                      if (($end_val =~ /tx_(bps|pps)/ ) ||
                          ($end_val =~ /rx_(bps|pps)/ )) {
-		        $value = 0 + $parts[2];
+                        $value = 0 + $parts[2];
                         if ($end_val =~ /bps/) {
                           $value *= 8;
                         }
@@ -507,7 +507,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                            $value   *= 8;
                         }
                      }
-
                      $option_map{ $option } = $value;
                      $endval_done++;
                      last;
@@ -786,7 +785,7 @@ sub create_endp {
 
    if ($my_endp_type ne "NA") {
      die("Endpoint protocol type --endp_type must be among "
-	 .join(', ', @::known_endp_types)."\n".$::usage)
+        .join(', ', @::known_endp_types)."\n".$::usage)
        if (! grep {$_ eq $my_endp_type } @::known_endp_types);
    }
 
@@ -878,9 +877,9 @@ sub create_endp {
 
      if ($::tos ne "") {
         my($service, $priority) = split(',', $::tos);
-	if (!$priority) {
-	  $priority = "NA";
-	}
+        if (!$priority) {
+          $priority = "NA";
+        }
         $::utils->doCmd("set_endp_tos $my_endp_name $service $priority");
      }
   }
