@@ -316,7 +316,7 @@ sub decode {
       if ($got_endp) {
 
          if ( $ln =~
-/Shelf:\s+(\d+)\,\s+Card:\s+(\d+)\s+Port:\s+(\d+)\s+Endpoint:\s+(\d+)\s+Type:\s+(\S+)\s+Pattern:\s+(\S+)/
+/Shelf:\s+(\d+)\,*\s+Card:\s+(\d+)\s+Port:\s+(\d+)\s+Endpoint:\s+(\d+)\s+Type:\s+(\S+)\s+Pattern:\s+(\S+)/
            )
          {
             $self->shelf_id($1);
