@@ -85,7 +85,7 @@ sub telnet {
 sub doCmd {
    my $self = shift;
    my $cmd  = shift;
-   print "CMD[[$cmd]]\n";
+   #print "CMD[[$cmd]]\n";
    my $t = ${$self->{telnet}};
    if ( !$self->cli_send_silent() || (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "")) {
       $self->log_cli($cmd);

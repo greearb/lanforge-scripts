@@ -45,7 +45,8 @@ my $log_cli          = "unset"; # use ENV{LOG_CLI} elsewhere
 our $num_cx          = -1;
 my $show_help        = 0;
 our $speed           = 1000 * 1000 * 1000;
-our $test_grp;
+our $generic_test_grp;  # we will manage our generic connections using this group (l3_video_em)
+our $l3_test_grp;       # the actual Layer 3 cx will live here, starting with _L3_
 our $use_ports_str   = "NA";
 our $use_speeds_str  = "NA";
 our $use_max_speeds  = "NA";
@@ -64,10 +65,11 @@ Usage: $0 # create a large group of Layer 3 creations that emulate video traffic
  --num_cx -n      {number} # default 1
  --resource -r    {station resource}
  --speed -s       {bps K|M|G} # maximum speed of tx side, default 1Gbps
- --stream -e      {stream resolution name|list} # default yt-sdr-1080p30
+ --stream --vid_mode -e {stream resolution name|list} # default yt-sdr-1080p30
                   # list of streams maintained in l3_video_em.pl
  --test_grp -g    {test group name} # all connections placed in this group
-                  # default is {cx_name}_tg
+                  # default is {cx_name}_tg for the Generic connections
+                  # we manage Layer 3 connections in _L3_{cx_name}_tg
  --upstream -u    {port short-EID} # video transmitter port;
                   # use 1.1.eth1 or 1.2.br0 for example
                   # upstream port does not need to be on same resource
@@ -115,7 +117,8 @@ GetOptions
    'quiet|q=s'          => \$::quiet,
    'resource|r=i'       => \$::resource,
    'speed|s=i'          => \$::speed,
-   'test_grp|g=s'       => \$::test_grp,
+   'stream|vid_mode|e'  => \$::vid_mode,
+   'test_group|test_grp|group|g=s'       => \$::generic_test_grp,
    'upstream|u=s'       => \$::upstream,
 
 ) || die($::usage);
@@ -158,13 +161,14 @@ $::utils->connect($lfmgr_host, $lfmgr_port);
 
 # Apply defaults
 
-if (!(defined $::test_grp) || ("" eq $::test_grp) || ("NA" eq $::test_grp)) {
+if (!(defined $::generic_test_grp) || ("" eq $::generic_test_grp) || ("NA" eq $::generic_test_grp)) {
    # use cx_name as prefix
    if (!(defined $::cx_name) || ("" eq $::cx_name) || ("NA" eq $::cx_name)) {
       die("No test_grp or cx_name is defined. Bye.");
    }
-   $::test_grp = $::cx_name ."_tg";
+   $::generic_test_grp = $::cx_name ."_tg";
 }
+$::l3_test_grp = "_L3_".$::generic_test_grp;
 
 # get a list of test groups
 my $ra_tg_list = $::utils->test_groups();
@@ -176,25 +180,31 @@ if ($::clear_group > 0) {
      print "No test groups defined, bye.";
      exit(1);
    }
-   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @$ra_tg_list;
+   my $re = q(^TestGroup name:\s+).$::generic_test_grp.q(\s+[\[]);
+   my @matches = grep {/$re/} @$ra_tg_list;
    print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "No test group matching name [$::test_grp], bye.";
      exit(1);
    }
-   print "will clear group $::test_grp\n";
-   $::utils->doCmd("clear_group $::test_grp");
+   print "will clear groups $::generic_test_grp and $::l3_test_grp\n";
+   $::utils->doCmd("clear_group $::generic_test_grp");
+   $::utils->doCmd("clear_group $::l3_test_grp");
 }
+
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "create") {
-   my @matches = grep {/^TestGroup name:\s+${main::test_grp}\s+[\[]/} @$ra_tg_list;
+   my $re = q(^TestGroup name:\s+).$::generic_test_grp.q(\s+[\[]);
+   my @matches = grep {/$re/} @$ra_tg_list;
    print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
-     print "Creating test group matching name [$::test_grp]...";
-     $::utils->doCmd($::utils->fmt_cmd("add_group", $::test_grp));
+     print "Creating test group matching name [$::generic_test_grp]...";
+     $::utils->doCmd($::utils->fmt_cmd("add_group", $::generic_test_grp));
+     $::utils->doCmd($::utils->fmt_cmd("add_group", $::l3_test_grp));
    }
+
    if (!(defined $::cx_name) or ("" eq $::cx_name)) {
-     $::cx_name = $::test_grp."-";
+     $::cx_name = $::generic_test_grp."-";
    }
    if (!(defined $::buffer_size) or ($::buffer_size < 0)) {
      print ("Please set --buffer_size, bye.");
@@ -271,16 +281,29 @@ if ($::action eq "create") {
 
    for (my $i=0; $i < $::num_cx; $i++) {
      my $j = 10000 + $i;
-     my $name = $::cx_name . substr("$j", 1);
+     my $cname = "_".$::cx_name . substr("$j", 1);
      my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
 
-     print "Connection name $name uses $ports\n";
-     my $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
-      .qq(--action create_cx --cx_name $name --endp_type $::endp_type )
+     #print "Connection name $name uses $ports\n";
+     my $cmd = qq(/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
+      .qq(--action create_cx --cx_name $cname --endp_type $::endp_type )
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
      print "CMD: $cmd\n";
      `$cmd`;
-     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::test_grp, $name));
+     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
+
+     my $gname = $::cx_name . substr("$j", 1);
+     $cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
+      .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
+      .qq(--stream $::vid_mode --quiet yes );
+     my $cmd2 = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
+      .qq(--action create_endp --endp_name $gname --endp_type 'generic' )
+      .qq(--port_name ).$selected_list[$i].q( )
+      .q(--endp_cmd ").$cmd.q(");
+     print "CMD: $cmd2\n";
+     `$cmd2`;
+     sleep_ms(20);
+     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::generic_test_grp, $gname));
    }
 
    exit 0;
@@ -292,25 +315,15 @@ if ($::action eq "destroy") {
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "start") {
-   print "we will start!";
-
-   if (!(defined $::test_grp) || ("" eq $::test_grp)) {
+   if (!(defined $::generic_test_grp) || ("" eq $::generic_test_grp)) {
      print "Please specify test group to start: --test_grp foo; bye.";
      exit(1);
    }
 
    # collect all cx names in the test group and start up the
    # video pulser on them
-   print "==========================================\n";
-   my $ra_items = $::utils->group_items($::test_grp);
-
-   print Dumper($ra_items) if ($::debug);
-   foreach my $name (@$ra_items) {
-     my $CMD = "./l3_vid_ stuff $::vid_mode ect";
-     print "$CMD\n";
-   }
-   print "==========================================\n";
-   #$::utils->sleep_ms(100);
+   print "Starting connections...";
+   $::utils->doCmd("start_group $::generic_test_grp");
 
    exit 0;
 }

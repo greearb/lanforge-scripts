@@ -218,12 +218,13 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
 # the stream resolution (kbps) is really a better burn rate
 
 my $show_help = undef;
-
+our $debug = 0;
 $::stream_key = $resolution;
 GetOptions
 (
    'help|h'               => \$show_help,
    'quiet|q=s'            => \$::quiet,
+   'debug|d'              => \$::debug,
    'silent+'              => \$::silent,
    'mgr|m=s'              => \$::lfmgr_host,
    'mgr_port|p:i'         => \$::lfmgr_port,
@@ -503,13 +504,13 @@ do {
   my ($finishtime_sec, $finishtime_usec) = gettimeofday();
   $last_fill_time_sec = ($finishtime_sec + ($finishtime_usec / 1000000)) - $starttime;
   if ($bytes > $buf_size) {
-    print "\n +", ($bytes - $startbytes), " took $last_fill_time_sec\n";
+    print "\n +", ($bytes - $startbytes), " took $last_fill_time_sec\n" if ($::debug);
   }
   $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
   if ($drain_wait_sec < 0) {
     print "\n Constant TX\n";
   }
-  print "\n drain_wait_seconds now $drain_wait_sec v $est_fill_time_sec = ", ($est_fill_time_sec - $last_fill_time_sec ), "\n";
+  print "\n drain_wait_seconds now $drain_wait_sec v $est_fill_time_sec = ", ($est_fill_time_sec - $last_fill_time_sec ), "\n" if ($::debug);
 
   if ($drain_wait_sec > 0) {
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
