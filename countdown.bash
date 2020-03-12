@@ -1,7 +1,7 @@
 #!/bin/bash
-ticker_time=$1
-orig_time=$1
-echo ""
+ticker_time="$1"
+orig_time="$1"
+#echo ""
 while [[ $ticker_time -gt 0 ]]; do
    sleep 1
    ticker_time=$(( $ticker_time - 1 ))
