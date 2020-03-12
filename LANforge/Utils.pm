@@ -43,6 +43,7 @@ sub connect {
    $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
    $t->waitfor($self->{prompt});
    $t->print("set_flag brief 0"); # If we leave it brief, RSLT prompt is not shown.
+   $t->waitfor($self->{prompt});
    if ($self->isQuiet()) {
       if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
          $self->cli_send_silent(0);
@@ -200,45 +201,45 @@ sub normalize_bucket {
       #print "bkts len: " . @bkts . "\n";
       my @nbkts = (0) x (@bkts);
       for ($i = 0; $i<@bkts; $i++) {
-	# Figure out the bkt range
-	my $minv = 0;
-	my $maxv = 2 ** $i;
-	if ($i > 0) {
-	  $minv = 2 ** ($i - 1);
-	}
-	# Adjust by the min value, which is treated as an offset
-	$minv += $min;
-	$maxv += $min;
+   # Figure out the bkt range
+   my $minv = 0;
+   my $maxv = 2 ** $i;
+   if ($i > 0) {
+     $minv = 2 ** ($i - 1);
+   }
+   # Adjust by the min value, which is treated as an offset
+   $minv += $min;
+   $maxv += $min;
 
-	# And adjust based on round-trip time to deal with clock lag
-	$minv += $adjust;
-	$maxv += $adjust;
+   # And adjust based on round-trip time to deal with clock lag
+   $minv += $adjust;
+   $maxv += $adjust;
 
-	# And now find the normalized bucket this fits in
-	#print "maxv: $maxv\n";
-	my $z;
-	my $idx = 0;
-	for ($z = 1; $z < 32; $z++) {
-	  if ($maxv < (2 ** $z)) {
-	    #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
-	    $idx = $z;
-	    # Everything else falls in the last bucket
-	    if ($idx >= @bkts) {
-	      $idx = (@bkts - 1);
-	    }
-	    last;
-	  }
-	}
+   # And now find the normalized bucket this fits in
+   #print "maxv: $maxv\n";
+   my $z;
+   my $idx = 0;
+   for ($z = 1; $z < 32; $z++) {
+     if ($maxv < (2 ** $z)) {
+       #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
+       $idx = $z;
+       # Everything else falls in the last bucket
+       if ($idx >= @bkts) {
+         $idx = (@bkts - 1);
+       }
+       last;
+     }
+   }
 
-	#print "idx: $idx i: $i ";
-	#print "nbkts: " . $nbkts[$idx];
+   #print "idx: $idx i: $i ";
+   #print "nbkts: " . $nbkts[$idx];
         #print " bkts: " . $bkts[$i] . "\n";
-	my $nv = $nbkts[$idx] + $bkts[$i];
-	@nbkts[$idx] = $nv;
+   my $nv = $nbkts[$idx] + $bkts[$i];
+   @nbkts[$idx] = $nv;
       }
 
       for ($i = 0; $i < @nbkts; $i++) {
-	$rv .= ($nbkts[$i] . " ");
+   $rv .= ($nbkts[$i] . " ");
       }
       return $rv;
     }
@@ -703,6 +704,256 @@ sub group_items {
    my $ra_items = [split(/\s+/, $trimmed)];
    #print Dumper($ra_items);
    return $ra_items;
+}
+
+# Generic disassembly of lines created by show
+our @starting_exceptions = (
+   # please keep these sorted
+   "Advertising:",
+   "Command:",
+   "Conn Established:",
+   "Conn Timeouts:",
+   "Current:",
+   "Cx Detected:",
+   "DNS Servers:",
+   "Endpoint [",
+   "GenericEndp [",
+   "Latency:",
+   "Missed Beacons:",
+   "Pkt-Gaps:",
+   "Results[",
+   ">>RSLT:",
+   "Rx Bytes:",
+   "Rx Bytes (On Wire):",
+   "Rx Duplicate Pkts:",
+   "Rx-Invalid-CRYPT:",
+   "Rx-Invalid-MISC:",
+   "Rx OOO Pkts:",
+   "Rx Pkts:",
+   "Rx Pkts (On Wire):",
+   "RX-Silence:",
+   "Shelf: 1,",
+   "Supported:",
+   "TCP Retransmits:",
+   "Tx Bytes:",
+   "Tx Bytes (On Wire):",
+   "Tx-Excessive-Retry:",
+   "Tx Failed Bytes:",
+   "Tx Failed Pkts:",
+   "Tx Pkts:",
+   "Tx Pkts (On Wire):",
+   "Tx-Retries:",
+   );
+our @one_line_keys = (
+   "Latency:",
+   "Pkt-Gaps:",
+   "RX-Silence:",
+   "Cx Detected:",
+   );
+#
+# examples of using this:
+# $rh = u->show_as_hash($txt)
+# $rh = u->show_as_hash(\$txt)
+# $rh = u->show_as_hash(split(/\n/, $txt))
+# $rh = u->show_as_hash(\@lines)
+#
+sub show_as_hash {
+   my ($self, $in) = (undef, undef);
+   if (@_ > 1) {
+      ($self, $in) = @_;
+   }
+   else {
+      $in = pop(@_);
+   }
+   my @lines = ();
+
+   # this allows us to pass in \$txt, split(/\n/, $txt) or just $txt
+   if ((ref $in) eq "") {
+      @lines = split(/\r?\n/, $in);
+   }
+   elsif ((ref $in) eq "SCALAR") {
+      @lines = split(/\r?\n/, $$in);
+   }
+   elsif ((ref $in) eq "ARRAY") {
+      @lines = @$in;
+   }
+
+   my $rh_pairs = {};
+   my @special = ();
+
+   # https://stackoverflow.com/questions/31724503/most-efficient-way-to-check-if-string-starts-with-needle-in-perl
+   my $key = undef;
+   my $value = undef;
+   my @hunks = ();
+   #print Dumper(\@lines);
+   chomp(@lines);
+   my $found_start_x = 0;
+   foreach my $line (@lines) {
+      foreach my $start (@LANforge::Utils::starting_exceptions) {
+         # we purposes are not wasting time trimming whitespace
+         my $i = index($line, $start);
+         if ($i >= 0) {
+            push(@special, $line);
+            $found_start_x++;
+            last;
+         }
+      }
+      if ($found_start_x) {
+         $found_start_x = 0;
+         next;
+      }
+      # at this point, every line should be split using colons and spaces
+      @hunks = split(/\s+/, $line);
+      foreach my $hunk (@hunks) {
+         if (rindex($hunk, ':') == length($hunk)-1) {
+            $key = substr($hunk, 0, rindex($hunk, ':'));
+            next;
+         }
+         $value = $hunk;
+         if ((defined $key) && ("" ne $key)) {
+            $rh_pairs->{$key} = (defined $value) ? $value : "";
+            $key = undef;
+            $value = undef;
+         }
+      }
+   }
+   @hunks = ();
+   $key = undef;
+   $value = undef;
+   foreach my $line (@special) {
+      #print "\nspecial: $line";
+      my $rh_vals = undef;
+
+      # special cases for certain lines
+      if (index($line, '>>RSLT:') >= 0) {
+         $rh_vals = {
+            'Cmd' => substr($line, index($line, 'Cmd:')+5),
+            'RSLT' => substr($line, index($line, ':')+2, (index($line, ' Cmd:') - index($line, ':')-3)),
+         };
+         foreach my $subkey (keys %$rh_vals) {
+            $rh_pairs->{$subkey} = $rh_vals->{$subkey}
+         }
+         #$rh_pairs->{"RSLT"} = $rh_vals;
+         #print Dumper($rh_pairs->{"RSLT"});
+         $rh_vals = undef;
+         $key = undef;
+         $value = undef;
+         next;
+      }
+      if (index($line, 'Endpoint [') >= 0) {
+         my $flags = substr($line, index($line, '(')+1, -1); # split(/\s+/,
+         my $name = substr($line, index($line, '[')+1, index($line, ']') - index($line, '[')-1);
+         $rh_vals = {
+            'Endpoint-name' => $name,
+            'Endpoint-flags' => $flags,
+         };
+         foreach my $subkey (keys %$rh_vals) {
+            $rh_pairs->{$subkey} = $rh_vals->{$subkey}
+         }
+         #$rh_pairs->{"Endpoint"} = $rh_vals;
+         $rh_vals = undef;
+         $key = undef;
+         $value = undef;
+         next;
+      }
+      if (index($line, 'Shelf: 1,') >= 0) {
+         $line =~ s/1,/1/;
+      }
+      my $found_oneline = 0;
+      foreach my $keyv (@LANforge::Utils::one_line_keys) {
+         if (index($line, $keyv) >= 0) {
+            $found_oneline++;
+            if (rindex($keyv, ':') >= 1) {
+               $keyv = substr($keyv, 0, rindex($keyv, ':'));
+            }
+            $rh_pairs->{$keyv} = substr($line, index($line, ":")+2);
+            last;
+         }
+         next if ($found_oneline);
+      }
+
+      my $i = index($line, ':');
+      $key = substr($line, 0, $i);
+      $key =~ s/^\s*//g;
+      $value = substr($line, $i+1);
+      $value =~ s/^\s*//g;
+      @hunks = split(/\s+/, $value);
+      $rh_vals = $self->hunks_to_hashes($key, \@hunks);
+      foreach my $subkey (keys %$rh_vals) {
+         $rh_pairs->{$subkey} = $rh_vals->{$subkey}
+      }
+      $rh_vals = undef;
+      $key = undef;
+      $value = undef;
+   }
+   #foreach $key (sort keys %$rh_pairs) {
+   #   print "{$key} => $rh_pairs->{$key}\n";
+   #}
+   #die("debugging");
+   return $rh_pairs;
+}
+
+sub hunks_to_hashes {
+   my ($self, $prefix, $input) = (undef, undef, undef);
+   if (@_ > 2) {
+      ($self, $prefix, $input) = @_;
+   }
+   else {
+      $prefix = shift;
+      $input = shift;
+   }
+   my @hunks = ();
+   if (ref($input) eq "ARRAY") {
+      @hunks = @$input;
+   }
+   elsif (ref($input) eq "SCALAR") {
+      @hunks = (@$input);
+   }
+   else {
+      die("Utils::hunks_to_hashes() expects an array");
+   }
+   if (index($prefix, ' ') >= 0) {
+      $prefix =~ s/\s+/-/g
+   }
+
+   my $rh = {};
+   my $key = undef;
+   my $value = undef;
+   foreach my $hunk (@hunks) {
+
+      if (rindex($hunk, '/s') >= 1) {
+         $key = $prefix."-Per-Sec";
+         $value = substr($hunk, 0, index($hunk, '/s'));
+         $rh->{$key} = (defined $value) ? $value : "";
+
+         # create bps not just Bps
+         if (index($prefix, "Bytes") >= 1) {
+            my $bps = (0 + $value) * 8;
+            $rh->{$prefix."-bps"} = $bps;
+         }
+         $key = undef;
+         $value = undef;
+         next;
+      }
+      if (rindex($hunk, ':') == length($hunk)-1) {
+         $key = $prefix .'-'. substr($hunk, 0, rindex($hunk, ':'));
+         next;
+      }
+      $value = $hunk;
+      if ((defined $key) && ("" ne $key)) {
+         $rh->{$key} = (defined $value) ? $value : "";
+         if ((index($prefix, "Bytes") >= 1)
+            && ((index($key, "Total") >=0 ) || (index($key, "Cur") >=0 ))) {
+            my $bits = (0 + $value) * 8;
+            my $nkey = $key;
+            $nkey =~ s/Bytes/Bits/;
+            $rh->{$nkey} = $bits;
+         }
+         $key = undef;
+         $value = undef;
+      }
+   }
+   return $rh;
 }
 
 ####
