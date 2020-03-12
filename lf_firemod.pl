@@ -347,34 +347,41 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
    elsif ($::action eq "show_endp") {
       if ((defined $::endp_vals) && ("$::endp_vals" ne "")) {
 
+
          my %option_map    = ();
          my $option        = '';
          for $option (split(',', $::endp_vals)) {
             #print "OPTION[$option]\n";
             #next if ($option =~ /\s/);
-            if ($option =~ /rx_pps/    ) { $option = "Rx Pkts"; }
-            if ($option =~ /tx_pps/    ) { $option = "Tx Pkts"; }
-            if ($option =~ /rx_pkts/   ) { $option = "Rx Pkts"; }
-            if ($option =~ /tx_pkts/   ) { $option = "Tx Pkts"; }
+            if ($option =~ /rx[_-]pps/    ) { $option = "Rx-Pkts-Per-Sec"; }
+            if ($option =~ /tx[_-]pps/    ) { $option = "Tx-Pkts-Per-Sec"; }
+            if ($option =~ /rx[_-]pkts/   ) { $option = "Rx-Pkts-Total"; }
+            if ($option =~ /tx[_-]pkts/   ) { $option = "Tx-Pkts-Total"; }
+            if ($option =~ /rx[_-]bps/    ) { $option = "Rx-Bytes-bps"; }
+            if ($option =~ /tx[_-]bps/    ) { $option = "Tx-Bytes-bps"; }
+
+            if ($option =~ /^Rx[ _-]Bytes$/  ) { $option = "Rx-Bytes-Total"; }
+            if ($option =~ /^Tx[ _-]Bytes$/  ) { $option = "Tx-Bytes-Total"; }
+            if ($option =~ /^Rx[ _-]Pkts$/   ) { $option = "Rx-Pkts-Total"; }
+            if ($option =~ /^Tx[ _-]Pkts$/   ) { $option = "Tx-Pkts-Total"; }
 
             # we don't know if we're armageddon or layer 3
             if ($option =~ /tx_bytes/  ) {
-               $option_map{ "Tx Bytes" } = '';
+               $option_map{ "Tx-Bytes-Total" } = '';
                $option = "Bytes Transmitted";
             }
             if ($option =~ /rx_b(ps|ytes)/  ) {
-               $option_map{ "Rx Bytes" } = '';
+               $option_map{ "Rx-Bytes-Total" } = '';
                $option = "Bytes Rcvd";
             }
             if ($option =~ /tx_packets/) {
-               $option_map{ "Tx Pkts" } = '';
+               $option_map{ "Tx-Pkts-Total" } = '';
                $option = "Packets Transmitted";
             }
             if ($option =~ /rx_packets/) {
-               $option_map{ "Rx Pkts" } = '';
+               $option_map{ "Rx-Pkts-Total" } = '';
                $option = "Packets Rcvd";
             }
-
             $option_map{ $option } = '';
          }
          # options are reformatted
@@ -387,165 +394,165 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          else {
            @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
          }
+         my $rh_value_map = $::utils->show_as_hash(\@lines);
 
-         for($i=0; $i<@lines; $i++) {
-            $lines[$i] = $lines[$i]." #";
+         for my $option (keys %option_map) {
+            my $val = '-';
+
+            if (defined $rh_value_map->{$option}) {
+               $val = $rh_value_map->{$option};
+
+               if ($option =~ /Latency/) {
+                  $val = $rh_value_map->{$option};
+                  $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                  $option_map{"Latency"} = $val;
+               }
+               elsif ($option =~ /Pkt-Gaps/) {
+                  $val = $rh_value_map->{$option};
+                  $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                  $option_map{"Pkt-Gaps"} = $val;
+               }
+               elsif ($option =~ /RX-Silence/) {
+                  $val = $rh_value_map->{$option};
+                  $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
+                  $option_map{"RX-Silence"} = $val;
+               }
+            }
+            else {
+               $val = 'not found';
+            }
+            $option_map{ $option } = $val;
          }
-         my $matcher = " (".join('|', keys %option_map)."):";
-         my @parts;
-         my @matches = grep( /$matcher/, @lines);
-         my $match;
-         #print "MATCHER $matcher  matches:\n" . join("\n", @matches) . NL;
-         for my $end_val (split(',', $::endp_vals)) {
-            my $endval_done = 0;
-            for $match (@matches) {
-               last if ($endval_done);
-               #print "\nMatch-line: $end_val> $match\n";
-
-               # no value between colon separated tags can be very
-               # confusing to parse, let's force a dumb value in if we find that
-               if ($match =~ /[^ ]+:\s+[^ ]+:/) {
-                  $match =~ s/([^ ]+:)\s+([^ ]+:\s+)/$1 ""  $2/g;
-                  #print "\n M> $match\n";
-               }
-
-               ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-               ##    special cases                                                  #
-               ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-               if ($end_val =~ /Latency/) {
-                  if ($match =~ /.*Latency:\s+(.*)\s+#/) {
-                     my $val = $1;
-                     #print "val -:$val:-\n";
-                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-                     $option_map{"Latency"} = $val;
-                  }
-               }
-               elsif ($end_val =~ /Pkt-Gaps/) {
-                  if ($match =~ /.*Pkt-Gaps:\s+(.*)\s+#/) {
-                     my $val = $1;
-                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-                     $option_map{"Pkt-Gaps"} = $val;
-                  }
-               }
-               elsif ($end_val =~ /RX-Silence/) {
-                  if ($match =~ /.*RX-Silence:\s+(.*)\s+#/) {
-                     my $val = $1;
-                     $option_map{"Normalized-Hdr"} = $::utils->normalize_bucket_hdr(17);
-                     $option_map{"RX-Silence"} = $val;
-                  }
-               }
-               elsif ($end_val =~ /Cx Detected/) {
-                  my $value = 0;
-                  #print "# case 2\n";
-                  ($option) = ($match =~ /(Cx Detected)/);
-                  if (defined $option_map{ $option } ) {
-                     $value = 0 + ($match =~ /:\s+(\d+)/)[0];
-                     $option_map{ $option } = $value;
-                     $endval_done++;
-                     last;
-                  }
-               }
-               elsif (($match =~ /Tx (Bytes|Pkts)/ && (($end_val =~ /tx_(bps|pps)/) || ($end_val =~ /Tx (Bytes|Pkts)/) || ($end_val =~ /(Pkts|Bytes) Sent/))) ||
-                     ($match =~ /Rx (Bytes|Pkts)/ && (($end_val =~ /rx_(bps|pps)/) || ($end_val =~ /Rx (Bytes|Pkts)/)|| ($end_val =~ /(Pkts|Bytes) Rcvd/)))) {
-                  my $value = 0;
-                  ($option) = ($match =~ /([TR]x (Bytes|Pkts))/);
-                  #print "# case 3, Option: $option" . NL;
-                  @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
-                  #print "\n TX: ".join(",",@parts)."\n";
-                  if (defined $option_map{ $option } ) {
-                     if (($end_val =~ /tx_(bps|pps)/ ) ||
-                         ($end_val =~ /rx_(bps|pps)/ )) {
-                        $value = 0 + $parts[2];
-                        if ($end_val =~ /bps/) {
-                          $value *= 8;
-                        }
-                     }
-                     else {
-                        $value = 0 + $parts[0];
-                     }
-                     print "\n    B end_val[$end_val] option[$option] now ".$value."\n";
-                     $option_map{ $end_val } = $value;
-
-                     # For backwards compat with older logic
-                     if (defined($option_map{"Bytes Rcvd"})) {
-                       if ($end_val eq "Rx Bytes") {
-                         $option_map{"Bytes Rcvd"} = $value;
-                       }
-                     }
-                     $endval_done++;
-                     last;
-                  }
-               }
-               elsif ($match =~ / [TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)/
-                     || $match =~ /Conn (Established|Timeouts)|TCP Retransmits/) {
-                  my $value = 0;
-                  ($option) = ($match =~ /([TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)|Conn (Established|Timeouts)|TCP Retransmits)/);
-                  @parts      = $match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$};
-                  #print "\n# case 4 TX: ".join(",",@parts)."\n";
-                  if (defined $option_map{ $option } ) {
-                     #print "$match\n";
-                     $match =~ s/""/ /g;
-                     ($option_map{ $option }) = $match =~/.*?:\s+(.*?)\s+\#$/;
-                     $endval_done++;
-                     last;
-                  }
-               }
-               elsif ($match =~ /(Bytes|Packets) (Rcvd|Transmitted)/ ) {
-                  ($option) = ($match =~ /((Bytes|Packets) (Rcvd|Transmitted))/);
-                  @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
-                  #print "\n# case 5 TX: ".join(",",@parts)."\n";
-                  my $value = 0;
-                  if (defined $option_map{ $option } ) {
-                     if ($end_val =~ /rx_(bps|pps)/ ) {
-                        $value = 0 + $parts[2];
-                     }
-                     elsif ($end_val =~ /rx_(byte|pkt|packet)s/ ) {
-                        $value = 0 + $parts[0];
-                     }
-                     if ($option eq "Bytes Rcvd") {
-                        if ($end_val =~ /rx_bps/ ) {
-                           $value   *= 8;
-                        }
-                     }
-                     $option_map{ $option } = $value;
-                     $endval_done++;
-                     last;
-                  }
-               }
-               else {
-                  $match =~ s/Shelf: (\d+), /Shelf: $1  /
-                     if ($match =~ /^\s*Shelf:/ );
-
-                  $match =~ s/(Endpoint|PktsToSend): (\d+) /$1: $2  /
-                     if ($match =~ /\s*(Endpoint|PktsToSend):/ );
-
-                  if ($match =~ /((Src|Dst)Mac): /) {
-                     my ($name1, $mac1) = ( $match =~ /(...Mac): (.*?)  /);
-                     $mac1 =~ s/ /-/g;
-                     $match =~ s/(...Mac): (.. .. .. .. .. ..) /$1: $mac1 /;
-                  }
-                  if ($match =~ /FileName: .*? SendBadCrc: /) {
-                     my $filename1 = '';
-                     ($filename1) =~ /FileName: (.*?) SendBadCrc.*$/;
-                     $filename1 = '""' if ($filename1 =~ /^ *$/);
-                     $match =~ s/(FileName): (.*?) (SendBadCrc.*)$/$1: $filename1  $3/;
-                  }
-                  $match =~ s/CWND: (\d+) /CWND: $1  /
-                     if ($match =~/CWND: (\d+) /);
-                  # ~specials
-
-                  #print "  match: $match\n";
-                  if ($match =~ /.*$end_val:\s+(\S+)/) {
-                    my $value = $1;
-                    #print " Found value: $value for key: $end_val\n";
-                    $option_map{ $end_val } = $value;
-                    $endval_done++;
-                  }
-               }
-            } # ~matches
-         } # ~endp_vals
+#
+#            my $endval_done = 0;
+#            for $match (@matches) {
+#               last if ($endval_done);
+#               print "\nMatch-line: $end_val> $match\n";
+#
+#               # no value between colon separated tags can be very
+#               # confusing to parse, let's force a dumb value in if we find that
+#               #if ($match =~ /[^ ]+:\s+[^ ]+:/) {
+#               #   $match =~ s/([^ ]+:)\s+([^ ]+:\s+)/$1 ""  $2/g;
+#               #   #print "\n M> $match\n";
+#               #}
+#
+#
+#               ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#               ##    special cases                                                  #
+#               ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#
+#               elsif ($end_val =~ /Cx Detected/) {
+#                  my $value = 0;
+#                  #print "# case 2\n";
+#                  ($option) = ($match =~ /(Cx Detected)/);
+#                  if (defined $option_map{ $option } ) {
+#                     $value = 0 + ($match =~ /:\s+(\d+)/)[0];
+#                     $option_map{ $option } = $value;
+#                     $endval_done++;
+#                     last;
+#                  }
+#               }
+#               elsif (($match =~ /Tx (Bytes|Pkts)/ && (($end_val =~ /tx_(bps|pps)/) || ($end_val =~ /Tx (Bytes|Pkts)/) || ($end_val =~ /(Pkts|Bytes) Sent/))) ||
+#                     ($match =~ /Rx (Bytes|Pkts)/ && (($end_val =~ /rx_(bps|pps)/) || ($end_val =~ /Rx (Bytes|Pkts)/)|| ($end_val =~ /(Pkts|Bytes) Rcvd/)))) {
+#                  my $value = 0;
+#                  ($option) = ($match =~ /([TR]x (Bytes|Pkts))/);
+#                  #print "# case 3, Option: $option" . NL;
+#                  @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
+#                  #print "\n TX: ".join(",",@parts)."\n";
+#                  if (defined $option_map{ $option } ) {
+#                     if (($end_val =~ /tx_(bps|pps)/ ) ||
+#                         ($end_val =~ /rx_(bps|pps)/ )) {
+#                        $value = 0 + $parts[2];
+#                        if ($end_val =~ /bps/) {
+#                          $value *= 8;
+#                        }
+#                     }
+#                     else {
+#                        $value = 0 + $parts[0];
+#                     }
+#                     print "\n    B end_val[$end_val] option[$option] now ".$value."\n";
+#                     $option_map{ $end_val } = $value;
+#
+#                     # For backwards compat with older logic
+#                     if (defined($option_map{"Bytes Rcvd"})) {
+#                       if ($end_val eq "Rx Bytes") {
+#                         $option_map{"Bytes Rcvd"} = $value;
+#                       }
+#                     }
+#                     $endval_done++;
+#                     last;
+#                  }
+#               }
+#               elsif ($match =~ / [TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)/
+#                     || $match =~ /Conn (Established|Timeouts)|TCP Retransmits/) {
+#                  my $value = 0;
+#                  ($option) = ($match =~ /([TR][Xx] (((OOO|Duplicate|Failed) (Bytes|Pkts))|Wrong Dev|CRC Failed|Bit Errors|Dropped)|Conn (Established|Timeouts)|TCP Retransmits)/);
+#                  @parts      = $match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$};
+#                  #print "\n# case 4 TX: ".join(",",@parts)."\n";
+#                  if (defined $option_map{ $option } ) {
+#                     #print "$match\n";
+#                     $match =~ s/""/ /g;
+#                     ($option_map{ $option }) = $match =~/.*?:\s+(.*?)\s+\#$/;
+#                     $endval_done++;
+#                     last;
+#                  }
+#               }
+#               elsif ($match =~ /(Bytes|Packets) (Rcvd|Transmitted)/ ) {
+#                  ($option) = ($match =~ /((Bytes|Packets) (Rcvd|Transmitted))/);
+#                  @parts      = ($match =~ m{ Total: (\d+) +Time: \d+s\s+ Cur: (\d+) +(\d+)\/s \#$});
+#                  #print "\n# case 5 TX: ".join(",",@parts)."\n";
+#                  my $value = 0;
+#                  if (defined $option_map{ $option } ) {
+#                     if ($end_val =~ /rx_(bps|pps)/ ) {
+#                        $value = 0 + $parts[2];
+#                     }
+#                     elsif ($end_val =~ /rx_(byte|pkt|packet)s/ ) {
+#                        $value = 0 + $parts[0];
+#                     }
+#                     if ($option eq "Bytes Rcvd") {
+#                        if ($end_val =~ /rx_bps/ ) {
+#                           $value   *= 8;
+#                        }
+#                     }
+#                     $option_map{ $option } = $value;
+#                     $endval_done++;
+#                     last;
+#                  }
+#               }
+#               else {
+#                  $match =~ s/Shelf: (\d+), /Shelf: $1  /
+#                     if ($match =~ /^\s*Shelf:/ );
+#
+#                  $match =~ s/(Endpoint|PktsToSend): (\d+) /$1: $2  /
+#                     if ($match =~ /\s*(Endpoint|PktsToSend):/ );
+#
+#                  if ($match =~ /((Src|Dst)Mac): /) {
+#                     my ($name1, $mac1) = ( $match =~ /(...Mac): (.*?)  /);
+#                     $mac1 =~ s/ /-/g;
+#                     $match =~ s/(...Mac): (.. .. .. .. .. ..) /$1: $mac1 /;
+#                  }
+#                  if ($match =~ /FileName: .*? SendBadCrc: /) {
+#                     my $filename1 = '';
+#                     ($filename1) =~ /FileName: (.*?) SendBadCrc.*$/;
+#                     $filename1 = '""' if ($filename1 =~ /^ *$/);
+#                     $match =~ s/(FileName): (.*?) (SendBadCrc.*)$/$1: $filename1  $3/;
+#                  }
+#                  $match =~ s/CWND: (\d+) /CWND: $1  /
+#                     if ($match =~/CWND: (\d+) /);
+#                  # ~specials
+#
+#                  #print "  match: $match\n";
+#                  if ($match =~ /.*$end_val:\s+(\S+)/) {
+#                    my $value = $1;
+#                    #print " Found value: $value for key: $end_val\n";
+#                    $option_map{ $end_val } = $value;
+#                    $endval_done++;
+#                  }
+#               }
+#            } # ~matches
+#         } # ~endp_vals
          for $option ( sort keys %option_map ) {
-            print $option.": ".$option_map{ $option }.$::NL;
+            print $option.": ".$option_map{ $option }."\n";
          }
       }
       else {
@@ -682,6 +689,7 @@ elsif ($::action eq "show_cx") {
       $::test_mgr = "default_tm";
    }
    my $cmd = $::utils->fmt_cmd("show_cxe", $::test_mgr, $::cx_name );
+   #print "$cmd\n";
    print $::utils->doAsyncCmd($cmd)."\n";
 }
 elsif ($::action eq "create_cx") {
