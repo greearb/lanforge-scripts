@@ -276,7 +276,7 @@ sub decode {
 
          $i++;
          $ln = $ta[$i];
-         if ( $ln =~ /\s+DNS Servers:\s+(.*)/ ) {
+         if ( $ln =~ /\s+DNS[ -]Servers:\s+(.*)/ ) {
             $self->dns_servers($i);
             $i++;
             $ln = $ta[$i];
@@ -340,7 +340,7 @@ sub decode {
 
          #   MAC: 00:c0:95:e2:4c:0e  DEV: eth5  MTU: 1500  TX Queue Len: 400
          if ( $ln =~
-/\s+MAC:\s+(\S+)\s+DEV:\s+(\S+)\s+MTU:\s+(\d+)\s+TX Queue Len:\s+(\d+)/
+/\s+MAC:\s+(\S+)\s+DEV:\s+(\S+)\s+MTU:\s+(\d+)\s+TX[ -]Queue[ -]Len:\s+(\d+)/
            )
          {
             $self->mac_addr($1);
