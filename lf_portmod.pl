@@ -20,12 +20,11 @@ package main;
 use strict;
 use warnings;
 use diagnostics;
-if ((defined $ENV{'DEBUG'}) && ($ENV{'DEBUG'} eq "1")) {
-   use Data::Dumper;
-   use Carp;
-   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
-   $SIG{ __WARN__  } = sub { Carp::confess( @_ ) };
-}
+use Data::Dumper;
+use Carp;
+$SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
+$SIG{ __WARN__  } = sub { Carp::confess( @_ ) };
+
 # Un-buffer output
 $| = 1;
 
@@ -247,7 +246,7 @@ if ($stats_from_file eq "") {
   # Configure our utils.
   $::utils = new LANforge::Utils();
   my $t = $::utils->connect($lfmgr_host, $lfmgr_port);
-
+  $::utils->sleep_ms(10);
   if ($::utils->isQuiet()) {
     if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
       $::utils->cli_send_silent(0);
@@ -376,8 +375,8 @@ if ($cli_cmd ne "") {
 
 if ($load ne "") {
    $cli_cmd = "load $load overwrite";
-   $::utils->doCmd($cli_cmd);
-   my @rslt = $t->waitfor("/LOAD-DB:  Load attempt has been completed./");
+   my @rslt = $::utils->doAsyncCmd($cli_cmd);
+   # $t->waitfor("/LOAD-DB:  Load attempt has been completed./");
    if (!$::utils->isQuiet()) {
       print @rslt;
       print "\n";
@@ -389,7 +388,6 @@ if ($load ne "") {
 
 if ((defined $list_port_names) && ($list_port_names ne "")) {
    my @lines =split("\n", $::utils->doAsyncCmd("nc_show_ports 1 $card all"));
-   print "---------------------------- ~x:\n";
    my $note = "";
    my $eid = "";
    my $ip = "";
