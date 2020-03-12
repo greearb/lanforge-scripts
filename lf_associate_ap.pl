@@ -366,49 +366,6 @@ our $quiesce_sec        = 3;                 # pretty standard
 =pod
 this fmt_cmd subroutine is now disabled, please use utils->fmt_cmd
 =cut
-#sub fmt_cmd {
-#   my $rv;
-#   if ($::utils->can('fmt_cmd')) {
-#      #print "fmt_cmd passing down to Utils::fmt_cmd()\n";
-#      $rv = $::utils->fmt_cmd(@_);
-#      return $rv;
-#   }
-#
-#   for my $hunk (@_) {
-#      die("fmt_cmd called with empty space or null argument, bye.") unless(defined $hunk && $hunk ne '');
-#      die("rv[${rv}]\n --> fmt_cmd passed an array, bye.")  if(ref($hunk) eq 'ARRAY');
-#      die("rv[${rv}]\n --> fmt_cmd passed a hash, bye.")    if(ref($hunk) eq 'HASH');
-#      $hunk = "0" if($hunk eq "0" || $hunk eq "+0");
-#
-#      if( $hunk eq "" ) {
-#         #print "hunk[".$hunk."] --> ";
-#         $hunk = 'NA';
-#         #print "hunk[".$hunk."]\n";
-#         #print "fmt_cmd: warning: hunk was blank, now NA. Prev hunks: $rv\n"
-#      }
-#      $rv .= ( $hunk =~m/ +/) ? "'$hunk' " : "$hunk ";
-#   }
-#   chomp $rv;
-#   print "cmd formatted to: $rv\n" unless($::utils->isQuiet());
-#   return $rv;
-#}
-
-# deprecated, please use utils->doCmd()
-#sub doCmd {
-#  my $cmd = shift;
-#  die("doCmd: Blank command, bye.") unless ($cmd);
-#  die("doCmd: Telnet uninitialized, check that '\$t' is set. Bye." ) unless ($main::t);
-#
-#  if ($::utils->can('doCmd')) {
-#     #print "doCmd passing down to Utils::doCmd($cmd)\n";
-#     $::utils->doCmd($cmd);
-#   }
-#   else {
-#     $main::t->print($cmd);
-#     my @rslt = $::t->waitfor('/ \>\>RSLT:(.*)/');
-#     print "**************\n @rslt ................\n\n"  unless($::utils->isQuiet());
-#   }
-#}
 
 sub db_exists {
    my $db_name = shift;
@@ -434,7 +391,7 @@ sub load_db {
       my $has_tx_bytes  = 0;
       my $sta_cnt       = 0;
       my $prev_cnt      = 0;
-      my $status        = $::utils->doAsyncCmd(fmt_cmd("nc_show_ports", 1, $::resource, "ALL"));
+      my $status        = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_ports", 1, $::resource, "ALL"));
       my @status        = split("\n", $status);
 
       foreach (@status){
@@ -805,8 +762,10 @@ sub new_wifi_station {
                                  "$flags", "$::ssid", "$::passphrase",
                                  $mac_addr, "$flagsmask", $wifi_m, $::bssid);
    $::utils->doCmd($sta1_cmd);
-   $sta1_cmd   = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
+   #$::utils->sleep_ms(20);
+   $sta1_cmd = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
    $::utils->doCmd($sta1_cmd);
+   #$::utils->sleep_ms(20);
    #$::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
    if ($::admin_down_on_add) {
      my $cur_flags = 0x1; # port down
@@ -815,6 +774,7 @@ sub new_wifi_station {
                          "NA", "NA", "NA", "$cur_flags",
                          "NA", "NA", "NA", "NA", "$ist_flags");
      $::utils->doCmd($sta1_cmd);
+     #$::utils->sleep_ms(20);
    }
 
    if ($sleep_amt > 0) {
@@ -833,6 +793,7 @@ sub delete_port {
    if (defined $::port_del) {
       print "deleting port $::port_del\n" unless($::utils->isQuiet());
       $::utils->doCmd($::utils->fmt_cmd("rm_vlan", 1, $::resource, $::port_del));
+      $::utils->sleep_ms(20);
    }
 }
 
@@ -1652,30 +1613,9 @@ if (defined $log_cli) {
   }
 }
 
-our $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-          Timeout => 20);
-$t->open(Host    => $lfmgr_host,
-         Port    => $lfmgr_port,
-         Timeout => 10);
-$t->waitfor("/btbits\>\>/");
-
 # Configure our utils.
 our $utils = new LANforge::Utils();
-$utils->telnet($t);         # Set our telnet object.
-if ($utils->isQuiet()) {
-  if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
-    $utils->cli_send_silent(0);
-  }
-  else {
-    $utils->cli_send_silent(1); # Do not show input to telnet
-  }
-  $utils->cli_rcv_silent(1);  # Repress output from telnet
-}
-else {
-  $utils->cli_send_silent(0); # Show input to telnet
-  $utils->cli_rcv_silent(0);  # Show output from telnet
-}
-$utils->log_cli("# $0 ".`date "+%Y-%m-%d %H:%M:%S"`);
+$::utils->connect($lfmgr_host, $lfmgr_port);
 
 if ($db_postload ne "" && db_exists($::db_postload)==0) {
    print("Scenario [$::db_postload] does not exist. Please create it first.");
@@ -1778,7 +1718,7 @@ elsif ($action eq "del_all_phy" ) {
    }
 }
 elsif ($action eq "show_port") {
-   print $utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $resource, (sort(keys %sta_names))[0])) . "\n";
+   print $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $resource, (sort(keys %sta_names))[0])) . "\n";
 }
 
 exit(0);
