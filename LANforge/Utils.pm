@@ -513,7 +513,11 @@ sub fmt_cmd {
       $item++;
       $rv .= ( $mod_hunk =~m/ +/) ? "'$mod_hunk' " : "$mod_hunk ";
    }
-   chomp $rv;
+   if (rindex($rv, ' ', length($rv)-2) > 1) {
+      print STDERR "[$rv]\n";
+      $rv =~ s/\s+$//g;
+      print STDERR "[$rv]\n";
+   }
    print STDERR "\ncmd: $rv\n" if($show_err or $::quiet ne "yes");
    return $rv;
 }
