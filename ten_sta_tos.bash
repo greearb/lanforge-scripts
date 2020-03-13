@@ -28,6 +28,7 @@ function portmod() {
 function firemod() {
    local action="$1"
    shift
+   #echo ./lf_firemod.pl -m $station_host -r $resource --action $action "$@"
    ./lf_firemod.pl -m $station_host -r $resource --action $action "$@"
 }
 
@@ -41,7 +42,8 @@ function create_sta() {
 
 # flush the system by loading a blank database, then check for ports
 portmod --load BLANK
-sleep 1
+./countdown.bash 5
+#firemod do_cmd --cmd "nc_show_ports 1 $resource all"
 count=1
 while [[ $count -gt 0 ]]; do
    names=(`portmod --list_port_names | grep -P 'sta\d+'`)
@@ -52,9 +54,7 @@ done
 prefix=90000
 last_sta=$((prefix + $num_stations))
 last_sta="sta${last_sta#9}"
-#for n in `seq $prefix $last_sta`; do
-#   portmod --port_name sta${n#9}
-#done
+sleep 2
 create_sta "$first_sta" --num_stations $num_stations
 
 while [[ $count -lt $num_stations ]]; do
@@ -75,7 +75,7 @@ done
 if [[ x$upstream = x ]]; then
    echo "no upstream port, bye."
 fi
-firemod do_cmd --cmd "add_group udpcx"
+firemod do_cmd --quiet yes --cmd "add_group udpcx"
 for name in "${names[@]}"; do
    portname="1.${resource}.${name}"
    firemod create_cx --cx_name "udpten-${name}" \
@@ -84,18 +84,18 @@ for name in "${names[@]}"; do
 done
 sleep 0.1
 for name in "${names[@]}"; do
-   firemod do_cmd --cmd "add_tgcx udpcx udpten-${name}"
+   firemod do_cmd  --quiet yes --cmd "add_tgcx udpcx udpten-${name}"
 done
 firemod do_cmd --cmd "add_group tcpcx"
 for name in "${names[@]}"; do
    portname="1.${resource}.${name}"
-   firemod create_cx --cx_name "tcpten-${name}" \
+   firemod create_cx --quiet yes --cx_name "tcpten-${name}" \
       --use_ports $portname,$upstream --use_speeds 35000,35000 \
       --endp_type tcp  --tos VO
 done
 sleep 0.1
 for name in "${names[@]}"; do
-   firemod do_cmd --cmd "add_tgcx tcpcx tcpten-${name}"
+   firemod do_cmd --quiet yes --cmd "add_tgcx tcpcx tcpten-${name}"
 done
 
 # poll for the port to come up
@@ -107,18 +107,43 @@ while [[ $stations -lt $num_stations ]]; do
          stations=$(( stations + 1))
       fi
    done
+   echo "$stations are associated"
    if [[ $stations -lt $num_stations ]]; then
       sleep 1
    fi
 done
+stations=0
+while [[ $stations -lt $num_stations ]]; do
+   for name in "${names[@]}"; do
+      ip=$(portmod --port_name $name --show_port IP)
+      if [[ x$ip != x ]] && [[ $ip != NA ]] && [[ $ip != 0.0.0.0 ]]; then
+         stations=$(( stations + 1))
+      fi
+   done
+   echo "$stations have IP addresses"
+   if [[ $stations -lt $num_stations ]]; then
+      sleep 1
+   fi
+done
+sleep 1
 
 # start the test groups
 firemod do_cmd --cmd "start_group udpcx"
+sleep 1
 firemod do_cmd --cmd "start_group tcpcx"
 
-# poll them for 20 seconds
-for sec in `seq 1 20`; do
-   firemod show_endp --endp_name tcpten-sta0000 --endp_vals tx_bps,rx_bps
+
+
+
+# poll them for 20 seconds, but the transmissions need time to start
+elapsed=0
+while [[ $elapsed -lt 20 ]]; do
+   for sta in ${names[@]}; do
+      val=( $(firemod show_endp --endp_name "tcpten-${sta}-A" --endp_vals tx_bps))
+      if [[ ${val[1]} -gt 0 ]]; then
+
+      fi
+   done
    sleep 1
 done
 
