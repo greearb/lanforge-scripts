@@ -481,10 +481,12 @@ def main():
                        worksheet.write(row, col, "", center_blue); col += 1
                        worksheet.write(row, col, "", center_blue); col += 1
 
-                   worksheet.write(row, col, float(results[2]) / 1000000, center_blue); col += 1
-                   worksheet.write(row, col, float(results[3]) / 1000000, center_tan); col += 1
-                   worksheet.write(row, col, "%s"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_blue); col += 1
-                   worksheet.write(row, col, "%s"%((float(resultsA[3]) + float(resultsB[3])) / 1000000), center_tan); col += 1
+                   print("results[2]:%s  3: %s"%(results[2], results[3]))
+
+                   worksheet.write(row, col, "%.2f"%(float(results[2]) / 1000000), center_blue); col += 1
+                   worksheet.write(row, col, "%.2f"%(float(results[3]) / 1000000), center_tan); col += 1
+                   worksheet.write(row, col, "%.2f"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_blue); col += 1
+                   worksheet.write(row, col, "%.2f"%((float(resultsA[3]) + float(resultsB[3])) / 1000000), center_tan); col += 1
                    worksheet.write(row, col, lat_cols[2], center_tan); col += 1
                    worksheet.write(row, col, lat_cols[0], center_tan); col += 1
                    worksheet.write(row, col, lat_cols[1], center_tan); col += 1

@@ -171,7 +171,7 @@ sub normalize_latency {
     $adjust = -$min1;
   }
   elsif ($min2 < 0) {
-    $adjust = -$min2;
+    $adjust = $min2;
   }
   return $self->normalize_bucket($lat1, $adjust);
 }
@@ -790,7 +790,7 @@ sub show_as_hash {
    my $found_start_x = 0;
    foreach my $line (@lines) {
       foreach my $start (@LANforge::Utils::starting_exceptions) {
-         # we purposes are not wasting time trimming whitespace
+         # we purposefully are not wasting time trimming whitespace
          my $i = index($line, $start);
          if ($i >= 0) {
             push(@special, $line);
@@ -886,6 +886,51 @@ sub show_as_hash {
       $key = undef;
       $value = undef;
    }
+
+   # Add some common short-hand actions that we supported in the past.
+   my $val;
+
+   $val = $rh_pairs->{"Rx-Pkts-Per-Sec"};
+   if (defined($val)) {
+     $rh_pairs->{"rx_pps"} = $val;
+   }
+   $val = $rh_pairs->{"Tx-Pkts-Per-Sec"};
+   if (defined($val)) {
+     $rh_pairs->{"tx_pps"} = $val;
+   }
+   $val = $rh_pairs->{"Rx-Pkts-Total"};
+   if (defined($val)) {
+     $rh_pairs->{"rx_pkts"} = $val;
+     $rh_pairs->{"Rx Pkts"} = $val;
+     $rh_pairs->{"Rx-Pkts"} = $val;
+   }
+   $val = $rh_pairs->{"Tx-Pkts-Total"};
+   if (defined($val)) {
+     $rh_pairs->{"tx_pkts"} = $val;
+     $rh_pairs->{"Tx Pkts"} = $val;
+     $rh_pairs->{"Tx-Pkts"} = $val;
+   }
+   $val = $rh_pairs->{"Rx-Bytes-bps"};
+   if (defined($val)) {
+     $rh_pairs->{"rx_bps"} = $val;
+   }
+   $val = $rh_pairs->{"Tx-Bytes-bps"};
+   if (defined($val)) {
+     $rh_pairs->{"tx_bps"} = $val;
+   }
+
+   $val = $rh_pairs->{"Rx-Bytes-Total"};
+   if (defined($val)) {
+     $rh_pairs->{"Rx-Bytes"} = $val;
+     $rh_pairs->{"Rx Bytes"} = $val;
+   }
+
+   $val = $rh_pairs->{"Tx-Bytes-Total"};
+   if (defined($val)) {
+     $rh_pairs->{"Tx-Bytes"} = $val;
+     $rh_pairs->{"Tx Bytes"} = $val;
+   }
+
    #foreach $key (sort keys %$rh_pairs) {
    #   print "{$key} => $rh_pairs->{$key}\n";
    #}
