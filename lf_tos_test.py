@@ -174,35 +174,52 @@ def main():
 
    worksheet.set_row(0, 45) # Set height
 
-   bucket_hdrs = "0-0 1-1 2-3 4-7 8-15 16-31 32-63 64-127 128-255 256-511 512-1023 1024-2047 2048-4095 4096-8191 8192-16383 16384-32767 32768-65535".split()
+   bucket_hdrs = "0 1 2-3 4-7 8-15 16-31 32-63 64-127 128-255 256-511 512-1023 1024-2047 2048-4095 4096-8191 8192-16383 16384-32767 32768-65535".split()
    col = 0
    row = 0
 
-   worksheet.set_column(0, 35, 13) # Set width to 14 for all columns by default
+   dwidth = 13 # Set width to 13 for all columns by default
+
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'CX-Name', dblue_bold); col += 1
    worksheet.set_column(col, col, 15)
    worksheet.write(row, col, 'Endp-Name', dblue_bold); col += 1
    worksheet.set_column(col, col, 12)
    worksheet.write(row, col, 'Port', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Protocol', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'ToS', dblue_bold); col += 1
    worksheet.set_column(col, col, 20)
    worksheet.write(row, col, 'AP BSSID', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Band\nwidth', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Mode', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Last MCS\nRx', dblue_bold); col += 1
-   worksheet.write(row, col, 'Combined\nRSSI', dpeach_bold); col += 1
-   worksheet.write(row, col, 'Endpoint\nOffered\nLoad', dblue_bold); col += 1
-   worksheet.write(row, col, 'Endpoint\nRx\nThroughput', dblue_bold); col += 1
-   worksheet.write(row, col, 'Cx\nOffered\nLoad', dblue_bold); col += 1
-   worksheet.write(row, col, 'Cx\nRx\nThroughput', dblue_bold); col += 1
-   worksheet.write(row, col, 'Avg\nLatency', dblue_bold); col += 1
-   worksheet.write(row, col, 'Min\nLatency', dblue_bold); col += 1
-   worksheet.write(row, col, 'Max\nLatency', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Combined\nRSSI', dblue_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Endpoint\nOffered\nLoad', dtan_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Endpoint\nRx\nThroughput', dtan_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Cx\nOffered\nLoad', dtan_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Cx\nRx\nThroughput', dtan_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Avg\nLatency', dyel_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Min\nLatency', dyel_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Max\nLatency', dyel_bold); col += 1
    for i in range(17):
        btitle = "Latency\nRange\n%s"%(bucket_hdrs[i])
-       worksheet.write(row, col, btitle, dblue_bold); col += 1
+       worksheet.set_column(col, col, dwidth)
+       worksheet.write(row, col, btitle, dpeach_bold); col += 1
 
+   worksheet.set_column(col, col, 50)
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
    row += 1
 
@@ -366,9 +383,11 @@ def main():
            if (m != None):
                _signal = m.group(1)
 
+       count = 0
        for p in protos:
            for t in toss:
                cxn = cxnames[count]
+               count = count + 1
 
                # Results:  tx_bytes, rx_bytes, tx_bps, rx_bps, tx_pkts, rx_pkts, Latency
                resultsA = ["0"] * 7
@@ -385,7 +404,7 @@ def main():
                    pss = endp_stats.stdout.decode('utf-8', 'ignore');
 
                    for line in pss.splitlines():
-                       print("probe-line, endp: %s: %s"%(ename, line))
+                       #print("probe-line, endp: %s: %s"%(ename, line))
                        m = re.search('Rx Bytes:\s+(\d+)', line)
                        if (m != None):
                            results[1] = int(m.group(1))
@@ -434,10 +453,10 @@ def main():
                                              "--lat1", resultsB[6], "--lat2", resultsA[6]], capture_output=True);
                pssB = endp_statsB.stdout.decode('utf-8', 'ignore');
 
-               print("latA: %s"%resultsA[6])
-               print("latB: %s"%resultsB[6])
-               print("pssA: %s"%pssA)
-               print("pssB: %s"%pssB)
+               #print("%s: latA: %s"%(cxn, resultsA[6]))
+               #print("%s: latB: %s"%(cxn, resultsB[6]))
+               #print("%s: pssA: %s"%(cxn, pssA))
+               #print("%s: pssB: %s"%(cxn, pssB))
 
                for line in pssA.splitlines():
                    m = re.search('Normalized-Latency:\s+(.*)', line)
@@ -465,8 +484,8 @@ def main():
                        worksheet.write(row, col, "%s.%s"%(sta_resource, sta_name), center_blue); col += 1
                    else:
                        worksheet.write(row, col, "%s.%s"%(u_resource, u_name), center_blue); col += 1
-                   worksheet.write(row, col, proto, center_blue); col += 1
-                   worksheet.write(row, col, tos, center_blue); col += 1
+                   worksheet.write(row, col, p, center_blue); col += 1
+                   worksheet.write(row, col, t, center_blue); col += 1
                    if ename == ena:
                        worksheet.write(row, col, _ap, center_blue); col += 1
                        worksheet.write(row, col, _bw, center_blue); col += 1
@@ -481,15 +500,15 @@ def main():
                        worksheet.write(row, col, "", center_blue); col += 1
                        worksheet.write(row, col, "", center_blue); col += 1
 
-                   print("results[2]:%s  3: %s"%(results[2], results[3]))
+                   #print("results[2]:%s  3: %s"%(results[2], results[3]))
 
-                   worksheet.write(row, col, "%.2f"%(float(results[2]) / 1000000), center_blue); col += 1
+                   worksheet.write(row, col, "%.2f"%(float(results[2]) / 1000000), center_tan); col += 1
                    worksheet.write(row, col, "%.2f"%(float(results[3]) / 1000000), center_tan); col += 1
-                   worksheet.write(row, col, "%.2f"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_blue); col += 1
+                   worksheet.write(row, col, "%.2f"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_tan); col += 1
                    worksheet.write(row, col, "%.2f"%((float(resultsA[3]) + float(resultsB[3])) / 1000000), center_tan); col += 1
-                   worksheet.write(row, col, lat_cols[2], center_tan); col += 1
-                   worksheet.write(row, col, lat_cols[0], center_tan); col += 1
-                   worksheet.write(row, col, lat_cols[1], center_tan); col += 1
+                   worksheet.write(row, col, lat_cols[2], center_yel); col += 1
+                   worksheet.write(row, col, lat_cols[0], center_yel); col += 1
+                   worksheet.write(row, col, lat_cols[1], center_yel); col += 1
                    for x in range(17):
                        worksheet.write(row, col, lat_cols[x + 3], center_peach); col += 1
 
@@ -499,9 +518,13 @@ def main():
                        worksheet.write(row, col, e_tot2, red_left); col += 1
                    row += 1
 
-               # Stop traffic
-               subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",
-                               "--cmd", "set_cx_state all %s STOPPED"%cxn], capture_output=True);
+   # Stop traffic
+   for cxn in cxnames:
+       cmd = "set_cx_state all %s STOPPED"%cxn
+       #print("Stopping CX: %s with command: %s"%(cxn, cmd));
+
+       subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
+                       "--cmd", cmd], capture_output=True);
 
 
    workbook.close()

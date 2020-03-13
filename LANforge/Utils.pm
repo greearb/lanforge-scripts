@@ -129,7 +129,10 @@ sub normalize_bucket_hdr {
   my $i;
   for ($i = 0; $i<$amt; $i++) {
     if ($i == 0) {
-      $rv .= "0-0 ";
+      $rv .= "0 ";
+    }
+    elsif ($i == 1) {
+      $rv .= "1 ";
     }
     else {
       $rv .= 2**($i-1) . "-" . (2**($i) - 1) . " ";
@@ -177,76 +180,76 @@ sub normalize_latency {
 }
 
 sub normalize_bucket {
-  my $self = shift;
-  my $line = shift;
-  my $adjust = shift;
+   my $self = shift;
+   my $line = shift;
+   my $adjust = shift;
 
-  #print "line -:$line:-\n";
+   #print "line -:$line:-\n";
 
-  # Looks like this: 5 -:5:- 6  [ 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ] (1)
-  if ($line =~ /(\S+)\s+-:(\S+):-\s+(\S+)\s+\[\s+(.*)\s+\]\s+\((\S+)\)/) {
-    my $min = $1;
-    my $avg = $2;
-    my $max = $3;
-    my $bks = $4;
-    my $width = $5; # Assumes one currently
-    if (!($width eq "1")) {
+   # Looks like this: 5 -:5:- 6  [ 17 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ] (1)
+   if ($line =~ /(\S+)\s+-:(\S+):-\s+(\S+)\s+\[\s+(.*)\s+\]\s+\((\S+)\)/) {
+      my $min = $1;
+      my $avg = $2;
+      my $max = $3;
+      my $bks = $4;
+      my $width = $5; # Assumes one currently
+      if (!($width eq "1")) {
+         return $line;
+      }
+      else {
+         my @bkts = split(/\s+/, $bks);
+         @bkts = (@bkts, "0");
+         my $i;
+         my $rv = ($min + $adjust) . " " . ($max + $adjust) . " " . ($avg + $adjust) . " ";
+         #print "bkts len: " . @bkts . "\n";
+         my @nbkts = (0) x (@bkts);
+         for ($i = 0; $i<@bkts; $i++) {
+            # Figure out the bkt range
+            my $minv = 0;
+            my $maxv = 2 ** $i - 1;
+            if ($i > 0) {
+               $minv = 2 ** ($i - 1);
+            }
+            # Adjust by the min value, which is treated as an offset
+            $minv += $min;
+            $maxv += $min;
+
+            # And adjust based on round-trip time to deal with clock lag
+            $minv += $adjust;
+            $maxv += $adjust;
+
+            # And now find the normalized bucket this fits in
+            #print "maxv: $maxv\n";
+            my $z;
+            my $idx = 0;
+            for ($z = 0; $z < 32; $z++) {
+               if ($maxv < (2 ** $z)) {
+                  #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
+                  $idx = $z;
+                  # Everything else falls in the last bucket
+                  if ($idx >= @bkts) {
+                     $idx = (@bkts - 1);
+                  }
+                  last;
+               }
+            }
+
+            #print "idx: $idx i: $i  minv: $minv  maxv: $maxv  min: $min  adjust: $adjust\n";
+            #print "nbkts: " . $nbkts[$idx];
+            #print " bkts: " . $bkts[$i] . "\n";
+            my $nv = $nbkts[$idx] + $bkts[$i];
+            @nbkts[$idx] = $nv;
+         }
+
+         for ($i = 0; $i < @nbkts; $i++) {
+            $rv .= ($nbkts[$i] . " ");
+         }
+         return $rv;
+      }
+   }
+   else {
       return $line;
-    }
-    else {
-      my @bkts = split(/\s+/, $bks);
-      @bkts = (@bkts, "0");
-      my $i;
-      my $rv = ($min + $adjust) . " " . ($max + $adjust) . " " . ($avg + $adjust) . " ";
-      #print "bkts len: " . @bkts . "\n";
-      my @nbkts = (0) x (@bkts);
-      for ($i = 0; $i<@bkts; $i++) {
-   # Figure out the bkt range
-   my $minv = 0;
-   my $maxv = 2 ** $i;
-   if ($i > 0) {
-     $minv = 2 ** ($i - 1);
    }
-   # Adjust by the min value, which is treated as an offset
-   $minv += $min;
-   $maxv += $min;
-
-   # And adjust based on round-trip time to deal with clock lag
-   $minv += $adjust;
-   $maxv += $adjust;
-
-   # And now find the normalized bucket this fits in
-   #print "maxv: $maxv\n";
-   my $z;
-   my $idx = 0;
-   for ($z = 1; $z < 32; $z++) {
-     if ($maxv < (2 ** $z)) {
-       #print "maxv: $maxv  z: $z  2^$z: " . 2 ** $z . + "\n";
-       $idx = $z;
-       # Everything else falls in the last bucket
-       if ($idx >= @bkts) {
-         $idx = (@bkts - 1);
-       }
-       last;
-     }
-   }
-
-   #print "idx: $idx i: $i ";
-   #print "nbkts: " . $nbkts[$idx];
-        #print " bkts: " . $bkts[$i] . "\n";
-   my $nv = $nbkts[$idx] + $bkts[$i];
-   @nbkts[$idx] = $nv;
-      }
-
-      for ($i = 0; $i < @nbkts; $i++) {
-   $rv .= ($nbkts[$i] . " ");
-      }
-      return $rv;
-    }
-  }
-  else {
-    return $line;
-  }
 }
 
 #  Uses cached values (so it will show Phantom ones too)
