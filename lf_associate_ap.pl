@@ -433,11 +433,11 @@ sub get_radio_bssid {
 
    #print "* looking up $radio_name for bssid...";
    my @status_lines  = split("\n", $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $radio_name)));
-   my @mac_lines     = grep { / MAC: [^ ]+/ } @status_lines;
+   my @mac_lines     = grep { /\s+MAC:\s+[^ ]+/ } @status_lines;
    die ("::get_radio_bssid: failed to find radio bssid, no MAC lines")
       if (@mac_lines < 1);
 
-   my ($parent_bssid) = $mac_lines[0] =~ / MAC: ([^ ]+)/;
+   my ($parent_bssid) = $mac_lines[0] =~ /\s+MAC:\s+([^ ]+)/;
    die ("::get_radio_bssid: failed to find radio bssid, MAC was empty")
       if ($parent_bssid eq "");
 
@@ -478,6 +478,7 @@ sub new_mac_from_pattern {
          $new_hunks[ $i ] = $pattern_hunks[ $i ];
       }
    }
+   #print "####### new_mac_from_pattern: [$parent_mac][$pattern] -> ".lc(join(":", @new_hunks))."\n";
    return lc(join(":", @new_hunks));
 } # ~new_mac_pattern
 
@@ -486,6 +487,7 @@ sub new_random_mac {
    for (my $i=0; $i<5; $i++) {
       $rv.=sprintf("%02X",int(rand(255))).(($i<4)?':':'');
    }
+   #print "new_random_mac $rv\n";
    return $rv;
 }
 
@@ -705,7 +707,7 @@ sub new_wifi_station {
    my $sleep_amt = shift;
    my $mac_addr = "";
 
-   print "## new-wifi-station, sta-name: $sta_name  change-mac: $change_mac" unless($::utils->isQuiet());
+   #print "## new-wifi-station, sta-name: $sta_name  change-mac: $change_mac" unless($::utils->isQuiet());
 
    if (! $::change_mac) {
      my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
@@ -713,15 +715,17 @@ sub new_wifi_station {
        $mac_addr = $1;
      }
    }
+   #print "new_wifi_station->mac_addr: $mac_addr\n";
    if ($mac_addr eq "") {
      # Couldn't find it, or we want to change the mac
-     print "## calculating new mac-addr.." unless($::utils->isQuiet());
+     #print "## calculating new mac-addr.." unless($::utils->isQuiet());
      my $parent_mac = get_radio_bssid($::sta_wiphy);
      die("new_wifi_station: unable to find bssid of parent radio") if ($parent_mac eq "");
      $mac_addr   = new_mac_from_pattern($parent_mac, $::mac_pattern);
+     #print "new_wifi_station->new_mac_from_pattern: $mac_addr\n";
    }
 
-   print "## $sta_name $mac_addr; " unless($::utils->isQuiet());
+   #print "## $sta_name $mac_addr; " unless($::utils->isQuiet());
    my $flags      = +0; # set this to string later
    my $flagsmask  = +0; # set this to string later
 
@@ -1361,6 +1365,7 @@ sub doStep_2 {
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 sub doAdd {
    # create virtual station
+   #print "## doAdd: sta_wiphy[$::sta_wiphy]\n";
    if ($::num_stations > 0 && defined $::sta_wiphy) {
       my %results2 = ();
 
