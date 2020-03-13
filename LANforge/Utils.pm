@@ -35,11 +35,11 @@ sub new {
 sub connect {
    my ($self, $host, $port) = @_;
    my $t = new Net::Telnet(Prompt   => '/btbits>> $/',
-                           Timeout  => 10);
+                           Timeout  => 30);
    $self->{telnet} = \$t;
    $t->open(Host     => $host,
             Port     => $port,
-            Timeout  => 2);
+            Timeout  => 20);
    $t->max_buffer_length(16 * 1024 * 1000); # 16 MB buffer
    $t->waitfor($self->{prompt});
    $t->print("set_flag brief 0"); # If we leave it brief, RSLT prompt is not shown.
