@@ -68,6 +68,7 @@ my $show_port        = "NA";
 my @port_stats       = ();
 my $cmd_log_name     = ""; #= "lf_portmod.txt";
 my $set_speed        = "NA";
+my $set_channel      = "NA";
 my $wifi_mode        = "NA";
 my $passwd           = "NA";
 my $ssid             = "NA";
@@ -114,6 +115,7 @@ my $usage = << "EOF"
 [--wifi_mode      { wifi mode: 0: AUTO, 1: 802.11a, 2: b, 3: g, 4: abg, 5: abgn,
                               6: bgn 7: bg, 8: abgnAC, 9 anAC, 10 an}
                   # wifi-mode option is applied when --set_speed is used.
+[--set_channel    { for radios, wifi channel (36, 100, etc) }
 [--passwd         { WiFi WPA/WPA2/ password}
 [--ssid           { WiFi SSID}
 [--ap             { BSSID of AP, or 'DEFAULT' for any.}
@@ -137,6 +139,7 @@ Examples:
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name eth2 --ip 10.1.1.1 --netmask 255.255.0.0 --gw 10.1.1.254
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed "1 Mbps /b" \\
                 --ssid fast-ap --passwd "secret passwd" --ap DEFAULT
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name wiphy0 --set_channel "36"
 ./lf_portmod.pl --load my_db
 ./lf_portmod.pl -m 192.168.100.138 --cmd reset --port_name 2 --amt_resets 5 --max_port_name 8 --card 1 --min_sleep 10 --max_sleep 20
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta11 --cmd set_wifi_extra --eap_identity 'adams' --eap_passwd 'family'
@@ -194,6 +197,7 @@ GetOptions
  'passwd=s'          => \$passwd,
  'set_ifstate|s=s'   => \$if_state,
  'set_speed=s'       => \$set_speed,
+ 'set_channel=s'     => \$set_channel,
  'ssid=s'            => \$ssid,
  'list_port_names!'  => \$list_port_names,
  'list_ports!'       => \$list_ports,
@@ -554,6 +558,11 @@ if ($if_state ne "unset") {
 
 if ($set_speed ne "NA" || $ssid ne "NA" || $passwd ne "NA" || $ap ne "NA") {
   $cli_cmd = "add_vsta 1 $card NA $port_name NA '$ssid' NA '$passwd' '$ap' NA NA $wifi_mode '$set_speed'";
+  $::utils->doCmd($cli_cmd);
+}
+
+if ($set_channel ne "NA") {
+  $cli_cmd = "set_wifi_radio 1 $card $port_name NA $set_channel";
   $::utils->doCmd($cli_cmd);
 }
 
