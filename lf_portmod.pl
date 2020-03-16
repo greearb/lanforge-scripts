@@ -511,61 +511,33 @@ elsif(($show_port ne "NA") && ($show_port ne "")) {
      @lines = split("\n", $::utils->doAsyncCmd("nc_show_port 1 $card $port_name"));
    }
 
-   # trick here is to place a ; before anything that looks like a keyword
-   for($i=0; $i<@lines; $i++) {
-      $lines[$i] = " ".$lines[$i]." ;";
-      $lines[$i] =~ s/ (dbm|[kmg]?bps)/$1/ig;
-      $lines[$i] =~ s/DNS Servers/DNS-Servers/ig;
-      $lines[$i] =~ s/TX Queue Len/TX-Queue-Len/ig;
-      $lines[$i] =~ s/Missed Beacons/Missed-Beacons/ig;
-      $lines[$i] =~ s/([^ :]+\: +)/;$1/g;
-      $lines[$i] =~ s/^\s+;?//;
-      #print "$i: ".$lines[$i]."\n";
-   }
-   my $matcher       = "(".join('|', keys %option_map).")";
-   #print "MATCHER: $matcher\n";
-   my @matches       = grep( /$matcher/, @lines);
-   for my $match (@matches) {
-      my @parts = split(/\s*;/, $match);
-      shift(@parts) if (@parts > 1 && $parts[0] =~ /^\s+$/);
-      for (my $i=0; $i <= $#parts; $i++) {
-         my $option= "";
-         my $value = "";
-         ($option)   = $parts[$i] =~ /^\s*(.*?):/;
-         ($value)    = $parts[$i] =~ /:(.*)$/;
-         $option     =~ s/^\s*(.*?)\s*$/$1/;
-         if ($value =~ /^\s*$/) {
-            $value   = "";
-         }
-         else {
-            $value   =~ s/^\s*(.*?)\s*$/$1/
-         }
-         next if (!defined $option || $option eq "");
+   my $rh_value_map = $::utils->show_as_hash(\@lines, 1);
 
-         if ( defined $option && defined $option_map{ $option } ) {
+   for my $option (keys %option_map) {
+      my $val = '-';
 
-            if (  $option eq "Missed-Beacons"
-               || $option eq "Rx-Invalid-CRYPT"
-               || $option eq "Rx-Invalid-MISC"
-               || $option eq "Tx-Excessive-Retry" )
-            {
-               $match =~ s/\s*;/; /g;
-               $value = $match;
-               $value =~ s/${option}:\s*;//;
-            }
-            $option_map{$option} = $value;
+      if (defined $rh_value_map->{$option}) {
+         $val = $rh_value_map->{$option};
+
+         $option_map{"$option"} = $val;
+
+         if (defined $rh_value_map->{"Cfg-$option"}) {
+            $val = $rh_value_map->{"Cfg-$option"};
+            $option_map{"Cfg-$option"} = $val;
+         }
+         if (defined $rh_value_map->{"Probed-$option"}) {
+            $val = $rh_value_map->{"Probed-$option"};
+            $option_map{"Probed-$option"} = $val;
          }
       }
    }
+
+
    for $option ( sort keys %option_map ) {
-      @matches = grep { /$option:/ } @lines;
-      if (@matches < 1) {
-         print STDERR "$option $NOT_FOUND\n";
-      }
-      else {
-         print $option.": ".$option_map{ $option }."\n";
-      }
+      #print("Checking option: $option\n");
+      print $option.": ".$option_map{ $option }."\n";
    }
+
    exit(0);
 }
 

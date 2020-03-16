@@ -726,15 +726,12 @@ our @starting_exceptions = (
    "Endpoint [",
    "GenericEndp [",
    "Latency:",
-   "Missed Beacons:",
    "Pkt-Gaps:",
    "Results[",
    ">>RSLT:",
    "Rx Bytes:",
    "Rx Bytes (On Wire):",
    "Rx Duplicate Pkts:",
-   "Rx-Invalid-CRYPT:",
-   "Rx-Invalid-MISC:",
    "Rx OOO Pkts:",
    "Rx Pkts:",
    "Rx Pkts (On Wire):",
@@ -744,13 +741,22 @@ our @starting_exceptions = (
    "TCP Retransmits:",
    "Tx Bytes:",
    "Tx Bytes (On Wire):",
-   "Tx-Excessive-Retry:",
    "Tx Failed Bytes:",
    "Tx Failed Pkts:",
    "Tx Pkts:",
    "Tx Pkts (On Wire):",
    "Tx-Retries:",
    );
+
+# Generic disassembly of lines created by show
+our @port_starting_exceptions = (
+   # please keep these sorted
+   "Missed-Beacons:",
+   "Tx-Excessive-Retry:",
+   "Rx-Invalid-CRYPT:",
+   "Rx-Invalid-MISC:",
+   );
+
 our @one_line_keys = (
    "Latency:",
    "Pkt-Gaps:",
@@ -765,9 +771,9 @@ our @one_line_keys = (
 # $rh = u->show_as_hash(\@lines)
 #
 sub show_as_hash {
-   my ($self, $in) = (undef, undef);
+   my ($self, $in, $isport) = (undef, undef, 0);
    if (@_ > 1) {
-      ($self, $in) = @_;
+      ($self, $in, $isport) = @_;
    }
    else {
       $in = pop(@_);
@@ -785,6 +791,8 @@ sub show_as_hash {
       @lines = @$in;
    }
 
+   #print "show_as_hash, isport: $isport\n";
+
    my $rh_pairs = {};
    my @special = ();
 
@@ -792,23 +800,58 @@ sub show_as_hash {
    my $key = undef;
    my $value = undef;
    my @hunks = ();
+   my $prefix = "";
    #print Dumper(\@lines);
    chomp(@lines);
    my $found_start_x = 0;
    foreach my $line (@lines) {
-      foreach my $start (@LANforge::Utils::starting_exceptions) {
-         # we purposefully are not wasting time trimming whitespace
-         my $i = index($line, $start);
-         if ($i >= 0) {
-            push(@special, $line);
-            $found_start_x++;
-            last;
+      if ($isport) {
+         #print "Port line -:$line:-\n";
+         foreach my $start (@LANforge::Utils::port_starting_exceptions) {
+            # we purposefully are not wasting time trimming whitespace
+            my $i = index($line, $start);
+            if ($i >= 0) {
+               push(@special, $line);
+               $found_start_x++;
+               last;
+            }
+         }
+      }
+      else {
+         foreach my $start (@LANforge::Utils::starting_exceptions) {
+            # we purposefully are not wasting time trimming whitespace
+            my $i = index($line, $start);
+            if ($i >= 0) {
+               push(@special, $line);
+               $found_start_x++;
+               last;
+            }
          }
       }
       if ($found_start_x) {
          $found_start_x = 0;
          next;
       }
+
+      if ($isport) {
+         #print "line -:$line:-\n";
+         if ($line =~ /^\s+\[Configured\]/) {
+            #print "Prefix to cfg\n";
+            $prefix = "Cfg";
+            next;
+         }
+         if ($line =~ /^\s+\[Probed\]/) {
+            $prefix = "Probed";
+            next;
+         }
+
+         $line =~ s/ (dbm|[kmg]?bps)/$1/ig;
+         $line =~ s/DNS Servers/DNS-Servers/ig;
+         $line =~ s/TX Queue Len/TX-Queue-Len/ig;
+         $line =~ s/Missed Beacons/Missed-Beacons/ig;
+         #print "$i: ".$lines[$i]."\n";
+      }
+
       # at this point, every line should be split using colons and spaces
       @hunks = split(/\s+/, $line);
       foreach my $hunk (@hunks) {
@@ -818,12 +861,19 @@ sub show_as_hash {
          }
          $value = $hunk;
          if ((defined $key) && ("" ne $key)) {
-            $rh_pairs->{$key} = (defined $value) ? $value : "";
+            my $val = (defined $value) ? $value : "";
+            #print "Adding key -:$key:-  val -:$val:-\n";
+            $rh_pairs->{$key} = $val;
+            if ($prefix ne "") {
+               #print "Adding prefixed key -:$prefix-$key:-  val -:$val:-\n";
+               $rh_pairs->{"$prefix-$key"} = $val;
+            }
             $key = undef;
             $value = undef;
          }
       }
    }
+
    @hunks = ();
    $key = undef;
    $value = undef;
@@ -879,15 +929,19 @@ sub show_as_hash {
          next if ($found_oneline);
       }
 
+      # This is parsing bucket counters, maybe more
       my $i = index($line, ':');
       $key = substr($line, 0, $i);
       $key =~ s/^\s*//g;
       $value = substr($line, $i+1);
+      $rh_pairs->{$key} = $value;  # Add full line to hash
       $value =~ s/^\s*//g;
       @hunks = split(/\s+/, $value);
       $rh_vals = $self->hunks_to_hashes($key, \@hunks);
       foreach my $subkey (keys %$rh_vals) {
-         $rh_pairs->{$subkey} = $rh_vals->{$subkey}
+         my $val = $rh_vals->{$subkey};
+         #print("Adding subkey -:$subkey:-  val -:$val:-\n");
+         $rh_pairs->{$subkey} = $val;
       }
       $rh_vals = undef;
       $key = undef;
