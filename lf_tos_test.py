@@ -39,6 +39,7 @@ import pprint
 import argparse
 import subprocess
 import xlsxwriter
+from subprocess import PIPE
 
 NL = "\n"
 CR = "\r\n"
@@ -260,7 +261,7 @@ def main():
        # Wait untill LANforge station connects
        while True:
            port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  sta_resource, "--port_name", sta_name,
-                                        "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True);
+                                        "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], stdout=PIPE, stderr=PIPE);
            pss = port_stats.stdout.decode('utf-8', 'ignore');
 
            _status = None
@@ -316,11 +317,11 @@ def main():
                cxnames.append(cxn)
 
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                               "--cmd", "rm_cx ALL %s"%cxn], capture_output=True);
+                               "--cmd", "rm_cx ALL %s"%cxn], stderr=PIPE, stdout=PIPE);
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                               "--cmd", "rm_endp %s"%ena], capture_output=True);
+                               "--cmd", "rm_endp %s"%ena], stderr=PIPE, stdout=PIPE);
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                               "--cmd", "rm_endp %s"%enb], capture_output=True);
+                               "--cmd", "rm_endp %s"%enb], stderr=PIPE, stdout=PIPE);
 
                cx_proto = p;
                if (cx_proto == "udp"):
@@ -338,7 +339,7 @@ def main():
 
                # Start traffic
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                               "--cmd", "set_cx_state all %s RUNNING"%cxn], capture_output=True);
+                               "--cmd", "set_cx_state all %s RUNNING"%cxn]);
 
                count = count + 1
 
@@ -357,7 +358,7 @@ def main():
            sta_name = tmpa[1];
 
        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  sta_resource, "--port_name", sta_name,
-                                    "--show_port", "AP,Mode,Bandwidth,Signal,Status,RX-Rate"], capture_output=True);
+                                    "--show_port", "AP,Mode,Bandwidth,Signal,Status,RX-Rate"], stderr=PIPE, stdout=PIPE);
        pss = port_stats.stdout.decode('utf-8', 'ignore');
 
        _ap = None
@@ -400,7 +401,7 @@ def main():
                    results = [""] * 7
 
                    endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--endp_vals", "tx_bps,rx_bps,Tx Bytes,Rx Bytes,Tx Pkts,Rx Pkts,Latency",
-                                                "--endp_name", ename], capture_output=True);
+                                                "--endp_name", ename], stderr=PIPE, stdout=PIPE);
                    pss = endp_stats.stdout.decode('utf-8', 'ignore');
 
                    for line in pss.splitlines():
@@ -447,10 +448,10 @@ def main():
 
                # Now that we know both latencies, we can normalize them.
                endp_statsA = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "normalize_latency",
-                                             "--lat1", resultsA[6], "--lat2", resultsB[6]], capture_output=True);
+                                             "--lat1", resultsA[6], "--lat2", resultsB[6]], stderr=PIPE, stdout=PIPE);
                pssA = endp_statsA.stdout.decode('utf-8', 'ignore');
                endp_statsB = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "normalize_latency",
-                                             "--lat1", resultsB[6], "--lat2", resultsA[6]], capture_output=True);
+                                             "--lat1", resultsB[6], "--lat2", resultsA[6]], stderr=PIPE, stdout=PIPE);
                pssB = endp_statsB.stdout.decode('utf-8', 'ignore');
 
                #print("%s: latA: %s"%(cxn, resultsA[6]))
@@ -524,8 +525,7 @@ def main():
        #print("Stopping CX: %s with command: %s"%(cxn, cmd));
 
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                       "--cmd", cmd], capture_output=True);
-
+                       "--cmd", cmd]);
 
    workbook.close()
 
