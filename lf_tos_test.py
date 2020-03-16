@@ -244,7 +244,7 @@ def main():
    cxnames = []
    for sta in lfstations:
        e_tot = ""
-       sta_resource=1
+       sta_resource = "1"
        sta_name = sta;
        if sta[0].isdigit():
            tmpa = sta.split(".", 1);
@@ -290,7 +290,7 @@ def main():
                    print("Waiting up to 180s for station %s.%s to associate."%(sta_resource, sta_name))
                wait_assoc_print = True
 
-           i += 1
+           i = i + 1
            # We wait a fairly long time since AP will take a long time to start on a CAC channel.
            if (i > 180):
                err = "ERROR:  Station did not connect within 180 seconds."
@@ -350,7 +350,7 @@ def main():
    # Gather probe results and record data, verify NSS, BW, Channel
    count = 0
    for sta in lfstations:
-       sta_resource=1
+       sta_resource = "1"
        sta_name = sta;
        if sta[0].isdigit():
            tmpa = sta.split(".", 1);
