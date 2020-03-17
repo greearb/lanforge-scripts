@@ -219,6 +219,8 @@ def main():
 
        idx = idx + 1
 
+   # Start sniffing on all monitor ports
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
