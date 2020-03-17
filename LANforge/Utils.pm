@@ -716,11 +716,9 @@ sub group_items {
 # Generic disassembly of lines created by show
 our @starting_exceptions = (
    # please keep these sorted
-   "Advertising:",
    "Command:",
    "Conn Established:",
    "Conn Timeouts:",
-   "Current:",
    "Cx Detected:",
    "DNS Servers:",
    "Endpoint [",
@@ -737,7 +735,6 @@ our @starting_exceptions = (
    "Rx Pkts (On Wire):",
    "RX-Silence:",
    "Shelf: 1,",
-   "Supported:",
    "TCP Retransmits:",
    "Tx Bytes:",
    "Tx Bytes (On Wire):",
@@ -751,7 +748,11 @@ our @starting_exceptions = (
 # Generic disassembly of lines created by show
 our @port_starting_exceptions = (
    # please keep these sorted
+   "Advertising:",
+   "Current:",
    "Missed-Beacons:",
+   "Partner:",
+   "Supported:",
    "Tx-Excessive-Retry:",
    "Rx-Invalid-CRYPT:",
    "Rx-Invalid-MISC:",

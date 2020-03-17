@@ -228,6 +228,28 @@ def main():
    sflags = "0x02"  # dumpcap, no terminal
    for m in monis_n:
        r = monis_r[idx]
+
+       # Wait for monitor to be non-phantom
+       isph = True
+       while isph:
+           port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  r, "--port_name", m,
+                                        "--show_port", "Current"], stdout=PIPE, stderr=PIPE);
+           pss = port_stats.stdout.decode('utf-8', 'ignore');
+           for line in pss.splitlines():
+               #print("line: %s\n"%line)
+               ma = re.search('Current:\s+(.*)', line)
+               if (ma != None):
+                   cf = ma.group(1);
+                   isph = False
+                   for f in cf.split():
+                       if (f == "PHANTOM"):
+                           isph = True
+                           break
+           if isph:
+               print("Waiting for monitor port %s.%s to become non-phantom\n"%(r, m));
+               sleep(1)
+
+       
        print("Starting sniffer on port %s.%s for %s seconds, saving to file %s.pcap on resource %s\n"%(r, m, dur, m, r))
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
                        "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))]);
