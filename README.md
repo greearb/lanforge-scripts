@@ -1,4 +1,4 @@
-# LANforge Perl Scripts #
+# LANforge Perl, Python, and Shell Scripts #
 This is a collection of scripts and scripting libraries designed to work
 with LANforge systems. On your LANforge system, these scripts are
 typically installed into `/home/lanforge/scripts`. The `LANforge/` sub directory holds
@@ -16,6 +16,8 @@ these scripts are more modern and may be a good place to start:
 | `lf_icemod.pl`        | Query and update WAN links and impairments |
 | `lf_attenmod.pl`      | Query and update CT70X programmable attenuators |
 | `lf_associate_ap.pl`  | Query and update wifi stations |
+| `lf_tos_test.py`      | Python script to generate traffic at different QoS and report in spreadsheet |
+| `lf_sniff.py`         | Python script to create packet capture files, especially OFDMA /AX captures |
 
 The `lf_wifi_rest_example.pl` script shows how one might call the other scripts from
 within a script.
@@ -23,7 +25,15 @@ within a script.
 ### Examples and Documents ###
 Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_api_cookbook.php) cookbook.
 
-### Summary ###
+### Python Scripts ###
+
+| Name | Purpose |
+|------|---------|
+| `lf_tos_test.py`      | Python script to generate traffic at different QoS and report performance in a spreadsheet |
+| `lf_sniff.py`         | Python script to create packet capture files, especially OFDMA /AX captures |
+
+
+### Perl and Shell Scripts ###
 
 | Name | Purpose |
 |------|---------|
