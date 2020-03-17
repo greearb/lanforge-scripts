@@ -18,7 +18,7 @@ the resource ID.
 
 ./lf_sniff.py --lfmgr 192.168.100.178 \
   --station "1.wlan0 1.wlan1" --sniffer_radios "2.wiphy0 2.wiphy1" \
-  --duration_min 5
+  --duration 5
 
 '''
 
@@ -100,6 +100,8 @@ def main():
 
    lfstations = lfstation.split()
    radios = sniffer_radios.split()
+   monis_n = []  # monitor device names
+   monis_r = []  # monitor device resources
 
    idx = 0
    for sta in lfstations:
@@ -216,10 +218,20 @@ def main():
                        "--cli_cmd", "add_monitor 1 %s %s %s %s 0xFFFFFFFFFFFF %s %s"%(rad_resource, rad_name, mname, moni_flags, aid, bssid)]);
 
        print("Created monitor interface: %s on resource %s\n"%(mname, rad_resource));
+       monis_n.append(mname);
+       monis_r.append(rad_resource);
 
        idx = idx + 1
 
    # Start sniffing on all monitor ports
+   idx = 0
+   sflags = "0x02"  # dumpcap, no terminal
+   for m in monis_n:
+       r = monis_r[idx]
+       print("Starting sniffer on port %s.%s for %s seconds, saving to file %s.pcap on resource %s\n"%(r, m, dur, m, r))
+       subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
+                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))]);
+       idx = idx + 1
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
