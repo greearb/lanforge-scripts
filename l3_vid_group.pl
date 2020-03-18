@@ -154,6 +154,7 @@ if (defined $log_cli) {
 our $utils = new LANforge::Utils;
 
 $::utils->connect($lfmgr_host, $lfmgr_port);
+#$::utils->doCmd("log_level 8");
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 #     M  A  I  N
@@ -302,7 +303,7 @@ if ($::action eq "create") {
       .q(--endp_cmd ").$cmd.q(");
      print "CMD: $cmd2\n";
      `$cmd2`;
-     sleep_ms(20);
+     $::utils->sleep_ms(20);
      $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::generic_test_grp, $gname));
    }
 
@@ -338,3 +339,9 @@ else {
 }
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
+#END {
+#   if (defined $::utils->{telnet}) {
+#      print STDERR "reducing log level";
+#      $::utils->doCmd("log_level 2");
+#   }
+#}
