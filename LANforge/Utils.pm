@@ -112,9 +112,9 @@ sub doAsyncCmd {
       $self->log_cli($cmd);
    }
    $t->print($cmd);
-   #my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
+   my @rslt = $t->waitfor('/ \>\>RSLT:(.*)/');
    my @rslt2 = $t->waitfor( $self->async_waitfor() );
-   @rv = ( @rslt2 );
+   @rv = (@rslt, @rslt2);
 
    if ( !$self->cli_rcv_silent() ) {
       print "**************\n @rv \n................\n\n";
@@ -375,7 +375,6 @@ sub updateEndpoint {
       $ep = $self->doAsyncCmd( "show_endpoint " . $endp->name() );
    }
    else {
-
       # Use the non-caching endpoint show.
       $ep = $self->doAsyncCmd( "nc_show_endpoint " . $endp->name() );
 
@@ -430,7 +429,7 @@ sub log_cli {
     }
   }
   if ($using_stdout == 1 || !isQuiet() ) {
-    print "\nCMD: $cmd\n"
+    print qq(\nCMD: \"$cmd\"\n);
   }
 }
 
@@ -514,11 +513,11 @@ sub fmt_cmd {
       $rv .= ( $mod_hunk =~m/ +/) ? "'$mod_hunk' " : "$mod_hunk ";
    }
    if (rindex($rv, ' ', length($rv)-2) > 1) {
-      print STDERR "[$rv]\n";
+      #print STDERR "[$rv]\n";
       $rv =~ s/\s+$//g;
-      print STDERR "[$rv]\n";
+      #print STDERR "[$rv]\n";
    }
-   print STDERR "\ncmd: $rv\n" if($show_err or $::quiet ne "yes");
+   print STDERR qq(\nFormatted cmd: "$rv"\n) if ($show_err or $::quiet ne "yes");
    return $rv;
 }
 
@@ -580,8 +579,7 @@ sub sleep_sec {
 sub get_eid_map {
   my ($self, $resource) = @_;
   my $rh_eid_map = {};
-  my @ports_lines = split("\n", $self->doAsyncCmd("nc_show_ports 1 $resource ALL"));
-  sleep_ms(100);
+  my @ports_lines = split(/\r?\n/, $self->doAsyncCmd("nc_show_ports 1 $resource all"));
   chomp(@ports_lines);
 
   my ($eid, $card, $port, $type, $mac, $dev, $parent, $ip);
