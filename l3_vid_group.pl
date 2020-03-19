@@ -181,11 +181,12 @@ if ($::clear_group > 0) {
      print "No test groups defined, bye.";
      exit(1);
    }
-   my $re = q(^TestGroup name:\s+).$::generic_test_grp.q(\s+[\[]);
-   my @matches = grep {/$re/} @$ra_tg_list;
+
+   my @matches = grep {/^$::generic_test_grp$/} @$ra_tg_list;
+
    print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
-     print "No test group matching name [$::test_grp], bye.";
+     print "No test group matching name [$::generic_test_grp], bye.";
      exit(1);
    }
    print "will clear groups $::generic_test_grp and $::l3_test_grp\n";
@@ -280,6 +281,7 @@ if ($::action eq "create") {
      last if (@selected_list >= $::num_cx);
    }
 
+   my @next_cmds = ();
    for (my $i=0; $i < $::num_cx; $i++) {
      my $j = 10000 + $i;
      my $cname = "_".$::cx_name . substr("$j", 1);
@@ -289,22 +291,39 @@ if ($::action eq "create") {
      my $cmd = qq(/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
       .qq(--action create_cx --cx_name $cname --endp_type $::endp_type )
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
-     print "CMD: $cmd\n";
+     #print "CMD: $cmd\n";
      `$cmd`;
-     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
+     push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
+   }
+   sleep 1;
+   $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
+   for my $cmd (@next_cmds) {
+      $::utils->doCmd($cmd);
+   }
+
+   @next_cmds = ();
+   for (my $i=0; $i < $::num_cx; $i++) {
+        my $j = 10000 + $i;
+        my $cname = "_".$::cx_name . substr("$j", 1);
+        my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
 
      my $gname = $::cx_name . substr("$j", 1);
      $cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
-      .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
-      .qq(--stream $::vid_mode --quiet yes );
+            .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
+            .qq(--stream $::vid_mode --quiet yes );
+
      my $cmd2 = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
-      .qq(--action create_endp --endp_name $gname --endp_type 'generic' )
-      .qq(--port_name ).$selected_list[$i].q( )
-      .q(--endp_cmd ").$cmd.q(");
-     print "CMD: $cmd2\n";
+               .qq(--action create_endp --endp_name $gname --endp_type 'generic' )
+               .qq(--port_name ).$selected_list[$i]
+               .q( --endp_cmd ").$cmd.q(");
      `$cmd2`;
      $::utils->sleep_ms(20);
-     $::utils->doAsyncCmd($::utils->fmt_cmd("add_tgcx", $::generic_test_grp, $gname));
+     push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::generic_test_grp, "CX_".$gname));
+   }
+   sleep 1;
+   $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
+   for my $cmd (@next_cmds) {
+      $::utils->doCmd($cmd);
    }
 
    exit 0;
@@ -324,13 +343,25 @@ if ($::action eq "start") {
    # collect all cx names in the test group and start up the
    # video pulser on them
    print "Starting connections...";
+   $::utils->doCmd("start_group $::l3_test_grp");
+   sleep 1;
    $::utils->doCmd("start_group $::generic_test_grp");
 
    exit 0;
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "stop") {
-   print "we will stop!";
+   if (!(defined $::generic_test_grp) || ("" eq $::generic_test_grp)) {
+     print "Please specify test group to stop: --test_grp foo; bye.";
+     exit(1);
+   }
+
+   # collect all cx names in the test group and start up the
+   # video pulser on them
+   print "Stopping connections...";
+   $::utils->doCmd("stop_group $::generic_test_grp");
+   sleep 1;
+   $::utils->doCmd("stop_group $::l3_test_grp");
    exit 0;
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
