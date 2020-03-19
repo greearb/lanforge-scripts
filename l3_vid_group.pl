@@ -355,7 +355,6 @@ if ($::action eq "destroy") {
          push(@cmds, "rm_endp ".$cx_name);
       }
       foreach my $cmd (@cmds) {
-         print "zmd: $cmd\n";
          $::utils->doCmd($cmd);
          $::utils->sleep_ms(30);
       }
