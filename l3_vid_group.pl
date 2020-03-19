@@ -175,8 +175,13 @@ $::l3_test_grp = "_L3_".$::generic_test_grp;
 my $ra_tg_list = $::utils->test_groups();
 print Dumper($ra_tg_list) if ($::debug);
 
+my $ra_l3_cx_names = $::utils->group_items($::l3_test_grp);
+my $ra_generic_cx_names = $::utils->group_items($::generic_test_grp);
+
+
+
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
-if ($::clear_group > 0) {
+if (($::clear_group > 0) || ($::action eq "destroy")) {
    if (@$ra_tg_list < 1) {
      print "No test groups defined, bye.";
      exit(1);
@@ -200,8 +205,9 @@ if ($::action eq "create") {
    my @matches = grep {/$re/} @$ra_tg_list;
    print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
-     print "Creating test group matching name [$::generic_test_grp]...";
+     print "Creating test group [$::generic_test_grp]...";
      $::utils->doCmd($::utils->fmt_cmd("add_group", $::generic_test_grp));
+     print "Creating test group [$::l3_test_grp]...";
      $::utils->doCmd($::utils->fmt_cmd("add_group", $::l3_test_grp));
    }
 
@@ -293,6 +299,8 @@ if ($::action eq "create") {
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
      #print "CMD: $cmd\n";
      `$cmd`;
+
+     print "adding $cname to $::l3_test_grp\n";
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
    }
    sleep 1;
@@ -312,17 +320,19 @@ if ($::action eq "create") {
             .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
             .qq(--stream $::vid_mode --quiet yes );
 
-     my $cmd2 = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
-               .qq(--action create_endp --endp_name $gname --endp_type 'generic' )
-               .qq(--port_name ).$selected_list[$i]
+     my $cmd2 = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
+               .qq( --action create_endp --endp_name $gname --endp_type 'generic')
+               .qq( --port_name ).$selected_list[$i]
                .q( --endp_cmd ").$cmd.q(");
      `$cmd2`;
      $::utils->sleep_ms(20);
+     print "adding CX_$gname to $::generic_test_grp\n";
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::generic_test_grp, "CX_".$gname));
    }
    sleep 1;
    $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
    for my $cmd (@next_cmds) {
+
       $::utils->doCmd($cmd);
    }
 
@@ -330,7 +340,47 @@ if ($::action eq "create") {
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "destroy") {
-   print "we will destroy!";
+   my @cmds = ();
+   if (@$ra_generic_cx_names < 1) {
+      print "No layer 3 connections in group [$::generic_test_grp], bye\n";
+   }
+   else {
+      foreach my $cx_name (@$ra_generic_cx_names) {
+         push(@cmds, "rm_cx default_tm ".$cx_name);
+      }
+      foreach my $cx_name (@$ra_generic_cx_names) {
+         $cx_name =~ s/^CX_/D_/;
+         push(@cmds, "rm_endp ".$cx_name);
+         $cx_name =~ s/^D_//;
+         push(@cmds, "rm_endp ".$cx_name);
+      }
+      foreach my $cmd (@cmds) {
+         print "zmd: $cmd\n";
+         $::utils->doCmd($cmd);
+         $::utils->sleep_ms(30);
+      }
+   }
+   $::utils->doCmd("rm_group $::generic_test_grp");
+
+   if (@$ra_l3_cx_names < 1) {
+      print "No layer 3 connections in group [$::l3_test_grp], bye\n";
+   }
+   else {
+      @cmds = ();
+      foreach my $cx_name (@$ra_l3_cx_names) {
+         push(@cmds, "rm_cx default_tm ".$cx_name);
+      }
+      foreach my $cx_name (@$ra_l3_cx_names) {
+         push(@cmds, "rm_endp ${cx_name}-A");
+         push(@cmds, "rm_endp ${cx_name}-B");
+      }
+      foreach my $cmd (@cmds) {
+         print "zmd: $cmd\n";
+         $::utils->doCmd($cmd);
+         $::utils->sleep_ms(30);
+      }
+   }
+   $::utils->doCmd("rm_group $::l3_test_grp");
    exit 0;
 }
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
