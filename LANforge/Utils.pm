@@ -641,7 +641,8 @@ sub get_eid_map {
 }
 
 ##
-##
+## retrieve an eid/name record by name using a refrence
+## to an eid_map
 ##
 sub find_by_name {
   my ($self, $rh_eid_map, $devname) = @_;
@@ -678,7 +679,7 @@ sub ports_on_radio {
 sub test_groups {
   my ($self) = @_;
   my @group_lines = split(/\r?\n/, $self->doAsyncCmd("show_group all"));
-  sleep_ms(10);
+  sleep_ms(30);
 
   #print Dumper(\@group_lines);
   my @matches = grep {/TestGroup name:\s+/} @group_lines;
@@ -692,22 +693,29 @@ sub test_groups {
   return $ra_group_names;
 }
 
+##
 sub group_items {
    my ($self, $tg_name) = @_;
    die("Utils::group_items wants a test group name, bye.")
       if (!(defined $tg_name) || ("" eq $tg_name));
    my @lines = split(/\r?\n/, $self->doAsyncCmd( "show_group '$tg_name'"));
-   sleep_ms(100);
-
-   my @cx_line = grep {/\s*Cross Connects:/} @lines;
-   if (@cx_line < 1) {
-     print "No cross connects found for test group $::test_grp. Bye.\n";
-     exit(1);
+   sleep_ms(30);
+   my $ra_items = [];
+   my $started = 0;
+   foreach my $line (@lines) {
+      $started ++ if ($line =~ /\s*Cross Connects:/);
+      next unless ($started);
+      last if ($line =~ /^\s*$/);
+      $line =~ s/^\s*Cross Connects:\s*//;
+      $line =~ s/^\s+//;
+      $line =~ s/\s+$//;
+      my @hunks = split(/\s+/, $line);
+      push(@$ra_items, split(/\s+/, $line));
    }
-   my $trimmed = $cx_line[0];
-   $trimmed =~ s/^\s*Cross Connects:\s*//;
-   my $ra_items = [split(/\s+/, $trimmed)];
-   #print Dumper($ra_items);
+   if (@$ra_items < 1) {
+     print STDERR "No cross connects found for test group $tg_name.\n";
+     return [];
+   }
    return $ra_items;
 }
 
