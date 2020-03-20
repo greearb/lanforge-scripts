@@ -28,10 +28,10 @@ function create_batch() {
     #echo "radio[$radio] start[$start] num[$num]"
     set -x
     ./lf_associate_ap.pl --mgr $M --radio $radio --action add \
-        --first_sta $start --num_sta $num \
-        --first_ip DHCP --ssid ${SSID[0]} \
-        --security wpa2 --passphrase ${SSID[1]} \
-        --admin_down_on_add
+        --first_sta "sta${start}" --num_sta ${num} \
+        --first_ip DHCP --ssid "${SSID[0]}" \
+        --security wpa2 --passphrase "${SSID[1]}" \
+        --admin_down_on_add || exit 1
     set +x
 }
 
@@ -39,9 +39,11 @@ sorted=$(for radio in "${!batches[@]}"; do
     echo $radio
 done | sort)
 
+set -e
 for radio in $sorted; do
     value="${batches[$radio]}"
     hunks=( ${value//,/ } )
     create_batch $radio ${hunks[0]} ${hunks[1]}
+    sleep 1
 done
 
