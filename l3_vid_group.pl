@@ -272,7 +272,12 @@ if ($::action eq "create") {
      if (!(defined $parent_name));
    my $ra_interfaces = $::utils->ports_on_radio($rh_eid_map, $parent_name);
    while (@$ra_interfaces < $::num_cx) {
-      my $more_interfaces
+      # hack wiphy names
+      my ($wi, $nu) = $parent_name =~ /^([a-z]+)(\d+)$/;
+      $nu = 1 + $nu;
+      $parent_name = "${wi}${nu}";
+      my $ra_more = $::utils->ports_on_radio($rh_eid_map, $parent_name);
+      push(@$ra_interfaces, @$ra_more);
    }
    die("Unable to find any subinterfaces of $parent_name")
      if (@$ra_interfaces < 1);
