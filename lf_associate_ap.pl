@@ -1368,12 +1368,22 @@ sub doAdd {
    #print "## doAdd: sta_wiphy[$::sta_wiphy]\n";
    if ($::num_stations > 0 && defined $::sta_wiphy) {
       my %results2 = ();
-
+      print "creating stations:";
+      my $i = 0;
       for my $sta_name (sort(keys %::sta_names)) {
          die("misconfiguration! ") if( ref($sta_name) eq "HASH");
          my $ip = $::sta_names{$sta_name};
+         print " $sta_name";
          new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
+         if (($i % 10) == 9) {
+            $::utils->sleep_ms(120);
+         }
+         else {
+            $::utils->sleep_ms(30);
+         }
+         $i++;
       }
+      print "done\n";
    }
    elsif (defined $::sta_wiphy) {
       print "Creating virtual radio: $::sta_wiphy.\n";
