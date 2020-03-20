@@ -271,6 +271,9 @@ if ($::action eq "create") {
    die("Unable to find parent of $::first_sta, bye.")
      if (!(defined $parent_name));
    my $ra_interfaces = $::utils->ports_on_radio($rh_eid_map, $parent_name);
+   while (@$ra_interfaces < $::num_cx) {
+      my $more_interfaces
+   }
    die("Unable to find any subinterfaces of $parent_name")
      if (@$ra_interfaces < 1);
 
@@ -286,9 +289,15 @@ if ($::action eq "create") {
      push(@selected_list, $iface);
      last if (@selected_list >= $::num_cx);
    }
+   if (@selected_list != $::num_cx) {
+      my $a = @selected_list;
+      print "Number of interfaces($a) does not match number of connections($::num_cx).\n"
+         ." You probably don't have as many interfaces as you think.\n";
+      sleep 5;
+   }
 
    my @next_cmds = ();
-   for (my $i=0; $i < $::num_cx; $i++) {
+   for (my $i=0; $i < @selected_list; $i++) {
      my $j = 10000 + $i;
      my $cname = "_".$::cx_name . substr("$j", 1);
      my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
@@ -299,42 +308,48 @@ if ($::action eq "create") {
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
      #print "CMD: $cmd\n";
      `$cmd`;
-
-     print "adding $cname to $::l3_test_grp\n";
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
    }
    sleep 1;
    $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
+   print "adding L3 CX to $::l3_test_grp ";
    for my $cmd (@next_cmds) {
+      print ".";
       $::utils->doCmd($cmd);
    }
-
+   print "done\n";
+   print "Creating Generic connections for video emulation ";
+   $::utils->sleep_ms(20);
    @next_cmds = ();
-   for (my $i=0; $i < $::num_cx; $i++) {
+   for (my $i=0; $i < @selected_list; $i++) {
         my $j = 10000 + $i;
         my $cname = "_".$::cx_name . substr("$j", 1);
         my $ports = join('.', 1, $::resource, $selected_list[$i]).",".$::upstream;
 
      my $gname = $::cx_name . substr("$j", 1);
-     $cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
+     my $gnr_cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
             .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
             .qq(--stream $::vid_mode --quiet yes );
 
-     my $cmd2 = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
+     $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
                .qq( --action create_endp --endp_name $gname --endp_type 'generic')
                .qq( --port_name ).$selected_list[$i]
-               .q( --endp_cmd ").$cmd.q(");
-     `$cmd2`;
+               .q( --endp_cmd ").$gnr_cmd.q(");
+     `$cmd`;
+     print ".";
      $::utils->sleep_ms(20);
-     print "adding CX_$gname to $::generic_test_grp\n";
+     #print "adding CX_$gname to $::generic_test_grp\n";
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::generic_test_grp, "CX_".$gname));
    }
+   print "done\n";
    sleep 1;
    $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
+   print "Adding generic connections to $::generic_test_grp ";
    for my $cmd (@next_cmds) {
-
+      print ".";
       $::utils->doCmd($cmd);
    }
+   print "done\n";
 
    exit 0;
 }
@@ -345,6 +360,7 @@ if ($::action eq "destroy") {
       print "No layer 3 connections in group [$::generic_test_grp], bye\n";
    }
    else {
+      print "Removing generic connections ";
       foreach my $cx_name (@$ra_generic_cx_names) {
          push(@cmds, "rm_cx default_tm ".$cx_name);
       }
@@ -355,9 +371,11 @@ if ($::action eq "destroy") {
          push(@cmds, "rm_endp ".$cx_name);
       }
       foreach my $cmd (@cmds) {
+         print ".";
          $::utils->doCmd($cmd);
          $::utils->sleep_ms(30);
       }
+      print "done\n";
    }
    $::utils->doCmd("rm_group $::generic_test_grp");
 
@@ -365,6 +383,7 @@ if ($::action eq "destroy") {
       print "No layer 3 connections in group [$::l3_test_grp], bye\n";
    }
    else {
+      print "Removing L3 endpoints ";
       @cmds = ();
       foreach my $cx_name (@$ra_l3_cx_names) {
          push(@cmds, "rm_cx default_tm ".$cx_name);
@@ -374,10 +393,11 @@ if ($::action eq "destroy") {
          push(@cmds, "rm_endp ${cx_name}-B");
       }
       foreach my $cmd (@cmds) {
-         print "zmd: $cmd\n";
+         print ".";
          $::utils->doCmd($cmd);
          $::utils->sleep_ms(30);
       }
+      print "done\n";
    }
    $::utils->doCmd("rm_group $::l3_test_grp");
    exit 0;
