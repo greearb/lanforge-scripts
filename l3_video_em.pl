@@ -498,7 +498,7 @@ do {
   my $bytes = 0;
   while($bytes < ($buf_size + $startbytes)) {
     $bytes = txbytes($endp);
-    sleep_ms(200);
+    $::utils->sleep_ms(200);
     #print " +$bytes" unless ($silent);
   }
   my ($finishtime_sec, $finishtime_usec) = gettimeofday();
@@ -516,7 +516,7 @@ do {
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
     print "-" unless($silent);
     $::utils->doCmd($cmd);
-    sleep_sec($drain_wait_sec);
+    $::utils->sleep_sec($drain_wait_sec);
     $startbytes = txbytes($endp);
     $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
     $::utils->doCmd($cmd);
