@@ -261,12 +261,9 @@ elsif ($tos eq "VO") {
   $tos = 192;
 }
 
-if (defined $ENV{DEBUG}) {
-  use Data::Dumper;
-}
+use Data::Dumper;
 
 if ($::debug) {
-  use Data::Dumper;
   $ENV{DEBUG} = 1 if (!(defined $ENV{DEBUG}));
 }
 
@@ -346,8 +343,6 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
    }
    elsif ($::action eq "show_endp") {
       if ((defined $::endp_vals) && ("$::endp_vals" ne "")) {
-
-
          my %option_map    = ();
          my $option        = '';
          for $option (split(',', $::endp_vals)) {
@@ -367,6 +362,12 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
             if ($option =~ /^Tx[ _-]Bytes$/  ) { $option = "Tx-Bytes-Total"; }
             if ($option =~ /^Rx[ _-]Pkts$/   ) { $option = "Rx-Pkts-Total"; }
             if ($option =~ /^Tx[ _-]Pkts$/   ) { $option = "Tx-Pkts-Total"; }
+
+            if ($option =~ /^EID$/i ) {
+               $option_map{ "Shelf" } = '';
+               $option_map{ "Card" } = '';
+               $option_map{ "Port" } = '';
+            }
 
             # we don't know if we're armageddon or layer 3
             if ($option =~ /tx_bytes/  ) {
@@ -401,10 +402,18 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          }
          my $rh_value_map = $::utils->show_as_hash(\@lines);
 
+         if ($debug && ($quiet ne "yes")) {
+            my @keyz = sort keys(%$rh_value_map);
+            print Dumper(\@keyz);
+         }
+
          for my $option (keys %option_map) {
             my $val = '-';
 
-            if (defined $rh_value_map->{$option}) {
+            if ($option =~ /^EID$/i) {
+               $val = "1.".$rh_value_map->{"Card"}.".".$rh_value_map->{"Port"};
+            }
+            elsif (defined $rh_value_map->{$option}) {
                $val = $rh_value_map->{$option};
 
                if ($option =~ /Latency/) {
