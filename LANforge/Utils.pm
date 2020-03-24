@@ -922,6 +922,17 @@ sub show_as_hash {
       }
       if (index($line, 'Shelf: 1,') >= 0) {
          $line =~ s/1,/1/;
+         if ($line =~ /Endpoint/ ) {
+            my ($card, $port, $endpoint, $eptype, $patt ) =
+               $line =~ /Shelf:\s+1\s+Card:\s+(\d+)\s+Port:\s+(\S+)\s+Endpoint:\s+(\S+)\s+Type:\s+(\S+)\s+Pattern:\s+(\S+)$/;
+            $rh_pairs->{Shelf} = 1;
+            $rh_pairs->{Card} = $card;
+            $rh_pairs->{Resource} = $card;
+            $rh_pairs->{Port} = $port;
+            $rh_pairs->{Endpoint} = $endpoint;
+            $rh_pairs->{Type} = $eptype;
+            $rh_pairs->{Pattern} = $patt;
+         }
       }
       my $found_oneline = 0;
       foreach my $keyv (@LANforge::Utils::one_line_keys) {
