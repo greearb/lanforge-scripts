@@ -1080,6 +1080,37 @@ sub hunks_to_hashes {
    return $rh;
 }
 
+sub expand_unit_str {
+   my ($self, $string) = @_;
+   die("Utils::expand_unit_str expects string to parse")
+      if (!(defined $string) || ("" eq $string));
+
+   return 0 if ($string =~ /^0+\s*\w+$/);
+
+   my ($num, $suf) = $string =~ /^(\d+)\s*(\w*)$/;
+   if (!(defined $num) || ("" eq $num)) {
+      die("Utils::expand_unit_str exects something like 33Mbps or '33 Mbps', not $string");
+   }
+   my $multiplier = 1;
+   if (!(defined $suf) || ("" eq $suf)) {
+      $multiplier = 1;
+      print STDERR "Utils::expand_unit_str saw no suffix in [$string]\n";
+   }
+   elsif ($suf =~ /^bps$/i) {
+      $multiplier = 1;
+   }
+   elsif ($suf =~ /^kbps$/i) {
+      $multiplier = 1000;
+   }
+   elsif ($suf =~ /^mbps$/i) {
+      $multiplier = 1000 * 1000;
+   }
+   elsif ($suf =~ /^gbps$/i) {
+      $multiplier = 1000 * 1000 * 1000;
+   }
+   return int($num) * $multiplier;
+}
+
 ####
 1;
 __END__
