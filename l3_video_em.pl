@@ -42,6 +42,7 @@ our $max_tx          = -1;
 our $buf_size        = -1;
 our $log_cli         = "unset"; # do not set to 0, it turns into logfile "./0"
 our $stream_key      = undef;
+our $quit_when_const = 0;
 
 # https://en.wikipedia.org/wiki/Standard-definition_television
 # https://www.adobe.com/devnet/adobe-media-server/articles/dynstream_live/popup.html
@@ -172,7 +173,7 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
   --log_cli {0|1} # use this to record cli commands
   --quiet {0|1|yes|no} # print CLI commands
   --silent        # do not print status output
-
+  --quit_when_const # quits connection when constant tx detected
   Example:
   1) create the L3 connection:
     ./lf_firemod.pl --resource 1 --action create_endp bursty-udp-A --speed 0 --endp_type lf_udp --port_name eth1 --report_timer 500
@@ -201,6 +202,7 @@ GetOptions
    'buf_size|buf=s'       => \$::buf_size,
    'stream_res|stream=s'  => \$::stream_key,
    'list_streams+'        => \$list_streams,
+   'quit_when_const'      => \$::quit_when_const,
 ) || die($!);
 
 
@@ -438,6 +440,8 @@ die("Unknown stream key $::stream_key")
 
 $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
+# estimated fill time is probably not going to be accurate because
+# there's no way to know the txrate between the AP and station.
 $::est_fill_time_sec  = (8 * $::buf_size) / ($max_tx * 0.5);
 my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
 my $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
@@ -461,7 +465,7 @@ die($matches[0])
   unless (@matches == 0);
 
 # avoid a stampede of scripts starting at the same time
-my $rand_start_delay = rand(15);
+my $rand_start_delay = rand(7);
 print "Random start delay: $rand_start_delay...\n";
 $::utils->sleep_sec($rand_start_delay);
 print "Stopping and configuring $::cx_name\n" unless($silent);
@@ -503,66 +507,78 @@ my $check_if_stopped = 0;
 my $startbytes = txbytes($endp, $check_if_stopped);
 my @delta_reports = ();
 do {
+   ($starttime_sec, $starttime_usec) = gettimeofday();
+   my $starttime = $starttime_sec + ($starttime_usec / 1000000 );
+   if (($starttime - $begin) > 20) {
+      $check_if_stopped = 1;
+   }
+   my $bytes = 0;
+   my $num_checks = 0;
+   my $prev_bytes = 0;
+   # this might not be
+   while($bytes < ($buf_size + $startbytes)) {
+      $num_checks++;
+      my ($delta1_sec, $delta1_usec) = gettimeofday();
+      $prev_bytes = $bytes;
+      $bytes = txbytes($endp, $check_if_stopped);
+      my ($delta2_sec, $delta2_usec) = gettimeofday();
+      $delta1_sec = $delta1_sec + ($delta1_usec/1000000);
+      $delta2_sec = $delta2_sec + ($delta2_usec/1000000);
+      #push(@delta_reports, sprintf(" Sent %d B, d %.5f",($bytes-$prev_bytes), ($delta2_sec - $delta1_sec)));
+      push(@delta_reports, sprintf(" Sent %d B/ %.5f bps;",
+         ($bytes-$prev_bytes),
+         ($bytes-$prev_bytes)/($delta2_sec - $starttime) ));
+      last if ($bytes > ($buf_size + $startbytes));
 
-  ($starttime_sec, $starttime_usec) = gettimeofday();
-  my $starttime = $starttime_sec + ($starttime_usec / 1000000 );
-  if (($starttime - $begin) > 20) {
-     $check_if_stopped = 1;
-  }
-  my $bytes = 0;
-  while($bytes < ($buf_size + $startbytes)) {
-    my ($delta1_sec, $delta1_usec) = gettimeofday();
-    $bytes = txbytes($endp, $check_if_stopped);
-    my ($delta2_sec, $delta2_usec) = gettimeofday();
-    $delta1_sec = $delta1_sec + ($delta1_usec/1000000);
-    $delta2_sec = $delta2_sec + ($delta2_usec/1000000);
-    push(@delta_reports, "".($delta2_sec - $delta1_sec));
-    last if($bytes > ($buf_size + $startbytes));
-    push(@delta_reports, "z");
-    $::utils->sleep_ms(200);
-    #$::utils->sleep_ms( 5 * ($delta2_sec - $delta1_sec));
-  }
-  # startbytes is only needed on iteration 0
-  $startbytes = 0;
-  my ($finishtime_sec, $finishtime_usec) = gettimeofday();
-  $finishtime_sec = ($finishtime_sec + ($finishtime_usec / 1000000));
-  $last_fill_time_sec =  $finishtime_sec - $starttime_sec;
-  $tt_bytes += $bytes;
+      # if we're taking unreasonably long, let's just escape
+      if (($delta2_sec - $starttime) > (12 * $last_fill_time_sec)) {
+         push(@reports, sprintf("Likely overfill detected, txsec: %.4f", ($delta2_sec - $starttime)));
+         last;
+      }
+      #push(@delta_reports, "z");
+      $::utils->sleep_ms(200);
+      #$::utils->sleep_ms( 5 * ($delta2_sec - $delta1_sec));
+   }
+   # startbytes is only needed on iteration 0
+   $startbytes = 0;
+   my ($finishtime_sec, $finishtime_usec) = gettimeofday();
+   $finishtime_sec = ($finishtime_sec + ($finishtime_usec / 1000000));
+   $last_fill_time_sec =  $finishtime_sec - $starttime_sec;
+   $tt_bytes += $bytes;
 
 
-  $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
-  push(@reports, "## drain_wait_seconds: $drain_wait_sec;"
-     ." est fill: $est_fill_time_sec;"
-     ." actual fill: $last_fill_time_sec;"
-     ." adj: ".($est_fill_time_sec - $last_fill_time_sec )
-     ."   deltas: ".join(',', @delta_reports));
-  if (($fill_stops > 1) && ($drain_wait_sec <= 0)) {
-     # this is a failure condition, we are misconfigured or overloaded
-     cleanexit("Gotta go: constant TX: $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;\n"
-        .join("\n", @reports));
-  }
+   $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
+   push(@reports, sprintf("## drain_wait_seconds: %.4f; est fill: %.4f; actual fill %.4f; dev: %.4f",
+      $drain_wait_sec, $est_fill_time_sec, $last_fill_time_sec, ($est_fill_time_sec - $last_fill_time_sec )));
+   push(@reports, "deltas: ".join(',', @delta_reports));
+
+   if ($::quit_when_const && ($fill_stops > 1) && ($drain_wait_sec <= 0)) {
+      # this is a failure condition, we are misconfigured or overloaded
+      cleanexit("Constant TX Quit: Wait $drain_wait_sec = Drain $drain_time_sec - Fill time $last_fill_time_sec;\n"
+               .join("\n", @reports));
+   }
 
   #push(@reports, "   deltas: ".join(',', @delta_reports));
-  @delta_reports = ();
+   @delta_reports = ();
 
-  if ($drain_wait_sec > 0) {
-    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
-    $::utils->doCmd($cmd);
-    $fill_stops++;
-    $ave_fill_bytes = $tt_bytes / $fill_stops;
-    push(@reports, "# $fill_starts fills for ave ${ave_fill_bytes}B/fill");
+   #if ($drain_wait_sec > 0) { # we don't really want to never stop, that's not useful
+   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
+   $::utils->doCmd($cmd);
+   $fill_stops++;
+   #$ave_fill_bytes = $tt_bytes / $fill_stops;
+   #push(@reports, "# $fill_starts fills for ave ${ave_fill_bytes}B/fill");
 
-    $::utils->sleep_sec($drain_wait_sec);
-    $startbytes = txbytes($endp, $check_if_stopped);
-    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
-    $::utils->doCmd($cmd);
-    $fill_starts++;
-  }
-  if (($finishtime_sec - $last_report_sec) >= $report_period_sec) {
-    print (join("\n", @reports), "\n");
-    @reports = ();
-    $last_report_sec = $finishtime_sec;
-  }
+   $::utils->sleep_sec($drain_wait_sec);
+   $startbytes = txbytes($endp, $check_if_stopped);
+   $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
+   $::utils->doCmd($cmd);
+   $fill_starts++;
+   #}
+   if (($finishtime_sec - $last_report_sec) >= $report_period_sec) {
+      print (join("\n", @reports), "\n");
+      @reports = ();
+      $last_report_sec = $finishtime_sec;
+   }
 } while(1);
 
 #
