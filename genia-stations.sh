@@ -10,11 +10,17 @@
 
 M=ct524-genia.jbr.candelatech.com
 SSID=(jedway-wpa2-x2048-5-1 jedway-wpa2-x2048-5-1)
+#declare -A batches=(
+#    [wiphy0]=000,200
+#    [wiphy1]=200,200
+#    [wiphy2]=400,63
+#    [wiphy3]=463,63
+#)
 declare -A batches=(
-    [wiphy0]=000,200
-    [wiphy1]=200,200
-    [wiphy2]=400,63
-    [wiphy3]=463,63
+    [wiphy0]=000,4
+    [wiphy1]=004,4
+    [wiphy2]=008,4
+    [wiphy3]=012,4
 )
 
 function create_batch() {
