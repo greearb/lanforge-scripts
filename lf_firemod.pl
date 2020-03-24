@@ -353,8 +353,8 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          for $option (split(',', $::endp_vals)) {
             #print "OPTION[$option]\n";
             #next if ($option =~ /\s/);
-	    my $oopt = $option;
-	    $option_map{ $option } = '';
+            my $oopt = $option;
+            $option_map{ $option } = '';
 
             if ($option =~ /rx[_-]pps/    ) { $option = "Rx-Pkts-Per-Sec"; }
             if ($option =~ /tx[_-]pps/    ) { $option = "Tx-Pkts-Per-Sec"; }
@@ -385,19 +385,19 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
                $option_map{ "Rx-Pkts-Total" } = '';
                $option = "Packets Rcvd";
             }
-	    if ($oopt ne $option) {
-	      $option_map{ $option } = '';
-	    }
+            if ($oopt ne $option) {
+               $option_map{ $option } = '';
+            }
          }
          # options are reformatted
 
          my $i;
          my @lines = ();
          if ($stats_from_file ne "") {
-           @lines = split(/\r?\n/, get_stats_from_file($stats_from_file, $endp_name));
+            @lines = split(/\r?\n/, get_stats_from_file($stats_from_file, $endp_name));
          }
          else {
-           @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
+            @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_endp $endp_name"));
          }
          my $rh_value_map = $::utils->show_as_hash(\@lines);
 
@@ -430,7 +430,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
          }
 
          for $option ( sort keys %option_map ) {
-	    #print("Checking option: $option\n");
+            #print("Checking option: $option\n");
             print $option.": ".$option_map{ $option }."\n";
          }
       }
@@ -459,7 +459,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
       $::utils->doCmd($cmd);
    }
    elsif ($::action eq "create_endp") {
-     create_endp($::endp_name, $::resource, $::port_name, $::endp_type, $::speed, $::max_speed);
+      create_endp($::endp_name, $::resource, $::port_name, $::endp_type, $::speed, $::max_speed);
    }
    else {
       # Set endp
@@ -470,7 +470,7 @@ if (grep {$_ eq $::action} split(',', "show_endp,set_endp,create_endp,create_arm
 
          # Assume Layer-3 for now
          $cmd = $::utils->fmt_cmd("add_endp", $endp_name, $::NA, $::NA, $::NA,
-            $::NA, $::NA, $::NA, $speed,  $max_speed);
+                                  $::NA, $::NA, $::NA, $speed,  $max_speed);
          #print("cmd: $cmd\n");
          $::utils->doCmd($cmd);
       }
