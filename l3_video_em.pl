@@ -163,7 +163,7 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
   --tx_style    { constant | bufferfill }
   --cx_name     {name}
   --tx_side     {A|B} # which side is emulating the server,
-                      # default $tx_side
+                      # default $::tx_side
   --max_tx      {speed in bps [K|M|G]} # use this to fill buffer
   --min_tx      {speed in bps [K|M|G]} # use when not filling buffer, default 0
   --buf_size    {size[K|M|G]}  # fill a buffer at max_tx for this long
@@ -306,7 +306,6 @@ sub filltime {
 }
 
 # ========================================================================
-
 sub rxbytes {
   my ($endp) = @_;
   die ("called rxbytes with no endp name, bye")
@@ -332,7 +331,43 @@ sub rxbytes {
   }
   return $bytes;
 }
+# ========================================================================
+# look for any TX/RX rates associated with station
+sub get_txrx_rate {
+   my ($lf_host, $lf_port, $rez, $cxnam, $rx_sid) = @_;
+   my $rxendp = "${cxnam}-${rx_sid}";
+   my $cmd = "lf_firemod.pl --mgr $lf_host --mgr_port $lf_port -r $rez "
+      ."--action show_endp --endp_name $rxendp --endp_vals EID";
+   my @lines = `$cmd`;
+   chomp(@lines);
+   my @matches = grep {/EID:/} @lines;
+   return -1 if (@matches < 1);
 
+   my ($discard1, $port_eid) = split(/:\s*/, $matches[0]);
+   my $max_rate = 0;
+   if (!(defined $port_eid) || ("" eq $port_eid)) {
+      print STDERR "Unable to determine port eid, unable to update max_tx\n";
+      return -1;
+   }
+   # find tx/rx rate
+   my ($discard2, $rez2, $portid) = split(/[.]/, $port_eid);
+   $cmd = "lf_portmod.pl --mgr $lf_host --mp $lf_port --resource $rez2"
+         ." --port_name $portid --show_port Probed-TX-Rate,Probed-RX-Rate";
+   @lines = `$cmd`;
+   chomp(@lines);
+   my $rate = 0;
+   for my $line (@lines) {
+      my @hunks = split(/:\s*/, $line);
+      if (@hunks > 1) {
+         $rate = $::utils->expand_unit_str($hunks[1]);
+      }
+      $max_rate = $rate if ($rate > $max_rate);
+   }
+   #if ($max_rate > 0) {
+   #   print "Adjusting max-rate closer to $max_rate\n";
+   #}
+   return $max_rate
+} # ~get_txrx_rate()
 
 # ========================================================================
 
@@ -442,7 +477,7 @@ $stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
 
 # estimated fill time is probably not going to be accurate because
 # there's no way to know the txrate between the AP and station.
-$::est_fill_time_sec  = (8 * $::buf_size) / ($max_tx * 0.5);
+$::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
 my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
 my $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
 
@@ -466,14 +501,14 @@ die($matches[0])
 
 # avoid a stampede of scripts starting at the same time
 my $rand_start_delay = rand(7);
-print "Random start delay: $rand_start_delay...\n";
-$::utils->sleep_sec($rand_start_delay);
+   if (! $::debug) {
+   print "Random start delay: $rand_start_delay...\n";
+   $::utils->sleep_sec($rand_start_delay);
+}
 print "Stopping and configuring $::cx_name\n" unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
 
-
-
-my $endp = "$::cx_name-${tx_side}";
+my $endp = $::cx_name."-".$::tx_side;
 @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endp", $endp)));
 @matches = grep {/ Shelf: 1, Card: /} @lines;
 die ("No matches for show endp $endp")
@@ -491,32 +526,6 @@ $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"))
 $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
 $::utils->doAsyncCmd($cmd);
 
-
-# look for any TX/RX rates associated with station
-my $rx_side = ($tx_side eq "A") ? "B" : "A";
-my $rxendp = "$::cx_name-${rx_side}";
-$cmd = "./lf_firemod.pl --mgr $::lfmgr_host -r $::resource "
-   ."--action show_endp --endp_name $rxendp --endp_vals EID";
-@lines = `$cmd`;
-chomp(@lines);
-@matches = grep {/EID:/} @lines;
-if (@matches > 0) {
-   my ($discard, $port_eid) = split(/:\s*/, $matches[0]);
-
-   if ((defined $port_eid) && ("" ne $port_eid)) {
-      # find tx/rx rate
-      my ($discard, $rez, $portid) = split(/[.]/, $port_eid);
-      $cmd = "./lf_portmod.pl --mgr $::lfmgr_host --mp $::lfmgr_port --resource $rez"
-         ." --port_name $portid --show_port Probed-TX-Rate,Probed-RX-Rate";
-      @lines = `$cmd`;
-      chomp(@lines);
-      print Dumper(\@lines);
-   }
-}
-die("testing");
-
-
-
 my @reports = ();
 my $fill_starts = 1;
 my $fill_stops = 0;
@@ -530,6 +539,7 @@ my $report_period_sec = 6;
 my $check_if_stopped = 0;
 my $startbytes = txbytes($endp, $check_if_stopped);
 my @delta_reports = ();
+
 do {
    ($starttime_sec, $starttime_usec) = gettimeofday();
    my $starttime = $starttime_sec + ($starttime_usec / 1000000 );
@@ -546,6 +556,13 @@ do {
       $prev_bytes = $bytes;
       $bytes = txbytes($endp, $check_if_stopped);
       my ($delta2_sec, $delta2_usec) = gettimeofday();
+      my $rx_side = ($::tx_side eq "A") ? "B" : "A";
+      my $updated_txbps = get_txrx_rate($::lfmgr_host, $lfmgr_port, $::resource, $::cx_name, $rx_side);
+      if ($updated_txbps > 0) {
+         $::max_tx = $updated_txbps;
+         $::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
+         $drain_wait_sec = $drain_time_sec - $::est_fill_time_sec;
+      }
       $delta1_sec = $delta1_sec + ($delta1_usec/1000000);
       $delta2_sec = $delta2_sec + ($delta2_usec/1000000);
       #push(@delta_reports, sprintf(" Sent %d B, d %.5f",($bytes-$prev_bytes), ($delta2_sec - $delta1_sec)));
@@ -570,7 +587,6 @@ do {
    $last_fill_time_sec =  $finishtime_sec - $starttime_sec;
    $tt_bytes += $bytes;
 
-
    $drain_wait_sec = $drain_time_sec - $last_fill_time_sec;
    push(@reports, sprintf("## drain_wait_seconds: %.4f; est fill: %.4f; actual fill %.4f; dev: %.4f",
       $drain_wait_sec, $est_fill_time_sec, $last_fill_time_sec, ($est_fill_time_sec - $last_fill_time_sec )));
@@ -594,6 +610,7 @@ do {
 
    $::utils->sleep_sec($drain_wait_sec);
    $startbytes = txbytes($endp, $check_if_stopped);
+   push(@reports, "Setting max_tx to $::max_tx");
    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
    $::utils->doCmd($cmd);
    $fill_starts++;
