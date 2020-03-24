@@ -1085,13 +1085,14 @@ sub expand_unit_str {
    die("Utils::expand_unit_str expects string to parse")
       if (!(defined $string) || ("" eq $string));
 
-   return 0 if ($string =~ /^0+\s*\w+$/);
+   return 0 if ($string =~ /^[0\.]+\s*\w+$/);
 
-   my ($num, $suf) = $string =~ /^(\d+)\s*(\w*)$/;
+   my ($num, $suf) = $string =~ /^([\.0-9]+)\s*(\w*)$/;
    if (!(defined $num) || ("" eq $num)) {
       die("Utils::expand_unit_str exects something like 33Mbps or '33 Mbps', not $string");
    }
    my $multiplier = 1;
+   #print "String[$string] => $num Suffix $suf\n";
    if (!(defined $suf) || ("" eq $suf)) {
       $multiplier = 1;
       print STDERR "Utils::expand_unit_str saw no suffix in [$string]\n";
