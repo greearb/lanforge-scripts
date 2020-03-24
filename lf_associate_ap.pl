@@ -410,7 +410,7 @@ sub load_db {
          }
       } # ~foreach
    }
-   print "done\n";
+   print " done\n";
 }
 
 sub save_db {
@@ -421,7 +421,7 @@ sub save_db {
       print "Warning: will over-write database $db_name! ";
    }
    $::utils->doCmd($::utils->fmt_cmd("save", $db_name));
-   print "done\n";
+   print " done\n";
 }
 
 sub get_radio_bssid {
@@ -1162,7 +1162,7 @@ sub adjustForDownload {
       $::utils->doCmd($::utils->fmt_cmd("set_cx_state",       $::test_mgr, $cx, "RUNNING"));
       print " $cx..."
    }
-   print "done\n";
+   print " done\n";
 } # ~adjustForUpload
 
 sub quiesceConnections {
@@ -1383,7 +1383,7 @@ sub doAdd {
          }
          $i++;
       }
-      print "done\n";
+      print " done\n";
    }
    elsif (defined $::sta_wiphy) {
       print "Creating virtual radio: $::sta_wiphy.\n";
@@ -1641,7 +1641,7 @@ if ($::db_preload ne "") {
    if(db_exists($::db_preload)==1) {
       print "Loading scenario $::db_preload...";
       load_db($::db_preload);
-      print "done\n";
+      print " done\n";
    }
    else {
       print("Scenario [$::db_postload] does not exist. Please create it first.");
