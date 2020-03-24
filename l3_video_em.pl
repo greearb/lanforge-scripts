@@ -471,27 +471,51 @@ $::utils->sleep_sec($rand_start_delay);
 print "Stopping and configuring $::cx_name\n" unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
 
+
+
 my $endp = "$::cx_name-${tx_side}";
 @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endp", $endp)));
-
 @matches = grep {/ Shelf: 1, Card: /} @lines;
 die ("No matches for show endp $endp")
   unless($matches[0]);
-
 my ($res, $port, $type) = $matches[0] =~ /, Card: (\d+)\s+Port: (\d+)\s+Endpoint: \d+ Type: ([^ ]+)\s+/;
-
 my $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
     $NA, # ip_port
     $NA, # is_rate_bursty
     $::min_tx, # min_rate
     $::min_tx # max_rate
   );
-
 $::utils->doAsyncCmd($cmd);
 print "Starting $::cx_name\n" unless($silent);
 $::utils->doCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING"));
 $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
 $::utils->doAsyncCmd($cmd);
+
+
+# look for any TX/RX rates associated with station
+my $rx_side = ($tx_side eq "A") ? "B" : "A";
+my $rxendp = "$::cx_name-${rx_side}";
+$cmd = "./lf_firemod.pl --mgr $::lfmgr_host -r $::resource "
+   ."--action show_endp --endp_name $rxendp --endp_vals EID";
+@lines = `$cmd`;
+chomp(@lines);
+@matches = grep {/EID:/} @lines;
+if (@matches > 0) {
+   my ($discard, $port_eid) = split(/:\s*/, $matches[0]);
+
+   if ((defined $port_eid) && ("" ne $port_eid)) {
+      # find tx/rx rate
+      my ($discard, $rez, $portid) = split(/[.]/, $port_eid);
+      $cmd = "./lf_portmod.pl --mgr $::lfmgr_host --mp $::lfmgr_port --resource $rez"
+         ." --port_name $portid --show_port Probed-TX-Rate,Probed-RX-Rate";
+      @lines = `$cmd`;
+      chomp(@lines);
+      print Dumper(\@lines);
+   }
+}
+die("testing");
+
+
 
 my @reports = ();
 my $fill_starts = 1;
@@ -558,7 +582,7 @@ do {
                .join("\n", @reports));
    }
 
-  #push(@reports, "   deltas: ".join(',', @delta_reports));
+   #push(@reports, "   deltas: ".join(',', @delta_reports));
    @delta_reports = ();
 
    #if ($drain_wait_sec > 0) { # we don't really want to never stop, that's not useful
