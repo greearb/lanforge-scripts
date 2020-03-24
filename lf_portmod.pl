@@ -92,6 +92,7 @@ my $usage = << "EOF"
    $0  --port_name {name | number}
 --cmd                { reset | delete }
 [--manager|--mgr|-m  { network address of LANforge manager} ]
+[--manager_port|mgr_port|lf_port|mp { manager port number } ]
 [--cli_cmd           { lf-cli-command text } ]
 [--amt_resets        { number (0 means forever) } ]
 [--max_port_name     { number } ]
@@ -186,7 +187,7 @@ GetOptions
  'cmd=s'             => \$cmd,
  'cli_cmd=s'         => \$cli_cmd,
  'manager|mgr|m=s'   => \$lfmgr_host,
- 'manager_port|mgr_port|mp:i' => \$lfmgr_port,
+ 'manager_port|mgr_port|lf_port|mp:i' => \$lfmgr_port,
  'load_db|load=s'    => \$load,
  'quiet|q=s'         => \$::quiet,
  'resource|card|res|r=i' => \$card,
