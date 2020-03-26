@@ -313,6 +313,8 @@ if ($::action eq "create") {
       .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
      #print "CMD: $cmd\n";
      `$cmd`;
+     push(@next_cmds, "set_endp_flag $cname-A AutoHelper 1");
+     push(@next_cmds, "set_endp_flag $cname-B AutoHelper 1");
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
    }
    sleep 1;
