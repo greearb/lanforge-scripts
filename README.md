@@ -111,7 +111,7 @@ using the **pypi.org** servers. Consider updating your ``~/.pypirc`` file:
 ````
 [distutils]
 index-servers =  
-&nbsp;&nbsp;pypi  
+    pypi  
 
 [pypi]  
 repository: https://upload.pypi.org/legacy/
