@@ -22,11 +22,6 @@ these scripts are more modern and may be a good place to start:
 The `lf_wifi_rest_example.pl` script shows how one might call the other scripts from
 within a script.
 
-### Installation ###
-These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
-such as your laptop, either copy the entire scripts directory or do a __git clone__ of this repository. Just copying
-one script to a separate directory is going to break its requirements.
-
 ### Examples and Documents ###
 Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_api_cookbook.php) cookbook.
 
@@ -93,6 +88,11 @@ Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_
 Scripts will be kept backwards and forwards compatible with LANforge
 releases as much as possible.
 
+### Installation ###
+These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
+such as your laptop, either copy the entire scripts directory or do a __git clone__ of this repository. Just copying
+one script to a separate directory is going to break its requirements.
+
 ### Requirements ###
 The perl scripts require the following perl packages to be installed. Most of these
 perl packages are available through your repository as `.deb` or `.rpm` packages. 
@@ -102,6 +102,23 @@ perl packages are available through your repository as `.deb` or `.rpm` packages
 | Net::Telnet        | perl-Net-Telnet |  Yes            |
 | JSON               | perl-JSON       |  Yes, for JSON parsing |
 | JSON::PrettyPrint  | perl-JSON-PP    |  No, useful for debugging |
+
+#### Pip v Pip3 ####
+Please use pip3, we are targeting Python 3 with our scripts. If your pip/pip3 repositories have a difficult time connecting,
+it's likely that you are trying to download from **pypi.python.org**. This is a deprecated location. Please update
+using the **pypi.org** servers. Consider updating your ``~/.pypirc`` file:
+
+````
+[distutils]
+index-servers =  
+&nbsp;&nbsp;pypi  
+
+[pypi]  
+repository: https://upload.pypi.org/legacy/
+````
+
+
+As [described on Python.org](https://packaging.python.org/guides/migrating-to-pypi-org/).
 
 ### License ###
 Code in this repository is released under the BSD license (see license.txt).
