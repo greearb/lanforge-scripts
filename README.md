@@ -22,6 +22,11 @@ these scripts are more modern and may be a good place to start:
 The `lf_wifi_rest_example.pl` script shows how one might call the other scripts from
 within a script.
 
+### Installation ###
+These scripts call each other and rely on the structure of this directory. To use these scripts in other locations,
+such as your laptop, either copy the entire scripts directory or do a __git clone__ of this repository. Just copying
+one script to a separate directory is going to break its requirements.
+
 ### Examples and Documents ###
 Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_api_cookbook.php) cookbook.
 
