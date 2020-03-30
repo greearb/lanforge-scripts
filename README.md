@@ -103,6 +103,12 @@ perl packages are available through your repository as `.deb` or `.rpm` packages
 | JSON               | perl-JSON       |  Yes, for JSON parsing |
 | JSON::PrettyPrint  | perl-JSON-PP    |  No, useful for debugging |
 
+| Python3 Package  |  RPM    | Required    |
+|-------------------------|-----------|---------------|
+| Pexpect                 | python3-pexpect | yes |
+| XlsxWriter             | python3-xlsxwriter | yes, Xlsx output |
+
+
 #### Pip v Pip3 ####
 Please use pip3, we are targeting Python 3 with our scripts. If your pip/pip3 repositories have a difficult time connecting,
 it's likely that you are trying to download from **pypi.python.org**. This is a deprecated location. Please update
