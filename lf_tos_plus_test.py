@@ -53,7 +53,7 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
 lfmgr = "127.0.0.1"
 cx_strs = []  # station-radio, station-port, mode, upstream-port, protocol, pkt-size, speed_ul, speed_dl, QoS.
-outfile = "tos_results.xlsx"
+outfile = "tos+_results.xlsx"
 dur = 5 * 60
 passwd = ""
 ssid = "Test-SSID"
@@ -196,6 +196,8 @@ def main():
    worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Combined\nRSSI', dblue_bold); col += 1
    worksheet.set_column(col, col, dwidth)
+   worksheet.write(row, col, 'Endpoint\nTX Pkt\nSize', dtan_bold); col += 1
+   worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Endpoint\nOffered\nLoad', dtan_bold); col += 1
    worksheet.set_column(col, col, dwidth)
    worksheet.write(row, col, 'Endpoint\nRx\nThroughput', dtan_bold); col += 1
@@ -222,6 +224,10 @@ def main():
 
    sta_to_mode = {}  # map station name to mode
    cxnames = []      # list of all cxnames
+   endp_to_port = {}
+   endp_to_pktsz = {}
+   endp_to_proto = {}
+   endp_to_tos = {}
 
    e_tot = ""
 
@@ -240,13 +246,6 @@ def main():
        cx_speed_ul = cxa[6]
        cx_speed_dl = cxa[7]
        t = cxa[8]  # qos
-       if sta in sta_to_mode:
-           old_mode = sta_to_mode[sta]
-           if old_mode != mode:
-               emsg = ("ERROR:  Skipping connection: \"%s\", mode conflicts with previous mode: %s"%(cx, old_mode))
-               e_tot.append(cxa)
-               print(emsg)
-               continue
 
        u_name = upstream_port
        u_resource = 1
@@ -261,6 +260,17 @@ def main():
            tmpa = sta.split(".", 1);
            sta_resource = tmpa[0];
            sta_name = tmpa[1];
+
+       sta_key = "%s.%s"%(sta_resource, sta_name)
+       if sta_key in sta_to_mode:
+           old_mode = sta_to_mode[sta_key]
+           if old_mode != mode:
+               emsg = ("ERROR:  Skipping connection: \"%s\", mode conflicts with previous mode: %s"%(cx, old_mode))
+               e_tot.append(cxa)
+               print(emsg)
+               continue
+       else:
+           sta_to_mode[sta_key] = mode
 
        rad_resource = "1"
        rad_name = radio;
@@ -350,6 +360,15 @@ def main():
        if (cx_proto == "tcp"):
            cx_proto = "lf_tcp"
 
+       endp_to_port[ena] = "%s.%s"%(sta_resource, sta_name);
+       endp_to_pktsz[ena] = pkt_sz
+       endp_to_proto[ena] = p;
+       endp_to_tos[ena] = t;
+       endp_to_port[enb] = "%s.%s"%(u_resource, u_name);
+       endp_to_pktsz[enb] = pkt_sz
+       endp_to_proto[enb] = p;
+       endp_to_tos[enb] = t;
+
        # Now, create the new connection
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  "%s"%sta_resource, "--action", "create_endp", "--port_name", sta_name,
                        "--endp_type", cx_proto, "--endp_name", ena, "--speed", "%s"%cx_speed_ul, "--report_timer", "1000", "--tos", t,
@@ -378,7 +397,8 @@ def main():
    time.sleep(dur)
 
    # Gather probe results and record data, verify NSS, BW, Channel
-   count = 0
+   sta_stats = {}  # Key is resource.station, holds array of values
+
    for sta in sta_to_mode:
        sta_resource = "1"
        sta_name = sta;
@@ -386,6 +406,9 @@ def main():
            tmpa = sta.split(".", 1);
            sta_resource = tmpa[0];
            sta_name = tmpa[1];
+
+       sta_key = "%s.%s"%(sta_resource, sta_name)
+       print("Checking station stats, key: %s"%(sta_key))
 
        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  sta_resource, "--port_name", sta_name,
                                     "--show_port", "AP,Mode,Bandwidth,Signal,Status,RX-Rate"], stderr=PIPE, stdout=PIPE);
@@ -414,6 +437,9 @@ def main():
            if (m != None):
                _signal = m.group(1)
 
+       sta_stats[sta_key] = [_ap, _bw, _mode, _rxrate, _signal];
+       print("sta-stats found: %s, mode: %s  bw: %s"%(sta_key, _mode, _bw));
+
    for cxn in cxnames:
        # Results:  tx_bytes, rx_bytes, tx_bps, rx_bps, tx_pkts, rx_pkts, Latency
        resultsA = ["0"] * 7
@@ -426,7 +452,7 @@ def main():
        for ename in enames:
            results = [""] * 7
 
-           endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--endp_vals", "tx_bps,rx_bps,Tx Bytes,Rx Bytes,Tx Pkts,Rx Pkts,Latency",
+           endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--endp_vals", "RealTxRate,RealRxRate,Tx Bytes,Rx Bytes,Tx Pkts,Rx Pkts,Latency",
                                         "--endp_name", ename], stderr=PIPE, stdout=PIPE);
            pss = endp_stats.stdout.decode('utf-8', 'ignore');
 
@@ -447,11 +473,11 @@ def main():
                        e_tot2 += err
                        e_tot2 += "  "
 
-               m = re.search('tx_bps:\s+(.*)', line)
+               m = re.search('RealTxRate:\s+(.*)bps', line)
                if (m != None):
                    results[2] = m.group(1)
 
-               m = re.search('rx_bps:\s+(.*)', line)
+               m = re.search('RealRxRate:\s+(.*)bps', line)
                if (m != None):
                    results[3] = m.group(1)
 
@@ -507,18 +533,22 @@ def main():
 
            worksheet.write(row, col, cxn, center_blue); col += 1
            worksheet.write(row, col, ename, center_blue); col += 1
+
+           en_port = endp_to_port[ename]
+           worksheet.write(row, col, en_port, center_blue); col += 1
+
+           worksheet.write(row, col, endp_to_proto[ename], center_blue); col += 1
+           worksheet.write(row, col, endp_to_tos[ename], center_blue); col += 1
+
            if ename == ena:
-               worksheet.write(row, col, "%s.%s"%(sta_resource, sta_name), center_blue); col += 1
-           else:
-               worksheet.write(row, col, "%s.%s"%(u_resource, u_name), center_blue); col += 1
-               worksheet.write(row, col, p, center_blue); col += 1
-               worksheet.write(row, col, t, center_blue); col += 1
-           if ename == ena:
-               worksheet.write(row, col, _ap, center_blue); col += 1
-               worksheet.write(row, col, _bw, center_blue); col += 1
-               worksheet.write(row, col, _mode, center_blue); col += 1
-               worksheet.write(row, col, _rxrate, center_blue); col += 1
-               worksheet.write(row, col, _signal, center_blue); col += 1
+               key = en_port
+               #print("endp, key: %s"%(key));
+               sta_rpt = sta_stats[key]
+               worksheet.write(row, col, sta_rpt[0], center_blue); col += 1
+               worksheet.write(row, col, sta_rpt[1], center_blue); col += 1
+               worksheet.write(row, col, sta_rpt[2], center_blue); col += 1
+               worksheet.write(row, col, sta_rpt[3], center_blue); col += 1
+               worksheet.write(row, col, sta_rpt[4], center_blue); col += 1
            else:
                # Upstream is likely wired, don't print station info
                worksheet.write(row, col, "", center_blue); col += 1
@@ -529,6 +559,7 @@ def main():
 
            #print("results[2]:%s  3: %s"%(results[2], results[3]))
            
+           worksheet.write(row, col, endp_to_pktsz[ename], center_tan); col += 1
            worksheet.write(row, col, "%.2f"%(float(results[2]) / 1000000), center_tan); col += 1
            worksheet.write(row, col, "%.2f"%(float(results[3]) / 1000000), center_tan); col += 1
            worksheet.write(row, col, "%.2f"%((float(resultsA[2]) + float(resultsB[2])) / 1000000), center_tan); col += 1
