@@ -18,10 +18,15 @@ the resource ID.
 
 The --cx argument is defined as:  station-radio, station-port, mode, upstream-port, protocol, pkt-size, speed_ul, speed_dl, QoS.
 Pass this argument multiple times to create multiple connections.
+The --radio argument is defined as: radio, spatial-streams, channel
+Use NA if you do not want to change from current values.  Use 0 for any channel.
 
 Supported modes are: a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX
 
+# Run connections on wlan0 and sta0, set radio wiphy0 to use any frequency
+# and 2 spatial streams.
 ./lf_tos_plus_test.py --lfmgr 192.168.100.178 --ssid testme --passwd mypsk \
+  --radio "1.wiphy0 2 0"
   --cx "1.wiphy0 1.wlan0 an 1.eth1 udp 1024 1000000 56000 BK" \
   --cx "1.wiphy0 1.sta0 anAC 1.eth1 udp 1472 56000 1000000 BK" ..
 
@@ -58,6 +63,7 @@ dur = 5 * 60
 passwd = ""
 ssid = "Test-SSID"
 security = "open"
+radio_strs = []  # Radios to modify:  radio nss channel
 
 # rssi_adjust = (current_nf - nf_at_calibration)
 
@@ -65,6 +71,7 @@ def usage():
    print("$0 ")
    print("--outfile: Write results here.")
    print("--cx: Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
+   print("--radio: Radio tuple:  radio nss channel");
    print("--lfmgr: LANforge manager IP address")
    print("--duration: Duration to run traffic, in minutes")
    print("--ssid: AP's SSID")
@@ -79,9 +86,11 @@ def main():
    global passwd
    global ssid
    global security
+   global radio_strs
 
    parser = argparse.ArgumentParser(description="ToS++ report Script")
    parser.add_argument("--cx",  type=str, action='append', help="Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
+   parser.add_argument("--radio",  type=str, action='append', help="Radio tuple:  radio nss channel")
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--outfile",     type=str, help="Output file for csv data")
    parser.add_argument("--duration",     type=float, help="Duration to run traffic, in minutes")
@@ -92,6 +101,7 @@ def main():
    try:
       args = parser.parse_args()
       cx_strs = args.cx.copy()
+      radio_strs = args.radio.copy()
       if (args.lfmgr != None):
           lfmgr = args.lfmgr
       if (args.duration != None):
@@ -233,6 +243,25 @@ def main():
 
    opposite_speed = 56000
    count = 0
+
+   # Configure radios as requested
+   for rad in radio_strs:
+       ra = rad.split()
+       radio = ra[0]
+       nss = ra[1]
+       ch = ra[2]
+
+       rad_resource = "1"
+       rad_name = radio;
+       if radio[0].isdigit():
+           tmpa = radio.split(".", 1);
+           rad_resource = tmpa[0];
+           rad_name = tmpa[1];
+
+       print("Setting radio %s.%s NSS %s Channel %s"%(rad_resource, rad_name, nss, ch))
+       subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  rad_resource, "--port_name", rad_name,
+                       "--set_nss", nss, "--set_channel", ch]);
+
 
    for cx in cx_strs:
        cxa = cx.split()
