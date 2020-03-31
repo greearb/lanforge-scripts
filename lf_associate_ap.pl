@@ -94,8 +94,8 @@ my  $log_cli            = "unset"; # use ENV{'LOG_CLI'}
 # and we're assuming the port is on the same resource (1).
 our $upstream_port      = "eth1";      # Step 1 upstream port
 our $sta_wiphy          = "wiphy0";    # physical parent (radio) of virtual stations
-our $phy_channel        = -1; # channel number
-our $phy_antenna        = 0; # number of antennas, all
+our $phy_channel        = ""; # channel number
+our $phy_antenna        = ""; # number of antennas, 0 means all
 our %wiphy_bssids       = ();
 our $admin_down_on_add  = 0;
 our $ssid;
@@ -1521,8 +1521,10 @@ sub set_antenna {
   die("Antenna mode [$ant] does not exist.")
     if (! exists $::antenna_table{$ant});
   my $mode = 'NA';
-  my $chan = ((defined $::phy_channel) && ($::phy_channel > 0))
-            ? $::phy_channel : 'NA';
+  my $chan = $::phy_channel;
+  if ($chan eq "") {
+     $chan = "NA";
+  }
   my $country = 'NA';
   my $freq = 'NA'; #'0xFFFF' will override channel
   my $frag = 'NA';
@@ -1685,10 +1687,10 @@ if (!($action =~ /del/)) { # Below steps are unrelated to deleting objects
 }
 
 if ($action =~ /step|add/) {
-  if (defined $::phy_channel && $::phy_channel > 0) {
+  if ($::phy_channel ne "") {
     set_channel($::resource, $::sta_wiphy, $::phy_channel);
   }
-  if (defined $::phy_antenna) {
+  if ($::phy_antenna ne "") {
     set_antenna($::resource, $::sta_wiphy, $::phy_antenna);
   }
 }
