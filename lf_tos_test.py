@@ -17,7 +17,7 @@ The user is responsible for setting up the stations oustide of this script, howe
 When specifying ports, if the port starts with [Number]., like 1.eth1, then the 1 specifies
 the resource ID.
 
-./lf_tos_test.py -d 192.168.100.112 --lfmgr 192.168.100.178 \
+./lf_tos_test.py --lfmgr 192.168.100.178 \
   --station "1.wlan0 1.wlan1" --tos "BK BE VI VO" --proto udp \
   --speed_mbps 1000 --upstream_port 1.eth2 --duration_min 5
 
@@ -331,9 +331,18 @@ def main():
 
                # Now, create the new connection
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  "%s"%sta_resource, "--action", "create_endp", "--port_name", sta_name,
-                               "--endp_type", cx_proto, "--endp_name", ena, "--speed", "%s"%opposite_speed, "--report_timer", "1000", "--tos", t])#, capture_output=True);
+                               "--endp_type", cx_proto, "--endp_name", ena, "--speed", "%s"%opposite_speed, "--report_timer", "1000", "--tos", t,
+                               "--multicon", "1"])#, capture_output=True);
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  "%s"%u_resource, "--action", "create_endp", "--port_name", u_name,
-                               "--endp_type", cx_proto, "--endp_name", enb, "--speed", "%s"%cx_speed, "--report_timer", "1000", "--tos", t])#  capture_output=True);
+                               "--endp_type", cx_proto, "--endp_name", enb, "--speed", "%s"%cx_speed, "--report_timer", "1000", "--tos", t,
+                               "--multicon", "1"])#  capture_output=True);
+
+               # Enable Multi-Helper
+               subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd", "--cmd",
+                               "set_endp_flag %s AutoHelper 1"%(ena)])
+               subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd", "--cmd",
+                               "set_endp_flag %s AutoHelper 1"%(enb)])
+
                subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd", "--cmd",
                                 "add_cx %s default_tm %s %s"%(cxn, ena, enb)])# capture_output=True);
 

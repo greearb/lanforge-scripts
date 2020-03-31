@@ -50,10 +50,10 @@ our $multicon         = "0"; #no multicon
 our $endp_type        = undef; #"mc_udp"; this needs to be explicit
 our $mcast_addr       = "224.9.9.9";
 our $mcast_port       = "9999";
-our $max_speed        = "-1";
+our $max_speed        = "0";
 our $rcv_mcast        = "YES";
 our $min_pkt_sz       = "-1";
-our $max_pkt_sz       = "-1";
+our $max_pkt_sz       = "0";
 our $use_csums        = "NO";  # Use LANforge checksums in payload?
 our $ttl              = 32;
 our $report_timer     = 5000;
@@ -108,7 +108,7 @@ $0 [ --action {
       #  --endp_vals rx_bytes         (Rx Bytes)
   [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
   [--max_pkt_sz   {maximum payload size in bytes}]
-  [--max_speed    {speed in bps}]
+  [--max_speed    {speed in bps, 0 means same as mininum value}]
   [--min_pkt_sz   {minimum payload size in bytes}]
   [--mcast_addr   {multicast address, for example: 224.4.5.6}]
   [--mcast_port   {multicast port number}]

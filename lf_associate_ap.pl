@@ -222,7 +222,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2|wpa3}] # station authentication type, Default is open
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
-      [--passphrase {...}]       # implies wpa2 if --security not set
+      [--passphrase {...}]       # Set security too if you want to enable security
       [--wifi_mode {$mode_list}]
 
       ##       station configuration
