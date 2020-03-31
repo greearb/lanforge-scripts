@@ -69,6 +69,7 @@ my @port_stats       = ();
 my $cmd_log_name     = ""; #= "lf_portmod.txt";
 my $set_speed        = "NA";
 my $set_channel      = "NA";
+my $set_nss          = "NA";
 my $wifi_mode        = "NA";
 my $passwd           = "NA";
 my $ssid             = "NA";
@@ -117,6 +118,7 @@ my $usage = << "EOF"
                               6: bgn 7: bg, 8: abgnAC, 9 anAC, 10 an}
                   # wifi-mode option is applied when --set_speed is used.
 [--set_channel    { for radios, wifi channel (36, 100, etc) }
+[--set_nss        { for radios, set spatial streams (1, 2, 3, 4) }
 [--passwd         { WiFi WPA/WPA2/ password}
 [--ssid           { WiFi SSID}
 [--ap             { BSSID of AP, or 'DEFAULT' for any.}
@@ -140,7 +142,7 @@ Examples:
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name eth2 --ip 10.1.1.1 --netmask 255.255.0.0 --gw 10.1.1.254
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta0 --wifi_mode 2 --set_speed "1 Mbps /b" \\
                 --ssid fast-ap --passwd "secret passwd" --ap DEFAULT
-./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name wiphy0 --set_channel "36"
+./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name wiphy0 --set_channel "36" --set_nss 2
 ./lf_portmod.pl --load my_db
 ./lf_portmod.pl -m 192.168.100.138 --cmd reset --port_name 2 --amt_resets 5 --max_port_name 8 --card 1 --min_sleep 10 --max_sleep 20
 ./lf_portmod.pl -m 192.168.1.101 --card 1 --port_name sta11 --cmd set_wifi_extra --eap_identity 'adams' --eap_passwd 'family'
@@ -199,6 +201,7 @@ GetOptions
  'set_ifstate|s=s'   => \$if_state,
  'set_speed=s'       => \$set_speed,
  'set_channel=s'     => \$set_channel,
+ 'set_nss=s'         => \$set_nss,
  'ssid=s'            => \$ssid,
  'list_port_names!'  => \$list_port_names,
  'list_ports!'       => \$list_ports,
@@ -226,6 +229,19 @@ GetOptions
 if ($show_help) {
    print $usage;
    exit 0
+}
+
+if ($set_nss ne "NA") {
+   # Convert to what LANforge CLI wants.
+   if ($set_nss eq "2") {
+      $set_nss = "4";
+   }
+   elsif ($set_nss eq "3") {
+      $set_nss = "7";
+   }
+   elsif ($set_nss eq "4") {
+      $set_nss = "8";
+   }
 }
 
 our $utils = undef;
@@ -562,8 +578,8 @@ if ($set_speed ne "NA" || $ssid ne "NA" || $passwd ne "NA" || $ap ne "NA") {
   $::utils->doCmd($cli_cmd);
 }
 
-if ($set_channel ne "NA") {
-  $cli_cmd = "set_wifi_radio 1 $card $port_name NA $set_channel";
+if (($set_channel ne "NA") || ($set_nss ne "NA")) {
+  $cli_cmd = "set_wifi_radio 1 $card $port_name NA $set_channel NA NA NA NA NA NA NA $set_nss";
   $::utils->doCmd($cli_cmd);
 }
 
