@@ -5,13 +5,7 @@ Create connections using stations with different a/b/g/n/AC/AX modes,
 traffic with different QoS, packet size, requested rate, and tcp or udp protocol.
 Report the latency and other throughput values.
 
-make sure pexpect is installed:
-$ sudo yum install python3-pexpect
-$ sudo yum install python3-xlsxwriter
-
-You might need to install pexpect-serial using pip:
-$ pip3 install pexpect-serial
-$ pip3 install XlsxWriter
+Optionally start packet-capture on secondary radio(s) and upstream port.
 
 When specifying ports, if the port starts with [Number]., like 1.eth1, then the 1 specifies
 the resource ID.
@@ -23,13 +17,31 @@ Use NA if you do not want to change from current values.  Use 0 for any channel.
 
 Supported modes are: a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX
 
+If sniffer_radios is specified, then the lf_sniff.py script will be started in the background once
+the stations have become admin-up, and the sniff will run for the entire duration time specified
+(there is not a good way to stop the capture early based on packets-sent since on-the-air frames
+are very likely more than the PDU count)
+
 # Run connections on wlan0 and sta0, set radio wiphy0 to use any frequency
-# and 2 spatial streams.
-./lf_tos_plus_test.py --lfmgr 192.168.100.178 --ssid testme --passwd mypsk \
-  [ --txpkts 10000 ]
-  --radio "1.wiphy0 2 0"
-  --cx "1.wiphy0 1.wlan0 an 1.eth1 udp 1024 1000000 56000 BK" \
-  --cx "1.wiphy0 1.sta0 anAC 1.eth1 udp 1472 56000 1000000 BK" ..
+# and 2 spatial streams.  Use wiphy2 as a sniffer, stop traffic after 10,000 PDUs
+# have been sent.  Sniffer radio will automatically change to the correct settings
+# to sniff the first station.
+
+./lf_tos_plus_test.py --dur 5 --lfmgr 192.168.100.156 --ssid NETGEAR68-5G --passwd aquaticbug712 \
+  --radio "1.wiphy0 2 0" --txpkts 9999 \
+  --cx "1.wiphy0 1.wlan0 an 1.eth1 udp 1024 10000 500000000 BK" \
+  --cx "1.wiphy0 1.wlan0 an 1.eth1 udp MTU 10000 500000000 VI" \
+  --cx "1.wiphy0 1.sta0 anAC 1.eth1 tcp 1472 56000 2000000 BK" \
+  --sniffer_radios "1.wiphy2"
+
+
+make sure pexpect is installed:
+$ sudo yum install python3-pexpect
+$ sudo yum install python3-xlsxwriter
+
+You might need to install pexpect-serial using pip:
+$ pip3 install pexpect-serial
+$ pip3 install XlsxWriter
 
 '''
 
@@ -66,6 +78,7 @@ ssid = "Test-SSID"
 security = "open"
 radio_strs = []  # Radios to modify:  radio nss channel
 txpkts = 0 # 0 == Run forever
+sniffer_radios = ""
 
 # rssi_adjust = (current_nf - nf_at_calibration)
 
@@ -79,6 +92,7 @@ def usage():
    print("--ssid: AP's SSID")
    print("--passwd: Optional: password (do not add this option for OPEN)")
    print("--txpkts: Optional: amount of packets to transmit (and then stop the data connections)")
+   print("--sniffer_radios: Optional: list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\")")
    print("-h|--help")
 
 def main():
@@ -91,6 +105,7 @@ def main():
    global security
    global radio_strs
    global txpkts
+   global sniffer_radios
 
    parser = argparse.ArgumentParser(description="ToS++ report Script")
    parser.add_argument("--cx",  type=str, action='append', help="Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
@@ -101,6 +116,7 @@ def main():
    parser.add_argument("--ssid",         type=str, help="AP's SSID")
    parser.add_argument("--passwd",       type=str, help="AP's password if using PSK authentication, skip this argement for OPEN")
    parser.add_argument("--txpkts",       type=str, help="Optional:  Packets (PDUs) to send before stopping data connections  Default (0) means infinite")
+   parser.add_argument("--sniffer_radios", type=str, help="Optional:  list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\"")
    
    args = None
    try:
@@ -120,6 +136,8 @@ def main():
           outfile = args.outfile
       if (args.txpkts != None):
           txpkts = args.txpkts
+      if (args.sniffer_radios != None):
+          sniffer_radios = args.sniffer_radios
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -270,7 +288,8 @@ def main():
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  rad_resource, "--port_name", rad_name,
                        "--set_nss", nss, "--set_channel", ch]);
 
-
+   upstreams = []
+   stations = []
    for cx in cx_strs:
        cxa = cx.split()
        #station-radio, station-port, mode, upstream-port, protocol, pkt-size, speed_ul, speed_dl, QoS.
@@ -308,6 +327,11 @@ def main():
                continue
        else:
            sta_to_mode[sta_key] = mode
+           stations.append(sta_key)
+
+       ukey = "%s.%s"%(u_resource, u_name)
+       if not ukey in upstreams:
+           upstreams.append(ukey)
 
        rad_resource = "1"
        rad_name = radio;
@@ -426,7 +450,30 @@ def main():
                        "add_cx %s default_tm %s %s"%(cxn, ena, enb)])# capture_output=True);
        count = count + 1
 
+   # Start sniffer?
+   if sniffer_radios != "":
+       radios = sniffer_radios.split()
+       lfstations = ""
+       lfupstreams = ""
+       ri = 0
+       for r in radios:
+           lfstations = lfstations + " " + stations[ri]
+           ri = ri + 1
 
+       for u in upstreams:
+           lfupstreams = lfupstreams + " " + u
+
+       # Add 15 seconds to capture length in case it takes a bit of time to start all
+       # of the connections.
+       if lfupstreams == "":
+           subprocess.run(["./lf_sniff.py", "--lfmgr", lfmgr, "--duration", "%f"%((dur + 15) / 60), "--station", lfstations,
+                           "--sniffer_radios", sniffer_radios])# capture_output=True);
+       else:
+           subprocess.run(["./lf_sniff.py", "--lfmgr", lfmgr, "--duration", "%f"%((dur + 15) / 60), "--station", lfstations,
+                           "--sniffer_radios", sniffer_radios, "--upstreams", lfupstreams])# capture_output=True);
+
+   sniff_done_at = time.time() + dur + 15;
+   
    # All traffic connects are created, now start them all
    for cxn in cxnames:
        # Start traffic
@@ -440,7 +487,7 @@ def main():
        time.sleep(dur)
    else:
        # Wait until connections are done transmitting and all are stopped
-       print("Waiting until all connections have finished transmitting %s and have stopped themselves."%txpkts);
+       print("Waiting until all connections have finished transmitting %s PDUs and have stopped themselves."%txpkts);
        done = False
        while not done:
            if time.time() > stop_at:
@@ -463,7 +510,7 @@ def main():
                            foundone = True
                            #print("Flags, was running: %s"%flags)
                            break
-                       else:
+                       #else:
                            #print("Flags, was not running: %s"%flags)
 
                if foundone:
@@ -664,6 +711,10 @@ def main():
 
    workbook.close()
 
+   if sniffer_radios != "":
+       now = time.time()
+       if now < sniff_done_at:
+           print("Sniffer will complete in %f seconds."%(sniff_done_at - now))
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':

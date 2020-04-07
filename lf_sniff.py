@@ -49,6 +49,7 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 lfmgr = "127.0.0.1"
 lfstation = "1.wlan0"
 sniffer_radios = "2.wiphy0"
+upstream = ""
 dur = 5 * 60
 moni_flags = "0x100000000"; # 160Mhz mode enabled
 
@@ -61,11 +62,13 @@ def usage():
    print("--lfmgr: LANforge manager IP address")
    print("--duration: Duration to run traffic, in minutes")
    print("--moni_flags: Monitor flags (see LANforge CLI help for set_wifi_monitor command)  Default enables 160Mhz")
+   print("--upstreams: Upstream ports to sniff (1.eth1 ...)")
    print("-h|--help")
 
 def main():
    global lfmgr
    global lfstation
+   global upstream
    global sniffer_radios
    global dur
    global moni_flags
@@ -76,12 +79,15 @@ def main():
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--duration",     type=float, help="Duration to sniff, in minutes")
    parser.add_argument("--moni_flags",   type=str, help="Monitor port flags, see LANforge CLI help for set_wifi_monitor.  Default enables 160Mhz")
+   parser.add_argument("--upstreams",    type=str, help="Upstream ports to sniff (1.eth1 ...)")
    
    args = None
    try:
       args = parser.parse_args()
       if (args.station != None):
           lfstation = args.station
+      if (args.upstreams != None):
+          upstream = args.upstreams
       if (args.sniffer_radios != None):
           sniffer_radios = args.sniffer_radios
       if (args.lfmgr != None):
@@ -98,6 +104,7 @@ def main():
 
    # Use subprocess.check_output("Cmd") to utilize existing LF scripts.
 
+   upstreams = upstream.split()
    lfstations = lfstation.split()
    radios = sniffer_radios.split()
    monis_n = []  # monitor device names
@@ -254,6 +261,19 @@ def main():
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
                        "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))]);
        idx = idx + 1
+
+   # Start sniffing on all upstream ports
+   for u in upstreams:
+       u_resource = "1"
+       u_name = u;
+       if u[0].isdigit():
+           tmpa = u.split(".", 1);
+           u_resource = tmpa[0];
+           u_name = tmpa[1];
+           
+       print("Starting sniffer on upstream port %s.%s for %s seconds, saving to file %s.pcap on resource %s\n"%(u_resource, u_name, dur, u_name, u_resource))
+       subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
+                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(u_resource, u_name, sflags, u_name, int(dur))]);
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
