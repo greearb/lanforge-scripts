@@ -548,13 +548,19 @@ elsif ($::action eq "list_cx") {
    my $out = '';
    my $num_ep = 0;
    for my $line (@lines) {
-      #print "      |||$line\n";
+      print "      |||$line\n" if ($::debug);
       if ($line =~ /\s*WAN_LINK CX:\s+([^ ]+)\s+id:.*$/ ) {
          $out .= "WL $1";
       }
       if ($line =~ /^WanLink\s+\[([^ ]+)\] .*$/ ) {
          $out .= ", wanlink $1";
          $num_ep++;
+      }
+      if ($line =~ /^L4Endp\s+\[([^ ]+)\]/) {
+         $num_ep++;
+      }
+      if ($line =~ /^L4_GENERIC\s+CX:\s+([^ ]+)\s+id:/) {
+         $out .= "L4 $1";
       }
       if ($line =~ /^\s*(WanLink|LANFORGE.*? CX):\s+([^ ]+) .*$/ ) {
          $out .= "CX $2";
@@ -566,7 +572,7 @@ elsif ($::action eq "list_cx") {
          $out .= ", endpoint $2";
          $num_ep++;
       }
-      if (($line =~ /^ *$/) && ($num_ep >1)) {
+      if (($line =~ /^ *$/) && ($num_ep > 0)) {
          print "$out\n";
          $out = '';
          $num_ep = 0;
