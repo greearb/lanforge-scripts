@@ -54,6 +54,7 @@ our $max_speed        = "0";
 our $rcv_mcast        = "YES";
 our $min_pkt_sz       = "-1";
 our $max_pkt_sz       = "0";
+our $pkts_to_send     = "";
 our $use_csums        = "NO";  # Use LANforge checksums in payload?
 our $ttl              = 32;
 our $report_timer     = 5000;
@@ -108,6 +109,7 @@ $0 [ --action {
       #  --endp_vals rx_bytes         (Rx Bytes)
   [--ip_port      {-1 (let LF choose, AUTO) | 0 (let OS choose, ANY) | specific IP port}]
   [--max_pkt_sz   {maximum payload size in bytes}]
+  [--pkts_to_send {Packets (PDUs) to send before stopping the connection.  0 means infinite}]
   [--max_speed    {speed in bps, 0 means same as mininum value}]
   [--min_pkt_sz   {minimum payload size in bytes}]
   [--mcast_addr   {multicast address, for example: 224.4.5.6}]
@@ -143,7 +145,7 @@ Example:
  $0 --action create_endp --endp_name mcast_xmit_1 --speed 154000 \\
    --endp_type mc_udp   --mcast_addr 224.9.9.8    --mcast_port 9998 \\
    --rcv_mcast NO       --port_name eth1 \\
-   --min_pkt_sz 1072    --max_pkt_sz 1472 \\
+   --min_pkt_sz 1072    --max_pkt_sz 1472 --pkts_to_send 9999\\
    --use_csums NO       --ttl 32 \\
    --quiet no --report_timer 1000
 
@@ -219,6 +221,7 @@ GetOptions
    'max_speed=s'        => \$::speed,
    'min_pkt_sz=s'       => \$::min_pkt_sz,
    'max_pkt_sz=s'       => \$::max_pkt_sz,
+   'pkts_to_send=s'     => \$::pkts_to_send,
    'mcast_addr=s'       => \$::mcast_addr,
    'mcast_port=s'       => \$::mcast_port,
    'lfmgr_port|mgr_port|port|p=i' => \$::lfmgr_port,
@@ -728,6 +731,11 @@ sub create_endp {
     $cmd = $::utils->fmt_cmd("set_mc_endp", $::endp_name, $::ttl, $::mcast_addr, $::mcast_port, $::rcv_mcast);
     $::utils->doCmd($cmd);
 
+    if ($pkts_to_send ne "") {
+       $cmd = $::utils->fmt_cmd("set_endp_details", $::endp_name, "NA", "NA", "NA", $::pkts_to_send);
+       $::utils->doCmd($cmd);
+    }
+
     $cmd = "set_endp_report_timer $::endp_name $::report_timer";
     $::utils->doCmd($cmd);
   }
@@ -767,6 +775,11 @@ sub create_endp {
                               $payld_pat,    $::use_csums,  $::ttl,
                               $bad_ppm,      $::multicon);
      $::utils->doCmd($cmd);
+
+     if ($pkts_to_send ne "") {
+        $cmd = $::utils->fmt_cmd("set_endp_details", $::endp_name, "NA", "NA", "NA", $::pkts_to_send);
+        $::utils->doCmd($cmd);
+     }
 
      $cmd = "set_endp_report_timer $my_endp_name $::report_timer";
      $::utils->doCmd($cmd);

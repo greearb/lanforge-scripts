@@ -26,6 +26,7 @@ Supported modes are: a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnA
 # Run connections on wlan0 and sta0, set radio wiphy0 to use any frequency
 # and 2 spatial streams.
 ./lf_tos_plus_test.py --lfmgr 192.168.100.178 --ssid testme --passwd mypsk \
+  [ --txpkts 10000 ]
   --radio "1.wiphy0 2 0"
   --cx "1.wiphy0 1.wlan0 an 1.eth1 udp 1024 1000000 56000 BK" \
   --cx "1.wiphy0 1.sta0 anAC 1.eth1 udp 1472 56000 1000000 BK" ..
@@ -64,6 +65,7 @@ passwd = ""
 ssid = "Test-SSID"
 security = "open"
 radio_strs = []  # Radios to modify:  radio nss channel
+txpkts = 0 # 0 == Run forever
 
 # rssi_adjust = (current_nf - nf_at_calibration)
 
@@ -75,7 +77,8 @@ def usage():
    print("--lfmgr: LANforge manager IP address")
    print("--duration: Duration to run traffic, in minutes")
    print("--ssid: AP's SSID")
-   print("--passwd: Optional password (do not add this option for OPEN)")
+   print("--passwd: Optional: password (do not add this option for OPEN)")
+   print("--txpkts: Optional: amount of packets to transmit (and then stop the data connections)")
    print("-h|--help")
 
 def main():
@@ -87,15 +90,17 @@ def main():
    global ssid
    global security
    global radio_strs
+   global txpkts
 
    parser = argparse.ArgumentParser(description="ToS++ report Script")
    parser.add_argument("--cx",  type=str, action='append', help="Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
    parser.add_argument("--radio",  type=str, action='append', help="Radio tuple:  radio nss channel")
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--outfile",     type=str, help="Output file for csv data")
-   parser.add_argument("--duration",     type=float, help="Duration to run traffic, in minutes")
+   parser.add_argument("--duration",     type=float, help="Duration to run traffic, in minutes.  If txpkts is specified, that may stop the test earlier.")
    parser.add_argument("--ssid",         type=str, help="AP's SSID")
    parser.add_argument("--passwd",       type=str, help="AP's password if using PSK authentication, skip this argement for OPEN")
+   parser.add_argument("--txpkts",       type=str, help="Optional:  Packets (PDUs) to send before stopping data connections  Default (0) means infinite")
    
    args = None
    try:
@@ -113,6 +118,8 @@ def main():
           security = "wpa2"
       if (args.outfile != None):
           outfile = args.outfile
+      if (args.txpkts != None):
+          txpkts = args.txpkts
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -234,6 +241,7 @@ def main():
 
    sta_to_mode = {}  # map station name to mode
    cxnames = []      # list of all cxnames
+   endpnames = []
    endp_to_port = {}
    endp_to_pktsz = {}
    endp_to_proto = {}
@@ -375,6 +383,8 @@ def main():
        enb = "scr-tos+-%i-B"%count
 
        cxnames.append(cxn)
+       endpnames.append(ena)
+       endpnames.append(enb)
 
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
                        "--cmd", "rm_cx ALL %s"%cxn], stderr=PIPE, stdout=PIPE);
@@ -401,10 +411,10 @@ def main():
        # Now, create the new connection
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  "%s"%sta_resource, "--action", "create_endp", "--port_name", sta_name,
                        "--endp_type", cx_proto, "--endp_name", ena, "--speed", "%s"%cx_speed_ul, "--report_timer", "1000", "--tos", t,
-                       "--min_pkt_sz", pkt_sz, "--multicon", "1"])#, capture_output=True);
+                       "--min_pkt_sz", pkt_sz, "--multicon", "1", "--pkts_to_send", txpkts])#, capture_output=True);
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  "%s"%u_resource, "--action", "create_endp", "--port_name", u_name,
                        "--endp_type", cx_proto, "--endp_name", enb, "--speed", "%s"%cx_speed_dl, "--report_timer", "1000", "--tos", t,
-                       "--min_pkt_sz", pkt_sz, "--multicon", "1"])#  capture_output=True);
+                       "--min_pkt_sz", pkt_sz, "--multicon", "1", "--pkts_to_send", txpkts])#  capture_output=True);
 
        # Enable Multi-Helper
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd", "--cmd",
@@ -414,17 +424,56 @@ def main():
        
        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd", "--cmd",
                        "add_cx %s default_tm %s %s"%(cxn, ena, enb)])# capture_output=True);
-
-       # Start traffic
-       subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
-                               "--cmd", "set_cx_state all %s RUNNING"%cxn]);
-
        count = count + 1
 
-   # Traffic is started, wait requested amount of time
-   print("Waiting %s seconds to let traffic run for a bit"%(dur))
-   time.sleep(dur)
 
+   # All traffic connects are created, now start them all
+   for cxn in cxnames:
+       # Start traffic
+       subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--action", "do_cmd",
+                       "--cmd", "set_cx_state all %s RUNNING"%cxn]);
+
+   # Traffic is started, wait requested amount of time
+   stop_at = time.time() + dur;
+   if txpkts == 0:
+       print("Waiting %s seconds to let traffic run for a bit"%(dur))
+       time.sleep(dur)
+   else:
+       # Wait until connections are done transmitting and all are stopped
+       print("Waiting until all connections have finished transmitting %s and have stopped themselves."%txpkts);
+       done = False
+       while not done:
+           if time.time() > stop_at:
+               print("Duration expired, stop waiting for Endpoints to quiesce.")
+               break
+
+           foundone = False
+           for ename in endpnames:
+               #print("Checking endpoint: %s"%ename)
+
+               endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--endp_name", ename,
+                                            "--endp_vals", "Endpoint-flags"], stderr=PIPE, stdout=PIPE);
+               ess = endp_stats.stdout.decode('utf-8', 'ignore');
+               for line in ess.splitlines():
+                   #print("endp-stats line: %s"%line)
+                   m = re.search('Endpoint-flags:\s+(.*)', line)
+                   if (m != None):
+                       flags = m.group(1)
+                       if not "NOT_RUNNING" in flags:
+                           foundone = True
+                           #print("Flags, was running: %s"%flags)
+                           break
+                       else:
+                           #print("Flags, was not running: %s"%flags)
+
+               if foundone:
+                   break
+           if not foundone:
+               print("All endpoints stopped, continuing on.")
+               done = True
+               break
+           sleep(3)  # wait 3 seconds, then poll again                   
+       
    # Gather probe results and record data, verify NSS, BW, Channel
    sta_stats = {}  # Key is resource.station, holds array of values
 
