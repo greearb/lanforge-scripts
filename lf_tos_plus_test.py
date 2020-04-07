@@ -35,7 +35,8 @@ are very likely more than the PDU count)
   --sniffer_radios "1.wiphy2"
 
 
-make sure pexpect is installed:
+make sure pexpect, pandas is installed:
+$ sudo yum install python3-pandas
 $ sudo yum install python3-pexpect
 $ sudo yum install python3-xlsxwriter
 
@@ -61,6 +62,7 @@ import pprint
 import argparse
 import subprocess
 import xlsxwriter
+import pandas as pd
 from subprocess import PIPE
 
 NL = "\n"
@@ -711,10 +713,58 @@ def main():
 
    workbook.close()
 
+   # Convert workbook to csv
+
+   csvfname = "%s.csv"%(outfile)
+   csv = open(csvfname, "w")
+   df = pd.read_excel(outfile)
+   
+   list_of_columns = df.columns.values
+
+   # Print header
+   for c in range(len(list_of_columns)):
+       cell = list_of_columns[c]
+       if cell != cell:
+           cell = ""
+       # convert newlines to spaces
+       if isinstance(cell, str):
+           cell = cell.replace('\n', ' ')
+           cell = cell.replace('\r', '')
+           # Remove commas
+           cell = cell.replace(',', '')
+       if c == 0:
+           csv.write(cell)
+       else:
+           csv.write(",%s"%(cell))
+   csv.write("\n")
+
+   for r in range (len(df)):
+       for c in range(len(list_of_columns)):
+           #print("list-of-columns[c]: %s"%(list_of_columns[c]))
+           cell = df[list_of_columns[c]][r]
+           #print("cell: %s  c: %i r: %i"%(cell, c, r))
+           # NAN check
+           if cell != cell:
+               cell = ""
+           if isinstance(cell, str):
+               # convert newlines to spaces
+               cell = cell.replace('\n', ' ')
+               cell = cell.replace('\r', '')
+               # Remove commas
+               cell = cell.replace(',', '')
+           if c == 0:
+               csv.write(cell)
+           else:
+               csv.write(",%s"%(cell))
+       csv.write("\n");
+   csv.close()
+   print("CSV report data saved to: %s"%(csvfname))
+
    if sniffer_radios != "":
        now = time.time()
        if now < sniff_done_at:
            print("Sniffer will complete in %f seconds."%(sniff_done_at - now))
+
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
