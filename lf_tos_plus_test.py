@@ -22,13 +22,14 @@ the stations have become admin-up, and the sniff will run for the entire duratio
 (there is not a good way to stop the capture early based on packets-sent since on-the-air frames
 are very likely more than the PDU count)
 
-# Run connections on wlan0 and sta0, set radio wiphy0 to use any frequency
+# Run connections on wlan0 and sta0 for 1 minute, set radio wiphy0 to use any frequency
 # and 2 spatial streams.  Use wiphy2 as a sniffer, stop traffic after 10,000 PDUs
 # have been sent.  Sniffer radio will automatically change to the correct settings
-# to sniff the first station.
+# to sniff the first station. --wait_sniffer 1 tells the script to pause until the
+# sniffer process has completed.
 
-./lf_tos_plus_test.py --dur 5 --lfmgr 192.168.100.156 --ssid NETGEAR68-5G --passwd aquaticbug712 \
-  --radio "1.wiphy0 2 0" --txpkts 9999 \
+./lf_tos_plus_test.py --dur 1 --lfmgr 192.168.100.156 --ssid NETGEAR68-5G --passwd aquaticbug712 \
+  --radio "1.wiphy0 2 0" --txpkts 9999 --wait_sniffer 1 \
   --cx "1.wiphy0 1.wlan0 an 1.eth1 udp 1024 10000 500000000 BK" \
   --cx "1.wiphy0 1.wlan0 an 1.eth1 udp MTU 10000 500000000 VI" \
   --cx "1.wiphy0 1.sta0 anAC 1.eth1 tcp 1472 56000 2000000 BK" \
@@ -62,6 +63,7 @@ import pprint
 import argparse
 import subprocess
 import xlsxwriter
+import datetime
 import pandas as pd
 from subprocess import PIPE
 
@@ -81,6 +83,7 @@ security = "open"
 radio_strs = []  # Radios to modify:  radio nss channel
 txpkts = 0 # 0 == Run forever
 sniffer_radios = ""
+wait_sniffer = False
 
 # rssi_adjust = (current_nf - nf_at_calibration)
 
@@ -95,6 +98,7 @@ def usage():
    print("--passwd: Optional: password (do not add this option for OPEN)")
    print("--txpkts: Optional: amount of packets to transmit (and then stop the data connections)")
    print("--sniffer_radios: Optional: list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\")")
+   print("--wait_sniffer: Optional: 1 means wait on sniffer to finish before existing script")
    print("-h|--help")
 
 def main():
@@ -108,6 +112,7 @@ def main():
    global radio_strs
    global txpkts
    global sniffer_radios
+   global wait_sniffer
 
    parser = argparse.ArgumentParser(description="ToS++ report Script")
    parser.add_argument("--cx",  type=str, action='append', help="Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
@@ -119,6 +124,7 @@ def main():
    parser.add_argument("--passwd",       type=str, help="AP's password if using PSK authentication, skip this argement for OPEN")
    parser.add_argument("--txpkts",       type=str, help="Optional:  Packets (PDUs) to send before stopping data connections  Default (0) means infinite")
    parser.add_argument("--sniffer_radios", type=str, help="Optional:  list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\"")
+   parser.add_argument("--wait_sniffer", type=str, help="Optional: 1 means wait on sniffer to finish before existing script\"")
    
    args = None
    try:
@@ -140,6 +146,8 @@ def main():
           txpkts = args.txpkts
       if (args.sniffer_radios != None):
           sniffer_radios = args.sniffer_radios
+      if (args.wait_sniffer != None):
+          wait_sniffer = args.wait_sniffer == "1"
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -763,7 +771,18 @@ def main():
    if sniffer_radios != "":
        now = time.time()
        if now < sniff_done_at:
-           print("Sniffer will complete in %f seconds."%(sniff_done_at - now))
+           waitfor = int(sniff_done_at - now);
+           if wait_sniffer:
+               print("Waiting %i seconds until sniffer completes."%(waitfor))
+               sleep(waitfor)
+
+               # move capture files into a new directory
+               tstr = time.strftime("%Y-%m-%d %H:%M:%S")
+               os.mkdir(tstr)
+               os.system("mv /home/lanforge/*.pcap %s"%(tstr))
+               print("Captures are found in directory: %s"%tstr)
+           else:
+               print("Sniffer will complete in %f seconds."%(waitfor))
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
