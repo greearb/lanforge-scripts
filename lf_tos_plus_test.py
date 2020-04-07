@@ -51,6 +51,7 @@ $ pip3 install XlsxWriter
 # TODO:  Allow selecting tabs or commas for output files
 
 import sys
+import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
@@ -777,7 +778,7 @@ def main():
                sleep(waitfor)
 
                # move capture files into a new directory
-               tstr = time.strftime("%Y-%m-%d %H:%M:%S")
+               tstr = time.strftime("%Y-%m-%d-%H:%M:%S")
                os.mkdir(tstr)
                os.system("mv /home/lanforge/*.pcap %s"%(tstr))
                print("Captures are found in directory: %s"%tstr)
