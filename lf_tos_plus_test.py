@@ -413,9 +413,9 @@ def main():
        # Station is up, create connection
        # Create connections.
        # First, delete any old ones
-       cxn = "scr-tos+-%i"%count
-       ena = "scr-tos+-%i-A"%count
-       enb = "scr-tos+-%i-B"%count
+       cxn = "scr-tos-%i"%count
+       ena = "scr-tos-%i-A"%count
+       enb = "scr-tos-%i-B"%count
 
        cxnames.append(cxn)
        endpnames.append(ena)
@@ -769,6 +769,7 @@ def main():
    csv.close()
    print("CSV report data saved to: %s"%(csvfname))
 
+   tstr = ""
    if sniffer_radios != "":
        now = time.time()
        if now < sniff_done_at:
@@ -785,6 +786,16 @@ def main():
            else:
                print("Sniffer will complete in %f seconds."%(waitfor))
 
+
+   # Create a file easily sourced by a shell script to communicate the directory
+   # name and such.
+   fname = "TOS_PLUS.sh"
+   sh = open(fname, "w")
+   sh.write("CAPTURE_DIR=%s\n"%(tstr))
+   sh.write("CSV_FILE=%s\n"%(csvfname))
+   sh.write("XLSX_FILE=%s\n"%(outfile))
+
+   sh.close()
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
