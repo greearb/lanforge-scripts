@@ -157,6 +157,37 @@ our %avail_stream_res = (
   # 1080p60 1920x1080 373MBps, 6.2Mbps frame size
   "raw1080p"       => [ 1920, 1080,    0,       128000, 2975872000, 2976000000,    60],
 
+  # Skype requirements below as listed on https://support.skype.com/en/faq/FA1417/how-much-bandwidth-does-skype-need
+  # ^--- indicates there is a minimum TX requirement for stations
+  #      group calls range from 128k up to 512k up, roughly HQ-recommended, maybe 1280x720x15
+  # https://www.quora.com/Does-Skype-support-1080p-HD-video-calls
+  # https://tomtalks.blog/2018/04/set-skype-for-business-to-record-meetings-at-1080p-and-30-fps/
+  # Transmission quality is fundamentally different than YouTube -- it is constant TX that varies by
+  # the amount of compression available. Variation between minimum required bandwidth and recommended
+  # bandwidth is visible in packet captures.
+  # Actual capture resolutions depend on your camera and can be manipulated via settings, esp frame rate:
+  # https://superuser.com/questions/180690/how-to-reduce-the-skype-video-settings-to-work-with-an-older-computer
+  # https://lifehacker.com/how-to-get-better-quality-out-of-your-video-chats-5836186
+  # https://docs.microsoft.com/en-us/skypeforbusiness/plan-your-deployment/clients-and-devices/video-resolutions
+  # ^--- This outlines a requirements for 4 core processors as requirement for Skype at 720p!
+  # Jed is roughly interpolating many of these values for this table
+  # nicname                       w,    h,  interlaced,   audio,    vid bps,   tt bps   framerate
+  "skype-vox-min"          => [   0,    0,      0,        30000,      0,        30000,        0 ],
+  "skype-vox-rcmd"         => [   0,    0,      0,       100000,      0,       100000,        0 ],
+  # screen sharing falls into min requirement
+  "skype-vid-min"          => [   424,  240,    0,        30000,      98000,     128000,     15 ],
+  "skype-vid-rcmd"         => [   640,  360,    0,       100000,     200000,     300000,     30 ],
+  "skype-vid-hq-min"       => [   960,  540,    0,       100000,     300000,     400000,     15 ],
+  "skype-vid-hq-rcmd"      => [  1280,  720,    0,       100000,     400000,     500000,     30 ],
+  "skype-vid-hd-min"       => [  1920, 1080,    0,       100000,    1100000,    1200000,     15 ],
+  "skype-vid-hd-rcmd"      => [  1920, 1080,    0,       100000,    1400000,    1500000,     30 ],
+  "skype-vid-grp3-min"     => [   640,  480,    0,        30000,     482000,     512000,     15 ],
+  "skype-vid-grp3-rcmd"    => [  1280,  720,    0,       100000,     900000,    2000000,     15 ],
+  "skype-vid-grp5-min"     => [   640,  360,    0,        30000,    1700000,    2000000,     15 ],
+  "skype-vid-grp5-rcmd"    => [  1280,  720,    0,       100000,    3700000,    4000000,     15 ],
+  "skype-vid-grp7-min"     => [   640,  360,    0,        30000,    3700000,    4000000,     15 ],
+  "skype-vid-grp7-rcmd"    => [  1280,  720,    0,       100000,    7700000,    8000000,     15 ],
+
 );
 
 our $avail_stream_desc = join(", ", keys(%avail_stream_res));
@@ -244,19 +275,19 @@ if ($list_streams) {
   my %sortedkeys = ();
   foreach my $oldkey (keys(%::avail_stream_res)) {
     my $ra_row  = $::avail_stream_res{$oldkey};
-    my $x       =    10000000 + int(@$ra_row[$stream_keys{x}]);
-    my $y       =    10000000 + int(@$ra_row[$stream_keys{y}]);
-    my $b       = 10000000000 + int(@$ra_row[$stream_keys{video_bps}]);
+    my $x       =    10000000 + int(@$ra_row[$::stream_keys{x}]);
+    my $y       =    10000000 + int(@$ra_row[$::stream_keys{y}]);
+    my $b       = 10000000000 + int(@$ra_row[$::stream_keys{video_bps}]);
     my $newkey = "${b}_${x}_${y}_${oldkey}";
     $sortedkeys{$newkey} = $oldkey;
   }
   foreach my $sorted_key (sort(keys(%sortedkeys))) {
     my $key = $sortedkeys{$sorted_key};
     my $ra_row1 = $::avail_stream_res{$key};
-    my $x       = @$ra_row1[$stream_keys{x}];
-    my $y       = @$ra_row1[$stream_keys{y}];
-    my $bps     = int(@$ra_row1[$stream_keys{stream_bps}]);
-    my $bps_sum = int(@$ra_row1[$stream_keys{video_bps}]) + int(@$ra_row1[$stream_keys{audio_bps}]);
+    my $x       = @$ra_row1[$::stream_keys{x}];
+    my $y       = @$ra_row1[$::stream_keys{y}];
+    my $bps     = int(@$ra_row1[$::stream_keys{stream_bps}]);
+    my $bps_sum = int(@$ra_row1[$::stream_keys{video_bps}]) + int(@$ra_row1[$::stream_keys{audio_bps}]);
     #my $warning = "";
     printf("[ %15s ]  %4s x %4s using %8s kbps", $key, $x, $y, ($bps/1000));
     if ($bps != $bps_sum) {
@@ -574,39 +605,90 @@ else {
    $::begin_running = 0;
 }
 
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+# Layer-3 constant setup
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+if ($::tx_style =~ /constant/) {
+   if ($::stream_key !~ /^skype-/) {
+      print "Using 'constant' tx-style only makes sense when emulating Skype calls. Please choose different stream.\n";
+      exit 1;
+   }
+   if ($::stream_key =~ /grp\d+/) {
+      print "group calls not implemented presently\n";
+      exit 1;
+   }
+   else {
+      print "Call upload requirements still under development.\n";
+   }
+
+   # if someone sets stream resolution to "-min$", that's not a cap that Skype respects, skype will
+   # search for more bandwidth...stream max will be /-rcmd$/, min will be /-min$/
+   if ($::stream_key =~ /-min$/) {
+      $::stream_key =~ s/-min/-rcmd/;
+   }
+}
+die ("Please provide cx_name")
+  unless((defined $::cx_name) && ("" ne $::cx_name));
+
 my $stream_bps = 0;
 die("Unknown stream key $::stream_key")
   unless(exists $::avail_stream_res{$::stream_key});
 
-$stream_bps = @{$::avail_stream_res{$stream_key}}[$stream_keys{stream_bps}];
+$stream_bps = @{$::avail_stream_res{$::stream_key}}[$::stream_keys{stream_bps}];
 
-# estimated fill time is probably not going to be accurate because
-# there's no way to know the txrate between the AP and station.
-$::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
-my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
-my $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
+my $drain_time_sec = 0;
+my $drain_wait_sec = 0;
+my $stream_kbps = 0;
 
-if ($drain_wait_sec <= 0) {
-  my $stream_kbps = $stream_bps / 1000;
-  print "Warning: constant transmit! Raise max_tx to at least $stream_kbps Kbps\n";
-  $drain_wait_sec = 0;
+if ($::tx_style =~ /constant/) {
+   my $stream_min = $::stream_key;
+   $stream_min =~ s/-rcmd/-min/;
+
+   $::min_tx = @{$::avail_stream_res{$stream_min}}[$::stream_keys{stream_bps}];
+   $::max_tx = @{$::avail_stream_res{$::stream_key}}[$::stream_keys{stream_bps}];
+   $stream_bps = $::max_tx;
+   $stream_kbps = $stream_bps / 1000;
 }
+else {
+   # estimated fill time is probably not going to be accurate because
+   # there's no way to know the txrate between the AP and station.
+   $::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
+   my $drain_time_sec = (8 * $::buf_size) / $stream_bps;
+   my $drain_wait_sec = $drain_time_sec - $est_fill_time_sec;
 
-my $buf_kB = $::buf_size / 1024;
-print "Filling $::stream_key $buf_kB KB buffer est ${est_fill_time_sec}sec, empties in ${drain_time_sec} sec\n"
-  unless($::silent);
+   if ($drain_wait_sec <= 0) {
+     my $stream_kbps = $stream_bps / 1000;
+     print "Warning: constant transmit! Raise max_tx to at least $stream_kbps Kbps\n";
+     $drain_wait_sec = 0;
+   }
 
-die ("Please provide cx_name")
-  unless((defined $::cx_name) && ("" ne $::cx_name));
+   my $buf_kB = $::buf_size / 1024;
+   print "Filling $::stream_key $buf_kB KB buffer est ${est_fill_time_sec}sec, empties in ${drain_time_sec} sec\n"
+     unless($::silent);
+}
+$stream_kbps = $stream_bps / 1000;
+
 # check for cx if we're bufferfill
 my $cx_exists = 0;
 @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("show_cx", "all", $::cx_name)));
 @matches = grep {/Could not find/} @lines;
 $cx_exists = 1 if (@matches == 0);
 
-if ($::tx_style eq "bufferfill") {
+if (($::tx_style eq "bufferfill") && !$cx_exists) {
    print "Tx_style bufferfill requires your connection already exists, bye.\n";
    exit 1;
+}
+
+if (($::tx_style =~ /constant/) && !$cx_exists) {
+   my $cmd = "./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --action create_cx "
+      ."--cx_name $::cx_name --use_ports $::sta,$::upstream --use_speeds 128000,$::max_tx "
+      ."--speed $::min_tx --max_speed $::max_tx --endp_type udp --report_timer 3000";
+   my $result = `$cmd`;
+   print "x"x72, "\n";
+   print $result, "\n";
+   print "x"x72, "\n";
 }
 
 print "Stopping and configuring $::cx_name\n" unless($silent);
@@ -683,12 +765,6 @@ if ($::tx_style eq "L4") {
    $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, "default_tm", $tmp_ep1, "NA");
    $::utils->doAsyncCmd($cmd);
 }
-
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-# Layer-3 constant setup
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-
-
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 # Layer-3 constant bufferfill
