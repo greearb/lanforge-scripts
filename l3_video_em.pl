@@ -49,7 +49,7 @@ our $upstream        = "";
 our $proto           = "udp"; # for constant
 our $est_fill_time_sec = 0;
 our $last_fill_time_sec = 0;
-
+our $begin_running   = 1; # set to 0 to not start CX running; 0 is appropriate for batch creation or bufferfill
 
 # https://en.wikipedia.org/wiki/Standard-definition_television
 # https://www.adobe.com/devnet/adobe-media-server/articles/dynstream_live/popup.html
@@ -189,6 +189,7 @@ our $usage = "$0:    # modulates a Layer 3 CX to emulate a video server
   --sta          {1.1.sta0 or 1.sta0} # use with L4 or constant
   --upstream     {1.1.eth1 or 1.eth1} # use with L4 or constant; will create HTTP service on port if necessary
   --proto        {udp|tcp} # use with constant tx style
+  --begin_running {0|1} # bufferfill does not get created running, but constant and L4 do, overrides this
 
   Example:
   1) create the L3 connection:
@@ -227,6 +228,7 @@ GetOptions
    'sta=s'                => \$::sta,
    'upstream|up|u=s'      => \$::upstream,
    'proto=s'              => \$::proto,
+   'begin_running'        => \$::begin_running,
 ) || die($!);
 
 
@@ -318,11 +320,11 @@ sub cleanexit {
             $::utils->doAsyncCmd($::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "STOPPED"));
          }
          else {
-            print STDERR ("CX '$::cx_name' will keep running.") unless $::silent;
+            print STDERR ("CX '$::cx_name' will not be stopped.") unless $::silent;
          }
       }
       else {
-         print STDERR ("No telnet session remains, CX '$::cx_name' will keep running.");
+         print STDERR ("No telnet session remains, CX '$::cx_name' will not be stopped.");
       }
    }
    exit 0;
@@ -555,13 +557,21 @@ if (($::tx_style eq "L4") || ($::tx_style eq "constant")) {
       $::upstream = $hunks[-1];
       $::upstream_res = $hunks[-2];
    }
-
+   @lines = split(/\r?\n/, $::utils->doAsyncCmd("nc_show_port 1 $::upstream_res $::upstream"));
+   @matches = grep {/^Shelf: 1,/} @lines;
+   if (@matches < 1) {
+      print "Cannot find upstream port $::upstream_res.$::upstream, bye\n";
+      exit(1);
+   }
    if ($::sta =~ /\./) {
       @hunks = split(/[.]/, $::sta);
       $::sta = $hunks[-1];
       die("resource ${hunks[-2]} for station $::sta is not listed resource: $::resource, bye.")
          if ($hunks[-2] ne $::resource);
    }
+}
+else {
+   $::begin_running = 0;
 }
 
 my $stream_bps = 0;
@@ -628,15 +638,25 @@ our $stop_cx_on_exit = 1;
 if ($::tx_style eq "L4") {
    # check that the upstream port has http enabled
    $::stop_cx_on_exit = 0;
-   my $cmd = "./lf_portmod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --port_name $::upstream --show_port Current";
-   my $current = `$cmd`;
-   if ($current !~ / SVC-HTTPD/ ) {
+   my $cmd = "./lf_portmod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --port_name $::upstream --show_port Current,IP";
+   my @lines = `$cmd`;
+   chomp(@lines);
+
+   if ($lines[0] !~ / SVC-HTTPD/m ) {
       print "Enabling HTTP on $::upstream...\n";
       #"set_port 1 1 eth1 NA NA NA NA 0 NA NA NA NA 134217730 " # <--- and to turn off
-      $cmd =
-      $::utils->doCmd($::utils->fmt_cmd("set_port", 1, $::resource,  $::upstream,
-         "NA", "NA", "NA", "NA", 35184372088832, "NA", "NA", "NA", "NA", 134217730));
+      $cmd = $::utils->fmt_cmd("set_port", 1, $::resource,  $::upstream,
+                              "NA", "NA", "NA", "NA", 35184372088832, "NA", "NA", "NA", "NA", 134217730);
+      $::utils->doCmd($cmd);
       sleep(1);
+   }
+   my $ip = "0.0.0.0";
+   if ($lines[1] =~ /^IP:\s+([^ ]+)$/) {
+      $ip = $1;
+   }
+   else {
+      print "Unable to find IP address for upstream port, bye.";
+      exit 1;
    }
    my ($short_cx) = $::cx_name =~ /CX_(\S+)/;
    my $tmp_ep1 = $short_cx;
@@ -652,18 +672,15 @@ if ($::tx_style eq "L4") {
    while ($short_size > 1024) {
       $short_size = floor($short_size / 1024);
    }
-   my $url = "dl http://".$::upstream."/".$short_size."m.bin /dev/null";
-   print "URL $url\n";
-   sleep 10;
+   my $url = "dl http://".$ip."/".$short_size."m.bin /dev/null";
+   #print "URL $url\n";
+   #sleep 10;
 
-   #$::utils->doCmd($::utils->fmt_cmd(
-   #   "add_l4_endp", $tmp_ep2, 1, $::resource, $::sta, "l4_generic", 0, 0, 0, ' ', ' '));
-   #$::utils->doCmd($::utils->fmt_cmd("set_endp_flag", $tmp_ep2, "Unmananaged", 1));
+   # do not need to add dummy endpoint
    $::utils->doCmd($::utils->fmt_cmd(
       "add_l4_endp", $tmp_ep1, 1, $::resource, $::sta, "l4_generic", 0, $timeout, $url_rate, $url, ' '));
-   sleep 1;
+   #sleep 1;
    $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, "default_tm", $tmp_ep1, "NA");
-   print "********** $cmd **********\n";
    $::utils->doAsyncCmd($cmd);
 }
 
@@ -714,16 +731,18 @@ my $rand_start_delay = rand(7);
    print "Random start delay: $rand_start_delay...\n";
    $::utils->sleep_sec($rand_start_delay);
 }
-$cmd = $::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING");
-print "Starting $::cx_name: $cmd\n" unless($silent);
-$::utils->doCmd($cmd);
 
 if (!(defined $endp) || !(defined $res) || !(defined $port) || !(defined $type) || !(defined $::max_tx) || !(defined $::min_tx)) {
    die("Unable to continue, missing values in: endp($endp) res($res) port($port) type($type) max_tx($::max_tx)");
 }
 
 if ($::tx_style !~ /bufferfill/) {
-   print "Done\n";
+   if ($::begin_running) {
+      $cmd = $::utils->fmt_cmd("set_cx_state", "all", $::cx_name, "RUNNING");
+      #print "Starting $::cx_name: $cmd\n" unless($silent);
+      $::utils->doCmd($cmd);
+      print "started $::cx_name\n";
+   }
    cleanexit("Done with setup on $::tx_style $::cx_name\n");
 }
 
