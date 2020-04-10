@@ -31,6 +31,14 @@ def jsonReq(mgrURL, reqURL, data, debug=False):
 		sys.exit(1)
 	else:
 		lf_r.jsonPost()
+def getJsonInfo(mgrURL, reqURL, name):
+	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
+	json_response = lf_r.getAsJson()
+	print(name)
+	print(json_response)
+	#j_printer = pprint.PrettyPrinter(indent=2)
+	#j_printer.pprint(record)
+
 
 #create cx for tcp and udp
 cmd = ("perl lf_firemod.pl --action create_cx --cx_name test1 --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp")
@@ -128,7 +136,7 @@ cmd = ("perl ./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 
 execWrap(cmd)
 
 
-#show tx and rx for endpoints
+#show tx and rx for endpoints PERL
 time.sleep(5)
 print("test1-A")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name test1-A --endp_vals tx_bps,rx_bps")
@@ -143,12 +151,20 @@ print("test2-B")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name test2-B --endp_vals tx_bps,rx_bps")
 execWrap(cmd)
 print("l4Test")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total")
 execWrap(cmd)
 cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest")
 execWrap(cmd)
 cmd = ("./lf_firemod.pl --action show_endp --endp_name genTest1")
 execWrap(cmd)
+
+#show tx and rx for endpoints JSON
+getJsonInfo(mgrURL, "endp/test1-A?fields=tx+bytes,rx+bytes", "test1-A")
+getJsonInfo(mgrURL, "endp/test1-B?fields=tx+bytes,rx+bytes", "test1-B")
+getJsonInfo(mgrURL, "endp/test2-A?fields=tx+bytes,rx+bytes", "test2-A")
+getJsonInfo(mgrURL, "endp/test2-B?fields=tx+bytes,rx+bytes", "test2-B")
+getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
+getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
 
 #stop cx traffic
 for name in range(len(cxNames)):
@@ -163,7 +179,7 @@ timeout = 5 # seconds
 for i in range(len(url)):
 	lf_r = LFRequest.LFRequest(mgrURL + url[i])
 	json_response = lf_r.getAsJson()
-	print(json_response)
+	#print(json_response)
 	j_printer = pprint.PrettyPrinter(indent=2)
 	if not i:
 		print("Ports: \n")
