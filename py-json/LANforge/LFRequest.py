@@ -40,7 +40,7 @@ class LFRequest:
                                              headers=self.default_headers)
         else:
             request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
-            print("No data for this jsonPost?")
+            print("No data for this formPost?")
 
         request.headers['Content-type'] = 'application/x-www-form-urlencoded'
         resp = ''
@@ -125,7 +125,7 @@ class LFRequest:
             return myresponses[0]
         except urllib.error.HTTPError as error:
             if (show_error):
-                print("----- jsonPost() HTTPError: --------------------------------------------")
+                print("----- get() HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
 
                 print("Error: ", sys.exc_info()[0])
@@ -147,7 +147,7 @@ class LFRequest:
                 print("------------------------------------------------------------------------")
         except urllib.error.URLError as uerror:
             if (show_error):
-                print("----- jsonPost() URLError: ---------------------------------------------")
+                print("----- get() URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
         return None
@@ -162,7 +162,7 @@ class LFRequest:
             if (show_error):
                 print("No response from "+self.requested_url)
             return None
-        json_data = json.loads(responses[0].read())
+        json_data = json.loads(responses[0].read().decode('utf-8'))
         return json_data
 
     def addPostData(self, data):
