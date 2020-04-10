@@ -162,7 +162,7 @@ class LFRequest:
             if (show_error):
                 print("No response from "+self.requested_url)
             return None
-        json_data = json.loads(responses[0].read())
+        json_data = json.loads(responses[0].read().decode('utf-8'))
         return json_data
 
     def addPostData(self, data):
