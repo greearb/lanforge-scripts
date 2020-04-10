@@ -18,11 +18,12 @@ def main():
    timeout = 5 # seconds
 
    lf_r = LFRequest.LFRequest(url)
-   json_response = lf_r.getAsJson()
-   #print(json_response)
+   json_response = lf_r.getAsJson(True)
    j_printer = pprint.PrettyPrinter(indent=2)
-   for record in json_response['interfaces']:
-        j_printer.pprint(record)
+   j_printer.pprint(json_response)
+   
+   #for record in json_response['interfaces']:
+        #j_printer.pprint(record)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == "__main__":
