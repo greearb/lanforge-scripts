@@ -35,6 +35,9 @@ are very likely more than the PDU count)
   --cx "1.wiphy0 1.sta0 anAC 1.eth1 tcp 1472 56000 2000000 BK" \
   --sniffer_radios "1.wiphy2"
 
+# You can also create connections between non-station endpoints.
+./lf_tos_plus_test.py --dur 1 --lfmgr 192.168.100.156 --txpkts 99 \
+ --cx "NA 1.rddVR0 NA 1.rddVR1 tcp MTU 1000000 2000000 0"  --wait_sniffer 1
 
 make sure pexpect, pandas is installed:
 $ sudo yum install python3-pandas
@@ -115,6 +118,8 @@ def main():
    global sniffer_radios
    global wait_sniffer
 
+   do_sniff = False
+
    parser = argparse.ArgumentParser(description="ToS++ report Script")
    parser.add_argument("--cx",  type=str, action='append', help="Connection tuple: station-radio station-port mode upstream-port protocol pkt-size speed_ul speed_dl QoS")
    parser.add_argument("--radio",  type=str, action='append', help="Radio tuple:  radio nss channel")
@@ -125,13 +130,14 @@ def main():
    parser.add_argument("--passwd",       type=str, help="AP's password if using PSK authentication, skip this argement for OPEN")
    parser.add_argument("--txpkts",       type=str, help="Optional:  Packets (PDUs) to send before stopping data connections  Default (0) means infinite")
    parser.add_argument("--sniffer_radios", type=str, help="Optional:  list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\"")
-   parser.add_argument("--wait_sniffer", type=str, help="Optional: 1 means wait on sniffer to finish before existing script\"")
+   parser.add_argument("--wait_sniffer", type=str, help="Optional: 1 means wait on sniffer to finish before existing script.\"")
    
    args = None
    try:
       args = parser.parse_args()
       cx_strs = args.cx.copy()
-      radio_strs = args.radio.copy()
+      if (args.radio != None):
+          radio_strs = args.radio.copy()
       if (args.lfmgr != None):
           lfmgr = args.lfmgr
       if (args.duration != None):
@@ -147,7 +153,9 @@ def main():
           txpkts = args.txpkts
       if (args.sniffer_radios != None):
           sniffer_radios = args.sniffer_radios
+          do_sniff = True
       if (args.wait_sniffer != None):
+          do_sniff = True
           wait_sniffer = args.wait_sniffer == "1"
       filehandler = None
    except Exception as e:
@@ -344,19 +352,25 @@ def main():
        if not ukey in upstreams:
            upstreams.append(ukey)
 
-       rad_resource = "1"
-       rad_name = radio;
-       if radio[0].isdigit():
-           tmpa = radio.split(".", 1);
-           rad_resource = tmpa[0];
-           rad_name = tmpa[1];
+       if radio != "NA":
+           rad_resource = "1"
+           rad_name = radio;
+           if radio[0].isdigit():
+               tmpa = radio.split(".", 1);
+               rad_resource = tmpa[0];
+               rad_name = tmpa[1];
 
-       # Create or update station with requested mode
-       subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--resource", rad_resource, "--action", "add",
-                       "--radio", rad_name, "--ssid", ssid, "--passphrase", passwd, "--security", security,
-                       "--first_sta", sta_name, "--first_ip", "DHCP", "--wifi_mode", mode, "--num_stations", "1"])
+           # Create or update station with requested mode
+           subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--resource", rad_resource, "--action", "add",
+                           "--radio", rad_name, "--ssid", ssid, "--passphrase", passwd, "--security", security,
+                           "--first_sta", sta_name, "--first_ip", "DHCP", "--wifi_mode", mode, "--num_stations", "1"])
+       else:
+           # Assume it should be sniffed.
+           ukey = "%s.%s"%(sta_resource, sta_name)
+           if not ukey in upstreams:
+               upstreams.append(ukey)
 
-       # Up station
+       # Up station / A-side Port
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  sta_resource, "--port_name", sta_name,
                        "--set_ifstate", "up"]); 
 
@@ -382,18 +396,27 @@ def main():
 
            #print("IP %s  Status %s"%(_ip, _status))
 
-           if (_status == "Authorized"):
+           if sta_name.startswith("wlan") or sta_name.startswith("sta"):
+               if (_status == "Authorized"):
+                   if ((_ip != None) and (_ip != "0.0.0.0")):
+                       print("Station is associated with IP address.")
+                       break
+                   else:
+                       if (not wait_ip_print):
+                           print("Waiting for station %s.%s to get IP Address."%(sta_resource, sta_name))
+                           wait_ip_print = True
+               else:
+                   if (not wait_assoc_print):
+                       print("Waiting up to 180s for station %s.%s to associate."%(sta_resource, sta_name))
+                       wait_assoc_print = True
+           else:
                if ((_ip != None) and (_ip != "0.0.0.0")):
-                   print("Station is associated with IP address.")
+                   print("Port is associated with IP address.")
                    break
                else:
                    if (not wait_ip_print):
-                       print("Waiting for station %s.%s to get IP Address."%(sta_resource, sta_name))
+                       print("Waiting for port %s.%s to get IP Address."%(sta_resource, sta_name))
                        wait_ip_print = True
-           else:
-               if (not wait_assoc_print):
-                   print("Waiting up to 180s for station %s.%s to associate."%(sta_resource, sta_name))
-               wait_assoc_print = True
 
            i = i + 1
            # We wait a fairly long time since AP will take a long time to start on a CAC channel.
@@ -462,26 +485,28 @@ def main():
        count = count + 1
 
    # Start sniffer?
-   if sniffer_radios != "":
-       radios = sniffer_radios.split()
+   if do_sniff:
        lfstations = ""
        lfupstreams = ""
-       ri = 0
-       for r in radios:
-           lfstations = lfstations + " " + stations[ri]
-           ri = ri + 1
+       if sniffer_radios != "":
+           radios = sniffer_radios.split()
+           ri = 0
+           for r in radios:
+               lfstations = lfstations + " " + stations[ri]
+               ri = ri + 1
 
        for u in upstreams:
            lfupstreams = lfupstreams + " " + u
 
        # Add 15 seconds to capture length in case it takes a bit of time to start all
        # of the connections.
-       if lfupstreams == "":
-           subprocess.run(["./lf_sniff.py", "--lfmgr", lfmgr, "--duration", "%f"%((dur + 15) / 60), "--station", lfstations,
-                           "--sniffer_radios", sniffer_radios])# capture_output=True);
-       else:
-           subprocess.run(["./lf_sniff.py", "--lfmgr", lfmgr, "--duration", "%f"%((dur + 15) / 60), "--station", lfstations,
-                           "--sniffer_radios", sniffer_radios, "--upstreams", lfupstreams])# capture_output=True);
+       cmd = ["./lf_sniff.py", "--lfmgr", lfmgr, "--duration", "%f"%((dur + 15) / 60)]
+       if lfstations != "":
+           cmd.extend(["--station", lfstations, "--sniffer_radios", sniffer_radios])
+       if lfupstreams != "":
+           cmd.extend(["--upstreams", lfupstreams])
+
+       subprocess.run(cmd)
 
    sniff_done_at = time.time() + dur + 15;
    
