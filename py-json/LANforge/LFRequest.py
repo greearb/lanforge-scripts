@@ -123,12 +123,35 @@ class LFRequest:
         try:
             myresponses.append(urllib.request.urlopen(myrequest))
             return myresponses[0]
-        except:
+        except urllib.error.HTTPError as error:
             if (show_error):
-                print("Url: "+myrequest.get_full_url())
-                print("Error: ", sys.exc_info()[0])
+                print("----- jsonPost() HTTPError: --------------------------------------------")
+                print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
 
+                print("Error: ", sys.exc_info()[0])
+                print("Request URL:", myrequest.get_full_url())
+                print("Request Content-type:", myrequest.get_header('Content-type'))
+                print("Request Accept:", myrequest.get_header('Accept'))
+                print("Request Data:")
+                LFUtils.debug_printer.pprint(myrequest.data)
+
+                if (error.headers):
+                    # the HTTPError is of type HTTPMessage a subclass of email.message
+                    #print(type(error.keys()))
+                    for headername in sorted(error.headers.keys()):
+                        print ("Response %s: %s "%(headername, error.headers.get(headername)))
+
+                if (len(myresponses) > 0):
+                    print("----- Response: --------------------------------------------------------")
+                    LFUtils.debug_printer.pprint(responses[0].reason)
+                print("------------------------------------------------------------------------")
+        except urllib.error.URLError as uerror:
+            if (show_error):
+                print("----- jsonPost() URLError: ---------------------------------------------")
+                print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
+                print("------------------------------------------------------------------------")
         return None
+
 
     def getAsJson(self, show_error=True):
         responses = []
