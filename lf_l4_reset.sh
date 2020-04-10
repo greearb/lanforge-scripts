@@ -80,8 +80,8 @@ while : ; do
       #echo "$endp_status"
       #echo '---------------------------------------'
       
-      l4read=`echo "$endp_status"  | awk  '/Bytes Read/ {print $8}'`
-      l4write=`echo "$endp_status" | awk  '/Bytes Written/ {print $8}'`
+      l4read=`echo "$endp_status"  | awk  '/Bytes Read:/ {print $8}'`
+      l4write=`echo "$endp_status" | awk  '/Bytes Written:/ {print $8}'`
       runChk=`echo "$endp_status"  | grep '^L4Endp '`
       runStat=`echo "$runChk"      | sed  's/L4Endp \[.*\] (\(.*\))/\1/'`
 
@@ -106,8 +106,8 @@ while : ; do
          echo "Unknown case ${i}[$runStat]"
          ;;
       esac
-
-      if (( $checkSpeed == 1 )); then
+      if [[ x$checkSpeed = x1 ]]; then
+         #echo "l4read[$l4read] min[$min] l4write[$l4write]"
          if (( $l4read <= $min )) && (( $l4write <= $min )); then
             doL4Restart=1
          fi
