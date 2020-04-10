@@ -145,19 +145,8 @@ if ( !defined *LANforge::Utils::fmt_cmd ) {
 }
 # Configure our utils.
 our $utils = new LANforge::Utils();
+$::utils->connect($lfmgr_host, $lfmgr_port);
 
-
-#-----------------------------------------------------------------------#
-
-$::utils->telnet($::t);         # Set our telnet object.
-if ($::quiet eq "yes") {
-  $::utils->cli_send_silent(1); # Do show input to CLI
-  $::utils->cli_rcv_silent(1);  # Repress output from CLI ??
-}
-else {
-  $::utils->cli_send_silent(0); # Do show input to CLI
-  $::utils->cli_rcv_silent(0);  # Repress output from CLI ??
-}
 
 #-----------------------------------------------------------------------#
 # survey ports, complain if they are not present                        #

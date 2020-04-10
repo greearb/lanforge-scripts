@@ -229,9 +229,7 @@ sub init {
    $conn->max_buffer_length(1024 * 1024 * 10);  # 10M buffer
 
    $::utils = new LANforge::Utils();
-   $::utils->telnet($conn);                     # Set our telnet object.
-   $::utils->cli_send_silent($::DEBUG ? 0 : 1); # Do show input to CLI
-   $::utils->cli_rcv_silent($::DEBUG ? 0 : 1);  # Repress output from CLI ??
+   $::utils->connect($lfmgr_host, $lfmgr_port);
 
    if ($::group && $::group ne "") {
       my $ra_bounds  = $::group_names{ $::group };

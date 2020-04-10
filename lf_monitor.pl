@@ -128,15 +128,7 @@ sub init {
    $t->waitfor("/btbits\>\>/");
 
    $::utils = new LANforge::Utils();
-   $::utils->telnet($t);         # Set our telnet object.
-   if ($::quiet eq "yes") {
-     $::utils->cli_send_silent(1); # Do show input to CLI
-     $::utils->cli_rcv_silent(1);  # Repress output from CLI ??
-   }
-   else {
-     $::utils->cli_send_silent(0); # Do show input to CLI
-     $::utils->cli_rcv_silent(0);  # Repress output from CLI ??
-   }
+   $::utils->connect($lfmgr_host, $lfmgr_port);
 }
 ## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
