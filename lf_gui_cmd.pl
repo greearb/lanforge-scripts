@@ -31,6 +31,8 @@ my $tname = "lfgui-test";
 my $tconfig = "";  # test config
 my $rpt_dest = "";
 my $show_help = 0;
+my @modifiers_key = ();
+my @modifiers_val = ();
 
 ########################################################################
 # Nothing to configure below here, most likely.
@@ -45,6 +47,7 @@ my $usage = qq($0  [--manager { hostname or address of LANforge GUI machine } ]
                  [--tconfig {test configuration name, use defaults if not specified} ]
                  [--rpt_dest {Copy report to destination once it is complete} ]
                  [--cmd { command to send to the GUI } ]
+                 [--modifier "
 
 Example:
  lf_gui_cmd.pl --manager localhost --port 3990 --ttype TR-398 --tname mytest --tconfig comxim --rpt_dest /var/www/html/lf_reports
@@ -59,6 +62,8 @@ if (@ARGV < 2) {
 GetOptions (
    'help|h'                => \$show_help,
    'manager|mgr|m=s'       => \$lfmgr_host,
+   'modifier_key=s'        => \@modifiers_key,
+   'modifier_val=s'        => \@modifiers_val,
    'ttype=s'               => \$ttype,
    'tname=s'               => \$tname,
    'tconfig=s'             => \$tconfig,
@@ -70,6 +75,13 @@ GetOptions (
 if ($show_help) {
    print $usage;
    exit 0;
+}
+
+my $lnk = @modifiers_key;
+my $lnv = @modifiers_val;
+if ($lnk != $lnv) {
+   print("ERROR:  You must specify the same amount of modifers-key and modifiers-val entries.\n");
+   exit(3);
 }
 
 if ((defined $port) && ($port > 0)) {
@@ -96,6 +108,14 @@ if ($ttype ne "") {
     print doCmd("cv load '$tname' '$tconfig'");
   }
   print doCmd("cv click '$tname' 'Auto Save Report'");
+
+  my $i;
+  for ($i = 0; $i<@modifiers_key; $i++) {
+     my $k = $modifiers_key[$i];
+     my $v = $modifiers_val[$i];
+     print doCmd("cv set '$tname' '$k' '$v'");
+  }
+
   print doCmd("cv click '$tname' 'Start'");
   while (1) {
     my $rslt = doCmd("cv get '$tname' 'Report Location:'");
@@ -119,6 +139,33 @@ if ($ttype ne "") {
     else {
       sleep(3);
     }
+  }
+
+  # Clean up our instance.  This can take a while.
+  print doCmd("cv delete '$tname'");
+  while (1) {
+     my $rslt = doCmd("cv exists '$tname'");
+     print "Result-exists -:$rslt:-\n";
+     if ($rslt =~ /YES/) {
+        sleep(3);
+     }
+     else {
+        last;
+     }
+  }
+
+  # Wait a bit more, CV will likey be rebuilt now.
+  sleep(5);
+
+  while (1) {
+     my $rslt = doCmd("cv is_built");
+     print "Result-built -:$rslt:-\n";
+     if ($rslt =~ /NO/) {
+        sleep(3);
+     }
+     else {
+        last;
+     }
   }
 }
 

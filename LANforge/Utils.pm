@@ -86,12 +86,18 @@ sub telnet {
 sub doCmd {
    my $self = shift;
    my $cmd  = shift;
+   my $nowait = shift;
+
    #print "CMD[[$cmd]]\n";
    my $t = ${$self->{telnet}};
    if ( !$self->cli_send_silent() || (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "")) {
       $self->log_cli($cmd);
    }
    $t->print($cmd);
+
+   if (defined($nowait) && ($nowait == 1)) {
+      return "";
+   }
 
    my @rslt = $t->waitfor('/ >>RSLT:(.*)/');
    if ( !$self->cli_rcv_silent() ) {
