@@ -56,6 +56,8 @@ def removeCX(mgrURL, cxNames):
 		"cx_name":name
 		}
 		jsonReq(mgrURL,"cli-json/rm_cx", data)
+
+
 #create cx for tcp and udp
 cmd = ("perl lf_firemod.pl --action create_cx --cx_name test1 --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp")
 execWrap(cmd)
@@ -113,7 +115,7 @@ data = {
 jsonReq(mgrURL,url,data)
 
 
-#create generic endpoint
+#create generic endpoints
 genl.createGenEndp("genTest1",1,1,"sta00000","gen_generic")
 genl.createGenEndp("genTest2",1,1,"sta00000","gen_generic")
 genl.setFlags("genTest1","ClearPortOnStart",1)
@@ -194,22 +196,3 @@ for name in range(len(cxNames)):
 endpNames = ["test1-A", "test1-B", "test2-A", "test2-B", "l4Test", "fioTest", "genTest1", "genTest2"]
 removeCX(mgrURL, cxNames)
 removeEndps(mgrURL, endpNames)
-
-#get JSON info from webpage for ports and endps
-"""
-url = ["port/","endp/"]
-
-for i in range(len(url)):
-	lf_r = LFRequest.LFRequest(mgrURL + url[i])
-	json_response = lf_r.getAsJson()
-	#print(json_response)
-	j_printer = pprint.PrettyPrinter(indent=2)
-	if not i:
-		print("Ports: \n")
-		for record in json_response['interfaces']:
-			j_printer.pprint(record)
-	else:
-		print("Endpoints: \n")
-		for record in json_response['endpoint']:
-                        j_printer.pprint(record)
-"""
