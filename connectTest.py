@@ -15,7 +15,6 @@ if sys.version_info[0] != 3:
 
 mgrURL = "http://localhost:8080/"
 
-
 def execWrap(cmd):
 	if os.system(cmd) != 0:
 		print("\nError with " + cmd + ",bye\n")
@@ -31,13 +30,32 @@ def jsonReq(mgrURL, reqURL, data, debug=False):
 		sys.exit(1)
 	else:
 		lf_r.jsonPost()
+
 def getJsonInfo(mgrURL, reqURL, name):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
 	json_response = lf_r.getAsJson()
 	print(name)
-	print(json_response)
-	#j_printer = pprint.PrettyPrinter(indent=2)
-	#j_printer.pprint(record)
+	j_printer = pprint.PrettyPrinter(indent=2)
+	j_printer.pprint(json_response)
+	#for record in json_response[key]:
+	#	j_printer.pprint(record)
+
+def removeEndps(mgrURL, endpNames):
+	for name in endpNames:
+		print(f"Removing endp {name}")
+		data = {
+		"endp_name":name
+		}
+		jsonReq(mgrURL, "cli-json/rm_endp", data)
+
+def removeCX(mgrURL, cxNames):
+	for name in cxNames:
+		print(f"Removing CX {name}")
+		data = {
+		"test_mgr":"all",
+		"cx_name":name
+		}
+		jsonReq(mgrURL,"cli-json/rm_cx", data)
 
 
 #create cx for tcp and udp
@@ -97,7 +115,7 @@ data = {
 jsonReq(mgrURL,url,data)
 
 
-#create generic endpoint
+#create generic endpoints
 genl.createGenEndp("genTest1",1,1,"sta00000","gen_generic")
 genl.createGenEndp("genTest2",1,1,"sta00000","gen_generic")
 genl.setFlags("genTest1","ClearPortOnStart",1)
@@ -105,8 +123,9 @@ genl.setFlags("genTest2","ClearPortOnStart",1)
 genl.setFlags("genTest2","Unmanaged",1)
 genl.setCmd("genTest1","lfping  -i 0.1 -I sta00000 10.40.0.1")
 
+
 #create generic cx
-url = "cli-json/add_cx" 
+url = "cli-json/add_cx"
 data = {
 "alias":"CX_genTest1",
 "test_mgr":"default_tm",
@@ -153,8 +172,10 @@ execWrap(cmd)
 print("l4Test")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total")
 execWrap(cmd)
+print("fioTest")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest")
 execWrap(cmd)
+print("genTest1")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name genTest1")
 execWrap(cmd)
 
@@ -171,22 +192,7 @@ for name in range(len(cxNames)):
 	cmd = (f"perl lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"")
 	execWrap(cmd)
 
-
-#get JSON info from webpage for ports and endps
-url = ["port/","endp/"]
-timeout = 5 # seconds
-
-for i in range(len(url)):
-	lf_r = LFRequest.LFRequest(mgrURL + url[i])
-	json_response = lf_r.getAsJson()
-	#print(json_response)
-	j_printer = pprint.PrettyPrinter(indent=2)
-	if not i:
-		print("Ports: \n")
-		for record in json_response['interfaces']:
-			j_printer.pprint(record)
-	else:
-		print("Endpoints: \n")
-		for record in json_response['endpoint']:
-                        j_printer.pprint(record)
-
+#remove all endpoints and cxs
+endpNames = ["test1-A", "test1-B", "test2-A", "test2-B", "l4Test", "fioTest", "genTest1", "genTest2"]
+removeCX(mgrURL, cxNames)
+removeEndps(mgrURL, endpNames)
