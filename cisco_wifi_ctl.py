@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 '''
-LANforge 192.168.100.178
-Controller at 192.168.100.112 admin/Cisco123
+LANforge 172.19.27.91
+Controller at 172.19.27.95 2013 cisco/Cisco123
 Controller is 192.1.0.10
-AP is 192.1.0.2
+AP is 172.19.27.95 2014
 
 make sure pexpect is installed:
 $ sudo yum install python3-pexpect
@@ -11,7 +11,7 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
-./cisco_wifi_ctl.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22
+./cisco_wifi_ctl.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet 
 '''
 
 
@@ -51,6 +51,8 @@ def usage():
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file: log messages here")
    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
+   print("-w|--wlan:  WLAN name")
+   print("-i|--wlanID:  WLAN ID")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -75,12 +77,14 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
+   parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
+   parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
    parser.add_argument("-a", "--ap",      type=str, help="select AP")
    parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "channel", "show" ])
+      "cmd", "txPower", "bandwidth", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -88,7 +92,8 @@ def main():
       args = parser.parse_args()
       host = args.dest
       scheme = args.scheme
-      port = (default_ports[scheme], args.port)[args.port != None]
+      port = args.port
+      #port = (default_ports[scheme], args.port)[args.port != None]
       user = args.user
       passwd = args.passwd
       logfile = args.log
@@ -160,13 +165,20 @@ def main():
          logg.info("Spawn: "+cmd+NL)
          egg = pexpect.spawn(cmd)
          egg.logfile = FileAdapter(logg)
-         egg.expect('login:', timeout=3)
          time.sleep(0.1)
+         egg.sendline(' ')
+         egg.expect('User\:')
          egg.sendline(user)
-         time.sleep(0.1)
-         egg.expect('password:')
-         time.sleep(0.1)
+         egg.expect('Password\:')
          egg.sendline(passwd)
+         egg.sendline('config paging disable')
+         #egg.expect('(Voice-Talwar) >', timeout=3)
+         #time.sleep(0.1)
+         #egg.sendline(user)
+         #time.sleep(0.1)
+         #egg.expect('password:')
+         #time.sleep(0.1)
+         #egg.sendline(passwd)
       else:
          usage()
          exit(1)
@@ -175,7 +187,8 @@ def main():
 
    command = None
    time.sleep(0.1)
-   CCPROMPT = '\(Cisco Controller\) >'
+   CCPROMPT = '\(Voice-Talwar\) >'
+   LOGOUTPROMPT = 'User:'
    EXITPROMPT = "Would you like to save them now\? \(y/N\)"
    AREYOUSURE = "Are you sure you want to continue\? \(y/n\)"
    CLOSEDBYREMOTE = "closed by remote host."
@@ -236,6 +249,26 @@ def main():
    if (args.action == "channel"):
       command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
 
+   if (args.action == "wlan" and (args.wlanID is None)):
+      raise Exception("wlan ID is required")
+   if (args.action == "wlan"):
+      command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
+
+   if (args.action == "enable_wlan" and (args.wlanID is None)):
+      raise Exception("wlan ID is required")
+   if (args.action == "enable_wlan"):
+      command = "config wlan enable %s"%(args.wlanID)
+
+   if (args.action == "delete_wlan" and (args.wlanID is None)):
+      raise Exception("wlan ID is required")
+   if (args.action == "delete_wlan"):
+      command = "config wlan delete %s"%(args.wlanID)
+
+   if (args.action == "wlan_qos" and (args.wlanID is None)):
+      raise Exception("wlan ID is required")
+   if (args.action == "wlan_qos"):
+      command = "config wlan qos %s %s"%(args.wlanID, args.value)
+
 
    if (command is None):
       logg.info("No command specified, going to log out.")
@@ -255,7 +288,7 @@ def main():
           
 
    egg.sendline("logout")
-   i = egg.expect([EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX])
+   i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX])
    if i == 0:
        egg.sendline("y")
 
