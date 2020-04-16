@@ -134,9 +134,27 @@ $::utils->connect($lfmgr_host, $lfmgr_port);
 
 if ($::action eq "show") {
    $cmd = "show_text_blob $test_type $test_name";
-   my $r = $::utils->doCmd($cmd);
-   print $r;
-   print "\n\n";
+   my $txt = $::utils->doCmd($cmd);
+   my @r = split(/\n/, $txt);
+   my $first = $r[0];
+   chomp($first);
+   if ($first =~ /.*::(.*)/) {
+      print "$1\n";
+   }
+   my $i;
+   for ($i = 1; $i<@r; $i++) {
+      my $ln = $r[$i];
+      chomp($ln);
+      if ($ln =~ /\s*>>RSLT.*/) {
+         # ignore
+      }
+      elsif ($ln =~ /\s*default\@btbits.*/) {
+         # ignore
+      }
+      else {
+         print "$ln\n";
+      }
+   }
 }
 elsif ($::action eq "set") {
    if ($file_name eq "") {
