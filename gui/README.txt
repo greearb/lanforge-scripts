@@ -1,0 +1,48 @@
+
+Notes on writing GUI automated tests (such as AP-Auto, TR-398, Dataplane, Capacity test, etc)
+
+AP-Auto:
+
+In the GUI, configure the AP-Auto test as wished, and save the test config on the
+Advanced Configuration page.  In this example, I use the name: ap-auto-32-64-dual
+
+In LANforge CLI, you can dump the saved configuration:
+
+default@btbits>> show_text_blob Plugin-Settings AP-Auto-ap-auto-32-64-dual
+TEXT-BLOB:Plugin-Settings.AP-Auto-ap-auto-32-64-dual::[BLANK]
+show_events: 1
+show_log: 1
+port_sorting: 0
+notes0: Chamber to Chamber test.
+bg: 0xE0ECF8
+test_rig: TR-398 test bed
+....
+
+Save this text to a file for later use:  AP-Auto-ap-auto-32-64-dual.txt
+
+You can also use the ../lf_testmod.pl script to do this:
+# The head and tail stuff trims leading and trailing lines, respectively.
+../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name AP-Auto-ap-auto-32-64-dual|tail -n +2 | head -n -2 > test_configs/mytest.txt
+
+To load a test file:
+
+lf_testmod.pl --mgr 192.168.100.156 --action set --test_name AP-Auto-ben --file test_configs/mytest.txt
+
+
+
+###
+Once test cases have been loaded, you can tell the GUI to run tests for you, potentially modifying the
+test configuration through the GUI.
+
+First, tell the GUI to read the latest test config from the server.
+
+../lf_gui_cmd.pl --manager localhost --port 3990 --cmd "cli show_text_blob"
+
+
+Now, tell the GUI to run a test with the new config.
+# Note that the --tconfig option does not have the "AP-Auto-" prepended to it, that is automatically
+# done by the GUI in order to make sure each test has its own namespace.
+../lf_gui_cmd.pl --manager localhost --port 3990 --ttype "AP-Auto" --tname ap-auto-ben --tconfig ben --rpt_dest /tmp/lf_reports/
+
+
+Check /tmp/lf_reports for the report files.
