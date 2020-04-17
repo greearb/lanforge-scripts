@@ -20,26 +20,33 @@ test_rig: TR-398 test bed
 
 Save this text to a file for later use:  AP-Auto-ap-auto-32-64-dual.txt
 
-You can also use the ../lf_testmod.pl script to do this:
-# The head and tail stuff trims leading and trailing lines, respectively.
-../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name AP-Auto-ap-auto-32-64-dual|tail -n +2 | head -n -2 > test_configs/mytest.txt
+# Save this text using the ../lf_testmod.pl script:
+../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name AP-Auto-ap-auto-32-64-dual > test_configs/mytest.txt
 
-To load a test file:
 
-lf_testmod.pl --mgr 192.168.100.156 --action set --test_name AP-Auto-ben --file test_configs/mytest.txt
+# To load a test file into the LANforge server configuration:
+../lf_testmod.pl --mgr 192.168.100.156 --action set --test_name AP-Auto-ben --file test_configs/mytest.txt
 
+
+# Save print and scenario:
+../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name simpleThput --test_type Network-Connectivity > test_configs/myscenario.txt
+
+
+# Load a scenario into the LANforge server configuration
+../lf_testmod.pl --mgr 192.168.100.156 --action set --test_type Network-Connectivity --test_name 64sta --file test_configs/myscenario.txt
 
 
 ###
-Once test cases have been loaded, you can tell the GUI to run tests for you, potentially modifying the
+Once test cases have been loaded into the server, you can tell the GUI to run tests for you, potentially modifying the
 test configuration through the GUI.
 
-First, tell the GUI to read the latest test config from the server.
-
+# Tell the GUI to read the latest test config from the server.
 ../lf_gui_cmd.pl --manager localhost --port 3990 --cmd "cli show_text_blob"
 
+# Tell the Chamber-View GUI widget to load and build the specified scenario.
+../lf_gui_cmd.pl --manager localhost --port 3990 --load 64sta
 
-Now, tell the GUI to run a test with the new config.
+# Now, tell the GUI to run a test with the new config.
 # Note that the --tconfig option does not have the "AP-Auto-" prepended to it, that is automatically
 # done by the GUI in order to make sure each test has its own namespace.
 ../lf_gui_cmd.pl --manager localhost --port 3990 --ttype "AP-Auto" --tname ap-auto-ben --tconfig ben --rpt_dest /tmp/lf_reports/

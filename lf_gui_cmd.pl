@@ -28,6 +28,7 @@ my $port = "";
 my $cmd = "";
 my $ttype = ""; # Test type
 my $tname = "lfgui-test";
+my $scenario = "";
 my $tconfig = "";  # test config
 my $rpt_dest = "";
 my $show_help = 0;
@@ -43,6 +44,8 @@ my $usage = qq($0  [--manager { hostname or address of LANforge GUI machine } ]
                                        # careful, your cli-socket might be 3390!
                  [--ttype {test instance type} ]
                     # likely types: "cv", "WiFi Capacity", "Port Bringup", "Port Reset"
+                 [--scenario {scenario name} ]
+                    #  Apply and build the scenario.
                  [--tname {test instance name} ]
                  [--tconfig {test configuration name, use defaults if not specified} ]
                  [--rpt_dest {Copy report to destination once it is complete} ]
@@ -52,6 +55,7 @@ my $usage = qq($0  [--manager { hostname or address of LANforge GUI machine } ]
 Example:
  lf_gui_cmd.pl --manager localhost --port 3990 --ttype TR-398 --tname mytest --tconfig comxim --rpt_dest /var/www/html/lf_reports
  lf_gui_cmd.pl --manager localhost --port 3990 --cmd \"help\"
+ lf_gui_cmd.pl --manager localhost --port 3990 --scenario 64sta
 );
 
 if (@ARGV < 2) {
@@ -66,6 +70,7 @@ GetOptions (
    'modifier_val=s'        => \@modifiers_val,
    'ttype=s'               => \$ttype,
    'tname=s'               => \$tname,
+   'scenario=s'            => \$scenario,
    'tconfig=s'             => \$tconfig,
    'rpt_dest=s'            => \$rpt_dest,
    'port=s'                => \$port,
@@ -100,6 +105,23 @@ $t->waitfor("/lfgui\# /");
 
 if ($cmd ne "") {
   print doCmd("$cmd");
+}
+
+if ($scenario ne "") {
+   print doCmd("cv apply '$scenario'");
+   print doCmd("cv build");
+   sleep(3);
+
+   while (1) {
+     my $rslt = doCmd("cv is_built");
+     print "Result-built -:$rslt:-\n";
+     if ($rslt =~ /NO/) {
+        sleep(3);
+     }
+     else {
+        last;
+     }
+  }
 }
 
 if ($ttype ne "") {
@@ -164,6 +186,7 @@ if ($ttype ne "") {
         sleep(3);
      }
      else {
+        print("Chamber-View is (re)built, exiting.\n");
         last;
      }
   }
