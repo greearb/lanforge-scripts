@@ -85,7 +85,7 @@ passwd = ""
 ssid = "Test-SSID"
 security = "open"
 radio_strs = []  # Radios to modify:  radio nss channel
-txpkts = 0 # 0 == Run forever
+txpkts = "0" # 0 == Run forever
 sniffer_radios = ""
 wait_sniffer = False
 
