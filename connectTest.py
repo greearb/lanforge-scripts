@@ -2,12 +2,15 @@
 import os
 import time
 import sys
-sys.path.append('py-json')
+if 'py-json' not in sys.path:
+	sys.path.append('py-json')
+
 import json
 import pprint
 from LANforge import LFRequest
 from LANforge import LFUtils
 import create_genlink as genl
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -19,6 +22,7 @@ def execWrap(cmd):
 	if os.system(cmd) != 0:
 		print("\nError with " + cmd + ",bye\n")
 		exit(1)
+
 
 def jsonReq(mgrURL, reqURL, data, debug=False):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
@@ -34,15 +38,16 @@ def jsonReq(mgrURL, reqURL, data, debug=False):
 def getJsonInfo(mgrURL, reqURL, name):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
 	json_response = lf_r.getAsJson()
-	print(name)
-	j_printer = pprint.PrettyPrinter(indent=2)
-	j_printer.pprint(json_response)
+	return json_response
+	#print(name)
+	#j_printer = pprint.PrettyPrinter(indent=2)
+	#j_printer.pprint(json_response)
 	#for record in json_response[key]:
 	#	j_printer.pprint(record)
 
 def removeEndps(mgrURL, endpNames):
 	for name in endpNames:
-		print(f"Removing endp {name}")
+		#print(f"Removing endp {name}")
 		data = {
 		"endp_name":name
 		}
@@ -50,18 +55,18 @@ def removeEndps(mgrURL, endpNames):
 
 def removeCX(mgrURL, cxNames):
 	for name in cxNames:
-		print(f"Removing CX {name}")
+		#print(f"Removing CX {name}")
 		data = {
 		"test_mgr":"all",
 		"cx_name":name
 		}
 		jsonReq(mgrURL,"cli-json/rm_cx", data)
 
-
+print("Creating endpoints and cross connects")
 #create cx for tcp and udp
-cmd = ("perl lf_firemod.pl --action create_cx --cx_name test1 --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp")
+cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp > /tmp/connectTest.log")
 execWrap(cmd)
-cmd = ("perl lf_firemod.pl --action create_cx --cx_name test2 --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type udp")
+cmd = ("./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type udp >> /tmp/connectTest.log")
 execWrap(cmd)
 
 #create l4 endpoint
@@ -135,64 +140,144 @@ data = {
 
 jsonReq(mgrURL,url,data)
 
+#get data before running traffic
+testTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes", "testTCP-A")
+testTCPATX = testTCPA['endpoint']['tx bytes']
+testTCPARX = testTCPA['endpoint']['rx bytes']
+
+testTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes", "testTCP-B")
+testTCPBTX = testTCPB['endpoint']['tx bytes']
+testTCPBRX = testTCPB['endpoint']['rx bytes']
+
+testUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes", "testUDP-A")
+testUDPATX = testUDPA['endpoint']['tx bytes']
+testUDPARX = testUDPA['endpoint']['rx bytes']
+
+testUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes", "testUDP-B")
+testUDPBTX = testUDPB['endpoint']['tx bytes']
+testUDPBRX = testUDPB['endpoint']['rx bytes']
+
+l4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
+l4TestBR = l4Test['endpoint']['bytes-rd']
+
+genTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
+genTest1LR = genTest1['endpoint']['last results']
+
 
 #start cx traffic
-cxNames = ["test1","test2", "CX_l4Test", "CX_fioTest", "CX_genTest1"]
+print("\nStarting CX Traffic")
+cxNames = ["testTCP","testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1"]
 for name in range(len(cxNames)):
-	cmd = (f"perl lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} RUNNING\"")
+	cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} RUNNING\" >> /tmp/connectTest.log")
 	execWrap(cmd)
 
+#print("Sleeping for 5 seconds")
 time.sleep(5)
 
 
 #show tx and rx bytes for ports
-time.sleep(5)
+"""
 print("eth1")
-cmd = ("perl ./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\"")
+cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\"")
 execWrap(cmd)
 print("sta00000")
-cmd = ("perl ./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 --show_port \"Txb,Rxb\"")
+cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 --show_port \"Txb,Rxb\"")
 execWrap(cmd)
 
 
 #show tx and rx for endpoints PERL
-time.sleep(5)
-print("test1-A")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name test1-A --endp_vals tx_bps,rx_bps")
+print("testTCP-A")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-A --endp_vals \"Tx Bytes,Rx Bytes\"")
 execWrap(cmd)
-print("test1-B")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name test1-B --endp_vals tx_bps,rx_bps")
+print("testTCP-B")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-B --endp_vals  \"Tx Bytes,Rx Bytes\"")
 execWrap(cmd)
-print("test2-A")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name test2-A --endp_vals tx_bps,rx_bps")
+print("testUDP-A")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-A --endp_vals  \"Tx Bytes,Rx Bytes\"")
 execWrap(cmd)
-print("test2-B")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name test2-B --endp_vals tx_bps,rx_bps")
+print("testUDP-B")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-B --endp_vals  \"Tx Bytes,Rx Bytes\"")
 execWrap(cmd)
 print("l4Test")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total")
 execWrap(cmd)
 print("fioTest")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest --endp_vals \"Bytes Written,Bytes Read\"")
 execWrap(cmd)
 print("genTest1")
 cmd = ("./lf_firemod.pl --action show_endp --endp_name genTest1")
 execWrap(cmd)
+"""
 
-#show tx and rx for endpoints JSON
-getJsonInfo(mgrURL, "endp/test1-A?fields=tx+bytes,rx+bytes", "test1-A")
-getJsonInfo(mgrURL, "endp/test1-B?fields=tx+bytes,rx+bytes", "test1-B")
-getJsonInfo(mgrURL, "endp/test2-A?fields=tx+bytes,rx+bytes", "test2-A")
-getJsonInfo(mgrURL, "endp/test2-B?fields=tx+bytes,rx+bytes", "test2-B")
-getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
-getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
 
 #stop cx traffic
+print("Stopping CX Traffic")
 for name in range(len(cxNames)):
-	cmd = (f"perl lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"")
+	cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"  >> /tmp/connectTest.log")
 	execWrap(cmd)
+#print("Sleeping for 15 seconds")
+time.sleep(15)
+
+#get data for endpoints JSON
+print("Collecting Data")
+ptestTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes", "testTCP-A")
+ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
+ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
+
+ptestTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes", "testTCP-B")
+ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
+ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
+
+ptestUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes", "testUDP-A")
+ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
+ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
+
+ptestUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes", "testUDP-B")
+ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
+ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
+
+pl4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
+pl4TestBR = pl4Test['endpoint']['bytes-rd']
+
+pgenTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
+pgenTest1LR = pgenTest1['endpoint']['last results']
+
+#print("Sleeping for 5 seconds")
+time.sleep(5)
+
+
+
+#compare pre-test values to post-test values
+
+def compareVals(name, preVal, postVal):
+	print(f"Comparing {name}")
+	if postVal > preVal:
+		print("		Test Passed")
+	else:
+		print(f"	Test Failed: {name} did not increase after 5 seconds")
+
+print("\n")
+compareVals("testTCP-A TX", testTCPATX, ptestTCPATX)
+compareVals("testTCP-A RX", testTCPARX, ptestTCPARX)
+
+compareVals("testTCP-B TX", testTCPBTX, ptestTCPBTX)
+compareVals("testTCP-B RX", testTCPBRX, ptestTCPBRX)
+
+compareVals("testUDP-A TX", testUDPATX, ptestUDPATX)
+compareVals("testUDP-A RX", testUDPARX, ptestUDPARX)
+
+compareVals("testUDP-B TX", testUDPBTX, ptestUDPBTX)
+compareVals("testUDP-B RX", testUDPBRX, ptestUDPBRX)
+
+compareVals("l4Test Bytes Read", l4TestBR, pl4TestBR)
+
+compareVals("genTest1 Last Results", genTest1LR, pgenTest1LR)
+print("\n")
+
+
 
 #remove all endpoints and cxs
-endpNames = ["test1-A", "test1-B", "test2-A", "test2-B", "l4Test", "fioTest", "genTest1", "genTest2"]
+print("Cleaning up...")
+endpNames = ["testTCP-A", "testTCP-B", "testUDP-A", "testUDP-B", "l4Test", "fioTest", "genTest1", "genTest2"]
 removeCX(mgrURL, cxNames)
 removeEndps(mgrURL, endpNames)
