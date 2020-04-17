@@ -13,6 +13,7 @@
 
 AP_AUTO_CFG_FILE=${AP_AUTO_CFG_FILE:-test_configs/AP-Auto-ap-auto-32-64-dual.txt}
 WCT_CFG_FILE=${WCT_CFG_FILE:-test_configs/WCT-64sta.txt}
+DPT_CFG_FILE=${DPT_CFG_FILE:-test_configs/dpt-pkt-sz.txt}
 SCENARIO_CFG_FILE=${SCENARIO_CFG_FILE:-test_configs/64_sta_scenario.txt}
 
 # LANforge target machine
@@ -29,6 +30,7 @@ TEST_RIG_ID=${TEST_RIG_ID:-Unspecified}
 
 # Tests to run
 DEFAULT_ENABLE=${DEFAULT_ENABLE:-1}
+DO_DPT_PKT_SZ=${DO_DPT_PKT_SZ:-$DEFAULT_ENABLE}
 DO_WCT_DL=${DO_WCT_DL:-$DEFAULT_ENABLE}
 DO_WCT_UL=${DO_WCT_UL:-$DEFAULT_ENABLE}
 DO_WCT_BI=${DO_WCT_BI:-$DEFAULT_ENABLE}
@@ -45,6 +47,7 @@ RSLTS_DIR=${RSLTS_DIR:-basic_regression_results_$DATESTR}
 # Probably no config below here
 AP_AUTO_CFG=ben
 WCT_CFG=ben
+DPT_CFG=ben
 SCENARIO=64sta
 RPT_TMPDIR=${MY_TMPDIR}/lf_reports
 
@@ -60,6 +63,9 @@ set -x
 # Load Wifi Capacity config file
 ../lf_testmod.pl --mgr $LFMANAGER --action set --test_name Wifi-Capacity-$WCT_CFG --file $WCT_CFG_FILE
 
+# Load Dataplane config file
+../lf_testmod.pl --mgr $LFMANAGER --action set --test_name dataplane-test-latest-$DPT_CFG --file $DPT_CFG_FILE
+
 # Make sure GUI is synced up with the server
 ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli show_text_blob"
 
@@ -73,6 +79,18 @@ sleep 10
 if [ -d $RPT_TMPDIR ]
 then
     rm -fr $RPT_TMPDIR/*
+fi
+
+# Do dataplane pkt size test
+echo "Checking if we should run Dataplane packet size test."
+if [ "_$DO_DPT_PKT_SZ" == "_1" ]
+then
+    ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "Dataplane" --tname dpt-ben  --tconfig $DPT_CFG \
+        --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
+        --modifier_key "Show Low-Level Graphs" --modifier_val true \
+        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+    mv $RPT_TMPDIR/* $RSLTS_DIR/dataplane_pkt_sz
+    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/dataplane_pkt_sz/test_automation.txt
 fi
 
 # Do capacity test
