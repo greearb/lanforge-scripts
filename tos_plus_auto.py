@@ -28,11 +28,14 @@ import pexpect
 import subprocess
 
 ptype="QCA"
+tos="BE"
+
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
 def usage():
    print("$0 used connect to automated a test case using cisco controller and LANforge tos-plus script:")
    print("-p|--ptype:  AP Hardware type")
+   print("--tos:  TOS type we are testing, used to find output in csv data: BE BK VI VO")
    print("-h|--help")
    print("-l|--log file: log messages here")
 
@@ -50,11 +53,12 @@ class FileAdapter(object):
 
 def main():
    global ptype
-
+   global tos
 
    parser = argparse.ArgumentParser(description="TOS Plus automation script")
    parser.add_argument("-p", "--ptype",    type=str, help="AP Hardware type")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
+   parser.add_argument("-t", "--tos",     type=str, help="TOS type we are testing, used to find output in csv data: BE BK VI VO")
    
    args = None
    try:
@@ -143,6 +147,52 @@ def main():
                   "--value", "interfaces dot11Radio 1 traffic distribution periodic data exported"], capture_output=True)
    print(output02)
 
+   ap_at_us = -1
+   ap_lat_us = -1
+   in_pkg2 = False
+   in_pkg3 = False
+   pkg_prefix = ""
+   if tos == "BK":
+       pkg_prefix = "Background"
+   else if tos == "BE":
+       pkg_prefix = "Best"
+   else if tos == "VI":
+       pkg_prefix = "Video"
+   else if tos == "VO":
+       pkg_prefix = "Voice"
+
+   for line in output02.split("\n"):
+       if line.startswith("Pkg 2"):
+           in_pkg2 = True
+           in_pkg3 = False
+       else if line.startswith("Pkg 3"):
+           in_pkg3 = True
+           in_pkg2 = False
+       else:
+           toks = line.split()
+           if toks[0] == "1": # Something like: 1 Background  TX      11ax Good-RSSI 457013940       3683370
+               us_idx = 6
+               lat_idx = 4
+               offset = 0
+               if toks[1] == "Best":
+                   # Tokenization is broken due to space, work-around
+                   offset = 1
+
+               if toks[1] == pkg_prefix:
+                   if in_pkg2:
+                       if toks[2 + offset] == "TX" and toks[3 + offset] == "11ax":
+                           ap_at_us = int(toks[us_idx + offset])
+                   else if in_pkg3:
+                       ap_lat_us = int(toks[lat_idx + offset])
+       
+   if ap_at_us == -1:
+       print("ERROR:  Could not find AP airtime, tos: %s  pkg_prefix: %s"%(tos, pkg_prefix))
+       exit(1)
+
+   if ap_lat_us == -1:
+       print("ERROR:  Could not find AP avg latency, tos: %s  pkg_prefix: %s"%(tos, pkg_prefix))
+       exit(2)
+
    file1 = open('TOS_PLUS.sh', 'r') 
    lines = file1.readlines()
 
@@ -162,17 +212,55 @@ def main():
 
    # Run third-party tool to process the capture files.
    os.system('python3 sb -p %s -subdir %s'%(ptype, capture_dir))
-
   
    # Print out one-way latency reported by LANforge
    file2 = open(csv_file, 'r')
    lines = file2.readlines()
 
+   avglat = 0  # Assumes single connection
    # Strips the newline character 
    for line in lines:
        cols = line.split("\t")
        # Print out endp-name and avg latency
        print("%s\t%s"%(cols[1], cols[15]))
+       if cols[1].endswith("-A"):
+           avglat = cols[15]
+
+   # Compare pcap csv data
+   file3 = open("airtime.csv", 'r')
+   lines = file3.readlines()
+
+   at_row = []
+   # Strips the newline character 
+   for line in lines:
+       cols = line.split(",")
+       if cols[0].endswith(tos):
+           at_row = line.split(",")
+           break
+
+   #at_row holds air-time fairness csv row created by pcap analyzer
+   #avglat is AVG one-way download latency reported by LANforge
+   #ap_at_lat is airtime in usec reported by AP for the specified type-of-service
+   #ap_lat_us is latency in usec reported by AP for the specified type-of-service
+
+   # Check latency
+   avglat *= 1000  # Convert LF latency to usec
+   latdiff = abs(avglat - ap_lat_us)
+   if latdiff <= 2000:
+       # Assume 2ms is close enough
+       print("AVG-LAT:  PASSED  ## Within 2ms, AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
+   else:
+       upper = ap_lat_us * 1.2
+       lower = ap_lat_us * 0.8
+
+       if avglat >= lower and avglat <= upper:
+            print("AVG-LAT:  PASSED  ## Within +=20%, AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
+       else:
+           print("AVG-LAT:  FAILED  ## AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
+
+   # Check Airtime
+   # TODO:  Not sure what at_row column(s) to compare
+
 
    subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "delete_wlan"], capture_output=True)
