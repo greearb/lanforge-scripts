@@ -28,7 +28,7 @@ import pexpect
 import subprocess
 
 ptype="QCA"
-tos="BE"
+tos="BE" #Allowed values are BE/BK/VI/VO
 
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
@@ -144,28 +144,28 @@ def main():
 
    #Read Stormbreaker exported stats after the test
    output02 = subprocess.run(["./cisco_ap.py", "-d", dest, "-o", port_ap, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "--action", "show", 
-                  "--value", "interfaces dot11Radio 1 traffic distribution periodic data exported"], capture_output=True)
-   print(output02)
+                              "--value", "interfaces dot11Radio 1 traffic distribution periodic data exported"], capture_output=True)
+   rslt = output02.stdout.decode('utf-8', 'ignore');
 
    ap_at_us = -1
    ap_lat_us = -1
    in_pkg2 = False
    in_pkg3 = False
    pkg_prefix = ""
-   if tos == "BK":
+   if (tos == "BK"):
        pkg_prefix = "Background"
-   else if tos == "BE":
+   elif (tos == "BE"):
        pkg_prefix = "Best"
-   else if tos == "VI":
+   elif (tos == "VI"):
        pkg_prefix = "Video"
-   else if tos == "VO":
+   elif (tos == "VO"):
        pkg_prefix = "Voice"
 
-   for line in output02.split("\n"):
+   for line in rslt.splitlines():
        if line.startswith("Pkg 2"):
            in_pkg2 = True
            in_pkg3 = False
-       else if line.startswith("Pkg 3"):
+       elif line.startswith("Pkg 3"):
            in_pkg3 = True
            in_pkg2 = False
        else:
@@ -182,7 +182,7 @@ def main():
                    if in_pkg2:
                        if toks[2 + offset] == "TX" and toks[3 + offset] == "11ax":
                            ap_at_us = int(toks[us_idx + offset])
-                   else if in_pkg3:
+                   elif in_pkg3:
                        ap_lat_us = int(toks[lat_idx + offset])
        
    if ap_at_us == -1:
@@ -248,13 +248,13 @@ def main():
    latdiff = abs(avglat - ap_lat_us)
    if latdiff <= 2000:
        # Assume 2ms is close enough
-       print("AVG-LAT:  PASSED  ## Within 2ms, AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
+       print("AVG-LAT:  PASSED  ## Within 2ms, AP Reports: %ius  Candela reports: %ius"%(ap_at_lat, avglat))
    else:
        upper = ap_lat_us * 1.2
        lower = ap_lat_us * 0.8
 
        if avglat >= lower and avglat <= upper:
-            print("AVG-LAT:  PASSED  ## Within +=20%, AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
+            print("AVG-LAT:  PASSED  ## Within +-20%, AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
        else:
            print("AVG-LAT:  FAILED  ## AP Reports: %ius  LANforge reports: %ius"%(ap_at_lat, avglat))
 
@@ -262,6 +262,7 @@ def main():
    # TODO:  Not sure what at_row column(s) to compare
 
 
+   #Clear config on WLAN
    subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "delete_wlan"], capture_output=True)
      #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w wlan_open -i 6 --action delete_wlan"%(dest, port, ap, user, passwd))
