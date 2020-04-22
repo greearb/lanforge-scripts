@@ -20,16 +20,20 @@ test_rig: TR-398 test bed
 
 Save this text to a file for later use:  AP-Auto-ap-auto-32-64-dual.txt
 
-# Save this text using the ../lf_testmod.pl script:
+# Save AP-Auto configuration text using the ../lf_testmod.pl script:
 ../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name AP-Auto-ap-auto-32-64-dual > test_configs/mytest.txt
+
+# Save WiFi-Capacity configuration (saved as 'fb-192' using the ../lf_testmod.pl script:
+../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name Wifi-Capacity-fb-192 > test_configs/mytest.txt
+
+# Save Chamber View scenario:
+../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name simpleThput --test_type Network-Connectivity > test_configs/myscenario.txt
+
 
 
 # To load a test file into the LANforge server configuration:
 ../lf_testmod.pl --mgr 192.168.100.156 --action set --test_name AP-Auto-ben --file test_configs/mytest.txt
 
-
-# Save print and scenario:
-../lf_testmod.pl --mgr 192.168.100.156 --action show --test_name simpleThput --test_type Network-Connectivity > test_configs/myscenario.txt
 
 
 # Load a scenario into the LANforge server configuration

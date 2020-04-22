@@ -246,3 +246,4 @@ then
 fi
 
 echo "Done with regression test."
+echo "Results-Dir: $RSLTS_DIR"
