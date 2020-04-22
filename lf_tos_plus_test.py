@@ -100,6 +100,7 @@ def usage():
    print("--duration: Duration to run traffic, in minutes")
    print("--ssid: AP's SSID")
    print("--passwd: Optional: password (do not add this option for OPEN)")
+   print("--security: Default is 'open', or if passwd is configured, default is wpa2.  wpa3 is also valid option")
    print("--txpkts: Optional: amount of packets to transmit (and then stop the data connections)")
    print("--sniffer_radios: Optional: list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\")")
    print("--wait_sniffer: Optional: 1 means wait on sniffer to finish before existing script")
@@ -128,6 +129,7 @@ def main():
    parser.add_argument("--duration",     type=float, help="Duration to run traffic, in minutes.  If txpkts is specified, that may stop the test earlier.")
    parser.add_argument("--ssid",         type=str, help="AP's SSID")
    parser.add_argument("--passwd",       type=str, help="AP's password if using PSK authentication, skip this argement for OPEN")
+   parser.add_argument("--security",     type=str, help="Default is 'open', or if passwd is configured, default is wpa2.  wpa3 is also valid option")
    parser.add_argument("--txpkts",       type=str, help="Optional:  Packets (PDUs) to send before stopping data connections  Default (0) means infinite")
    parser.add_argument("--sniffer_radios", type=str, help="Optional:  list of radios to sniff wifi traffic \"1.wiphy2 1.wiphy4\"")
    parser.add_argument("--wait_sniffer", type=str, help="Optional: 1 means wait on sniffer to finish before existing script.\"")
@@ -147,6 +149,8 @@ def main():
       if (args.passwd != None):
           passwd = args.passwd
           security = "wpa2"
+      if (args.security != None):
+          security = args.security
       if (args.outfile != None):
           outfile = args.outfile
       if (args.txpkts != None):
