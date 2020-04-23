@@ -11,6 +11,14 @@
 #
 #
 
+# Disable stdout buffering in python so that we get serial console log
+# output promptly.
+PYTHONUNBUFFERED=1
+export PYTHONUNBUFFERED
+
+AP_SERIAL=${AP_SERIAL:-NONE}
+LF_SERIAL=${LF_SERIAL:-NONE}
+LFPASSWD=${LFPASSWD:-lanforge}  # Root password on LANforge machine
 AP_AUTO_CFG_FILE=${AP_AUTO_CFG_FILE:-test_configs/AP-Auto-ap-auto-32-64-dual.txt}
 WCT_CFG_FILE=${WCT_CFG_FILE:-test_configs/WCT-64sta.txt}
 DPT_CFG_FILE=${DPT_CFG_FILE:-test_configs/dpt-pkt-sz.txt}
@@ -66,7 +74,7 @@ RSLTS_DIR=${RSLTS_DIR:-basic_regression_results_$DATESTR}
 AP_AUTO_CFG=ben
 WCT_CFG=ben
 DPT_CFG=ben
-SCENARIO=64sta
+SCENARIO=tip-auto
 RPT_TMPDIR=${MY_TMPDIR}/lf_reports
 
 # Query DUT from the scenario
@@ -74,9 +82,61 @@ DUT=`grep DUT: $SCENARIO_CFG_FILE |head -1|grep -o "DUT: .*"|cut -f2 -d ' '`
 
 echo "Found DUT: $DUT from scenario $SCENARIO_CFG_FILE"
 
-mkdir -p $RSLTS_DIR
+function pre_test {
+    # Clean logs, this bounces radios and such too as side effect
+    ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli admin clean_logs"
+
+    if [ "_${LF_SERIAL}" != "_NONE" ]
+    then
+        # Kill any existing processes on this serial port
+        pkill -f ".*openwrt_ctl.*$LF_SERIAL.*"
+        ../openwrt_ctl.py --action lurk --tty $LF_SERIAL --scheme serial --user root --passwd $LFPASSWD --prompt "\[root@" >  $MY_TMPDIR/lanforge_console_log.txt 2>&1 &
+    fi
+
+    if [ "_${AP_SERIAL}" != "_NONE" ]
+    then
+        # Kill any existing processes on this serial port
+        pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
+        ../openwrt_ctl.py --action logread --tty $AP_SERIAL --scheme serial >  $MY_TMPDIR/dut_console_log.txt 2>&1 &
+    fi
+}
+
+function post_test {
+    DEST=$1
+    mkdir -p $DEST/logs
+
+    if [ "_${LF_SERIAL}" != "_NONE" ]
+        then
+        # Kill any existing processes on this serial port
+        pkill -f ".*openwrt_ctl.*$LF_SERIAL.*"
+        mv $MY_TMPDIR/lanforge_console_log.txt $DEST/logs/
+    fi
+
+    if [ "_${AP_SERIAL}" != "_NONE" ]
+        then
+        # Kill any existing processes on this serial port
+        pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
+        mv $MY_TMPDIR/dut_console_log.txt $DEST/logs/
+    fi
+
+    mv $MY_TMPDIR/basic_regression_log.txt $DEST/logs/test_automation_log.txt
+    if [ -f /home/lanforge/lanforge_log_0.txt ]
+    then
+        # Must be running on LF itself
+        cp /home/lanforge/lanforge_log_*.txt* $DEST/logs/
+        cp /home/lanforge/wifi/*log* $DEST/logs/
+    else
+        # Try via scp.  Root perms needed to read wifi logs, thus root@
+        scp root@$LFMANAGER:/home/lanforge/lanforge_log_*.txt* $DEST/logs/
+        scp root@$LFMANAGER:/home/lanforge/wifi/*log* $DEST/logs/
+    fi
+}
+
 
 set -x
+
+mkdir -p $RSLTS_DIR
+
 # Load scenario file
 ../lf_testmod.pl --mgr $LFMANAGER --action set --test_type Network-Connectivity --test_name $SCENARIO --file $SCENARIO_CFG_FILE
 
@@ -101,7 +161,7 @@ fi
 ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli show_dut"
 
 # Pause to let GUI finish getting data from the server
-sleep 10
+sleep 20
 
 # Tell GUI to load and build the scenario
 ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --scenario $SCENARIO
@@ -117,19 +177,21 @@ fi
 echo "Checking if we should run Dataplane packet size test."
 if [ "_$DO_DPT_PKT_SZ" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "Dataplane" --tname dpt-ben  --tconfig $DPT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
         --modifier_key "Show Low-Level Graphs" --modifier_val true \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/dataplane_pkt_sz
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/dataplane_pkt_sz/test_automation.txt
+    post_test $RSLTS_DIR/dataplane_pkt_sz
 fi
 
 # Do capacity test
 echo "Checking if we should run WCT Download test."
 if [ "_$DO_WCT_DL" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -137,12 +199,13 @@ then
         --modifier_key "RATE_UL" --modifier_val "0" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_dl
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/wifi_capacity_dl/test_automation.txt
+    post_test $RSLTS_DIR/wifi_capacity_dl
 fi
 
 echo "Checking if we should run WCT Upload test."
 if [ "_$DO_WCT_UL" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -150,12 +213,13 @@ then
         --modifier_key "RATE_DL" --modifier_val "0" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_ul
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/wifi_capacity_ul/test_automation.txt
+    post_test $RSLTS_DIR/wifi_capacity_ul
 fi
 
 echo "Checking if we should run WCT Bi-Direction test."
 if [ "_$DO_WCT_BI" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -164,7 +228,7 @@ then
         --modifier_key "Protocol:" --modifier_val "TCP-IPv4" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_bi
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/wifi_capacity_bi/test_automation.txt
+    post_test $RSLTS_DIR/wifi_capacity_bi
 fi
 
 
@@ -172,12 +236,13 @@ fi
 echo "Checking if we should run Short-AP Basic CX test."
 if [ "_$DO_SHORT_AP_BASIC_CX" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_basic_cx
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/ap_auto_basic_cx/test_automation.txt
+    post_test $RSLTS_DIR/ap_auto_basic_cx
 fi
 
 # Run Throughput, Dual-Band, Capacity test in a row, the Capacity will use results from earlier
@@ -185,6 +250,7 @@ fi
 echo "Checking if we should run Short-AP Throughput test."
 if [ "_$DO_SHORT_AP_TPUT" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -194,13 +260,14 @@ then
         --modifier_key "Capacity" --modifier_val true \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_capacity
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/ap_auto_capacity/test_automation.txt
+    post_test $RSLTS_DIR/ap_auto_capacity
 fi
 
 # Run Stability test (single port resets, voip, tcp, udp)
 echo "Checking if we should run Short-AP Stability Reset test."
 if [ "_$DO_SHORT_AP_STABILITY_RESET" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -209,13 +276,14 @@ then
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
         --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_ports
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/ap_auto_stability_reset_ports/test_automation.txt
+    post_test $RSLTS_DIR/ap_auto_stability_reset_ports
 fi
 
 # Run Stability test (radio resets, voip, tcp, udp)
 echo "Checking if we should run Short-AP Stability Radio Reset test."
 if [ "_$DO_SHORT_AP_STABILITY_RADIO_RESET" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -225,13 +293,14 @@ then
         --modifier_key "Reset Radios" --modifier_val true \
         --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_radios
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/ap_auto_stability_reset_radios/test_automation.txt
+    post_test $RSLTS_DIR/ap_auto_stability_reset_radios
 fi
 
 # Run Stability test (no resets, no voip, tcp, udp)
 echo "Checking if we should run Short-AP Stability No-Reset test."
 if [ "_$DO_SHORT_AP_STABILITY_NO_RESET" == "_1" ]
 then
+    pre_test
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
@@ -242,7 +311,18 @@ then
         --modifier_key "Concurrent Ports To Reset:" --modifier_val 0 \
         --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_no_reset
-    mv $MY_TMPDIR/basic_regression_log.txt $RSLTS_DIR/ap_auto_stability_no_reset/test_automation.txt
+    post_test $RSLTS_DIR/ap_auto_stability_no_reset
+fi
+
+if [ "_${LFLOG_PID}" != "_" ]
+then
+    kill $LFLOG_PID
+    mv $MY_TMPDIR/lanforge_console_log.txt $RSLTS_DIR/
+fi
+if [ "_${DUTLOG_PID}" != "_" ]
+then
+    kill $DUTLOG_PID
+    mv $MY_TMPDIR/dut_console_log.txt $RSLTS_DIR/
 fi
 
 echo "Done with regression test."
