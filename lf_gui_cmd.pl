@@ -150,6 +150,7 @@ if ($ttype ne "") {
       }
       else {
         # Copy some place it can be seen easily?
+        print("LANforge GUI test complete, rpt-dest: $rpt_dest  location: $loc\n");
         if ($rpt_dest ne "") {
           if (-d $loc) {
             # Must be on the local system
@@ -159,7 +160,7 @@ if ($ttype ne "") {
           }
           else {
             # Must be on remote system, try scp to get it.
-            my $cp = "scp -r lanforge@$lfmgr_host:$loc $rpt_dest";
+            my $cp = "scp -r lanforge\@$lfmgr_host:$loc $rpt_dest";
             print "Secure Copy test results: $cp\n";
             system($cp);
           }
