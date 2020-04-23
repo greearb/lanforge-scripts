@@ -64,12 +64,14 @@ def removeCX(mgrURL, cxNames):
 		}
 		jsonReq(mgrURL,"cli-json/rm_cx", data)
 
+print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
+
 print("Creating endpoints and cross connects")
 
 #create cx for tcp and udp
-cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp > /tmp/connectTest.log")
+cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp > /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-cmd = ("./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type udp >> /tmp/connectTest.log")
+cmd = ("./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type udp >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
 time.sleep(.5)
 
@@ -273,38 +275,44 @@ for name in range(len(cxNames)):
 time.sleep(5)
 
 #show tx and rx bytes for ports
-"""
-print("eth1")
-cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\"")
+
+os.system("echo  eth1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("sta00000")
-cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 --show_port \"Txb,Rxb\"")
+os.system("echo  sta00000 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
 
 
 #show tx and rx for endpoints PERL
-print("testTCP-A")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-A --endp_vals \"Tx Bytes,Rx Bytes\"")
+os.system("echo  TestTCP-A >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-A --endp_vals \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("testTCP-B")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-B --endp_vals  \"Tx Bytes,Rx Bytes\"")
+os.system("echo  TestTCP-B >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testTCP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("testUDP-A")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-A --endp_vals  \"Tx Bytes,Rx Bytes\"")
+os.system("echo  TestUDP-A >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-A --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("testUDP-B")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-B --endp_vals  \"Tx Bytes,Rx Bytes\"")
+os.system("echo  TestUDP-B >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name testUDP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("l4Test")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total")
+os.system("echo  l4Test >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("fioTest")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest --endp_vals \"Bytes Written,Bytes Read\"")
+os.system("echo  fioTest >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name fioTest --endp_vals \"Bytes Written,Bytes Read\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-print("genTest1")
-cmd = ("./lf_firemod.pl --action show_endp --endp_name genTest1")
+os.system("echo  genTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name genTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
-"""
+os.system("echo  wlTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name wlTest1 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+execWrap(cmd)
+os.system("echo  wlTest2 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+cmd = ("./lf_firemod.pl --action show_endp --endp_name wlTest2 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+execWrap(cmd)
+
 
 
 #stop cx traffic
