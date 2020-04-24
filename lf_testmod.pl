@@ -183,8 +183,18 @@ elsif ($::action eq "set") {
       }
 
       $cmd = "add_text_blob '$test_type' '$test_name' $ln";
-      $::utils->doCmd($cmd, 1);  # send and do not wait for result
+      print("$cmd\n");
+      if ($i % 25 == 0) {
+         $::utils->doCmd($cmd, 1);  # send and do not wait for result
+      }
+      else {
+         $::utils->doCmd($cmd);  # send and wait for result
+      }
    }
+
+   # Wait until we complete processing of all cmds.
+   $cmd = "gossip __gossip_test__";
+   $::utils->doCmd($cmd, 0, "/__gossip_test__/");
 }
 else {
   die("Unknown action: $::action\n$::usage\n");

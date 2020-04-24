@@ -87,6 +87,11 @@ sub doCmd {
    my $self = shift;
    my $cmd  = shift;
    my $nowait = shift;
+   my $waitfor = shift;
+
+   if (!defined($waitfor)) {
+      $waitfor = '/ >>RSLT:(.*)/';
+   }
 
    #print "CMD[[$cmd]]\n";
    my $t = ${$self->{telnet}};
@@ -99,7 +104,7 @@ sub doCmd {
       return "";
    }
 
-   my @rslt = $t->waitfor('/ >>RSLT:(.*)/');
+   my @rslt = $t->waitfor($waitfor);
    if ( !$self->cli_rcv_silent() ) {
       print "**************\n@rslt\n................\n\n";
    }
