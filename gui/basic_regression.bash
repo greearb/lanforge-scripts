@@ -166,12 +166,12 @@ sleep 20
 # Tell GUI to load and build the scenario
 ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --scenario $SCENARIO
 
-# Clean out temp report directory
+# Clean out temp report directory on local system and remote
 if [ -d $RPT_TMPDIR ]
 then
     rm -fr $RPT_TMPDIR/*
 fi
-
+ssh lanforge\@GMANAGER "test -d $RPT_TMPDIR && rm -fr $RPT_TMPDIR";
 
 # Do dataplane pkt size test
 echo "Checking if we should run Dataplane packet size test."
@@ -324,6 +324,8 @@ then
     kill $DUTLOG_PID
     mv $MY_TMPDIR/dut_console_log.txt $RSLTS_DIR/
 fi
+
+./lf_gui_report_summary.pl --title "TIP Test Bed Results" --dir $RSLTS_DIR < index_template.html  > $RSLTS_DIR/index.html
 
 echo "Done with regression test."
 echo "Results-Dir: $RSLTS_DIR"

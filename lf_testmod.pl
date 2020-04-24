@@ -184,7 +184,7 @@ elsif ($::action eq "set") {
 
       $cmd = "add_text_blob '$test_type' '$test_name' $ln";
       print("$cmd\n");
-      if ($i % 25 == 0) {
+      if (($i % 25) != 0) {
          $::utils->doCmd($cmd, 1);  # send and do not wait for result
       }
       else {

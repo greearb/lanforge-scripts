@@ -152,7 +152,7 @@ if ($ttype ne "") {
         # Copy some place it can be seen easily?
         print("LANforge GUI test complete, rpt-dest: $rpt_dest  location: $loc\n");
         if ($rpt_dest ne "") {
-          if (-d $loc) {
+          if ($lfmgr_host eq "localhost" || $lfmgr_host eq "127.0.0.1") {
             # Must be on the local system
             my $cp = "cp -ar $loc $rpt_dest";
             print "Copy test results: $cp\n";
