@@ -181,6 +181,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "Dataplane" --tname dpt-ben  --tconfig $DPT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "Dataplane Pkt-Size" \
         --modifier_key "Show Low-Level Graphs" --modifier_val true \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/dataplane_pkt_sz
@@ -195,6 +196,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "Capacity-Download" \
         --modifier_key "RATE_DL" --modifier_val "1Gbps" \
         --modifier_key "RATE_UL" --modifier_val "0" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
@@ -209,6 +211,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "Capacity-Upload" \
         --modifier_key "RATE_UL" --modifier_val "1Gbps" \
         --modifier_key "RATE_DL" --modifier_val "0" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
@@ -223,6 +226,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "WiFi Capacity" --tname wct-ben  --tconfig $WCT_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "Capacity-TCP-UL+DL" \
         --modifier_key "RATE_UL" --modifier_val "1Gbps" \
         --modifier_key "RATE_DL" --modifier_val "1Gbps" \
         --modifier_key "Protocol:" --modifier_val "TCP-IPv4" \
@@ -271,6 +275,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "AP-Auto Port-Reset" \
         --modifier_key "Basic Client Connectivity" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
@@ -287,6 +292,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "AP-Auto Radio-Reset" \
         --modifier_key "Basic Client Connectivity" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
@@ -304,6 +310,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
+        --modifier_key "KPI_TEST_ID" --modifier_val "AP-Auto No-Reset" \
         --modifier_key "Basic Client Connectivity" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \

@@ -99,7 +99,11 @@ foreach my $line (@files) {
                $dut_tr = "<tr><td>$cols[1]</td><td>$cols[2]</td><td>$cols[3]</td><td>$cols[4]</td><td>$cols[5]</td></tr>\n";
             }
 
-            $kpi_tr .= "<tr><td>$cols[7]</td><td>$cols[8]</td><td>$cols[9]</td><td>$cols[10]</td><td>$cols[11]</td></tr>\n";
+            my $nval = $cols[10];
+            if  ( $nval =~ /^[+-]?(?=\.?\d)\d*\.?\d*(?:e[+-]?\d+)?\z/i ) {
+               $nval = sprintf("%.2f", $nval);
+            }
+            $kpi_tr .= "<tr><td>$cols[7]</td><td>$cols[8]</td><td>$cols[9]</td><td>$nval</td><td>$cols[11]</td></tr>\n";
          }
       }
    }
