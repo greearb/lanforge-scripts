@@ -45,7 +45,7 @@ use Scalar::Util; #::looks_like_number;
 use Getopt::Long;
 no warnings 'portable';  # Support for 64-bit ints required
 use Socket;
-
+#use Data::Dumper;
 our $binsleep = 0;
 if ( -x "/bin/sleep" || -x "/usr/bin/sleep") {
    $::binsleep = 1;
@@ -810,7 +810,7 @@ sub delete_port {
 sub get_sta_state {
    my($rs_status) = @_;
    die("is_assoc_state: wants ref to status string")     unless($rs_status);
-   my @lines      = split(/\n/, $$rs_status);
+   my @lines      = split(/\r?\n/, $$rs_status);
    my $careful    = 0;
    my $name       = "unknown";
    my $ip         = "0.0.0.0";
@@ -823,38 +823,44 @@ sub get_sta_state {
    my $mask;
    my $channel;
    my $mode;
+   my $probed_seen = 0;
    for my $line (@lines) {
-      $first      = "_";
-      $line       =~ m/^\s+(\S+?:)\s+/;
-      #print "}}}} $line\n";
-      if ($1 && $1 eq "MAC:" ) {
+      $first = "_";
+      my($key) = $line =~ m/^\s*([^:]+:)\s+/;
+      #print "{{{$key}}} $line\n";
+      next if ($line =~ /^\s*$/);
+      next if ($line =~ /RSLT:/);
+      last if ($line =~ /default@/);
+
+      $probed_seen++ if ($line =~ /Probed/);
+      if ($key && $key eq "MAC:" ) {
          @hunks   = split(/: /, $line);
          $mac     = (split(/ /, $hunks[1]))[0];
          $name    = (split(/ /, $hunks[2]))[0];
          next;
       }
-      if ($1 && $1 eq "IP:") {
+      if ($key && $key eq "IP:") {
          @hunks   = split(/: /, $line);
          $ip      = (split(/ /, $hunks[1]))[0];
          $mask    = (split(/ /, $hunks[2]))[0];
          $gw      = (split(/ /, $hunks[3]))[0];
          next;
       }
-      if ($1 && $1 eq "Probed:") {
+      if ($probed_seen && ($line =~ /Mode:/)) {
          @hunks   = split(/: /, $line);
          $careful = 1;
          $mode    = (split(/ /, $hunks[2]))[0];
          next;
       }
-      if( $careful && $1 eq "Channel:" ) {
+      if( $probed_seen && $careful && ($key eq "Channel:")) {
          @hunks   = split(/: /, $line);
+         #print Dumper(\@hunks);
          $channel = (split(/ /, $hunks[1]))[0];
          $freq    = (split(/ /, $hunks[3]))[0];
          if ((@hunks > 3) && (defined $hunks[4])) {
            $assoc   = (split(/ /, $hunks[4]))[0];
          }
-         #print " assoc:".$assoc;
-         last;
+
       }
    }
    my %rv = (
@@ -866,6 +872,7 @@ sub get_sta_state {
       "mac"    => $mac,
       "mode"   => $mode,
       "name"   => $name );
+   #print Dumper(\%rv);
    return %rv;
 }
 
@@ -931,9 +938,10 @@ sub awaitNewStations {
       my @not_assoc        = ();
       for my $sta_name (sort(keys(%::sta_names))) {
          my $status     = $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
+         #print "STATUS: $status\n\n";
          my %sta_status = get_sta_state(\$status);
          #print " $sta_name ".$sta_status{"assoc"};
-         if( $sta_status{"assoc"} ne "Not-Associated") {
+         if( $sta_status{"assoc"} !~ /NA|Not-Associated|unknown/) {
             push(@are_assoc, $sta_name);
          }
          else {
@@ -946,6 +954,7 @@ sub awaitNewStations {
          print "  Associated:".join(", ", @are_assoc)."\n";
          print "  Pending   :".join(", ", @not_assoc)."\n";
       }
+      sleep 1;
    } # ~while
 }
 
@@ -1345,7 +1354,7 @@ sub doStep_2 {
          my $status  =  $::utils->doAsyncCmd($::utils->fmt_cmd("show_port", 1, $::resource, $sta_name));
          my %state   = get_sta_state(\$status);
          #print $state{"name"}.": ".$state{"assoc"}." ";
-         $num_assoc++ if($state{"assoc"} ne "Not-Associated");
+         $num_assoc++ if( $state{"assoc"} !~ /NA|Not-Associated|unknown/);
          #print $state{"ip"}."/".$state{"mask"}." gw:".$state{"gw"}."\n";
          $num_ip++ if($state{"ip"} ne "0.0.0.0" );
       }
