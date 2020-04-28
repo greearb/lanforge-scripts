@@ -182,7 +182,7 @@ our $poll_time          = 5;  # seconds
 our $traffic_type       = "separate"; # separate: download then upload, concurrent: at same time
 our $default_mac_pat    = "xx:xx:xx:*:*:xx";
 our $mac_pattern        = $::default_mac_pat;
-
+our $gateway            = "";
 our %wifi_modes = (
    "a"      => "1",
    "b"      => "2",
@@ -230,6 +230,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--first_sta {$first_sta}]
       [--first_ip {DHCP |ip address}]
       [--netmask {$netmask}]
+      [--gateway {$gateway}]
       [--change_mac {0|1}]
          # If this is set to 0, then we will not change MAC if the station already exists.
          # This is now the default behaviour.
@@ -612,13 +613,17 @@ sub fmt_port_cmd {
    #print "fmt_port_cmd: DHCP($use_dhcp) $cur_flags\n" unless($::quiet eq "yes");
    my $ist_flags        = 0;
    $ist_flags           |= 0x2;       # check current flags
-   $ist_flags           |= 0x4        if($ip ne "NA");
-   $ist_flags           |= 0x8        if($::netmask ne "NA");
-   $ist_flags           |= 0x20       if($mac_addr ne "NA");
+   $ist_flags           |= 0x4        if ($ip ne "NA");
+   $ist_flags           |= 0x8        if ($::netmask ne "NA");
+   $ist_flags           |= 0x10       if (($::gateway ne "") || ($::gateway ne "0.0.0.0"));
+   $ist_flags           |= 0x20       if ($mac_addr ne "NA");
    $ist_flags           |= 0x4000;    # Always interested in DHCP, we either set it to DHCP or IP
    $ist_flags           |= 0x800000;  # port up
 
-   my $gateway          = "0.0.0.0";
+   my $gw               = "0.0.0.0";
+   if ($::gateway ne "" || $::gateway ne "0.0.0.0") {
+      $gw = $::gateway;
+   }
    my $dns_servers      = "NA";
    my $dhcp_client_id   = "NONE";
    my $flags2           = "NA";
@@ -628,7 +633,7 @@ sub fmt_port_cmd {
    $cmd_flags = "+0" if(!$cmd_flags);
    $ist_flags = "+0" if(!$ist_flags);
    my $cmd = $::utils->fmt_cmd("set_port", 1, $::resource, $port_id, $ip, $::netmask,
-                     $gateway, "$cmd_flags", "$cur_flags",
+                     $gw, "$cmd_flags", "$cur_flags",
                      "$mac_addr", "NA", "NA", "NA", "$ist_flags", $::report_timer, "$flags2",
                      "NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA",
                      $dns_servers, "NA", $dhcp_client_id);
@@ -653,7 +658,7 @@ sub fmt_port_down {
    $ist_flags           |= 0x800000;  # port down
    my $dhcp_id          = "NONE";
    my $netmask          = "$ip_mask";
-   my $gateway          = "0.0.0.0";
+   my $gw               = (($::gateway eq "") || ($::gateway eq "0.0.0.0")) ? "0.0.0.0" : $::gateway;
    my $dns_servers      = "NA";
    my $dhcp_client_id   = "NONE";
    my $flags2           = "NA";
@@ -662,7 +667,7 @@ sub fmt_port_down {
    $cur_flags  = "+0" if(!$cur_flags);
    $ist_flags  = "+0" if(!$ist_flags);
    my $cmd = $::utils->fmt_cmd("set_port", 1, $resource, $port_id, $ip_addr,
-                     $netmask, $gateway, "$cmd_flags", "$cur_flags",
+                     $netmask, $gw, "$cmd_flags", "$cur_flags",
                      "NA", "NA", "NA", "NA", "$ist_flags", $::report_timer, "$flags2",
                      "NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA","NA",
                      $dns_servers, "NA", $dhcp_client_id);
@@ -1445,7 +1450,7 @@ sub initStationAddr {
 
    my $ip;
    my $ip_obj;
-   if($::first_ip eq "DHCP"){
+   if ($::first_ip eq "DHCP"){
       $ip   = "DHCP";
    }
    else {
@@ -1578,11 +1583,12 @@ GetOptions
   'ssid|s=s'                  => \$::ssid,
   'security=s'                => \$::security,
   'xsec=s'                    => \$::xsec,
-  'passphrase|h=s'            => \$::passphrase,
+  'passphrase|password|pass|h=s' => \$::passphrase,
   'first_ip|b=s'              => \$::first_ip,
   'first_sta|c=s'             => \$::first_sta,
-  'num_stations|n=i'          => \$::num_stations,
+  'num_stations|num_sta|n=i'  => \$::num_stations,
   'netmask|k=s'               => \$::netmask,
+  'gateway|g=s'               => \$::gateway,
   'change_mac=i'              => \$::change_mac,
   'mac-pattern|mac_pattern=s' => \$::mac_pattern,
   'cxtype|x=s'                => \$::cx_type,
