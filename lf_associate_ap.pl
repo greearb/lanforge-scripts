@@ -182,7 +182,7 @@ our $poll_time          = 5;  # seconds
 our $traffic_type       = "separate"; # separate: download then upload, concurrent: at same time
 our $default_mac_pat    = "xx:xx:xx:*:*:xx";
 our $mac_pattern        = $::default_mac_pat;
-our $gateway            = "";
+our $gateway            = "NA";
 our %wifi_modes = (
    "a"      => "1",
    "b"      => "2",
@@ -615,15 +615,16 @@ sub fmt_port_cmd {
    $ist_flags           |= 0x2;       # check current flags
    $ist_flags           |= 0x4        if ($ip ne "NA");
    $ist_flags           |= 0x8        if ($::netmask ne "NA");
-   $ist_flags           |= 0x10       if (($::gateway ne "") || ($::gateway ne "0.0.0.0"));
+   $ist_flags           |= 0x10       if (($::gateway ne "NA") || ($::gateway ne "") || ($::gateway ne "0.0.0.0"));
    $ist_flags           |= 0x20       if ($mac_addr ne "NA");
    $ist_flags           |= 0x4000;    # Always interested in DHCP, we either set it to DHCP or IP
    $ist_flags           |= 0x800000;  # port up
 
    my $gw               = "0.0.0.0";
-   if ($::gateway ne "" || $::gateway ne "0.0.0.0") {
+   if (($::gateway ne "") || ($::gateway ne "") || ($::gateway ne "0.0.0.0")) {
       $gw = $::gateway;
    }
+
    my $dns_servers      = "NA";
    my $dhcp_client_id   = "NONE";
    my $flags2           = "NA";
@@ -658,7 +659,7 @@ sub fmt_port_down {
    $ist_flags           |= 0x800000;  # port down
    my $dhcp_id          = "NONE";
    my $netmask          = "$ip_mask";
-   my $gw               = (($::gateway eq "") || ($::gateway eq "0.0.0.0")) ? "0.0.0.0" : $::gateway;
+   my $gw               = (($::gateway eq "NA") || ($::gateway eq "") || ($::gateway eq "0.0.0.0")) ? "0.0.0.0" : $::gateway;
    my $dns_servers      = "NA";
    my $dhcp_client_id   = "NONE";
    my $flags2           = "NA";
