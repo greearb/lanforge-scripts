@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Carp;
 use Net::Telnet;
+use bigint;
 $| = 1;
 #$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 #$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
@@ -1157,6 +1158,23 @@ sub expand_unit_str {
    }
    return int($num) * $multiplier;
 }
+
+sub mac_add {
+   my ($first_mac, $second_dec) = @_;
+   $first_mac =~ s/[:]//g if ($first_mac =~ /[:]/);
+   
+   $first_mac = "0x".$first_mac if ($first_mac !~ /^0x/);
+   
+   my $newdec = (0+$second_dec) + hex($first_mac);
+   my $newhex = sprintf("%x", $newdec);
+   my $rv = "";
+   for (my $i = length($newhex); $i > 0; $i-=2) {
+      $rv = substr($newhex, $i-2, 2).":$rv";
+   }
+   return substr($newhex, 0, -1);
+}
+
+
 
 ####
 1;
