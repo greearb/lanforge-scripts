@@ -460,7 +460,7 @@ sub new_mac_from_pattern {
    die ("::new_mac_pattern: blank pattern. Please debug.")     if ($pattern eq "");
 
    if (($pattern !~ /x+/i) && ($pattern !~ /[*]+/)) {
-      return $pattern;
+      return $pattern; # this lacks pattern tokens
    }
 
    my @parent_hunks  = split(":", $parent_mac);
@@ -737,9 +737,11 @@ sub new_wifi_station {
      my $parent_mac = get_radio_bssid($::sta_wiphy);
      die("new_wifi_station: unable to find bssid of parent radio") if ($parent_mac eq "");
      $mac_addr   = new_mac_from_pattern($parent_mac, $::mac_pattern);
-     if (($mac_addr eq $parent_mac) && ($::num_stations > 1)) {
-        $mac_addr = $::utils->mac_add($parent_mac, $num_in_series);
+     #print "OLD MAC $::mac_pattern NEW MAC $mac_addr\n";
+     if (($mac_addr eq $::mac_pattern) && ($num_in_series > 0)) {
+        $mac_addr = $::utils->mac_add($::mac_pattern, $num_in_series);
      }
+     #print "OLD MAC $::mac_pattern NEWER MAC $mac_addr\n";
      #print "new_wifi_station->new_mac_from_pattern: $mac_addr\n";
    }
 
