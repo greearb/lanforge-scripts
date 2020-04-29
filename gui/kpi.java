@@ -191,9 +191,10 @@ public class kpi {
       // For all per-test history, print out csv files
       for (History hist : hist_datav) {
          String hk = hist.getName();
-         Set<String> v2 = hist.csv.keySet();
-         for (String ck: v2) {
-            StringBuffer csv = hist.csv.get(ck);
+         int ci = 0;
+         for (StringBuffer csv : hist.csv) {
+            String ck = hist.csv_names.elementAt(ci);
+            ci++;
             String title = hist.titles.get(ck);
             try {
                String cf = dir + File.separator + hk + "::" + ck + ".csv";
@@ -296,8 +297,10 @@ public class kpi {
 
 class History {
    String name;
-   Hashtable<String, StringBuffer> csv = new Hashtable();
-   Hashtable<String, String> titles = new Hashtable();
+   Vector<StringBuffer> csv = new Vector();
+   Vector<String> csv_names = new Vector();
+   Hashtable<String, StringBuffer> csvh = new Hashtable(); // lookup by name
+   Hashtable<String, String> titles = new Hashtable(); // lookup by name
 
    public History(String n) {
       name = n;
@@ -309,11 +312,13 @@ class History {
 
    StringBuffer findCsv(String n) {
       //System.out.println("findCsv, n: " + n);
-      return csv.get(n);
+      return csvh.get(n);
    }
 
    void addCsv(StringBuffer b, String n, String title) {
-      csv.put(n, b);
+      csv.add(b);
+      csv_names.add(n);
+      csvh.put(n, b);
       titles.put(n, title);
    }
 }
