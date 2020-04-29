@@ -37,6 +37,7 @@ public class kpi {
    public static int SHORT_DESC_IDX = 8;
    public static int NUMERIC_SCORE_IDX = 10;
 
+   public static String TESTBED_TEMPLATE = "testbed_template.html";
    public static String AP_AUTO_BASIC_CX = "ap_auto_basic_cx";
 
    public kpi() {
@@ -60,7 +61,12 @@ public class kpi {
 
    public static void main(String[] args) {
       kpi k = new kpi();
-      k.work(args);
+      try {
+         k.work(args);
+      }
+      catch (Exception ee) {
+         ee.printStackTrace();
+      }
    }
 
    public void work(String[] args) {
@@ -161,6 +167,9 @@ public class kpi {
          }
       }
 
+      StringBuffer plots = new StringBuffer();
+      StringBuffer runs_rows = new StringBuffer();
+
       // For all history, print out csv files
       v = new Vector(hist_data.keySet());
       for (Object hk : v) {
@@ -184,7 +193,22 @@ public class kpi {
                System.out.println(exec.getError());
 
                File png = new File("plot.png");
-               png.renameTo(new File(dir + File.separator + hk + "::" + ck + ".png"));
+               String npng = hk + "::" + ck + ".png";
+               png.renameTo(new File(dir + File.separator + npng));
+
+               exec = new ShellExec(true, true);
+               rv = exec.execute("gnuplot", null, true, "-e", "filename='" + cf + "'",
+                                     "mini.plot");
+               System.out.println("mini gnuplot for filename: " + cf + " rv: " + rv);
+               System.out.println(exec.getOutput());
+               System.out.println(exec.getError());
+
+               png = new File("plot.png");
+               String npngt = hk + "::" + ck + "-thumb.png";
+               png.renameTo(new File(dir + File.separator + npngt));
+
+               plots.append("<tr><td>" + hk + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+
             }
             catch (Exception ee) {
                ee.printStackTrace();
@@ -192,7 +216,56 @@ public class kpi {
          }
       }
 
+      boolean cp = true;
+      for (int i = 0; i<runs.size(); i++) {
+         Run run = runs.elementAt(i);
+         runs_rows.append("<tr><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate() + "</td></tr>\n");
+
+         if (cp) {
+            try {
+               String fname;
+               copy("CandelaLogo2-90dpi-200x90-trans.png", dir + File.separator + run.getName(), dir);
+               copy("candela_swirl_small-72h.png", dir + File.separator + run.getName(), dir);
+               copy("canvil.ico", dir + File.separator + run.getName(), dir);
+               copy("custom.css", dir + File.separator + run.getName(), dir);
+               copy("report.css", dir + File.separator + run.getName(), dir);
+
+               cp = false;
+            }
+            catch (Exception ee) {
+               ee.printStackTrace();
+            }
+         }
+      }
+
+      try {
+         // Read in the testbed_template.html and update it with our info
+         BufferedReader br = new BufferedReader(new FileReader(new File(kpi.TESTBED_TEMPLATE)));
+         String ofile = dir + File.separator + "index.html";
+         BufferedWriter bw = new BufferedWriter(new FileWriter(ofile));
+         String line;
+         while ((line = br.readLine()) != null) {
+            line = line.replace("___TITLE___", "Test-Bed Report History");
+            line = line.replace("___DATA_GRAPHS___", plots.toString());
+            line = line.replace("___TEST_RUNS___", runs_rows.toString());
+            bw.write(line);
+         }
+         
+         br.close();
+         bw.close();
+
+         System.out.println("See " + ofile);
+      }
+      catch (Exception eee) {
+         eee.printStackTrace();
+      }
    } // ~work()
+
+   public void copy(String fname, String from, String to) throws Exception {
+      Path fromp = Paths.get(from + File.separator + fname);
+      Path top = Paths.get(to + File.separator + fname);
+      Files.copy(fromp, top, StandardCopyOption.REPLACE_EXISTING);
+   }
 }
 
 class History {
@@ -253,6 +326,7 @@ class Test {
    Vector<Row> data = new Vector();
    Hashtable<String, String> descs = new Hashtable();
 
+   public String date = "";
    public String test_rig;
    public String dut_hw_version;
    public String dut_sw_version;
@@ -261,6 +335,10 @@ class Test {
 
    public Test(String n) {
       name = n;
+   }
+
+   String getDate() {
+      return date;
    }
 
    String getName() {
@@ -308,7 +386,7 @@ class Test {
                last_was_sep = false;
             }
 
-            if (data.size() == 1) { // first row is being added
+            if ((data.size() == 1) && !last_was_sep) { // first row is being added
                if (titles.elementAt(idx - 1).equalsIgnoreCase("test-rig")) {
                   test_rig = rtok;
                }
@@ -320,6 +398,10 @@ class Test {
                }
                else if (titles.elementAt(idx - 1).equalsIgnoreCase("dut-model-num")) {
                   dut_model_num = rtok;
+               }
+               else if (titles.elementAt(idx - 1).equalsIgnoreCase("Date")) {
+                  System.out.println("idx: " + idx + " rtok: " + rtok);
+                  date = new Date(Long.valueOf(rtok).longValue()).toString();
                }
             }
             //System.out.println("idx: " + idx);
@@ -340,6 +422,17 @@ class Run {
    public Run(String n) {
       name = n;
    }
+
+   String getDate() {
+      try {
+         Test first = tests.elements().nextElement();
+         return first.getDate();
+      }
+      catch (Exception ee) {
+         return "";
+      }
+   }
+      
 
    String getName() {
       return name;

@@ -5,6 +5,7 @@ set ylabel "Data"
 set xlabel "Test#"
 #set xdata time
 set grid
-set key outside
-plot filename using 1:2
+#set key outside
+set key off
+plot filename using 1:2 with lines
 
