@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Carp;
 use Net::Telnet;
+#use bigint;
+use Math::BigInt;
 $| = 1;
 #$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 #$SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
@@ -1157,6 +1159,28 @@ sub expand_unit_str {
    }
    return int($num) * $multiplier;
 }
+
+sub mac_add {
+   my ($self, $first_mac, $second_dec) = @_;
+   $first_mac =~ s/[:]//g if ($first_mac =~ /[:]/);
+   $first_mac = "0x".$first_mac if ($first_mac !~ /^0x/);
+   my $newdec = Math::BigInt->new($first_mac);
+   $newdec->badd(0+$second_dec);
+   my $pad = Math::BigInt->new('0x1000000000000');
+   $newdec->badd($pad);
+   my $newhex = "".$newdec->as_hex();
+   my $rv = "";
+   $newhex = substr($newhex, -12); # we begin 0x100...much bigger than we need
+   for (my $i = length($newhex); $i > 0; $i-=2) {
+      $rv = substr($newhex, $i-2, 2).":$rv";
+   }
+   $rv =substr($rv, 0, -1);
+   undef($newdec);
+   undef($pad);
+   return $rv;
+}
+
+
 
 ####
 1;

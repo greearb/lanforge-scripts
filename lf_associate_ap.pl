@@ -43,6 +43,7 @@ use Carp;
 use POSIX qw(ceil floor);
 use Scalar::Util; #::looks_like_number;
 use Getopt::Long;
+
 no warnings 'portable';  # Support for 64-bit ints required
 use Socket;
 #use Data::Dumper;
@@ -83,7 +84,7 @@ use List::Util qw(first);
 use LANforge::Endpoint;
 use LANforge::Port;
 use LANforge::Utils;
-use Net::Telnet ();
+#use Net::Telnet ();
 
 our $num_stations       = 1;
 our $netmask            = "255.255.0.0";
@@ -288,6 +289,10 @@ Examples:
  $0 --action step2 --radio wiphy2 --ssid jedtest \\
    --first_sta sta100 --first_ip DHCP --num_stations 3 \\
    --security wpa2 --passphrase jedtest1 --mac_pattern 'xx:xx:xx:*:*:*'
+   Note: mac_pattern is NOT a regex, it is octet based tokens:
+   * = rand(256)
+   xx = parent mac octet
+   You can specify a numeric mac address (d0:01:00:00:af:ff) and it can get incremented
 
 ## using a second lanforge system to connect to wpa2 AP:
  $0 --mgr 192.168.100.1 --resource 2 --radio wiphy2 \\
@@ -453,6 +458,10 @@ sub new_mac_from_pattern {
    my $pattern    = shift;
    die ("::new_mac_pattern: blank parent_mac. Please debug.")  if ($parent_mac eq "");
    die ("::new_mac_pattern: blank pattern. Please debug.")     if ($pattern eq "");
+
+   if (($pattern !~ /x+/i) && ($pattern !~ /[*]+/)) {
+      return $pattern; # this lacks pattern tokens
+   }
 
    my @parent_hunks  = split(":", $parent_mac);
    my @pattern_hunks = split(":", $pattern);
@@ -710,7 +719,7 @@ sub new_wifi_station {
    my $rh_results = shift;
    die("new_wifi_station wants hash ref to place results, bye.")  unless(defined $rh_results);
    my $wifi_m     = shift;
-   my $sleep_amt = shift;
+   my $num_in_series = shift; # use this to add to non-patterned mac-address
    my $mac_addr = "";
 
    #print "## new-wifi-station, sta-name: $sta_name  change-mac: $change_mac" unless($::utils->isQuiet());
@@ -728,6 +737,11 @@ sub new_wifi_station {
      my $parent_mac = get_radio_bssid($::sta_wiphy);
      die("new_wifi_station: unable to find bssid of parent radio") if ($parent_mac eq "");
      $mac_addr   = new_mac_from_pattern($parent_mac, $::mac_pattern);
+     #print "OLD MAC $::mac_pattern NEW MAC $mac_addr\n";
+     if (($mac_addr eq $::mac_pattern) && ($num_in_series > 0)) {
+        $mac_addr = $::utils->mac_add($::mac_pattern, $num_in_series);
+     }
+     #print "OLD MAC $::mac_pattern NEWER MAC $mac_addr\n";
      #print "new_wifi_station->new_mac_from_pattern: $mac_addr\n";
    }
 
@@ -787,9 +801,9 @@ sub new_wifi_station {
      #$::utils->sleep_ms(20);
    }
 
-   if ($sleep_amt > 0) {
-     sleep $sleep_amt;
-   }
+   #if ($sleep_amt > 0) {
+   #  sleep $sleep_amt;
+   #}
    my $data = [ $mac_addr, $sta_name, $sta1_cmd ];
    $rh_results->{$sta_name} = $data;
 }
@@ -1227,7 +1241,7 @@ sub doStep_1 {
    for $sta_name (sort(keys %::sta_names)) {
       # sta, ip, rh, $ip_addr
       print " $sta_name ";
-      new_wifi_station( $sta_name, $::sta_names{$sta_name}, \%results1, $::wifi_mode, 0);
+      new_wifi_station( $sta_name, $::sta_names{$sta_name}, \%results1, $::wifi_mode, $i);
       altsleep(0.12);
       altsleep(0.6) if (($i % 5) == 0);
       $i++;
@@ -1316,11 +1330,13 @@ sub doStep_2 {
    print "Creating new stations...";
 
    # create new stations
+   my $i = 0;
    for my $sta_name (sort(keys %::sta_names)) {
       die("misconfiguration! ") if( ref($sta_name) eq "HASH");
       my $ip = $::sta_names{$sta_name};
       print "$sta_name " unless($::utils->isQuiet());
-      new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
+      new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, $i);
+      $i++;
 
       # Uncomment to diagnose connection results. The IPs assigned
       # are unlikely to appear instantly, but the mac and entity id
@@ -1389,7 +1405,7 @@ sub doAdd {
          die("misconfiguration! ") if( ref($sta_name) eq "HASH");
          my $ip = $::sta_names{$sta_name};
          print " $sta_name";
-         new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, 0);
+         new_wifi_station( $sta_name, $ip, \%results2, $::wifi_mode, $i);
          if (($i % 10) == 9) {
             $::utils->sleep_ms(120);
          }
@@ -1583,7 +1599,7 @@ if (@ARGV < 2) {
 GetOptions
 (
   'mgr|m=s'                   => \$::lfmgr_host,
-  'mgr_port|p=i'              => \$lfmgr_port,
+  'lf_mgr_port|lf_port|mgr_port|p=i' => \$lfmgr_port,
   'resource|r=i'              => \$::resource,
   'resource2|r2=i'            => \$::resource2,
   'quiet|q=s'                 => \$::quiet,
@@ -1648,6 +1664,7 @@ if (defined $log_cli) {
 
 # Configure our utils.
 our $utils = new LANforge::Utils();
+print "Connecting to $lfmgr_host, $lfmgr_port\n";
 $::utils->connect($lfmgr_host, $lfmgr_port);
 
 if ($db_postload ne "" && db_exists($::db_postload)==0) {
