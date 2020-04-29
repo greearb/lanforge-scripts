@@ -83,6 +83,7 @@ public class kpi {
       }
 
       Hashtable<String, String> test_names = new Hashtable();
+      Vector<String> test_namesv = new Vector();
       Vector<Run> runs = new Vector();
 
       try {
@@ -104,7 +105,10 @@ public class kpi {
                   File kf = new File(f2.getAbsolutePath() + File.separator + "kpi.csv");
                   try {
                      BufferedReader br = new BufferedReader(new FileReader(kf));
-                     test_names.put(f2.getName(), f2.getName());
+                     if (test_names.get(f2.getName()) == null) {
+                        test_names.put(f2.getName(), f2.getName());
+                        test_namesv.add(f2.getName());
+                     }
                      if (run == null) {
                         run = new Run(f.getName());
                         runs.add(run);
@@ -131,14 +135,27 @@ public class kpi {
          System.err.println(x);
       }
 
+      // Sort runs so that earliest is first.
+      class SortbyDate implements Comparator<Run> { 
+         // Used for sorting in ascending order of 
+         // roll number 
+         public int compare(Run a, Run b) { 
+            long c = a.getDateMs() - b.getDateMs();
+            if (c < 0)
+               return -1;
+            if (c > 0)
+               return 1;
+            return 0;
+         }
+      }
+
+      runs.sort(new SortbyDate());
+
       // We have read everything into memory.
       // For each test, generate data over time.
       Hashtable<String, History> hist_data = new Hashtable();
-      Vector v = new Vector(test_names.keySet());
-      Collections.sort(v);
-      Iterator it = v.iterator();
-      while (it.hasNext()) {
-         String tname = (String)it.next();
+      Vector<History> hist_datav = new Vector();
+      for (String tname: test_namesv) {
          // For each test, find all runs that have this test and consolidate data
          for (int i = 0; i<runs.size(); i++) {
             Run run = runs.elementAt(i);
@@ -147,8 +164,9 @@ public class kpi {
                try {
                   History hist = hist_data.get(tname);
                   if (hist == null) {
-                     hist = new History();
+                     hist = new History(tname);
                      hist_data.put(tname, hist);
+                     hist_datav.add(hist);
                   }
                   for (int z = 0; z<t.data.size(); z++) {
                      Row r = t.data.elementAt(z);
@@ -170,10 +188,9 @@ public class kpi {
       StringBuffer plots = new StringBuffer();
       StringBuffer runs_rows = new StringBuffer();
 
-      // For all history, print out csv files
-      v = new Vector(hist_data.keySet());
-      for (Object hk : v) {
-         History hist = hist_data.get(hk); // history per test
+      // For all per-test history, print out csv files
+      for (History hist : hist_datav) {
+         String hk = hist.getName();
          Set<String> v2 = hist.csv.keySet();
          for (String ck: v2) {
             StringBuffer csv = hist.csv.get(ck);
@@ -188,9 +205,11 @@ public class kpi {
                int rv = exec.execute("gnuplot", null, true, "-e", "filename='" + cf + "'",
                                      "-e", "set title '" + title + "'",
                                      "default.plot");
-               System.out.println("gnuplot for filename: " + cf + " rv: " + rv);
-               System.out.println(exec.getOutput());
-               System.out.println(exec.getError());
+               if (rv != 0) {
+                  System.out.println("gnuplot for filename: " + cf + " rv: " + rv);
+                  System.out.println(exec.getOutput());
+                  System.out.println(exec.getError());
+               }
 
                File png = new File("plot.png");
                String npng = hk + "::" + ck + ".png";
@@ -199,9 +218,11 @@ public class kpi {
                exec = new ShellExec(true, true);
                rv = exec.execute("gnuplot", null, true, "-e", "filename='" + cf + "'",
                                      "mini.plot");
-               System.out.println("mini gnuplot for filename: " + cf + " rv: " + rv);
-               System.out.println(exec.getOutput());
-               System.out.println(exec.getError());
+               if (rv != 0) {
+                  System.out.println("mini gnuplot for filename: " + cf + " rv: " + rv);
+                  System.out.println(exec.getOutput());
+                  System.out.println(exec.getError());
+               }
 
                png = new File("plot.png");
                String npngt = hk + "::" + ck + "-thumb.png";
@@ -216,10 +237,15 @@ public class kpi {
          }
       }
 
+      String test_bed = "Test Bed";
+
       boolean cp = true;
       for (int i = 0; i<runs.size(); i++) {
          Run run = runs.elementAt(i);
-         runs_rows.append("<tr><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate() + "</td></tr>\n");
+         test_bed = run.getTestRig();
+         runs_rows.append("<tr><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
+                          + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
+                          + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
 
          if (cp) {
             try {
@@ -245,7 +271,7 @@ public class kpi {
          BufferedWriter bw = new BufferedWriter(new FileWriter(ofile));
          String line;
          while ((line = br.readLine()) != null) {
-            line = line.replace("___TITLE___", "Test-Bed Report History");
+            line = line.replace("___TITLE___", test_bed + " Report History");
             line = line.replace("___DATA_GRAPHS___", plots.toString());
             line = line.replace("___TEST_RUNS___", runs_rows.toString());
             bw.write(line);
@@ -269,10 +295,16 @@ public class kpi {
 }
 
 class History {
+   String name;
    Hashtable<String, StringBuffer> csv = new Hashtable();
    Hashtable<String, String> titles = new Hashtable();
 
-   public History() {
+   public History(String n) {
+      name = n;
+   }
+
+   public String getName() {
+      return name;
    }
 
    StringBuffer findCsv(String n) {
@@ -326,15 +358,41 @@ class Test {
    Vector<Row> data = new Vector();
    Hashtable<String, String> descs = new Hashtable();
 
-   public String date = "";
-   public String test_rig;
-   public String dut_hw_version;
-   public String dut_sw_version;
-   public String dut_model_num;
-   public String dut_serial_num;
+   long date_ms = 0;
+   public String date = "NA";
+   public String test_rig = "NA";
+   public String dut_hw_version = "NA";
+   public String dut_sw_version = "NA";
+   public String dut_model_num = "NA";
+   public String dut_serial_num = "NA";
 
    public Test(String n) {
       name = n;
+   }
+
+   long getDateMs() {
+      return date_ms;
+   }
+
+   String getTestRig() {
+      return test_rig;
+   }
+
+   String getDutHwVer() {
+      return dut_hw_version;
+   }
+
+   String getDutSwVer() {
+      return dut_sw_version;
+   }
+
+   String getDutSerialNum() {
+      return dut_serial_num;
+   }
+
+   String getDutModelNum() {
+      System.out.println("Test: " + getName() + " model-num: " + dut_model_num);
+      return dut_model_num;
    }
 
    String getDate() {
@@ -386,7 +444,7 @@ class Test {
                last_was_sep = false;
             }
 
-            if ((data.size() == 1) && !last_was_sep) { // first row is being added
+            if ((data.size() >= 1) && (!last_was_sep) && dut_sw_version.equals("NA")) { // first row is being added
                if (titles.elementAt(idx - 1).equalsIgnoreCase("test-rig")) {
                   test_rig = rtok;
                }
@@ -400,8 +458,9 @@ class Test {
                   dut_model_num = rtok;
                }
                else if (titles.elementAt(idx - 1).equalsIgnoreCase("Date")) {
-                  System.out.println("idx: " + idx + " rtok: " + rtok);
-                  date = new Date(Long.valueOf(rtok).longValue()).toString();
+                  //System.out.println("idx: " + idx + " rtok: " + rtok);
+                  date_ms = Long.valueOf(rtok).longValue();
+                  date = new Date(date_ms).toString();
                }
             }
             //System.out.println("idx: " + idx);
@@ -413,26 +472,63 @@ class Test {
          descs.put(row.getShortDesc(), row.getShortDesc());
       }
    }
-}
+}//Test
+
 
 class Run {
    String name;
    Hashtable<String, Test> tests = new Hashtable();
+   Vector<Test> testsv = new Vector();
 
    public Run(String n) {
       name = n;
    }
 
-   String getDate() {
-      try {
-         Test first = tests.elements().nextElement();
-         return first.getDate();
-      }
-      catch (Exception ee) {
-         return "";
-      }
+   Test getFirstTest() {
+      return testsv.elementAt(0);
    }
-      
+
+   String getDate() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDate();
+      return "";
+   }
+
+   long getDateMs() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDateMs();
+      return 0;
+   }
+
+   String getTestRig() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getTestRig();
+      return "";
+   }
+
+   String getDutHwVer() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDutHwVer();
+      return "";
+   }
+
+   String getDutSwVer() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDutSwVer();
+      return "";
+   }
+
+   String getDutModelNum() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDutModelNum();
+      return "";
+   }
 
    String getName() {
       return name;
@@ -440,12 +536,13 @@ class Run {
 
    void addTest(Test t) {
       tests.put(t.getName(), t);
+      testsv.add(t);
    }
 
    Test findTest(String n) {
       return tests.get(n);
    }
-}
+}//Run
 
 
 // From: https://stackoverflow.com/questions/882772/capturing-stdout-when-calling-runtime-exec
