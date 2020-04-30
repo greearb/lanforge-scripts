@@ -23,6 +23,7 @@ AP_AUTO_CFG_FILE=${AP_AUTO_CFG_FILE:-test_configs/AP-Auto-ap-auto-32-64-dual.txt
 WCT_CFG_FILE=${WCT_CFG_FILE:-test_configs/WCT-64sta.txt}
 DPT_CFG_FILE=${DPT_CFG_FILE:-test_configs/dpt-pkt-sz.txt}
 SCENARIO_CFG_FILE=${SCENARIO_CFG_FILE:-test_configs/64_sta_scenario.txt}
+WCT_DURATION=${WCT_DURATION:-60s}
 
 # LANforge target machine
 LFMANAGER=${LFMANAGER:-localhost}
@@ -199,6 +200,8 @@ then
         --modifier_key "KPI_TEST_ID" --modifier_val "Capacity-Download" \
         --modifier_key "RATE_DL" --modifier_val "1Gbps" \
         --modifier_key "RATE_UL" --modifier_val "0" \
+        --modifier_key "VERBOSITY" --modifier_val "9" \
+        --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_dl
     post_test $RSLTS_DIR/wifi_capacity_dl
@@ -214,6 +217,8 @@ then
         --modifier_key "KPI_TEST_ID" --modifier_val "Capacity-Upload" \
         --modifier_key "RATE_UL" --modifier_val "1Gbps" \
         --modifier_key "RATE_DL" --modifier_val "0" \
+        --modifier_key "VERBOSITY" --modifier_val "9" \
+        --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_ul
     post_test $RSLTS_DIR/wifi_capacity_ul
@@ -230,6 +235,8 @@ then
         --modifier_key "RATE_UL" --modifier_val "1Gbps" \
         --modifier_key "RATE_DL" --modifier_val "1Gbps" \
         --modifier_key "Protocol:" --modifier_val "TCP-IPv4" \
+        --modifier_key "VERBOSITY" --modifier_val "9" \
+        --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
         --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_bi
     post_test $RSLTS_DIR/wifi_capacity_bi
