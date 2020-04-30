@@ -36,6 +36,9 @@ public class kpi {
    public static int TEST_ID_IDX = 7;
    public static int SHORT_DESC_IDX = 8;
    public static int NUMERIC_SCORE_IDX = 10;
+   public static int NOTES_IDX = 11;
+   public static int UNITS_IDX = 12;
+   public static int GRAPH_GROUP_IDX = 13;
 
    public static String TESTBED_TEMPLATE = "testbed_template.html";
    public static String AP_AUTO_BASIC_CX = "ap_auto_basic_cx";
@@ -170,12 +173,12 @@ public class kpi {
                   }
                   for (int z = 0; z<t.data.size(); z++) {
                      Row r = t.data.elementAt(z);
-                     StringBuffer csv = hist.findCsv(r.getShortDescKey());
+                     HistRow csv = hist.findRow(r.getShortDescKey());
                      if (csv == null) {
-                        csv = new StringBuffer();
-                        hist.addCsv(csv, r.getShortDescKey(), r.getTestId() + ":  " + r.getShortDesc());
+                        csv = new HistRow(r);
+                        hist.addRow(csv);
                      }
-                     csv.append(i + kpi.out_sep + t.data.elementAt(z).getScore() + System.lineSeparator());
+                     csv.csv.append(i + kpi.out_sep + t.data.elementAt(z).getScore() + System.lineSeparator());
                   }
                }
                catch (Exception eee) {
@@ -186,24 +189,44 @@ public class kpi {
       }
 
       StringBuffer plots = new StringBuffer();
+      StringBuffer groups = new StringBuffer();
       StringBuffer runs_rows = new StringBuffer();
 
       // For all per-test history, print out csv files
       for (History hist : hist_datav) {
          String hk = hist.getName();
-         int ci = 0;
-         for (StringBuffer csv : hist.csv) {
-            String ck = hist.csv_names.elementAt(ci);
-            ci++;
-            String title = hist.titles.get(ck);
+         Hashtable<String, Vector> groupsh = new Hashtable();
+         Vector<String> groupsn = new Vector();
+         for (HistRow csv : hist.csv) {
+            String ck = csv.getName();
+            String title = csv.getTitle();
+            String units = csv.getUnits();
+            String g = csv.getGraphGroup();
+
+            if (!(g.equals("NA") || units.equals(""))) {
+               Vector<HistRow> gv = groupsh.get(g);
+               if (gv == null) {
+                  gv = new Vector();
+                  groupsh.put(g, gv);
+                  groupsn.add(g);
+               }
+               gv.add(csv);
+            }
+
+            if (units.equals("NA") || units.equals("")) {
+               units = "Data";
+            }
             try {
                String cf = dir + File.separator + hk + "::" + ck + ".csv";
                FileWriter f = new FileWriter(cf);
-               f.write(csv.toString());
+               f.write(csv.csv.toString());
                f.close();
+               csv.setFname(cf);
 
                ShellExec exec = new ShellExec(true, true);
-               int rv = exec.execute("gnuplot", null, true, "-e", "filename='" + cf + "'",
+               int rv = exec.execute("gnuplot", null, true,
+                                     "-e", "set ylabel \"" + units + "\"",
+                                     "-e", "filename='" + cf + "'",
                                      "-e", "set title '" + title + "'",
                                      "default.plot");
                if (rv != 0) {
@@ -236,6 +259,97 @@ public class kpi {
                ee.printStackTrace();
             }
          }
+
+         // Graph groups
+         for (String g : groupsn) {
+            Vector<HistRow> datasets = groupsh.get(g);
+            if (datasets.size() < 2) {
+               continue; // group of 1 doesn't count
+            }
+            
+            HistRow csv0 = datasets.elementAt(0);
+            String title = g;
+            String units = csv0.getUnits();
+
+            if (units.equals("NA") || units.equals("")) {
+               units = "Data";
+            }
+
+            System.out.println("title: " + title + " units: " + units);
+            try {
+               StringBuffer plot = new StringBuffer("plot ");
+               StringBuffer mplot = new StringBuffer("plot ");
+               boolean first = true;
+               for (HistRow csv: datasets) {
+                  if (!first) {
+                     plot.append(", ");
+                     mplot.append(", ");
+                  }
+                  plot.append("\'" + csv.getFname() + "\' using 1:2 with lines title \'" + csv.getName().replace("_", " ") + "\'");
+                  mplot.append("\'" + csv.getFname() + "\' using 1:2 notitle");
+                  first = false;
+               }
+
+               BufferedReader br = new BufferedReader(new FileReader("default_group.plot"));
+               FileWriter f = new FileWriter("tmp.plot");
+               String line;
+               while ((line = br.readLine()) != null) {
+                  f.write(line);
+                  f.write(System.lineSeparator());
+               }
+               f.write(plot.toString());
+               f.write(System.lineSeparator());
+               f.close();
+               br.close();
+
+               //System.out.println("group plot: " + plot);
+               ShellExec exec = new ShellExec(true, true);
+               int rv = exec.execute("gnuplot", null, true,
+                                     "-e", "set ylabel '" + units + "'",
+                                     "-e", "set title '" + title + "'",
+                                     "tmp.plot");
+               if (rv != 0) {
+                  System.out.println("gnuplot for group: " + title + " rv: " + rv);
+                  System.out.println(exec.getOutput());
+                  System.out.println(exec.getError());
+               }
+
+               File png = new File("plot.png");
+               String npng = hk + "::" + g + ".png";
+               png.renameTo(new File(dir + File.separator + npng));
+
+               br = new BufferedReader(new FileReader("mini_group.plot"));
+               f = new FileWriter("tmp.plot");
+               while ((line = br.readLine()) != null) {
+                  f.write(line);
+                  f.write(System.lineSeparator());
+               }
+               f.write(mplot.toString());
+               f.write(System.lineSeparator());
+               f.close();
+               br.close();
+
+               exec = new ShellExec(true, true);
+               rv = exec.execute("gnuplot", null, true,
+                                 "tmp.plot");
+               if (rv != 0) {
+                  System.out.println("mini gnuplot for group: " + title + " rv: " + rv);
+                  System.out.println(exec.getOutput());
+                  System.out.println(exec.getError());
+               }
+
+               png = new File("plot.png");
+               String npngt = hk + "::" + g + "-thumb.png";
+               png.renameTo(new File(dir + File.separator + npngt));
+
+               groups.append("<tr><td>" + hk + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+
+            }
+            catch (Exception ee) {
+               ee.printStackTrace();
+            }
+         }
+         
       }
 
       String test_bed = "Test Bed";
@@ -273,6 +387,7 @@ public class kpi {
          String line;
          while ((line = br.readLine()) != null) {
             line = line.replace("___TITLE___", test_bed + " Report History");
+            line = line.replace("___GROUP_GRAPHS___", groups.toString());
             line = line.replace("___DATA_GRAPHS___", plots.toString());
             line = line.replace("___TEST_RUNS___", runs_rows.toString());
             bw.write(line);
@@ -295,12 +410,50 @@ public class kpi {
    }
 }
 
+class HistRow {
+   String fname;
+   String name;
+   String title = "";
+   String units = "";
+   String graph_group = "";
+   StringBuffer csv = new StringBuffer();
+
+   public HistRow(Row r) {
+      name = r.getShortDescKey();
+      title = r.getShortDesc();
+      units = r.getUnits();
+      graph_group = r.getGraphGroup();
+   }
+
+   String getFname() {
+      return fname;
+   }
+
+   void setFname(String s) {
+      fname = s;
+   }
+
+   String getName() {
+      return name;
+   }
+
+   String getTitle() {
+      return title;
+   }
+
+   String getUnits() {
+      return units;
+   }
+
+   String getGraphGroup() {
+      return graph_group;
+   }
+}
+
 class History {
    String name;
-   Vector<StringBuffer> csv = new Vector();
-   Vector<String> csv_names = new Vector();
-   Hashtable<String, StringBuffer> csvh = new Hashtable(); // lookup by name
-   Hashtable<String, String> titles = new Hashtable(); // lookup by name
+   Vector<HistRow> csv = new Vector();
+   Hashtable<String, HistRow> csvh = new Hashtable(); // lookup by name
 
    public History(String n) {
       name = n;
@@ -310,22 +463,42 @@ class History {
       return name;
    }
 
-   StringBuffer findCsv(String n) {
+   HistRow findRow(String n) {
       //System.out.println("findCsv, n: " + n);
       return csvh.get(n);
    }
 
-   void addCsv(StringBuffer b, String n, String title) {
-      csv.add(b);
-      csv_names.add(n);
-      csvh.put(n, b);
-      titles.put(n, title);
+   void addRow(HistRow r) {
+      csv.add(r);
+      csvh.put(r.getName(), r);
    }
 }
 
 class Row {
    Vector<String> rdata = new Vector();
    String short_desc_key = null;
+
+   String getNotes() {
+      return rdata.elementAt(kpi.NOTES_IDX);
+   }
+
+   String getUnits() {
+      try {
+         return rdata.elementAt(kpi.UNITS_IDX);
+      }
+      catch (Exception e) {
+         return "";
+      }
+   }
+
+   String getGraphGroup() {
+      try {
+         return rdata.elementAt(kpi.GRAPH_GROUP_IDX);
+      }
+      catch (Exception e) {
+         return "";
+      }
+   }
 
    String getScore() {
       return rdata.elementAt(kpi.NUMERIC_SCORE_IDX);
