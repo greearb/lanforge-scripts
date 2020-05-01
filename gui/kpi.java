@@ -154,6 +154,9 @@ public class kpi {
 
       runs.sort(new SortbyDate());
 
+      // Link to latest test run that has the test id
+      Hashtable<String, Run> test_id_links = new Hashtable();
+
       // We have read everything into memory.
       // For each test, generate data over time.
       Hashtable<String, History> hist_data = new Hashtable();
@@ -164,6 +167,7 @@ public class kpi {
             Run run = runs.elementAt(i);
             Test t = run.findTest(tname);
             if (t != null) {
+               test_id_links.put(tname, run);
                try {
                   History hist = hist_data.get(tname);
                   if (hist == null) {
@@ -252,7 +256,13 @@ public class kpi {
                String npngt = hk + "::" + ck + "-thumb.png";
                png.renameTo(new File(dir + File.separator + npngt));
 
-               plots.append("<tr><td>" + hk + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+               String hk_str = hk;
+               Run last = test_id_links.get(hk);
+               if (last != null) {
+                  hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+               }
+
+               plots.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
 
             }
             catch (Exception ee) {
@@ -342,7 +352,13 @@ public class kpi {
                String npngt = hk + "::" + g + "-thumb.png";
                png.renameTo(new File(dir + File.separator + npngt));
 
-               groups.append("<tr><td>" + hk + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+               String hk_str = hk;
+               Run last = test_id_links.get(hk);
+               if (last != null) {
+                  hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+               }
+
+               groups.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
 
             }
             catch (Exception ee) {
@@ -353,14 +369,17 @@ public class kpi {
       }
 
       String test_bed = "Test Bed";
+      String last_run = "";
 
       boolean cp = true;
       for (int i = 0; i<runs.size(); i++) {
          Run run = runs.elementAt(i);
          test_bed = run.getTestRig();
-         runs_rows.append("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
-                          + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
-                          + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
+         String row_text = ("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
+                            + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
+                            + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
+         last_run = row_text;
+         runs_rows.append(row_text);
 
          if (cp) {
             try {
@@ -390,6 +409,7 @@ public class kpi {
             line = line.replace("___GROUP_GRAPHS___", groups.toString());
             line = line.replace("___DATA_GRAPHS___", plots.toString());
             line = line.replace("___TEST_RUNS___", runs_rows.toString());
+            line = line.replace("___LATEST_RUN___", last_run);
             bw.write(line);
          }
          
