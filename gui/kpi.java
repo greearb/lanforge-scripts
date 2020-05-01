@@ -286,7 +286,7 @@ public class kpi {
                      mplot.append(", ");
                   }
                   plot.append("\'" + csv.getFname() + "\' using 1:2 with lines title \'" + csv.getName().replace("_", " ") + "\'");
-                  mplot.append("\'" + csv.getFname() + "\' using 1:2 notitle");
+                  mplot.append("\'" + csv.getFname() + "\' using 1:2 with lines notitle");
                   first = false;
                }
 
@@ -358,7 +358,7 @@ public class kpi {
       for (int i = 0; i<runs.size(); i++) {
          Run run = runs.elementAt(i);
          test_bed = run.getTestRig();
-         runs_rows.append("<tr><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
+         runs_rows.append("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
                           + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
                           + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
 

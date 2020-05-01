@@ -22,6 +22,8 @@ use lib "./";
 use Getopt::Long;
 
 our $dir = "";
+our $notes = "";
+our $gitlog = "";
 our $title = "Automated test results.";
 
 
@@ -30,10 +32,10 @@ our $title = "Automated test results.";
 ########################################################################
 
 our $usage = <<"__EndOfUsage__";
-$0 [ --dir directory-to-process ]
+$0 [ --dir directory-to-process --notes testbed-notes-file.html --gitlog gitlog-output.txt ]
 
 Example:
- $0 --dir ~/tmp/results --title "My Title"
+ $0 --dir ~/tmp/results --title "My Title" --notes testbeds/my_testbed/testbed_notes.html --gitlog /tmp/gitlog.txt
 __EndOfUsage__
 
 my $i = 0;
@@ -42,6 +44,8 @@ my $show_help = 0;
 GetOptions
 (
    'dir|d=s'            => \$::dir,
+   'notes|n=s'          => \$::notes,
+   'gitlog|g=s'         => \$::gitlog,
    'title|t=s'          => \$::title,
    'help|h'             => \$show_help,
 ) || die("$::usage");
@@ -50,6 +54,23 @@ if ($show_help) {
    print $usage;
    exit 0;
 }
+
+my $testbed_notes = "";
+if (-f "$notes") {
+   $testbed_notes .= "<b>Test Bed Notes.</b><br>\n";
+   $testbed_notes .= `cat $notes`;
+}
+
+if (-f "$gitlog") {
+   $testbed_notes .= "<P>\n";
+   $testbed_notes .= `cat $gitlog`;
+   $testbed_notes .= "<p>\n";
+}
+
+$testbed_notes .= "<p><b>Top lanforge-scripts commits.</b><br><pre>\n";
+$testbed_notes .= `git log -n 8 --oneline`;
+$testbed_notes .= "</pre>\n";
+
 
 chdir($dir);
 
@@ -74,6 +95,8 @@ foreach $line (@files) {
 my $dut_tr = "";
 my $kpi_tr = "";
 my $tests_tr = "";
+
+# TODO:  Add git commit history for other repositories perhaps?
 
 foreach my $line (@files) {
    if ( -d $line) {
@@ -120,6 +143,7 @@ while (<>) {
    $ln =~ s/___TR_DUT___/$dut_tr/g;
    $ln =~ s/___TR_KPI___/$kpi_tr/g;
    $ln =~ s/___TR_TESTS___/$tests_tr/g;
+   $ln =~ s/___TESTBED_NOTES___/$testbed_notes/g;
    print "$ln\n";
 }
 
