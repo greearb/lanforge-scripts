@@ -105,30 +105,40 @@ public class kpi {
                File f2 = file2.toFile(); // this is the test case dir in the test run
                // Directory full of test results?
                if (f2.isDirectory()) {
-                  File kf = new File(f2.getAbsolutePath() + File.separator + "kpi.csv");
-                  try {
-                     BufferedReader br = new BufferedReader(new FileReader(kf));
-                     if (test_names.get(f2.getName()) == null) {
-                        test_names.put(f2.getName(), f2.getName());
-                        test_namesv.add(f2.getName());
-                     }
-                     if (run == null) {
-                        run = new Run(f.getName());
-                        runs.add(run);
-                     }
-                     Test test = new Test(f2.getName());
-                     run.addTest(test);
-                     String line;
-                     while ((line = br.readLine()) != null) {
-                        test.addLine(line);
-                     }
+                  DirectoryStream<Path> stream3 = Files.newDirectoryStream(file2);
+                  Test test = new Test(f2.getName());
+                  if (run == null) {
+                     run = new Run(f.getName());
+                     runs.add(run);
                   }
-                  catch (FileNotFoundException enf) {
-                     // ignore
-                  }
-                  catch (Exception e) {
-                     e.printStackTrace();
-                  }
+                  run.addTest(test);
+
+                  for (Path file3: stream3) {
+                     File f3 = file3.toFile();
+                     String fname = f3.getName();
+                     if (fname.equals("kpi.csv")) {
+                        try {
+                           BufferedReader br = new BufferedReader(new FileReader(f3));
+                           if (test_names.get(f2.getName()) == null) {
+                              test_names.put(f2.getName(), f2.getName());
+                              test_namesv.add(f2.getName());
+                           }
+                           String line;
+                           while ((line = br.readLine()) != null) {
+                              test.addLine(line);
+                           }
+                        }
+                        catch (FileNotFoundException enf) {
+                           // ignore
+                        }
+                        catch (Exception e) {
+                           e.printStackTrace();
+                        }
+                     }// if kpi.csv
+                     else if (fname.startsWith("kpi-") && fname.endsWith(".png")) {
+                        test.addKpiImage(fname);
+                     }
+                  }// for all files in the test dir  
                }
             }
          }
@@ -370,6 +380,8 @@ public class kpi {
 
       String test_bed = "Test Bed";
       String last_run = "";
+      String last_run_kpi_images = "";
+      StringBuffer pngs = new StringBuffer();
 
       boolean cp = true;
       for (int i = 0; i<runs.size(); i++) {
@@ -378,7 +390,35 @@ public class kpi {
          String row_text = ("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
                             + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
                             + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
-         last_run = row_text;
+         if (i == (runs.size() - 1)) {
+            int png_row_count = 0;
+            boolean needs_tr = true;
+            last_run = row_text;
+            for (Test t : run.testsv) {
+               for (String png : t.kpi_images) {
+                  if (png.indexOf("-print") >= 0) {
+                     continue; // skip the print variants of the image.
+                  }
+                  if (needs_tr) {
+                     pngs.append("<tr>");
+                     needs_tr = false;
+                  }
+                  String fname = run.getName() + "/" + t.getName() + "/" + png;
+                  pngs.append("<td><a href=\"" + fname + "\"><img src=\"" + fname + "\" width=\"100\"></a></td>\n");
+                  png_row_count++;
+                  if (png_row_count == 5) {
+                     png_row_count = 0;
+                     pngs.append("</tr>\n");
+                     needs_tr = true;
+                  }
+               }
+            }
+
+            if (needs_tr && pngs.length() > 0) {
+               pngs.append("</tr>\n");
+            }
+         }
+
          runs_rows.append(row_text);
 
          if (cp) {
@@ -410,7 +450,9 @@ public class kpi {
             line = line.replace("___DATA_GRAPHS___", plots.toString());
             line = line.replace("___TEST_RUNS___", runs_rows.toString());
             line = line.replace("___LATEST_RUN___", last_run);
+            line = line.replace("___LATEST_RUN_PNGS___", pngs.toString());
             bw.write(line);
+            bw.write(System.lineSeparator());
          }
          
          br.close();
@@ -555,6 +597,7 @@ class Test {
    Vector<String> titles = null;
    Vector<Row> data = new Vector();
    Hashtable<String, String> descs = new Hashtable();
+   Vector<String> kpi_images = new Vector();
 
    long date_ms = 0;
    public String date = "NA";
@@ -566,6 +609,10 @@ class Test {
 
    public Test(String n) {
       name = n;
+   }
+
+   void addKpiImage(String s) {
+      kpi_images.add(s);
    }
 
    long getDateMs() {
