@@ -403,10 +403,12 @@ public class kpi {
                      pngs.append("<tr>");
                      needs_tr = false;
                   }
+                  String img_title = "Test: " + t.getName();
                   String fname = run.getName() + "/" + t.getName() + "/" + png;
-                  pngs.append("<td><a href=\"" + fname + "\"><img src=\"" + fname + "\" width=\"100\"></a></td>\n");
+                  pngs.append("<td><a href=\"" + fname + "\"><img src=\"" + fname + "\" style='width:400px;max-width:400px' title=\""
+                              + img_title + "\"></a></td>\n");
                   png_row_count++;
-                  if (png_row_count == 5) {
+                  if (png_row_count == 2) {
                      png_row_count = 0;
                      pngs.append("</tr>\n");
                      needs_tr = true;
