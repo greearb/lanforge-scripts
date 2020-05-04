@@ -33,6 +33,7 @@ public class kpi {
    static final String out_sep = "\t";
    static final String in_sep = "\t";
    
+   public static int PRIORITY_IDX = 6;
    public static int TEST_ID_IDX = 7;
    public static int SHORT_DESC_IDX = 8;
    public static int NUMERIC_SCORE_IDX = 10;
@@ -202,6 +203,7 @@ public class kpi {
          }
       }
 
+      StringBuffer scores = new StringBuffer();
       StringBuffer plots = new StringBuffer();
       StringBuffer groups = new StringBuffer();
       StringBuffer runs_rows = new StringBuffer();
@@ -272,8 +274,12 @@ public class kpi {
                   hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
                }
 
-               plots.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
-
+               if (csv.getPriority() >= 100) {
+                  scores.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+               }
+               else {
+                  plots.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+               }
             }
             catch (Exception ee) {
                ee.printStackTrace();
@@ -416,7 +422,7 @@ public class kpi {
                }
             }
 
-            if (needs_tr && pngs.length() > 0) {
+            if ((!needs_tr) && pngs.length() > 0) {
                pngs.append("</tr>\n");
             }
          }
@@ -448,6 +454,7 @@ public class kpi {
          String line;
          while ((line = br.readLine()) != null) {
             line = line.replace("___TITLE___", test_bed + " Report History");
+            line = line.replace("___SCORE_RUNS___", scores.toString());
             line = line.replace("___GROUP_GRAPHS___", groups.toString());
             line = line.replace("___DATA_GRAPHS___", plots.toString());
             line = line.replace("___TEST_RUNS___", runs_rows.toString());
@@ -480,6 +487,7 @@ class HistRow {
    String title = "";
    String units = "";
    String graph_group = "";
+   int prio = 0;
    StringBuffer csv = new StringBuffer();
 
    public HistRow(Row r) {
@@ -487,6 +495,11 @@ class HistRow {
       title = r.getShortDesc();
       units = r.getUnits();
       graph_group = r.getGraphGroup();
+      prio = r.getPriority();
+   }
+
+   int getPriority() {
+      return prio;
    }
 
    String getFname() {
@@ -561,6 +574,15 @@ class Row {
       }
       catch (Exception e) {
          return "";
+      }
+   }
+
+   int getPriority() {
+      try {
+         return Long.valueOf(rdata.elementAt(kpi.PRIORITY_IDX)).intValue();
+      }
+      catch (Exception e) {
+         return 0;
       }
    }
 
