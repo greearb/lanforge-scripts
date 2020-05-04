@@ -21,6 +21,7 @@
 //           questions.
 //
 
+import java.text.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.URL;
@@ -70,6 +71,20 @@ public class kpi {
       }
       catch (Exception ee) {
          ee.printStackTrace();
+      }
+   }
+
+   public static String toStringNum(double i, int precision) {
+      NumberFormat nf = NumberFormat.getInstance();
+      if (0.0 == i) {
+         // Don't pad precision on '0', just adds needless clutter.
+         return nf.format(i);
+      }
+      else {
+         nf = (NumberFormat)(nf.clone());
+         nf.setMaximumFractionDigits(precision);
+         nf.setMinimumFractionDigits(precision);
+         return nf.format(i);
       }
    }
 
@@ -193,7 +208,9 @@ public class kpi {
                         csv = new HistRow(r);
                         hist.addRow(csv);
                      }
-                     csv.csv.append(i + kpi.out_sep + t.data.elementAt(z).getScore() + System.lineSeparator());
+                     String score =  t.data.elementAt(z).getScore();
+                     csv.csv.append(i + kpi.out_sep + score + System.lineSeparator());
+                     csv.scores.add(Double.valueOf(score));
                   }
                }
                catch (Exception eee) {
@@ -274,11 +291,24 @@ public class kpi {
                   hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
                }
 
+               StringBuffer change = new StringBuffer();
+               Double cur = csv.scores.elementAt(csv.scores.size() - 1);
+               change.append("Last Value: " + toStringNum(cur, 2));
+               if (csv.scores.size() > 1) {
+                  Double prev = csv.scores.elementAt(csv.scores.size() - 2);
+                  change.append("<br>Delta for last run: " + toStringNum((cur - prev), 2));
+                  if (cur != 0) {
+                     change.append("<br>Percentage change: " + toStringNum(100.0 * ((cur - prev) / cur), 2) + "%");
+                  }
+               }
+
+               String row_str = ("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td><td>"
+                                 + change + "</td></tr>\n");
                if (csv.getPriority() >= 100) {
-                  scores.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+                  scores.append(row_str);
                }
                else {
-                  plots.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+                  plots.append(row_str);
                }
             }
             catch (Exception ee) {
@@ -292,10 +322,15 @@ public class kpi {
             if (datasets.size() < 2) {
                continue; // group of 1 doesn't count
             }
-            
+
             HistRow csv0 = datasets.elementAt(0);
             String title = g;
             String units = csv0.getUnits();
+
+            // Don't group scores
+            if (units.equalsIgnoreCase("Score")) {
+               continue;
+            }
 
             if (units.equals("NA") || units.equals("")) {
                units = "Data";
@@ -489,6 +524,7 @@ class HistRow {
    String graph_group = "";
    int prio = 0;
    StringBuffer csv = new StringBuffer();
+   Vector<Double> scores = new Vector();
 
    public HistRow(Row r) {
       name = r.getShortDescKey();
