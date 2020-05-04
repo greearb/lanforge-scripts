@@ -37,6 +37,7 @@ public class kpi {
    public static int PRIORITY_IDX = 6;
    public static int TEST_ID_IDX = 7;
    public static int SHORT_DESC_IDX = 8;
+   public static int PASS_FAIL_IDX = 8;
    public static int NUMERIC_SCORE_IDX = 10;
    public static int NOTES_IDX = 11;
    public static int UNITS_IDX = 12;
@@ -45,8 +46,24 @@ public class kpi {
    public static String TESTBED_TEMPLATE = "testbed_template.html";
    public static String AP_AUTO_BASIC_CX = "ap_auto_basic_cx";
 
+   public static String HTML_COLOR_PASS = "#bee7aa";
+   public static String HTML_COLOR_FAIL = "#f9c5c0";
+   public static String HTML_COLOR_WARNING = "#f8f6ad";
+
    public kpi() {
       priv_init();
+   }
+
+   static String yellowTd(String txt) {
+      return "<td><span style='background:" + HTML_COLOR_WARNING + ";color:black;'>" + txt + "</span></td>";
+   }
+
+   static String redTd(String txt) {
+      return "<td><span style='background:" + HTML_COLOR_FAIL + ";color:black;'>" + txt + "</span></td>";
+   }
+
+   static String greenTd(String txt) {
+      return "<td><span style='background:" + HTML_COLOR_PASS + ";color:black;'>" + txt + "</span></td>";
    }
 
    public boolean is_mac() {
@@ -428,10 +445,12 @@ public class kpi {
       for (int i = 0; i<runs.size(); i++) {
          Run run = runs.elementAt(i);
          test_bed = run.getTestRig();
+         
          String row_text = ("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
                             + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
-                            + "</td><td>" + run.getDutModelNum() + "</td></tr>\n");
+                            + "</td><td>" + run.getDutModelNum() + "</td>" + greenTd(run.getPass() + "") + redTd(run.getFail() + "") + "</tr>\n");
          if (i == (runs.size() - 1)) {
+            // Last run
             int png_row_count = 0;
             boolean needs_tr = true;
             last_run = row_text;
@@ -622,6 +641,10 @@ class Row {
       }
    }
 
+   String getPassFail() {
+      return rdata.elementAt(kpi.PASS_FAIL_IDX);
+   }
+
    String getScore() {
       return rdata.elementAt(kpi.NUMERIC_SCORE_IDX);
    }
@@ -658,6 +681,8 @@ class Test {
    Vector<Row> data = new Vector();
    Hashtable<String, String> descs = new Hashtable();
    Vector<String> kpi_images = new Vector();
+   int pass = 0;
+   int fail = 0;
 
    long date_ms = 0;
    public String date = "NA";
@@ -669,6 +694,14 @@ class Test {
 
    public Test(String n) {
       name = n;
+   }
+
+   public int getPass() {
+      return pass;
+   }
+
+   public int getFail() {
+      return fail;
    }
 
    void addKpiImage(String s) {
@@ -772,6 +805,14 @@ class Test {
          }
          //System.out.println("done tok reading loop");
 
+         String pf = row.getPassFail().toLowerCase();
+         if (pf.indexOf("pass") >= 0) {
+            pass++;
+         }
+         else if (pf.indexOf("fail") >= 0) {
+            fail++;
+         }
+
          row.setShortDescKey(row.getShortDesc().replace(" ", "_"));
          //System.out.println("Row: " + row);
          descs.put(row.getShortDesc(), row.getShortDesc());
@@ -787,6 +828,22 @@ class Run {
 
    public Run(String n) {
       name = n;
+   }
+
+   int getPass() {
+      int pass = 0;
+      for (Test t: testsv) {
+         pass += t.getPass();
+      }
+      return pass;
+   }
+
+   int getFail() {
+      int fail = 0;
+      for (Test t: testsv) {
+         fail += t.getFail();
+      }
+      return fail;
    }
 
    Test getFirstTest() {
