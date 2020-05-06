@@ -74,68 +74,59 @@ if (-f "$fname") {
      );
   print Dumper(\%address_map);
   for my $ln (@lines) {
-    print "LN[$ln]\n";
+    print "\nLN[$ln]\n";
     next if ($ln =~ /^\s*$/);
-    next if ($ln =~ /^127.0.0.1\b/);
-    next if ($ln =~ /^::1\b/);
-    next if ($ln =~ /^$ip\s+$MgrHostname\b/);
     next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/); # old typo
     next if ($ln =~ /^###-LF-HOSTNAME-NEXT-###/);
-
-    #$found_localhost++ if ($ln =~ /^127.0.0.1\s+localhost/);
-    #if ($ln =~ /\b$MgrHostname\b/
-    #   || $ln =~ /\blanforge-srv\b/
-    #   || $ln =~ /\b$ip\b/) {
-    #   print "MANAGER LINE [$ln]\n";
-    #   my @hunks = split(/\s+/, $ln);
-    #   for my $hunk (@hunks) {
-    #     print "HUNK{$hunk} ";
-    #     next if ($hunk =~ /\b(localhost)/);
-    #     next if ($hunk =~ /\b$ip\b/);
-    #     next if ($hunk =~ /\blanforge-srv\b/);
-    #     next if ($hunk =~ /\b$MgrHostname\b/);
-    #     if
-    #     $address_map{$ip} .= " $hunk" if ($hunk =~ /[g-z.]+/); # could not be ipv6 or ipv4
-    #     $address_map{$hunk} .= " extra-$counter" if ($hunk =~ /^[0-9.]+\b/);
-    #     $address_map{$hunk} .= " extra6-$counter" if ($hunk =~ /[0-9a-f]+[:]/);
-    #     $counter++;
-    #   }
-    #   next;
-    #}
-
 
     print "\nPARSING IPv4 ln[$ln]\n";
     @hunks = split(/\s+/, $ln);
     my $middleip = 0;
-    my $counter2 = 0;
+    my $counter2 = -1;
     my $prevname = "";
     my $previp = "";
+    my $linehasip = 0;
+    my $lfhostname = 0;
     for my $hunk (@hunks) {
-      print "ZUNK{$hunk} ";
-      next if ($hunk =~ /^localhost/);
-      next if ($hunk =~ /^192\.168\.1\.101/);
-      next if ($hunk =~ /^127\.0\.0\.1/);
-      next if ($hunk =~ /^::1\b/);
-      next if ($hunk =~ /^::1\b/);
-      next if ($hunk =~ /^$ip\b/);
-      next if ($hunk =~ /^lanforge-srv\b/);
-      next if ($hunk =~ /^$MgrHostname\b/);
-      next if ($hunk =~ /^lanforge\.local(domain|net)\b/);
-
+      print "\n   ZUNK",$counter2,"-:$hunk:- ";
       $counter2++;
+      next if ($hunk =~ /^localhost/);
+      next if ($hunk =~ /^lanforge-srv\b/);
+      next if ($hunk =~ /^lanforge\.local(domain|net)\b/);
+      next if ($hunk =~ /^extra6?-\d+/);
+
+      if (($hunk =~ /^$ip\b/)
+         || ($hunk =~ /^$MgrHostname\b/)
+         ){
+         $linehasip++;
+         $lfhostname++;
+         $prevname = $hunk;
+      }
+
+      if (($hunk =~ /^127\.0\.0\.1/)
+         || ($hunk =~ /^192\.168\.1\.101/)
+         || ($hunk =~ /^::1\b/)
+         ){
+         $previp = $hunk;
+         $linehasip++;
+      }
+
       if ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
+         $linehasip++;
          print " IP4($hunk)";
          $previp = $hunk;
-         if ($counter2) { # we're not first item on line
-            $middleip++;
+         if ($counter2 > 0) { # we're not first item on line
+            $middleip++ if ($counter2 > 0);
             print "MIDDLE";
          }
-         else {
-            $address_map{$hunk} .= " extra-$counter2";
-            print "+IP4";
+
+         if (!(defined $address_map{$hunk})) {
+            $address_map{$hunk} = "";
          }
+         print "+IP4";
+         $previp = $hunk;
       }
-      if (($hunk =~ /[G-Zg-z]+\.?/) || ($hunk =~ /^\D+\.?/)) {
+      elsif (($hunk =~ /[G-Zg-z]+\.?/) || ($hunk =~ /^[^:A-Fa-f0-9]+/)) {
          print " notIP($hunk)";
          $prevname = $hunk;
          if ($middleip) {
@@ -143,23 +134,37 @@ if (-f "$fname") {
             $address_map{$previp} .= " $hunk";
             $prevname = $hunk;
          }
-         else {
-            print " more($hunk)";
-            $more_hostnames{$hunk} = 1 ; # could not be ipv6 or ipv4, nutty stuff at start of line
+         elsif ($linehasip) {
+            print " prev($previp $hunk)";
+            $address_map{$previp} .= " $hunk";
+         }
+         elsif ($lfhostname) {
+            $more_hostnames{$hunk} = 1;
+         }
+         else { # strange word
+            print " hunk($hunk) has no IP***";
+            $more_hostnames{$hunk} = 1;
          }
       }
-      elsif ($hunk =~ /^[0-9.]+\b/) {
-         print " hunk($hunk)prev($prevname)";
-         $address_map{$hunk} .= " $prevname extra-$counter2" ;
-         $previp = $hunk;
-         next;
-      }
-      elsif ($hunk =~ /[0-9a-f]+[:]/) {
+      elsif (($hunk =~ /::/)
+         || ($hunk =~ /[0-9A-Fa-f]+:/)) {
          print " hunk6($hunk)";
-         $address_map{$hunk} .= " extra6-$counter2";
+         $linehasip++;
+         if (!(defined $address_map{$hunk})) {
+            $address_map{$hunk} = "";
+         }
          $previp = $hunk;
       }
-    }
+      elsif ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
+         print " hunk($hunk)prev($prevname)";
+         $address_map{$hunk} .= " $prevname" ;
+         $previp = $hunk;
+      }
+      else { # is hostname and not an ip
+         $address_map{$previp} .= " $hunk";
+      }
+
+    } # ~foreach hunk
 
   } # ~foreach line
 
