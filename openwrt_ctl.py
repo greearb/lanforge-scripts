@@ -48,7 +48,7 @@ def usage():
    print("--prompt   Prompt to look for when commands are done (default: root@OpenWrt)")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file log messages here")
-   print("--action (logread | journalctl | lurk | reboot | cmd")
+   print("--action (logread | journalctl | lurk | sysupgrade | reboot | cmd")
    print("--value (option to help complete the action")
    print("-h|--help")
 
@@ -77,7 +77,7 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["logread", "journalctl", "lurk", "reboot", "cmd" ])
+      choices=["logread", "journalctl", "lurk", "sysupgrade", "reboot", "cmd" ])
    parser.add_argument("--value",         type=str, help="set value")
    tty = None
 
@@ -221,6 +221,18 @@ def main():
       command = "date"
       TO=1
       wait_forever = True
+
+   if (args.action == "sysupgrade"):
+       command = "scp %s /tmp/new_img.bin"%(args.value)
+       logg.info("Command[%s]"%command)
+       egg.sendline(command);
+
+       egg.expect("password:", timeout=5)
+       egg.sendline("lanforge")
+       egg.expect(CCPROMPT, timeout=20)
+       egg.sendline("sysupgrade /tmp/new_img.bin")
+       egg.expect("link becomes ready", timeout=100)
+       return
 
    if (command is None):
       logg.info("No command specified, going to log out.")
