@@ -5,8 +5,8 @@ use warnings;
 use diagnostics;
 use Carp;
 use Data::Dumper;
-
-
+my $Q='"';
+my $q="'";
 my @idhunks = split(' ', `id`);
 my @hunks = grep { /uid=/ } @idhunks;
 die ("Must be root to use this")
@@ -50,6 +50,7 @@ die ("No ip found for mgt_dev; your config.values file is out of date: $!")
 print "ip: $ip\n";
 
 # This must be kept in sync with similar code in lf_kinstall.
+my $found_localhost = 0;
 my $fname = "/etc/hosts";
 if (-f "$fname") {
   my @lines = `cat $fname`;
@@ -59,42 +60,148 @@ if (-f "$fname") {
   chomp(@lines);
   # we want to consolidate the $ip $hostname entry for MgrHostname
   my @newlines = ();
-  my %more_hostnames = ("lanforge-srv" => 1);
+  my %more_hostnames = ();
   my $new_entry = "$ip ";
-  my $blank = 0;
-  my $was_blank = 0;
+  #my $blank = 0;
+  #my $was_blank = 0;
+  my $counter = 0;
+  my $debug = 0;
+  my %address_map = (
+     "127.0.0.1" => "localhost.localdomain localhost localhost4.localdomain4 localhost4",
+     "::1" => "localhost.localdomain localhost localhost6.loaldomain6 localhost6",
+     $ip => $MgrHostname,
+     "192.168.1.101" => "lanforge.localnet lanforge.localdomain",
+     );
+  print Dumper(\%address_map) if ($debug);
+  my $prevname = "";
+  my $previp = "";
 
   for my $ln (@lines) {
-    $was_blank = $blank;
-    $blank = ($ln =~ /^\s*$/) ? 1 : 0;
-    next if ($blank && $was_blank);
-    next if ($ln =~/^$ip $MgrHostname$/);
+    print "\nLN[$ln]\n" if ($debug);
+    next if ($ln =~ /^\s*$/);
     next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/); # old typo
     next if ($ln =~ /^###-LF-HOSTNAME-NEXT-###/);
-    if ($ln =~ /\b($MgrHostname|lanforge-srv|$ip)\b/) {
-       print "Matching LINE $ln\n";
-       my @hunks = split(/\s+/, $ln);
-       for my $hunk (@hunks) {
-         #print "HUNK{$hunk} ";
-         next if ($hunk =~ /^($ip|lanforge-srv|$MgrHostname)$/);
-         $more_hostnames{$hunk} = 1;
-       }
-       next;
-    }
-    print "ok ln[$ln]\n";
-    push(@newlines, $ln);
+
+    print "PARSING IPv4 ln[$ln]\n" if ($debug);
+    @hunks = split(/\s+/, $ln);
+    my $middleip = 0;
+    my $counter2 = -1;
+    my $linehasip = 0;
+    my $lfhostname = 0;
+    for my $hunk (@hunks) {
+      print "\n   HUNK",$counter2,"-:$hunk:- " if ($debug);
+      $counter2++;
+      next if ($hunk =~ /^localhost/);
+      next if ($hunk =~ /^lanforge-srv\b/);
+      next if ($hunk =~ /^lanforge\.local(domain|net)\b/);
+      next if ($hunk =~ /^extra6?-\d+/);
+
+      if (($hunk =~ /^$ip\b/)
+         || ($hunk =~ /^$MgrHostname\b/)){
+         $linehasip++;
+         $lfhostname++;
+         $prevname = $hunk;
+      }
+
+      if (($hunk =~ /^127\.0\.0\.1/)
+         || ($hunk =~ /^192\.168\.1\.101/)
+         || ($hunk =~ /^::1\b/)){
+         $previp = $hunk;
+         $linehasip++;
+      }
+
+      if ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
+         $linehasip++;
+         print " IP4($hunk)" if ($debug);
+         $previp = $hunk;
+         if ($counter2 > 0) { # we're not first item on line
+            $middleip++ if ($counter2 > 0);
+            print "middle" if ($debug);
+         }
+         if (!(defined $address_map{$hunk})) {
+            $address_map{$hunk} = "";
+         }
+         print "+IP4" if ($debug);
+         $previp = $hunk;
+      }
+      elsif (($hunk =~ /[G-Zg-z]+\.?/) || ($hunk =~ /^[^:A-Fa-f0-9]+/)) {
+         print " notIP($hunk)" if ($debug);
+         $prevname = $hunk;
+         if ($middleip) {
+            print " middle($previp)" if ($debug);
+            $address_map{$previp} .= " $hunk"
+               if ($address_map{$previp} !~ /\b$hunk\b/);
+            $prevname = $hunk;
+         }
+         elsif ($linehasip) {
+            print " prev($previp $hunk)" if ($debug);
+            $address_map{$previp} .= " $hunk"
+               if ($address_map{$previp} !~ /\b$hunk\b/);
+         }
+         elsif ($lfhostname) {
+            $more_hostnames{$hunk} = 1;
+         }
+         else { # strange word
+            if ("" eq $previp) {
+               print " hunk($hunk) has no IP***" if ($debug);
+               $more_hostnames{$hunk} = 1;
+            }
+            elsif ($address_map{$previp} !~ /\b$hunk\b/) {
+               $address_map{$previp} .= " $hunk"
+            }
+         }
+      }
+      elsif (($hunk =~ /::/)
+         || ($hunk =~ /[0-9A-Fa-f]+:/)) {
+         print " hunk6($hunk)" if ($debug);
+         $linehasip++;
+         if (!(defined $address_map{$hunk})) {
+            $address_map{$hunk} = "";
+         }
+         $previp = $hunk;
+      }
+      elsif ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
+         print " hunk($hunk)prev($prevname)" if ($debug);
+         $address_map{$hunk} .= " $prevname"
+            if ($address_map{$hunk} !~ /\b$prevname\b/);
+         $previp = $hunk;
+      }
+      elsif ($address_map{$previp} !~ /\b$hunk\b/) { # is hostname and not an ip
+         $address_map{$previp} .= " $hunk";
+      }
+
+    } # ~foreach hunk
+
+  } # ~foreach line
+
+  for my $name (sort keys %more_hostnames) {
+     $address_map{$ip} .= " $name";
+     print "NEWSTUFF $ip $address_map{$ip}\n" if ($debug);
+  }
+
+  print Dumper(\%address_map) if ($debug);
+
+  unshift(@newlines, "192.168.1.101 ".$address_map{"192.168.1.101"});
+  unshift(@newlines, "127.0.0.1  ".$address_map{"127.0.0.1"});
+  unshift(@newlines, "::1  ".$address_map{"::1"});
+
+  delete($address_map{"192.168.1.101"});
+  delete($address_map{"127.0.0.1"});
+  delete($address_map{"::1"});
+
+  for my $key (sort keys %address_map){
+     next if ($key eq $ip);
+     push(@newlines, $key."    ".$address_map{$key});
   }
   push(@newlines, "###-LF-HOSTNAME-NEXT-###");
-
+  push(@newlines, $ip."    ".$address_map{$ip});
+  print Dumper(\@newlines) if ($debug);
+  sleep 5 if ($debug);
   for my $ln (@newlines) {
     print FILE "$ln\n";
   }
 
-  print FILE "$ip $MgrHostname";
-  for my $name (keys %more_hostnames) {
-    print FILE " $name";
-  }
-  print FILE "\n\n";
+  print FILE "\n";
   close FILE;
 }
 
@@ -163,7 +270,7 @@ foreach my $file (@places_to_check) {
          }
          push(@newlines, "# modified by lanforge\n") if ($edited == 0);
 
-	 my $fh;
+         my $fh;
          die ($!) unless open($fh, ">", $file);
          print $fh join("\n", @newlines);
          close $fh;

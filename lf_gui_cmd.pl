@@ -125,20 +125,36 @@ if ($scenario ne "") {
 }
 
 if ($ttype ne "") {
-  print doCmd("cv create '$ttype' '$tname'");
+  # Try several times in case system is currently busy cleaning up or similar.
+  my $i;
+  my $rslt;
+  for ($i = 0; $i<60; $i++) {
+    $rslt = doCmd("cv create '$ttype' '$tname'");
+    print $rslt;
+    if ($rslt =~ /BUSY/) {
+       sleep(1);
+    }
+    else {
+       last;
+    }
+  }
   if ($tconfig ne "") {
     print doCmd("cv load '$tname' '$tconfig'");
   }
   print doCmd("cv click '$tname' 'Auto Save Report'");
 
-  my $i;
   for ($i = 0; $i<@modifiers_key; $i++) {
      my $k = $modifiers_key[$i];
      my $v = $modifiers_val[$i];
      print doCmd("cv set '$tname' '$k' '$v'");
   }
 
-  print doCmd("cv click '$tname' 'Start'");
+  $rslt = doCmd("cv click '$tname' 'Start'");
+  print $rslt;
+  if ($rslt =~ /Could not find instance/) {
+     exit(1);
+  }
+
   while (1) {
     my $rslt = doCmd("cv get '$tname' 'Report Location:'");
     #print "Result-:$rslt:-\n";
