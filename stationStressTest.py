@@ -5,7 +5,7 @@ import time
 sys.path.append('py-json')
 import json
 import pprint
-from datetime import date
+import datetime
 from LANforge import LFRequest
 from LANforge import LFUtils
 
@@ -160,8 +160,18 @@ for name in stations:
 
 
 #create weblog for monitoring stations
-webLog = "stationStressTestLog.html"
-f = open(webLog,"w")
+curTime = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
+webLog = "/home/lanforge/Documents/load-test/loadTest{}.html".format(curTime)
+
+try:
+	f = open(webLog,"w")
+
+except IOError as err:
+	print(err)
+	print("Please ensure correct permissions have been assigned in target directory")
+	sys.exit()
+
+
 top = """<html>
 <head>
 <title>Test report</title>
@@ -171,29 +181,31 @@ h1, h2, h3 { text-align: center; font-family: "Century Gothic",Arial,Helvetica,s
 </style>
 </head>
 <body>
-<h1>Long test on {}</h1>
+<h1>Long test on %s</h1>
 <table>
-""".format(date.today())
+""" % datetime.date.today()
 
 
 f.write(top)
 f.close()
 
+f = open(webLog, "a")
+f.write("<tr>\n")
 
+for name in radios:
+	f.write("<th>{}</th>\n".format(name))
 
-for min5 in range(1):
+f.write("</tr>\n")
+
+print("Logging Info to {}".format(webLog))
+for min5 in range(3):
+	f.write("<tr>")
 	for radio, numStations in radios.items():
-
-		f = open(webLog, "a")
-		f.write("<tr>\n")
-		f.write("<th>{}</th>\n".format(radio))
-		f.write("</tr>\n")
-
-
+		#print(radio)
 		withoutIP = 0
 		dissociated = 0
+		good = 0
 
-		f.write("<tr>")
 		for i in range(0,numStations):
 			staName = "sta" + radio[-1:] + str(paddingNum + i)[1:]
 			staStatus = getJsonInfo(mgrURL, "port/1/1/" + staName)
@@ -201,19 +213,23 @@ for min5 in range(1):
 				withoutIP += 1
 				if staStatus['interface']['ap'] == None:
 					dissociated += 1
+			else:
+				good += 1
 
-			f.write("<td>\n")
-			f.write("<td>{}</td>".format(staName))
-			f.write("</td>\n")
-		f.write("</tr>")
+		if withoutIP and not dissociated:
+			f.write("<td style=\"background-color:rgb(255,200,0);\">{}/{}</td>".format(good,numStations)) #without IP assigned
+		elif dissociated:
+			f.write("<td style=\"background-color:rgb(255,0,0);\">{}/{}</td>".format(good,numStations)) #dissociated from AP
+		else:
+			f.write("<td style=\"background-color:rgb(0,255,0);\">{}/{}</td>".format(good,numStations)) #with IP and associated
 
-	f.write("</table></body></html>\n")
-	f.close()
+	f.write("</tr>")
+	time.sleep((min5 + 1) * 30) #Sleeps for five minutes at a time per loop
 
 
-		#print("Without IP: {}".format(withoutIP))
-		#print("Dissociated: {}".format(dissociated))
-	time.sleep((min5 + 1) * 300) #Sleeps for five minutes at a time per loop
+f.write("</table></body></html>\n")
+f.close()
+
 
 print("Stopping CX Traffic")
 for name in stations:
@@ -223,6 +239,7 @@ for name in stations:
 time.sleep(10)
 
 #remove all created stations and cross connects
+
 print("Cleaning Up...")
 for staName in stations:
 	reqURL = "cli-json/rm_vlan"
