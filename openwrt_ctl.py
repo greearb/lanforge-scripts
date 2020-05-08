@@ -48,8 +48,9 @@ def usage():
    print("--prompt   Prompt to look for when commands are done (default: root@OpenWrt)")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file log messages here")
-   print("--action (logread | journalctl | lurk | sysupgrade | reboot | cmd")
+   print("--action (logread | journalctl | lurk | sysupgrade | download | reboot | cmd")
    print("--value (option to help complete the action")
+   print("--value2 (option to help complete the action, dest filename for download")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -77,8 +78,9 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["logread", "journalctl", "lurk", "sysupgrade", "reboot", "cmd" ])
+      choices=["logread", "journalctl", "lurk", "sysupgrade", "download", "reboot", "cmd" ])
    parser.add_argument("--value",         type=str, help="set value")
+   parser.add_argument("--value2",        type=str, help="set value2")
    tty = None
 
    args = None
@@ -131,7 +133,7 @@ def main():
          egg.logfile = FileAdapter(logg)
          egg.sendline(NL)
          try:
-             i = egg.expect([prompt, "Please pres Enter to activate", "login:"], timeout=3)
+             i = egg.expect([prompt, "Please press Enter to activate", "login:"], timeout=3)
              if (i == 2):
                  egg.sendline(user)
                  egg.expect("Password:")
@@ -196,7 +198,7 @@ def main():
    egg.expect("__hello__")
    egg.expect(CCPROMPT)
 
-   logg.info("Action[%s] Value[%s] "%(args.action, args.value))
+   logg.info("Action[%s] Value[%s] Value2[%s]"%(args.action, args.value, args.value2))
 
    if (args.action == "reboot"):
       command = "reboot"
@@ -227,11 +229,27 @@ def main():
        logg.info("Command[%s]"%command)
        egg.sendline(command);
 
-       egg.expect("password:", timeout=5)
+       i = egg.expect(["password:", "Do you want to continue connecting"], timeout=5)
+       if i == 1:
+           egg.sendline("y")
+           egg.expect("password:", timeout=5)
        egg.sendline("lanforge")
        egg.expect(CCPROMPT, timeout=20)
        egg.sendline("sysupgrade /tmp/new_img.bin")
        egg.expect("link becomes ready", timeout=100)
+       return
+
+   if (args.action == "download"):
+       command = "scp %s /tmp/%s"%(args.value, args.value2)
+       logg.info("Command[%s]"%command)
+       egg.sendline(command);
+
+       i = egg.expect(["password:", "Do you want to continue connecting"], timeout=5)
+       if i == 1:
+           egg.sendline("y")
+           egg.expect("password:", timeout=5)
+       egg.sendline("lanforge")
+       egg.expect(CCPROMPT, timeout=20)
        return
 
    if (command is None):
