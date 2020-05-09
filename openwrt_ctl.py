@@ -189,7 +189,11 @@ def main():
    CLOSEDBYREMOTE = "closed by remote host."
    CLOSEDCX = "Connection to .* closed."
 
-   egg.expect(CCPROMPT)
+   try:
+       egg.expect(CCPROMPT)
+   except Exception as e:
+       egg.sendline(NL)
+
    TO=10
    wait_forever = False
 
