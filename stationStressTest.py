@@ -8,6 +8,9 @@ import pprint
 import datetime
 from LANforge import LFRequest
 from LANforge import LFUtils
+import argparse
+import re
+import math
 
 def jsonReq(mgrURL, reqURL, data, debug=False):
         lf_r = LFRequest.LFRequest(mgrURL + reqURL)
@@ -31,14 +34,88 @@ def getJsonInfo(mgrURL, reqURL):
 	json_response = lf_r.getAsJson()
 	return json_response
 
+
+
+parser = argparse.ArgumentParser(description="create max stations for each radio")
+parser.add_argument("--test_duration", type=str, help="full duration for the test to run. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--report_interval", type=str, help="how often a report is made. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--output_dir", type=str, help="directory to ouptut to")
+parser.add_argument("--output_prefix", type=str, help="name of the file. Timestamp will be appended to the end")
+
+
+args = None
+try:
+	args = parser.parse_args()
+	if (args.test_duration is not None):
+		pattern = re.compile("^(\d+)([dhms])$")
+		td = pattern.match(args.test_duration)
+		if td != None:
+			durTime = int(td.group(1))
+			durMeasure = td.group(2)
+			if durMeasure == 'd':
+				duration = durTime * 60 * 60 * 24
+			elif durMeasure == 'h':
+				duration = durTime * 60 * 60
+			elif durMeasure == 'm':
+				duration = durTime * 60
+			else:
+				duration = durMeasure
+		else:
+			parser.print_help()
+			parser.exit()
+
+	if (args.report_interval is not None):
+                pattern = re.compile("^(\d+)([dhms])$")
+                td = pattern.match(args.report_interval)
+                if td != None:
+                        intTime = int(td.group(1))
+                        intMeasure = td.group(2)
+                        if intMeasure == 'd':
+                                interval = intTime * 60 * 60 * 24
+                        elif intMeasure == 'h':
+                                interval = intTime * 60 * 60
+                        elif intMeasure == 'm':
+                                interval = intTime * 60
+                        else:
+                                interval = intMeasure
+                else:
+                        parser.print_help()
+                        parser.exit()
+
+	if (args.output_dir != None):
+		outputDir = args.output_dir
+	else:
+		parser.print_help()
+		parser.exit()
+
+	if (args.output_prefix != None):
+		outputPrefix = args.output_prefix
+	else:
+		parser.print_help()
+		parser.exit()
+
+except Exception as e:
+      logging.exception(e)
+      usage()
+      exit(2)
+
 stations = []
 radios = {"wiphy0":200, "wiphy1":200, "wiphy2":64, "wiphy3":200} #radioName:numStations
+radio_ssid_map = {"wiphy0":"jedway-wpa2-x2048-4-1",
+		  "wiphy1":"jedway-wpa2-x2048-5-3",
+		  "wiphy2":"jedway-wpa2-x2048-5-1",
+		  "wiphy3":"jedway-wpa2-x2048-4-4"}
+
+ssid_passphrase_map = {"jedway-wpa2-x2048-4-1":"jedway-wpa2-x2048-4-1",
+		       "jedway-wpa2-x2048-5-3":"jedway-wpa2-x2048-5-3",
+		       "jedway-wpa2-x2048-5-1":"jedway-wpa2-x2048-5-1",
+		       "jedway-wpa2-x2048-4-4":"jedway-wpa2-x2048-4-4"}
 
 paddingNum = 1000 #uses all but the first number to create names for stations
 
 mgrURL = "http://localhost:8080/"
 
-#create stations
+#clean up old stations
 print("Cleaning up old Stations")
 
 for radio, numStations in radios.items():
@@ -76,9 +153,10 @@ for radio, numStations in radios.items():
 			"endp_name":staName + "-B"
 			}
 
+#create new stations
 print("Creating Stations")
-reqURL = "cli-json/add_sta"
 
+reqURL = "cli-json/add_sta"
 for radio, numStations in radios.items():
 	for i in range(0,numStations):
 		staName = "sta" + radio[-1:] + str(paddingNum + i)[1:]
@@ -88,8 +166,8 @@ for radio, numStations in radios.items():
 		"resource":1,
 		"radio":radio,
 		"sta_name":staName,
-		"ssid":"jedway-wpa2-x2048-4-1",
-		"key":"jedway-wpa2-x2048-4-1",
+		"ssid":radio_ssid_map[radio],
+		"key":ssid_passphrase_map[radio_ssid_map[radio]],
 		"mode":1,
 		"mac":"xx:xx:xx:xx:*:xx",
 		"flags":0x400
@@ -161,7 +239,7 @@ for name in stations:
 
 #create weblog for monitoring stations
 curTime = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
-webLog = "/home/lanforge/Documents/load-test/loadTest{}.html".format(curTime)
+webLog = outputDir + outputPrefix + "{}.html".format(curTime)
 
 try:
 	f = open(webLog,"w")
@@ -198,10 +276,12 @@ for name in radios:
 f.write("</tr>\n")
 
 print("Logging Info to {}".format(webLog))
-for min5 in range(3):
-	f.write("<tr>")
+
+timesLoop = math.ceil(durTime / intTime)
+
+for min in range(timesLoop):
+	f.write("<tr>\n")
 	for radio, numStations in radios.items():
-		#print(radio)
 		withoutIP = 0
 		dissociated = 0
 		good = 0
@@ -217,14 +297,15 @@ for min5 in range(3):
 				good += 1
 
 		if withoutIP and not dissociated:
-			f.write("<td style=\"background-color:rgb(255,200,0);\">{}/{}</td>".format(good,numStations)) #without IP assigned
+			f.write("<td style=\"background-color:rgb(255,200,0);\">{}/{}</td>\n".format(good,numStations)) #without IP assigned
 		elif dissociated:
-			f.write("<td style=\"background-color:rgb(255,0,0);\">{}/{}</td>".format(good,numStations)) #dissociated from AP
+			f.write("<td style=\"background-color:rgb(255,0,0);\">{}/{}</td>\n".format(good,numStations)) #dissociated from AP
 		else:
-			f.write("<td style=\"background-color:rgb(0,255,0);\">{}/{}</td>".format(good,numStations)) #with IP and associated
+			f.write("<td style=\"background-color:rgb(0,255,0);\">{}/{}</td>\n".format(good,numStations)) #with IP and associated
 
-	f.write("</tr>")
-	time.sleep((min5 + 1) * 30) #Sleeps for five minutes at a time per loop
+	f.write("<td>{}</td>\n".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
+	f.write("</tr>\n")
+	time.sleep(intTime) #Sleeps for specified interval in seconds
 
 
 f.write("</table></body></html>\n")
