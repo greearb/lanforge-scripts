@@ -75,6 +75,7 @@ RSLTS_DIR=${RSLTS_DIR:-basic_regression_results_$DATESTR}
 AP_AUTO_CFG=ben
 WCT_CFG=ben
 DPT_CFG=ben
+# Change testbed_poll.pl if scenario changes below.
 SCENARIO=tip-auto
 RPT_TMPDIR=${MY_TMPDIR}/lf_reports
 
