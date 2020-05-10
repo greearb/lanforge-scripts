@@ -85,6 +85,10 @@ DUT=`grep DUT: $SCENARIO_CFG_FILE |head -1|grep -o "DUT: .*"|cut -f2 -d ' '`
 echo "Found DUT: $DUT from scenario $SCENARIO_CFG_FILE"
 
 function pre_test {
+    # Remove existing data connections.
+    ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli rm_cx all all"
+    ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli rm_endp YES_ALL"
+
     # Clean logs, this bounces radios and such too as side effect
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli admin clean_logs"
 
@@ -173,7 +177,7 @@ if [ -d $RPT_TMPDIR ]
 then
     rm -fr $RPT_TMPDIR/*
 fi
-ssh lanforge\@GMANAGER "test -d $RPT_TMPDIR && rm -fr $RPT_TMPDIR";
+ssh lanforge\@$GMANAGER "test -d $RPT_TMPDIR && rm -fr $RPT_TMPDIR";
 
 # Do dataplane pkt size test
 echo "Checking if we should run Dataplane packet size test."
