@@ -11,17 +11,21 @@ from LANforge import LFUtils
 import argparse
 import re
 import math
+import string
+
+
+debugOn = False
 
 def jsonReq(mgrURL, reqURL, data, debug=False):
-        lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-        lf_r.addPostData(data)
+	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
+	lf_r.addPostData(data)
 
-        if debug:
-                json_response = lf_r.jsonPost(True)
+	if debug:
+                json_response = lf_r.jsonPost(debug)
                 LFUtils.debug_printer.pprint(json_response)
                 sys.exit(1)
-        else:
-             	lf_r.jsonPost()
+	else:
+             	lf_r.jsonPost(debug)
 
 
 def execWrap(cmd):
@@ -31,56 +35,59 @@ def execWrap(cmd):
 
 def getJsonInfo(mgrURL, reqURL):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-	json_response = lf_r.getAsJson()
+	json_response = lf_r.getAsJson(debugOn)
 	return json_response
 
 
 
-parser = argparse.ArgumentParser(description="create max stations for each radio")
-parser.add_argument("--test_duration", type=str, help="full duration for the test to run. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
-parser.add_argument("--report_interval", type=str, help="how often a report is made. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
-parser.add_argument("--output_dir", type=str, help="directory to ouptut to")
-parser.add_argument("--output_prefix", type=str, help="name of the file. Timestamp will be appended to the end")
+
+parser = argparse.ArgumentParser(description="Create max stations for each radio")
+parser.add_argument("--test_duration", type=str, help="Full duration for the test to run. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--report_interval", type=str, help="How often a report is made. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--output_dir", type=str, help="Directory to ouptut to")
+parser.add_argument("--output_prefix", type=str, help="Name of the file. Timestamp and .html will be appended to the end")
 
 
 args = None
 try:
 	args = parser.parse_args()
 	if (args.test_duration is not None):
-		pattern = re.compile("^(\d+)([dhms])$")
+		pattern = re.compile("^(\d+)([dhms]$)")
 		td = pattern.match(args.test_duration)
 		if td != None:
 			durTime = int(td.group(1))
-			durMeasure = td.group(2)
-			if durMeasure == 'd':
-				duration = durTime * 60 * 60 * 24
-			elif durMeasure == 'h':
-				duration = durTime * 60 * 60
-			elif durMeasure == 'm':
-				duration = durTime * 60
+			durMeasure = str(td.group(2))
+
+			if durMeasure == "d":
+				durationSec = durTime * 60 * 60 * 24
+			elif durMeasure == "h":
+				durationSec = durTime * 60 * 60
+			elif durMeasure == "m":
+				durationSec = durTime * 60
 			else:
-				duration = durMeasure
+				durationSec = durMeasure
 		else:
 			parser.print_help()
 			parser.exit()
 
 	if (args.report_interval is not None):
-                pattern = re.compile("^(\d+)([dhms])$")
-                td = pattern.match(args.report_interval)
-                if td != None:
-                        intTime = int(td.group(1))
-                        intMeasure = td.group(2)
-                        if intMeasure == 'd':
-                                interval = intTime * 60 * 60 * 24
-                        elif intMeasure == 'h':
-                                interval = intTime * 60 * 60
-                        elif intMeasure == 'm':
-                                interval = intTime * 60
-                        else:
-                                interval = intMeasure
-                else:
-                        parser.print_help()
-                        parser.exit()
+		pattern = re.compile("^(\d+)([dhms])$")
+		ri = pattern.match(args.report_interval)
+		if ri != None:
+			intTime = int(ri.group(1))
+			intMeasure = str(ri.group(2))
+
+			if intMeasure == "d":
+                        	intervalSec = intTime * 60 * 60 * 24
+			elif intMeasure == "h":
+				intervalSec = intTime * 60 * 60
+			elif intMeasure == "m":
+				intervalSec = intTime * 60
+			else:
+				intervalSec = intMeasure
+		else:
+			parser.print_help()
+			parser.exit()
 
 	if (args.output_dir != None):
 		outputDir = args.output_dir
@@ -233,8 +240,8 @@ time.sleep(15)
 #start traffic through cxs
 print("Starting CX Traffic")
 for name in stations:
-        cmd = ("./lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm " + name + " RUNNING\" >> sst.log")
-        execWrap(cmd)
+	cmd = ("./lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm " + name + " RUNNING\" >> sst.log")
+	execWrap(cmd)
 
 
 #create weblog for monitoring stations
@@ -260,6 +267,10 @@ h1, h2, h3 { text-align: center; font-family: "Century Gothic",Arial,Helvetica,s
 </head>
 <body>
 <h1>Long test on %s</h1>
+<p2>Key</p2>
+<p1 style="background-color:rgb(0,255,0);">All stations associated and with ip</p1>
+<p1 style="background-color:rgb(255,200,0);">All stations associated and at least one without ip</p1>
+<p1 style="background-color:rgb(255,150,150);">No stations associated and without ip</p1>
 <table>
 """ % datetime.date.today()
 
@@ -277,8 +288,8 @@ f.write("</tr>\n")
 
 print("Logging Info to {}".format(webLog))
 
-timesLoop = math.ceil(durTime / intTime)
-
+timesLoop = math.ceil(durationSec / intervalSec)
+#print("Looping {} times".format(timesLoop))
 for min in range(timesLoop):
 	f.write("<tr>\n")
 	for radio, numStations in radios.items():
@@ -299,13 +310,14 @@ for min in range(timesLoop):
 		if withoutIP and not dissociated:
 			f.write("<td style=\"background-color:rgb(255,200,0);\">{}/{}</td>\n".format(good,numStations)) #without IP assigned
 		elif dissociated:
-			f.write("<td style=\"background-color:rgb(255,0,0);\">{}/{}</td>\n".format(good,numStations)) #dissociated from AP
+			f.write("<td style=\"background-color:rgb(255,150,150);\">{}/{}</td>\n".format(good,numStations)) #dissociated from AP
 		else:
 			f.write("<td style=\"background-color:rgb(0,255,0);\">{}/{}</td>\n".format(good,numStations)) #with IP and associated
 
 	f.write("<td>{}</td>\n".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
 	f.write("</tr>\n")
-	time.sleep(intTime) #Sleeps for specified interval in seconds
+	#print("sleeping for {} seconds".format(intervalSec))
+	time.sleep(intervalSec) #Sleeps for specified interval in seconds
 
 
 f.write("</table></body></html>\n")
@@ -314,8 +326,8 @@ f.close()
 
 print("Stopping CX Traffic")
 for name in stations:
-        cmd = ("./lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm " + name + " STOPPED\" >> sst.log")
-        execWrap(cmd)
+	cmd = ("./lf_firemod.pl --mgr localhost --quiet 0 --action do_cmd --cmd \"set_cx_state default_tm " + name + " STOPPED\" >> sst.log")
+	execWrap(cmd)
 
 time.sleep(10)
 
