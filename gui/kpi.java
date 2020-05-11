@@ -144,6 +144,7 @@ public class kpi {
                      run = new Run(f.getName());
                      runs.add(run);
                   }
+                  System.out.println("Run: " + run + " adding test: " + test);
                   run.addTest(test);
 
                   for (Path file3: stream3) {
@@ -205,10 +206,12 @@ public class kpi {
       Hashtable<String, History> hist_data = new Hashtable();
       Vector<History> hist_datav = new Vector();
       for (String tname: test_namesv) {
+         System.out.println("Checking testname: " + tname + " runs.size: " + runs.size());
          // For each test, find all runs that have this test and consolidate data
          for (int i = 0; i<runs.size(); i++) {
             Run run = runs.elementAt(i);
             Test t = run.findTest(tname);
+            System.out.println("Run [" + i + "]  Test: " + t);
             if (t != null) {
                test_id_links.put(tname, run);
                try {
@@ -217,6 +220,7 @@ public class kpi {
                      hist = new History(tname);
                      hist_data.put(tname, hist);
                      hist_datav.add(hist);
+                     System.out.println("Adding history datav, tname: " + tname);
                   }
                   for (int z = 0; z<t.data.size(); z++) {
                      Row r = t.data.elementAt(z);
@@ -224,6 +228,7 @@ public class kpi {
                      if (csv == null) {
                         csv = new HistRow(r);
                         hist.addRow(csv);
+                        System.out.println("Adding history row: " + r.getShortDescKey());
                      }
                      String score =  t.data.elementAt(z).getScore();
                      csv.csv.append(i + kpi.out_sep + score + System.lineSeparator());
@@ -247,11 +252,14 @@ public class kpi {
          String hk = hist.getName();
          Hashtable<String, Vector> groupsh = new Hashtable();
          Vector<String> groupsn = new Vector();
+         System.out.println("Checking history-data: " + hk);
          for (HistRow csv : hist.csv) {
             String ck = csv.getName();
             String title = csv.getTitle();
             String units = csv.getUnits();
             String g = csv.getGraphGroup();
+
+            System.out.println("csv name: " + ck);
 
             if (!(g.equals("NA") || units.equals(""))) {
                Vector<HistRow> gv = groupsh.get(g);
@@ -268,6 +276,7 @@ public class kpi {
             }
             try {
                String cf = dir + File.separator + hk + "::" + ck + ".csv";
+               System.out.println("Creating gnuplot csv: " + cf);
                FileWriter f = new FileWriter(cf);
                f.write(csv.csv.toString());
                f.close();
@@ -286,8 +295,17 @@ public class kpi {
                }
 
                File png = new File("plot.png");
+               if (!png.exists()) {
+                  System.out.println("ERROR:  File: " + png + " does not exist.");
+               }
                String npng = hk + "::" + ck + ".png";
-               png.renameTo(new File(dir + File.separator + npng));
+               String nplot_name = dir + File.separator + npng;
+               System.out.println("Rename plot: " + png + " to: " + nplot_name);
+               File nf = new File(nplot_name);
+               Path nfp = Files.move(png.toPath(), nf.toPath(), StandardCopyOption.REPLACE_EXISTING);//boolean renamed = png.renameTo(nf);
+               if (!nf.exists()) {
+                  System.out.println("ERROR:  New file: " + nf + " does not exist.");
+               }
 
                exec = new ShellExec(true, true);
                rv = exec.execute("gnuplot", null, true, "-e", "filename='" + cf + "'",
@@ -300,8 +318,8 @@ public class kpi {
 
                png = new File("plot.png");
                String npngt = hk + "::" + ck + "-thumb.png";
-               png.renameTo(new File(dir + File.separator + npngt));
-
+               Files.move(png.toPath(), new File(dir + File.separator + npngt).toPath(), StandardCopyOption.REPLACE_EXISTING);
+               
                String hk_str = hk;
                Run last = test_id_links.get(hk);
                if (last != null) {
@@ -394,7 +412,7 @@ public class kpi {
 
                File png = new File("plot.png");
                String npng = hk + "::" + g + ".png";
-               png.renameTo(new File(dir + File.separator + npng));
+               Files.move(png.toPath(), new File(dir + File.separator + npng).toPath(), StandardCopyOption.REPLACE_EXISTING);
 
                br = new BufferedReader(new FileReader("mini_group.plot"));
                f = new FileWriter("tmp.plot");
@@ -418,7 +436,7 @@ public class kpi {
 
                png = new File("plot.png");
                String npngt = hk + "::" + g + "-thumb.png";
-               png.renameTo(new File(dir + File.separator + npngt));
+               Files.move(png.toPath(), new File(dir + File.separator + npngt).toPath(), StandardCopyOption.REPLACE_EXISTING);
 
                String hk_str = hk;
                Run last = test_id_links.get(hk);
@@ -696,6 +714,10 @@ class Test {
       name = n;
    }
 
+   public String toString() {
+      return "Name: " + name;
+   }
+
    public int getPass() {
       return pass;
    }
@@ -729,7 +751,7 @@ class Test {
    }
 
    String getDutModelNum() {
-      System.out.println("Test: " + getName() + " model-num: " + dut_model_num);
+      //System.out.println("Test: " + getName() + " model-num: " + dut_model_num);
       return dut_model_num;
    }
 
@@ -817,7 +839,7 @@ class Test {
          //System.out.println("Row: " + row);
          descs.put(row.getShortDesc(), row.getShortDesc());
       }
-   }
+   }//addline
 }//Test
 
 
@@ -828,6 +850,10 @@ class Run {
 
    public Run(String n) {
       name = n;
+   }
+
+   public String toString() {
+      return "Name: " + name;
    }
 
    int getPass() {
@@ -936,13 +962,20 @@ class ShellExec {
     */
    public int execute(String command, String workdir, boolean wait, String...args) throws IOException {
       String[] cmdArr;
+      StringBuffer dbg = new StringBuffer();
+      dbg.append("Command: " + command);
       if (args != null && args.length > 0) {
          cmdArr = new String[1+args.length];
          cmdArr[0] = command;
          System.arraycopy(args, 0, cmdArr, 1, args.length);
+         for (int i = 0; i<args.length; i++) {
+            dbg.append(" " + args[i]);
+         }
       } else {
          cmdArr = new String[] { command };
       }
+
+      System.out.println("Running cmd: " + dbg.toString());
 
       ProcessBuilder pb =  new ProcessBuilder(cmdArr);
       File workingDir = (workdir==null ? new File(command).getParentFile() : new File(workdir) );
