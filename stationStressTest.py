@@ -67,7 +67,7 @@ try:
 			elif durMeasure == "m":
 				durationSec = durTime * 60
 			else:
-				durationSec = durMeasure
+				durationSec = durTime
 		else:
 			parser.print_help()
 			parser.exit()
@@ -86,7 +86,7 @@ try:
 			elif intMeasure == "m":
 				intervalSec = intTime * 60
 			else:
-				intervalSec = intMeasure
+				intervalSec = intTime
 		else:
 			parser.print_help()
 			parser.exit()
