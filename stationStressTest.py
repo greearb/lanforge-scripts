@@ -12,9 +12,11 @@ import argparse
 import re
 import math
 import string
-
+import emailHelper
 
 debugOn = False
+
+sender = "lanforge@candelatech.com"
 
 def jsonReq(mgrURL, reqURL, data, debug=False):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
@@ -46,7 +48,7 @@ parser.add_argument("--test_duration", type=str, help="Full duration for the tes
 parser.add_argument("--report_interval", type=str, help="How often a report is made. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
 parser.add_argument("--output_dir", type=str, help="Directory to ouptut to")
 parser.add_argument("--output_prefix", type=str, help="Name of the file. Timestamp and .html will be appended to the end")
-
+parser.add_argument("--email", type=str, help="Email address of recipient")
 
 args = None
 try:
@@ -65,7 +67,7 @@ try:
 			elif durMeasure == "m":
 				durationSec = durTime * 60
 			else:
-				durationSec = durMeasure
+				durationSec = durTime
 		else:
 			parser.print_help()
 			parser.exit()
@@ -84,7 +86,7 @@ try:
 			elif intMeasure == "m":
 				intervalSec = intTime * 60
 			else:
-				intervalSec = intMeasure
+				intervalSec = intTime
 		else:
 			parser.print_help()
 			parser.exit()
@@ -100,11 +102,18 @@ try:
 	else:
 		parser.print_help()
 		parser.exit()
+	if (args.email != None):
+		recipient = args.email
+	else:
+		parser.print_help()
+		parser.exit()
+
 
 except Exception as e:
       logging.exception(e)
       usage()
       exit(2)
+
 
 stations = []
 radios = {"wiphy0":200, "wiphy1":200, "wiphy2":64, "wiphy3":200} #radioName:numStations
@@ -286,6 +295,14 @@ for name in radios:
 
 f.write("</tr>\n")
 
+
+curTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+subject = "Station Test Begin Report Notification"
+body = "Report begun at {}\n See {}".format(curTime, webLog)
+email = emailHelper.writeEmail(body)
+emailHelper.sendEmail(email, sender, recipient, subject)
+
+
 print("Logging Info to {}".format(webLog))
 
 timesLoop = math.ceil(durationSec / intervalSec)
@@ -322,6 +339,13 @@ for min in range(timesLoop):
 
 f.write("</table></body></html>\n")
 f.close()
+
+
+curTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+subject = "Station Test End Report Notification"
+body = "Report finished at {} see {}".format(curTime, webLog)
+email = emailHelper.writeEmail(body)
+emailHelper.sendEmail(email, sender, recipient, subject)
 
 
 print("Stopping CX Traffic")
