@@ -147,6 +147,11 @@ public class kpi {
                   System.out.println("Run: " + run + " adding test: " + test);
                   run.addTest(test);
 
+                  // TODO:
+                  // Add log processing.  In particular, look in console logs for things like:
+                  // "ath10k_pci 0000:01:00.0: wmi command 36967 timeout, restarting hardware"
+                  // "WARNING: CPU: 0 PID: 8907 at backports-4.
+
                   for (Path file3: stream3) {
                      File f3 = file3.toFile();
                      String fname = f3.getName();
