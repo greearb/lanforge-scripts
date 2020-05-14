@@ -147,6 +147,11 @@ public class kpi {
                   System.out.println("Run: " + run + " adding test: " + test);
                   run.addTest(test);
 
+                  // TODO:
+                  // Add log processing.  In particular, look in console logs for things like:
+                  // "ath10k_pci 0000:01:00.0: wmi command 36967 timeout, restarting hardware"
+                  // "WARNING: CPU: 0 PID: 8907 at backports-4.
+
                   for (Path file3: stream3) {
                      File f3 = file3.toFile();
                      String fname = f3.getName();
@@ -171,6 +176,21 @@ public class kpi {
                      }// if kpi.csv
                      else if (fname.startsWith("kpi-") && fname.endsWith(".png")) {
                         test.addKpiImage(fname);
+                     }
+                     else if (fname.equals("logs")) {
+                        File logs_csv = new File(f3.getAbsolutePath() + File.separator + "logs.csv");
+                        if (logs_csv.exists()) {
+                           try {
+                              BufferedReader br = new BufferedReader(new FileReader(logs_csv));
+                              String line;
+                              while ((line = br.readLine()) != null) {
+                                 test.addLogCsv(line);
+                              }
+                           }
+                           catch (Exception e) {
+                              e.printStackTrace();
+                           }
+                        }
                      }
                   }// for all files in the test dir  
                }
@@ -463,10 +483,42 @@ public class kpi {
       for (int i = 0; i<runs.size(); i++) {
          Run run = runs.elementAt(i);
          test_bed = run.getTestRig();
-         
+         StringBuffer logs_str = new StringBuffer();
+         int logv = run.getLogBugs();
+         if (logv > 0) {
+            logs_str.append(redTd(logv + ""));
+         }
+         else {
+            logs_str.append(greenTd(logv + ""));
+         }
+
+         logv = run.getLogWarnings();
+         if (logv > 0) {
+            logs_str.append(redTd(logv + ""));
+         }
+         else {
+            logs_str.append(greenTd(logv + ""));
+         }
+
+         logv = run.getLogCrashes();
+         if (logv > 0) {
+            logs_str.append(redTd(logv + ""));
+         }
+         else {
+            logs_str.append(greenTd(logv + ""));
+         }
+
+         logv = run.getLogRestarting();
+         if (logv > 0) {
+            logs_str.append(redTd(logv + ""));
+         }
+         else {
+            logs_str.append(greenTd(logv + ""));
+         }
+
          String row_text = ("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
                             + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
-                            + "</td><td>" + run.getDutModelNum() + "</td>" + greenTd(run.getPass() + "") + redTd(run.getFail() + "") + "</tr>\n");
+                            + "</td><td>" + run.getDutModelNum() + "</td>" + greenTd(run.getPass() + "") + redTd(run.getFail() + "") + logs_str + "</tr>\n");
          if (i == (runs.size() - 1)) {
             // Last run
             int png_row_count = 0;
@@ -699,8 +751,14 @@ class Test {
    Vector<Row> data = new Vector();
    Hashtable<String, String> descs = new Hashtable();
    Vector<String> kpi_images = new Vector();
+   Vector<String> log_csv = new Vector();
    int pass = 0;
    int fail = 0;
+
+   int log_bugs = 0;
+   int log_warnings = 0;
+   int log_crashes = 0;
+   int log_restarting = 0;
 
    long date_ms = 0;
    public String date = "NA";
@@ -712,6 +770,22 @@ class Test {
 
    public Test(String n) {
       name = n;
+   }
+
+   public int getLogBugs() {
+      return log_bugs;
+   }
+
+   public int getLogWarnings() {
+      return log_warnings;
+   }
+
+   public int getLogCrashes() {
+      return log_crashes;
+   }
+
+   public int getLogRestarting() {
+      return log_restarting;
    }
 
    public String toString() {
@@ -761,6 +835,25 @@ class Test {
 
    String getName() {
       return name;
+   }
+
+   void addLogCsv(String l) {
+      log_csv.add(l);
+      try {
+         StringTokenizer st = new StringTokenizer(l, "\t");
+         String tok = st.nextToken();
+         if (tok.equals("FILE")) {
+            // title, ignore rest of this title
+            return;
+         }
+         log_bugs += Long.valueOf(st.nextToken());
+         log_warnings += Long.valueOf(st.nextToken());
+         log_crashes += Long.valueOf(st.nextToken());
+         log_restarting += Long.valueOf(st.nextToken());
+      }
+      catch (Exception e) {
+         e.printStackTrace();
+      }
    }
 
    void addLine(String l) {
@@ -868,6 +961,38 @@ class Run {
       int fail = 0;
       for (Test t: testsv) {
          fail += t.getFail();
+      }
+      return fail;
+   }
+
+   int getLogBugs() {
+      int fail = 0;
+      for (Test t: testsv) {
+         fail += t.getLogBugs();
+      }
+      return fail;
+   }
+
+   int getLogWarnings() {
+      int fail = 0;
+      for (Test t: testsv) {
+         fail += t.getLogWarnings();
+      }
+      return fail;
+   }
+
+   int getLogCrashes() {
+      int fail = 0;
+      for (Test t: testsv) {
+         fail += t.getLogCrashes();
+      }
+      return fail;
+   }
+
+   int getLogRestarting() {
+      int fail = 0;
+      for (Test t: testsv) {
+         fail += t.getLogRestarting();
       }
       return fail;
    }

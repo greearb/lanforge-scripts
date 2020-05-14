@@ -20,6 +20,7 @@ use lib "../";
 use lib "./";
 
 use Getopt::Long;
+use HTML::Entities;
 
 our $dir = "";
 our $notes = "";
@@ -32,10 +33,10 @@ our $title = "Automated test results.";
 ########################################################################
 
 our $usage = <<"__EndOfUsage__";
-$0 [ --dir directory-to-process --notes testbed-notes-file.html --gitlog gitlog-output.txt ]
+$0 [ --dir directory-to-process --notes testbed-notes-file.html --gitlog gitlog-output.txt ] < html_template.html
 
 Example:
- $0 --dir ~/tmp/results --title "My Title" --notes testbeds/my_testbed/testbed_notes.html --gitlog /tmp/gitlog.txt
+ cat html-template | $0 --dir ~/tmp/results --title "My Title" --notes testbeds/my_testbed/testbed_notes.html --gitlog /tmp/gitlog.txt
 __EndOfUsage__
 
 my $i = 0;
@@ -100,8 +101,21 @@ my $tests_tr = "";
 
 foreach my $line (@files) {
    if ( -d $line) {
+      #print "Checking report: $line\n";
       if ( -d "$line/logs") {
-         $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</html></td><td><a href=\"$line/logs\">Logs</td></tr>\n";
+         processLogs("$line/logs");
+         my $log_links = "";
+         my $li = 0;
+         my $iline;
+         my @ifiles = `ls $line/logs/*-idx.html`;
+         chomp(@ifiles);
+         foreach $iline (@ifiles) {
+            $log_links .= " <a href=$iline>[$li]</a>";
+         }
+         if ($log_links ne "") {
+            $log_links = "Errors: $log_links";
+         }
+         $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</a></td><td><a href=\"$line/logs\">Logs</a> $log_links</td></tr>\n";
       }
       else {
          $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</html></td><td></td></tr>\n";
@@ -148,6 +162,141 @@ while (<>) {
 }
 
 exit(0);
+
+sub processLogs {
+   my $ldir = shift;
+
+   my @files = `ls $ldir`;
+   chomp(@files);
+
+   open(CSV, ">$ldir/logs.csv");
+   print CSV "FILE\tBUGS\tWARNINGS\tCRASHED\tRESTARTING\n";
+
+   foreach $line (@files) {
+      if ($line =~ /console.*\.txt$/) {
+
+         my $bugs = 0;
+         my $warnings = 0;
+         my $crashed = 0;
+         my $restarting = 0;
+
+         my $tag = 0;
+         my $logf = $ldir . "/" . $line;
+         my $logh = $logf . ".html";
+         my $loghb = $line . ".html";
+         my $loghi = $logf . "-idx.html";
+
+         #print("Processing log file: $logf\n");
+
+         open(IFILE, "<", $logf ) or die( "could not read $logf");
+         open(IDX, ">$loghi");
+         open(LOGH, ">$logh");
+
+         print IDX getHtmlHdr("Log file index: $line");
+         print LOGH getHtmlHdr("Log file: $line");
+
+         print LOGH "<pre>\n";
+
+         print IDX "<a href=$loghb>Full Logs in HTML format</a><br>\n";
+         print IDX "<a href=$line>Full Logs in Text format</a><P>\n";
+         print IDX "<b>Interesting log sections.</b><br>\n";
+         print IDX "<ol>\n";
+
+         while (<IFILE>) {
+            my $ln = $_;
+            chomp($ln);
+
+            #print("ln: $ln\n");
+            my $enc_ln = encode_entities($ln);
+            # Get rid of some funk
+            $enc_ln =~ s/\&\#0\;//g;
+
+            if (($ln =~ /WARNING:/) ||
+                ($ln =~ /BUG:/) ||
+                ($ln =~ /restarting hardware/) ||
+                ($ln =~ /crashed/)) {
+               if ($ln =~ /WARNING:/) {
+                  $warnings++;
+               }
+               elsif ($ln =~ /BUG:/) {
+                  $bugs++;
+               }
+               elsif ($ln =~ /restarting hardware/) {
+                  $restarting++;
+               }
+               elsif ($ln =~ /crashed/) {
+                  $crashed++;
+               }
+               print IDX "<li><a href=$loghb#$tag>$enc_ln</a></li>\n";
+               print LOGH "<a name='$tag'></a>\n";
+               print LOGH "<pre style='color:red'>$enc_ln</pre>\n";
+               $tag++;
+            }
+            else {
+               print LOGH "$enc_ln\n";
+            }
+         }
+
+         #print ("Done with file\n");
+
+         print LOGH "</pre>\n";
+         print IDX "</ol>\n";
+
+         print LOGH getHtmlFooter();
+         print IDX getHtmlFooter();
+
+         close(IDX);
+         close(LOGH);
+         close(IFILE);
+
+         print CSV "$line\t$bugs\t$warnings\t$crashed\t$restarting\n";
+
+         if ($bugs + $warnings +$crashed + $restarting == 0) {
+            # Remove index since it has no useful data
+            unlink($loghi);
+         }
+      }
+   }
+   #print("Done processing logs.\n");
+}
+
+sub getHtmlHdr {
+   my $title = shift;
+
+   return "<!DOCTYPE html>\n" .
+                "<html>\n" .
+                "  <head>\n" .
+                "    <meta charset='utf-8' />\n" .
+                "    <meta name='viewport' content='width=device-width, initial-scale=1' />\n" .
+                "    <title>$title</title>    <link rel='shortcut icon' href='canvil.ico' type='image/x-icon' />\n" .
+                "    <link rel='stylesheet' href='../report.css' />\n" .
+                "    <link rel='stylesheet' href='../custom.css' />\n" .
+                "    <style>\n" .
+                "     pre {\n" .
+                "        overflow: auto;\n" .
+                "     }\n" .
+                "     img {\n" .
+                "        width: 100%;\n" .
+                "        max-width: 8in;\n" .
+                "     }\n" .
+                "    </style>\n" .
+                "  </head>\n" .
+                "  <body>\n" .
+                "<div class='HeaderStyle'>\n" .
+                "<h1 class='TitleFontPrint'>$title</h1><br/>\n" .
+                "\n" .
+                "<div class='contentDiv'>\n";
+}
+
+sub getHtmlFooter {
+   return "</div><!--end content-div -->\n" .
+         "<div class='FooterStyle'><span class='Gradient'>Generated by Candela Technologies LANforge network testing tool.<br/>\n" .
+         "  <a href='https://www.candelatech.com/' target='_blank'>www.candelatech.com</a>\n" .
+         "</span>\n" .
+         "<a class='LogoImgLink' href='https://www.candelatech.com/' target='_blank'><img align='right' src='../candela_swirl_small-72h.png'></a></div><br/>\n" .
+         "  </body>\n" .
+         "</html>\n";
+}
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
