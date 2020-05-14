@@ -103,8 +103,19 @@ foreach my $line (@files) {
    if ( -d $line) {
       #print "Checking report: $line\n";
       if ( -d "$line/logs") {
-         $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</html></td><td><a href=\"$line/logs\">Logs</td></tr>\n";
          processLogs("$line/logs");
+         my $log_links = "";
+         my $li = 0;
+         my $iline;
+         my @ifiles = `ls $line/logs/*-idx.html`;
+         chomp(@ifiles);
+         foreach $iline (@ifiles) {
+            $log_links .= " <a href=$iline>[$li]</a>";
+         }
+         if ($log_links ne "") {
+            $log_links = "Errors: $log_links";
+         }
+         $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</a></td><td><a href=\"$line/logs\">Logs</a> $log_links</td></tr>\n";
       }
       else {
          $tests_tr .= "<tr><td><a href=\"$line/index.html\">$line</html></td><td></td></tr>\n";
@@ -158,8 +169,17 @@ sub processLogs {
    my @files = `ls $ldir`;
    chomp(@files);
 
+   open(CSV, ">$ldir/logs.csv");
+   print CSV "FILE\tBUGS\tWARNINGS\tCRASHED\tRESTARTING\n";
+
    foreach $line (@files) {
       if ($line =~ /console.*\.txt$/) {
+
+         my $bugs = 0;
+         my $warnings = 0;
+         my $crashed = 0;
+         my $restarting = 0;
+
          my $tag = 0;
          my $logf = $ldir . "/" . $line;
          my $logh = $logf . ".html";
@@ -195,6 +215,18 @@ sub processLogs {
                 ($ln =~ /BUG:/) ||
                 ($ln =~ /restarting hardware/) ||
                 ($ln =~ /crashed/)) {
+               if ($ln =~ /WARNING:/) {
+                  $warnings++;
+               }
+               elsif ($ln =~ /BUG:/) {
+                  $bugs++;
+               }
+               elsif ($ln =~ /restarting hardware/) {
+                  $restarting++;
+               }
+               elsif ($ln =~ /crashed/) {
+                  $crashed++;
+               }
                print IDX "<li><a href=$loghb#$tag>$enc_ln</a></li>\n";
                print LOGH "<a name='$tag'></a>\n";
                print LOGH "<pre style='color:red'>$enc_ln</pre>\n";
@@ -216,9 +248,16 @@ sub processLogs {
          close(IDX);
          close(LOGH);
          close(IFILE);
+
+         print CSV "$line\t$bugs\t$warnings\t$crashed\t$restarting\n";
+
+         if ($bugs + $warnings +$crashed + $restarting == 0) {
+            # Remove index since it has no useful data
+            unlink($loghi);
+         }
       }
    }
-   print("Done processing logs.\n");
+   #print("Done processing logs.\n");
 }
 
 sub getHtmlHdr {
