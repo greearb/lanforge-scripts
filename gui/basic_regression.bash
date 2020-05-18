@@ -355,7 +355,13 @@ then
     GITLOG=NA
 fi
 
-./lf_gui_report_summary.pl --title "$TEST_RIG_ID: $DUT_SW_VER" --dir $RSLTS_DIR --gitlog $GITLOG --notes $NOTES_HTML < index_template.html  > $RSLTS_DIR/index.html
+if [ "_${DUTGITLOG}" == "_" ]
+then
+    DUTGITLOG=NA
+fi
 
-echo "Done with regression test."
+echo "./lf_gui_report_summary.pl --title \"$TEST_RIG_ID: $DUT_SW_VER\" --dir $RSLTS_DIR --dutgitlog $DUTGITLOG --gitlog $GITLOG --notes $NOTES_HTML"
+./lf_gui_report_summary.pl --title "$TEST_RIG_ID: $DUT_SW_VER" --dir $RSLTS_DIR --dutgitlog $DUTGITLOG --gitlog $GITLOG --notes $NOTES_HTML < index_template.html  > $RSLTS_DIR/index.html
+
+echo "Done with automated regression test."
 echo "Results-Dir: $RSLTS_DIR"
