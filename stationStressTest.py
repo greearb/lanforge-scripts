@@ -41,14 +41,14 @@ def getJsonInfo(mgrURL, reqURL):
 	return json_response
 
 
-
-
 parser = argparse.ArgumentParser(description="Create max stations for each radio")
-parser.add_argument("--test_duration", type=str, help="Full duration for the test to run. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
-parser.add_argument("--report_interval", type=str, help="How often a report is made. should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--test_duration", type=str, help="Full duration for the test to run. Should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
+parser.add_argument("--test_end_time", type=str, help="Specify a time and date to end the test. Should be formatted as year-month-date_hour:minute. Date should be specified in numbers and time should be 24 hour format. Ex: 2020-5-14_14:30")
+parser.add_argument("--report_interval", type=str, help="How often a report is made. Should be specified by a number followed by a character. d for days, h for hours, m for minutes, s for seconds")
 parser.add_argument("--output_dir", type=str, help="Directory to ouptut to")
 parser.add_argument("--output_prefix", type=str, help="Name of the file. Timestamp and .html will be appended to the end")
 parser.add_argument("--email", type=str, help="Email address of recipient")
+
 
 args = None
 try:
@@ -59,18 +59,40 @@ try:
 		if td != None:
 			durTime = int(td.group(1))
 			durMeasure = str(td.group(2))
-
+			now = datetime.datetime.now()
 			if durMeasure == "d":
-				durationSec = durTime * 60 * 60 * 24
+				durationTime = datetime.timedelta(days = durTime)
 			elif durMeasure == "h":
-				durationSec = durTime * 60 * 60
+				durationTime = datetime.timedelta(hours = durTime)
 			elif durMeasure == "m":
-				durationSec = durTime * 60
+				durationTime = datetime.timedelta(minutes = durTime)
 			else:
-				durationSec = durTime
+				durationTime = datetime.timedelta(seconds = durTime)
 		else:
 			parser.print_help()
 			parser.exit()
+
+	elif (args.test_end_time is not None):
+		now = datetime.datetime.now()
+		try:
+			endTime = datetime.datetime.strptime(args.test_end_time,"%Y-%m-%d_%H:%M")
+			if endTime < now:
+				raise ValueError
+				parser.print_help()
+				parser.exit()
+			else:
+				curTime = datetime.datetime.now()
+				durationTime = endTime - curTime
+
+		except ValueError as exception:
+			print(exception)
+			parser.print_help()
+			parser.exit()
+
+	else:
+		parser.print_help()
+		parser.exit()
+
 
 	if (args.report_interval is not None):
 		pattern = re.compile("^(\d+)([dhms])$")
@@ -80,16 +102,19 @@ try:
 			intMeasure = str(ri.group(2))
 
 			if intMeasure == "d":
-                        	intervalSec = intTime * 60 * 60 * 24
+                        	intervalTime = datetime.timedelta(days = intTime)
 			elif intMeasure == "h":
-				intervalSec = intTime * 60 * 60
+				intervalTime = datetime.timedelta(hours = intTime)
 			elif intMeasure == "m":
-				intervalSec = intTime * 60
+				intervalTime = datetime.timedelta(minutes = intTime)
 			else:
-				intervalSec = intTime
+				intervalTime = datetime.timedelta(seconds = intTime)
 		else:
 			parser.print_help()
 			parser.exit()
+	else:
+		parser.print_help()
+		parser.exit()
 
 	if (args.output_dir != None):
 		outputDir = args.output_dir
@@ -116,7 +141,11 @@ except Exception as e:
 
 
 stations = []
-radios = {"wiphy0":200, "wiphy1":200, "wiphy2":64, "wiphy3":200} #radioName:numStations
+radios = {"wiphy0":200, #max 200
+	  "wiphy1":200, #max 200
+	  "wiphy2":64,  #max 64
+	  "wiphy3":200} #max 200
+			#radioName:numStations
 radio_ssid_map = {"wiphy0":"jedway-wpa2-x2048-4-1",
 		  "wiphy1":"jedway-wpa2-x2048-5-3",
 		  "wiphy2":"jedway-wpa2-x2048-5-1",
@@ -305,9 +334,10 @@ emailHelper.sendEmail(email, sender, recipient, subject)
 
 print("Logging Info to {}".format(webLog))
 
-timesLoop = math.ceil(durationSec / intervalSec)
-#print("Looping {} times".format(timesLoop))
-for min in range(timesLoop):
+curTime = datetime.datetime.now()
+endTime = curTime + durationTime
+
+while curTime <= (endTime):
 	f.write("<tr>\n")
 	for radio, numStations in radios.items():
 		withoutIP = 0
@@ -317,6 +347,7 @@ for min in range(timesLoop):
 		for i in range(0,numStations):
 			staName = "sta" + radio[-1:] + str(paddingNum + i)[1:]
 			staStatus = getJsonInfo(mgrURL, "port/1/1/" + staName)
+			#print(staName)
 			if staStatus['interface']['ip'] == "0.0.0.0":
 				withoutIP += 1
 				if staStatus['interface']['ap'] == None:
@@ -333,9 +364,15 @@ for min in range(timesLoop):
 
 	f.write("<td>{}</td>\n".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")))
 	f.write("</tr>\n")
-	#print("sleeping for {} seconds".format(intervalSec))
-	time.sleep(intervalSec) #Sleeps for specified interval in seconds
 
+	curTime = datetime.datetime.now()
+	intTime = curTime + intervalTime
+	while curTime <= intTime:
+		#print(curTime, intTime)
+		time.sleep(1)
+		curTime = datetime.datetime.now()
+	#sleep(1)
+	curTime = datetime.datetime.now()
 
 f.write("</table></body></html>\n")
 f.close()
