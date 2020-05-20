@@ -6,6 +6,7 @@ import sys
 if 'py-json' not in sys.path:
 	sys.path.append('py-json')
 
+import subprocess
 import json
 import pprint
 from LANforge import LFRequest
@@ -16,7 +17,14 @@ import create_genlink as genl
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
-    exit()
+    exit(1)
+
+checkForGUI = subprocess.run(["pgrep", "java"], capture_output=True)
+if checkForGUI.stdout == b'':
+	print("GUI not found, test will not be started")
+	exit(1)
+
+
 
 mgrURL = "http://localhost:8080/"
 
@@ -67,6 +75,22 @@ def removeCX(mgrURL, cxNames):
 print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
 
 print("Creating endpoints and cross connects")
+
+
+url = "cli-json/add_sta"
+data = {
+data = {
+"shelf":1,
+"resource":1,
+"radio":"wiphy0",
+"sta_name":"sta00000",
+"ssid":"jedway-wpa2-x64-3-1",
+"key"::"jedway-wpa2-x64-3-1",
+"mode":1,
+"mac":"xx:xx:xx:xx:*:xx",
+"flags":0x400
+}
+
 
 #create cx for tcp and udp
 cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp > /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
