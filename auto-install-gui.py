@@ -85,6 +85,7 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 		else:
 			print("Found newer version of GUI")
 			print(f"Downloading {newestWebFile['filename']} from {url}")
+#=====ATTEMPT DOWNLOAD AND INSTALL=========
 		subprocess.call(["curl", "-o", f"{filePath}{newestWebFile['filename']}", f"{url}{newestWebFile['filename']}"])
 		time.sleep(5)
 	except Exception as e:
@@ -112,7 +113,7 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 	except Exception as e:
 		print(f"{e}\nInstallation failed. Please Try again.")
 		sys.exit(1)
-
+#=========ATTEMPT TO RESTART GUI==========
 	try:
 		print("Killing current GUI process")
 		os.system("pgrep java | xargs kill")
