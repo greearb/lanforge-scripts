@@ -25,6 +25,7 @@ use HTML::Entities;
 our $dir = "";
 our $notes = "";
 our $gitlog = "";
+our $dutgitlog = "";
 our $title = "Automated test results.";
 
 
@@ -33,10 +34,10 @@ our $title = "Automated test results.";
 ########################################################################
 
 our $usage = <<"__EndOfUsage__";
-$0 [ --dir directory-to-process --notes testbed-notes-file.html --gitlog gitlog-output.txt ] < html_template.html
+$0 [ --dir directory-to-process --notes testbed-notes-file.html --dutgitlog dut-gitlog-output.html --gitlog gitlog-output.html ] < html_template.html
 
 Example:
- cat html-template | $0 --dir ~/tmp/results --title "My Title" --notes testbeds/my_testbed/testbed_notes.html --gitlog /tmp/gitlog.txt
+ cat html-template | $0 --dir ~/tmp/results --title "My Title" --notes testbeds/my_testbed/testbed_notes.html --dutgitlog /tmp/dgitlog.html --gitlog /tmp/gitlog.html
 __EndOfUsage__
 
 my $i = 0;
@@ -47,6 +48,7 @@ GetOptions
    'dir|d=s'            => \$::dir,
    'notes|n=s'          => \$::notes,
    'gitlog|g=s'         => \$::gitlog,
+   'dutgitlog=s'        => \$::dutgitlog,
    'title|t=s'          => \$::title,
    'help|h'             => \$show_help,
 ) || die("$::usage");
@@ -60,6 +62,12 @@ my $testbed_notes = "";
 if (-f "$notes") {
    $testbed_notes .= "<b>Test Bed Notes.</b><br>\n";
    $testbed_notes .= `cat $notes`;
+}
+
+if (-f "$dutgitlog") {
+   $testbed_notes .= "<P>\n";
+   $testbed_notes .= `cat $dutgitlog`;
+   $testbed_notes .= "<p>\n";
 }
 
 if (-f "$gitlog") {
