@@ -53,4 +53,3 @@ def setCmd(endpName,cmd):
 	"command":cmd
 	}
 	jsonReq(mgrURL,reqURL,data)
-
