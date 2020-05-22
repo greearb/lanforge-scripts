@@ -99,6 +99,7 @@ data = {
 }
 jsonReq(mgrURL, url, data)
 
+time.sleep(5)
 
 reqURL = "cli-json/set_port"
 data = {
@@ -110,7 +111,7 @@ data = {
 }
 jsonReq(mgrURL,reqURL,data)
 
-time.sleep(5)
+time.sleep(10)
 
 eth1IP = getJsonInfo(mgrURL, "port/1/1/eth1")
 if eth1IP['interface']['ip'] == "0.0.0.0":
@@ -125,13 +126,23 @@ jsonReq(mgrURL,reqURL,data)
 
 staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
 timeout = 0
-while staIP['interface']['ip'] == "0.0.0.0" and timeout != 120:
+maxTime = 300
+while staIP['interface']['ip'] == "0.0.0.0" and timeout != maxTime:
 	print("Station failed to get IP. Waiting 10 seconds...")
 	staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
 	timeout += 10
 	time.sleep(10)
-if timeout == 120:
+if timeout == maxTime:
 	print("sta00000 failed to get an ip. Ending test")
+	print("Cleaning up...")
+	reqURL = "cli-json/rm_vlan"
+	data = {
+	"shelf":1,
+	"resource":1,
+	"port":"sta00000"
+	}
+
+	jsonReq(mgrURL, reqURL, data)
 	sys.exit(1)
 
 
