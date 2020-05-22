@@ -89,6 +89,9 @@ function pre_test {
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli rm_cx all all"
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli rm_endp YES_ALL"
 
+    # Clear port counters.
+    ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli clear_port_counters ALL ALL ALL"
+
     # Clean logs, this bounces radios and such too as side effect
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --cmd "cli admin clean_logs"
 
