@@ -148,7 +148,15 @@ foreach my $line (@files) {
             if  ( $nval =~ /^[+-]?(?=\.?\d)\d*\.?\d*(?:e[+-]?\d+)?\z/i ) {
                $nval = sprintf("%.2f", $nval);
             }
-            $kpi_tr .= "<tr><td>$cols[7]</td><td>$cols[8]</td><td>$cols[9]</td><td>$nval</td><td>$cols[11]</td></tr>\n";
+
+            my $s_passed = "0";
+            my $s_failed = "0";
+            if (@cols >= 16) {
+               $s_passed = $cols[14];
+               $s_failed = $cols[15];
+            }
+
+            $kpi_tr .= "<tr><td>$cols[7]</td><td>$cols[8]</td><td>$cols[9]</td><td>$s_passed</td><td>$s_failed</td><td>$nval</td><td>$cols[11]</td></tr>\n";
          }
       }
    }

@@ -42,6 +42,8 @@ public class kpi {
    public static int NOTES_IDX = 11;
    public static int UNITS_IDX = 12;
    public static int GRAPH_GROUP_IDX = 13;
+   public static int SUBTEST_PASS_IDX = 14;
+   public static int SUBTEST_FAIL_IDX = 15;
 
    public static String TESTBED_TEMPLATE = "testbed_template.html";
    public static String AP_AUTO_BASIC_CX = "ap_auto_basic_cx";
@@ -684,6 +686,18 @@ class Row {
       return rdata.elementAt(kpi.NOTES_IDX);
    }
 
+   String getSubtestPassed() {
+      if (rdata.size() > kpi.SUBTEST_PASS_IDX)
+         return rdata.elementAt(kpi.SUBTEST_PASS_IDX);
+      return "";
+   }
+
+   String getSubtestFailed() {
+      if (rdata.size() > kpi.SUBTEST_FAIL_IDX)
+         return rdata.elementAt(kpi.SUBTEST_FAIL_IDX);
+      return "";
+   }
+
    String getUnits() {
       try {
          return rdata.elementAt(kpi.UNITS_IDX);
@@ -926,6 +940,26 @@ class Test {
          }
          else if (pf.indexOf("fail") >= 0) {
             fail++;
+         }
+
+         String spass = row.getSubtestPassed();
+         try {
+            if (!spass.equals("")) {
+               pass += Long.valueOf(spass).longValue();
+            }
+         }
+         catch (Exception ee) {
+            ee.printStackTrace();
+         }
+
+         String sfail = row.getSubtestFailed();
+         try {
+            if (!sfail.equals("")) {
+               fail += Long.valueOf(sfail).longValue();
+            }
+         }
+         catch (Exception ee) {
+            ee.printStackTrace();
          }
 
          row.setShortDescKey(row.getShortDesc().replace(" ", "_"));
