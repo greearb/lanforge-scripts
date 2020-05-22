@@ -19,13 +19,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-checkForGUI = subprocess.run(["pgrep", "java"], capture_output=True)
-if checkForGUI.stdout == b'':
-	print("GUI not found, test will not be started")
-	exit(1)
-
-
-
 mgrURL = "http://localhost:8080/"
 
 def execWrap(cmd):
@@ -45,7 +38,7 @@ def jsonReq(mgrURL, reqURL, data, debug=False):
 	else:
 		lf_r.jsonPost(debug)
 
-def getJsonInfo(mgrURL, reqURL, name):
+def getJsonInfo(mgrURL, reqURL):
 	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
 	json_response = lf_r.getAsJson(debugOn)
 	return json_response
@@ -72,10 +65,23 @@ def removeCX(mgrURL, cxNames):
 		}
 		jsonReq(mgrURL,"cli-json/rm_cx", data)
 
+print("Checking for LANforge Client")
+response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+timeout = 0
+while response == None or timeout != 300:
+	print("LANforge Client not found sleeping 5 seconds")
+	timeout += 5
+	time.sleep(5)
+	response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+if timeout == 300:
+	print("Could not connect to LANforge Client")
+	sys.exit(1)
+
+
+
+
 print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
-
 print("Creating endpoints and cross connects")
-
 
 url = "cli-json/add_sta"
 data = {
@@ -258,32 +264,32 @@ cxNames = ["testTCP","testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wl
 
 #get data before running traffic
 try:
-	testTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes", "testTCP-A")
+	testTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
 	testTCPATX = testTCPA['endpoint']['tx bytes']
 	testTCPARX = testTCPA['endpoint']['rx bytes']
 
-	testTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes", "testTCP-B")
+	testTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
 	testTCPBTX = testTCPB['endpoint']['tx bytes']
 	testTCPBRX = testTCPB['endpoint']['rx bytes']
 
-	testUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes", "testUDP-A")
+	testUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
 	testUDPATX = testUDPA['endpoint']['tx bytes']
 	testUDPARX = testUDPA['endpoint']['rx bytes']
 
-	testUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes", "testUDP-B")
+	testUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
 	testUDPBTX = testUDPB['endpoint']['tx bytes']
 	testUDPBRX = testUDPB['endpoint']['rx bytes']
 
-	l4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
+	l4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
 	l4TestBR = l4Test['endpoint']['bytes-rd']
 
-	genTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
+	genTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
 	genTest1LR = genTest1['endpoint']['last results']
 
-	wlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1","wlTest1")
+	wlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
 	wlTest1TXB = wlTest1['endpoint']['tx bytes']
 	wlTest1RXP = wlTest1['endpoint']['rx pkts']
-	wlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2","wlTest2")
+	wlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
 	wlTest2TXB = wlTest2['endpoint']['tx bytes']
 	wlTest2RXP = wlTest2['endpoint']['rx pkts']
 except Exception as e:
@@ -369,32 +375,32 @@ time.sleep(15)
 #get data for endpoints JSON
 print("Collecting Data")
 try:
-	ptestTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes", "testTCP-A")
+	ptestTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
 	ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
 	ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-	ptestTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes", "testTCP-B")
+	ptestTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
 	ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
 	ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-	ptestUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes", "testUDP-A")
+	ptestUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
 	ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
 	ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-	ptestUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes", "testUDP-B")
+	ptestUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
 	ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
 	ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
 
-	pl4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd", "l4Test")
+	pl4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
 	pl4TestBR = pl4Test['endpoint']['bytes-rd']
 
-	pgenTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results", "genTest1")
+	pgenTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
 	pgenTest1LR = pgenTest1['endpoint']['last results']
 
-	pwlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1","wlTest1")
+	pwlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
 	pwlTest1TXB = pwlTest1['endpoint']['tx bytes']
 	pwlTest1RXP = pwlTest1['endpoint']['rx pkts']
-	pwlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2","wlTest2")
+	pwlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
 	pwlTest2TXB = pwlTest2['endpoint']['tx bytes']
 	pwlTest2RXP = pwlTest2['endpoint']['rx pkts']
 except Exception as e:
