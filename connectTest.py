@@ -68,11 +68,12 @@ def removeCX(mgrURL, cxNames):
 print("Checking for LANforge Client")
 response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
 timeout = 0
-while response == None or timeout != 300:
+while response == None and timeout != 300:
 	print("LANforge Client not found sleeping 5 seconds")
 	timeout += 5
 	time.sleep(5)
 	response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+	#print(response)
 if timeout == 300:
 	print("Could not connect to LANforge Client")
 	sys.exit(1)
@@ -81,22 +82,63 @@ if timeout == 300:
 
 
 print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
-print("Creating endpoints and cross connects")
-
+#Create stations and turn dhcp on
+print("Creating station and turning on dhcp")
 url = "cli-json/add_sta"
+
 data = {
 "shelf":1,
 "resource":1,
 "radio":"wiphy0",
 "sta_name":"sta00000",
-"ssid":"jedway-wpa2-x64-3-1",
-"key":"jedway-wpa2-x64-3-1",
+"ssid":"jedway-wpa2-x2048-5-1",
+"key":"jedway-wpa2-x2048-5-1",
 "mode":1,
 "mac":"xx:xx:xx:xx:*:xx",
-"flags":0x400
+"flags":1024 #0x400 | 1024
 }
+jsonReq(mgrURL, url, data)
 
 
+reqURL = "cli-json/set_port"
+data = {
+"shelf":1,
+"resource":1,
+"port":"sta00000",
+"current_flags": 2147483648, #0x80000000 | 2147483648
+"interest":16386 # 0x4002 | 16386
+}
+jsonReq(mgrURL,reqURL,data)
+
+time.sleep(5)
+
+eth1IP = getJsonInfo(mgrURL, "port/1/1/eth1")
+if eth1IP['interface']['ip'] == "0.0.0.0":
+	print("Warning: Eth1 lacks ip address")
+
+reqURL = "cli-json/nc_show_ports"
+data = { "shelf":1,
+	 "resource":1,
+	 "port":"sta0000",
+	 "probe_flags":1 }
+jsonReq(mgrURL,reqURL,data)
+
+staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
+timeout = 0
+while staIP['interface']['ip'] == "0.0.0.0" and timeout != 120:
+	print("Station failed to get IP. Waiting 10 seconds...")
+	staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
+	timeout += 10
+	time.sleep(10)
+if timeout == 120:
+	print("sta00000 failed to get an ip. Ending test")
+	sys.exit(1)
+
+
+#create endpoints and cxs
+
+
+print("Creating endpoints and cross connects")
 #create cx for tcp and udp
 cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports sta00000,eth1 --use_speeds  360000,150000 --endp_type tcp > /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
 execWrap(cmd)
