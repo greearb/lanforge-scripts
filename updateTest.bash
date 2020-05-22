@@ -8,6 +8,9 @@ CTLH="/home/lanforge/Documents/connectTestHLog.txt"
 verNum="5.4.2"
 
 python3 /home/lanforge/Documents/lanforge-scripts/auto-install-gui.py --versionNumber $verNum &> $GUIUpdate
+
+grep -q "Current GUI version up to date" $GUIUpdate && exit
+
 python3 /home/lanforge/Documents/lanforge-scripts/connectTest.py &> $CTLGUI
 
 pgrep java | xargs kill
