@@ -4,7 +4,7 @@ import time
 import sys
 
 if 'py-json' not in sys.path:
-	sys.path.append('py-json')
+   sys.path.append('py-json')
 
 import subprocess
 import json
@@ -22,61 +22,61 @@ if sys.version_info[0] != 3:
 mgrURL = "http://localhost:8080/"
 
 def execWrap(cmd):
-	if os.system(cmd) != 0:
-		print("\nError with " + cmd + ",bye\n")
-		exit(1)
+   if os.system(cmd) != 0:
+      print("\nError with " + cmd + ",bye\n")
+      exit(1)
 
 
 def jsonReq(mgrURL, reqURL, data, debug=False):
-	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-	lf_r.addPostData(data)
+   lf_r = LFRequest.LFRequest(mgrURL + reqURL)
+   lf_r.addPostData(data)
 
-	if debug:
-		json_response = lf_r.jsonPost(debug)
-		LFUtils.debug_printer.pprint(json_response)
-		sys.exit(1)
-	else:
-		lf_r.jsonPost(debug)
+   if debug:
+      json_response = lf_r.jsonPost(debug)
+      LFUtils.debug_printer.pprint(json_response)
+      sys.exit(1)
+   else:
+      lf_r.jsonPost(debug)
 
 def getJsonInfo(mgrURL, reqURL):
-	lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-	json_response = lf_r.getAsJson(debugOn)
-	return json_response
-	#print(name)
-	#j_printer = pprint.PrettyPrinter(indent=2)
-	#j_printer.pprint(json_response)
-	#for record in json_response[key]:
-	#	j_printer.pprint(record)
+   lf_r = LFRequest.LFRequest(mgrURL + reqURL)
+   json_response = lf_r.getAsJson(debugOn)
+   return json_response
+   #print(name)
+   #j_printer = pprint.PrettyPrinter(indent=2)
+   #j_printer.pprint(json_response)
+   #for record in json_response[key]:
+   #  j_printer.pprint(record)
 
 def removeEndps(mgrURL, endpNames):
-	for name in endpNames:
-		#print(f"Removing endp {name}")
-		data = {
-		"endp_name":name
-		}
-		jsonReq(mgrURL, "cli-json/rm_endp", data)
+   for name in endpNames:
+      #print(f"Removing endp {name}")
+      data = {
+      "endp_name":name
+      }
+      jsonReq(mgrURL, "cli-json/rm_endp", data)
 
 def removeCX(mgrURL, cxNames):
-	for name in cxNames:
-		#print(f"Removing CX {name}")
-		data = {
-		"test_mgr":"all",
-		"cx_name":name
-		}
-		jsonReq(mgrURL,"cli-json/rm_cx", data)
+   for name in cxNames:
+      #print(f"Removing CX {name}")
+      data = {
+      "test_mgr":"all",
+      "cx_name":name
+      }
+      jsonReq(mgrURL,"cli-json/rm_cx", data)
 
 print("Checking for LANforge Client")
-response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
 timeout = 0
 while response == None and timeout != 300:
-	print("LANforge Client not found sleeping 5 seconds")
-	timeout += 5
-	time.sleep(5)
-	response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
-	#print(response)
+   print("LANforge Client not found sleeping 5 seconds")
+   timeout += 5
+   time.sleep(5)
+   response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
+   #print(response)
 if timeout == 300:
-	print("Could not connect to LANforge Client")
-	sys.exit(1)
+   print("Could not connect to LANforge Client")
+   sys.exit(1)
 
 
 
@@ -115,35 +115,35 @@ time.sleep(10)
 
 eth1IP = getJsonInfo(mgrURL, "port/1/1/eth1")
 if eth1IP['interface']['ip'] == "0.0.0.0":
-	print("Warning: Eth1 lacks ip address")
+   print("Warning: Eth1 lacks ip address")
 
 reqURL = "cli-json/nc_show_ports"
 data = { "shelf":1,
-	 "resource":1,
-	 "port":"sta0000",
-	 "probe_flags":1 }
+    "resource":1,
+    "port":"sta0000",
+    "probe_flags":1 }
 jsonReq(mgrURL,reqURL,data)
 
 staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
 timeout = 0
 maxTime = 300
 while staIP['interface']['ip'] == "0.0.0.0" and timeout != maxTime:
-	print("Station failed to get IP. Waiting 10 seconds...")
-	staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
-	timeout += 10
-	time.sleep(10)
+   print("Station failed to get IP. Waiting 10 seconds...")
+   staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
+   timeout += 10
+   time.sleep(10)
 if timeout == maxTime:
-	print("sta00000 failed to get an ip. Ending test")
-	print("Cleaning up...")
-	reqURL = "cli-json/rm_vlan"
-	data = {
-	"shelf":1,
-	"resource":1,
-	"port":"sta00000"
-	}
+   print("sta00000 failed to get an ip. Ending test")
+   print("Cleaning up...")
+   reqURL = "cli-json/rm_vlan"
+   data = {
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000"
+   }
 
-	jsonReq(mgrURL, reqURL, data)
-	sys.exit(1)
+   jsonReq(mgrURL, reqURL, data)
+   sys.exit(1)
 
 
 #create endpoints and cxs
@@ -317,61 +317,61 @@ cxNames = ["testTCP","testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wl
 
 #get data before running traffic
 try:
-	testTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
-	testTCPATX = testTCPA['endpoint']['tx bytes']
-	testTCPARX = testTCPA['endpoint']['rx bytes']
+   testTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
+   testTCPATX = testTCPA['endpoint']['tx bytes']
+   testTCPARX = testTCPA['endpoint']['rx bytes']
 
-	testTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
-	testTCPBTX = testTCPB['endpoint']['tx bytes']
-	testTCPBRX = testTCPB['endpoint']['rx bytes']
+   testTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
+   testTCPBTX = testTCPB['endpoint']['tx bytes']
+   testTCPBRX = testTCPB['endpoint']['rx bytes']
 
-	testUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
-	testUDPATX = testUDPA['endpoint']['tx bytes']
-	testUDPARX = testUDPA['endpoint']['rx bytes']
+   testUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
+   testUDPATX = testUDPA['endpoint']['tx bytes']
+   testUDPARX = testUDPA['endpoint']['rx bytes']
 
-	testUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
-	testUDPBTX = testUDPB['endpoint']['tx bytes']
-	testUDPBRX = testUDPB['endpoint']['rx bytes']
+   testUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
+   testUDPBTX = testUDPB['endpoint']['tx bytes']
+   testUDPBRX = testUDPB['endpoint']['rx bytes']
 
-	l4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
-	l4TestBR = l4Test['endpoint']['bytes-rd']
+   l4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
+   l4TestBR = l4Test['endpoint']['bytes-rd']
 
-	genTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
-	genTest1LR = genTest1['endpoint']['last results']
+   genTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
+   genTest1LR = genTest1['endpoint']['last results']
 
-	wlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
-	wlTest1TXB = wlTest1['endpoint']['tx bytes']
-	wlTest1RXP = wlTest1['endpoint']['rx pkts']
-	wlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
-	wlTest2TXB = wlTest2['endpoint']['tx bytes']
-	wlTest2RXP = wlTest2['endpoint']['rx pkts']
+   wlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
+   wlTest1TXB = wlTest1['endpoint']['tx bytes']
+   wlTest1RXP = wlTest1['endpoint']['rx pkts']
+   wlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
+   wlTest2TXB = wlTest2['endpoint']['tx bytes']
+   wlTest2RXP = wlTest2['endpoint']['rx pkts']
 except Exception as e:
-	print("Something went wrong")
-	print(e)
-	print("Cleaning up...")
-	reqURL = "cli-json/rm_vlan"
-	data = {
-	"shelf":1,
-	"resource":1,
-	"port":"sta00000"
-	}
+   print("Something went wrong")
+   print(e)
+   print("Cleaning up...")
+   reqURL = "cli-json/rm_vlan"
+   data = {
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000"
+   }
 
-	jsonReq(mgrURL, reqURL, data)
+   jsonReq(mgrURL, reqURL, data)
 
-	endpNames = ["testTCP-A", "testTCP-B",
-	             "testUDP-A", "testUDP-B",
-	             "l4Test", "fioTest",
-	             "genTest1", "genTest2",
-	             "wlTest1","wlTest2"]
-	removeCX(mgrURL, cxNames)
-	removeEndps(mgrURL, endpNames)
-	sys.exit(1)
+   endpNames = ["testTCP-A", "testTCP-B",
+                "testUDP-A", "testUDP-B",
+                "l4Test", "fioTest",
+                "genTest1", "genTest2",
+                "wlTest1","wlTest2"]
+   removeCX(mgrURL, cxNames)
+   removeEndps(mgrURL, endpNames)
+   sys.exit(1)
 
 #start cx traffic
 print("\nStarting CX Traffic")
 for name in range(len(cxNames)):
-	cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} RUNNING\" >> /tmp/connectTest.log")
-	execWrap(cmd)
+   cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} RUNNING\" >> /tmp/connectTest.log")
+   execWrap(cmd)
 
 #print("Sleeping for 5 seconds")
 time.sleep(5)
@@ -420,63 +420,63 @@ execWrap(cmd)
 #stop cx traffic
 print("Stopping CX Traffic")
 for name in range(len(cxNames)):
-	cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"  >> /tmp/connectTest.log")
-	execWrap(cmd)
+   cmd = (f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"  >> /tmp/connectTest.log")
+   execWrap(cmd)
 #print("Sleeping for 15 seconds")
 time.sleep(15)
 
 #get data for endpoints JSON
 print("Collecting Data")
 try:
-	ptestTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
-	ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
-	ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
+   ptestTCPA = getJsonInfo(mgrURL, "endp/testTCP-A?fields=tx+bytes,rx+bytes")
+   ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
+   ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-	ptestTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
-	ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
-	ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
+   ptestTCPB = getJsonInfo(mgrURL, "endp/testTCP-B?fields=tx+bytes,rx+bytes")
+   ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
+   ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-	ptestUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
-	ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
-	ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
+   ptestUDPA = getJsonInfo(mgrURL, "endp/testUDP-A?fields=tx+bytes,rx+bytes")
+   ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
+   ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-	ptestUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
-	ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
-	ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
+   ptestUDPB = getJsonInfo(mgrURL, "endp/testUDP-B?fields=tx+bytes,rx+bytes")
+   ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
+   ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
 
-	pl4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
-	pl4TestBR = pl4Test['endpoint']['bytes-rd']
+   pl4Test = getJsonInfo(mgrURL, "layer4/l4Test?fields=bytes-rd")
+   pl4TestBR = pl4Test['endpoint']['bytes-rd']
 
-	pgenTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
-	pgenTest1LR = pgenTest1['endpoint']['last results']
+   pgenTest1 = getJsonInfo(mgrURL, "generic/genTest1?fields=last+results")
+   pgenTest1LR = pgenTest1['endpoint']['last results']
 
-	pwlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
-	pwlTest1TXB = pwlTest1['endpoint']['tx bytes']
-	pwlTest1RXP = pwlTest1['endpoint']['rx pkts']
-	pwlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
-	pwlTest2TXB = pwlTest2['endpoint']['tx bytes']
-	pwlTest2RXP = pwlTest2['endpoint']['rx pkts']
+   pwlTest1 = getJsonInfo(mgrURL,"wl_ep/wlTest1")
+   pwlTest1TXB = pwlTest1['endpoint']['tx bytes']
+   pwlTest1RXP = pwlTest1['endpoint']['rx pkts']
+   pwlTest2 = getJsonInfo(mgrURL,"wl_ep/wlTest2")
+   pwlTest2TXB = pwlTest2['endpoint']['tx bytes']
+   pwlTest2RXP = pwlTest2['endpoint']['rx pkts']
 except Exception as e:
-	print("Something went wrong")
-	print(e)
-	print("Cleaning up...")
-	reqURL = "cli-json/rm_vlan"
-	data = {
-	"shelf":1,
-	"resource":1,
-	"port":"sta00000"
-	}
+   print("Something went wrong")
+   print(e)
+   print("Cleaning up...")
+   reqURL = "cli-json/rm_vlan"
+   data = {
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000"
+   }
 
-	jsonReq(mgrURL, reqURL, data)
+   jsonReq(mgrURL, reqURL, data)
 
-	endpNames = ["testTCP-A", "testTCP-B",
-	             "testUDP-A", "testUDP-B",
-	             "l4Test", "fioTest",
-	             "genTest1", "genTest2",
-	             "wlTest1","wlTest2"]
-	removeCX(mgrURL, cxNames)
-	removeEndps(mgrURL, endpNames)
-	sys.exit(1)
+   endpNames = ["testTCP-A", "testTCP-B",
+                "testUDP-A", "testUDP-B",
+                "l4Test", "fioTest",
+                "genTest1", "genTest2",
+                "wlTest1","wlTest2"]
+   removeCX(mgrURL, cxNames)
+   removeEndps(mgrURL, endpNames)
+   sys.exit(1)
 
 #print("Sleeping for 5 seconds")
 time.sleep(5)
@@ -486,11 +486,11 @@ time.sleep(5)
 #compare pre-test values to post-test values
 
 def compareVals(name, preVal, postVal):
-	print(f"Comparing {name}")
-	if postVal > preVal:
-		print("		Test Passed")
-	else:
-		print(f"	Test Failed: {name} did not increase after 5 seconds")
+   print(f"Comparing {name}")
+   if postVal > preVal:
+      print("     Test Passed")
+   else:
+      print(f" Test Failed: {name} did not increase after 5 seconds")
 
 print("\n")
 compareVals("testTCP-A TX", testTCPATX, ptestTCPATX)
@@ -532,9 +532,9 @@ data = {
 jsonReq(mgrURL, reqURL, data)
 
 endpNames = ["testTCP-A", "testTCP-B",
-	     "testUDP-A", "testUDP-B",
-	     "l4Test", "fioTest",
-	     "genTest1", "genTest2",
-	     "wlTest1","wlTest2"]
+        "testUDP-A", "testUDP-B",
+        "l4Test", "fioTest",
+        "genTest1", "genTest2",
+        "wlTest1","wlTest2"]
 removeCX(mgrURL, cxNames)
 removeEndps(mgrURL, endpNames)
