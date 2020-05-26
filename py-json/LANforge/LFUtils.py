@@ -313,7 +313,7 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
             else:
                lf_r = LFRequest.LFRequest(base_url+"/cli-form/nc_show_ports")
                lf_r.addPostData({"shelf":1, "resource":resource_id, "port":port_name, "flags":1})
-               lr_r.formPost()
+               lf_r.formPost()
     sleep(2)
     print("These stations appeared: "+", ".join(found_stations))
     return None
