@@ -127,13 +127,13 @@ class LFRequest:
             if (show_error):
                 print("----- get() HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
-
-                print("Error: ", sys.exc_info()[0])
-                print("Request URL:", myrequest.get_full_url())
-                print("Request Content-type:", myrequest.get_header('Content-type'))
-                print("Request Accept:", myrequest.get_header('Accept'))
-                print("Request Data:")
-                LFUtils.debug_printer.pprint(myrequest.data)
+                if (error.code != 404):
+                    print("Error: ", sys.exc_info()[0])
+                    print("Request URL:", myrequest.get_full_url())
+                    print("Request Content-type:", myrequest.get_header('Content-type'))
+                    print("Request Accept:", myrequest.get_header('Accept'))
+                    print("Request Data:")
+                    LFUtils.debug_printer.pprint(myrequest.data)
 
                 if (error.headers):
                     # the HTTPError is of type HTTPMessage a subclass of email.message
@@ -143,7 +143,7 @@ class LFRequest:
 
                 if (len(myresponses) > 0):
                     print("----- Response: --------------------------------------------------------")
-                    LFUtils.debug_printer.pprint(responses[0].reason)
+                    LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
         except urllib.error.URLError as uerror:
             if (show_error):
