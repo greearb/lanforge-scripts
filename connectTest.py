@@ -66,13 +66,13 @@ def removeCX(mgrURL, cxNames):
       jsonReq(mgrURL,"cli-json/rm_cx", data)
 
 print("Checking for LANforge Client")
-response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
 timeout = 0
 while response == None and timeout != 300:
    print("LANforge Client not found sleeping 5 seconds")
    timeout += 5
    time.sleep(5)
-   response = getJsonInfo(mgrURL, 'port/1/1/wlan0')
+   response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
    #print(response)
 if timeout == 300:
    print("Could not connect to LANforge Client")
