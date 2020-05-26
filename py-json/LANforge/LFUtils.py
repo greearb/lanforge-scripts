@@ -255,7 +255,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
-            if json_response['down'] is "false":
+            if json_response['down'] == "false":
                 up_stations.append(port_name)
         sleep(1)
     return None
@@ -275,7 +275,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
-            if json_response['down'] is "true":
+            if json_response['down'] == "true":
                 down_stations.append(port_name)
         sleep(1)
     return None
