@@ -52,6 +52,8 @@ public class kpi {
    public static String HTML_COLOR_FAIL = "#f9c5c0";
    public static String HTML_COLOR_WARNING = "#f8f6ad";
 
+   public static String PF = "PASS-FAIL";
+
    public kpi() {
       priv_init();
    }
@@ -123,6 +125,9 @@ public class kpi {
       Hashtable<String, String> test_names = new Hashtable();
       Vector<String> test_namesv = new Vector();
       Vector<Run> runs = new Vector();
+
+      test_names.put(PF, PF);
+      test_namesv.add(PF);
 
       try {
          DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir));
@@ -219,6 +224,28 @@ public class kpi {
       }
 
       runs.sort(new SortbyDate());
+
+      // Create meta-test results for each run.
+      for (int i = 0; i<runs.size(); i++) {
+         Run run = runs.elementAt(i);
+         Test t = new Test(PF);
+         run.addTest(t);
+         // Build fake kpi title and add that,
+         // then add fake kpi results line
+         // Example lines from a kpi.csv
+         //Date	test-rig	dut-hw-version	dut-sw-version	dut-model-num	dut-serial-num	test-priority	test-id	short-description	pass/fail	numeric-score	test details	Units	Graph-Group	Subtest-Pass	Subtest-Fail
+         //1590190791848	Ferndale-01-Basic	Linksys-EA8300	d88ea40	Linksys-EA8300		90	AP Auto	Basic Client Connectivity Dual-Band MIN		8.0	Minimum CX time (ms)	Time (ms)	CX-Time	0	0
+
+         t.addLine("Date	test-rig	dut-hw-version	dut-sw-version	dut-model-num	dut-serial-num	test-priority	test-id	short-description	pass/fail	numeric-score	test details	Units	Graph-Group	Subtest-Pass	Subtest-Fail");
+         t.addLine(run.getDateMs() + kpi.in_sep + run.getTestRig() + kpi.in_sep + run.getDutHwVer() + kpi.in_sep + run.getDutSwVer()
+                   + kpi.in_sep + run.getDutModelNum() + kpi.in_sep + run.getDutSerNum() + kpi.in_sep + "100" + kpi.in_sep + PF
+                   + kpi.in_sep + "Total Pass" + kpi.in_sep + kpi.in_sep + run.getPass() + kpi.in_sep + "Total passing tests and sub-tests for this run."
+                   + kpi.in_sep + "Number" + kpi.in_sep + PF + kpi.in_sep + "0" + kpi.in_sep + "0");
+         t.addLine(run.getDateMs() + kpi.in_sep + run.getTestRig() + kpi.in_sep + run.getDutHwVer() + kpi.in_sep + run.getDutSwVer()
+                   + kpi.in_sep + run.getDutModelNum() + kpi.in_sep + run.getDutSerNum() + kpi.in_sep + "100" + kpi.in_sep + PF
+                   + kpi.in_sep + "Total Failures" + kpi.in_sep + kpi.in_sep + run.getFail() + kpi.in_sep + "Total failing tests and sub-tests for this run."
+                   + kpi.in_sep + "Number" + kpi.in_sep + PF + kpi.in_sep + "0" + kpi.in_sep + "0");
+      }
 
       // Link to latest test run that has the test id
       Hashtable<String, Run> test_id_links = new Hashtable();
@@ -344,8 +371,10 @@ public class kpi {
                
                String hk_str = hk;
                Run last = test_id_links.get(hk);
-               if (last != null) {
-                  hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+               if (!hk.equals(PF)) {
+                  if (last != null) {
+                     hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+                  }
                }
 
                StringBuffer change = new StringBuffer();
@@ -359,7 +388,7 @@ public class kpi {
                   }
                }
 
-               String row_str = ("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td><td>"
+               String row_str = ("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"./" + npng + "\"><img src=\"./" + npngt + "\"></a></td><td>"
                                  + change + "</td></tr>\n");
                if (csv.getPriority() >= 100) {
                   scores.append(row_str);
@@ -462,11 +491,13 @@ public class kpi {
 
                String hk_str = hk;
                Run last = test_id_links.get(hk);
-               if (last != null) {
-                  hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+               if (!hk.equals(PF)) {
+                  if (last != null) {
+                     hk_str = "<a href=\"" + last.getName() + "/" + hk + "/index.html\">" + hk + "</a>";
+                  }
                }
 
-               groups.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"" + npng + "\"><img src=\"" + npngt + "\"></a></td></tr>\n");
+               groups.append("<tr><td>" + hk_str + "</td><td>" + title + "</td><td><a href=\"./" + npng + "\"><img src=\"./" + npngt + "\"></a></td></tr>\n");
 
             }
             catch (Exception ee) {
@@ -1067,6 +1098,13 @@ class Run {
       Test t = getFirstTest();
       if (t != null)
          return t.getDutSwVer();
+      return "";
+   }
+
+   String getDutSerNum() {
+      Test t = getFirstTest();
+      if (t != null)
+         return t.getDutSerialNum();
       return "";
    }
 
