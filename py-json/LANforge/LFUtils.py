@@ -2,6 +2,7 @@
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
+import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
@@ -255,7 +256,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
-            if json_response['down'] is "false":
+            if json_response['down'] == "false":
                 up_stations.append(port_name)
         sleep(1)
     return None
@@ -275,7 +276,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
-            if json_response['down'] is "true":
+            if json_response['down'] == "true":
                 down_stations.append(port_name)
         sleep(1)
     return None
@@ -313,9 +314,66 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
             else:
                lf_r = LFRequest.LFRequest(base_url+"/cli-form/nc_show_ports")
                lf_r.addPostData({"shelf":1, "resource":resource_id, "port":port_name, "flags":1})
-               lr_r.formPost()
+               lf_r.formPost()
     sleep(2)
     print("These stations appeared: "+", ".join(found_stations))
     return None
 
- ###
+def removePort(resource, port_name, baseurl="http://localhost:8080/"):
+    lf_r = LFRequest.LFRequest(baseurl+"cli-json/rm_vlan")
+    lf_r.addPostData({
+        "shelf": 1,
+        "resource": resource,
+        "port": port_name
+    })
+    lf_r.jsonPost(False)
+
+def removePortByName(port_name, baseurl="http://localhost:8080/"):
+    if ((port_name is None) or (port_name == "")):
+        print("No port name")
+        return;
+    if (port_name.index(".") < 0):
+        print("removePortByName: Please use short EID port names like: 2.sta1")
+        return
+
+    resource = port_name[0 : port_name.index(".")]
+    name = port_name[port_name.index(".")+1 : ]
+    if (name.index(".") >= 0):
+        name = name[name.index(".")+1 : ]
+    lf_r = LFRequest.LFRequest(baseurl+"cli-json/rm_vlan")
+    lf_r.addPostData({
+        "shelf": 1,
+        "resource": resource,
+        "port": name
+    })
+    lf_r.jsonPost(True)
+
+def removeCX(mgrURL, cxNames):
+   for name in cxNames:
+      #print(f"Removing CX {name}")
+      data = {
+          "test_mgr":"all",
+          "cx_name":name
+      }
+      lf_r = LFRequest.LFRequest(mgrURL+"cli-json/rm_cx")
+      lf_r.addPostData(data)
+      lf_r.jsonPost()
+
+def removeEndps(mgrURL, endpNames):
+   for name in endpNames:
+      #print(f"Removing endp {name}")
+      data = {
+        "endp_name":name
+      }
+      lf_r = LFRequest.LFRequest(mgrURL+"cli-json/rm_endp")
+      lf_r.addPostData(data)
+      lf_r.jsonPost()
+
+
+def execWrap(cmd):
+   if os.system(cmd) != 0:
+      print("\nError with " + cmd + ",bye\n")
+      exit(1)
+
+
+###
