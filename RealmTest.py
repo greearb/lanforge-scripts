@@ -3,6 +3,16 @@
 import Realm
 
 
-test = Realm.Realm("localhost:8080")
+test = Realm.Realm("http://localhost:8080")
 
-test.stationList
+staList = test.stationList()
+cxList = test.cxList()
+vapList = test.vapList()
+
+
+print(f"CXs: {cxList}\n")
+print(f"Stations: {staList}\n")
+print(f"VAPs: {vapList}\n")
+
+
+print(test.findPortsLike("sta+"))
