@@ -58,7 +58,8 @@ class Realm:
    def findPortsLike(self, pattern=""):
       #Searches for ports that match a given pattern and returns a list of names
       list = []
-      lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias")
+      # alias is possible but device is guarnteed
+      lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
       response = lf_r.getAsJson(True)
       for x in range(len(response['interfaces'])):
          for k,v in response['interfaces'][x].items():
@@ -69,17 +70,19 @@ class Realm:
 
       for name in list:
          if (pattern.index("+") > 0):
-            match1 = re.search(r"^[^+]+[+]$", name)
-            if match1:
-               print(match1)
-               matchedList.append(name)
+            prefix = re.search(r"^([^+]+)[+]$", pattern)
+            if prefix:
+               print(prefix)
+               if (name.index(prefix) == 0):
+                  matchedList.append(name)
          elif (pattern.index("*") > 0):
-            match2 = re.search(r"^[^\*]+[\*]$", name)
-            if match2:
-               print(match2)
-               matchedList.append(name)
+            prefix = re.search(r"^([^\*]+)[\*]$", pattern)
+            if prefix:
+               print(prefix)
+               if (name.index(prefix) == 0):
+                  matchedList.append(name)
             if (pattern.index("[") > 0):
-               match3 = re.search(r"^[\[]+\[\d+\.\.\d+\]$", name)
+               match3 = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
                if match3:
                   print(match3)
                   matchedList.append(name)

@@ -16,3 +16,7 @@ print(f"VAPs: {vapList}\n")
 
 
 print(test.findPortsLike("sta+"))
+
+print(test.findPortsLike("sta0*"))
+
+print(test.findPortsLike("sta[0000..0002]"))
