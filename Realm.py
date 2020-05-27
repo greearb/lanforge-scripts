@@ -68,25 +68,40 @@ class Realm:
 
       matchedList = []
 
-      for name in list:
+      prefix = ""
+      for portname in list:
          if (pattern.index("+") > 0):
-            prefix = re.search(r"^([^+]+)[+]$", pattern)
-            if prefix:
-               print(prefix)
-               if (name.index(prefix) == 0):
-                  matchedList.append(name)
-         elif (pattern.index("*") > 0):
-            prefix = re.search(r"^([^\*]+)[\*]$", pattern)
-            if prefix:
-               print(prefix)
-               if (name.index(prefix) == 0):
-                  matchedList.append(name)
-            if (pattern.index("[") > 0):
-               match3 = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
-               if match3:
-                  print(match3)
-                  matchedList.append(name)
+            try:
+               match = re.search(r"^([^+]+)[+]$", pattern)
+               if match.group(1):
+                  print("name:", portname, " Group 1: ",match.group(1))
+                  prefix = match.group(1)
+                  if (portname.index(prefix) == 0):
+                     matchedList.append(portname)
+            except ValueError as e:
+               print(e)
 
+         elif (pattern.index("*") > 0):
+            try:
+               match = re.search(r"^([^\*]+)[\*]$", pattern)
+               if match.group(1):
+                  prefix = match.group(1)
+                  print("group 1: ",prefix)
+                  if (portname.index(prefix) == 0):
+                     matchedList.append(portname)
+            except ValueError as e:
+               print(e)
+
+         elif (pattern.index("[") > 0):
+            try:
+               match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
+               if match.group(0):
+                  print("[group1]: ", match.group(1))
+                  prefix = match.group(1)
+                  if (portname.index(prefix)):
+                     matchedList.append(portname) # wrong but better
+            except ValueError as e:
+               print(e)
       return matchedList
 
 class CxProfile:
