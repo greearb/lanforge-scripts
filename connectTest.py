@@ -11,36 +11,33 @@ import json
 import pprint
 from LANforge import LFRequest
 from LANforge import LFUtils
+from LANforge.LFUtils import *
+
 import create_genlink as genl
 
 debugOn = True
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 mgrURL = "http://localhost:8080/"
 
-def execWrap(cmd):
-   if os.system(cmd) != 0:
-      print("\nError with " + cmd + ",bye\n")
-      exit(1)
-
-
-def jsonReq(mgrURL, reqURL, data, debug=False):
+def jsonReq(mgrURL, reqURL, data, exitWhenCalled=False):
    lf_r = LFRequest.LFRequest(mgrURL + reqURL)
    lf_r.addPostData(data)
 
-   if debug:
-      json_response = lf_r.jsonPost(debug)
-      LFUtils.debug_printer.pprint(json_response)
+   if exitWhenCalled:
+      json_response = lf_r.jsonPost(True)
+      print("jsonReq: debugdie Response: ")
+      LFUtils.debug_printer.pprint(vars(json_response))
+      print("jsonReq: bye")
       sys.exit(1)
    else:
-      lf_r.jsonPost(debug)
+      lf_r.jsonPost(exitWhenCalled)
 
-def getJsonInfo(mgrURL, reqURL):
+def getJsonInfo(mgrURL, reqURL, debug=False):
    lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-   json_response = lf_r.getAsJson(debugOn)
+   json_response = lf_r.getAsJson(debug)
    return json_response
    #print(name)
    #j_printer = pprint.PrettyPrinter(indent=2)
@@ -48,70 +45,63 @@ def getJsonInfo(mgrURL, reqURL):
    #for record in json_response[key]:
    #  j_printer.pprint(record)
 
-def removeEndps(mgrURL, endpNames):
-   for name in endpNames:
-      #print(f"Removing endp {name}")
-      data = {
-      "endp_name":name
-      }
-      jsonReq(mgrURL, "cli-json/rm_endp", data)
-
-def removeCX(mgrURL, cxNames):
-   for name in cxNames:
-      #print(f"Removing CX {name}")
-      data = {
-      "test_mgr":"all",
-      "cx_name":name
-      }
-      jsonReq(mgrURL,"cli-json/rm_cx", data)
 
 print("Checking for LANforge Client")
 response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
-timeout = 0
-while response == None and timeout != 300:
+duration = 0
+while ((response == None) and (duration < 300)):
    print("LANforge Client not found sleeping 5 seconds")
-   timeout += 5
-   time.sleep(5)
+   duration += 2
+   time.sleep(2)
    response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
-   #print(response)
-if timeout == 300:
+
+if duration >= 300:
    print("Could not connect to LANforge Client")
    sys.exit(1)
-
-
 
 
 print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
 #Create stations and turn dhcp on
 print("Creating station and turning on dhcp")
-url = "cli-json/add_sta"
 
+url = "port/1/1/sta00000"
+debugOn = True
+response = getJsonInfo(mgrURL, url)
+if (response is not None):
+   if (response["interface"] is not None):
+      print("removing old station")
+      LFUtils.removePortByName("1.1.sta00000", mgrURL)
+      time.sleep(1)
+
+url = "cli-json/add_sta"
 data = {
-"shelf":1,
-"resource":1,
-"radio":"wiphy0",
-"sta_name":"sta00000",
-"ssid":"jedway-wpa2-x2048-5-1",
-"key":"jedway-wpa2-x2048-5-1",
-"mode":1,
-"mac":"xx:xx:xx:xx:*:xx",
-"flags":1024 #0x400 | 1024
+   "shelf":1,
+   "resource":1,
+   "radio":"wiphy0",
+   "sta_name":"sta00000",
+   "ssid":"jedway-wpa2-x2048-5-1",
+   "key":"jedway-wpa2-x2048-5-1",
+   "mode":1,
+   "mac":"xx:xx:xx:xx:*:xx",
+   "flags":1024 #0x400 | 1024
 }
+print("adding new station")
 jsonReq(mgrURL, url, data)
 
-time.sleep(5)
+time.sleep(1)
 
 reqURL = "cli-json/set_port"
 data = {
-"shelf":1,
-"resource":1,
-"port":"sta00000",
-"current_flags": 2147483648, #0x80000000 | 2147483648
-"interest":16386 # 0x4002 | 16386
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000",
+   "current_flags": 2147483648, #0x80000000 | 2147483648
+   "interest":16386 # 0x4002 | 16386
 }
-jsonReq(mgrURL,reqURL,data)
+print("configuring port")
+jsonReq(mgrURL, reqURL, data)
 
-time.sleep(10)
+time.sleep(5)
 
 eth1IP = getJsonInfo(mgrURL, "port/1/1/eth1")
 if eth1IP['interface']['ip'] == "0.0.0.0":
@@ -122,27 +112,26 @@ data = { "shelf":1,
     "resource":1,
     "port":"sta0000",
     "probe_flags":1 }
-jsonReq(mgrURL,reqURL,data)
+jsonReq(mgrURL, reqURL, data)
 
-staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
-timeout = 0
+station_info = getJsonInfo(mgrURL, "port/1/1/sta00000?fields=port,ip")
+duration = 0
 maxTime = 300
-while staIP['interface']['ip'] == "0.0.0.0" and timeout != maxTime:
+ip = "0.0.0.0"
+while ((ip == "0.0.0.0") and (duration < maxTime)):
    print("Station failed to get IP. Waiting 10 seconds...")
-   staIP = getJsonInfo(mgrURL, "port/1/1/sta00000")
-   timeout += 10
-   time.sleep(10)
-if timeout == maxTime:
+   station_info = getJsonInfo(mgrURL, "port/1/1/sta00000?fields=port,ip")
+
+   LFUtils.debug_printer.pprint(station_info)
+   if ((station_info is not None) and ("interface" in station_info) and ("ip" in station_info["interface"])):
+      ip = station_info["interface"]["ip"]
+   duration += 2
+   time.sleep(2)
+
+if duration >= maxTime:
    print("sta00000 failed to get an ip. Ending test")
    print("Cleaning up...")
-   reqURL = "cli-json/rm_vlan"
-   data = {
-   "shelf":1,
-   "resource":1,
-   "port":"sta00000"
-   }
-
-   jsonReq(mgrURL, reqURL, data)
+   removePortByName("1.sta00000", mgrURL)
    sys.exit(1)
 
 
@@ -160,14 +149,14 @@ time.sleep(.5)
 #create l4 endpoint
 url = "cli-json/add_l4_endp"
 data = {
-"alias":"l4Test",
-"shelf":1,
-"resource":1,
-"port":"sta00000",
-"type":"l4_generic",
-"timeout":1000,
-"url_rate":600,
-"url":"dl http://10.40.0.1/ /dev/null"
+   "alias":"l4Test",
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000",
+   "type":"l4_generic",
+   "timeout":1000,
+   "url_rate":600,
+   "url":"dl http://10.40.0.1/ /dev/null"
 }
 
 jsonReq(mgrURL, url, data)
@@ -176,10 +165,10 @@ time.sleep(.5)
 #create cx for l4_endp
 url = "cli-json/add_cx"
 data = {
-"alias":"CX_l4Test",
-"test_mgr":"default_tm",
-"tx_endp":"l4Test",
-"rx_endp":"NA"
+   "alias":"CX_l4Test",
+   "test_mgr":"default_tm",
+   "tx_endp":"l4Test",
+   "rx_endp":"NA"
 }
 
 jsonReq(mgrURL, url, data)
@@ -188,12 +177,12 @@ time.sleep(.5)
 #create fileio endpoint
 url = "cli-json/add_file_endp"
 data = {
-"alias":"fioTest",
-"shelf":1,
-"resource":1,
-"port":"sta00000",
-"type":"fe_nfs",
-"directory":"/mnt/fe-test"
+   "alias":"fioTest",
+   "shelf":1,
+   "resource":1,
+   "port":"sta00000",
+   "type":"fe_nfs",
+   "directory":"/mnt/fe-test"
 }
 
 jsonReq(mgrURL,url,data)
@@ -202,10 +191,10 @@ time.sleep(.5)
 #create fileio cx
 url = "cli-json/add_cx"
 data = {
-"alias":"CX_fioTest",
-"test_mgr":"default_tm",
-"tx_endp":"fioTest",
-"rx_endp":"NA"
+   "alias":"CX_fioTest",
+   "test_mgr":"default_tm",
+   "tx_endp":"fioTest",
+   "rx_endp":"NA"
 }
 
 jsonReq(mgrURL,url,data)
@@ -223,10 +212,10 @@ time.sleep(.5)
 #create generic cx
 url = "cli-json/add_cx"
 data = {
-"alias":"CX_genTest1",
-"test_mgr":"default_tm",
-"tx_endp":"genTest1",
-"rx_endp":"genTest2"
+   "alias":"CX_genTest1",
+   "test_mgr":"default_tm",
+   "tx_endp":"genTest1",
+   "rx_endp":"genTest2"
 }
 
 jsonReq(mgrURL,url,data)
@@ -235,20 +224,20 @@ time.sleep(.5)
 #create redirects for wanlink
 url = "cli-json/add_rdd"
 data = {
-"shelf":1,
-"resource":1,
-"port":"rdd0",
-"peer_ifname":"rdd1"
+   "shelf":1,
+   "resource":1,
+   "port":"rdd0",
+   "peer_ifname":"rdd1"
 }
 
 jsonReq(mgrURL,url,data)
 
 url = "cli-json/add_rdd"
 data = {
-"shelf":1,
-"resource":1,
-"port":"rdd1",
-"peer_ifname":"rdd0"
+   "shelf":1,
+   "resource":1,
+   "port":"rdd1",
+   "peer_ifname":"rdd0"
 }
 
 jsonReq(mgrURL,url,data)
@@ -257,18 +246,18 @@ time.sleep(.5)
 #reset redirect ports
 url = "cli-json/reset_port"
 data = {
-"shelf":1,
-"resource":1,
-"port":"rdd0"
+   "shelf":1,
+   "resource":1,
+   "port":"rdd0"
 }
 
 jsonReq(mgrURL,url,data)
 
 url = "cli-json/reset_port"
 data = {
-"shelf":1,
-"resource":1,
-"port":"rdd1"
+   "shelf":1,
+   "resource":1,
+   "port":"rdd1"
 }
 
 jsonReq(mgrURL,url,data)
@@ -278,24 +267,24 @@ time.sleep(.5)
 #create wanlink endpoints
 url = "cli-json/add_wl_endp"
 data = {
-"alias":"wlTest1",
-"shelf":1,
-"resource":1,
-"port":"rdd0",
-"latency":20,
-"max_rate":1544000
+   "alias":"wlTest1",
+   "shelf":1,
+   "resource":1,
+   "port":"rdd0",
+   "latency":20,
+   "max_rate":1544000
 }
 
 jsonReq(mgrURL,url,data)
 
 url = "cli-json/add_wl_endp"
 data = {
-"alias":"wlTest2",
-"shelf":1,
-"resource":1,
-"port":"rdd1",
-"latency":30,
-"max_rate":1544000
+   "alias":"wlTest2",
+   "shelf":1,
+   "resource":1,
+   "port":"rdd1",
+   "latency":30,
+   "max_rate":1544000
 }
 
 jsonReq(mgrURL,url,data)
@@ -304,10 +293,10 @@ time.sleep(.5)
 #create wanlink cx
 url = "cli-json/add_cx"
 data = {
-"alias":"CX_wlTest1",
-"test_mgr":"default_tm",
-"tx_endp":"wlTest1",
-"rx_endp":"wlTest2"
+   "alias":"CX_wlTest1",
+   "test_mgr":"default_tm",
+   "tx_endp":"wlTest1",
+   "rx_endp":"wlTest2"
 }
 
 jsonReq(mgrURL,url,data)
@@ -349,14 +338,7 @@ except Exception as e:
    print("Something went wrong")
    print(e)
    print("Cleaning up...")
-   reqURL = "cli-json/rm_vlan"
-   data = {
-   "shelf":1,
-   "resource":1,
-   "port":"sta00000"
-   }
-
-   jsonReq(mgrURL, reqURL, data)
+   LFUtils.removePortByName("1.sta00000", mgrURL)
 
    endpNames = ["testTCP-A", "testTCP-B",
                 "testUDP-A", "testUDP-B",
@@ -522,14 +504,7 @@ print("\n")
 #remove all endpoints and cxs
 print("Cleaning up...")
 
-reqURL = "cli-json/rm_vlan"
-data = {
-"shelf":1,
-"resource":1,
-"port":"sta00000"
-}
-
-jsonReq(mgrURL, reqURL, data)
+LFUtils.removePortByName("1.sta00000", mgrURL)
 
 endpNames = ["testTCP-A", "testTCP-B",
         "testUDP-A", "testUDP-B",
