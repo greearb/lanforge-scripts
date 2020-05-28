@@ -115,7 +115,9 @@ def main():
         lf_r.addPostData( {
             "shelf":1,
             "resource": resource_id,
-            "port": sta_name
+            "port": sta_name,
+            "suppress_preexec_cli": "yes",
+            "suppress_preexec_method": 1
         })
         json_response = lf_r.formPost()
         sleep(0.05) # best to give LANforge a few millis between rm_vlan commands
