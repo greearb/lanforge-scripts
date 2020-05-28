@@ -110,6 +110,11 @@ function pre_test {
     fi
 }
 
+function reboot_dut {
+     ../openwrt_ctl.py --action reboot --tty $AP_SERIAL --scheme serial
+     # TODO:  Support hard-power cycle with power-ctl switch as well?
+}
+
 function post_test {
     DEST=$1
     mkdir -p $DEST/logs
@@ -126,6 +131,9 @@ function post_test {
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
         mv $MY_TMPDIR/dut_console_log.txt $DEST/logs/
+
+        # detect a few fatal flaws and reqest AP restart if found.
+        grep "Hardware became unavailable" $DEST/logs/dut_console_log.txt && reboot_dut
     fi
 
     mv $MY_TMPDIR/basic_regression_log.txt $DEST/logs/test_automation_log.txt

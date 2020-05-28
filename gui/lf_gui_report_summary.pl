@@ -229,6 +229,7 @@ sub processLogs {
 
             if (($ln =~ /WARNING:/) ||
                 ($ln =~ /BUG:/) ||
+                ($ln =~ /Hardware became unavailable during restart/) ||
                 ($ln =~ /restarting hardware/) ||
                 ($ln =~ /crashed/)) {
                if ($ln =~ /WARNING:/) {
@@ -240,7 +241,8 @@ sub processLogs {
                elsif ($ln =~ /restarting hardware/) {
                   $restarting++;
                }
-               elsif ($ln =~ /crashed/) {
+               elsif (($ln =~ /crashed/) || # software/firmware crashed
+                      ($ln =~ /became unavailable/)) { # hardware crashed
                   $crashed++;
                }
                print IDX "<li><a href=$loghb#$tag>$enc_ln</a></li>\n";
