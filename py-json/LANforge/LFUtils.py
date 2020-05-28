@@ -328,26 +328,6 @@ def removePort(resource, port_name, baseurl="http://localhost:8080/"):
     })
     lf_r.jsonPost(False)
 
-def removePortByName(port_name, baseurl="http://localhost:8080/"):
-    if ((port_name is None) or (port_name == "")):
-        print("No port name")
-        return;
-    if (port_name.index(".") < 0):
-        print("removePortByName: Please use short EID port names like: 2.sta1")
-        return
-
-    resource = port_name[0 : port_name.index(".")]
-    name = port_name[port_name.index(".")+1 : ]
-    if (name.index(".") >= 0):
-        name = name[name.index(".")+1 : ]
-    lf_r = LFRequest.LFRequest(baseurl+"cli-json/rm_vlan")
-    lf_r.addPostData({
-        "shelf": 1,
-        "resource": resource,
-        "port": name
-    })
-    lf_r.jsonPost(True)
-
 def removeCX(mgrURL, cxNames):
    for name in cxNames:
       #print(f"Removing CX {name}")
