@@ -7,7 +7,7 @@ import json
 import pprint
 from LANforge import LFRequest
 from LANforge import LFUtils
-
+import re
 
 def jsonPost(mgrURL, reqURL, data, debug=False):
    lf_r = LFRequest.LFRequest(mgrURL + reqURL)
@@ -15,11 +15,6 @@ def jsonPost(mgrURL, reqURL, data, debug=False):
    json_response = lf_r.jsonPost(debug)
    LFUtils.debug_printer.pprint(json_response)
    sys.exit(1)
-   
-def getJsonReq(mgrURL, reqURL):
-   lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-   json_response = lf_r.getAsJson(debugOn)
-   return json_response
 
 
 class Realm:
@@ -28,18 +23,86 @@ class Realm:
       self.mgrURL = mgrURL
 
    def cxList(self):
-      print("Not yet Implemented")
+      #Returns json response from webpage of all layer 3 cross connects
+      lf_r = LFRequest.LFRequest(self.mgrURL + "/cx")
+      response = lf_r.getAsJson(True)
+      return response
 
    def stationList(self):
+      #Returns list of all stations with "sta" in their name
+      list = []
       lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias")
-      response = lf_r.getAsJson(False)
-      print(response)
+      response = lf_r.getAsJson(True)
+
+      for x in range(len(response['interfaces'])):
+         for k,v in response['interfaces'][x].items():
+            if "sta" in v['alias']:
+               list.append(response['interfaces'][x])
+
+      return list
 
    def vapList(self):
-      print("Not yet Implemented")
+      #Returns list of all VAPs with "vap" in their name
+      list = []
+      lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias")
+      response = lf_r.getAsJson(True)
+
+      for x in range(len(response['interfaces'])):
+         for k,v in response['interfaces'][x].items():
+            if "vap" in v['alias']:
+               list.append(response['interfaces'][x])
+
+      return list
+
 
    def findPortsLike(self, pattern=""):
-      print("Not yet Implemented")
+      #Searches for ports that match a given pattern and returns a list of names
+      list = []
+      # alias is possible but device is guarnteed
+      lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
+      response = lf_r.getAsJson(True)
+      for x in range(len(response['interfaces'])):
+         for k,v in response['interfaces'][x].items():
+            if v['alias'] != "NA":
+               list.append(v['alias'])
+
+      matchedList = []
+
+      prefix = ""
+      for portname in list:
+         if (pattern.index("+") > 0):
+            try:
+               match = re.search(r"^([^+]+)[+]$", pattern)
+               if match.group(1):
+                  print("name:", portname, " Group 1: ",match.group(1))
+                  prefix = match.group(1)
+                  if (portname.index(prefix) == 0):
+                     matchedList.append(portname)
+            except ValueError as e:
+               print(e)
+
+         elif (pattern.index("*") > 0):
+            try:
+               match = re.search(r"^([^\*]+)[\*]$", pattern)
+               if match.group(1):
+                  prefix = match.group(1)
+                  print("group 1: ",prefix)
+                  if (portname.index(prefix) == 0):
+                     matchedList.append(portname)
+            except ValueError as e:
+               print(e)
+
+         elif (pattern.index("[") > 0):
+            try:
+               match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
+               if match.group(0):
+                  print("[group1]: ", match.group(1))
+                  prefix = match.group(1)
+                  if (portname.index(prefix)):
+                     matchedList.append(portname) # wrong but better
+            except ValueError as e:
+               print(e)
+      return matchedList
 
 class CxProfile:
 
@@ -60,4 +123,4 @@ class StationProfile:
 		self.dhcp = dhcp
 
 	def build(self, resourceRadio, numStations):
-	   print("Not yet Implemented")      
+	   print("Not yet implemented") 
