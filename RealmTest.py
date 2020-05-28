@@ -14,6 +14,10 @@ print(f"CXs: {cxList}\n")
 print(f"Stations: {staList}\n")
 print(f"VAPs: {vapList}\n")
 
+cxTest = Realm.CXProfile()
+
+cxTest.addPorts("A", "lf_udp", test.findPortsLike("sta+"))
+cxTest.create()
 
 print(test.findPortsLike("sta+"))
 
