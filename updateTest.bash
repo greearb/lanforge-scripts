@@ -18,7 +18,7 @@ grep -q "Current GUI version up to date" $GUIUpdate && exit
 
 python3 ${scripts}/connectTest.py &> $CTLGUI
 sleep 1
-pgrep java | xargs kill
+killall -9 java
 sleep 1
 
 ${HL}/LANforgeGUI_5.4.2/lfclient.bash -daemon -s localhost &> $GUILog &
