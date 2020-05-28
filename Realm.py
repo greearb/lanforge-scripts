@@ -75,7 +75,7 @@ class Realm:
 
                   match = re.search(r"^([^+]+)[+]$", pattern)
                   if match.group(1):
-                     print("name:", portname, " Group 1: ",match.group(1))
+                     #print("name:", portname, " Group 1: ",match.group(1))
                      prefix = match.group(1)
                      if (portname.index(prefix) == 0):
                         matchedList.append(portname)
@@ -84,14 +84,14 @@ class Realm:
                   match = re.search(r"^([^\*]+)[\*]$", pattern)
                   if match.group(1):
                      prefix = match.group(1)
-                     print("group 1: ",prefix)
+                     #print("group 1: ",prefix)
                      if (portname.index(prefix) == 0):
                         matchedList.append(portname)
 
             elif (pattern.index("[") > 0):
                   match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
                   if match.group(0):
-                     print("[group1]: ", match.group(1))
+                     #print("[group1]: ", match.group(1))
                      prefix = match.group(1)
                      if (portname.index(prefix)):
                         matchedList.append(portname) # wrong but better
@@ -174,13 +174,33 @@ class CXProfile:
 
 class StationProfile:
 
-   def __init__(self, ssid="NA", ssidPass="NA", mode="open", up=True, dhcp=True):
+   def __init__(self, ssid="NA", ssidPass="NA", security="open", startID="", mode=0, up=True, dhcp=True):
       self.ssid = ssid
       self.ssidPass = ssidPass
       self.mode = mode
       self.up = up
       self.dhcp = dhcp
-
+      self.security = security
+   
    def build(self, resourceRadio, numStations):
-	   print("Not yet implemented") 
+   #Checks for errors in initialization values and creates specified number of stations using init parameters
+   try:
+      resource = port_name[0 : resourceRadio.index(".")]
+      name = port_name[resourceRadio.index(".")+1 : ]
+         if (name.index(".") >= 0):
+            name = name[name.index(".")+1 : ]
+   except ValueError as e:
+      print(e)
 
+   for num in range(numStations): 
+      data = {
+      "shelf":1,
+      "resource":1,
+      "radio":radio,
+      "sta_name":f"sta{num:05}",
+      "ssid":self.ssid,
+      "key":self.ssidPass,
+      "mode":1,
+      "mac":"xx:xx:xx:xx:*:xx",
+      "flags":
+      }
