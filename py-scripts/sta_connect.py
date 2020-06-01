@@ -14,7 +14,7 @@ if 'py-json' not in sys.path:
 # from LANforge import LFRequest
 from LANforge import LFUtils
 # from LANforge import LFCliBase
-from LANforge.LFCliBase import LFCliBase
+from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 
 if sys.version_info[0] != 3:
@@ -23,14 +23,15 @@ if sys.version_info[0] != 3:
 
 
 class StaConnect(LFCliBase):
-    def __init__(self, lfjson_host, lfjson_port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
+    def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
                  _resource=1, _upstream_resource=1, _upstream_port="eth2",
                  _sta_name="sta001", _debugOn=False):
-        # self.dest = "localhost" # in super
-        # self.port = "8080" # in super
+        # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
+        # that is py2 era syntax and will force self into the host variable, making you
+        # very confused.
+        super().__init__(host, port, _debugOn)
 
-        super().__init__(self, lfjson_host, lfjson_port)
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
         self.dut_bssid = _dut_bssid
@@ -54,20 +55,6 @@ class StaConnect(LFCliBase):
         if self.upstream_url is None:
             self.upstream_url = f"port/1/{self.upstream_resource}/{self.upstream_port}"
         return self.upstream_url
-
-    def checkConnect(self):
-        print(f"Checking for LANforge GUI connection: {self.mgr_url}")
-        response = super().jsonGet("/")
-        duration = 0
-        while (response is None) and (duration < 300):
-            print(f"LANforge GUI connection not found sleeping 5 seconds, tried: {self.mgr_url}")
-            duration += 2
-            time.sleep(2)
-            response = super().jsonGet("/")
-
-        if duration >= 300:
-            print("Could not connect to LANforge GUI")
-            sys.exit(1)
 
     # Compare pre-test values to post-test values
     @staticmethod
@@ -360,7 +347,7 @@ class StaConnect(LFCliBase):
 
 
 def main():
-    lfjson_host = "http://localhost"
+    lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
         description="""LANforge Unit Test:  Connect Station to AP
@@ -410,13 +397,11 @@ Example:
     if args.dut_ssid is not None:
         staConnect.dut_ssid = args.dut_ssid
 
+    staConnect.run()
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-
 if __name__ == "__main__":
     main()
-
-
-
