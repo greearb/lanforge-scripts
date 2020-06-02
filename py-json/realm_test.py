@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 
-import Realm
+import realm
 
 
-test = Realm.Realm("http://localhost:8080")
+test = realm.Realm("http://localhost:8080")
 
-staList = test.stationList()
-cxList = test.cxList()
-vapList = test.vapList()
+sta_list = test.station_list()
+cx_list = test.cx_list()
+vap_list = test.vap_list()
 
 
-print(f"CXs: {cxList}\n")
-print(f"Stations: {staList}\n")
-print(f"VAPs: {vapList}\n")
+print(f"CXs: {cx_list}\n")
+print(f"Stations: {sta_list}\n")
+print(f"VAPs: {vap_list}\n")
 
-cxTest = Realm.CXProfile()
+cxTest = realm.CXProfile()
 
-cxTest.addPorts("A", "lf_udp", test.findPortsLike("sta+"))
+cxTest.add_ports("A", "lf_udp", test.find_ports_like("sta+"))
 cxTest.create()
 
-print(test.findPortsLike("sta+"))
+print(test.find_ports_like("sta+"))
 
-print(test.findPortsLike("sta0*"))
+print(test.find_ports_like("sta0*"))
 
-print(test.findPortsLike("sta[0000..0002]"))
+print(test.find_ports_like("sta[0000..0002]"))
