@@ -16,6 +16,7 @@ from LANforge import LFUtils
 # from LANforge import LFCliBase
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
+from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -67,8 +68,9 @@ class StaConnect(LFCliBase):
 
     def run(self):
         self.checkConnect()
-        # Create stations and turn dhcp on
-        print("Creating station and turning on dhcp")
+        eth1IP = self.jsonGet(self.getUpstreamUrl())
+        if eth1IP['interface']['ip'] == "0.0.0.0":
+            print(f"Warning: {self.getUpstreamUrl()} lacks ip address")
 
         url = self.getStaUrl()
         response = super().jsonGet(url)
@@ -76,10 +78,14 @@ class StaConnect(LFCliBase):
             if response["interface"] is not None:
                 print("removing old station")
                 LFUtils.removePort(self.resource, self.sta_name, self.mgr_url)
-                time.sleep(5)
+                LFUtils.waitUntilPortsDisappear(self.resource, self.mgr_url, [self.sta_name])
 
-        # See add_sta in LANforge CLI user guide
+        # Create stations and turn dhcp on
+        print("Creating station %s and turning on dhcp..." % self.sta_name)
         url = "cli-json/add_sta"
+        flags = 0x10000
+        if "" != self.dut_passwd:
+            flags += 0x400
         data = {
             "shelf": 1,
             "resource": self.resource,
@@ -89,9 +95,9 @@ class StaConnect(LFCliBase):
             "key": self.dut_passwd,
             "mode": self.sta_mode,
             "mac": "xx:xx:xx:xx:*:xx",
-            "flags": 0x10000  # verbose, open
+            "flags": flags  # verbose, wpa2
         }
-        print("adding new station")
+        print("Adding new station %s " % self.sta_name)
         super().jsonPost(url, data)
 
         reqURL = "cli-json/set_port"
@@ -102,14 +108,8 @@ class StaConnect(LFCliBase):
             "current_flags": 0x80000000,  # use DHCP, not down
             "interest": 0x4002  # set dhcp, current flags
         }
-        print("configuring port")
+        print("Configuring %s..." % self.sta_name)
         super().jsonPost(reqURL, data)
-
-        time.sleep(5)
-
-        eth1IP = self.jsonGet(self.getUpstreamUrl())
-        if eth1IP['interface']['ip'] == "0.0.0.0":
-            print(f"Warning: {self.getUpstreamUrl()} lacks ip address")
 
         reqURL = "cli-json/nc_show_ports"
         data = {"shelf": 1,
@@ -117,6 +117,7 @@ class StaConnect(LFCliBase):
                 "port": self.sta_name,
                 "probe_flags": 1}
         super().jsonPost(reqURL, data)
+        LFUtils.waitUntilPortsAdminUp(self.resource, self.mgr_url, [self.sta_name])
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
@@ -124,10 +125,8 @@ class StaConnect(LFCliBase):
         ip = "0.0.0.0"
         ap = ""
         while (ip == "0.0.0.0") and (duration < maxTime):
-
             duration += 2
             time.sleep(2)
-
             station_info = super().jsonGet(f"{self.getStaUrl()}?fields=port,ip,ap")
 
             # LFUtils.debug_printer.pprint(station_info)
@@ -138,10 +137,10 @@ class StaConnect(LFCliBase):
                     ap = station_info["interface"]["ap"]
 
             if (ap == "Not-Associated") or (ap == ""):
-                print("Station waiting to associate...")
+                print("Waiting for %s associate to AP [%s]..." % (self.sta_name, ap))
             else:
                 if ip == "0.0.0.0":
-                    print("Station waiting for IP ...")
+                    print("Waiting for %s to gain IP ..." % self.sta_name)
 
         if (ap != "") and (ap != "Not-Associated"):
             print(f"Connected to AP: {ap}")
