@@ -51,7 +51,7 @@ dirFiles = []
 
 for file in dir:
 	if ver in file:
-		fileTime = datetime.datetime.strptime(time.ctime(os.stat(file).st_ctime), "%a %B %d %H:%M:%S %Y") # Fri May  8 08:31:43 2020
+		fileTime = datetime.datetime.strptime(time.ctime(os.stat(file).st_ctime), "%a %b %d %H:%M:%S %Y") # Fri May  8 08:31:43 2020
 		dirFiles.append({'filename':file[25:], 'timestamp':fileTime})
 
 if len(dirFiles) == 0:
