@@ -55,7 +55,7 @@ for file in dir:
 		dirFiles.append({'filename':file[25:], 'timestamp':fileTime})
 
 if len(dirFiles) == 0:
-	print(f"Failed to find file in {filePath} with version {ver}")
+	print(f"Unable to find file in {filePath} with version {ver}")
 	#sys.exit(1)
 
 #============FIND NEWEST FILES============
@@ -116,7 +116,7 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 #=========ATTEMPT TO RESTART GUI==========
 	try:
 		print("Killing current GUI process")
-		os.system("pgrep java | xargs kill")
+		os.system("if pgrep java; then pgrep java | xargs kill -9 ;fi")
 	except Exception as e:
 		print(f"{e}\nProcess kill failed. Please try again")
 		sys.exit(1)
