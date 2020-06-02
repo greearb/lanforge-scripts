@@ -7,15 +7,13 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-import email.message
-import http.client
+
 import urllib.request
 import urllib.error
-from urllib import error
 import urllib.parse
 import json
-import LANforge
 from LANforge import LFUtils
+
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
@@ -45,14 +43,14 @@ class LFRequest:
         request.headers['Content-type'] = 'application/x-www-form-urlencoded'
         resp = ''
         try:
-            resp = urllib.request.urlopen(request);
+            resp = urllib.request.urlopen(request)
             responses.append(resp)
             return responses[0]
         except urllib.error.HTTPError as error:
             if (show_error):
                 print("----- formPost() HTTPError: --------------------------------------------")
                 print("%s: %s; URL: %s"%(error.code, error.reason, request.get_full_url()))
-                LFUtils.debug_printer.pprint(error.headers())
+                LFUtils.debug_printer.pprint(error.headers)
                 #print("Error: ", sys.exc_info()[0])
                 #print("Request URL:", request.get_full_url())
                 print("Request Content-type:", request.get_header('Content-type'))
@@ -84,11 +82,11 @@ class LFRequest:
 
         request.headers['Content-type'] = 'application/json'
         try:
-            resp = urllib.request.urlopen(request);
+            resp = urllib.request.urlopen(request)
             responses.append(resp)
             return responses[0]
         except urllib.error.HTTPError as error:
-            if (show_error):
+            if show_error:
                 print("----- jsonPost() HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(request.get_full_url(), error.code, error.reason, ))
 
@@ -99,23 +97,22 @@ class LFRequest:
                 print("Request Data:")
                 LFUtils.debug_printer.pprint(request.data)
 
-                if (error.headers):
+                if error.headers:
                     # the HTTPError is of type HTTPMessage a subclass of email.message
-                    #print(type(error.keys()))
+                    # print(type(error.keys()))
                     for headername in sorted(error.headers.keys()):
                         print ("Response %s: %s "%(headername, error.headers.get(headername)))
 
-                if (len(responses) > 0):
+                if len(responses) > 0:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(responses[0].reason)
                 print("------------------------------------------------------------------------")
         except urllib.error.URLError as uerror:
-            if (show_error):
+            if show_error:
                 print("----- jsonPost() URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
         return None
-
 
     def get(self, show_error=True):
         myrequest = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
@@ -124,10 +121,10 @@ class LFRequest:
             myresponses.append(urllib.request.urlopen(myrequest))
             return myresponses[0]
         except urllib.error.HTTPError as error:
-            if (show_error):
+            if show_error:
                 print("----- get() HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
-                if (error.code != 404):
+                if error.code != 404:
                     print("Error: ", sys.exc_info()[0])
                     print("Request URL:", myrequest.get_full_url())
                     print("Request Content-type:", myrequest.get_header('Content-type'))
@@ -135,23 +132,22 @@ class LFRequest:
                     print("Request Data:")
                     LFUtils.debug_printer.pprint(myrequest.data)
 
-                if (error.headers):
+                if error.headers:
                     # the HTTPError is of type HTTPMessage a subclass of email.message
-                    #print(type(error.keys()))
+                    # print(type(error.keys()))
                     for headername in sorted(error.headers.keys()):
                         print ("Response %s: %s "%(headername, error.headers.get(headername)))
 
-                if (len(myresponses) > 0):
+                if len(myresponses) > 0:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
         except urllib.error.URLError as uerror:
-            if (show_error):
+            if show_error:
                 print("----- get() URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
         return None
-
 
     def getAsJson(self, show_error=True):
         responses = []
