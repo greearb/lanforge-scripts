@@ -15,6 +15,7 @@ for f in $GUILog $GUIUpdate $CTLGUI $CTLH; do rm -f $f; done
 python3 ${scripts}/auto-install-gui.py --versionNumber $verNum &> $GUIUpdate
 sleep 5
 grep -q "Current GUI version up to date" $GUIUpdate && exit
+grep -q -i "fail" $GUIUpdate && exit
 
 python3 ${scripts}/connectTest.py &> $CTLGUI
 sleep 1
