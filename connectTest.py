@@ -33,7 +33,7 @@ def jsonReq(mgrURL, reqURL, data, exitWhenCalled=False):
       print("jsonReq: bye")
       sys.exit(1)
    else:
-      lf_r.jsonPost(False)  # False means don't print info on errors
+      lf_r.jsonPost(exitWhenCalled)
 
 def getJsonInfo(mgrURL, reqURL, debug=False):
    lf_r = LFRequest.LFRequest(mgrURL + reqURL)
@@ -50,7 +50,7 @@ print("Checking for LANforge Client")
 response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
 duration = 0
 while ((response == None) and (duration < 300)):
-   print("LANforge Client not found sleeping 5 seconds")
+   #print("LANforge Client not found sleeping 5 seconds")
    duration += 2
    time.sleep(2)
    response = getJsonInfo(mgrURL, 'port/1/1/wiphy0')
@@ -70,7 +70,7 @@ response = getJsonInfo(mgrURL, url)
 if (response is not None):
    if (response["interface"] is not None):
       print("removing old station")
-      LFUtils.removePort("1", "sta00000", mgrURL)
+      LFUtils.removePortByName("1.1.sta00000", mgrURL)
       time.sleep(1)
 
 url = "cli-json/add_sta"
@@ -131,7 +131,7 @@ while ((ip == "0.0.0.0") and (duration < maxTime)):
 if duration >= maxTime:
    print("sta00000 failed to get an ip. Ending test")
    print("Cleaning up...")
-   removePort("1", "sta00000", mgrURL)
+   removePort(1,"sta00000", mgrURL)
    sys.exit(1)
 
 
@@ -338,7 +338,7 @@ except Exception as e:
    print("Something went wrong")
    print(e)
    print("Cleaning up...")
-   LFUtils.removePort("1", "sta00000", mgrURL)
+   LFUtils.removePort(1,"sta00000", mgrURL)
 
    endpNames = ["testTCP-A", "testTCP-B",
                 "testUDP-A", "testUDP-B",
@@ -504,7 +504,7 @@ print("\n")
 #remove all endpoints and cxs
 print("Cleaning up...")
 
-LFUtils.removePort("1", "sta00000", mgrURL)
+LFUtils.removePort(1,"sta00000", mgrURL)
 
 endpNames = ["testTCP-A", "testTCP-B",
         "testUDP-A", "testUDP-B",
