@@ -1,7 +1,8 @@
 #!env /usr/bin/python
 
 # Extend this class to use common set of debug and request features for your script
-
+from pprint import pprint
+import LANforge.LFUtils
 from LANforge.LFUtils import *
 
 
@@ -20,6 +21,8 @@ class LFCliBase:
         _data['suppress_preexec_cli'] = True
         _data['suppress_preexec_method'] = True
         lf_r.addPostData(_data)
+        if (self.debugOn):
+            LANforge.LFUtils.debug_printer.pprint(_data)
         json_response = lf_r.jsonPost(self.debugOn)
         # Debugging
         # if (json_response != None):
@@ -34,7 +37,7 @@ class LFCliBase:
 
     def checkConnect(self):
         print(f"Checking for LANforge GUI connection: {self.mgr_url}")
-        response = self.jsonGet("")
+        response = self.jsonGet("/")
         duration = 0
         while (response is None) and (duration < 300):
             print(f"LANforge GUI connection not found sleeping 5 seconds, tried: {self.mgr_url}")
