@@ -20,6 +20,8 @@ grep -q "Current GUI version up to date" $GUIUpdate && exit
 grep -q -i "fail" $GUIUpdate && exit
 rm "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
 
+nohup env RESTARTS=999999 ./lfclient.bash -s localhost &> $GUILog
+
 python3 ${scripts}/connectTest.py &> $CTLGUI
 sleep 1
 killall -9 java
@@ -35,4 +37,4 @@ rm "${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 
 
 
-echo "Logs Attached" | mail -s 'GUI Update Logs' -a $GUIUpdate -a $CTLGUI -a $CTLH  "test.notice@candelatech.com"
+echo "Logs Attached" | mail -s 'GUI Update Logs' -a $GUILog -a $GUIUpdate -a $CTLGUI -a $CTLH  "test.notice@candelatech.com"
