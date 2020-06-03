@@ -7,7 +7,7 @@ if sys.version_info[0] != 3:
 
 from LANforge.lfcli_base import LFCliBase
 
-class CreateGenlink(LFCliBase):
+class GenericCx(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port):
         super().__init__(lfclient_host, lfclient_port)
         self.lfclient_host = lfclient_host
