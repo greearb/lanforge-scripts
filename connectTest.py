@@ -9,8 +9,7 @@ if 'py-json' not in sys.path:
 from LANforge import LFUtils
 from LANforge.LFUtils import *
 from LANforge.lfcli_base import LFCliBase
-import create_genlink as genl
-#debugOn = True
+from create_genlink import CreateGenlink
 
 mgrURL = "http://localhost:8080/"
 staName = "sta0"
@@ -166,6 +165,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create generic endpoints
+        genl = CreateGenlink(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
         genl.createGenEndp("genTest1", 1, 1, staName, "gen_generic")
         genl.createGenEndp("genTest2", 1, 1, staName, "gen_generic")
         genl.setFlags("genTest1", "ClearPortOnStart", 1)
