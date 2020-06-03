@@ -5,6 +5,7 @@ if sys.version_info[0] != 3:
     exit(1)
 if 'py-json' not in sys.path:
     sys.path.append('py-json')
+import traceback
 
 from LANforge import LFUtils
 from LANforge.LFUtils import *
@@ -107,10 +108,10 @@ class ConnectTest(LFCliBase):
         print("Creating endpoints and cross connects")
         # create cx for tcp and udp
         cmd = (
-            f"./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type tcp > /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            f"./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type tcp > ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
         cmd = (
-            f"./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type udp >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            f"./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type udp >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
         time.sleep(.05)
 
@@ -262,34 +263,38 @@ class ConnectTest(LFCliBase):
 
         # get data before running traffic
         try:
-            testTCPA = super().jsonGet("endp/testTCP-A?fields=tx+bytes,rx+bytes")
-            testTCPATX = testTCPA['endpoint']['tx bytes']
-            testTCPARX = testTCPA['endpoint']['rx bytes']
+            get_info = {}
+            get_info['testTCPA'] = super().jsonGet("endp/testTCP-A?fields=tx+bytes,rx+bytes")
+            get_info['testTCPB'] = super().jsonGet("endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            get_info['testUDPA'] = super().jsonGet("endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            get_info['testUDPB'] = super().jsonGet("endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            get_info['l4Test'] = super().jsonGet("layer4/l4Test?fields=bytes-rd")
+            get_info['genTest1'] = super().jsonGet("generic/genTest1?fields=last+results")
+            get_info['wlan0'] = super().jsonGet("wl_ep/wlan0")
+            get_info['wlan1'] = super().jsonGet("wl_ep/wlan1")
 
-            testTCPB = super().jsonGet("endp/testTCP-B?fields=tx+bytes,rx+bytes")
-            testTCPBTX = testTCPB['endpoint']['tx bytes']
-            testTCPBRX = testTCPB['endpoint']['rx bytes']
+            for name in get_info:
+                if 'endpoint' not in name:
+                    print(get_info[name])
+                    raise ValueError (f"{name} missing endpoint value")
 
-            testUDPA = super().jsonGet("endp/testUDP-A?fields=tx+bytes,rx+bytes")
-            testUDPATX = testUDPA['endpoint']['tx bytes']
-            testUDPARX = testUDPA['endpoint']['rx bytes']
+            testTCPATX = get_info['testTCPA']['endpoint']['tx bytes']
+            testTCPARX = get_info['testTCPA']['endpoint']['rx bytes']
+            testTCPBTX = get_info['testTCPB']['endpoint']['tx bytes']
+            testTCPBRX = get_info['testTCPB']['endpoint']['rx bytes']
 
-            testUDPB = super().jsonGet("endp/testUDP-B?fields=tx+bytes,rx+bytes")
-            testUDPBTX = testUDPB['endpoint']['tx bytes']
-            testUDPBRX = testUDPB['endpoint']['rx bytes']
+            testUDPATX = get_info['testUDPA']['endpoint']['tx bytes']
+            testUDPARX = get_info['testUDPA']['endpoint']['rx bytes']
+            testUDPBTX = get_info['testUDPB']['endpoint']['tx bytes']
+            testUDPBRX = get_info['testUDPB']['endpoint']['rx bytes']
 
-            l4Test = super().jsonGet("layer4/l4Test?fields=bytes-rd")
-            l4TestBR = l4Test['endpoint']['bytes-rd']
+            l4TestBR = get_info['l4Test']['endpoint']['bytes-rd']
+            genTest1LR = get_info['genTest1']['endpoint']['last results']
 
-            genTest1 = super().jsonGet("generic/genTest1?fields=last+results")
-            genTest1LR = genTest1['endpoint']['last results']
-
-            wlan0 = super().jsonGet("wl_ep/wlan0")
-            wlan0TXB = wlan0['endpoint']['tx bytes']
-            wlan0RXP = wlan0['endpoint']['rx pkts']
-            wlan1 = super().jsonGet("wl_ep/wlan1")
-            wlan1TXB = wlan1['endpoint']['tx bytes']
-            wlan1RXP = wlan1['endpoint']['rx pkts']
+            wlan0TXB = get_info['wlan0']['endpoint']['tx bytes']
+            wlan0RXP = get_info['wlan0']['endpoint']['rx pkts']
+            wlan1TXB = get_info['wlan1']['endpoint']['tx bytes']
+            wlan1RXP = get_info['wlan1']['endpoint']['rx pkts']
 
         except Exception as e:
             print("Something went wrong")
@@ -303,6 +308,7 @@ class ConnectTest(LFCliBase):
                          "wlan0", "wlan1"]
             removeCX(mgrURL, cxNames)
             removeEndps(mgrURL, endpNames)
+            traceback.print_stack()
             sys.exit(1)
 
         # start cx traffic
@@ -317,51 +323,51 @@ class ConnectTest(LFCliBase):
 
         # show tx and rx bytes for ports
 
-        os.system("echo  eth1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  eth1 >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system(f"echo  {staName} >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system(f"echo  {staName} >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            f"./lf_portmod.pl --quiet 1 --manager localhost --port_name {staName} --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            f"./lf_portmod.pl --quiet 1 --manager localhost --port_name {staName} --show_port \"Txb,Rxb\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
 
         # show tx and rx for endpoints PERL
-        os.system("echo  TestTCP-A >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  TestTCP-A >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name testTCP-A --endp_vals \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name testTCP-A --endp_vals \"Tx Bytes,Rx Bytes\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  TestTCP-B >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  TestTCP-B >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name testTCP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name testTCP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  TestUDP-A >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  TestUDP-A >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name testUDP-A --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name testUDP-A --endp_vals  \"Tx Bytes,Rx Bytes\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  TestUDP-B >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  TestUDP-B >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name testUDP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name testUDP-B --endp_vals  \"Tx Bytes,Rx Bytes\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  l4Test >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  l4Test >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name l4Test --endp_vals Bytes-Read-Total >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  fioTest >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  fioTest >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name fioTest --endp_vals \"Bytes Written,Bytes Read\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name fioTest --endp_vals \"Bytes Written,Bytes Read\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  genTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  genTest1 >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name genTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name genTest1 >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  wlan0 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  wlan0 >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name wlan0 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name wlan0 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  wlan1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  wlan1 >> ~/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name wlan1 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name wlan1 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
 
         # stop cx traffic
@@ -376,6 +382,7 @@ class ConnectTest(LFCliBase):
         # get data for endpoints JSON
         print("Collecting Data")
         try:
+
             ptestTCPA = super().jsonGet("endp/testTCP-A?fields=tx+bytes,rx+bytes")
             ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
             ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
