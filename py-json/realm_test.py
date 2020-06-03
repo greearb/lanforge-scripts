@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import pprint
+import time
 from pprint import pprint
 import realm
 from realm import Realm
+import LANforge
+from LANforge import LFUtils
 
 localrealm = Realm("localhost", 8080, True)
 
@@ -11,9 +14,12 @@ try:
     sta_list = localrealm.station_list()
     print(f"{len(sta_list)} Stations:")
     pprint(sta_list)
-    print(localrealm.find_ports_like("sta+"))
-    print(localrealm.find_ports_like("sta0*"))
-    print(localrealm.find_ports_like("sta[0000..0002]"))
+    print("  Stations like sta+:")
+    print(localrealm.find_ports_like("wlan+"))
+    print("  Stations like sta0:")
+    print(localrealm.find_ports_like("wlan0*"))
+    print("  Stations between wlan0..wlan2:")
+    print(localrealm.find_ports_like("wlan[0..2]"))
 except Exception as x:
     pprint(x)
     exit(1)
@@ -37,10 +43,29 @@ except Exception as x:
     exit(1)
 
 print("** Removing previous stations **")
+stations = localrealm.find_ports_like("sta+")
+for station in stations:
+    pprint(station)
+    time.sleep(1)
+    LFUtils.removePort(station["resource"], station["name"], localrealm.lfclient_url)
 
 print("** Removing previous CXs **")
 
 print("** Creating Stations **")
+
+try:
+    sta_list = localrealm.station_list()
+    print(f"{len(sta_list)} Stations:")
+    pprint(sta_list)
+    print("  Stations like sta+:")
+    print(localrealm.find_ports_like("wlan+"))
+    print("  Stations like sta0:")
+    print(localrealm.find_ports_like("wlan0*"))
+    print("  Stations between wlan0..wlan2:")
+    print(localrealm.find_ports_like("wlan[0..2]"))
+except Exception as x:
+    pprint(x)
+    exit(1)
 
 print("** Creating CXs **")
 try:
