@@ -14,17 +14,17 @@ class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=False):
         super().__init__(lfclient_host, lfclient_port, debug, _halt_on_error=True)
         self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}"
-        super().checkConnect()
+        super().check_connect()
 
     # Returns json response from webpage of all layer 3 cross connects
     def cx_list(self):
-        response = super().jsonGet("/cx")
+        response = super().json_get("/cx")
         return response
 
     # Returns list of all stations with "sta" in their name
     def station_list(self):
         sta_list = []
-        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
+        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):
             print("station_list: incomplete response:")
             pprint(response)
@@ -39,7 +39,7 @@ class Realm(LFCliBase):
     # Returns list of all VAPs with "vap" in their name
     def vap_list(self):
         sta_list = []
-        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
+        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
                 if "vap" in v['device']:
@@ -51,7 +51,7 @@ class Realm(LFCliBase):
     # Searches for ports that match a given pattern and returns a list of names
     def find_ports_like(self, pattern=""):
         device_name_list = []
-        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
+        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
                 if v['device'] != "NA":
@@ -95,9 +95,13 @@ class Realm(LFCliBase):
 
         return matched_list
 
-    def newCxProfile(self):
-        cxprof = CXProfile(self.lfclient_url)
-        return cxprof
+    def new_station_profile(self):
+        station_prof = StationProfile(self.lfclient_url)
+        return station_prof
+
+    def new_cx_profile(self):
+        cx_prof = CXProfile(self.lfclient_url)
+        return cx_prof
 
 class CXProfile:
     def __init__(self, lfclient_host, lfclient_port):
@@ -212,7 +216,7 @@ class StationProfile:
             "interest": 0, #(0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
 
-    def setParam(self, cli_name, param_name, param_val):
+    def set_param(self, cli_name, param_name, param_val):
         # we have to check what the param name is
         if (cli_name is None) or (cli_name == ""):
             return
@@ -230,7 +234,7 @@ class StationProfile:
                 print(f"Parameter name [{param_name}] not defined in set_port.py")
                 return
 
-    def addNamedFlags(self, desired_list, command_ref):
+    def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
             raise ValueError("addNamedFlags wants a list of desired flag names")
         if len(desired_list) < 1:
@@ -259,7 +263,7 @@ class StationProfile:
         #     print(e)
 
         # create stations down, do set_port on them, then set stations up
-        self.add_sta_data["flags"] = self.addNamedFlags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+        self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio
         self.add_sta_data["resource"] = resource
         lf_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
