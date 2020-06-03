@@ -124,7 +124,7 @@ class ConnectTest(LFCliBase):
             "alias": "l4Test",
             "shelf": 1,
             "resource": 1,
-            "port": "sta00000",
+            "port": staName,
             "type": "l4_generic",
             "timeout": 1000,
             "url_rate": 600,
@@ -150,7 +150,7 @@ class ConnectTest(LFCliBase):
             "alias": "fioTest",
             "shelf": 1,
             "resource": 1,
-            "port": "sta00000",
+            "port": staName,
             "type": "fe_nfs",
             "directory": "/mnt/fe-test"
         }
@@ -169,12 +169,12 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create generic endpoints
-        genl.createGenEndp("genTest1", 1, 1, "sta00000", "gen_generic")
-        genl.createGenEndp("genTest2", 1, 1, "sta00000", "gen_generic")
+        genl.createGenEndp("genTest1", 1, 1, staName, "gen_generic")
+        genl.createGenEndp("genTest2", 1, 1, staName, "gen_generic")
         genl.setFlags("genTest1", "ClearPortOnStart", 1)
         genl.setFlags("genTest2", "ClearPortOnStart", 1)
         genl.setFlags("genTest2", "Unmanaged", 1)
-        genl.setCmd("genTest1", "lfping  -i 0.1 -I sta00000 10.40.0.1")
+        genl.setCmd("genTest1", f"lfping  -i 0.1 -I {staName} 10.40.0.1")
         time.sleep(.05)
 
         # create generic cx
@@ -324,9 +324,9 @@ class ConnectTest(LFCliBase):
         cmd = (
             "./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  sta00000 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system(f"echo  {staName} >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_portmod.pl --quiet 1 --manager localhost --port_name sta00000 --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            f"./lf_portmod.pl --quiet 1 --manager localhost --port_name {staName} --show_port \"Txb,Rxb\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
 
         # show tx and rx for endpoints PERL
@@ -450,7 +450,7 @@ class ConnectTest(LFCliBase):
 
         # remove all endpoints and cxs
         print("Cleaning up...")
-        LFUtils.removePort(1, "sta00000", mgrURL)
+        LFUtils.removePort(1, staName, mgrURL)
 
         endpNames = ["testTCP-A", "testTCP-B",
                      "testUDP-A", "testUDP-B",
