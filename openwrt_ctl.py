@@ -248,7 +248,18 @@ def main():
        logg.info("Command[%s]"%command)
        egg.sendline(command);
 
-       i = egg.expect(["password:", "Do you want to continue connecting"], timeout=5)
+       i = egg.expect(["password:", "Do you want to continue connecting", "Network unreachable"], timeout=5)
+       if i == 2:
+           print("Network unreachable, wait 15 seconds and try again.")
+           time.sleep(15)
+           command = "scp %s /tmp/%s"%(args.value, args.value2)
+           logg.info("Command[%s]"%command)
+           egg.sendline(command);
+
+           i = egg.expect(["password:", "Do you want to continue connecting", "Network unreachable"], timeout=5)
+       if i == 2:
+           print("ERROR:  Could not connect to LANforge to get download file")
+           exit(2)
        if i == 1:
            egg.sendline("y")
            egg.expect("password:", timeout=5)

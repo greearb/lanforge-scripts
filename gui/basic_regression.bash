@@ -78,6 +78,11 @@ DPT_CFG=ben
 # Change testbed_poll.pl if scenario changes below.
 SCENARIO=tip-auto
 RPT_TMPDIR=${MY_TMPDIR}/lf_reports
+LF_SER_DEV=$(basename $LF_SERIAL)
+DUT_SER_DEV=$(basename $DUT_SERIAL)
+LF_SER_LOG=$MY_TMPDIR/lanforge_console_log_$LF_SER_DEV.txt
+DUT_SER_LOG=$MY_TMPDIR/dut_console_log_$DUT_SER_DEV.txt
+REGLOG=$MY_TMPDIR/basic_regression_log_$$.txt
 
 # Query DUT from the scenario
 DUT=`grep DUT: $SCENARIO_CFG_FILE |head -1|grep -o "DUT: .*"|cut -f2 -d ' '`
@@ -99,14 +104,14 @@ function pre_test {
     then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$LF_SERIAL.*"
-        ../openwrt_ctl.py --action lurk --tty $LF_SERIAL --scheme serial --user root --passwd $LFPASSWD --prompt "\[root@" >  $MY_TMPDIR/lanforge_console_log.txt 2>&1 &
+        ../openwrt_ctl.py --action lurk --tty $LF_SERIAL --scheme serial --user root --passwd $LFPASSWD --prompt "\[root@" >  $LF_SER_LOG 2>&1 &
     fi
 
     if [ "_${AP_SERIAL}" != "_NONE" ]
     then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
-        ../openwrt_ctl.py --action logread --tty $AP_SERIAL --scheme serial >  $MY_TMPDIR/dut_console_log.txt 2>&1 &
+        ../openwrt_ctl.py --action logread --tty $AP_SERIAL --scheme serial >  $DUT_SER_LOG 2>&1 &
     fi
 }
 
@@ -123,20 +128,20 @@ function post_test {
         then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$LF_SERIAL.*"
-        mv $MY_TMPDIR/lanforge_console_log.txt $DEST/logs/
+        mv $LF_SER_LOG $DEST/logs/lanforge_console_log.txt
     fi
 
     if [ "_${AP_SERIAL}" != "_NONE" ]
         then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
-        mv $MY_TMPDIR/dut_console_log.txt $DEST/logs/
+        mv $DUT_SER_LOG $DEST/logs/dut_console_log.txt
 
         # detect a few fatal flaws and reqest AP restart if found.
         grep "Hardware became unavailable" $DEST/logs/dut_console_log.txt && reboot_dut
     fi
 
-    mv $MY_TMPDIR/basic_regression_log.txt $DEST/logs/test_automation_log.txt
+    mv $REGLOG $DEST/logs/test_automation_log.txt
     if [ -f /home/lanforge/lanforge_log_0.txt ]
     then
         # Must be running on LF itself
@@ -200,7 +205,7 @@ then
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
         --modifier_key "KPI_TEST_ID" --modifier_val "Dataplane Pkt-Size" \
         --modifier_key "Show Low-Level Graphs" --modifier_val true \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/dataplane_pkt_sz
     post_test $RSLTS_DIR/dataplane_pkt_sz
 fi
@@ -218,7 +223,7 @@ then
         --modifier_key "RATE_UL" --modifier_val "0" \
         --modifier_key "VERBOSITY" --modifier_val "9" \
         --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_dl
     post_test $RSLTS_DIR/wifi_capacity_dl
 fi
@@ -235,7 +240,7 @@ then
         --modifier_key "RATE_DL" --modifier_val "0" \
         --modifier_key "VERBOSITY" --modifier_val "9" \
         --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_ul
     post_test $RSLTS_DIR/wifi_capacity_ul
 fi
@@ -253,7 +258,7 @@ then
         --modifier_key "Protocol:" --modifier_val "TCP-IPv4" \
         --modifier_key "VERBOSITY" --modifier_val "9" \
         --modifier_key "Duration:" --modifier_val "$WCT_DURATION" \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/wifi_capacity_bi
     post_test $RSLTS_DIR/wifi_capacity_bi
 fi
@@ -267,7 +272,7 @@ then
     ../lf_gui_cmd.pl --manager $GMANAGER --port $GMPORT --ttype "AP-Auto" --tname ap-auto-ben --tconfig $AP_AUTO_CFG \
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_basic_cx
     post_test $RSLTS_DIR/ap_auto_basic_cx
 fi
@@ -285,7 +290,7 @@ then
         --modifier_key "Throughput vs Pkt Size" --modifier_val true \
         --modifier_key "Dual Band Performance" --modifier_val true \
         --modifier_key "Capacity" --modifier_val true \
-        --rpt_dest $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_capacity
     post_test $RSLTS_DIR/ap_auto_capacity
 fi
@@ -302,7 +307,7 @@ then
         --modifier_key "Basic Client Connectivity" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
-        --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_ports
     post_test $RSLTS_DIR/ap_auto_stability_reset_ports
 fi
@@ -320,7 +325,7 @@ then
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
         --modifier_key "Reset Radios" --modifier_val true \
-        --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_radios
     post_test $RSLTS_DIR/ap_auto_stability_reset_radios
 fi
@@ -339,7 +344,7 @@ then
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
         --modifier_key "VOIP Call Count:" --modifier_val 0 \
         --modifier_key "Concurrent Ports To Reset:" --modifier_val 0 \
-        --rpt_dest  $RPT_TMPDIR > $MY_TMPDIR/basic_regression_log.txt 2>&1
+        --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_no_reset
     post_test $RSLTS_DIR/ap_auto_stability_no_reset
 fi
@@ -347,12 +352,12 @@ fi
 if [ "_${LFLOG_PID}" != "_" ]
 then
     kill $LFLOG_PID
-    mv $MY_TMPDIR/lanforge_console_log.txt $RSLTS_DIR/
+    mv $LF_SER_LOG $RSLTS_DIR/lanforge_console_log.txt
 fi
 if [ "_${DUTLOG_PID}" != "_" ]
 then
     kill $DUTLOG_PID
-    mv $MY_TMPDIR/dut_console_log.txt $RSLTS_DIR/
+    mv $$DUT_SER_LOG $RSLTS_DIR/dut_console_log.txt
 fi
 
 RPT_ARGS=
