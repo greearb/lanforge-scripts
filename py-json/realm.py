@@ -1,41 +1,45 @@
 #!/usr/bin/env python3
 import re
 import time
-
+import pprint
+from pprint import pprint
 from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
+from LANforge import lfcli_base
+from LANforge.lfcli_base import LFCliBase
 
-class Realm:
+class Realm(LFCliBase):
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=False):
+        super().__init__(lfclient_host, lfclient_port, debug)
+        self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}"
+        super().checkConnect()
 
-    def __init__(self, lfclient_url="http://localhost:8080"):
-        self.lfclient_url = lfclient_url
-
+    # Returns json response from webpage of all layer 3 cross connects
     def cx_list(self):
-        #Returns json response from webpage of all layer 3 cross connects
-        lf_r = LFRequest.LFRequest(self.lfclient_url + "/cx")
-        response = lf_r.getAsJson(True)
+        response = super().jsonGet("/cx")
         return response
 
+    # Returns list of all stations with "sta" in their name
     def station_list(self):
-    #Returns list of all stations with "sta" in their name
         sta_list = []
-        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
-        response = lf_r.getAsJson(True)
+        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
+        if (response is None) or ("interfaces" not in response):
+            print("station_list: incomplete response:")
+            pprint(response)
+            exit(1)
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
-                if "sta" in v['device']:
+                if ("sta" in v['device']) or ("wlan" in v['device']):
                     sta_list.append(response['interfaces'][x])
 
         return sta_list
 
+    # Returns list of all VAPs with "vap" in their name
     def vap_list(self):
-        #Returns list of all VAPs with "vap" in their name
         sta_list = []
-        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
-        response = lf_r.getAsJson(True)
-
+        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
                 if "vap" in v['device']:
@@ -44,19 +48,15 @@ class Realm:
         return sta_list
 
 
+    # Searches for ports that match a given pattern and returns a list of names
     def find_ports_like(self, pattern=""):
-        #Searches for ports that match a given pattern and returns a list of names
         device_name_list = []
-        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
-        response = lf_r.getAsJson(True)
-        #print(response)
+        response = super().jsonGet("/port/list?fields=_links,alias,device,port+type")
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
                 if v['device'] != "NA":
                     device_name_list.append(v['device'])
-
         matched_list = []
-
         prefix = ""
         for port_name in device_name_list:
             try:
@@ -92,12 +92,12 @@ class Realm:
         return cxprof
 
 class CXProfile:
-    def __init__(self, mgr_url):
-        self.mgr_url = mgr_url
+    def __init__(self, lfclient_host, lfclient_port):
+        self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}/"
         self.post_data = []
 
+    # Adds post data for a cross-connect between eth1 and specified list of ports, appends to array
     def add_ports(self, side, endp_type, ports=[]):
-    #Adds post data for a cross-connect between eth1 and specified list of ports, appends to array
         side = side.upper()
         endp_side_a = {
         "alias":"",
@@ -135,7 +135,7 @@ class CXProfile:
                 endp_side_b["alias"] = port_name+"CX-B"
                 endp_side_b["port"] = port_name
 
-            lf_r = LFRequest.LFRequest(self.mgr_url + "/cli-json/add_endp")
+            lf_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_endp")
             lf_r.addPostData(endp_side_a)
             json_response = lf_r.jsonPost(True)
             lf_r.addPostData(endp_side_b)
@@ -153,10 +153,10 @@ class CXProfile:
 
             self.post_data.append(data)
 
+    # Creates cross-connect for each port specified in the addPorts function
     def create(self, sleep_time=.5):
-    #Creates cross-connect for each port specified in the addPorts function
        for data in self.post_data:
-           lf_r = LFRequest.LFRequest(self.mgr_url + "/cli-json/add_cx")
+           lf_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_cx")
            lf_r.addPostData(data)
            json_response = lf_r.jsonPost(True)
            #LFUtils.debug_printer.pprint(json_response)
@@ -222,8 +222,25 @@ class StationProfile:
                 print(f"Parameter name [{param_name}] not defined in set_port.py")
                 return
 
+    def addNamedFlags(self, desired_list, command_ref):
+        if desired_list is None:
+            raise ValueError("addNamedFlags wants a list of desired flag names")
+        if len(desired_list) < 1:
+            print("addNamedFlags: empty desired list")
+            return 0
+        if (command_ref is None) or (len(command_ref) < 1):
+            raise ValueError("addNamedFlags wants a maps of flag values")
+
+        result = 0
+        for name in desired_list:
+            if (name not in command_ref):
+                raise ValueError(f"flag {name} not in map")
+            result += command_ref[name]
+
+        return result
+
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def build(self, resource, resource_radio, num_stations):
+    def build(self, resource, radio, num_stations):
         # try:
         #     resource = resource_radio[0: resource_radio.index(".")]
         #     name = resource_radio[resource_radio.index(".") + 1:]
@@ -234,26 +251,14 @@ class StationProfile:
         #     print(e)
 
         # create stations down, do set_port on them, then set stations up
-        self.add_sta_data["flags"] = ( 0
-                + (0, add_sta.add_sta_flags["wpa_enable"])[self.desired_add_sta_flags["wpa_enable"]]
-                + (0, add_sta.add_sta_flags["wep_enable"])[self.desired_add_sta_flags["wpa_enable"]]
-                + (0, add_sta.add_sta_flags["wpa2_enable "])[self.desired_add_sta_flags["wpa_enable"]]
-                + (0, add_sta.add_sta_flags["ht40_disable"])[self.desired_add_sta_flags["wpa_enable"]]
-
-        )
+        self.add_sta_data["flags"] = self.addNamedFlags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+        self.add_sta_data["radio"] = radio
+        self.add_sta_data["resource"] = resource
         lf_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         for num in range(num_stations):
-            # data = {
-            # "shelf":1,
-            # "resource":resource,
-            # "radio":radio_name,
-            # "sta_name":f"sta{num:05}",
-            # "ssid":self.ssid,
-            # "key":self.ssid_pass,
-            # "mode":1,
-            # "mac":"xx:xx:xx:xx:*:xx",
-            # "flags": self.add
-            # }
-            lf_r.addPostData(data)
+            self.add_sta_data["sta_name"] = f"sta{num:05}"
+            lf_r.addPostData(self.add_sta_data)
             json_response = lf_r.jsonPost(True)
+        print(f"created {num} stations")
 
+#
