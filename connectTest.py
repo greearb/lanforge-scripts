@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 import sys
-
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
 if 'py-json' not in sys.path:
     sys.path.append('py-json')
 
 from LANforge import LFUtils
 from LANforge.LFUtils import *
 from LANforge.lfcli_base import LFCliBase
-
 import create_genlink as genl
-
-debugOn = True
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
+#debugOn = True
 
 mgrURL = "http://localhost:8080/"
 staName = "sta0"
