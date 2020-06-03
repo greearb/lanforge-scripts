@@ -19,7 +19,7 @@ class LFCliBase:
         self.haltOnError = _halt_on_error
         self.mgr_url = "http://%s:%s/" % (self.lfjson_host, self.lfjson_port)
 
-    def jsonPost(self, _req_url, _data):
+    def json_post(self, _req_url, _data):
         json_response = None
         if self.mgr_url.endswith('/') and _req_url.startswith('/'):
             _req_url = _req_url[1:]
@@ -42,7 +42,7 @@ class LFCliBase:
 
         return json_response
 
-    def jsonGet(self, _req_url):
+    def json_get(self, _req_url):
         json_response = None
         if self.mgr_url.endswith('/') and _req_url.startswith('/'):
             _req_url = _req_url[1:]
@@ -71,15 +71,15 @@ class LFCliBase:
         #else:
         #    print("continuing...")
 
-    def checkConnect(self):
+    def check_connect(self):
         print(f"Checking for LANforge GUI connection: {self.mgr_url}")
-        response = self.jsonGet("/")
+        response = self.json_get("/")
         duration = 0
         while (response is None) and (duration < 300):
             print(f"LANforge GUI connection not found sleeping 5 seconds, tried: {self.mgr_url}")
             duration += 2
             time.sleep(2)
-            response = self.jsonGet("")
+            response = self.json_get("")
 
         if duration >= 300:
             print("Could not connect to LANforge GUI")

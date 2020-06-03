@@ -21,7 +21,7 @@ class GenericCx(LFCliBase):
             "port": port,
             "type": type
         }
-        super().jsonPost("cli-json/add_gen_endp", data)
+        super().json_post("cli-json/add_gen_endp", data)
 
     def setFlags(self, endpName, flagName, val):
         data = {
@@ -29,11 +29,11 @@ class GenericCx(LFCliBase):
             "flag": flagName,
             "val": val
         }
-        super().jsonPost("cli-json/set_endp_flag", data)
+        super().json_post("cli-json/set_endp_flag", data)
 
     def setCmd(self, endpName, cmd):
         data = {
             "name": endpName,
             "command": cmd
         }
-        super().jsonPost("cli-json/set_gen_cmd", data)
+        super().json_post("cli-json/set_gen_cmd", data)
