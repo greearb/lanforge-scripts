@@ -1,55 +1,39 @@
 #!/usr/bin/env python3
-import os
-import time
 import sys
-import json
-import pprint
-from LANforge import LFRequest
-from LANforge import LFUtils
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
+from LANforge.lfcli_base import LFCliBase
 
-def jsonReq(mgrURL,reqURL,postData,debug=False):
-        lf_r = LFRequest.LFRequest(mgrURL + reqURL)
-        lf_r.addPostData(postData)
+class CreateGenlink(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port):
+        super().__init__(lfclient_host, lfclient_port)
+        self.lfclient_host = lfclient_host
+        self.lfclient_port = lfclient_port
 
-        if debug:
-                json_response = lf_r.jsonPost(True)
-                LFUtils.debug_printer.pprint(json_response)
-                sys.exit(1)
-        else:
-             	lf_r.jsonPost()
+    def createGenEndp(self, alias, shelf, rsrc, port, type):
+        data = {
+            "alias": alias,
+            "shelf": shelf,
+            "resource": rsrc,
+            "port": port,
+            "type": type
+        }
+        super().jsonPost("cli-json/add_gen_endp", data)
 
-def createGenEndp(alias, shelf, rsrc, port, type):
-	mgrURL = "http://localhost:8080/"
-	reqURL = "cli-json/add_gen_endp"
-	data = {
-	"alias":alias,
-	"shelf":shelf,
-	"resource":rsrc,
-	"port":port,
-	"type":type
-	}
-	jsonReq(mgrURL,reqURL,data)
+    def setFlags(self, endpName, flagName, val):
+        data = {
+            "name": endpName,
+            "flag": flagName,
+            "val": val
+        }
+        super().jsonPost("cli-json/set_endp_flag", data)
 
-def setFlags(endpName, flagName,val):
-	mgrURL = "http://localhost:8080/"
-	reqURL = "cli-json/set_endp_flag"
-	data = {
-	"name":endpName,
-	"flag":flagName,
-	"val":val
-	}
-	jsonReq(mgrURL,reqURL,data)
-
-def setCmd(endpName,cmd):
-	mgrURL = "http://localhost:8080/"
-	reqURL = "cli-json/set_gen_cmd"
-	data = {
-	"name":endpName,
-	"command":cmd
-	}
-	jsonReq(mgrURL,reqURL,data)
+    def setCmd(self, endpName, cmd):
+        data = {
+            "name": endpName,
+            "command": cmd
+        }
+        super().jsonPost("cli-json/set_gen_cmd", data)
