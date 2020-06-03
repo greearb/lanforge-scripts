@@ -1,6 +1,7 @@
 #!env /usr/bin/python
 
 # Extend this class to use common set of debug and request features for your script
+import pprint
 from pprint import pprint
 import LANforge.LFUtils
 from LANforge.LFUtils import *
@@ -11,10 +12,11 @@ class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
     # that is py2 era syntax and will force self into the host variable, making you
     # very confused.
-    def __init__(self, _lfjson_host, _lfjson_port, _debug=False):
+    def __init__(self, _lfjson_host, _lfjson_port, _debug=False, _halt_on_error=False):
         self.lfjson_host = _lfjson_host
         self.lfjson_port = _lfjson_port
         self.debugOn = _debug
+        self.haltOnError = _halt_on_error
         self.mgr_url = "http://%s:%s/" % (self.lfjson_host, self.lfjson_port)
 
     def jsonPost(self, _req_url, _data):
@@ -30,14 +32,14 @@ class LFCliBase:
                 LANforge.LFUtils.debug_printer.pprint(_data)
             json_response = lf_r.jsonPost(self.debugOn)
         except Exception as x:
-            print(f"jsonPost posted to {_req_url}")
-            pprint(_data)
-            print(x.__traceback__)
+            if self.debugOn or self.haltOnError:
+                print(f"jsonPost posted to {_req_url}")
+                pprint(_data)
+                print(f"Exception {x}:")
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            if self.haltOnError:
+                exit(1)
 
-        # Debugging
-        # if (json_response != None):
-        #   print("jsonReq: response: ")
-        #   LFUtils.debug_printer.pprint(vars(json_response))
         return json_response
 
     def jsonGet(self, _req_url):
@@ -50,10 +52,24 @@ class LFCliBase:
             if (json_response is None) and self.debugOn:
                 raise ValueError(json_response)
         except ValueError as ve:
-            print("jsonGet asked for "+_req_url)
-            print(ve.__traceback__)
+            if self.debugOn or self.haltOnError:
+                print("jsonGet asked for "+_req_url)
+                print(f"Exception {ve}:")
+                traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
+            if self.haltOnError:
+                sys.exit(1)
 
         return json_response
+
+    def error(self, exception):
+        #print(f"lfcli_base error: {exception}")
+        pprint.pprint(exception)
+        traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
+        if self.haltOnError:
+            print("halting on error")
+            sys.exit(1)
+        #else:
+        #    print("continuing...")
 
     def checkConnect(self):
         print(f"Checking for LANforge GUI connection: {self.mgr_url}")
