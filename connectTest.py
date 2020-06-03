@@ -229,7 +229,7 @@ class ConnectTest(LFCliBase):
         # create wanlink endpoints
         url = "cli-json/add_wl_endp"
         data = {
-            "alias": "wlTest1",
+            "alias": "wlan0",
             "shelf": 1,
             "resource": 1,
             "port": "rdd0",
@@ -240,7 +240,7 @@ class ConnectTest(LFCliBase):
 
         url = "cli-json/add_wl_endp"
         data = {
-            "alias": "wlTest2",
+            "alias": "wlan1",
             "shelf": 1,
             "resource": 1,
             "port": "rdd1",
@@ -253,15 +253,15 @@ class ConnectTest(LFCliBase):
         # create wanlink cx
         url = "cli-json/add_cx"
         data = {
-            "alias": "CX_wlTest1",
+            "alias": "CX_wlan0",
             "test_mgr": "default_tm",
-            "tx_endp": "wlTest1",
-            "rx_endp": "wlTest2"
+            "tx_endp": "wlan0",
+            "rx_endp": "wlan1"
         }
         super().jsonPost(url, data)
         time.sleep(.5)
 
-        cxNames = ["testTCP", "testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wlTest1"]
+        cxNames = ["testTCP", "testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wlan0"]
 
         # get data before running traffic
         try:
@@ -287,12 +287,12 @@ class ConnectTest(LFCliBase):
             genTest1 = super().jsonGet("generic/genTest1?fields=last+results")
             genTest1LR = genTest1['endpoint']['last results']
 
-            wlTest1 = super().jsonGet("wl_ep/wlTest1")
-            wlTest1TXB = wlTest1['endpoint']['tx bytes']
-            wlTest1RXP = wlTest1['endpoint']['rx pkts']
-            wlTest2 = super().jsonGet("wl_ep/wlTest2")
-            wlTest2TXB = wlTest2['endpoint']['tx bytes']
-            wlTest2RXP = wlTest2['endpoint']['rx pkts']
+            wlan0 = super().jsonGet("wl_ep/wlan0")
+            wlan0TXB = wlan0['endpoint']['tx bytes']
+            wlan0RXP = wlan0['endpoint']['rx pkts']
+            wlan1 = super().jsonGet("wl_ep/wlan1")
+            wlan1TXB = wlan1['endpoint']['tx bytes']
+            wlan1RXP = wlan1['endpoint']['rx pkts']
 
         except Exception as e:
             print("Something went wrong")
@@ -303,7 +303,7 @@ class ConnectTest(LFCliBase):
                          "testUDP-A", "testUDP-B",
                          "l4Test", "fioTest",
                          "genTest1", "genTest2",
-                         "wlTest1", "wlTest2"]
+                         "wlan0", "wlan1"]
             removeCX(mgrURL, cxNames)
             removeEndps(mgrURL, endpNames)
             sys.exit(1)
@@ -358,13 +358,13 @@ class ConnectTest(LFCliBase):
         cmd = (
             "./lf_firemod.pl --action show_endp --endp_name genTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  wlTest1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  wlan0 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name wlTest1 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name wlan0 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system("echo  wlTest2 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  wlan1 >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         cmd = (
-            "./lf_firemod.pl --action show_endp --endp_name wlTest2 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action show_endp --endp_name wlan1 --endp_vals \"Rx Pkts,Tx Bytes,Cur-Backlog,Dump File,Tx3s\" >> /home/lanforge/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
 
         # stop cx traffic
@@ -401,12 +401,12 @@ class ConnectTest(LFCliBase):
             pgenTest1 = super().jsonGet("generic/genTest1?fields=last+results")
             pgenTest1LR = pgenTest1['endpoint']['last results']
 
-            pwlTest1 = super().jsonGet("wl_ep/wlTest1")
-            pwlTest1TXB = pwlTest1['endpoint']['tx bytes']
-            pwlTest1RXP = pwlTest1['endpoint']['rx pkts']
-            pwlTest2 = super().jsonGet("wl_ep/wlTest2")
-            pwlTest2TXB = pwlTest2['endpoint']['tx bytes']
-            pwlTest2RXP = pwlTest2['endpoint']['rx pkts']
+            pwlan0 = super().jsonGet("wl_ep/wlan0")
+            pwlan0TXB = pwlan0['endpoint']['tx bytes']
+            pwlan0RXP = pwlan0['endpoint']['rx pkts']
+            pwlan1 = super().jsonGet("wl_ep/wlan1")
+            pwlan1TXB = pwlan1['endpoint']['tx bytes']
+            pwlan1RXP = pwlan1['endpoint']['rx pkts']
         except Exception as e:
             print("Something went wrong")
             print(e)
@@ -423,7 +423,7 @@ class ConnectTest(LFCliBase):
                          "testUDP-A", "testUDP-B",
                          "l4Test", "fioTest",
                          "genTest1", "genTest2",
-                         "wlTest1", "wlTest2"]
+                         "wlan0", "wlan1"]
             removeCX(mgrURL, cxNames)
             removeEndps(mgrURL, endpNames)
             sys.exit(1)
@@ -442,10 +442,10 @@ class ConnectTest(LFCliBase):
         self.CompareVals("testUDP-B RX", testUDPBRX, ptestUDPBRX)
         self.CompareVals("l4Test Bytes Read", l4TestBR, pl4TestBR)
         self.CompareVals("genTest1 Last Results", genTest1LR, pgenTest1LR)
-        self.CompareVals("wlTest1 TX Bytes", wlTest1TXB, pwlTest1TXB)
-        self.CompareVals("wlTest1 RX Pkts", wlTest1RXP, pwlTest1RXP)
-        self.CompareVals("wlTest2 TX Bytes", wlTest2TXB, pwlTest2TXB)
-        self.CompareVals("wlTest2 RX Pkts", wlTest2RXP, pwlTest2RXP)
+        self.CompareVals("wlan0 TX Bytes", wlan0TXB, pwlan0TXB)
+        self.CompareVals("wlan0 RX Pkts", wlan0RXP, pwlan0RXP)
+        self.CompareVals("wlan1 TX Bytes", wlan1TXB, pwlan1TXB)
+        self.CompareVals("wlan1 RX Pkts", wlan1RXP, pwlan1RXP)
         print("\n")
 
         # remove all endpoints and cxs
@@ -456,7 +456,7 @@ class ConnectTest(LFCliBase):
                      "testUDP-A", "testUDP-B",
                      "l4Test", "fioTest",
                      "genTest1", "genTest2",
-                     "wlTest1", "wlTest2"]
+                     "wlan0", "wlan1"]
         removeCX(mgrURL, cxNames)
         removeEndps(mgrURL, endpNames)
 
