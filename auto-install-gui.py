@@ -40,7 +40,7 @@ for file in searchResults:
 	if ver == file[1]:
 		webFiles.append({'filename':file[0], 'timestamp': datetime.datetime.strptime(file[2], "%Y-%m-%d %H:%M")})
 if len(webFiles) == 0:
-	print(f"Unable to find webfile with version number {ver}")
+	print(f"Failed to find webfile with version number {ver}")
 	sys.exit(1)
 
 
@@ -95,7 +95,7 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 		print("Attempting to extract files")
 		subprocess.call(["tar", "-xf", f"{filePath}{newestWebFile['filename']}", "-C", "/home/lanforge/"])
 	except Exception as e:
-		print(f"{e}\nExtraction Failed. Please try again")
+		print(f"{e}\nExtraction failed. Please try again")
 		sys.exit(1)
 
 	#time.sleep(90)
@@ -104,8 +104,8 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 			print("Copying LANforge-auto.desktop to /home/lanforge/.config/autostart/")
 			subprocess.call(["cp", f"/home/lanforge/{newestWebFile['filename'][:len(newestWebFile)-18]}/LANforge-auto.desktop", "/home/lanforge/.config/autostart/"])
 	except Exception as e:
-		print(e)
-
+		print(f"{e}\nCopy failed. Please try again")
+		sys.exit(1)
 
 	try:
 		print(f"Attempting to install {newestWebFile['filename']} at /home/lanforge")
@@ -114,12 +114,12 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 		print(f"{e}\nInstallation failed. Please Try again.")
 		sys.exit(1)
 #=========ATTEMPT TO RESTART GUI==========
-	try:
-		print("Killing current GUI process")
-		os.system("pgrep java | xargs kill")
-	except Exception as e:
-		print(e)
-
+#	try:
+#		print("Killing current GUI process")
+#		os.system("if pgrep java; then pgrep java | xargs kill -9 ;fi")
+#	except Exception as e:
+#		print(f"{e}\nProcess kill failed. Please try again")
+#		sys.exit(1)
 
 else:
 	print("Current GUI version up to date")
