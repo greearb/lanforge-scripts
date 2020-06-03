@@ -4,23 +4,24 @@ import time
 
 from LANforge import LFRequest
 from LANforge import LFUtils
-
+from LANforge import set_port
+from LANforge import add_sta
 
 class Realm:
 
-    def __init__(self, mgr_url="http://localhost:8080"):
-        self.mgrURL = mgr_url
+    def __init__(self, lfclient_url="http://localhost:8080"):
+        self.lfclient_url = lfclient_url
 
     def cx_list(self):
         #Returns json response from webpage of all layer 3 cross connects
-        lf_r = LFRequest.LFRequest(self.mgrURL + "/cx")
+        lf_r = LFRequest.LFRequest(self.lfclient_url + "/cx")
         response = lf_r.getAsJson(True)
         return response
 
     def station_list(self):
     #Returns list of all stations with "sta" in their name
         sta_list = []
-        lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
+        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
         response = lf_r.getAsJson(True)
         for x in range(len(response['interfaces'])):
             for k,v in response['interfaces'][x].items():
@@ -32,7 +33,7 @@ class Realm:
     def vap_list(self):
         #Returns list of all VAPs with "vap" in their name
         sta_list = []
-        lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
+        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
         response = lf_r.getAsJson(True)
 
         for x in range(len(response['interfaces'])):
@@ -46,7 +47,7 @@ class Realm:
     def find_ports_like(self, pattern=""):
         #Searches for ports that match a given pattern and returns a list of names
         device_name_list = []
-        lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
+        lf_r = LFRequest.LFRequest(self.lfclient_url + "/port/list?fields=_links,alias,device,port+type")
         response = lf_r.getAsJson(True)
         #print(response)
         for x in range(len(response['interfaces'])):
@@ -86,9 +87,12 @@ class Realm:
                 print(e)
         return matched_list
 
-class CXProfile:
+    def newCxProfile(self):
+        cxprof = CXProfile(self.lfclient_url)
+        return cxprof
 
-    def __init__(self, mgr_url="http://localhost:8080"):
+class CXProfile:
+    def __init__(self, mgr_url):
         self.mgr_url = mgr_url
         self.post_data = []
 
@@ -159,40 +163,97 @@ class CXProfile:
            time.sleep(sleep_time)
 
 
+# use the station profile to set the combination of features you want on your stations
+# once this combination is configured, build the stations with the build(resource, radio, number) call
+# build() calls will fail if the station already exists. Please survey and clean your resource
+# before calling build()
+#       survey = Realm.findStations(resource=1)
+#       Realm.removeStations(survey)
+#       profile = Realm.newStationProfile()
+#       profile.set...
+#       profile.build(resource, radio, 64)
+#
 class StationProfile:
-
-    def __init__(self, mgr_url="localhost:8080", ssid="NA", ssid_pass="NA", security="open", start_id="", mode=0, up=True, dhcp=True):
-        self.mgrURL = mgr_url
+    def __init__(self, lfclient_url, ssid="NA", ssid_pass="NA", security="open", start_id="", mode=0, up=True, dhcp=True):
+        self.lfclient_url = lfclient_url
         self.ssid = ssid
         self.ssid_pass = ssid_pass
         self.mode = mode
         self.up = up
         self.dhcp = dhcp
         self.security = security
+        self.COMMANDS = ["add_sta", "set_port"]
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.add_sta_data = {
+            "shelf": 1,
+            "resource": 1,
+            "radio": None,
+            "sta_name": None,
+            "ssid": None,
+            "key": None,
+            "mode": 0,
+            "mac": "xx:xx:xx:xx:*:xx",
+            "flags": 0, # (0x400 + 0x20000 + 0x1000000000)  # create admin down
+        }
+        self.desired_set_port_flags = ["down", "dhcp"]
+        self.set_port_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "current_flags": 0,
+            "interest": 0, #(0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
+        }
 
-    def build(self, resource_radio, num_stations):
-    #Checks for errors in initialization values and creates specified number of stations using init parameters
-        try:
-            resource = resource_radio[0: resource_radio.index(".")]
-            name = resource_radio[resource_radio.index(".") + 1:]
-            if name.index(".") >= 0:
-                radio_name = name[name.index(".")+1 : ]
-        except ValueError as e:
-            print(e)
+    def setParam(self, cli_name, param_name, param_val):
+        # we have to check what the param name is
+        if (cli_name is None) or (cli_name == ""):
+            return
+        if (param_name is None) or (param_name == ""):
+            return
+        if cli_name not in self.COMMANDS:
+            print(f"Command name name [{cli_name}] not defined in {self.COMMANDS}")
+            return
+        if cli_name == "add_sta":
+            if (param_name not in add_sta.add_sta_flags) or (param_name not in add_sta.add_sta_modes):
+                print(f"Parameter name [{param_name}] not defined in add_sta.py")
+                return
+        elif cli_name == "set_port":
+            if (param_name not in set_port.set_port_current_flags) or (param_name not in set_port.set_port_cmd_flags):
+                print(f"Parameter name [{param_name}] not defined in set_port.py")
+                return
 
-        lf_r = LFRequest.LFRequest(self.mgrURL + "/cli-json/add_sta")
+    # Checks for errors in initialization values and creates specified number of stations using init parameters
+    def build(self, resource, resource_radio, num_stations):
+        # try:
+        #     resource = resource_radio[0: resource_radio.index(".")]
+        #     name = resource_radio[resource_radio.index(".") + 1:]
+        #     if name.index(".") >= 0:
+        #         radio_name = name[name.index(".")+1 : ]
+        #     print(f"Building {num_stations} on radio {resource}.{radio_name}")
+        # except ValueError as e:
+        #     print(e)
+
+        # create stations down, do set_port on them, then set stations up
+        self.add_sta_data["flags"] = ( 0
+                + (0, add_sta.add_sta_flags["wpa_enable"])[self.desired_add_sta_flags["wpa_enable"]]
+                + (0, add_sta.add_sta_flags["wep_enable"])[self.desired_add_sta_flags["wpa_enable"]]
+                + (0, add_sta.add_sta_flags["wpa2_enable "])[self.desired_add_sta_flags["wpa_enable"]]
+                + (0, add_sta.add_sta_flags["ht40_disable"])[self.desired_add_sta_flags["wpa_enable"]]
+
+        )
+        lf_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         for num in range(num_stations):
-            data = {
-            "shelf":1,
-            "resource":resource,
-            "radio":radio_name,
-            "sta_name":f"sta{num:05}",
-            "ssid":self.ssid,
-            "key":self.ssid_pass,
-            "mode":1,
-            "mac":"xx:xx:xx:xx:*:xx",
-            "flags":
-            }
+            # data = {
+            # "shelf":1,
+            # "resource":resource,
+            # "radio":radio_name,
+            # "sta_name":f"sta{num:05}",
+            # "ssid":self.ssid,
+            # "key":self.ssid_pass,
+            # "mode":1,
+            # "mac":"xx:xx:xx:xx:*:xx",
+            # "flags": self.add
+            # }
             lf_r.addPostData(data)
             json_response = lf_r.jsonPost(True)
 
