@@ -119,14 +119,13 @@ duration = 0
 maxTime = 300
 ip = "0.0.0.0"
 while ((ip == "0.0.0.0") and (duration < maxTime)):
-   print("Station failed to get IP. Waiting 10 seconds...")
    station_info = getJsonInfo(mgrURL, "port/1/1/sta00000?fields=port,ip")
 
-   #LFUtils.debug_printer.pprint(station_info)
+   LFUtils.debug_printer.pprint(station_info)
    if ((station_info is not None) and ("interface" in station_info) and ("ip" in station_info["interface"])):
       ip = station_info["interface"]["ip"]
-   duration += 2
-   time.sleep(2)
+   duration += 4
+   time.sleep(4)
 
 if duration >= maxTime:
    print("sta00000 failed to get an ip. Ending test")
