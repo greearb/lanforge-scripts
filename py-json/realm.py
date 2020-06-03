@@ -46,7 +46,6 @@ class Realm:
     def find_ports_like(self, pattern=""):
         #Searches for ports that match a given pattern and returns a list of names
         device_name_list = []
-        # alias is possible but device is gauranteed
         lf_r = LFRequest.LFRequest(self.mgrURL + "/port/list?fields=_links,alias,device,port+type")
         response = lf_r.getAsJson(True)
         #print(response)
@@ -63,7 +62,7 @@ class Realm:
                 if pattern.index("+") > 0:
                     match = re.search(r"^([^+]+)[+]$", pattern)
                     if match.group(1):
-                        #print("name:", portname, " Group 1: ",match.group(1))
+                        #print("name:", port_name, " Group 1: ",match.group(1))
                         prefix = match.group(1)
                     if port_name.index(prefix) == 0:
                         matched_list.append(port_name)
@@ -81,7 +80,7 @@ class Realm:
                     if match.group(0):
                         #print("[group1]: ", match.group(1))
                         prefix = match.group(1)
-                        if (port_name.index(prefix)):
+                        if port_name.index(prefix):
                             matched_list.append(port_name) # wrong but better
             except ValueError as e:
                 print(e)
@@ -174,10 +173,10 @@ class StationProfile:
     def build(self, resource_radio, num_stations):
     #Checks for errors in initialization values and creates specified number of stations using init parameters
         try:
-            resource = port_name[0: resource_radio.index(".")]
-            name = port_name[resource_radio.index(".") + 1:]
+            resource = resource_radio[0: resource_radio.index(".")]
+            name = resource_radio[resource_radio.index(".") + 1:]
             if name.index(".") >= 0:
-                name = name[name.index(".")+1 : ]
+                radio_name = name[name.index(".")+1 : ]
         except ValueError as e:
             print(e)
 
@@ -185,8 +184,8 @@ class StationProfile:
         for num in range(num_stations):
             data = {
             "shelf":1,
-            "resource":1,
-            "radio":radio,
+            "resource":resource,
+            "radio":radio_name,
             "sta_name":f"sta{num:05}",
             "ssid":self.ssid,
             "key":self.ssid_pass,
