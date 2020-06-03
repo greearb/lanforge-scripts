@@ -12,7 +12,7 @@ from LANforge.lfcli_base import LFCliBase
 
 class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=False):
-        super().__init__(lfclient_host, lfclient_port, debug)
+        super().__init__(lfclient_host, lfclient_port, debug, _halt_on_error=True)
         self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}"
         super().checkConnect()
 
@@ -58,33 +58,41 @@ class Realm(LFCliBase):
                     device_name_list.append(v['device'])
         matched_list = []
         prefix = ""
-        for port_name in device_name_list:
-            try:
-                if pattern.index("+") > 0:
-                    match = re.search(r"^([^+]+)[+]$", pattern)
-                    if match.group(1):
-                        #print("name:", port_name, " Group 1: ",match.group(1))
-                        prefix = match.group(1)
-                    if port_name.index(prefix) == 0:
+        try:
+            if pattern.find("+") > 0:
+                match = re.search(r"^([^+]+)[+]$", pattern)
+                if match.group(1):
+                    #print("name:", port_name, " Group 1: ",match.group(1))
+                    prefix = match.group(1)
+                for port_name in device_name_list:
+                    if port_name.find(prefix) == 0:
                         matched_list.append(port_name)
 
-                elif pattern.index("*") > 0:
-                    match = re.search(r"^([^\*]+)[\*]$", pattern)
-                    if match.group(1):
-                        prefix = match.group(1)
-                        #print("group 1: ",prefix)
-                    if port_name.index(prefix) == 0:
+            elif pattern.find("*") > 0:
+                match = re.search(r"^([^\*]+)[\*]$", pattern)
+                if match.group(1):
+                    prefix = match.group(1)
+                    #print("group 1: ",prefix)
+                for port_name in device_name_list:
+                    if port_name.find(prefix) == 0:
                         matched_list.append(port_name)
 
-                elif pattern.index("[") > 0:
-                    match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
-                    if match.group(0):
-                        #print("[group1]: ", match.group(1))
-                        prefix = match.group(1)
-                        if port_name.index(prefix):
-                            matched_list.append(port_name) # wrong but better
-            except ValueError as e:
-                print(e)
+            elif pattern.find("[") > 0:
+                match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
+                if match.group(0):
+                    #print("[group1]: ", match.group(1))
+                    #print("[group2]: ", match.group(2))
+                    #print("[group3]: ", match.group(3))
+                    prefix = match.group(1)
+                    for port_name in device_name_list:
+                        if port_name.find(prefix) == 0:
+                            port_suf = port_name[len(prefix):]
+                            if (port_suf >= match.group(2)) and (port_suf <= match.group(3)):
+                                #print(f"{port_name}: suffix[{port_name}] between {match.group(2)}:{match.group(3)}")
+                                matched_list.append(port_name) # wrong but better
+        except ValueError as e:
+            super().error(e)
+
         return matched_list
 
     def newCxProfile(self):
