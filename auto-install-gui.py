@@ -114,12 +114,12 @@ if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 		print(f"{e}\nInstallation failed. Please Try again.")
 		sys.exit(1)
 #=========ATTEMPT TO RESTART GUI==========
-	try:
-		print("Killing current GUI process")
-		os.system("if pgrep java; then pgrep java | xargs kill -9 ;fi")
-	except Exception as e:
-		print(f"{e}\nProcess kill failed. Please try again")
-		sys.exit(1)
+#	try:
+#		print("Killing current GUI process")
+#		os.system("if pgrep java; then pgrep java | xargs kill -9 ;fi")
+#	except Exception as e:
+#		print(f"{e}\nProcess kill failed. Please try again")
+#		sys.exit(1)
 
 else:
 	print("Current GUI version up to date")
