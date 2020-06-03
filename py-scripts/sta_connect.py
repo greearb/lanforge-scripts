@@ -69,6 +69,9 @@ class StaConnect(LFCliBase):
     def run(self):
         self.checkConnect()
         eth1IP = self.jsonGet(self.getUpstreamUrl())
+        if eth1IP is None:
+            print("Unable to query "+self.upstream_port+", bye")
+            sys.exit(1)
         if eth1IP['interface']['ip'] == "0.0.0.0":
             print(f"Warning: {self.getUpstreamUrl()} lacks ip address")
 
