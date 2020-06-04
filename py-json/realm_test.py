@@ -12,46 +12,51 @@ localrealm = Realm("localhost", 8080, True)
 print("** Existing Stations **")
 try:
     sta_list = localrealm.station_list()
-    print(f"{len(sta_list)} Stations:")
-    pprint(sta_list)
-    print("  Stations like sta+:")
+    print(f"\n{len(sta_list)} Station List:")
+    print(sta_list)
+    del sta_list
+    sta_map = localrealm.station_map()
+    print(f"\n{len(sta_map)} Station Map:")
+    print(sta_map)
+    del sta_map
+    print("\n  Stations like wlan+:")
     print(localrealm.find_ports_like("wlan+"))
-    print("  Stations like sta0:")
+    print("\n  Stations like wlan0:")
     print(localrealm.find_ports_like("wlan0*"))
-    print("  Stations between wlan0..wlan2:")
+    print("\n  Stations between wlan0..wlan2:")
     print(localrealm.find_ports_like("wlan[0..2]"))
 except Exception as x:
     pprint(x)
     exit(1)
 
-print("** Existing vAPs **")
+print("\n** Removing previous stations **")
+station_map = localrealm.find_ports_like("sta+")
+for eid,record in station_map.items():
+    pprint(eid)
+    # a list of these objects is not super useful unless
+    localrealm.removeVlanByEid(eid)
+    time.sleep(0.03)
+
+# convert station map to plain list
+del_sta_names = []
 try:
-    vap_list = localrealm.vap_list()
-    print(f"{len(vap_list)} VAPs:")
-    pprint(vap_list)
+    for eid,value in station_map.items():
+        #print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
+        #pprint(eid)
+        #print("rfind: %d" % )
+        #print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
+        tname = eid[eid.rfind('.'):]
+        del_sta_names.append(tname)
 except Exception as x:
-    pprint(x)
-    exit(1)
+    localrealm.error(x)
 
-print("** Existing CXs **")
-try:
-    cx_list = localrealm.cx_list()
-    print(f"{len(cx_list)} CXs:")
-    pprint(cx_list)
-except Exception as x:
-    pprint(x)
-    exit(1)
-
-print("** Removing previous stations **")
-stations = localrealm.find_ports_like("sta+")
-for station in stations:
-    pprint(station)
-    time.sleep(1)
-    LFUtils.removePort(station["resource"], station["name"], localrealm.lfclient_url)
-
-print("** Removing previous CXs **")
-
+LFUtils.waitUntilPortsDisappear(resource_id=1, base_url=localrealm.lfclient_url, port_list=del_sta_names, debug=False)
 print("** Creating Stations **")
+profile = localrealm.new_station_profile()
+profile.use_wpa2(True, "jedway-wpa2-x2048-5-1", "jedway-wpa2-x2048-5-1")
+profile.set_command_flag("add_sta", "80211u_enable", 1)
+profile.set_prefix("0100")
+profile.build(1, "wiphy0", 5)
 
 try:
     sta_list = localrealm.station_list()
@@ -67,9 +72,32 @@ except Exception as x:
     pprint(x)
     exit(1)
 
+print(" - - - - TESTING - - - - - -")
+exit(0)
+
+print("** Existing vAPs **")
+try:
+    vap_list = localrealm.vap_list()
+    print(f"{len(vap_list)} VAPs:")
+    pprint(vap_list)
+except Exception as x:
+    localrealm.error(x)
+    exit(1)
+
+print("** Existing CXs **")
+try:
+    cx_list = localrealm.cx_list()
+    print(f"{len(cx_list)} CXs:")
+    pprint(cx_list)
+except Exception as x:
+    localrealm.error(x)
+    exit(1)
+
+print("** Removing previous CXs **")
+
 print("** Creating CXs **")
 try:
-    cxProfile = localrealm.newCXProfile()
+    cxProfile = localrealm.new_cx_profile()
     # set attributes of cxProfile
     cxProfile.add_ports("A", "lf_udp", localrealm.find_ports_like("sta+"))
     cxProfile.create()
