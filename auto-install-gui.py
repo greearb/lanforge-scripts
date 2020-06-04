@@ -40,13 +40,13 @@ for file in searchResults:
 	if ver == file[1]:
 		webFiles.append({'filename':file[0], 'timestamp': datetime.datetime.strptime(file[2], "%Y-%m-%d %H:%M")})
 if len(webFiles) == 0:
-	print(f"Failed to find webfile with version number {ver}")
+	print("Failed to find webfile with version number %s" % (ver))
 	sys.exit(1)
 
 
 #=========CHECK DIR FOR FILES=============
-filePath = f"/home/lanforge/Downloads/"
-dir = glob.glob(filePath + f"LANforgeGUI_{ver}*")
+filePath = "/home/lanforge/Downloads/"
+dir = glob.glob(filePath + "LANforgeGUI_%s*" % ver)
 dirFiles = []
 
 for file in dir:
@@ -55,7 +55,7 @@ for file in dir:
 		dirFiles.append({'filename':file[25:], 'timestamp':fileTime})
 
 if len(dirFiles) == 0:
-	print(f"Unable to find file in {filePath} with version {ver}")
+	print("Unable to find file in {filePath} with version %s" % ver)
 	#sys.exit(1)
 
 #============FIND NEWEST FILES============
@@ -79,46 +79,46 @@ else:
 if newestWebFile['timestamp'] > newestDirFile['timestamp']:
 	try:
 		if newestDirFile['filename'] != 'placeholder':
-			subprocess.call(["rm", f"{filePath}{newestDirFile['filename']}"])
+			subprocess.call(["rm", "%s%s" % (filePath, newestDirFile['filename'])])
 			print("No file found")
-			print(f"Downloading newest {newestWebFile['filename']} from {url}")
+			print("Downloading newest %s from %s" % (newestWebFile['filename'], url))
 		else:
 			print("Found newer version of GUI")
-			print(f"Downloading {newestWebFile['filename']} from {url}")
+			print("Downloading %s from %s" % (newestWebFile['filename'], url))
 #=====ATTEMPT DOWNLOAD AND INSTALL=========
-		subprocess.call(["curl", "-o", f"{filePath}{newestWebFile['filename']}", f"{url}{newestWebFile['filename']}"])
+		subprocess.call(["curl", "-o", "%s%s" % (filePath, newestWebFile['filename']), "%s%s" % (url, newestWebFile['filename'])])
 		time.sleep(5)
 	except Exception as e:
-		print(f"{e} Download failed. Please try again.")
+		print("%s Download failed. Please try again." % e)
 		sys.exit(1)
 	try:
 		print("Attempting to extract files")
-		subprocess.call(["tar", "-xf", f"{filePath}{newestWebFile['filename']}", "-C", "/home/lanforge/"])
+		subprocess.call(["tar", "-xf", "%s%s" % (filePath, newestWebFile['filename']), "-C", "/home/lanforge/"])
 	except Exception as e:
-		print(f"{e}\nExtraction failed. Please try again")
+		print("%s\nExtraction failed. Please try again" % e)
 		sys.exit(1)
 
 	#time.sleep(90)
 	try:
 		if "/home/lanforge/.config/autostart/LANforge-auto.desktop" not in glob.glob("/home/lanforge/.config/autostart/*"):
 			print("Copying LANforge-auto.desktop to /home/lanforge/.config/autostart/")
-			subprocess.call(["cp", f"/home/lanforge/{newestWebFile['filename'][:len(newestWebFile)-18]}/LANforge-auto.desktop", "/home/lanforge/.config/autostart/"])
+			subprocess.call(["cp", "/home/lanforge/%s/LANforge-auto.desktop" % (newestWebFile['filename'][:len(newestWebFile)-18]), "/home/lanforge/.config/autostart/"])
 	except Exception as e:
-		print(f"{e}\nCopy failed. Please try again")
+		print("%s\nCopy failed. Please try again" % e)
 		sys.exit(1)
 
 	try:
-		print(f"Attempting to install {newestWebFile['filename']} at /home/lanforge")
-		os.system(f"cd /home/lanforge/{newestWebFile['filename'][:len(newestWebFile)-18]}; sudo bash lfgui_install.bash")
+		print("Attempting to install %s at /home/lanforge" % newestWebFile['filename'])
+		os.system("cd /home/lanforge/%s; sudo bash lfgui_install.bash" % (newestWebFile['filename'][:len(newestWebFile)-18]))
 	except Exception as e:
-		print(f"{e}\nInstallation failed. Please Try again.")
+		print("%s\nInstallation failed. Please Try again." % e)
 		sys.exit(1)
 #=========ATTEMPT TO RESTART GUI==========
 #	try:
 #		print("Killing current GUI process")
 #		os.system("if pgrep java; then pgrep java | xargs kill -9 ;fi")
 #	except Exception as e:
-#		print(f"{e}\nProcess kill failed. Please try again")
+#		print("%s\nProcess kill failed. Please try again" % e)
 #		sys.exit(1)
 
 else:

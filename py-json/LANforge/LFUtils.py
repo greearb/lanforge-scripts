@@ -241,7 +241,7 @@ def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(),
     if base_url.endswith('/'):
         port_url = port_url[1:]
     for port_name in port_names:
-        url = f"{port_url}/{resource_id}/{port_name}"
+        url = "%s/%s/%s" % (port_url, resource_id, port_name)
         lf_r = LFRequest.LFRequest(url)
         try:
             response = lf_r.getAsJson(debug)
@@ -263,11 +263,11 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
     while len(up_stations) > 0:
         up_stations = []
         for port_name in port_list:
-            url = f"{base_url}{port_url}/{resource_id}/{port_name}?fields=device,down"
+            url = "%s%s/%s/%s?fields=device,down" % (base_url, port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(url)
             json_response = lf_r.getAsJson(show_error=False)
             if json_response == None:
-                print(f"port {port_name} disappeared")
+                print("port %s disappeared" % port_name)
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
@@ -288,7 +288,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
     while len(down_stations) > 0:
         down_stations = []
         for port_name in port_list:
-            url =  f"{base_url}{port_url}/{resource_id}/{port_name}?fields=device,down"
+            url =  "%s%s/%s/%s?fields=device,down" % (base_url, port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(url)
             json_response = lf_r.getAsJson(show_error=False)
             if json_response == None:
@@ -314,7 +314,7 @@ def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", por
         found_stations = []
         sleep(1)
         for port_name in port_list:
-            check_url = f"{base_url}{url}/{resource_id}/{port_name}"
+            check_url = "%s%s/%s/%s" % (base_url, url, resource_id, port_name)
             if debug:
                 print("checking:"+check_url)
             lf_r = LFRequest.LFRequest(check_url)
@@ -339,13 +339,13 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
         found_stations = []
         for port_name in port_list:
             sleep(1)
-            url = f"{base_url}{port_url}/{resource_id}/{port_name}"
+            url = "%s/%s/%s" % (base_url, port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(url)
             json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(f"{base_url}{ncshow_url}")
+                lf_r = LFRequest.LFRequest("%s%s" % (base_url, ncshow_url))
                 lf_r.addPostData({"shelf": 1, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
     sleep(2)

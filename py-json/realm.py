@@ -13,7 +13,7 @@ from LANforge.lfcli_base import LFCliBase
 class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=False):
         super().__init__(lfclient_host, lfclient_port, debug, _halt_on_error=True)
-        self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}"
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         super().check_connect()
 
 
@@ -69,14 +69,14 @@ class Realm(LFCliBase):
     # removes port by eid/eidpn
     def removeVlanByEid(self, eid):
         if (eid is None) or ("" == eid):
-            raise ValueError(f"removeVlanByEid wants eid like 1.1.sta0 but given[{eid}]")
+            raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         hunks = eid.split('.')
         #print("- - - - - - - - - - - - - - - - -")
         #pprint(hunks)
         #pprint(self.lfclient_url)
         #print("- - - - - - - - - - - - - - - - -")
         if (len(hunks) > 3) or (len(hunks) < 2):
-            raise ValueError(f"removeVlanByEid wants eid like 1.1.sta0 but given[{eid}]")
+            raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         elif len(hunks) == 3:
             LFUtils.removePort(hunks[1], hunks[2], self.lfclient_url)
         else:
@@ -130,7 +130,7 @@ class Realm(LFCliBase):
                         if port_eid.find(prefix) >= 0:
                             port_suf = record["device"][len(prefix):]
                             if (port_suf >= match.group(2)) and (port_suf <= match.group(3)):
-                                #print(f"{port_name}: suffix[{port_name}] between {match.group(2)}:{match.group(3)}")
+                                #print("%s: suffix[%s] between %s:%s" % (port_name, port_name, match.group(2), match.group(3))
                                 matched_map[port_eid] = record
         except ValueError as e:
             super().error(e)
@@ -147,7 +147,7 @@ class Realm(LFCliBase):
 
 class CXProfile:
     def __init__(self, lfclient_host, lfclient_port, debug=False):
-        self.lfclient_url = f"http://{lfclient_host}:{lfclient_port}/"
+        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
         self.debug = debug
         self.post_data = []
 
@@ -281,7 +281,7 @@ class StationProfile:
         if (param_name is None) or (param_name == ""):
             return
         if command_name not in self.COMMANDS:
-            super().error(f"Command name name [{command_name}] not defined in {self.COMMANDS}")
+            super().error("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
             return
         if command_name == "add_sta":
             self.add_sta_data[param_name] = param_value
@@ -295,11 +295,11 @@ class StationProfile:
         if (param_name is None) or (param_name == ""):
             return
         if command_name not in self.COMMANDS:
-            print(f"Command name name [{command_name}] not defined in {self.COMMANDS}")
+            print("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
             return
         if command_name == "add_sta":
             if (param_name not in add_sta.add_sta_flags) and (param_name not in add_sta.add_sta_modes):
-                print(f"Parameter name [{param_name}] not defined in add_sta.py")
+                print("Parameter name [%s] not defined in add_sta.py" % param_name)
                 if self.debug:
                     pprint(add_sta.add_sta_flags)
                 return
@@ -310,7 +310,7 @@ class StationProfile:
 
         elif command_name == "set_port":
             if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags):
-                print(f"Parameter name [{param_name}] not defined in set_port.py")
+                print("Parameter name [%s] not defined in set_port.py" % param_name)
                 if self.debug:
                     pprint(set_port.set_port_cmd_flags)
                     pprint(set_port.set_port_current_flags)
@@ -353,10 +353,10 @@ class StationProfile:
         v = int(self.prefix, 10)
         if v > 0:
             num += v
-        template = f"sta%0{wd}d"
+        template = "sta%0%sd" % wd
         name = template % num
         #if self.debug:
-        #    print(f"XXXXXXXXXXX {name} XXXXXXXXXXXXXXX")
+        #    print("XXXXXXXXXXX %s XXXXXXXXXXXXXXX" % name)
         return name
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
@@ -366,7 +366,7 @@ class StationProfile:
         #     name = resource_radio[resource_radio.index(".") + 1:]
         #     if name.index(".") >= 0:
         #         radio_name = name[name.index(".")+1 : ]
-        #     print(f"Building {num_stations} on radio {resource}.{radio_name}")
+        #     print("Building %s on radio %s.%s" % (num_stations, resource, radio_name))
         # except ValueError as e:
         #     print(e)
 
@@ -387,7 +387,7 @@ class StationProfile:
             self.set_port_data["port"] = sta_name
             sta_names.append(sta_name)
             if debug:
-                print(f"- 381 - {sta_name}- - - - - - - - - - - - - - - - - - ")
+                print("- 381 - %s- - - - - - - - - - - - - - - - - - "% sta_name)
                 pprint(self.add_sta_data)
                 pprint(self.set_port_data)
                 print("- ~381 - - - - - - - - - - - - - - - - - - - ")
@@ -410,6 +410,6 @@ class StationProfile:
             json_response = set_port_r.jsonPost(debug)
             time.sleep(0.03)
 
-        print(f"created {num} stations")
+        print("created %s stations" % num)
 
 #

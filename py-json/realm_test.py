@@ -12,11 +12,11 @@ localrealm = Realm("localhost", 8080, True)
 print("** Existing Stations **")
 try:
     sta_list = localrealm.station_list()
-    print(f"\n{len(sta_list)} Station List:")
+    print("\n%s Station List:" % len(sta_list))
     print(sta_list)
     del sta_list
     sta_map = localrealm.station_map()
-    print(f"\n{len(sta_map)} Station Map:")
+    print("\n Station Map:" % len(sta_map))
     print(sta_map)
     del sta_map
     print("\n  Stations like wlan+:")
@@ -60,7 +60,7 @@ profile.build(1, "wiphy0", 5)
 
 try:
     sta_list = localrealm.station_list()
-    print(f"{len(sta_list)} Stations:")
+    print("%s Stations:" % {len(sta_list)})
     pprint(sta_list)
     print("  Stations like sta+:")
     print(localrealm.find_ports_like("wlan+"))
@@ -78,7 +78,7 @@ exit(0)
 print("** Existing vAPs **")
 try:
     vap_list = localrealm.vap_list()
-    print(f"{len(vap_list)} VAPs:")
+    print("%s VAPs:" % len(vap_list))
     pprint(vap_list)
 except Exception as x:
     localrealm.error(x)
@@ -87,7 +87,7 @@ except Exception as x:
 print("** Existing CXs **")
 try:
     cx_list = localrealm.cx_list()
-    print(f"{len(cx_list)} CXs:")
+    print("%s CXs:" % len(cx_list))
     pprint(cx_list)
 except Exception as x:
     localrealm.error(x)

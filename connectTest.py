@@ -25,11 +25,11 @@ class ConnectTest(LFCliBase):
     # compare pre-test values to post-test values
     @staticmethod
     def CompareVals(_name, preVal, postVal):
-        print(f"Comparing {_name}")
+        print("Comparing %s" % _name)
         if postVal > preVal:
             print("     Test Passed")
         else:
-            print(f" Test Failed: {_name} did not increase after 5 seconds")
+            print(" Test Failed: %s did not increase after 5 seconds" % _name)
 
     def run(self):
         print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
@@ -108,10 +108,10 @@ class ConnectTest(LFCliBase):
         print("Creating endpoints and cross connects")
         # create cx for tcp and udp
         cmd = (
-            f"./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type tcp > ~/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports %s,eth1 --use_speeds  360000,150000 --endp_type tcp > ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
         execWrap(cmd)
         cmd = (
-            f"./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports {staName},eth1 --use_speeds  360000,150000 --endp_type udp >> ~/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports %s,eth1 --use_speeds  360000,150000 --endp_type udp >> ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
         execWrap(cmd)
         time.sleep(.05)
 
@@ -172,7 +172,7 @@ class ConnectTest(LFCliBase):
         genl.setFlags("genTest1", "ClearPortOnStart", 1)
         genl.setFlags("genTest2", "ClearPortOnStart", 1)
         genl.setFlags("genTest2", "Unmanaged", 1)
-        genl.setCmd("genTest1", f"lfping  -i 0.1 -I {staName} 10.40.0.1")
+        genl.setCmd("genTest1", "lfping  -i 0.1 -I %s 10.40.0.1" % staName)
         time.sleep(.05)
 
         # create generic cx
@@ -276,7 +276,7 @@ class ConnectTest(LFCliBase):
             for name in get_info:
                 if 'endpoint' not in name:
                     print(get_info[name])
-                    raise ValueError (f"{name} missing endpoint value")
+                    raise ValueError ("%s missing endpoint value" % name)
 
             testTCPATX = get_info['testTCPA']['endpoint']['tx bytes']
             testTCPARX = get_info['testTCPA']['endpoint']['rx bytes']
@@ -315,7 +315,7 @@ class ConnectTest(LFCliBase):
         print("\nStarting CX Traffic")
         for name in range(len(cxNames)):
             cmd = (
-                f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} RUNNING\" >> /tmp/connectTest.log")
+                "./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm %s RUNNING\" >> /tmp/connectTest.log" % (cxNames[name]))
             execWrap(cmd)
 
         # print("Sleeping for 5 seconds")
@@ -327,9 +327,9 @@ class ConnectTest(LFCliBase):
         cmd = (
             "./lf_portmod.pl --quiet 1 --manager localhost --port_name eth1 --show_port \"Txb,Rxb\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
         execWrap(cmd)
-        os.system(f"echo  {staName} >> ~/Documents/connectTestLogs/connectTestLatest.log")
+        os.system("echo  %s >> ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
         cmd = (
-            f"./lf_portmod.pl --quiet 1 --manager localhost --port_name {staName} --show_port \"Txb,Rxb\" >> ~/Documents/connectTestLogs/connectTestLatest.log")
+            "./lf_portmod.pl --quiet 1 --manager localhost --port_name %s --show_port \"Txb,Rxb\" >> ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
         execWrap(cmd)
 
         # show tx and rx for endpoints PERL
@@ -374,7 +374,7 @@ class ConnectTest(LFCliBase):
         print("Stopping CX Traffic")
         for name in range(len(cxNames)):
             cmd = (
-                f"./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm {cxNames[name]} STOPPED\"  >> /tmp/connectTest.log")
+                "./lf_firemod.pl --mgr localhost --quiet yes --action do_cmd --cmd \"set_cx_state default_tm %s STOPPED\"  >> /tmp/connectTest.log" % (cxNames[name]))
             execWrap(cmd)
         # print("Sleeping for 15 seconds")
         time.sleep(15)
