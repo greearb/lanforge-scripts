@@ -24,7 +24,9 @@ def main():
     staConnect.dut_ssid = "jedway-wpa2-x2048-5-1"
     staConnect.dut_passwd = "jedway-wpa2-x2048-5-1"
     staConnect.run()
-
+    run_results = staConnect.get_result_list()
+    for result in run_results:
+        print("test result: "+result)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 

@@ -58,13 +58,19 @@ class StaConnect(LFCliBase):
         return self.upstream_url
 
     # Compare pre-test values to post-test values
+    # TODO: make this method add a results to an array
+    # the calling client should collect results from that array
     @staticmethod
-    def compareVals(name, postVal):
+    def compareVals(name, postVal, results=None):
         # print(f"Comparing {name}")
         if postVal > 0:
             print("PASSED: %s %s" % (name, postVal))
+            if results is not None:
+               results.append("PASSED: %s %s" % (name, postVal))
         else:
             print("FAILED: %s did not report traffic: %s" % (name, postVal))
+            if results is not None:
+               results.append("FAILED: %s did not report traffic: %s" % (name, postVal))
 
     def run(self):
         self.check_connect()
@@ -323,17 +329,18 @@ class StaConnect(LFCliBase):
             sys.exit(1)
 
         print("\n")
-        self.compareVals("testTCP-A TX", ptestTCPATX)
-        self.compareVals("testTCP-A RX", ptestTCPARX)
+        self.test_results = []
+        self.compareVals("testTCP-A TX", ptestTCPATX, self.test_results)
+        self.compareVals("testTCP-A RX", ptestTCPARX, self.test_results)
 
-        self.compareVals("testTCP-B TX", ptestTCPBTX)
-        self.compareVals("testTCP-B RX", ptestTCPBRX)
+        self.compareVals("testTCP-B TX", ptestTCPBTX, self.test_results)
+        self.compareVals("testTCP-B RX", ptestTCPBRX, self.test_results)
 
-        self.compareVals("testUDP-A TX", ptestUDPATX)
-        self.compareVals("testUDP-A RX", ptestUDPARX)
+        self.compareVals("testUDP-A TX", ptestUDPATX, self.test_results)
+        self.compareVals("testUDP-A RX", ptestUDPARX, self.test_results)
 
-        self.compareVals("testUDP-B TX", ptestUDPBTX)
-        self.compareVals("testUDP-B RX", ptestUDPBRX)
+        self.compareVals("testUDP-B TX", ptestUDPBTX, self.test_results)
+        self.compareVals("testUDP-B RX", ptestUDPBRX, self.test_results)
         print("\n")
 
         # remove all endpoints and cxs
@@ -341,6 +348,9 @@ class StaConnect(LFCliBase):
 
         removeCX(self.mgr_url, cxNames)
         removeEndps(self.mgr_url, endpNames)
+
+    def get_result_list(self):
+        return self.test_results
 
 # ~class
 
@@ -400,7 +410,7 @@ Example:
         staConnect.dut_ssid = args.dut_ssid
 
     staConnect.run()
-
+    run_results = staConnect.get_result_list()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
