@@ -6,21 +6,19 @@
 #  The script will clean up the station and connections at the end of the test.
 
 import sys
-import argparse
-
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-# from LANforge import LFRequest
-from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
+
+if 'py-json' not in sys.path:
+    sys.path.append('../py-json')
+
+import argparse
+from LANforge import LFUtils
+# from LANforge import LFCliBase
+from LANforge.lfcli_base import LFCliBase
+from LANforge.LFUtils import *
 
 
 class StaConnect(LFCliBase):
@@ -31,8 +29,9 @@ class StaConnect(LFCliBase):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
-        super().__init__(host, port, _debugOn)
-
+        super().__init__(host, port, _debug=_debugOn, _halt_on_error=False)
+        self.fail_pref = "FAILED: "
+        self.pass_pref = "PASSED: "
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
         self.dut_bssid = _dut_bssid
@@ -49,37 +48,44 @@ class StaConnect(LFCliBase):
 
     def getStaUrl(self):
         if self.sta_url is None:
-            self.sta_url = f"port/1/{self.resource}/{self.sta_name}"
+            self.sta_url = "port/1/%s/%s" % (self.resource, self.sta_name)
         return self.sta_url
 
     def getUpstreamUrl(self):
         if self.upstream_url is None:
-            self.upstream_url = f"port/1/{self.upstream_resource}/{self.upstream_port}"
+            self.upstream_url = "port/1/%s/%s" % (self.upstream_resource, self.upstream_port)
         return self.upstream_url
 
     # Compare pre-test values to post-test values
-    # TODO: make this method add a results to an array
-    # the calling client should collect results from that array
-    @staticmethod
-    def compareVals(name, postVal, results=None):
+    def compareVals(self, name, postVal, print_pass=False, print_fail=True):
         # print(f"Comparing {name}")
         if postVal > 0:
-            print("PASSED: %s %s" % (name, postVal))
-            if results is not None:
-               results.append("PASSED: %s %s" % (name, postVal))
+            self._pass("%s %s" % (name, postVal), print_pass)
         else:
-            print("FAILED: %s did not report traffic: %s" % (name, postVal))
-            if results is not None:
-               results.append("FAILED: %s did not report traffic: %s" % (name, postVal))
+            self._fail("%s did not report traffic: %s" % (name, postVal), print_fail)
+
+    # use this inside the class to log a failure result
+    def _fail(self, message, print_=False):
+        self.test_results.append(self.fail_pref + message)
+        if print_:
+            print(self.fail_pref + message)
+
+    # use this inside the class to log a pass result
+    def _pass(self, message, print_=False):
+        self.test_results.append(self.pass_pref + message)
+        if print_:
+            print(self.pass_pref + message)
 
     def run(self):
+        self.test_results = []
         self.check_connect()
         eth1IP = self.json_get(self.getUpstreamUrl())
         if eth1IP is None:
-            print("Unable to query "+self.upstream_port+", bye")
-            sys.exit(1)
+            self._fail("Unable to query %s, bye" % self.upstream_port, True)
+            return False
         if eth1IP['interface']['ip'] == "0.0.0.0":
-            print(f"Warning: {self.getUpstreamUrl()} lacks ip address")
+            self._fail("Warning: %s lacks ip address" % self.getUpstreamUrl())
+            return False
 
         url = self.getStaUrl()
         response = super().json_get(url)
@@ -133,6 +139,7 @@ class StaConnect(LFCliBase):
         maxTime = 300
         ip = "0.0.0.0"
         ap = ""
+        print("Waiting for %s associate to AP [%s]..." % (self.sta_name, ap))
         while (ip == "0.0.0.0") and (duration < maxTime):
             duration += 2
             time.sleep(2)
@@ -155,20 +162,22 @@ class StaConnect(LFCliBase):
             print(f"Connected to AP: {ap}")
             if self.dut_bssid != "":
                 if self.dut_bssid.lower() == ap.lower():
-                    print(f"PASSED: Connected to BSSID: {ap}")
+                    self._pass("Connected to BSSID: " + ap)
+                    # self.test_results.append("PASSED: )
+                    # print("PASSED: Connected to BSSID: "+ap)
                 else:
-                    print("FAILED: Connected to wrong BSSID, requested: %s  Actual: %s" % (self.dut_bssid, ap))
+                    self._fail("Connected to wrong BSSID, requested: %s  Actual: %s" % (self.dut_bssid, ap))
         else:
-            print("FAILED:  Did not connect to AP")
-            sys.exit(3)
+            self._fail("Did not connect to AP")
+            return False
 
         if ip == "0.0.0.0":
-            print(f"FAILED: {self.sta_name} did not get an ip. Ending test")
+            self._fail("%s did not get an ip. Ending test" % self.sta_name)
             print("Cleaning up...")
             removePort(self.resource, self.sta_name, self.mgr_url)
-            sys.exit(1)
+            return False
         else:
-            print("PASSED: Connected to AP: %s  With IP: %s" % (ap, ip))
+            self._pass("Connected to AP: %s  With IP: %s" % (ap, ip))
 
         # create endpoints and cxs
         # Create UDP endpoints
@@ -266,7 +275,6 @@ class StaConnect(LFCliBase):
             }
             super().json_post(reqURL, data)
 
-        # print("Sleeping for 15 seconds")
         time.sleep(15)
 
         # stop cx traffic
@@ -312,8 +320,7 @@ class StaConnect(LFCliBase):
             ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
             ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
         except Exception as e:
-            print("Something went wrong")
-            print(e)
+            super.error(e)
             print("Cleaning up...")
             reqURL = "cli-json/rm_vlan"
             data = {
@@ -321,27 +328,27 @@ class StaConnect(LFCliBase):
                 "resource": self.resource,
                 "port": self.sta_name
             }
-
             self.json_post(reqURL, data)
-
             removeCX(self.mgr_url, cxNames)
             removeEndps(self.mgr_url, endpNames)
-            sys.exit(1)
+            return False
 
-        print("\n")
-        self.test_results = []
-        self.compareVals("testTCP-A TX", ptestTCPATX, self.test_results)
-        self.compareVals("testTCP-A RX", ptestTCPARX, self.test_results)
+        # print("\n")
+        # self.test_results.append("Neutral message will fail")
+        # self.test_results.append("FAILED message will fail")
 
-        self.compareVals("testTCP-B TX", ptestTCPBTX, self.test_results)
-        self.compareVals("testTCP-B RX", ptestTCPBRX, self.test_results)
+        self.compareVals("testTCP-A TX", ptestTCPATX)
+        self.compareVals("testTCP-A RX", ptestTCPARX)
 
-        self.compareVals("testUDP-A TX", ptestUDPATX, self.test_results)
-        self.compareVals("testUDP-A RX", ptestUDPARX, self.test_results)
+        self.compareVals("testTCP-B TX", ptestTCPBTX)
+        self.compareVals("testTCP-B RX", ptestTCPBRX)
 
-        self.compareVals("testUDP-B TX", ptestUDPBTX, self.test_results)
-        self.compareVals("testUDP-B RX", ptestUDPBRX, self.test_results)
-        print("\n")
+        self.compareVals("testUDP-A TX", ptestUDPATX)
+        self.compareVals("testUDP-A RX", ptestUDPARX)
+
+        self.compareVals("testUDP-B TX", ptestUDPBTX)
+        self.compareVals("testUDP-B RX", ptestUDPBRX)
+        # print("\n")
 
         # remove all endpoints and cxs
         LFUtils.removePort(self.resource, self.sta_name, self.mgr_url)
@@ -351,6 +358,30 @@ class StaConnect(LFCliBase):
 
     def get_result_list(self):
         return self.test_results
+
+    def get_failed_result_list(self):
+        fail_list = []
+        for result in self.test_results:
+            if not result.startswith("PASS"):
+                fail_list.append(result)
+        return fail_list
+
+    def get_fail_message(self):
+        fail_messages = self.get_failed_result_list()
+        return "\n".join(fail_messages)
+
+    def passes(self):
+        pass_counter: int = 0
+        fail_counter: int = 0
+        for result in self.test_results:
+            if result.startswith("PASS"):
+                pass_counter += 1
+            else:
+                fail_counter += 1
+        if (fail_counter == 0) and (pass_counter > 0):
+            return True
+        return False
+
 
 # ~class
 
@@ -411,6 +442,7 @@ Example:
 
     staConnect.run()
     run_results = staConnect.get_result_list()
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
