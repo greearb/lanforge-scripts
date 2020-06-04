@@ -72,7 +72,7 @@ class LFCliBase:
         #    print("continuing...")
 
     def check_connect(self):
-        print("Checking for LANforge GUI connection: " % self.mgr_url)
+        print("Checking for LANforge GUI connection: %s" % self.mgr_url)
         response = self.json_get("/")
         duration = 0
         while (response is None) and (duration < 300):
