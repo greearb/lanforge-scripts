@@ -205,7 +205,7 @@ def main():
     json_response = lf_r.getAsJson()
     if json_response == None:
         raise Exception("no reponse to: "+url)
-    port_map = LFUtils.portAliasesInList(json_response)
+    port_map = LFUtils.portListToAliasMap(json_response)
     #LFUtils.debug_printer.pprint(port_map)
 
     for sta_name in desired_stations:
