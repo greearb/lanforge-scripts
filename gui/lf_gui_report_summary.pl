@@ -231,6 +231,7 @@ sub processLogs {
                 ($ln =~ /BUG:/) ||
                 ($ln =~ /Hardware became unavailable during restart/) ||
                 ($ln =~ /restarting hardware/) ||
+                ($ln =~ /oom-killer/) ||
                 ($ln =~ /crashed/)) {
                if ($ln =~ /WARNING:/) {
                   $warnings++;
@@ -242,6 +243,7 @@ sub processLogs {
                   $restarting++;
                }
                elsif (($ln =~ /crashed/) || # software/firmware crashed
+                      ($ln =~ /oom-killer/) || # System OOM, processes were force-killed by kernel
                       ($ln =~ /became unavailable/)) { # hardware crashed
                   $crashed++;
                }
