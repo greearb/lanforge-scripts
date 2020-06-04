@@ -61,3 +61,40 @@ set_port_cmd_flags = {
     "abort_if_scripts":     0x400,  # Forceably abort all ifup/down scripts on this Port.
     "use_pre_ifdown":       0x800,  # Call pre-ifdown script before bringing interface down.
 }
+set_port_interest_flags = {
+    "command_flags"     :  0x1,               # apply command flags
+    "current_flags"     :  0x2,               # apply current flags
+    "ip_address"        :  0x4,               # IP address
+    "ip_Mask"           :  0x8,               # IP mask
+    "ip_gateway"        :  0x10,              # IP gateway
+    "mac_address"       :  0x20,              # MAC address
+    "supported_flags"   :  0x40,              # apply supported flags
+    "link_speed"        :  0x80,              # Link speed
+    "mtu"               :  0x100,             # MTU
+    "tx_queue_length"   :  0x200,             # TX Queue Length
+    "promisc_mode"      :  0x400,             # PROMISC mode
+    "interal_use_1"     :  0x800,             # (INTERNAL USE)
+    "alias"             :  0x1000,            # Port alias
+    "rx_all"            :  0x2000,            # Rx-ALL
+    "dhcp"              :  0x4000,            # including client-id.
+    "rpt_timer"         :  0x8000,            # Report Timer
+    "bridge"            :  0x10000,           # BRIDGE
+    "ipv6_addrs"        :  0x20000,           # IPv6 Address
+    "bypass"            :  0x40000,           # Bypass
+    "gen_offload"       :  0x80000,           # Generic offload flags, everything but LRO
+    "cpu_mask"          :  0x100000,          # CPU Mask, useful for pinning process to CPU core
+    "lro_offload"       :  0x200000,          # LRO (Must be disabled when used in Wanlink,
+                                                # and probably in routers)
+    
+    "sta_br_id"         :  0x400000,          # WiFi Bridge identifier.  0 means no bridging.
+    "ifdown"            :  0x800000,          # Down interface
+    "dhcpv6"            :  0x1000000,         # Use DHCPv6
+    "rxfcs"             :  0x2000000,         # RXFCS
+    "dhcp_rls"          :  0x4000000,         # DHCP release
+    "svc_httpd"         :  0x8000000,         # Enable/disable HTTP Service for a port
+    "svc_ftpd"          :  0x10000000,        # Enable/disable FTP Service for a port
+    "aux_mgt"           :  0x20000000,        # Enable/disable Auxillary-Management for a port
+    "no_dhcp_conn"      :  0x40000000,        # Enable/disable NO-DHCP-ON-CONNECT flag for a port
+    "no_apply_dhcp"     :  0x80000000,        # Enable/disable NO-APPLY-DHCP flag for a port
+    "skip_ifup_roam"    :  0x100000000,       # Enable/disable SKIP-IFUP-ON-ROAM flag for a port
+}
