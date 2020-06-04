@@ -33,9 +33,9 @@ class LFCliBase:
             json_response = lf_r.jsonPost(self.debugOn)
         except Exception as x:
             if self.debugOn or self.haltOnError:
-                print(f"jsonPost posted to {_req_url}")
+                print("jsonPost posted to %s" % _req_url)
                 pprint(_data)
-                print(f"Exception {x}:")
+                print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             if self.haltOnError:
                 exit(1)
@@ -54,7 +54,7 @@ class LFCliBase:
         except ValueError as ve:
             if self.debugOn or self.haltOnError:
                 print("jsonGet asked for "+_req_url)
-                print(f"Exception {ve}:")
+                print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
             if self.haltOnError:
                 sys.exit(1)
@@ -62,7 +62,7 @@ class LFCliBase:
         return json_response
 
     def error(self, exception):
-        #print(f"lfcli_base error: {exception}")
+        #print("lfcli_base error: %s" % exception)
         pprint.pprint(exception)
         traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
         if self.haltOnError:
@@ -72,11 +72,11 @@ class LFCliBase:
         #    print("continuing...")
 
     def check_connect(self):
-        print(f"Checking for LANforge GUI connection: {self.mgr_url}")
+        print("Checking for LANforge GUI connection: " % self.mgr_url)
         response = self.json_get("/")
         duration = 0
         while (response is None) and (duration < 300):
-            print(f"LANforge GUI connection not found sleeping 5 seconds, tried: {self.mgr_url}")
+            print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.mgr_url)
             duration += 2
             time.sleep(2)
             response = self.json_get("")
