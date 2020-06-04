@@ -67,8 +67,8 @@ class StaConnect(LFCliBase):
             print("FAILED: %s did not report traffic: %s" % (name, postVal))
 
     def run(self):
-        self.checkConnect()
-        eth1IP = self.jsonGet(self.getUpstreamUrl())
+        self.check_connect()
+        eth1IP = self.json_get(self.getUpstreamUrl())
         if eth1IP is None:
             print("Unable to query "+self.upstream_port+", bye")
             sys.exit(1)
@@ -76,7 +76,7 @@ class StaConnect(LFCliBase):
             print(f"Warning: {self.getUpstreamUrl()} lacks ip address")
 
         url = self.getStaUrl()
-        response = super().jsonGet(url)
+        response = super().json_get(url)
         if response is not None:
             if response["interface"] is not None:
                 print("removing old station")
@@ -101,7 +101,7 @@ class StaConnect(LFCliBase):
             "flags": flags  # verbose, wpa2
         }
         print("Adding new station %s " % self.sta_name)
-        super().jsonPost(url, data)
+        super().json_post(url, data)
 
         reqURL = "cli-json/set_port"
         data = {
@@ -112,14 +112,14 @@ class StaConnect(LFCliBase):
             "interest": 0x4002  # set dhcp, current flags
         }
         print("Configuring %s..." % self.sta_name)
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         reqURL = "cli-json/nc_show_ports"
         data = {"shelf": 1,
                 "resource": self.resource,
                 "port": self.sta_name,
                 "probe_flags": 1}
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
         LFUtils.waitUntilPortsAdminUp(self.resource, self.mgr_url, [self.sta_name])
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -130,7 +130,7 @@ class StaConnect(LFCliBase):
         while (ip == "0.0.0.0") and (duration < maxTime):
             duration += 2
             time.sleep(2)
-            station_info = super().jsonGet(f"{self.getStaUrl()}?fields=port,ip,ap")
+            station_info = super().json_get(f"{self.getStaUrl()}?fields=port,ip,ap")
 
             # LFUtils.debug_printer.pprint(station_info)
             if (station_info is not None) and ("interface" in station_info):
@@ -176,7 +176,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         reqURL = "cli-json/add_endp"
         data = {
@@ -188,7 +188,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         # Create CX
         reqURL = "cli-json/add_cx"
@@ -198,7 +198,7 @@ class StaConnect(LFCliBase):
             "tx_endp": "testUDP-A",
             "rx_endp": "testUDP-B",
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         # Create TCP endpoints
         reqURL = "cli-json/add_endp"
@@ -211,7 +211,7 @@ class StaConnect(LFCliBase):
             "ip_port": "0",
             "min_rate": 1000000
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         reqURL = "cli-json/add_endp"
         data = {
@@ -223,7 +223,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         # Create CX
         reqURL = "cli-json/add_cx"
@@ -233,7 +233,7 @@ class StaConnect(LFCliBase):
             "tx_endp": "testTCP-A",
             "rx_endp": "testTCP-B",
         }
-        super().jsonPost(reqURL, data)
+        super().json_post(reqURL, data)
 
         cxNames = ["testTCP", "testUDP"]
         endpNames = ["testTCP-A", "testTCP-B",
@@ -248,7 +248,7 @@ class StaConnect(LFCliBase):
                 "cx_name": cxNames[name],
                 "cx_state": "RUNNING"
             }
-            super().jsonPost(reqURL, data)
+            super().json_post(reqURL, data)
 
         # Refresh stats
         print("\nRefresh CX stats")
@@ -258,7 +258,7 @@ class StaConnect(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            super().jsonPost(reqURL, data)
+            super().json_post(reqURL, data)
 
         # print("Sleeping for 15 seconds")
         time.sleep(15)
@@ -272,7 +272,7 @@ class StaConnect(LFCliBase):
                 "cx_name": cxNames[name],
                 "cx_state": "STOPPED"
             }
-            super().jsonPost(reqURL, data)
+            super().json_post(reqURL, data)
 
         # Refresh stats
         print("\nRefresh CX stats")
@@ -282,7 +282,7 @@ class StaConnect(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            super().jsonPost(reqURL, data)
+            super().json_post(reqURL, data)
 
         # print("Sleeping for 5 seconds")
         time.sleep(5)
@@ -290,19 +290,19 @@ class StaConnect(LFCliBase):
         # get data for endpoints JSON
         print("Collecting Data")
         try:
-            ptestTCPA = super().jsonGet("endp/testTCP-A?fields=tx+bytes,rx+bytes")
+            ptestTCPA = super().json_get("endp/testTCP-A?fields=tx+bytes,rx+bytes")
             ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
             ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-            ptestTCPB = super().jsonGet("endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            ptestTCPB = super().json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
             ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
             ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-            ptestUDPA = super().jsonGet("endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            ptestUDPA = super().json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
             ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
             ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-            ptestUDPB = super().jsonGet("endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            ptestUDPB = super().json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
             ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
             ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
         except Exception as e:
@@ -316,7 +316,7 @@ class StaConnect(LFCliBase):
                 "port": self.sta_name
             }
 
-            self.jsonPost(reqURL, data)
+            self.json_post(reqURL, data)
 
             removeCX(self.mgr_url, cxNames)
             removeEndps(self.mgr_url, endpNames)
