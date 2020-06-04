@@ -16,7 +16,7 @@ try:
     print(sta_list)
     del sta_list
     sta_map = localrealm.station_map()
-    print("\n Station Map:" % len(sta_map))
+    print("\n%s Station Map:" % len(sta_map))
     print(sta_map)
     del sta_map
     print("\n  Stations like wlan+:")
