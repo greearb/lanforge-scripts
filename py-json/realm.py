@@ -353,7 +353,7 @@ class StationProfile:
         v = int(self.prefix, 10)
         if v > 0:
             num += v
-        template = "sta%0%sd" % wd
+        template = "sta0%sd" % wd
         name = template % num
         #if self.debug:
         #    print("XXXXXXXXXXX %s XXXXXXXXXXXXXXX" % name)
