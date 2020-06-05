@@ -278,19 +278,19 @@ class StaConnect(LFCliBase):
         # get data for endpoints JSON
         print("Collecting Data")
         try:
-            ptestTCPA = self.json_get("endp/testTCP-A?fields=tx+bytes,rx+bytes")
+            ptestTCPA = self.json_get("/endp/testTCP-A?fields=tx+bytes,rx+bytes")
             ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
             ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-            ptestTCPB = self.json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            ptestTCPB = self.json_get("/endp/testTCP-B?fields=tx+bytes,rx+bytes")
             ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
             ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-            ptestUDPA = self.json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            ptestUDPA = self.json_get("/endp/testUDP-A?fields=tx+bytes,rx+bytes")
             ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
             ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-            ptestUDPB = self.json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            ptestUDPB = self.json_get("/endp/testUDP-B?fields=tx+bytes,rx+bytes")
             ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
             ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
         except Exception as e:
