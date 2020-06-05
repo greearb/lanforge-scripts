@@ -24,7 +24,7 @@ class LFRequest:
         'Accept': 'application/json'}
 
     def __init__(self, url, uri=None):
-        if "http://" not in url or "https://" not in url:
+        if not url.startswith("http://") and not url.startswith("https://"):
             print("No http:// or https:// found, prepending http://")
             url = "http://" + url
         if uri is not None:
