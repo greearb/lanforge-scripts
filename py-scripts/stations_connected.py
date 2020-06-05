@@ -12,20 +12,46 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 from LANforge.lfcli_base import LFCliBase
+from realm import Realm
+import pprint
+from pprint import pprint
 
-
-class QueryStationsExample(LFCliBase):
+class StationsConnected(LFCliBase):
     def __init__(self, lfjson_host, lfjson_port):
-        super().__init__(_lfjson_host=lfjson_host, _lfjson_port=lfjson_port, _halt_on_error=True, _debug=True)
+        super().__init__(_lfjson_host=lfjson_host, _lfjson_port=lfjson_port, _halt_on_error=True, _debug=False)
+        self.localrealm = Realm(lfclient_host=lfjson_host, lfclient_port=lfjson_port, debug=False)
+        self.check_connect()
 
     def run(self):
-        pass
+        self.clear_test_results()
+        fields = "_links,port,alias,ip,ap,port+type"
+        self.station_results = self.localrealm.find_ports_like("sta*", fields, debug_=False)
+        #pprint(self.station_results)
+        if (self.station_results is None) or (len(self.station_results) < 1):
+            self.get_failed_result_list()
+            return False
+        return True
 
+    def num_associated(self, bssid):
+        counter = 0
+        # print("there are %d results" % len(self.station_results))
+        for eid,record in self.station_results.items():
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            #pprint(eid)
+            #pprint(record)
+            if record["ap"] == bssid:
+                counter += 1
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+        return counter
 
 def main():
-    qstationsx = QueryStationsExample("localhost", 8080)
-    qstationsx.run()
-
+    qstationsx = StationsConnected("localhost", 8080)
+    bssid = "00:0E:8E:7B:DF:9B"
+    if qstationsx.run():
+        associated_stations = qstationsx.num_associated(bssid)
+        print("Number of stations associated to %s: %s" % (bssid, associated_stations))
+    else:
+        print("problem querying for stations for %s" % bssid)
 
 if __name__ == "__main__":
     main()
