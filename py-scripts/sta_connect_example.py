@@ -15,7 +15,7 @@ from sta_connect import StaConnect
 
 
 def main():
-    staConnect = StaConnect("localhost", 8080)
+    staConnect = StaConnect("localhost", 8080, _debugOn=True)
     staConnect.sta_mode = 0
     staConnect.upstream_resource = 1
     staConnect.upstream_port = "eth1"
