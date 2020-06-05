@@ -23,9 +23,11 @@ class LFRequest:
     default_headers = {
         'Accept': 'application/json'}
 
-    def __init__(self, url, uri=None):
+    def __init__(self, url, uri=None, debug_=False):
+        self.debug = debug_
+        self.requested_url = None
         if not url.startswith("http://") and not url.startswith("https://"):
-            print("No http:// or https:// found, prepending http://")
+            print("No http:// or https:// found, prepending http:// to "+url)
             url = "http://" + url
         if uri is not None:
             if not url.endswith('/') and not uri.startswith('/'):
@@ -34,14 +36,24 @@ class LFRequest:
         if self.requested_url.find('//'):
             protopos = self.requested_url.find("://")
             self.requested_url = self.requested_url[:protopos + 2] + self.requested_url[protopos + 2:].replace("//", "/")
+        if self.debug:
+            print("new LFRequest[%s]" % self.requested_url )
+        if self.requested_url is None:
+            raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % url, uri)
 
     # request first url on stack
-    def formPost(self, show_error=True):
+    def formPost(self, show_error=True, debug=False):
+        if (debug == False) and (self.debug == True):
+            debug = True;
         responses = []
         urlenc_data = ""
+        if (debug):
+            print("formPost: url: "+self.requested_url)
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             urlenc_data = urllib.parse.urlencode(self.post_data).encode("utf-8")
-            #print("data looks like:" + str(urlenc_data))
+            if (debug):
+                print("formPost: data looks like:" + str(urlenc_data))
+                print("formPost: url: "+self.requested_url)
             request = urllib.request.Request(url=self.requested_url,
                                              data=urlenc_data,
                                              headers=self.default_headers)
@@ -79,7 +91,9 @@ class LFRequest:
 
         return None
 
-    def jsonPost(self, show_error=True):
+    def jsonPost(self, show_error=True, debug=False):
+        if (debug == False) and (self.debug == True):
+            debug = True
         responses = []
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             request = urllib.request.Request(url=self.requested_url,
@@ -123,7 +137,11 @@ class LFRequest:
                 print("------------------------------------------------------------------------")
         return None
 
-    def get(self, show_error=True):
+    def get(self, show_error=True, debug=False):
+        if (debug == False) and (self.debug == True):
+            debug = True
+        if (debug):
+            print("get: url: "+self.requested_url)
         myrequest = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
         myresponses = []
         try:
