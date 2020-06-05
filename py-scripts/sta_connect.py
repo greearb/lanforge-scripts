@@ -84,7 +84,6 @@ class StaConnect(LFCliBase):
 
         # Create stations and turn dhcp on
         print("Creating station %s and turning on dhcp..." % self.sta_name)
-        url = "cli-json/add_sta"
         flags = 0x10000
         if "" != self.dut_passwd:
             flags += 0x400
@@ -100,9 +99,8 @@ class StaConnect(LFCliBase):
             "flags": flags  # verbose, wpa2
         }
         print("Adding new station %s " % self.sta_name)
-        self.json_post(url, data)
+        self.json_post("/cli-json/add_sta", data)
 
-        reqURL = "cli-json/set_port"
         data = {
             "shelf": 1,
             "resource": self.resource,
@@ -111,14 +109,13 @@ class StaConnect(LFCliBase):
             "interest": 0x4002  # set dhcp, current flags
         }
         print("Configuring %s..." % self.sta_name)
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/set_port", data)
 
-        reqURL = "cli-json/nc_show_ports"
         data = {"shelf": 1,
                 "resource": self.resource,
                 "port": self.sta_name,
                 "probe_flags": 1}
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/nc_show_ports", data)
         LFUtils.waitUntilPortsAdminUp(self.resource, self.mgr_url, [self.sta_name])
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -168,7 +165,6 @@ class StaConnect(LFCliBase):
 
         # create endpoints and cxs
         # Create UDP endpoints
-        reqURL = "cli-json/add_endp"
         data = {
             "alias": "testUDP-A",
             "shelf": 1,
@@ -178,9 +174,8 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_endp", data)
 
-        reqURL = "cli-json/add_endp"
         data = {
             "alias": "testUDP-B",
             "shelf": 1,
@@ -190,20 +185,18 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_endp", data)
 
         # Create CX
-        reqURL = "cli-json/add_cx"
         data = {
             "alias": "testUDP",
             "test_mgr": "default_tm",
             "tx_endp": "testUDP-A",
             "rx_endp": "testUDP-B",
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_cx", data)
 
         # Create TCP endpoints
-        reqURL = "cli-json/add_endp"
         data = {
             "alias": "testTCP-A",
             "shelf": 1,
@@ -213,9 +206,8 @@ class StaConnect(LFCliBase):
             "ip_port": "0",
             "min_rate": 1000000
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_endp", data)
 
-        reqURL = "cli-json/add_endp"
         data = {
             "alias": "testTCP-B",
             "shelf": 1,
@@ -225,17 +217,16 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_endp", data)
 
         # Create CX
-        reqURL = "cli-json/add_cx"
         data = {
             "alias": "testTCP",
             "test_mgr": "default_tm",
             "tx_endp": "testTCP-A",
             "rx_endp": "testTCP-B",
         }
-        self.json_post(reqURL, data)
+        self.json_post("/cli-json/add_cx", data)
 
         cxNames = ["testTCP", "testUDP"]
         endpNames = ["testTCP-A", "testTCP-B",
@@ -244,46 +235,42 @@ class StaConnect(LFCliBase):
         # start cx traffic
         print("\nStarting CX Traffic")
         for name in range(len(cxNames)):
-            reqURL = "cli-json/set_cx_state"
             data = {
                 "test_mgr": "ALL",
                 "cx_name": cxNames[name],
                 "cx_state": "RUNNING"
             }
-            self.json_post(reqURL, data)
+            self.json_post("/cli-json/set_cx_state", data)
 
         # Refresh stats
         print("\nRefresh CX stats")
         for name in range(len(cxNames)):
-            reqURL = "cli-json/show_cxe"
             data = {
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            self.json_post(reqURL, data)
+            self.json_post("/cli-json/show_cxe", data)
 
         time.sleep(15)
 
         # stop cx traffic
         print("\nStopping CX Traffic")
         for name in range(len(cxNames)):
-            reqURL = "cli-json/set_cx_state"
             data = {
                 "test_mgr": "ALL",
                 "cx_name": cxNames[name],
                 "cx_state": "STOPPED"
             }
-            self.json_post(reqURL, data)
+            self.json_post("/cli-json/set_cx_state", data)
 
         # Refresh stats
         print("\nRefresh CX stats")
         for name in range(len(cxNames)):
-            reqURL = "cli-json/show_cxe"
             data = {
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            self.json_post(reqURL, data)
+            self.json_post("/cli-json/show_cxe", data)
 
         # print("Sleeping for 5 seconds")
         time.sleep(5)
@@ -309,13 +296,12 @@ class StaConnect(LFCliBase):
         except Exception as e:
             self.error(e)
             print("Cleaning up...")
-            reqURL = "cli-json/rm_vlan"
             data = {
                 "shelf": 1,
                 "resource": self.resource,
                 "port": self.sta_name
             }
-            self.json_post(reqURL, data)
+            self.json_post("/cli-json/rm_vlan", data)
             removeCX(self.mgr_url, cxNames)
             removeEndps(self.mgr_url, endpNames)
             return False
