@@ -19,7 +19,7 @@ class LFCliBase:
         self.lfjson_port = _lfjson_port
         self.debugOn = _debug
         self.haltOnError = _halt_on_error
-        self.mgr_url = "http://%s:%s/" % (self.lfjson_host, self.lfjson_port)
+        self.mgr_url = "http://%s:%s" % (self.lfjson_host, self.lfjson_port)
         self.test_results = []
 
     def clear_test_results(self):
