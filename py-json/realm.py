@@ -11,11 +11,10 @@ from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 
 class Realm(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=False):
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug=True):
         super().__init__(lfclient_host, lfclient_port, debug, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
-        super().check_connect()
-
+        self.check_connect()
 
     # Returns json response from webpage of all layer 3 cross connects
     def cx_list(self):
@@ -83,30 +82,40 @@ class Realm(LFCliBase):
             LFUtils.removePort(hunks[0], hunks[1], self.lfclient_url)
 
     # Searches for ports that match a given pattern and returns a list of names
-    def find_ports_like(self, pattern=""):
-        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
-        alias_map = LFUtils.portListToAliasMap(response)
-        #pprint(alias_map)
+    def find_ports_like(self, pattern="", _fields="_links,alias,device,port+type", resource=0, debug_=False):
+        if resource == 0:
+            url = "/port/1/list?fields=%s" % _fields
+        else:
+            url = "/port/1/%s/list?fields=%s" % (resource, _fields)
+        response = self.json_get(url)
+        if debug_:
+            print("###### find_ports_like r:%s, u:%s #################" % (resource, url))
+            pprint(response)
+        alias_map = LFUtils.portListToAliasMap(response, debug_=debug_)
+        if debug_:
+            pprint(alias_map)
         prelim_map = {}
         matched_map = {}
         for name,record in alias_map.items():
             try:
-                #print("- prelim - - - - - - - - - - - - - - - - - - -")
-                #pprint(record)
+                if debug_:
+                    print("- prelim - - - - - - - - - - - - - - - - - - -")
+                    pprint(record)
                 if (record["port type"] == "WIFI-STA"):
                     prelim_map[name] = record
 
             except Exception as x:
-                super().error(x)
+                self.error(x)
 
         prefix = ""
         try:
             if pattern.find("+") > 0:
                 match = re.search(r"^([^+]+)[+]$", pattern)
                 if match.group(1):
-                    #print("name:", port_name, " Group 1: ",match.group(1))
                     prefix = match.group(1)
                 for port_eid,record in prelim_map.items():
+                    if debug_:
+                        print("name:", port_eid, " Group 1: ",match.group(1))
                     if port_eid.find(prefix) >= 0:
                         matched_map[port_eid] = record
 
@@ -114,7 +123,8 @@ class Realm(LFCliBase):
                 match = re.search(r"^([^\*]+)[\*]$", pattern)
                 if match.group(1):
                     prefix = match.group(1)
-                    #print("group 1: ",prefix)
+                    if debug_:
+                        print("group 1: ",prefix)
                 for port_eid,record in prelim_map.items():
                     if port_eid.find(prefix) >= 0:
                         matched_map[port_eid] = record
@@ -122,9 +132,10 @@ class Realm(LFCliBase):
             elif pattern.find("[") > 0:
                 match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
                 if match.group(0):
-                    #print("[group1]: ", match.group(1))
-                    #print("[group2]: ", match.group(2))
-                    #print("[group3]: ", match.group(3))
+                    if debug_:
+                        print("[group1]: ", match.group(1))
+                        print("[group2]: ", match.group(2))
+                        print("[group3]: ", match.group(3))
                     prefix = match.group(1)
                     for port_eid,record in prelim_map.items():
                         if port_eid.find(prefix) >= 0:
@@ -133,7 +144,7 @@ class Realm(LFCliBase):
                                 #print("%s: suffix[%s] between %s:%s" % (port_name, port_name, match.group(2), match.group(3))
                                 matched_map[port_eid] = record
         except ValueError as e:
-            super().error(e)
+            self.error(e)
 
         return matched_map
 
@@ -142,7 +153,7 @@ class Realm(LFCliBase):
         return station_prof
 
     def new_cx_profile(self):
-        cx_prof = CXProfile(self.lfclient_url, debug=self.debugOn)
+        cx_prof = CXProfile(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port, debug=self.debugOn)
         return cx_prof
 
 class CXProfile:
@@ -281,7 +292,7 @@ class StationProfile:
         if (param_name is None) or (param_name == ""):
             return
         if command_name not in self.COMMANDS:
-            super().error("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
+            self.error("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
             return
         if command_name == "add_sta":
             self.add_sta_data[param_name] = param_value
