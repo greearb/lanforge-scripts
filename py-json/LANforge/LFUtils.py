@@ -341,7 +341,7 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
         found_stations = []
         for port_name in port_list:
             sleep(1)
-            url = "%s/%s/%s" % (base_url, port_url, resource_id, port_name)
+            url = "%s%s/%s/%s" % (base_url, port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(url)
             json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
