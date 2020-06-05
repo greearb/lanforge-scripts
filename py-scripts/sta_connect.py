@@ -17,6 +17,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge import LFUtils
 # from LANforge import LFCliBase
+import LANforge.lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 
@@ -30,8 +31,6 @@ class StaConnect(LFCliBase):
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
         super().__init__(host, port, _debug=_debugOn, _halt_on_error=False)
-        self.fail_pref = "FAILED: "
-        self.pass_pref = "PASSED: "
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
         self.dut_bssid = _dut_bssid
@@ -64,20 +63,8 @@ class StaConnect(LFCliBase):
         else:
             self._fail("%s did not report traffic: %s" % (name, postVal), print_fail)
 
-    # use this inside the class to log a failure result
-    def _fail(self, message, print_=False):
-        self.test_results.append(self.fail_pref + message)
-        if print_:
-            print(self.fail_pref + message)
-
-    # use this inside the class to log a pass result
-    def _pass(self, message, print_=False):
-        self.test_results.append(self.pass_pref + message)
-        if print_:
-            print(self.pass_pref + message)
-
     def run(self):
-        self.test_results = []
+        self.clear_test_results()
         self.check_connect()
         eth1IP = self.json_get(self.getUpstreamUrl())
         if eth1IP is None:
@@ -88,7 +75,7 @@ class StaConnect(LFCliBase):
             return False
 
         url = self.getStaUrl()
-        response = super().json_get(url)
+        response = self.json_get(url)
         if response is not None:
             if response["interface"] is not None:
                 print("removing old station")
@@ -113,7 +100,7 @@ class StaConnect(LFCliBase):
             "flags": flags  # verbose, wpa2
         }
         print("Adding new station %s " % self.sta_name)
-        super().json_post(url, data)
+        self.json_post(url, data)
 
         reqURL = "cli-json/set_port"
         data = {
@@ -124,14 +111,14 @@ class StaConnect(LFCliBase):
             "interest": 0x4002  # set dhcp, current flags
         }
         print("Configuring %s..." % self.sta_name)
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         reqURL = "cli-json/nc_show_ports"
         data = {"shelf": 1,
                 "resource": self.resource,
                 "port": self.sta_name,
                 "probe_flags": 1}
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
         LFUtils.waitUntilPortsAdminUp(self.resource, self.mgr_url, [self.sta_name])
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -143,7 +130,7 @@ class StaConnect(LFCliBase):
         while (ip == "0.0.0.0") and (duration < maxTime):
             duration += 2
             time.sleep(2)
-            station_info = super().json_get(f"{self.getStaUrl()}?fields=port,ip,ap")
+            station_info = self.json_get(f"{self.getStaUrl()}?fields=port,ip,ap")
 
             # LFUtils.debug_printer.pprint(station_info)
             if (station_info is not None) and ("interface" in station_info):
@@ -191,7 +178,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         reqURL = "cli-json/add_endp"
         data = {
@@ -203,7 +190,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         # Create CX
         reqURL = "cli-json/add_cx"
@@ -213,7 +200,7 @@ class StaConnect(LFCliBase):
             "tx_endp": "testUDP-A",
             "rx_endp": "testUDP-B",
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         # Create TCP endpoints
         reqURL = "cli-json/add_endp"
@@ -226,7 +213,7 @@ class StaConnect(LFCliBase):
             "ip_port": "0",
             "min_rate": 1000000
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         reqURL = "cli-json/add_endp"
         data = {
@@ -238,7 +225,7 @@ class StaConnect(LFCliBase):
             "ip_port": "-1",
             "min_rate": 1000000
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         # Create CX
         reqURL = "cli-json/add_cx"
@@ -248,7 +235,7 @@ class StaConnect(LFCliBase):
             "tx_endp": "testTCP-A",
             "rx_endp": "testTCP-B",
         }
-        super().json_post(reqURL, data)
+        self.json_post(reqURL, data)
 
         cxNames = ["testTCP", "testUDP"]
         endpNames = ["testTCP-A", "testTCP-B",
@@ -263,7 +250,7 @@ class StaConnect(LFCliBase):
                 "cx_name": cxNames[name],
                 "cx_state": "RUNNING"
             }
-            super().json_post(reqURL, data)
+            self.json_post(reqURL, data)
 
         # Refresh stats
         print("\nRefresh CX stats")
@@ -273,7 +260,7 @@ class StaConnect(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            super().json_post(reqURL, data)
+            self.json_post(reqURL, data)
 
         time.sleep(15)
 
@@ -286,7 +273,7 @@ class StaConnect(LFCliBase):
                 "cx_name": cxNames[name],
                 "cx_state": "STOPPED"
             }
-            super().json_post(reqURL, data)
+            self.json_post(reqURL, data)
 
         # Refresh stats
         print("\nRefresh CX stats")
@@ -296,7 +283,7 @@ class StaConnect(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cxNames[name]
             }
-            super().json_post(reqURL, data)
+            self.json_post(reqURL, data)
 
         # print("Sleeping for 5 seconds")
         time.sleep(5)
@@ -304,23 +291,23 @@ class StaConnect(LFCliBase):
         # get data for endpoints JSON
         print("Collecting Data")
         try:
-            ptestTCPA = super().json_get("endp/testTCP-A?fields=tx+bytes,rx+bytes")
+            ptestTCPA = self.json_get("endp/testTCP-A?fields=tx+bytes,rx+bytes")
             ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
             ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-            ptestTCPB = super().json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            ptestTCPB = self.json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
             ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
             ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-            ptestUDPA = super().json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            ptestUDPA = self.json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
             ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
             ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-            ptestUDPB = super().json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            ptestUDPB = self.json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
             ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
             ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
         except Exception as e:
-            super.error(e)
+            self.error(e)
             print("Cleaning up...")
             reqURL = "cli-json/rm_vlan"
             data = {
@@ -355,33 +342,6 @@ class StaConnect(LFCliBase):
 
         removeCX(self.mgr_url, cxNames)
         removeEndps(self.mgr_url, endpNames)
-
-    def get_result_list(self):
-        return self.test_results
-
-    def get_failed_result_list(self):
-        fail_list = []
-        for result in self.test_results:
-            if not result.startswith("PASS"):
-                fail_list.append(result)
-        return fail_list
-
-    def get_fail_message(self):
-        fail_messages = self.get_failed_result_list()
-        return "\n".join(fail_messages)
-
-    def passes(self):
-        pass_counter: int = 0
-        fail_counter: int = 0
-        for result in self.test_results:
-            if result.startswith("PASS"):
-                pass_counter += 1
-            else:
-                fail_counter += 1
-        if (fail_counter == 0) and (pass_counter > 0):
-            return True
-        return False
-
 
 # ~class
 
