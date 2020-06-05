@@ -110,8 +110,8 @@ class LFCliBase:
         return "\n".join(fail_messages)
 
     def passes(self):
-        pass_counter: int = 0
-        fail_counter: int = 0
+        pass_counter = 0
+        fail_counter = 0
         for result in self.test_results:
             if result.startswith("PASS"):
                 pass_counter += 1
