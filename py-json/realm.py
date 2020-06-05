@@ -359,16 +359,6 @@ class StationProfile:
 
         return result
 
-    def format_sta_name(self, num):
-        wd = len(self.prefix)
-        v = int(self.prefix, 10)
-        if v > 0:
-            num += v
-        template = "sta0%sd" % wd
-        name = template % num
-        #if self.debug:
-        #    print("XXXXXXXXXXX %s XXXXXXXXXXXXXXX" % name)
-        return name
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def build(self, resource, radio, num_stations, dry_run=False, debug=False):
@@ -391,14 +381,15 @@ class StationProfile:
 
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-        sta_names = []
-        for num in range(num_stations):
-            sta_name = self.format_sta_name(num)
-            self.add_sta_data["sta_name"] = sta_name
-            self.set_port_data["port"] = sta_name
-            sta_names.append(sta_name)
+        sta_names = LFUtils.portNameSeries("sta", 0, num_stations-1, 10000)
+        num = 0
+
+        for name in sta_names:
+            num += 1
+            self.add_sta_data["sta_name"] = name
+            self.set_port_data["port"] = name
             if debug:
-                print("- 381 - %s- - - - - - - - - - - - - - - - - - "% sta_name)
+                print("- 381 - %s- - - - - - - - - - - - - - - - - - "% name)
                 pprint(self.add_sta_data)
                 pprint(self.set_port_data)
                 print("- ~381 - - - - - - - - - - - - - - - - - - - ")
