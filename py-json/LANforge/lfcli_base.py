@@ -27,10 +27,8 @@ class LFCliBase:
 
     def json_post(self, _req_url, _data):
         json_response = None
-        if self.mgr_url.endswith('/') and _req_url.startswith('/'):
-            _req_url = _req_url[1:]
         try:
-            lf_r = LFRequest.LFRequest(self.mgr_url + _req_url)
+            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url)
             _data['suppress_preexec_cli'] = True
             _data['suppress_preexec_method'] = True
             lf_r.addPostData(_data)
@@ -52,10 +50,8 @@ class LFCliBase:
         if self.debugOn:
             print("URL: "+_req_url)
         json_response = None
-        if self.mgr_url.endswith('/') and _req_url.startswith('/'):
-            _req_url = _req_url[1:]
         try:
-            lf_r = LFRequest.LFRequest(self.mgr_url + _req_url)
+            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url)
             json_response = lf_r.getAsJson(self.debugOn)
             #debug_printer.pprint(json_response)
             if (json_response is None) and self.debugOn:
