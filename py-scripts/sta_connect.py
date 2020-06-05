@@ -130,7 +130,7 @@ class StaConnect(LFCliBase):
         while (ip == "0.0.0.0") and (duration < maxTime):
             duration += 2
             time.sleep(2)
-            station_info = self.json_get(f"{self.getStaUrl()}?fields=port,ip,ap")
+            station_info = self.json_get(self.getStaUrl() + "?fields=port,ip,ap")
 
             # LFUtils.debug_printer.pprint(station_info)
             if (station_info is not None) and ("interface" in station_info):
@@ -146,7 +146,7 @@ class StaConnect(LFCliBase):
                     print("Waiting for %s to gain IP ..." % self.sta_name)
 
         if (ap != "") and (ap != "Not-Associated"):
-            print(f"Connected to AP: {ap}")
+            print("Connected to AP: "+ap)
             if self.dut_bssid != "":
                 if self.dut_bssid.lower() == ap.lower():
                     self._pass("Connected to BSSID: " + ap)
