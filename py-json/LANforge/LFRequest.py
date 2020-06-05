@@ -27,9 +27,9 @@ class LFRequest:
         if "http://" not in url or "https://" not in url:
             print("No http:// or https:// found, prepending http://")
             url = "http://" + url
-        if not url.endswith('/') and not uri.startswith('/'):
-            url += '/'
         if uri is not None:
+            if not url.endswith('/') and not uri.startswith('/'):
+                url += '/'
             self.requested_url = url + uri
         if self.requested_url.find('//'):
             protopos = self.requested_url.find("://")
