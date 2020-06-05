@@ -261,7 +261,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
     while len(up_stations) > 0:
         up_stations = []
         for port_name in port_list:
-            uri = "%s%s/%s/%s?fields=device,down" % (base_url, port_url, resource_id, port_name)
+            uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(show_error=False)
             if json_response == None:
@@ -333,7 +333,7 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
         found_stations = []
         for port_name in port_list:
             sleep(1)
-            uri = "%s%s/%s/%s" % (base_url, port_url, resource_id, port_name)
+            uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(show_error=False)
             if (json_response != None):
