@@ -23,8 +23,19 @@ class LFRequest:
     default_headers = {
         'Accept': 'application/json'}
 
-    def __init__(self, url):
-        self.requested_url = url
+    def __init__(self, url, uri=None):
+        if "http://" not in url or "https://" not in url:
+            print("No http:// or https:// found, prepending http://")
+            url = "http://" + url
+        if not url.endswith('/') and not uri.startswith('/'):
+            url += '/'
+        if uri is not None:
+            self.requested_url = url + uri
+        if self.requested_url.find('//'):
+            protopos = self.requested_url.find("://")
+            self.requested_url = self.requested_url[:protopos + 2] + self.requested_url[protopos + 2:].replace("//", "/")
+
+
 
     # request first url on stack
     def formPost(self, show_error=True):
