@@ -28,13 +28,13 @@ class LFCliBase:
     def json_post(self, _req_url, _data):
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url)
+            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url, debug_=self.debugOn)
             _data['suppress_preexec_cli'] = True
             _data['suppress_preexec_method'] = True
             lf_r.addPostData(_data)
             if (self.debugOn):
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(self.debugOn)
+            json_response = lf_r.jsonPost(show_error=self.debugOn, debug=self.debugOn)
         except Exception as x:
             if self.debugOn or self.haltOnError:
                 print("jsonPost posted to %s" % _req_url)
