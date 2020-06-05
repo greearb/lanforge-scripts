@@ -35,8 +35,6 @@ class LFRequest:
             protopos = self.requested_url.find("://")
             self.requested_url = self.requested_url[:protopos + 2] + self.requested_url[protopos + 2:].replace("//", "/")
 
-
-
     # request first url on stack
     def formPost(self, show_error=True):
         responses = []
