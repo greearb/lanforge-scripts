@@ -204,10 +204,12 @@ def generateRandomHex():
 #       }
 #   },
 #   { ... }
-
-def portListToAliasMap(json_list):
+def portListToAliasMap(json_list, debug_=False):
     reverse_map = {}
-    if len(json_list) < 1:
+    if (json_list is None) or (len(json_list) < 1):
+        if debug_:
+            print("portListToAliasMap: no json_list provided")
+            raise ValueError("portListToAliasMap: no json_list provided")
         return reverse_map
 
     json_interfaces = json_list
