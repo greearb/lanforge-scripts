@@ -102,7 +102,10 @@ class StressTester(LFCliBase):
                 parser.exit()
 
             if args.output_dir is not None:
-                output_dir = args.output_dir
+                if not args.output_dir.endswith('/'):
+                    output_dir = args.output_dir + '/'
+                else:
+                    output_dir = args.output_dir
             else:
                 parser.print_help()
                 parser.exit()
