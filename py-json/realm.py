@@ -15,7 +15,7 @@ from generic_cx import GenericCx
 class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_on=True):
         super().__init__(lfclient_host, lfclient_port, debug_on, _halt_on_error=True)
-        #self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.check_connect()
 
     # Returns json response from webpage of all layer 3 cross connects
@@ -155,15 +155,15 @@ class Realm(LFCliBase):
         return station_prof
 
     def new_l3_cx_profile(self):
-
+        cx_prof = L3CXProfile(self, self.lfclient_host, self.lfclient_port)
         return cx_prof
 
     def new_l4_cx_profile(self):
-
+        cx_prof = L4CXProfile(self, self.lfclient_host, self.lfclient_port)
         return cx_prof
 
     def new_generic_cx_profile(self):
-
+        cx_prof = GenericCx(self, self.lfclient_host, self.lfclient_port)
         return cx_prof
 
 
@@ -172,7 +172,6 @@ class L3CXProfile:
         self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
         self.debug = debug
 
-    # Creates cross-connect for each port specified in the addPorts function
     def create(self, endp_type, side="a", ports=[], sleep_time=.5):
         post_data = []
         side = side.upper()
@@ -233,9 +232,10 @@ class L4CXProfile:
     def __init__(self, lfclient_host, lfclient_port, debug=False):
         self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
         self.debug = debug
+        self.url = "http://localhost/"
+        self.requests_per_ten = 600
 
-            # Creates cross-connect for each port specified in the addPorts function
-    def create(self, endp_type, ports=[], sleep_time=.5):
+    def create(self, ports=[], sleep_time=.5):
         post_data = []
         for port_name in ports:
             data = {
@@ -243,10 +243,10 @@ class L4CXProfile:
                 "shelf": 1,
                 "resource": 1,
                 "port": port_name,
-                "type": endp_type,
-                "timeout": 1000,
-                "url_rate": 600,
-                "url": "http://localhost/"
+                "type": "l4_generic",
+                "timeout": 10,
+                "url_rate": self.requests_per_ten,
+                "url": self.url
             }
             url = self.lfclient_url + "cli-json/add_l4_endp"
             LFCliBase.json_post(url, data)
@@ -267,35 +267,41 @@ class L4CXProfile:
 
 
 class GenCXProfile:
-        def __init__(self, lfclient_host, lfclient_port, debug=False):
-            self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
-            self.debug = debug
+    def __init__(self, lfclient_host, lfclient_port, debug=False):
+        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
+        self.debug = debug
+        self.type = "lfping"
+        self.dest = "127.0.0.1"
+        self.interval = 1
+        self.count = 2
+        self.cmd = ""
 
-        # Creates cross-connect for each port specified in the addPorts function
-        def create(self, endp_type, ports=[], sleep_time=.5):
-            post_data = []
-            for port_name in ports:
-                genl = GenericCx(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
-                genl.createGenEndp(port_name + "_gen", 1, 1, port_name, endp_type)
-                genl.createGenEndp(port_name + "_gen2", 1, 1, port_name, endp_type)
-                genl.setFlags(port_name + "_gen", "ClearPortOnStart", 1)
-                genl.setFlags(port_name + "_gen2", "ClearPortOnStart", 1)
-                genl.setFlags(port_name + "_gen2", "Unmanaged", 1)
-                genl.setCmd(port_name + "_gen", "lfping  -i 0.1 -I %s 10.40.0.1" % port_name)
-                time.sleep(sleep_time)
+    def create(self, ports=[], sleep_time=.5):
+        post_data = []
+        for port_name in ports:
+            gen_name = port_name + "_gen"
+            gen_name2 = port_name + "_gen"
+            genl = GenericCx(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
+            genl.createGenEndp(gen_name, 1, 1, port_name, "gen_generic")
+            genl.createGenEndp(gen_name2, 1, 1, port_name, "gen_generic")
+            genl.setFlags(gen_name, "ClearPortOnStart", 1)
+            genl.setFlags(gen_name2, "ClearPortOnStart", 1)
+            genl.setFlags(gen_name2, "Unmanaged", 1)
+            genl.setCmd(gen_name, self.cmd)
+            time.sleep(sleep_time)
 
-                data = {
-                    "alias": "CX_genTest1",
-                    "test_mgr": "default_tm",
-                    "tx_endp": "genTest1",
-                    "rx_endp": "genTest2"
-                }
-                post_data.append(data)
+            data = {
+                "alias": port_name + "_gen_CX",
+                "test_mgr": "default_tm",
+                "tx_endp": gen_name,
+                "rx_endp": gen_name2
+            }
+            post_data.append(data)
 
-            for data in post_data:
-                url = self.lfclient_url + "/cli-json/add_cx"
-                LFCliBase.json_post(url, data)
-                time.sleep(sleep_time)
+        for data in post_data:
+            url = self.lfclient_url + "/cli-json/add_cx"
+            LFCliBase.json_post(url, data)
+            time.sleep(sleep_time)
 
 
 # use the station profile to set the combination of features you want on your stations
