@@ -361,7 +361,7 @@ class StationProfile:
 
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def build(self, resource, radio, num_stations, dry_run=False, debug=False):
+    def create(self, resource, radio, num_stations, dry_run=False, debug=False):
         # try:
         #     resource = resource_radio[0: resource_radio.index(".")]
         #     name = resource_radio[resource_radio.index(".") + 1:]

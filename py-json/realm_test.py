@@ -56,7 +56,7 @@ profile = localrealm.new_station_profile()
 profile.use_wpa2(True, "jedway-wpa2-x2048-5-1", "jedway-wpa2-x2048-5-1")
 profile.set_command_flag("add_sta", "80211u_enable", 1)
 profile.set_prefix("0100")
-profile.build(1, "wiphy0", 5)
+profile.create(1, "wiphy0", 5)
 
 try:
     sta_list = localrealm.station_list()
