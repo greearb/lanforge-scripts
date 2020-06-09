@@ -15,7 +15,7 @@ from generic_cx import GenericCx
 class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_on=True):
         super().__init__(lfclient_host, lfclient_port, debug_on, _halt_on_error=True)
-        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        #self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.check_connect()
 
     # Returns json response from webpage of all layer 3 cross connects
