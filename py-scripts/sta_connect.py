@@ -17,9 +17,11 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge import LFUtils
 # from LANforge import LFCliBase
-import LANforge.lfcli_base
+from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
+import realm
+from realm import Realm
 
 OPEN="open"
 WEP="wep"
@@ -31,11 +33,12 @@ class StaConnect(LFCliBase):
     def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
                  _resource=1, _upstream_resource=1, _upstream_port="eth2",
-                 _sta_name=None, _debugOn=False, _dut_security=OPEN):
+                 _sta_name=None, _debugOn=False, _dut_security=OPEN, _exit_on_error=False,
+                 _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
-        super().__init__(host, port, _debug=_debugOn, _halt_on_error=False)
+        super().__init__(host, port, _debug=_debugOn, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.dut_security = ""
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
@@ -47,13 +50,14 @@ class StaConnect(LFCliBase):
         self.resource = _resource
         self.upstream_resource = _upstream_resource
         self.upstream_port = _upstream_port
-        # self.sta_name = _sta_name
-
+        self.runtime_secs = _runtime_sec
+        self.cleanup_on_exit = _cleanup_on_exit
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
         self.station_names = []
         if _sta_name is not None:
             self.station_names = [ _sta_name ]
+        self.localrealm = Realm(lfclient_host=host, lfclient_port=port)
 
     def get_station_url(self, sta_name_=None):
         if sta_name_ is None:
@@ -64,13 +68,13 @@ class StaConnect(LFCliBase):
                 self.sta_url_map[sta_name] = "port/1/%s/%s" % (self.resource, sta_name)
         return self.sta_url_map[sta_name_]
 
-    def getUpstreamUrl(self):
+    def get_upstream_url(self):
         if self.upstream_url is None:
             self.upstream_url = "port/1/%s/%s" % (self.upstream_resource, self.upstream_port)
         return self.upstream_url
 
     # Compare pre-test values to post-test values
-    def compareVals(self, name, postVal, print_pass=False, print_fail=True):
+    def compare_vals(self, name, postVal, print_pass=False, print_fail=True):
         # print(f"Comparing {name}")
         if postVal > 0:
             self._pass("%s %s" % (name, postVal), print_pass)
@@ -81,15 +85,33 @@ class StaConnect(LFCliBase):
         for name in self.station_names:
             LFUtils.removePort(self.resource, name, self.lfclient_url)
 
+
+
+    def num_associated(self, bssid):
+        counter = 0
+        # print("there are %d results" % len(self.station_results))
+        fields = "_links,port,alias,ip,ap,port+type"
+        self.station_results = self.localrealm.find_ports_like("sta*", fields, debug_=False)
+        if (self.station_results is None) or (len(self.station_results) < 1):
+            self.get_failed_result_list()
+        for eid,record in self.station_results.items():
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            #pprint(eid)
+            #pprint(record)
+            if record["ap"] == bssid:
+                counter += 1
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+        return counter
+
     def run(self):
         self.clear_test_results()
         self.check_connect()
-        eth1IP = self.json_get(self.getUpstreamUrl())
+        eth1IP = self.json_get(self.get_upstream_url())
         if eth1IP is None:
             self._fail("Unable to query %s, bye" % self.upstream_port, True)
             return False
         if eth1IP['interface']['ip'] == "0.0.0.0":
-            self._fail("Warning: %s lacks ip address" % self.getUpstreamUrl())
+            self._fail("Warning: %s lacks ip address" % self.get_upstream_url())
             return False
 
         for sta_name in self.station_names:
@@ -120,9 +142,10 @@ class StaConnect(LFCliBase):
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": flags  # verbose, wpa2
         }
+        print("Adding new stations ", end="")
         for sta_name in self.station_names:
             add_sta_data["sta_name"] = sta_name
-            print("Adding new station %s " % sta_name)
+            print(" %s," % sta_name, end="")
             self.json_post("/cli-json/add_sta", add_sta_data)
 
         set_port_data = {
@@ -131,11 +154,12 @@ class StaConnect(LFCliBase):
             "current_flags": 0x80000000,  # use DHCP, not down
             "interest": 0x4002  # set dhcp, current flags
         }
+        print("\nConfiguring ")
         for sta_name in self.station_names:
             set_port_data["port"] = sta_name
-            print("Configuring %s..." % sta_name)
+            print(" %s," % sta_name, end="")
             self.json_post("/cli-json/set_port", set_port_data)
-
+        print("\nBringing ports up...")
         data = {"shelf": 1,
                 "resource": self.resource,
                 "port": "ALL",
@@ -148,12 +172,12 @@ class StaConnect(LFCliBase):
         maxTime = 300
         ip = "0.0.0.0"
         ap = ""
-        print("Waiting for %s stations to associate to AP [%s]..." % (len(self.station_names), ap))
-
-        connected_stations = []
-        while (len(connected_stations) < len(self.station_names)) and (duration < maxTime):
-            duration += 2
-            time.sleep(2)
+        print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
+        connected_stations = {}
+        while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
+            duration += 3
+            time.sleep(3)
+            print(".", end="")
             for sta_name in self.station_names:
                 sta_url = self.get_station_url(sta_name)
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
@@ -167,13 +191,20 @@ class StaConnect(LFCliBase):
 
                 if (ap == "Not-Associated") or (ap == ""):
                     if self.debugOn:
-                        print("Waiting for %s associate to AP [%s]..." % (sta_name, ap))
+                        print(" -%s," % sta_name, end="")
                 else:
                     if ip == "0.0.0.0":
                         if self.debugOn:
-                            print("Waiting for %s to gain IP ..." % sta_name)
+                            print(" %s (0.0.0.0)" % sta_name, end="")
                     else:
-                        connected_stations.append(sta_url)
+                        connected_stations[sta_name] = sta_url
+            data = {
+                "shelf":1,
+                "resource": self.resource,
+                "port": "ALL",
+                "probe_flags": 1
+            }
+            self.json_post("/cli-json/nc_show_ports", data)
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
@@ -181,14 +212,14 @@ class StaConnect(LFCliBase):
             ap = station_info["interface"]["ap"]
             ip = station_info["interface"]["ip"]
             if (ap != "") and (ap != "Not-Associated"):
-                print("Connected to AP: "+ap)
+                print(" %s +AP %s, " % (sta_name, ap), end="")
                 if self.dut_bssid != "":
                     if self.dut_bssid.lower() == ap.lower():
                         self._pass(sta_name+" connected to BSSID: " + ap)
                         # self.test_results.append("PASSED: )
                         # print("PASSED: Connected to BSSID: "+ap)
                     else:
-                        self._fail(sta_name+" connected to wrong BSSID, requested: %s  Actual: %s" % (self.dut_bssid, ap))
+                        self._fail("%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
             else:
                 self._fail(sta_name+" did not connect to AP")
                 return False
@@ -199,8 +230,9 @@ class StaConnect(LFCliBase):
                 self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
 
         if self.passes() == False:
-            print("Cleaning up...")
-            self.remove_stations()
+            if self.cleanup_on_exit:
+                print("Cleaning up...")
+                self.remove_stations()
             return False
 
         # create endpoints and cxs
@@ -295,7 +327,7 @@ class StaConnect(LFCliBase):
             }
             self.json_post("/cli-json/show_cxe", data)
 
-        time.sleep(15)
+        time.sleep(self.runtime_secs)
 
         # stop cx traffic
         print("Stopping CX Traffic")
@@ -332,11 +364,11 @@ class StaConnect(LFCliBase):
                 ptest_b_tx = ptest['endpoint']['tx bytes']
                 ptest_b_rx = ptest['endpoint']['rx bytes']
 
-                self.compareVals("testTCP-A TX", ptest_a_tx)
-                self.compareVals("testTCP-A RX", ptest_a_rx)
+                self.compare_vals("testTCP-A TX", ptest_a_tx)
+                self.compare_vals("testTCP-A RX", ptest_a_rx)
 
-                self.compareVals("testTCP-B TX", ptest_b_tx)
-                self.compareVals("testTCP-B RX", ptest_b_rx)
+                self.compare_vals("testTCP-B TX", ptest_b_tx)
+                self.compare_vals("testTCP-B RX", ptest_b_rx)
 
             except Exception as e:
                 self.error(e)
