@@ -2,6 +2,7 @@
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
@@ -172,10 +173,33 @@ def generateMac(parent_mac, random_octet, debug=False):
     return ":".join(octets)
 
 
-# this produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
-# the padding_number is added to the start and end numbers and the resulting sum
-# has the first digit trimmed, so f(0, 1, 10000) => {0000, 0001}
-def portNameSeries(prefix="sta", start_id=0, end_id=1, padding_number=10000):
+def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000):
+    """
+    This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
+    the padding_number is added to the start and end numbers and the resulting sum
+    has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
+    @deprecated -- please use port_name_series
+    :param prefix_:
+    :param start_id_:
+    :param end_id_:
+    :param padding_number_:
+    :return:
+    """
+    return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_)
+
+
+def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000):
+    """
+    This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
+    the padding_number is added to the start and end numbers and the resulting sum
+    has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
+    @deprecated -- please use port_name_series
+    :param prefix_: defaults to 'sta'
+    :param start_id_: beginning id
+    :param end_id_: ending_id
+    :param padding_number_: used for width of resulting station number
+    :return: list of stations
+    """
     name_list = []
     for i in range((padding_number + start_id), (padding_number + end_id + 1)):
         sta_name = prefix + str(i)[1:]
@@ -280,7 +304,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
     down_stations = port_list.copy()
     sleep(1)
     port_url = "/port/1"
-    #url = /%s/%s?fields=device,down" % (resource_id, port_name)
+    # url = /%s/%s?fields=device,down" % (resource_id, port_name)
     while len(down_stations) > 0:
         down_stations = []
         for port_name in port_list:
@@ -310,7 +334,7 @@ def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", por
         for port_name in port_list:
             check_url = "%s/%s/%s" % (url, resource_id, port_name)
             if debug:
-                print("checking:"+check_url)
+                print("checking:" + check_url)
             lf_r = LFRequest.LFRequest(base_url, check_url)
             json_response = lf_r.getAsJson(show_error=debug)
             if (json_response != None):
