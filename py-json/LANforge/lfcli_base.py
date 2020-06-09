@@ -6,7 +6,7 @@ from pprint import pprint
 
 import LANforge.LFUtils
 from LANforge.LFUtils import *
-import realm
+
 
 class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
@@ -19,7 +19,7 @@ class LFCliBase:
         self.lfjson_port = _lfjson_port
         self.debugOn = _debug
         self.haltOnError = _halt_on_error
-        self.mgr_url = "http://%s:%s" % (self.lfjson_host, self.lfjson_port)
+        self.lfclient_url = "http://%s:%s" % (self.lfjson_host, self.lfjson_port)
         self.test_results = []
 
     def clear_test_results(self):
@@ -28,7 +28,7 @@ class LFCliBase:
     def json_post(self, _req_url, _data):
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url, debug_=self.debugOn)
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debugOn)
             _data['suppress_preexec_cli'] = True
             _data['suppress_preexec_method'] = True
             lf_r.addPostData(_data)
@@ -51,7 +51,7 @@ class LFCliBase:
             print("URL: "+_req_url)
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.mgr_url, _req_url)
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url)
             json_response = lf_r.getAsJson(self.debugOn)
             #debug_printer.pprint(json_response)
             if (json_response is None) and self.debugOn:
@@ -78,11 +78,11 @@ class LFCliBase:
 
     def check_connect(self):
         if self.debugOn:
-            print("Checking for LANforge GUI connection: %s" % self.mgr_url)
+            print("Checking for LANforge GUI connection: %s" % self.lfclient_url)
         response = self.json_get("/")
         duration = 0
         while (response is None) and (duration < 300):
-            print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.mgr_url)
+            print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
             duration += 2
             time.sleep(2)
             response = self.json_get("")
