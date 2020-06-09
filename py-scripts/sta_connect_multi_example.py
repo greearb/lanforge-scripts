@@ -20,7 +20,7 @@ import LANforge
 from LANforge import LFUtils
 
 def main():
-    # create multiple open stations
+    # create multiple OPEN stations
     station_names = LFUtils.port_name_series(start_id=0, end_id=1)
     test = StaConnect("localhost", 8080, _debugOn=False)
     test.sta_mode = sta_connect.MODE_AUTO
@@ -31,17 +31,20 @@ def main():
     test.dut_security = sta_connect.OPEN
     test.dut_ssid = "jedway-open"
     test.dut_passwd = "NA"
-    test.name_list = station_names
+    test.station_names = station_names
     test.run()
     is_passing = test.passes()
     if is_passing == False:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
+        return
     else:
         print("Tests pass")
+
     test.remove_stations()
 
+    # Stations use WPA2
     test.dut_security = sta_connect.WPA2
     test.dut_ssid = "jedway-wpa2-x2048-5-1"
     test.dut_passwd = "jedway-wpa2-x2048-5-1"
@@ -51,8 +54,10 @@ def main():
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
+        return
     else:
         print("Tests pass")
+
     test.remove_stations()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
