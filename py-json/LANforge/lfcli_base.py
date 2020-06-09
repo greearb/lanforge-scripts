@@ -12,7 +12,7 @@ class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
     # that is py2 era syntax and will force self into the host variable, making you
     # very confused.
-    def __init__(self, _lfjson_host, _lfjson_port, _debug=False, _halt_on_error=False):
+    def __init__(self, _lfjson_host, _lfjson_port, _debug=False, _halt_on_error=False, _exit_on_error=False, _exit_on_fail=False):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfjson_host = _lfjson_host
@@ -21,6 +21,8 @@ class LFCliBase:
         self.haltOnError = _halt_on_error
         self.lfclient_url = "http://%s:%s" % (self.lfjson_host, self.lfjson_port)
         self.test_results = []
+        self.exit_on_error = _exit_on_error
+        self.exit_on_fail = _exit_on_fail
 
     def clear_test_results(self):
         self.test_results.clear()
@@ -122,6 +124,8 @@ class LFCliBase:
         self.test_results.append(self.fail_pref + message)
         if print_:
             print(self.fail_pref + message)
+        if self.exit_on_error:
+            sys.exit(1)
 
     # use this inside the class to log a pass result
     def _pass(self, message, print_=False):
