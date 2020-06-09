@@ -91,7 +91,7 @@ class Realm(LFCliBase):
             url = "/port/1/%s/list?fields=%s" % (resource, _fields)
         response = self.json_get(url)
         if debug_:
-            print("###### find_ports_like r:%s, u:%s #################" % (resource, url))
+            print("# find_ports_like r:%s, u:%s #" % (resource, url))
             pprint(response)
         alias_map = LFUtils.portListToAliasMap(response, debug_=debug_)
         if debug_:
