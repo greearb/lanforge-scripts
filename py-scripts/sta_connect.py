@@ -59,8 +59,9 @@ class StaConnect(LFCliBase):
         if sta_name_ is None:
             raise ValueError("get_station_url wants a station name")
         if self.sta_url_map is None:
+            self.sta_url_map = {}
             for sta_name in self.station_names:
-                self.sta_url_map[sta_name] = "port/1/%s/%s" % (self.resource, self.sta_name)
+                self.sta_url_map[sta_name] = "port/1/%s/%s" % (self.resource, sta_name)
         return self.sta_url_map[sta_name_]
 
     def getUpstreamUrl(self):
@@ -97,8 +98,9 @@ class StaConnect(LFCliBase):
             if response is not None:
                 if response["interface"] is not None:
                     print("removing old station")
-                    LFUtils.removePort(self.resource, self.sta_name, self.lfclient_url)
-                    LFUtils.waitUntilPortsDisappear(self.resource, self.lfclient_url, [self.sta_name])
+                    for sta_name in self.station_names:
+                        LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+                    LFUtils.waitUntilPortsDisappear(self.resource, self.lfclient_url, self.station_names)
 
         # Create stations and turn dhcp on
 
@@ -119,8 +121,8 @@ class StaConnect(LFCliBase):
             "flags": flags  # verbose, wpa2
         }
         for sta_name in self.station_names:
-            add_sta_data["sta_name"] = sta_name;
-            print("Adding new station %s " % self.sta_name)
+            add_sta_data["sta_name"] = sta_name
+            print("Adding new station %s " % sta_name)
             self.json_post("/cli-json/add_sta", add_sta_data)
 
         set_port_data = {
@@ -153,7 +155,7 @@ class StaConnect(LFCliBase):
             duration += 2
             time.sleep(2)
             for sta_name in self.station_names:
-                sta_url = self.get_station_urls(sta_name)
+                sta_url = self.get_station_url(sta_name)
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
 
                 # LFUtils.debug_printer.pprint(station_info)
@@ -165,11 +167,11 @@ class StaConnect(LFCliBase):
 
                 if (ap == "Not-Associated") or (ap == ""):
                     if self.debugOn:
-                        print("Waiting for %s associate to AP [%s]..." % (self.sta_name, ap))
+                        print("Waiting for %s associate to AP [%s]..." % (sta_name, ap))
                 else:
                     if ip == "0.0.0.0":
                         if self.debugOn:
-                            print("Waiting for %s to gain IP ..." % self.sta_name)
+                            print("Waiting for %s to gain IP ..." % sta_name)
                     else:
                         connected_stations.append(sta_url)
 
@@ -232,7 +234,7 @@ class StaConnect(LFCliBase):
 
             # Create CX
             data = {
-                "alias": "testUDP-%" % sta_name,
+                "alias": "testUDP-%s" % sta_name,
                 "test_mgr": "default_tm",
                 "tx_endp": "testUDP-%s-A" % sta_name,
                 "rx_endp": "testUDP-%s-B" % sta_name,
@@ -268,13 +270,10 @@ class StaConnect(LFCliBase):
             data = {
                 "alias": "testTCP-%s" % sta_name,
                 "test_mgr": "default_tm",
-                "tx_endp": "testTCP-A" % sta_name,
-                "rx_endp": "testTCP-B" % sta_name,
+                "tx_endp": "testTCP-%s-A" % sta_name,
+                "rx_endp": "testTCP-%s-B" % sta_name,
             }
             self.json_post("/cli-json/add_cx", data)
-
-            #cxNames = ["testTCP", "testUDP"]
-            #endpNames = ["testTCP-A", "testTCP-B", "testUDP-A", "testUDP-B"]
 
         # start cx traffic
         print("\nStarting CX Traffic")
@@ -349,7 +348,8 @@ class StaConnect(LFCliBase):
         # print("\n")
 
         # remove all endpoints and cxs
-        LFUtils.removePort(self.resource, self.sta_name, self.lfclient_url)
+        for sta_name in self.station_names:
+            LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
         endp_names = []
         removeCX(self.lfclient_url, cx_names.keys())
         for cx_name in cx_names:

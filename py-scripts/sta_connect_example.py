@@ -11,6 +11,7 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 # if you lack __init__.py in this directory you will not find sta_connect module
+import sta_connect
 from sta_connect import StaConnect
 
 
@@ -21,8 +22,10 @@ def main():
     staConnect.upstream_port = "eth1"
     staConnect.radio = "wiphy0"
     staConnect.resource = 1
+    staConnect.dut_security = sta_connect.WPA2
     staConnect.dut_ssid = "jedway-wpa2-x2048-5-1"
     staConnect.dut_passwd = "jedway-wpa2-x2048-5-1"
+    staConnect.station_names = [ "sta000" ]
     staConnect.run()
     is_passing = staConnect.passes()
     if is_passing == False:
