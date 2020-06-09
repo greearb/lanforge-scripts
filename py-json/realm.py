@@ -154,106 +154,126 @@ class Realm(LFCliBase):
         station_prof = StationProfile(self.lfclient_url, debug=self.debugOn)
         return station_prof
 
-    def new_l3_cx_profile(self, cx_type):
-        cx_prof = CXProfile(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port, cx_type=cx_type,
-                            debug=self.debugOn)
+    def new_l3_cx_profile(self):
+
         return cx_prof
 
     def new_l4_cx_profile(self):
-        cx_prof = CXProfile(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port, cx_type="l4_generic",
-                            debug=self.debugOn)
+
         return cx_prof
 
     def new_generic_cx_profile(self):
-        cx_prof = CXProfile(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port, cx_type="gen_generic",
-                            debug=self.debugOn)
+
         return cx_prof
 
 
-class CXProfile:
-    def __init__(self, lfclient_host, lfclient_port, cx_type, debug=False):
+class L3CXProfile:
+    def __init__(self, lfclient_host, lfclient_port, debug=False):
         self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
-        self.cx_type = cx_type
         self.debug = debug
 
     # Creates cross-connect for each port specified in the addPorts function
     def create(self, endp_type, side="a", ports=[], sleep_time=.5):
         post_data = []
-        if endp_type == "lf_udp" or endp_type == "lf_tcp":
-            side = side.upper()
-            endp_side_a = {
-                "alias": "",
-                "shelf": 1,
-                "resource": 1,
-                "port": "",
-                "type": endp_type,
-                "min_rate": 0,
-                "max_rate": 0,
-                "min_pkt": -1,
-                "max_pkt": 0
+        side = side.upper()
+        endp_side_a = {
+            "alias": "",
+            "shelf": 1,
+            "resource": 1,
+            "port": "",
+            "type": endp_type,
+            "min_rate": 0,
+            "max_rate": 0,
+            "min_pkt": -1,
+            "max_pkt": 0
+        }
+        endp_side_b = {
+            "alias": "",
+            "shelf": 1,
+            "resource": 1,
+            "port": "",
+            "type": endp_type,
+            "min_rate": 0,
+            "max_rate": 0,
+            "min_pkt": -1,
+            "max_pkt": 0
+        }
+
+        for port_name in ports:
+            if side == "A":
+                endp_side_a["alias"] = port_name + "CX-A"
+                endp_side_a["port"] = port_name
+                endp_side_b["alias"] = port_name + "CX-B"
+                endp_side_b["port"] = "eth1"
+            elif side == "B":
+                endp_side_a["alias"] = port_name + "CX-A"
+                endp_side_a["port"] = "eth1"
+                endp_side_b["alias"] = port_name + "CX-B"
+                endp_side_b["port"] = port_name
+
+            url = self.lfclient_url + "/cli-json/add_endp"
+            LFCliBase.json_post(url, endp_side_a)
+            LFCliBase.json_post(url, endp_side_b)
+            time.sleep(sleep_time)
+
+            data = {
+                "alias": port_name + "CX",
+                "test_mgr": "default_tm",
+                "tx_endp": port_name + "CX-A",
+                "rx_endp": port_name + "CX-B"
             }
-            endp_side_b = {
-                "alias": "",
-                "shelf": 1,
-                "resource": 1,
-                "port": "",
-                "type": endp_type,
-                "min_rate": 0,
-                "max_rate": 0,
-                "min_pkt": -1,
-                "max_pkt": 0
-            }
-
-            for port_name in ports:
-                if side == "A":
-                    endp_side_a["alias"] = port_name + "CX-A"
-                    endp_side_a["port"] = port_name
-                    endp_side_b["alias"] = port_name + "CX-B"
-                    endp_side_b["port"] = "eth1"
-                elif side == "B":
-                    endp_side_a["alias"] = port_name + "CX-A"
-                    endp_side_a["port"] = "eth1"
-                    endp_side_b["alias"] = port_name + "CX-B"
-                    endp_side_b["port"] = port_name
-
-                url = self.lfclient_url + "/cli-json/add_endp"
-                LFCliBase.json_post(url, endp_side_a)
-                LFCliBase.json_post(url, endp_side_b)
-                time.sleep(sleep_time)
-
-                data = {
-                    "alias": port_name + "CX",
-                    "test_mgr": "default_tm",
-                    "tx_endp": port_name + "CX-A",
-                    "rx_endp": port_name + "CX-B"
-                }
-                post_data.append(data)
-
-        elif endp_type == "l4_generic":
-            for port_name in ports:
-                data = {
-                    "alias": port_name + "_l4",
-                    "shelf": 1,
-                    "resource": 1,
-                    "port": port_name,
-                    "type": endp_type,
-                    "timeout": 1000,
-                    "url_rate": 600,
-                    "url": "http://localhost/"
-                }
-                url = self.lfclient_url + "cli-json/add_l4_endp"
+            post_data.append(data)
+            for data in post_data:
+                url = self.lfclient_url + "/cli-json/add_cx"
                 LFCliBase.json_post(url, data)
                 time.sleep(sleep_time)
 
-                data = {
-                    "alias": port_name + "_l4CX",
-                    "test_mgr": "default_tm",
-                    "tx_endp": port_name + "_l4",
-                    "rx_endp": "NA"
-                }
-                post_data.append(data)
 
-        elif endp_type == "gen_generic":
+class L4CXProfile:
+    def __init__(self, lfclient_host, lfclient_port, debug=False):
+        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
+        self.debug = debug
+
+            # Creates cross-connect for each port specified in the addPorts function
+    def create(self, endp_type, ports=[], sleep_time=.5):
+        post_data = []
+        for port_name in ports:
+            data = {
+                "alias": port_name + "_l4",
+                "shelf": 1,
+                "resource": 1,
+                "port": port_name,
+                "type": endp_type,
+                "timeout": 1000,
+                "url_rate": 600,
+                "url": "http://localhost/"
+            }
+            url = self.lfclient_url + "cli-json/add_l4_endp"
+            LFCliBase.json_post(url, data)
+            time.sleep(sleep_time)
+
+            data = {
+                "alias": port_name + "_l4CX",
+                "test_mgr": "default_tm",
+                "tx_endp": port_name + "_l4",
+                "rx_endp": "NA"
+            }
+            post_data.append(data)
+
+            for data in post_data:
+                url = self.lfclient_url + "/cli-json/add_cx"
+                LFCliBase.json_post(url, data)
+                time.sleep(sleep_time)
+
+
+class GenCXProfile:
+        def __init__(self, lfclient_host, lfclient_port, debug=False):
+            self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
+            self.debug = debug
+
+        # Creates cross-connect for each port specified in the addPorts function
+        def create(self, endp_type, ports=[], sleep_time=.5):
+            post_data = []
             for port_name in ports:
                 genl = GenericCx(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
                 genl.createGenEndp(port_name + "_gen", 1, 1, port_name, endp_type)
@@ -272,10 +292,10 @@ class CXProfile:
                 }
                 post_data.append(data)
 
-        for data in post_data:
-            url = self.lfclient_url + "/cli-json/add_cx"
-            LFCliBase.json_post(url, data)
-            time.sleep(sleep_time)
+            for data in post_data:
+                url = self.lfclient_url + "/cli-json/add_cx"
+                LFCliBase.json_post(url, data)
+                time.sleep(sleep_time)
 
 
 # use the station profile to set the combination of features you want on your stations
