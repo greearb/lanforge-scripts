@@ -51,6 +51,7 @@ class StaConnect(LFCliBase):
 
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
+        self.station_names = []
         if _sta_name is not None:
             self.station_names = [ _sta_name ]
 
@@ -77,7 +78,7 @@ class StaConnect(LFCliBase):
 
     def remove_stations(self):
         for name in self.station_names:
-            LFUtils.removePort(self.resource, name, self.mgr_url)
+            LFUtils.removePort(self.resource, name, self.lfclient_url)
 
     def run(self):
         self.clear_test_results()
@@ -90,16 +91,17 @@ class StaConnect(LFCliBase):
             self._fail("Warning: %s lacks ip address" % self.getUpstreamUrl())
             return False
 
-        url = self.getStaUrl()
-        response = self.json_get(url)
-        if response is not None:
-            if response["interface"] is not None:
-                print("removing old station")
-                LFUtils.removePort(self.resource, self.sta_name, self.mgr_url)
-                LFUtils.waitUntilPortsDisappear(self.resource, self.mgr_url, [self.sta_name])
+        for sta_name in self.station_names:
+            sta_url = self.get_station_url(sta_name)
+            response = self.json_get(sta_url)
+            if response is not None:
+                if response["interface"] is not None:
+                    print("removing old station")
+                    LFUtils.removePort(self.resource, self.sta_name, self.lfclient_url)
+                    LFUtils.waitUntilPortsDisappear(self.resource, self.lfclient_url, [self.sta_name])
 
         # Create stations and turn dhcp on
-        print("Creating station %s and turning on dhcp..." % self.sta_name)
+
         flags = 0x10000
         if self.dut_security == WPA2:
             flags += 0x400
@@ -137,14 +139,14 @@ class StaConnect(LFCliBase):
                 "port": "ALL",
                 "probe_flags": 1}
         self.json_post("/cli-json/nc_show_ports", data)
-        LFUtils.waitUntilPortsAdminUp(self.resource, self.mgr_url, [self.sta_name])
+        LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
         maxTime = 300
         ip = "0.0.0.0"
         ap = ""
-        print("Waiting for %s associate to AP [%s]..." % (self.sta_name, ap))
+        print("Waiting for %s stations to associate to AP [%s]..." % (len(self.station_names), ap))
 
         connected_stations = []
         while (len(connected_stations) < len(self.station_names)) and (duration < maxTime):
@@ -172,7 +174,7 @@ class StaConnect(LFCliBase):
                         connected_stations.append(sta_url)
 
         for sta_name in self.station_names:
-            sta_url = self.get_station_urls(sta_name)
+            sta_url = self.get_station_url(sta_name)
             station_info = self.json_get(sta_url + "?fields=port,ip,ap")
             ap = station_info["interface"]["ap"]
             ip = station_info["interface"]["ip"]
@@ -347,13 +349,13 @@ class StaConnect(LFCliBase):
         # print("\n")
 
         # remove all endpoints and cxs
-        LFUtils.removePort(self.resource, self.sta_name, self.mgr_url)
+        LFUtils.removePort(self.resource, self.sta_name, self.lfclient_url)
         endp_names = []
-        removeCX(self.mgr_url, cx_names.keys())
+        removeCX(self.lfclient_url, cx_names.keys())
         for cx_name in cx_names:
             endp_names.append(cx_names[cx_name]["a"])
             endp_names.append(cx_names[cx_name]["b"])
-        removeEndps(self.mgr_url, endp_names)
+        removeEndps(self.lfclient_url, endp_names)
 
 # ~class
 
