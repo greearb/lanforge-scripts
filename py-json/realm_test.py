@@ -34,7 +34,7 @@ station_map = localrealm.find_ports_like("sta+")
 for eid,record in station_map.items():
     pprint(eid)
     # a list of these objects is not super useful unless
-    localrealm.removeVlanByEid(eid)
+    localrealm.remove_vlan_by_eid(eid)
     time.sleep(0.03)
 
 # convert station map to plain list

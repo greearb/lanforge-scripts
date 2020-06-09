@@ -66,7 +66,7 @@ class Realm(LFCliBase):
         return sta_list
 
     # removes port by eid/eidpn
-    def removeVlanByEid(self, eid):
+    def remove_vlan_by_eid(self, eid):
         if (eid is None) or ("" == eid):
             raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         hunks = eid.split('.')
