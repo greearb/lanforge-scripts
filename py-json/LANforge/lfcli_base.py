@@ -6,7 +6,8 @@ from pprint import pprint
 
 import LANforge.LFUtils
 from LANforge.LFUtils import *
-
+import realm
+from realm import Realm
 
 class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
@@ -21,6 +22,7 @@ class LFCliBase:
         self.haltOnError = _halt_on_error
         self.mgr_url = "http://%s:%s" % (self.lfjson_host, self.lfjson_port)
         self.test_results = []
+        self.realm = Realm(_lfjson_host, _lfjson_port, debug=_debug)
 
     def clear_test_results(self):
         self.test_results.clear()
