@@ -25,7 +25,7 @@ class LFRequest:
 
     def __init__(self, url, uri=None, debug_=False):
         self.debug = debug_
-        self.requested_url = None
+
         if not url.startswith("http://") and not url.startswith("https://"):
             print("No http:// or https:// found, prepending http:// to "+url)
             url = "http://" + url
@@ -33,6 +33,9 @@ class LFRequest:
             if not url.endswith('/') and not uri.startswith('/'):
                 url += '/'
             self.requested_url = url + uri
+        else:
+            self.requested_url = url
+
         if self.requested_url.find('//'):
             protopos = self.requested_url.find("://")
             self.requested_url = self.requested_url[:protopos + 2] + self.requested_url[protopos + 2:].replace("//", "/")
