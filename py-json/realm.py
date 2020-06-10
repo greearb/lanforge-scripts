@@ -13,9 +13,10 @@ from generic_cx import GenericCx
 
 
 class Realm(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_on=True):
-        super().__init__(lfclient_host, lfclient_port, debug_on, _halt_on_error=True)
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=True):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
         self.check_connect()
 
     # Returns json response from webpage of all layer 3 cross connects
@@ -34,7 +35,7 @@ class Realm(LFCliBase):
         temp_map = LFUtils.portListToAliasMap(response)
         for k, v in temp_map.items():
             if (v['port type'] == "WIFI-STA"):
-                sta_map[k] = v;
+                sta_map[k] = v
         temp_map.clear()
         del temp_map
         del response
@@ -122,7 +123,7 @@ class Realm(LFCliBase):
                         matched_map[port_eid] = record
 
             elif pattern.find("*") > 0:
-                match = re.search(r"^([^\*]+)[\*]$", pattern)
+                match = re.search(r"^([^\*]+)[*]$", pattern)
                 if match.group(1):
                     prefix = match.group(1)
                     if debug_:
@@ -151,26 +152,27 @@ class Realm(LFCliBase):
         return matched_map
 
     def new_station_profile(self):
-        station_prof = StationProfile(self.lfclient_url, debug=self.debugOn)
+        station_prof = StationProfile(self.lfclient_url, debug_=self.debug)
         return station_prof
 
     def new_l3_cx_profile(self):
-        cx_prof = L3CXProfile(self, self.lfclient_host, self.lfclient_port)
+        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
         return cx_prof
 
     def new_l4_cx_profile(self):
-        cx_prof = L4CXProfile(self, self.lfclient_host, self.lfclient_port)
+        cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
         return cx_prof
 
     def new_generic_cx_profile(self):
-        cx_prof = GenericCx(self, self.lfclient_host, self.lfclient_port)
+        cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
         return cx_prof
 
 
-class L3CXProfile:
-    def __init__(self, lfclient_host, lfclient_port, debug=False):
-        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
-        self.debug = debug
+class L3CXProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
 
     def create(self, endp_type, side="a", ports=[], sleep_time=.5):
         post_data = []
@@ -211,8 +213,8 @@ class L3CXProfile:
                 endp_side_b["port"] = port_name
 
             url = self.lfclient_url + "/cli-json/add_endp"
-            LFCliBase.json_post(url, endp_side_a)
-            LFCliBase.json_post(url, endp_side_b)
+            LFCliBase.json_post(self, url, endp_side_a)
+            LFCliBase.json_post(self, url, endp_side_b)
             time.sleep(sleep_time)
 
             data = {
@@ -224,14 +226,15 @@ class L3CXProfile:
             post_data.append(data)
             for data in post_data:
                 url = self.lfclient_url + "/cli-json/add_cx"
-                LFCliBase.json_post(url, data)
+                LFCliBase.json_post(self, url, data)
                 time.sleep(sleep_time)
 
 
-class L4CXProfile:
-    def __init__(self, lfclient_host, lfclient_port, debug=False):
-        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
-        self.debug = debug
+class L4CXProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
         self.url = "http://localhost/"
         self.requests_per_ten = 600
 
@@ -249,7 +252,7 @@ class L4CXProfile:
                 "url": self.url
             }
             url = self.lfclient_url + "cli-json/add_l4_endp"
-            LFCliBase.json_post(url, data)
+            LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
             data = {
@@ -262,14 +265,17 @@ class L4CXProfile:
 
             for data in post_data:
                 url = self.lfclient_url + "/cli-json/add_cx"
-                LFCliBase.json_post(url, data)
+                LFCliBase.json_post(self, url, data)
                 time.sleep(sleep_time)
 
 
-class GenCXProfile:
-    def __init__(self, lfclient_host, lfclient_port, debug=False):
-        self.lfclient_url = "http://%s:%s/" % (lfclient_host, lfclient_port)
-        self.debug = debug
+class GenCXProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_host = lfclient_host
+        self.lfclient_port = lfclient_port
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
         self.type = "lfping"
         self.dest = "127.0.0.1"
         self.interval = 1
@@ -281,7 +287,7 @@ class GenCXProfile:
         for port_name in ports:
             gen_name = port_name + "_gen"
             gen_name2 = port_name + "_gen"
-            genl = GenericCx(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
+            genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
             genl.createGenEndp(gen_name, 1, 1, port_name, "gen_generic")
             genl.createGenEndp(gen_name2, 1, 1, port_name, "gen_generic")
             genl.setFlags(gen_name, "ClearPortOnStart", 1)
@@ -300,7 +306,7 @@ class GenCXProfile:
 
         for data in post_data:
             url = self.lfclient_url + "/cli-json/add_cx"
-            LFCliBase.json_post(url, data)
+            LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
 
@@ -316,8 +322,8 @@ class GenCXProfile:
 #
 class StationProfile:
     def __init__(self, lfclient_url, ssid="NA", ssid_pass="NA", security="open", prefix="00000", mode=0, up=True,
-                 dhcp=True, debug=False):
-        self.debug = debug
+                 dhcp=True, debug_=False):
+        self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
         self.ssid_pass = ssid_pass
