@@ -12,6 +12,8 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 # if you lack __init__.py in this directory you will not find sta_connect module
+import pprint
+from pprint import pprint
 import sta_connect
 from sta_connect import *
 import realm
@@ -21,7 +23,7 @@ from LANforge import LFUtils
 
 def main():
     # create multiple OPEN stations
-    station_names = LFUtils.port_name_series(start_id=10, end_id=19)
+    station_names = LFUtils.port_name_series(start_id=0, end_id=1)
 
     test = StaConnect("localhost", 8080, _debugOn=False, _exit_on_error=True,
                         _cleanup_on_exit=False, _runtime_sec=360, _exit_on_fail=True)
@@ -34,11 +36,21 @@ def main():
     test.dut_ssid = "jedway-open"
     test.dut_passwd = "[BLANK]"
     test.station_names = station_names
-    test.runtime_secs = 500
-    test.cleanup_on_exit = False
-
+    test.runtime_secs = 5
+    test.cleanup_on_exit = True
     test.run()
     is_passing = test.passes()
+
+    # recorded stations and endpoints can be retrieved this way:
+    '''
+    for sta_name in test.resulting_stations:
+        print("** recorded: "+sta_name)
+        pprint.pprint(test.resulting_stations[sta_name])
+
+    for endp_name in test.resulting_endpoints:
+        print("** endp: "+endp_name)
+        pprint.pprint(test.resulting_endpoints[endp_name])
+    '''
     if is_passing == False:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
