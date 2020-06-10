@@ -32,7 +32,7 @@ def main():
     test.resource = 1
     test.dut_security = sta_connect.OPEN
     test.dut_ssid = "jedway-open"
-    test.dut_passwd = "NA"
+    test.dut_passwd = "[BLANK]"
     test.station_names = station_names
     test.runtime_secs = 500
     test.cleanup_on_exit = False
