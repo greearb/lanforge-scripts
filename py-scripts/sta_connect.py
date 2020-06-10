@@ -254,6 +254,13 @@ class StaConnect(LFCliBase):
             self.json_post("/cli-json/add_endp", data)
 
             data = {
+                "name" : "testUDP-%s-A" % sta_name,
+                "flag" : "UseAutoNAT",
+                "val" : 1
+            }
+            self.json_post("/cli-json/set_endp_flag", data)
+
+            data = {
                 "alias": "testUDP-%s-B" % sta_name,
                 "shelf": 1,
                 "resource": self.upstream_resource,
@@ -264,6 +271,13 @@ class StaConnect(LFCliBase):
             }
             self.json_post("/cli-json/add_endp", data)
 
+            data = {
+                "name" : "testUDP-%s-B" % sta_name,
+                "flag" : "UseAutoNAT",
+                "val" : 1
+            }
+            self.json_post("/cli-json/set_endp_flag", data)
+
             # Create CX
             data = {
                 "alias": "testUDP-%s" % sta_name,
@@ -272,6 +286,13 @@ class StaConnect(LFCliBase):
                 "rx_endp": "testUDP-%s-B" % sta_name,
             }
             self.json_post("/cli-json/add_cx", data)
+
+            data = {
+                "test_mgr": "default_tm",
+                "cx_name": "testUDP-%s" % sta_name,
+                "milliseconds": 1000
+            }
+            self.json_post("/cli-json/set_cx_report_timer", data)
 
             # Create TCP endpoints
             cx_names["testTCP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
@@ -306,6 +327,13 @@ class StaConnect(LFCliBase):
                 "rx_endp": "testTCP-%s-B" % sta_name,
             }
             self.json_post("/cli-json/add_cx", data)
+
+            data = {
+                "test_mgr": "default_tm",
+                "cx_name": "testTCP-%s" % sta_name,
+                "milliseconds": 1000
+            }
+            self.json_post("/cli-json/set_cx_report_timer", data)
 
         # start cx traffic
         print("\nStarting CX Traffic")
