@@ -39,6 +39,7 @@ class StaConnect(LFCliBase):
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
         super().__init__(host, port, _debug=_debugOn, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.debugOn = _debugOn
         self.dut_security = ""
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
