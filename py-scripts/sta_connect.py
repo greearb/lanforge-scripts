@@ -57,7 +57,14 @@ class StaConnect(LFCliBase):
         self.station_names = []
         if _sta_name is not None:
             self.station_names = [ _sta_name ]
-        self.localrealm = Realm(lfclient_host=host, lfclient_port=port)
+        # self.localrealm :Realm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
+        self.localrealm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
+        self.resulting_stations = {}
+        self.resulting_endpoints = {}
+
+    # def get_realm(self) -> Realm: # py > 3.6
+    def get_realm(self):
+        return self.localrealm
 
     def get_station_url(self, sta_name_=None):
         if sta_name_ is None:
@@ -85,8 +92,6 @@ class StaConnect(LFCliBase):
         for name in self.station_names:
             LFUtils.removePort(self.resource, name, self.lfclient_url)
 
-
-
     def num_associated(self, bssid):
         counter = 0
         # print("there are %d results" % len(self.station_results))
@@ -102,6 +107,12 @@ class StaConnect(LFCliBase):
                 counter += 1
             #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
         return counter
+
+    def clear_test_results(self):
+        self.resulting_stations = {}
+        self.resulting_endpoints = {}
+        super().clear_test_results()
+        #super(StaConnect, self).clear_test_results().test_results.clear()
 
     def run(self):
         self.clear_test_results()
@@ -206,9 +217,13 @@ class StaConnect(LFCliBase):
             }
             self.json_post("/cli-json/nc_show_ports", data)
 
+        # make a copy of the connected stations for test records
+
+
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
-            station_info = self.json_get(sta_url + "?fields=port,ip,ap")
+            station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
+            self.resulting_stations[sta_url] = station_info
             ap = station_info["interface"]["ap"]
             ip = station_info["interface"]["ip"]
             if (ap != "") and (ap != "Not-Associated"):
@@ -384,11 +399,19 @@ class StaConnect(LFCliBase):
         for cx_name in cx_names.keys():
 
             try:
-                ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["a"])
+                # ?fields=tx+bytes,rx+bytes
+                endp_url = "/endp/%s" % cx_names[cx_name]["a"]
+                ptest = self.json_get(endp_url)
+                self.resulting_endpoints[endp_url] = ptest
+
                 ptest_a_tx = ptest['endpoint']['tx bytes']
                 ptest_a_rx = ptest['endpoint']['rx bytes']
 
-                ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
+                #ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
+                endp_url = "/endp/%s" % cx_names[cx_name]["b"]
+                ptest = self.json_get(endp_url)
+                self.resulting_endpoints[endp_url] = ptest
+
                 ptest_b_tx = ptest['endpoint']['tx bytes']
                 ptest_b_rx = ptest['endpoint']['rx bytes']
 
@@ -401,21 +424,21 @@ class StaConnect(LFCliBase):
             except Exception as e:
                 self.error(e)
 
-        # print("\n")
+        # Examples of what happens when you add test results that do not begin with PASS
         # self.test_results.append("Neutral message will fail")
         # self.test_results.append("FAILED message will fail")
-
         # print("\n")
 
         # remove all endpoints and cxs
-        for sta_name in self.station_names:
-            LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
-        endp_names = []
-        removeCX(self.lfclient_url, cx_names.keys())
-        for cx_name in cx_names:
-            endp_names.append(cx_names[cx_name]["a"])
-            endp_names.append(cx_names[cx_name]["b"])
-        removeEndps(self.lfclient_url, endp_names)
+        if self.cleanup_on_exit:
+            for sta_name in self.station_names:
+                LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+            endp_names = []
+            removeCX(self.lfclient_url, cx_names.keys())
+            for cx_name in cx_names:
+                endp_names.append(cx_names[cx_name]["a"])
+                endp_names.append(cx_names[cx_name]["b"])
+            removeEndps(self.lfclient_url, endp_names)
 
 # ~class
 
