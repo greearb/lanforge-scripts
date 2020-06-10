@@ -476,7 +476,7 @@ Example:
         lfjson_port = args.port
 
     staConnect = StaConnect(lfjson_host, lfjson_port)
-
+    staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
     if args.passwd is not None:
