@@ -166,7 +166,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create generic endpoints
-        genl = GenericCx(lfclient_host=self.lfjson_host, lfclient_port=self.lfjson_port)
+        genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
         genl.createGenEndp("genTest1", 1, 1, staName, "gen_generic")
         genl.createGenEndp("genTest2", 1, 1, staName, "gen_generic")
         genl.setFlags("genTest1", "ClearPortOnStart", 1)
@@ -468,9 +468,9 @@ class ConnectTest(LFCliBase):
 # ~class
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
-    test = ConnectTest(lfjson_host, lfjson_port)
+    lfclient_host = "localhost"
+    lfclient_port = 8080
+    test = ConnectTest(lfclient_host, lfclient_port)
     test.run()
 
 
