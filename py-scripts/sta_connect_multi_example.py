@@ -37,7 +37,7 @@ def main():
     test.dut_passwd = "[BLANK]"
     test.station_names = station_names
     test.runtime_secs = 5
-    test.cleanup_on_exit = False
+    test.cleanup_on_exit = True
     test.run()
     is_passing = test.passes()
 
