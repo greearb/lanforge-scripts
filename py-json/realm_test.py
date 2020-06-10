@@ -73,7 +73,7 @@ except Exception as x:
     exit(1)
 
 print(" - - - - TESTING - - - - - -")
-exit(0)
+#exit(0)
 
 print("** Existing vAPs **")
 try:
@@ -95,14 +95,31 @@ except Exception as x:
 
 print("** Removing previous CXs **")
 
-print("** Creating CXs **")
+print("** Creating Layer 3 CXs **")
 try:
-    cxProfile = localrealm.new_cx_profile()
+    cxProfile = localrealm.new_l3_cx_profile()
     # set attributes of cxProfile
-    cxProfile.add_ports("A", "lf_udp", localrealm.find_ports_like("sta+"))
-    cxProfile.create()
+    cxProfile.create("A", "lf_udp", localrealm.find_ports_like("sta+"))
 except Exception as x:
     pprint(x)
     exit(1)
 
+print("** Creating Layer 4 CXs **")
+try:
+    cxProfile = localrealm.new_l4_cx_profile()
+    # set attributes of cxProfile
+    cxProfile.create(localrealm.find_ports_like("sta+"))
+except Exception as x:
+    pprint(x)
+    exit(1)
+
+print("** Creating Generic CXs **")
+try:
+    cxProfile = localrealm.new_generic_cx_profile()
+    # set attributes of cxProfile
+    cxProfile.create(localrealm.find_ports_like("sta+"))
+except Exception as x:
+    pprint(x)
+    exit(1)
 #
+exit(0)
