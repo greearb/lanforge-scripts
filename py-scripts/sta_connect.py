@@ -26,7 +26,7 @@ from realm import Realm
 OPEN="open"
 WEP="wep"
 WPA="wpa"
-WPA2="wpa"
+WPA2="wpa2"
 MODE_AUTO=0
 
 class StaConnect(LFCliBase):
@@ -476,7 +476,7 @@ Example:
         lfjson_port = args.port
 
     staConnect = StaConnect(lfjson_host, lfjson_port)
-
+    staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
     if args.passwd is not None:
@@ -499,8 +499,17 @@ Example:
         staConnect.dut_ssid = args.dut_ssid
 
     staConnect.run()
+
     run_results = staConnect.get_result_list()
 
+    
+    is_passing = staConnect.passes()
+    if is_passing == False:
+        print("FAIL:  Some tests failed")
+    else:
+        print("PASS:  All tests pass")
+
+    print(staConnect.get_all_message())
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
