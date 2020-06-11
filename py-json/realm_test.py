@@ -103,10 +103,11 @@ try:
 except Exception as x:
     pprint(x)
     exit(1)
+
 try:
     cxProfile = localrealm.new_l3_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create("lf_udp", side_a=list(localrealm.find_ports_like("sta+", side_b="1.1.eth1")))
+    cxProfile.create("lf_udp", side_a=list(localrealm.find_ports_like("sta+")), side_b="1.1.eth1")
 except Exception as x:
     pprint(x)
     exit(1)
