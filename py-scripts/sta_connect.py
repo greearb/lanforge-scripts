@@ -499,8 +499,17 @@ Example:
         staConnect.dut_ssid = args.dut_ssid
 
     staConnect.run()
+
     run_results = staConnect.get_result_list()
 
+
+    is_passing = staConnect.passes()
+    if is_passing == False:
+        print("FAIL:  Some tests failed")
+    else:
+        print("PASS:  All tests pass")
+
+    print(staConnect.get_all_message())
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
