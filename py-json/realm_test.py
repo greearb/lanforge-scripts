@@ -62,9 +62,9 @@ try:
     sta_list = localrealm.station_list()
     print("%s Stations:" % {len(sta_list)})
     pprint(sta_list)
-    print("  Stations like sta+:")
+    print("  Stations like wlan+:")
     print(localrealm.find_ports_like("wlan+"))
-    print("  Stations like sta0:")
+    print("  Stations like wlan0:")
     print(localrealm.find_ports_like("wlan0*"))
     print("  Stations between wlan0..wlan2:")
     print(localrealm.find_ports_like("wlan[0..2]"))
@@ -99,7 +99,14 @@ print("** Creating Layer 3 CXs **")
 try:
     cxProfile = localrealm.new_l3_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create("A", "lf_udp", localrealm.find_ports_like("sta+"))
+    cxProfile.create("lf_udp", side_a="1.1.eth1", side_b=list(localrealm.find_ports_like("sta+")))
+except Exception as x:
+    pprint(x)
+    exit(1)
+try:
+    cxProfile = localrealm.new_l3_cx_profile()
+    # set attributes of cxProfile
+    cxProfile.create("lf_udp", side_a=list(localrealm.find_ports_like("sta+", side_b="1.1.eth1")))
 except Exception as x:
     pprint(x)
     exit(1)
