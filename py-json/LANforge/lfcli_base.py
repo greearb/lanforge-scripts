@@ -108,6 +108,9 @@ class LFCliBase:
         fail_messages = self.get_failed_result_list()
         return "\n".join(fail_messages)
 
+    def get_all_message(self):
+        return "\n".join(self.test_results)
+
     def passes(self):
         pass_counter = 0
         fail_counter = 0
