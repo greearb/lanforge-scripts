@@ -151,6 +151,20 @@ class Realm(LFCliBase):
 
         return matched_map
 
+    def name_to_eid(self, eid):
+        info = []
+        if eid is None or eid == "":
+            raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
+        else:
+            if '.' in eid:
+                info = eid.split('.')
+        return info
+
+    def parse_link(self, link):
+        link = self.lfclient_url + link
+        info = ()
+
+
     def new_station_profile(self):
         station_prof = StationProfile(self.lfclient_url, debug_=self.debug)
         return station_prof
@@ -174,60 +188,149 @@ class L3CXProfile(LFCliBase):
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
 
-    def create(self, endp_type, side="a", ports=[], sleep_time=.5):
+    def name_to_eid(self, eid):
+        info = []
+        if eid is None or eid == "":
+            raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
+        else:
+            if '.' in eid:
+                info = eid.split('.')
+        return info
+
+    def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
-        side = side.upper()
-        endp_side_a = {
-            "alias": "",
-            "shelf": 1,
-            "resource": 1,
-            "port": "",
-            "type": endp_type,
-            "min_rate": 0,
-            "max_rate": 0,
-            "min_pkt": -1,
-            "max_pkt": 0
-        }
-        endp_side_b = {
-            "alias": "",
-            "shelf": 1,
-            "resource": 1,
-            "port": "",
-            "type": endp_type,
-            "min_rate": 0,
-            "max_rate": 0,
-            "min_pkt": -1,
-            "max_pkt": 0
-        }
 
-        for port_name in ports:
-            if side == "A":
-                endp_side_a["alias"] = port_name + "CX-A"
-                endp_side_a["port"] = port_name
-                endp_side_b["alias"] = port_name + "CX-B"
-                endp_side_b["port"] = "eth1"
-            elif side == "B":
-                endp_side_a["alias"] = port_name + "CX-A"
-                endp_side_a["port"] = "eth1"
-                endp_side_b["alias"] = port_name + "CX-B"
-                endp_side_b["port"] = port_name
+        if type(side_a) == list and type(side_b) != list:
+            side_b_info = self.name_to_eid(side_b)
+            if len(side_b_info) == 3:
+                side_b_shelf = side_b_info[0]
+                side_b_resource = side_b_info[1]
+                side_b_name = side_b_info[2]
+            elif len(side_b_info) == 2:
+                side_b_shelf = 1
+                side_b_resource = side_b_info[0]
+                side_b_name = side_b_info[1]
+            else:
+                raise ValueError("side_b must have a shelf and/or resource number")
 
-            url = self.lfclient_url + "/cli-json/add_endp"
-            LFCliBase.json_post(self, url, endp_side_a)
-            LFCliBase.json_post(self, url, endp_side_b)
+            for port_name in side_a:
+                side_a_info = self.name_to_eid(port_name)
+                if len(side_a_info) == 3:
+                    side_a_shelf = side_a_info[0]
+                    side_a_resource = side_a_info[1]
+                    side_a_name = side_a_info[2]
+                else:
+                    side_a_shelf = 1
+                    side_a_resource = side_a_info[0]
+                    side_a_name = side_a_info[1]
+
+                endp_side_a = {
+                    "alias": port_name + "-A",
+                    "shelf": side_a_shelf,
+                    "resource": side_a_resource,
+                    "port": side_a_name,
+                    "type": endp_type,
+                    "min_rate": 0,
+                    "max_rate": 0,
+                    "min_pkt": -1,
+                    "max_pkt": 0
+                }
+                endp_side_b = {
+                    "alias": port_name + "-B",
+                    "shelf": side_b_shelf,
+                    "resource": side_b_resource,
+                    "port": side_b_name,
+                    "type": endp_type,
+                    "min_rate": 0,
+                    "max_rate": 0,
+                    "min_pkt": -1,
+                    "max_pkt": 0
+                }
+
+                url = self.lfclient_url + "/cli-json/add_endp"
+                LFCliBase.json_post(self, url, endp_side_a)
+                LFCliBase.json_post(self, url, endp_side_b)
+                time.sleep(sleep_time)
+
+                data = {
+                    "alias": port_name + "CX",
+                    "test_mgr": "default_tm",
+                    "tx_endp": port_name + "CX-A",
+                    "rx_endp": port_name + "CX-B"
+                }
+                post_data.append(data)
+
+        elif type(side_b) == list and type(side_a) != list:
+            side_a_info = self.name_to_eid(side_a)
+            if len(side_a_info) == 3:
+                side_a_shelf = side_a_info[0]
+                side_a_resource = side_a_info[1]
+                side_a_name = side_a_info[2]
+            elif len(side_a_info) == 2:
+                side_a_shelf = 1
+                side_a_resource = side_a_info[0]
+                side_a_name = side_a_info[1]
+            else:
+                raise ValueError("side_b must have a shelf and/or resource number")
+
+            for port_name in side_b:
+                side_b_info = self.name_to_eid(port_name)
+                print(side_b_info)
+                if len(side_b_info) == 3:
+                    side_b_shelf = side_b_info[0]
+                    side_b_resource = side_b_info[1]
+                    side_b_name = side_b_info[2]
+                else:
+                    side_b_shelf = 1
+                    side_b_resource = side_b_info[0]
+                    side_b_name = side_b_info[1]
+                endp_side_a = {
+                    "alias": port_name + "-A",
+                    "shelf": side_a_shelf,
+                    "resource": side_a_resource,
+                    "port": side_a_name,
+                    "type": endp_type,
+                    "min_rate": 0,
+                    "max_rate": 0,
+                    "min_pkt": -1,
+                    "max_pkt": 0
+                }
+                endp_side_b = {
+                    "alias": port_name + "-B",
+                    "shelf": side_b_shelf,
+                    "resource": side_b_resource,
+                    "port": side_b_name,
+                    "type": endp_type,
+                    "min_rate": 0,
+                    "max_rate": 0,
+                    "min_pkt": -1,
+                    "max_pkt": 0
+                }
+
+                url = self.lfclient_url + "/cli-json/add_endp"
+                LFCliBase.json_post(self, url, endp_side_a)
+                LFCliBase.json_post(self, url, endp_side_b)
+                time.sleep(sleep_time)
+
+                data = {
+                    "alias": port_name + "CX",
+                    "test_mgr": "default_tm",
+                    "tx_endp": port_name + "CX-A",
+                    "rx_endp": port_name + "CX-B"
+                }
+                post_data.append(data)
+        else:
+            raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
+
+        for data in post_data:
+            url = self.lfclient_url + "/cli-json/add_cx"
+            LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
-            data = {
-                "alias": port_name + "CX",
-                "test_mgr": "default_tm",
-                "tx_endp": port_name + "CX-A",
-                "rx_endp": port_name + "CX-B"
-            }
-            post_data.append(data)
-            for data in post_data:
-                url = self.lfclient_url + "/cli-json/add_cx"
-                LFCliBase.json_post(self, url, data)
-                time.sleep(sleep_time)
+    def to_string(self):
+        print("Endpoint Side A " + self.endp_side_a)
+        print("Endpoint Side B " + self.endp_side_b)
+        print("CX Data " + self.data)
 
 
 class L4CXProfile(LFCliBase):
