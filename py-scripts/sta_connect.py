@@ -26,7 +26,7 @@ from realm import Realm
 OPEN="open"
 WEP="wep"
 WPA="wpa"
-WPA2="wpa"
+WPA2="wpa2"
 MODE_AUTO=0
 
 class StaConnect(LFCliBase):
