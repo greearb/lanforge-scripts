@@ -38,6 +38,7 @@ import java.nio.file.*;
 public class kpi {
    String lc_osname;
    String home_dir;
+
    static final String out_sep = "\t";
    static final String in_sep = "\t";
    
@@ -118,10 +119,18 @@ public class kpi {
 
    public void work(String[] args) {
       String dir = null;
+      String results_url = "";
+      String caseid = "";
 
       for (int i = 0; i<args.length; i++) {
          if (args[i].equals("--dir")) {
             dir = args[i+1];
+         }
+         else if (args[i].equals("--caseid")) {
+            caseid = args[i+1];
+         }
+         else if (args[i].equals("--results_url")) {
+            results_url = args[i+1];
          }
          else if (args[i].equals("--help") || args[i].equals("-h") || args[i].equals("-?")) {
             System.out.println("Usage: $0 --dir /path/to/test-collection");
@@ -559,6 +568,7 @@ public class kpi {
          String row_text = ("<tr><td>" + i + "</td><td><a href=\"" + run.getName() + "/index.html\">" + run.getName() + "</a></td><td>" + run.getDate()
                             + "</td><td>" + run.getDutHwVer() + "</td><td>" + run.getDutSwVer()
                             + "</td><td>" + run.getDutModelNum() + "</td>" + greenTd(run.getPass() + "") + redTd(run.getFail() + "") + logs_str + "</tr>\n");
+            
          if (i == (runs.size() - 1)) {
             // Last run
             int png_row_count = 0;
@@ -588,6 +598,34 @@ public class kpi {
 
             if ((!needs_tr) && pngs.length() > 0) {
                pngs.append("</tr>\n");
+            }
+
+            String testrails_msg = ("MSG Run: " + run.getName() + " Date: " + run.getDate() + " DUT-HW: " + run.getDutHwVer() + "DUT-SW: " + run.getDutSwVer()
+                                    + " Passed: " + run.getPass() + " Fail: " + run.getFail()
+                                    + " Log-Bugs: " + run.getLogBugs() + " Log-Warnings: " + run.getLogWarnings()
+                                    + " Log-Crashes: " + run.getLogCrashes() + " Log-Restarting: " + run.getLogRestarting());
+
+            if (!caseid.equals("")) {
+               try {
+                  // Create file for propagating results into external tool
+                  String ofile = dir + File.separator + "testrails.txt";
+                  BufferedWriter bw = new BufferedWriter(new FileWriter(ofile));
+             
+                  bw.write("CASE_ID " + caseid);
+                  bw.write("RUN_ID " + i);
+                  bw.write(System.lineSeparator());
+                  bw.write(testrails_msg);
+                  bw.write(System.lineSeparator());
+                  bw.write("MSG URL: " + results_url);
+                  bw.write(System.lineSeparator());
+
+                  bw.close();
+
+                  System.out.println("See testrails results: " + ofile);
+               }
+               catch (Exception eee) {
+                  eee.printStackTrace();
+               }
             }
          }
 
