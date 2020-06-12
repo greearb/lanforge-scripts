@@ -511,6 +511,14 @@ Example:
 
     print(staConnect.get_all_message())
 
+    is_passing = staConnect.passes()
+    if is_passing == False:
+        print("FAIL:  Some tests failed")
+    else:
+        print("PASS:  All tests pass")
+
+    print(staConnect.get_all_message())
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 

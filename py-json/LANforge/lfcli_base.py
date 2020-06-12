@@ -69,6 +69,38 @@ class LFCliBase:
 
         return json_response
 
+    @staticmethod
+    def response_list_to_map(json_list, key, debug_=False):
+        reverse_map = {}
+        if (json_list is None) or (len(json_list) < 1):
+            if debug_:
+                print("response_list_to_map: no json_list provided")
+                raise ValueError("response_list_to_map: no json_list provided")
+            return reverse_map
+
+        json_interfaces = json_list
+        if key in json_list:
+            json_interfaces = json_list[key]
+
+        for record in json_interfaces:
+            if len(record.keys()) < 1:
+                continue
+            record_keys = record.keys()
+            k2 = ""
+            # we expect one key in record keys, but we can't expect [0] to be populated
+            json_entry = None
+            for k in record_keys:
+                k2 = k
+                json_entry = record[k]
+            # skip uninitialized port records
+            if k2.find("Unknown") >= 0:
+                continue
+            port_json = record[k2]
+            reverse_map[k2] = json_entry
+
+        return reverse_map
+
+
     def error(self, exception):
         # print("lfcli_base error: %s" % exception)
         pprint.pprint(exception)
