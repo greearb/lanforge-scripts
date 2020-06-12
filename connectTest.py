@@ -34,7 +34,7 @@ class ConnectTest(LFCliBase):
     def run(self):
         print("See home/lanforge/Documents/connectTestLogs/connectTestLatest for specific values on latest test")
 
-        eth1IP = super().json_get("port/1/1/eth1")
+        eth1IP = super().json_get("/port/1/1/eth1")
         if eth1IP['interface']['ip'] == "0.0.0.0":
             print("Warning: Eth1 lacks ip address")
             exit(1)
@@ -42,7 +42,7 @@ class ConnectTest(LFCliBase):
         # Create stations and turn dhcp on
         print("Creating station and turning on dhcp")
 
-        response = super().json_get(staNameUri)
+        response = super().json_get("/" + staNameUri)
         if response is not None:
             if response["interface"] is not None:
                 print("removing old station")
@@ -89,7 +89,7 @@ class ConnectTest(LFCliBase):
         maxTime = 300
         ip = "0.0.0.0"
         while (ip == "0.0.0.0") and (duration < maxTime):
-            station_info = super().json_get(staNameUri + "?fields=port,ip")
+            station_info = super().json_get("/" + staNameUri + "?fields=port,ip")
             LFUtils.debug_printer.pprint(station_info)
             if (station_info is not None) and ("interface" in station_info) and ("ip" in station_info["interface"]):
                 ip = station_info["interface"]["ip"]
@@ -116,7 +116,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create l4 endpoint
-        url = "cli-json/add_l4_endp"
+        url = "/cli-json/add_l4_endp"
         data = {
             "alias": "l4Test",
             "shelf": 1,
@@ -125,13 +125,14 @@ class ConnectTest(LFCliBase):
             "type": "l4_generic",
             "timeout": 1000,
             "url_rate": 600,
-            "url": "dl http://10.40.0.1/ /dev/null"
+            "url": "dl http://localhost/ /dev/null",
+            "proxy_port" : "NA"
         }
         super().json_post(url, data)
-        time.sleep(.05)
+        time.sleep(20)
 
         # create cx for l4_endp
-        url = "cli-json/add_cx"
+        url = "/cli-json/add_cx"
         data = {
             "alias": "CX_l4Test",
             "test_mgr": "default_tm",
@@ -142,7 +143,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create fileio endpoint
-        url = "cli-json/add_file_endp"
+        url = "/cli-json/add_file_endp"
         data = {
             "alias": "fioTest",
             "shelf": 1,
@@ -152,10 +153,10 @@ class ConnectTest(LFCliBase):
             "directory": "/mnt/fe-test"
         }
         super().json_post(url, data)
-        time.sleep(.05)
+        time.sleep(20)
 
         # create fileio cx
-        url = "cli-json/add_cx"
+        url = "/cli-json/add_cx"
         data = {
             "alias": "CX_fioTest",
             "test_mgr": "default_tm",
@@ -176,7 +177,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create generic cx
-        url = "cli-json/add_cx"
+        url = "/cli-json/add_cx"
         data = {
             "alias": "CX_genTest1",
             "test_mgr": "default_tm",
@@ -187,7 +188,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create redirects for wanlink
-        url = "cli-json/add_rdd"
+        url = "/cli-json/add_rdd"
         data = {
             "shelf": 1,
             "resource": 1,
@@ -196,7 +197,7 @@ class ConnectTest(LFCliBase):
         }
         super().json_post(url, data)
 
-        url = "cli-json/add_rdd"
+        url = "/cli-json/add_rdd"
         data = {
             "shelf": 1,
             "resource": 1,
@@ -207,7 +208,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # reset redirect ports
-        url = "cli-json/reset_port"
+        url = "/cli-json/reset_port"
         data = {
             "shelf": 1,
             "resource": 1,
@@ -215,7 +216,7 @@ class ConnectTest(LFCliBase):
         }
         super().json_post(url, data)
 
-        url = "cli-json/reset_port"
+        url = "/cli-json/reset_port"
         data = {
             "shelf": 1,
             "resource": 1,
@@ -225,7 +226,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create wanlink endpoints
-        url = "cli-json/add_wl_endp"
+        url = "/cli-json/add_wl_endp"
         data = {
             "alias": "wlan0",
             "shelf": 1,
@@ -236,7 +237,7 @@ class ConnectTest(LFCliBase):
         }
         super().json_post(url, data)
 
-        url = "cli-json/add_wl_endp"
+        url = "/cli-json/add_wl_endp"
         data = {
             "alias": "wlan1",
             "shelf": 1,
@@ -249,7 +250,7 @@ class ConnectTest(LFCliBase):
         time.sleep(.05)
 
         # create wanlink cx
-        url = "cli-json/add_cx"
+        url = "/cli-json/add_cx"
         data = {
             "alias": "CX_wlan0",
             "test_mgr": "default_tm",
@@ -264,17 +265,18 @@ class ConnectTest(LFCliBase):
         # get data before running traffic
         try:
             get_info = {}
-            get_info['testTCPA'] = super().json_get("endp/testTCP-A?fields=tx+bytes,rx+bytes")
-            get_info['testTCPB'] = super().json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
-            get_info['testUDPA'] = super().json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
-            get_info['testUDPB'] = super().json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
-            get_info['l4Test'] = super().json_get("layer4/l4Test?fields=bytes-rd")
-            get_info['genTest1'] = super().json_get("generic/genTest1?fields=last+results")
-            get_info['wlan0'] = super().json_get("wl_ep/wlan0")
-            get_info['wlan1'] = super().json_get("wl_ep/wlan1")
+            get_info['testTCPA'] = super().json_get("/endp/testTCP-A?fields=tx+bytes,rx+bytes")
+            get_info['testTCPB'] = super().json_get("/endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            get_info['testUDPA'] = super().json_get("/endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            get_info['testUDPB'] = super().json_get("/endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            get_info['l4Test'] = super().json_get("/layer4/l4Test?fields=bytes-rd")
+            get_info['genTest1'] = super().json_get("/generic/genTest1?fields=last+results")
+            get_info['wlan0'] = super().json_get("/wl_ep/wlan0")
+            get_info['wlan1'] = super().json_get("/wl_ep/wlan1")
 
             for name in get_info:
-                if 'endpoint' not in name:
+                #print("==================\n"+name+"\n====================")
+                if 'endpoint' not in get_info[name]:
                     print(get_info[name])
                     raise ValueError ("%s missing endpoint value" % name)
 
@@ -295,11 +297,11 @@ class ConnectTest(LFCliBase):
             wlan0RXP = get_info['wlan0']['endpoint']['rx pkts']
             wlan1TXB = get_info['wlan1']['endpoint']['tx bytes']
             wlan1RXP = get_info['wlan1']['endpoint']['rx pkts']
-
         except Exception as e:
             print("Something went wrong")
             print(e)
             print("Cleaning up...")
+            time.sleep(15)
             LFUtils.removePort(1, staName, mgrURL)
             endpNames = ["testTCP-A", "testTCP-B",
                          "testUDP-A", "testUDP-B",
@@ -387,35 +389,36 @@ class ConnectTest(LFCliBase):
             ptestTCPATX = ptestTCPA['endpoint']['tx bytes']
             ptestTCPARX = ptestTCPA['endpoint']['rx bytes']
 
-            ptestTCPB = super().json_get("endp/testTCP-B?fields=tx+bytes,rx+bytes")
+            ptestTCPB = super().json_get("/endp/testTCP-B?fields=tx+bytes,rx+bytes")
             ptestTCPBTX = ptestTCPB['endpoint']['tx bytes']
             ptestTCPBRX = ptestTCPB['endpoint']['rx bytes']
 
-            ptestUDPA = super().json_get("endp/testUDP-A?fields=tx+bytes,rx+bytes")
+            ptestUDPA = super().json_get("/endp/testUDP-A?fields=tx+bytes,rx+bytes")
             ptestUDPATX = ptestUDPA['endpoint']['tx bytes']
             ptestUDPARX = ptestUDPA['endpoint']['rx bytes']
 
-            ptestUDPB = super().json_get("endp/testUDP-B?fields=tx+bytes,rx+bytes")
+            ptestUDPB = super().json_get("/endp/testUDP-B?fields=tx+bytes,rx+bytes")
             ptestUDPBTX = ptestUDPB['endpoint']['tx bytes']
             ptestUDPBRX = ptestUDPB['endpoint']['rx bytes']
 
-            pl4Test = super().json_get("layer4/l4Test?fields=bytes-rd")
+            pl4Test = super().json_get("/layer4/l4Test?fields=bytes-rd")
             pl4TestBR = pl4Test['endpoint']['bytes-rd']
 
-            pgenTest1 = super().json_get("generic/genTest1?fields=last+results")
+            pgenTest1 = super().json_get("/generic/genTest1?fields=last+results")
             pgenTest1LR = pgenTest1['endpoint']['last results']
 
-            pwlan0 = super().json_get("wl_ep/wlan0")
+            pwlan0 = super().json_get("/wl_ep/wlan0")
             pwlan0TXB = pwlan0['endpoint']['tx bytes']
             pwlan0RXP = pwlan0['endpoint']['rx pkts']
-            pwlan1 = super().json_get("wl_ep/wlan1")
+            pwlan1 = super().json_get("/wl_ep/wlan1")
             pwlan1TXB = pwlan1['endpoint']['tx bytes']
             pwlan1RXP = pwlan1['endpoint']['rx pkts']
         except Exception as e:
             print("Something went wrong")
             print(e)
             print("Cleaning up...")
-            reqURL = "cli-json/rm_vlan"
+            time.sleep(15)
+            reqURL = "/cli-json/rm_vlan"
             data = {
                 "shelf": 1,
                 "resource": 1,
