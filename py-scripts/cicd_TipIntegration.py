@@ -17,6 +17,13 @@ import paramiko
 from scp import SCPClient
 import pprint
 from pprint import pprint
+from os import listdir
+import re
+
+# For finding files
+# https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
+import glob
+external_results_dir=/var/tmp/lanforge
 
 local_dir=os.getenv('LOG_DIR')
 print("Local Directory where all files will be copied and logged", local_dir)
@@ -387,6 +394,48 @@ class RunTest:
         else:
             client.update_testrail(case_id=941, run_id=rid, status_id=5,
                                    msg='client connectivity to 5GHZ OPEN SSID is Failed')
+
+    # Check for externally run test case results.
+    def TestCase_LF_External(self, rid):
+        #https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
+        results = glob.glob("%s/*_CICD_RESULTS.txt"%external_results_dir)
+        for r in results:
+            rfile = open(r, 'r')
+            lines = rfile.readlines()
+
+            # File contents looks something like:
+            #CASE_ID 9999
+            #RUN_ID 15
+            #STATUS 1
+            #MSG Test passed nicely
+            #MSG Build ID:  deadbeef
+            #MSG Results:  http://cicd.telecominfraproject.com
+
+            _case_id = -1
+            _status_id = 1  # Default to pass
+            _msg = ""
+            _rid = rid
+
+            for line in Lines:
+                m = re.search(r'(\S+) (.*)', line)
+                k = m.group(0);
+                v = m.group(1);
+
+                if k == "CASE_ID":
+                    _case_id = v
+                if k == "RUN_ID":
+                    _rid = v
+                if k == "STATUS":
+                    _status_id = v
+                if k == "MSG":
+                    if _msg == "":
+                        _msg == v
+                    else:
+                        _msg += "\n"
+                        _msg += v
+            if _case_id != -1:
+               client.update_testrail(case_id=_case_id, run_id=_rid, status_id=_status_id, msg=_msg)
+            os.unlink(r)
 
     def TestCase_939(self, rid):
         ''' Client Count in MQTT Log'''
