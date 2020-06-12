@@ -129,7 +129,11 @@ class ConnectTest(LFCliBase):
             "proxy_port" : "NA"
         }
         super().json_post(url, data)
-        time.sleep(20)
+        data = {
+            "endpoint": "all"
+        }
+        super().json_post("/cli-json/nc_show_endpoints", data)
+        time.sleep(5)
 
         # create cx for l4_endp
         url = "/cli-json/add_cx"
@@ -153,7 +157,13 @@ class ConnectTest(LFCliBase):
             "directory": "/mnt/fe-test"
         }
         super().json_post(url, data)
-        time.sleep(20)
+        time.sleep(1)
+        data = {
+            "endpoint": "all"
+        }
+        super().json_post("/cli-json/nc_show_endpoints", data)
+        time.sleep(1)
+
 
         # create fileio cx
         url = "/cli-json/add_cx"
@@ -175,6 +185,10 @@ class ConnectTest(LFCliBase):
         genl.setFlags("genTest2", "Unmanaged", 1)
         genl.setCmd("genTest1", "lfping  -i 0.1 -I %s 10.40.0.1" % staName)
         time.sleep(.05)
+        data = {
+            "endpoint": "all"
+        }
+        super().json_post("/cli-json/nc_show_endpoints", data)
 
         # create generic cx
         url = "/cli-json/add_cx"
@@ -248,6 +262,10 @@ class ConnectTest(LFCliBase):
         }
         super().json_post(url, data)
         time.sleep(.05)
+        data = {
+            "endpoint": "all"
+        }
+        super().json_post("/cli-json/nc_show_endpoints", data)
 
         # create wanlink cx
         url = "/cli-json/add_cx"
@@ -259,12 +277,17 @@ class ConnectTest(LFCliBase):
         }
         super().json_post(url, data)
         time.sleep(.5)
+        data = {
+            "endpoint": "all"
+        }
+        super().json_post("/cli-json/nc_show_endpoints", data)
 
         cxNames = ["testTCP", "testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wlan0"]
 
         # get data before running traffic
         try:
             get_info = {}
+            sleep(5)
             get_info['testTCPA'] = super().json_get("/endp/testTCP-A?fields=tx+bytes,rx+bytes")
             get_info['testTCPB'] = super().json_get("/endp/testTCP-B?fields=tx+bytes,rx+bytes")
             get_info['testUDPA'] = super().json_get("/endp/testUDP-A?fields=tx+bytes,rx+bytes")
