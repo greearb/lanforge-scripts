@@ -106,15 +106,8 @@ class ConnectTest(LFCliBase):
             sys.exit(1)
 
         print("Creating endpoints and cross connects")
-        # create cx for tcp and udp
-        cmd = (
-            "./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports %s,eth1 --use_speeds  360000,150000 --endp_type tcp > ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
-        execWrap(cmd)
-        cmd = (
-            "./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports %s,eth1 --use_speeds  360000,150000 --endp_type udp >> ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
-        execWrap(cmd)
-        time.sleep(.05)
 
+        #==============| ENDPOINT CREATION |=================
         # create l4 endpoint
         url = "/cli-json/add_l4_endp"
         data = {
@@ -135,17 +128,6 @@ class ConnectTest(LFCliBase):
         super().json_post("/cli-json/nc_show_endpoints", data)
         time.sleep(5)
 
-        # create cx for l4_endp
-        url = "/cli-json/add_cx"
-        data = {
-            "alias": "CX_l4Test",
-            "test_mgr": "default_tm",
-            "tx_endp": "l4Test",
-            "rx_endp": "NA"
-        }
-        super().json_post(url, data)
-        time.sleep(.05)
-
         # create fileio endpoint
         url = "/cli-json/add_file_endp"
         data = {
@@ -164,18 +146,6 @@ class ConnectTest(LFCliBase):
         super().json_post("/cli-json/nc_show_endpoints", data)
         time.sleep(1)
 
-
-        # create fileio cx
-        url = "/cli-json/add_cx"
-        data = {
-            "alias": "CX_fioTest",
-            "test_mgr": "default_tm",
-            "tx_endp": "fioTest",
-            "rx_endp": "NA"
-        }
-        super().json_post(url, data)
-        time.sleep(.05)
-
         # create generic endpoints
         genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
         genl.createGenEndp("genTest1", 1, 1, staName, "gen_generic")
@@ -189,17 +159,6 @@ class ConnectTest(LFCliBase):
             "endpoint": "all"
         }
         super().json_post("/cli-json/nc_show_endpoints", data)
-
-        # create generic cx
-        url = "/cli-json/add_cx"
-        data = {
-            "alias": "CX_genTest1",
-            "test_mgr": "default_tm",
-            "tx_endp": "genTest1",
-            "rx_endp": "genTest2"
-        }
-        super().json_post(url, data)
-        time.sleep(.05)
 
         # create redirects for wanlink
         url = "/cli-json/add_rdd"
@@ -266,6 +225,51 @@ class ConnectTest(LFCliBase):
             "endpoint": "all"
         }
         super().json_post("/cli-json/nc_show_endpoints", data)
+
+        time.sleep(10)
+
+        #==============| CX CREATION |===================
+        # create cx for tcp and udp
+        cmd = ("./lf_firemod.pl --action create_cx --cx_name testTCP --use_ports %s,eth1 --use_speeds  360000,"
+               "150000 --endp_type tcp > ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
+        execWrap(cmd)
+        cmd = ("./lf_firemod.pl --action create_cx --cx_name testUDP --use_ports %s,eth1 --use_speeds  360000,"
+               "150000 --endp_type udp >> ~/Documents/connectTestLogs/connectTestLatest.log" % staName)
+        execWrap(cmd)
+        time.sleep(.05)
+
+        # create cx for l4_endp
+        url = "/cli-json/add_cx"
+        data = {
+            "alias": "CX_l4Test",
+            "test_mgr": "default_tm",
+            "tx_endp": "l4Test",
+            "rx_endp": "NA"
+        }
+        super().json_post(url, data)
+        time.sleep(.05)
+
+        # create fileio cx
+        url = "/cli-json/add_cx"
+        data = {
+            "alias": "CX_fioTest",
+            "test_mgr": "default_tm",
+            "tx_endp": "fioTest",
+            "rx_endp": "NA"
+        }
+        super().json_post(url, data)
+        time.sleep(.05)
+
+        # create generic cx
+        url = "/cli-json/add_cx"
+        data = {
+            "alias": "CX_genTest1",
+            "test_mgr": "default_tm",
+            "tx_endp": "genTest1",
+            "rx_endp": "genTest2"
+        }
+        super().json_post(url, data)
+        time.sleep(.05)
 
         # create wanlink cx
         url = "/cli-json/add_cx"
