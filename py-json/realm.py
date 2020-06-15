@@ -271,7 +271,7 @@ class L3CXProfile(LFCliBase):
                 side_a_resource = side_a_info[0]
                 side_a_name = side_a_info[1]
             else:
-                raise ValueError("side_b must have a shelf and/or resource number")
+                raise ValueError("side_a must have a shelf and/or resource number")
 
             for port_name in side_b:
                 side_b_info = self.name_to_eid(port_name)
