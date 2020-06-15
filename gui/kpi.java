@@ -612,6 +612,7 @@ public class kpi {
                   BufferedWriter bw = new BufferedWriter(new FileWriter(ofile));
              
                   bw.write("CASE_ID " + caseid);
+                  bw.write(System.lineSeparator());
                   bw.write("RUN_ID " + i);
                   bw.write(System.lineSeparator());
                   bw.write(testrails_msg);
