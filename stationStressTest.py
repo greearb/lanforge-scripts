@@ -14,9 +14,68 @@ from LANforge.lfcli_base import LFCliBase
 
 
 class StressTester(LFCliBase):
-    def __init__(self, lfhost, lfport, _sender="lanforge@candelatech.com", _debug_on=False):
+    def __init__(self, lfhost, lfport, _sender="lanforge@candelatech.com", _debug_on=True):
         self.sender = _sender
         super().__init__(lfhost, lfport, False)
+
+    def name_to_eid(self, eid):
+        info = []
+        if eid is None or eid == "":
+            raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
+        else:
+            if '.' in eid:
+                info = eid.split('.')
+        return info
+
+    def cleanup(self):
+        sta_json = super().json_get("port/1/1/list?field=alias")['interfaces']
+        cx_json = super().json_get("cx")
+        endp_json = super().json_get("endp")['endpoint']
+
+        # get and remove current stations
+        if sta_json is not None:
+            print("Removing old stations")
+            for name in list(sta_json):
+                for alias in list(name):
+                    if 'sta' in alias:
+                        #print(alias)
+                        info = self.name_to_eid(alias)
+                        req_url = "cli-json/rm_vlan"
+                        data = {
+                            "shelf": info[0],
+                            "resource": info[1],
+                            "port": info[2]
+                        }
+                        #print(data)
+                        super().json_post(req_url, data)
+                        time.sleep(.5)
+
+        # get and remove current cxs
+        if cx_json is not None:
+            print("Removing old cross-connects")
+            for name in list(cx_json):
+                if name != 'handler' and name != 'uri':
+                    #print(name)
+                    req_url = "cli-json/rm_cx"
+                    data = {
+                        "test_mgr": "default_tm",
+                        "cx_name": name
+                    }
+                    super().json_post(req_url, data)
+                    time.sleep(.5)
+
+        # get and remove current endps
+        if endp_json is not None:
+            print("Removing old endpoints")
+            for name in list(endp_json):
+                #print(list(name)[0])
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": list(name)[0]
+                }
+                #print(data)
+                super().json_post(req_url, data)
+                time.sleep(.5)
 
     def run(self):
         parser = argparse.ArgumentParser(description="Create max stations for each radio")
@@ -147,41 +206,7 @@ class StressTester(LFCliBase):
 
         # clean up old stations
         print("Cleaning up old Stations")
-
-        for radio, numStations in radios.items():
-            for i in range(0, numStations):
-                sta_name = "sta" + radio[-1:] + str(padding_num + i)[1:]
-                if super().json_get("port/1/1/" + sta_name) is not None:
-                    req_url = "cli-json/rm_vlan"
-
-                    data = {
-                        "shelf": 1,
-                        "resource": 1,
-                        "port": sta_name
-                    }
-
-                    super().json_post(req_url, data)
-
-                    req_url = "cli-json/rm_cx"
-
-                    data = {
-                        "test_mgr": "default_tm",
-                        "cx_name": sta_name
-                    }
-                    super().json_post(req_url, data)
-
-                    req_url = "cli-json/rm_endp"
-
-                    data = {
-                        "endp_name": sta_name + "-A"
-                    }
-                    super().json_post(req_url, data)
-
-                    req_url = "cli-json/rm_endp"
-                    data = {
-                        "endp_name": sta_name + "-B"
-                    }
-                    super().json_post(req_url, data)
+        self.cleanup()
 
         # create new stations
         print("Creating Stations")
@@ -376,39 +401,7 @@ class StressTester(LFCliBase):
         # remove all created stations and cross connects
 
         print("Cleaning Up...")
-        for sta_name in stations:
-            req_url = "cli-json/rm_vlan"
-
-            data = {
-                "shelf": 1,
-                "resource": 1,
-                "port": sta_name
-            }
-
-            super().json_post(req_url, data)
-
-            req_url = "cli-json/rm_cx"
-
-            data = {
-                "test_mgr": "default_tm",
-                "cx_name": sta_name
-            }
-            super().json_post(req_url, data)
-
-            req_url = "cli-json/rm_endp"
-
-            data = {
-                "endp_name": sta_name + "-A"
-            }
-            super().json_post(req_url, data)
-
-            req_url = "cli-json/rm_endp"
-            data = {
-                "endp_name": sta_name + "-B"
-            }
-
-            super().json_post(req_url, data)
-
+        self.cleanup()
 
 def main():
     lfjson_host = "localhost"
