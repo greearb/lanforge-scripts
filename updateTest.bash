@@ -12,6 +12,7 @@ verNum="5.4.2"
 GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
 
+rm -f /tmp/*.txt
 rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
 
 touch "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
