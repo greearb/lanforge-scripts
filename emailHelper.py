@@ -19,8 +19,8 @@ def sendEmail(email, sender, recipient, subject, smtpServer='localhost'):
 		s.send_message(email)
 		s.quit()
 		return True
-	except exception:
-		print("Send Failed, {}".format(exception))
+	except Exception as e:
+		print("Send Failed, {}".format(e))
 		sys.exit(2)
 
 
