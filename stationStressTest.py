@@ -28,9 +28,12 @@ class StressTester(LFCliBase):
         return info
 
     def cleanup(self):
-        sta_json = super().json_get("port/1/1/list?field=alias")['interfaces']
+        try:
+            sta_json = super().json_get("port/1/1/list?field=alias")['interfaces']
+        except TypeError:
+            sta_json = None
         cx_json = super().json_get("cx")
-        endp_json = super().json_get("endp")['endpoint']
+        endp_json = super().json_get("endp")
 
         # get and remove current stations
         if sta_json is not None:
@@ -49,10 +52,12 @@ class StressTester(LFCliBase):
                         #print(data)
                         super().json_post(req_url, data)
                         time.sleep(.5)
+        else:
+            print("No stations found to cleanup")
 
         # get and remove current cxs
         if cx_json is not None:
-            print("Removing old cross-connects")
+            print("Removing old cross connects")
             for name in list(cx_json):
                 if name != 'handler' and name != 'uri':
                     #print(name)
@@ -63,11 +68,13 @@ class StressTester(LFCliBase):
                     }
                     super().json_post(req_url, data)
                     time.sleep(.5)
+        else:
+            print("No cross connects found to cleanup")
 
         # get and remove current endps
         if endp_json is not None:
             print("Removing old endpoints")
-            for name in list(endp_json):
+            for name in list(endp_json['endpoint']):
                 #print(list(name)[0])
                 req_url = "cli-json/rm_endp"
                 data = {
@@ -76,6 +83,8 @@ class StressTester(LFCliBase):
                 #print(data)
                 super().json_post(req_url, data)
                 time.sleep(.5)
+        else:
+            print("No endpoints found to cleanup")
 
     def run(self):
         parser = argparse.ArgumentParser(description="Create max stations for each radio")
@@ -205,7 +214,6 @@ class StressTester(LFCliBase):
         padding_num = 1000  # uses all but the first number to create names for stations
 
         # clean up old stations
-        print("Cleaning up old Stations")
         self.cleanup()
 
         # create new stations
