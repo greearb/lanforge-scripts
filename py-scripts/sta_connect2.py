@@ -115,7 +115,7 @@ class StaConnect2(LFCliBase):
         super().clear_test_results()
         #super(StaConnect, self).clear_test_results().test_results.clear()
 
-    def run(self):
+    def setup(self):
         self.clear_test_results()
         self.check_connect()
         eth1IP = self.json_get(self.get_upstream_url())
@@ -170,86 +170,6 @@ class StaConnect2(LFCliBase):
         #     set_port_data["port"] = sta_name
         #     print(" %s," % sta_name, end="")
         #     self.json_post("/cli-json/set_port", set_port_data)
-        # print("\nBringing ports up...")
-        # data = {"shelf": 1,
-        #         "resource": self.resource,
-        #         "port": "ALL",
-        #         "probe_flags": 1}
-        # self.json_post("/cli-json/nc_show_ports", data)
-        # LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
-
-        # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
-        duration = 0
-        maxTime = 300
-        ip = "0.0.0.0"
-        ap = ""
-        print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
-        connected_stations = {}
-        # while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
-        #     duration += 3
-        #     time.sleep(3)
-        #     print(".", end="")
-        #     for sta_name in self.station_names:
-        #         sta_url = self.get_station_url(sta_name)
-        #         station_info = self.json_get(sta_url + "?fields=port,ip,ap")
-        #
-        #         # LFUtils.debug_printer.pprint(station_info)
-        #         if (station_info is not None) and ("interface" in station_info):
-        #             if "ip" in station_info["interface"]:
-        #                 ip = station_info["interface"]["ip"]
-        #             if "ap" in station_info["interface"]:
-        #                 ap = station_info["interface"]["ap"]
-        #
-        #         if (ap == "Not-Associated") or (ap == ""):
-        #             if self.debugOn:
-        #                 print(" -%s," % sta_name, end="")
-        #         else:
-        #             if ip == "0.0.0.0":
-        #                 if self.debugOn:
-        #                     print(" %s (0.0.0.0)" % sta_name, end="")
-        #             else:
-        #                 connected_stations[sta_name] = sta_url
-        #     data = {
-        #         "shelf":1,
-        #         "resource": self.resource,
-        #         "port": "ALL",
-        #         "probe_flags": 1
-        #     }
-        #     self.json_post("/cli-json/nc_show_ports", data)
-
-        # make a copy of the connected stations for test records
-
-
-        for sta_name in self.station_names:
-            sta_url = self.get_station_url(sta_name)
-            station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
-            self.resulting_stations[sta_url] = station_info
-            ap = station_info["interface"]["ap"]
-            ip = station_info["interface"]["ip"]
-            if (ap != "") and (ap != "Not-Associated"):
-                print(" %s +AP %s, " % (sta_name, ap), end="")
-                if self.dut_bssid != "":
-                    if self.dut_bssid.lower() == ap.lower():
-                        self._pass(sta_name+" connected to BSSID: " + ap)
-                        # self.test_results.append("PASSED: )
-                        # print("PASSED: Connected to BSSID: "+ap)
-                    else:
-                        self._fail("%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
-            else:
-                self._fail(sta_name+" did not connect to AP")
-                return False
-
-            if ip == "0.0.0.0":
-                self._fail("%s did not get an ip. Ending test" % sta_name)
-            else:
-                self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
-
-        if self.passes() == False:
-            if self.cleanup_on_exit:
-                print("Cleaning up...")
-                self.remove_stations()
-            return False
-
         # create endpoints and cxs
         # Create UDP endpoints
         cx_names = {}
@@ -350,6 +270,89 @@ class StaConnect2(LFCliBase):
         #     }
         #     self.json_post("/cli-json/set_cx_report_timer", data)
 
+
+    def start(self):
+        # print("\nBringing ports up...")
+        # data = {"shelf": 1,
+        #         "resource": self.resource,
+        #         "port": "ALL",
+        #         "probe_flags": 1}
+        # self.json_post("/cli-json/nc_show_ports", data)
+        # LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
+
+        # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
+        duration = 0
+        maxTime = 300
+        ip = "0.0.0.0"
+        ap = ""
+        print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
+        connected_stations = {}
+        # while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
+        #     duration += 3
+        #     time.sleep(3)
+        #     print(".", end="")
+        #     for sta_name in self.station_names:
+        #         sta_url = self.get_station_url(sta_name)
+        #         station_info = self.json_get(sta_url + "?fields=port,ip,ap")
+        #
+        #         # LFUtils.debug_printer.pprint(station_info)
+        #         if (station_info is not None) and ("interface" in station_info):
+        #             if "ip" in station_info["interface"]:
+        #                 ip = station_info["interface"]["ip"]
+        #             if "ap" in station_info["interface"]:
+        #                 ap = station_info["interface"]["ap"]
+        #
+        #         if (ap == "Not-Associated") or (ap == ""):
+        #             if self.debugOn:
+        #                 print(" -%s," % sta_name, end="")
+        #         else:
+        #             if ip == "0.0.0.0":
+        #                 if self.debugOn:
+        #                     print(" %s (0.0.0.0)" % sta_name, end="")
+        #             else:
+        #                 connected_stations[sta_name] = sta_url
+        #     data = {
+        #         "shelf":1,
+        #         "resource": self.resource,
+        #         "port": "ALL",
+        #         "probe_flags": 1
+        #     }
+        #     self.json_post("/cli-json/nc_show_ports", data)
+
+        # make a copy of the connected stations for test records
+
+
+        for sta_name in self.station_names:
+            sta_url = self.get_station_url(sta_name)
+            station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
+            self.resulting_stations[sta_url] = station_info
+            ap = station_info["interface"]["ap"]
+            ip = station_info["interface"]["ip"]
+            if (ap != "") and (ap != "Not-Associated"):
+                print(" %s +AP %s, " % (sta_name, ap), end="")
+                if self.dut_bssid != "":
+                    if self.dut_bssid.lower() == ap.lower():
+                        self._pass(sta_name+" connected to BSSID: " + ap)
+                        # self.test_results.append("PASSED: )
+                        # print("PASSED: Connected to BSSID: "+ap)
+                    else:
+                        self._fail("%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
+            else:
+                self._fail(sta_name+" did not connect to AP")
+                return False
+
+            if ip == "0.0.0.0":
+                self._fail("%s did not get an ip. Ending test" % sta_name)
+            else:
+                self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
+
+        if self.passes() == False:
+            if self.cleanup_on_exit:
+                print("Cleaning up...")
+                self.remove_stations()
+            return False
+
+
         # start cx traffic
         print("\nStarting CX Traffic")
         # for cx_name in cx_names.keys():
@@ -370,8 +373,7 @@ class StaConnect2(LFCliBase):
         #     }
         #     self.json_post("/cli-json/show_cxe", data)
 
-        time.sleep(self.runtime_secs)
-
+    def stop(self):
         # stop cx traffic
         print("Stopping CX Traffic")
         # for cx_name in cx_names.keys():
@@ -428,6 +430,7 @@ class StaConnect2(LFCliBase):
         # self.test_results.append("FAILED message will fail")
         # print("\n")
 
+    def cleanup(self):
         # remove all endpoints and cxs
         if self.cleanup_on_exit:
             for sta_name in self.station_names:
@@ -496,26 +499,20 @@ Example:
     if args.dut_ssid is not None:
         staConnect.dut_ssid = args.dut_ssid
 
-    staConnect.run()
+    staConnect.setup()
+    staConnect.start()
 
+    time.sleep(self.runtime_secs)
+    staConnect.stop()
     run_results = staConnect.get_result_list()
-
-
     is_passing = staConnect.passes()
     if is_passing == False:
         print("FAIL:  Some tests failed")
     else:
         print("PASS:  All tests pass")
-
     print(staConnect.get_all_message())
 
-    is_passing = staConnect.passes()
-    if is_passing == False:
-        print("FAIL:  Some tests failed")
-    else:
-        print("PASS:  All tests pass")
-
-    print(staConnect.get_all_message())
+    staConnect.cleanup()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
