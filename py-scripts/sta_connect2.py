@@ -143,40 +143,32 @@ class StaConnect2(LFCliBase):
         elif self.dut_security == OPEN:
             pass
 
-        # add_sta_data = {
-        #     "shelf": 1,
-        #     "resource": self.resource,
-        #     "radio": self.radio,
-        #     "ssid": self.dut_ssid,
-        #     "key": self.dut_passwd,
-        #     "mode": self.sta_mode,
-        #     "mac": "xx:xx:xx:xx:*:xx",
-        #     "flags": flags  # verbose, wpa2
-        # }
-        # print("Adding new stations ", end="")
-        # for sta_name in self.station_names:
-        #     add_sta_data["sta_name"] = sta_name
-        #     print(" %s," % sta_name, end="")
-        #     self.json_post("/cli-json/add_sta", add_sta_data)
+        sta_profile = self.localrealm.new_station_profile()
 
-        set_port_data = {
-            "shelf": 1,
-            "resource": self.resource,
-            "current_flags": 0x80000000,  # use DHCP, not down
-            "interest": 0x4002  # set dhcp, current flags
-        }
-        # print("\nConfiguring ")
-        # for sta_name in self.station_names:
-        #     set_port_data["port"] = sta_name
-        #     print(" %s," % sta_name, end="")
-        #     self.json_post("/cli-json/set_port", set_port_data)
-        # create endpoints and cxs
+        print("Adding new stations ", end="")
+        if (self.dut_security == WPA2):
+            sta_profile.use_wpa2(on=True, ssid=self.dut_ssid, passwd=self.dut_passwd)
+
+        sta_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names)
+
+
+        # Create endpoints and cxs
         # Create UDP endpoints
         cx_names = {}
 
-        # for sta_name in self.station_names:
-        #     cx_names["testUDP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
-        #                                     "b": "testUDP-%s-B" % sta_name}
+        for sta_name in self.station_names:
+             cx_names["testUDP-"+sta_name] = {
+                 "a": "testUDP-%s-A" % sta_name,
+                 "b": "testUDP-%s-B" % sta_name
+             }
+
+        l3_profile = self.localrealm.new_l3_cx_profile()
+        l3_profile.min_bps = self.udp_min_bps
+        l3_profile.max_bps = self.udp_max_bps
+        l3_profile.prefix = "stacon_udp_"
+        l3_profile.create(endp_type="lf_udp",
+                          side_a=list(self.localrealm.find_ports_like("sta+")),
+                          side_b=self.resource+'.'+self.upstream_port )
         #     data = {
         #         "alias": "testUDP-%s-A" % sta_name,
         #         "shelf": 1,
