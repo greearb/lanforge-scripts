@@ -545,7 +545,7 @@ class StationProfile:
         return result
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def create(self, resource, radio, num_stations, dry_run=False, debug=False):
+    def create(self, resource, radio, num_stations=0, sta_names_=None, dry_run=False, debug=False):
         # try:
         #     resource = resource_radio[0: resource_radio.index(".")]
         #     name = resource_radio[resource_radio.index(".") + 1:]
@@ -554,6 +554,8 @@ class StationProfile:
         #     print("Building %s on radio %s.%s" % (num_stations, resource, radio_name))
         # except ValueError as e:
         #     print(e)
+        if (sta_names_ is None) and (num_stations == 0):
+            raise ValueError("StationProfile.create needs either num_stations= or sta_names_= specified")
 
         # create stations down, do set_port on them, then set stations up
         self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
@@ -567,9 +569,13 @@ class StationProfile:
 
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-        sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, 10000)
-        num = 0
+        sta_names = None
+        if num_stations > 0:
+            sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, 10000)
+        else:
+            sta_names = sta_names_
 
+        num = 0
         for name in sta_names:
             num += 1
             self.add_sta_data["sta_name"] = name
