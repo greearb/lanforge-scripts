@@ -13,7 +13,7 @@ GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
 IP="192.168.95.239"
 
-numFound=$()find "${GUIDIR} -iname down-check" -mmin 60 | grep "down-check")
+numFound=$(find "${GUIDIR} -iname down-check" -mmin 60 | grep "down-check")
 if [[  $numFound == 1 ]]; then
   ping -c2 -i1 -nq -w2 -W2 ${IP}
   if [[ 1 != $? ]]; then
