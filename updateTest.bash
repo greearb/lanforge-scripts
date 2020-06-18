@@ -11,6 +11,19 @@ CTLH="/home/lanforge/Documents/connectTestHLog.txt"
 verNum="5.4.2"
 GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
+IP="192.168.95.239"
+
+find "${GUIDIR}/down-check" -mmin 60 | grep "down-check"
+if [[ $? ]]; then
+  ping "-qc 4 ${IP}"
+  if [[ ! $? ]]; then
+    touch "${GUIDIR}/down-check"
+    echo "Could not connect to ${IP}"
+    exit 1
+  else
+    rm "${GUIDIR}/down-check"
+  fi
+fi
 
 rm -f /tmp/*.txt
 rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
