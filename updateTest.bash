@@ -14,9 +14,9 @@ ST="/tmp/summary.txt"
 IP="192.168.95.239"
 
 find "${GUIDIR}/down-check" -mmin 60 | grep "down-check"
-if [[ $? ]]; then
-  ping "-qc 4 ${IP}"
-  if [[ ! $? ]]; then
+if [[  0 == $? ]]; then
+  ping "-q -c 4 ${IP}"
+  if [[ 0 != $? ]]; then
     touch "${GUIDIR}/down-check"
     echo "Could not connect to ${IP}"
     exit 1
