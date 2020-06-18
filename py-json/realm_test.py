@@ -97,35 +97,35 @@ print("** Removing previous CXs **")
 
 print("** Creating Layer 3 CXs **")
 try:
-    cxProfile = localrealm.new_l3_cx_profile()
+    cx_profile = localrealm.new_l3_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create("lf_udp", side_a="1.1.eth1", side_b=list(localrealm.find_ports_like("sta+")))
+    cx_profile.create("lf_udp", side_a="1.1.eth1", side_b=list(localrealm.find_ports_like("sta+")))
 except Exception as x:
     pprint(x)
     exit(1)
 
 try:
-    cxProfile = localrealm.new_l3_cx_profile()
+    cx_profile = localrealm.new_l3_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create("lf_udp", side_a=list(localrealm.find_ports_like("sta+")), side_b="1.1.eth1")
+    cx_profile.create("lf_udp", side_a=list(localrealm.find_ports_like("sta+")), side_b="1.1.eth1")
 except Exception as x:
     pprint(x)
     exit(1)
 
 print("** Creating Layer 4 CXs **")
 try:
-    cxProfile = localrealm.new_l4_cx_profile()
+    cx_profile = localrealm.new_l4_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create(localrealm.find_ports_like("sta+"))
+    cx_profile.create(localrealm.find_ports_like("sta+"))
 except Exception as x:
     pprint(x)
     exit(1)
 
 print("** Creating Generic CXs **")
 try:
-    cxProfile = localrealm.new_generic_cx_profile()
+    cx_profile = localrealm.new_generic_cx_profile()
     # set attributes of cxProfile
-    cxProfile.create(localrealm.find_ports_like("sta+"))
+    cx_profile.create(localrealm.find_ports_like("sta+"))
 except Exception as x:
     pprint(x)
     exit(1)
