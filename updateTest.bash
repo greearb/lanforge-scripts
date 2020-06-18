@@ -11,17 +11,24 @@ CTLH="/home/lanforge/Documents/connectTestHLog.txt"
 verNum="5.4.2"
 GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
-IP="192.168.95.239"
+IP="jed-centos7"
 
 find "${GUIDIR}/down-check" -mmin 60 | grep "down-check"
 if [[  0 == $? ]]; then
-  ping "-q -c 4 ${IP}"
+  ping -c2 -i1 -nq -w1 -W2 ${IP}
   if [[ 0 != $? ]]; then
     touch "${GUIDIR}/down-check"
     echo "Could not connect to ${IP}"
     exit 1
   else
     rm "${GUIDIR}/down-check"
+  fi
+else
+    ping -c2 -i1 -nq -w1 -W2 ${IP}
+  if [[ 0 != $? ]]; then
+    touch "${GUIDIR}/down-check"
+    echo "Could not connect to ${IP}"
+    exit 1
   fi
 fi
 
