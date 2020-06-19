@@ -100,7 +100,7 @@ class StressTester(LFCliBase):
                             help="How often a report is made. Should be specified by a "
                                  "number followed by a character. d for days, h for hours, "
                                  "m for minutes, s for seconds")
-        parser.add_argument("--output_dir", type=str, help="Directory to ouptut to")
+        parser.add_argument("--output_dir", type=str, help="Directory to output to")
         parser.add_argument("--output_prefix", type=str,
                             help="Name of the file. Timestamp and .html will be appended to the end")
         parser.add_argument("--email", type=str, help="Email address of recipient")
