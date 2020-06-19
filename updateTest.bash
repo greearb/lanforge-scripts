@@ -13,25 +13,27 @@ GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
 IP="192.168.95.239"
 
-numFound=$(find ${GUIDIR} -name down-check -mmin 60 | grep -c down-check)
-if [[  $numFound == 1 ]]; then
-  ping -c2 -i1 -nq -w2 -W2 ${IP}
-  if [[ 1 != $? ]]; then
-    touch "${GUIDIR}/down-check"
-    echo "Could not connect to ${IP}"
-    exit 1
-  else
-    rm "${GUIDIR}/down-check"
-  fi
-else
-    ping -c2 -i1 -nq -w2 -W2 ${IP}
-  if [[ 1 != $? ]]; then
-    touch "${GUIDIR}/down-check"
-    echo "Could not connect to ${IP}"
-    exit 1
-  fi
-fi
+if [ -f ${GUIDIR}/down-check ]; then 
+   numFound=`find ${GUIDIR} -name down-check -mmin +59 | grep -c down-check`
 
+   if (( numFound >= 1 )); then
+     ping -c2 -i1 -nq -w4 -W8 ${IP}
+     if (( 0 == $? )); then
+       rm "${GUIDIR}/down-check"
+     else
+       touch "${GUIDIR}/down-check"
+       echo "Could not connect to ${IP}"
+       exit 1
+     fi
+   else
+     ping -c2 -i1 -nq -w4 -W4 ${IP}
+     if (( 0 != $? )); then
+       touch "${GUIDIR}/down-check"
+       echo "Could not connect to ${IP}"
+       exit 1
+     fi
+   fi
+fi
 
 rm -f /tmp/*.txt
 rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
