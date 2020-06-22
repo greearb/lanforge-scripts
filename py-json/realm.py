@@ -449,8 +449,12 @@ class StationProfile:
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
         }
-        self.desired_set_port_current_flags = ["if_down", "use_dhcp"]
-        self.desired_set_port_interest_flags = ["current_flags", "dhcp", "ifdown"]
+        self.desired_set_port_current_flags = ["if_down"]
+        self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
+        if self.dhcp:
+            self.desired_set_port_current_flags.append("use_dhcp")
+            self.desired_set_port_interest_flags.append("dhcp")
+
         self.set_port_data = {
             "shelf": 1,
             "resource": 1,
