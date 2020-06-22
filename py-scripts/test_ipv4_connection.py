@@ -71,9 +71,12 @@ class IPv4Test(LFCliBase):
 
         self.profile.use_wpa2(True, self.ssid, self.password)
         self.profile.set_prefix(self.prefix)
+        print("Creating stations")
         self.profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations)
+
         for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (self.prefix[:-1], str(self.prefix[:-2]) + str(self.num_stations - 1)))):
             sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
+
         print(sta_list)
         time.sleep(self.timeout)
         self.run_test(sta_list, True, True)
