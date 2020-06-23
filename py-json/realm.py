@@ -583,7 +583,6 @@ class StationProfile:
         for name in sta_names:
             num += 1
             self.add_sta_data["sta_name"] = name
-            self.set_port_data["port"] = name
             if debug:
                 print("- 381 - %s- - - - - - - - - - - - - - - - - - " % name)
                 pprint(self.add_sta_data)
@@ -592,13 +591,20 @@ class StationProfile:
             if dry_run:
                 print("dry run")
                 continue
+
             add_sta_r.addPostData(self.add_sta_data)
             json_response = add_sta_r.jsonPost(debug)
+            self.set_port_data["port"] = name
+            # time.sleep(0.03)
+            time.sleep(2)
             set_port_r.addPostData(self.set_port_data)
             json_response = set_port_r.jsonPost(debug)
-            time.sleep(0.03)
+            time.sleep(.03)
+
 
         LFUtils.waitUntilPortsAppear(resource, self.lfclient_url, sta_names)
+
+
         # and set ports up
         if dry_run:
             return
