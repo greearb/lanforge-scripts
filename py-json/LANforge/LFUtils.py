@@ -321,10 +321,10 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
         sleep(1)
     return None
 
-def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
-    wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False)
+def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", port_list=[], debug=False):
+    wait_until_ports_disappear(resource_id, base_url, port_list, debug)
 
-def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
+def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", port_list=[], debug=False):
     if (debug):
         print("waitUntilPortsDisappear")
     url = "/port/1"
