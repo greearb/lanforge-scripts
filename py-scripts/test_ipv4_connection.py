@@ -72,13 +72,14 @@ class IPv4Test(LFCliBase):
         self.profile.use_wpa2(True, self.ssid, self.password)
         self.profile.set_prefix(self.prefix)
         print("Creating stations")
-        self.profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations)
+        self.profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations, debug=False)
 
-        for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (self.prefix[:-1], str(self.prefix[:-2]) + str(self.num_stations - 1)))):
+        for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
             sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
 
-        print(sta_list)
+        # print(sta_list)
         time.sleep(self.timeout)
+        print(sta_list)
         self.run_test(sta_list, True, True)
         print("Cleaning up")
         self.cleanup()
@@ -88,7 +89,7 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                       security="open", num_stations=5)
+                       security="open", num_stations=60)
     ip_test.timeout = 120
     ip_test.run()
 
