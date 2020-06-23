@@ -34,16 +34,44 @@ class IPv4Test(LFCliBase):
                                             security=self.security, prefix=self.prefix, mode=0, up=True, dhcp=True,
                                             debug_=False)
 
-    def run_test(self, sta_list, print_pass=False, print_fail=False):
-        for sta_name in sta_list:
-            sta_status = super().json_get("port/1/1/" + sta_name)
-            if sta_status['interface']['ap'] == '' or len(sta_status['interface']['ap']) != 18 and \
-                    sta_status['interface']['ap'][-3] != ':':
-                self._fail("%s failed to associate" % sta_name, print_fail)
-            elif sta_status['interface']['ip'] == "0.0.0.0":
-                self._fail("%s failed to get ip" % sta_name, print_fail)
+    def run_test_full(self, print_pass=False, print_fail=False):
+        print("Testing all stations for association")
+        port_list = self.local_realm.station_list()
+        sta_list = []
+        for item in list(port_list):
+            # print(list(item))
+            if "sta" in list(item)[0]:
+                sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
+
+        return self._run_test(sta_list)
+
+    def run_test_custom(self, range_start="000", range_end="000", sta_list=[]):
+        if len(sta_list) == 0:
+            if range_start != "000" and range_end != "000":
+                    found_stations = self.local_realm.find_ports_like("sta[%s..%s]" % (range_start, range_end))
+                    for sta_name in list(found_stations):
+                        sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
             else:
-                self._pass("%s associated with ip" % sta_name, print_pass)
+                raise ValueError("range_start and range_end not specified")
+        return self._run_test(sta_list)
+
+    def _run_test(self, sta_list):
+        for sec in range(self.timeout):
+            associated_map = []
+            ip_map = []
+            for sta_name in sta_list:
+                sta_status = super().json_get("port/1/1/" + sta_name)
+                if sta_status['interface']['ip'] == "0.0.0.0":
+                    associated_map.append(sta_name)
+                else:
+                    ip_map.append(sta_name)
+            time.sleep(1)
+        if len(sta_list) == len(ip_map) and len(sta_list) == len(ip_map):
+            self._pass("PASS: All stations associated with IP")
+        else:
+            self._fail("FAIL: Not all stations able to associate/get IP")
+
+        return self.passes()
 
     def cleanup(self):
         port_list = self.local_realm.station_list()
@@ -74,24 +102,23 @@ class IPv4Test(LFCliBase):
         print("Creating stations")
         self.profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations, debug=False)
 
-        for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
+        for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (
+        self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
             sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
-
-        # print(sta_list)
-        time.sleep(self.timeout)
-        print(sta_list)
-        self.run_test(sta_list, True, True)
-        print("Cleaning up")
-        self.cleanup()
 
 
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                       security="open", num_stations=60)
-    ip_test.timeout = 120
+                       security="open", num_stations=10)
+    ip_test.timeout = 30
     ip_test.run()
+    print("Full Test Passed: %s" % ip_test.run_test_full())
+    print("Range Test Passed: %s" % ip_test.run_test_custom("00005", "00009"))
+    print("Custom Test Passed: %s" % ip_test.run_test_custom(sta_list=["sta00001", "sta00003", "sta00009", "sta00002"]))
+
+    ip_test.cleanup()
 
 
 if __name__ == "__main__":
