@@ -575,9 +575,14 @@ class StationProfile:
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
         sta_names = None
         if num_stations > 0:
-            sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, 10000)
+            sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1"+self.prefix))
         else:
             sta_names = sta_names_
+        if len(sta_names) >= 50:
+            self.add_sta_data["suppress_preexec_cli"] = "yes"
+            self.add_sta_data["suppress_preexec_method"] = 1
+            self.set_port_data["suppress_preexec_cli"] = "yes"
+            self.set_port_data["suppress_preexec_method"] = 1
 
         num = 0
         for name in sta_names:
