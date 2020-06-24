@@ -43,33 +43,50 @@ class IPv4Test(LFCliBase):
             if "sta" in list(item)[0]:
                 sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
 
-        return self._run_test(sta_list)
+        return self._run_test(sta_list, print_pass, print_fail)
 
-    def run_test_custom(self, range_start="000", range_end="000", sta_list=[]):
+    def run_test_custom(self, range_start="000", range_end="000", sta_list=[], print_pass=False, print_fail=False):
         if len(sta_list) == 0:
+            print("Testing range of stations from sta%s to sta%s" % (range_start, range_end))
             if range_start != "000" and range_end != "000":
-                    found_stations = self.local_realm.find_ports_like("sta[%s..%s]" % (range_start, range_end))
-                    for sta_name in list(found_stations):
-                        sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
+                found_stations = self.local_realm.find_ports_like("sta[%s..%s]" % (range_start, range_end))
+                for sta_name in list(found_stations):
+                    sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
             else:
                 raise ValueError("range_start and range_end not specified")
-        return self._run_test(sta_list)
+        else:
+            print("Testing stations in specified list")
+        return self._run_test(sta_list, print_pass, print_fail)
 
-    def _run_test(self, sta_list):
+    def _run_test(self, sta_list, print_pass, print_fail):
         for sec in range(self.timeout):
             associated_map = []
             ip_map = []
             for sta_name in sta_list:
                 sta_status = super().json_get("port/1/1/" + sta_name)
-                if sta_status['interface']['ip'] == "0.0.0.0":
+                # print(sta_status)
+                if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':' \
+                        and sta_status['interface']['ip'] == '0.0.0.0':
+
+                    # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map.append(sta_name)
-                else:
+
+                elif len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':' \
+                        and sta_status['interface']['ip'] != '0.0.0.0':
+
+                    # print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                    associated_map.append(sta_name)
                     ip_map.append(sta_name)
+
+
             time.sleep(1)
-        if len(sta_list) == len(ip_map) and len(sta_list) == len(ip_map):
-            self._pass("PASS: All stations associated with IP")
+        # print(len(sta_list), sta_list)
+        # print(len(ip_map), ip_map)
+        # print(len(associated_map), associated_map)
+        if len(sta_list) == len(ip_map) and len(sta_list) == len(associated_map):
+            self._pass("PASS: All stations associated with IP", print_pass)
         else:
-            self._fail("FAIL: Not all stations able to associate/get IP")
+            self._fail("FAIL: Not all stations able to associate/get IP", print_fail)
 
         return self.passes()
 
@@ -103,7 +120,7 @@ class IPv4Test(LFCliBase):
         self.profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations, debug=False)
 
         for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (
-        self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
+                self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
             sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
 
 
@@ -112,7 +129,8 @@ def main():
     lfjson_port = 8080
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
                        security="open", num_stations=10)
-    ip_test.timeout = 30
+    ip_test.cleanup()
+    ip_test.timeout = 60
     ip_test.run()
     print("Full Test Passed: %s" % ip_test.run_test_full())
     print("Range Test Passed: %s" % ip_test.run_test_custom("00005", "00009"))
