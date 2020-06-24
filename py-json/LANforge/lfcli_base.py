@@ -24,6 +24,12 @@ class LFCliBase:
         self.test_results = []
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
+        # toggle using preexec_cli, preexec_method; the preexec_X parameters are useful
+        # when you desire the lfclient to check for existance of entities to run commands on,
+        # like when developing; you might toggle this with use_preexec = _debug
+        # Otherwise, preexec methods use more processing time because they add an extra CLI call
+        # into the queue, and inspect it -- typically nc_show_port
+        self.use_preexec = False
 
     def clear_test_results(self):
         self.test_results.clear()
@@ -32,8 +38,12 @@ class LFCliBase:
         json_response = None
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug)
-            _data['suppress_preexec_cli'] = True
-            _data['suppress_preexec_method'] = True
+            if self.use_preexec == True:
+                del _data['suppress_preexec_cli']
+                del _data['suppress_preexec_method']
+            else:
+                _data['suppress_preexec_cli'] = True
+                _data['suppress_preexec_method'] = True
             lf_r.addPostData(_data)
             if (self.debug):
                 LANforge.LFUtils.debug_printer.pprint(_data)
