@@ -19,6 +19,20 @@ class Realm(LFCliBase):
         self.debug = debug_
         self.check_connect()
 
+    # loads a database
+    def load(self, name):
+        if (name is None) or (name is ""):
+            raise ValueError("Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
+
+        data = {
+            "name": name,
+            "action":"overwrite",
+            "clean_dut":"yes",
+            "clean_chambers": "yes"
+        }
+        self.json_post("/cli-json/load")
+        time.sleep(1)
+
     # Returns json response from webpage of all layer 3 cross connects
     def cx_list(self):
         response = super().json_get("/cx")
