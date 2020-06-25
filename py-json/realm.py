@@ -10,6 +10,7 @@ from LANforge import add_sta
 from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from generic_cx import GenericCx
+import datetime
 
 
 class Realm(LFCliBase):
@@ -173,6 +174,28 @@ class Realm(LFCliBase):
             if '.' in eid:
                 info = eid.split('.')
         return info
+
+    def parse_time(self, time_string):
+        if isinstance(time_string, str):
+            pattern = re.compile("^(\d+)([dhms]$)")
+            td = pattern.match(time_string)
+            if td is not None:
+                dur_time = int(td.group(1))
+                dur_measure = str(td.group(2))
+                if dur_measure == "d":
+                    duration_time = datetime.timedelta(days=dur_time)
+                elif dur_measure == "h":
+                    duration_time = datetime.timedelta(hours=dur_time)
+                elif dur_measure == "m":
+                    duration_time = datetime.timedelta(minutes=dur_time)
+                else:
+                    duration_time = datetime.timedelta(seconds=dur_time)
+            else:
+                raise ValueError("Unknown value for time_string: %s" % time_string)
+        else:
+            raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
+        return duration_time
+
 
     def parse_link(self, link):
         link = self.lfclient_url + link
