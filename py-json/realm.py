@@ -275,7 +275,7 @@ class L3CXProfile(LFCliBase):
                     "max_pkt": 0
                 }
 
-                url = self.lfclient_url + "/cli-json/add_endp"
+                url = "/cli-json/add_endp"
                 LFCliBase.json_post(self, url, endp_side_a)
                 LFCliBase.json_post(self, url, endp_side_b)
                 time.sleep(sleep_time)
@@ -334,7 +334,7 @@ class L3CXProfile(LFCliBase):
                     "max_pkt": 0
                 }
 
-                url = self.lfclient_url + "/cli-json/add_endp"
+                url = "/cli-json/add_endp"
                 LFCliBase.json_post(self, url, endp_side_a)
                 LFCliBase.json_post(self, url, endp_side_b)
                 time.sleep(sleep_time)
@@ -351,7 +351,7 @@ class L3CXProfile(LFCliBase):
 
         print("post_data", post_data)
         for data in post_data:
-            url = self.lfclient_url + "/cli-json/add_cx"
+            url = "/cli-json/add_cx"
             LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
@@ -383,7 +383,7 @@ class L4CXProfile(LFCliBase):
                 "url_rate": self.requests_per_ten,
                 "url": self.url
             }
-            url = self.lfclient_url + "cli-json/add_l4_endp"
+            url = "cli-json/add_l4_endp"
             LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
@@ -396,7 +396,7 @@ class L4CXProfile(LFCliBase):
             post_data.append(data)
 
             for data in post_data:
-                url = self.lfclient_url + "/cli-json/add_cx"
+                url = "/cli-json/add_cx"
                 LFCliBase.json_post(self, url, data)
                 time.sleep(sleep_time)
 
@@ -438,7 +438,7 @@ class GenCXProfile(LFCliBase):
             post_data.append(data)
 
         for data in post_data:
-            url = self.lfclient_url + "/cli-json/add_cx"
+            url = "/cli-json/add_cx"
             LFCliBase.json_post(self, url, data)
             time.sleep(sleep_time)
 
