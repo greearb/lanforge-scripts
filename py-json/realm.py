@@ -22,7 +22,7 @@ class Realm(LFCliBase):
 
     # loads a database
     def load(self, name):
-        if (name is None) or (name is ""):
+        if (name is None) or (name == ""):
             raise ValueError("Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
 
         data = {
@@ -31,7 +31,7 @@ class Realm(LFCliBase):
             "clean_dut":"yes",
             "clean_chambers": "yes"
         }
-        self.json_post("/cli-json/load")
+        self.json_post("/cli-json/load", debug_=self.debug)
         time.sleep(1)
 
     # Returns json response from webpage of all layer 3 cross connects
@@ -200,7 +200,6 @@ class Realm(LFCliBase):
     def parse_link(self, link):
         link = self.lfclient_url + link
         info = ()
-
 
     def new_station_profile(self):
         station_prof = StationProfile(self.lfclient_url, debug_=self.debug)
