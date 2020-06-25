@@ -23,8 +23,9 @@ class LFRequest:
     default_headers = {
         'Accept': 'application/json'}
 
-    def __init__(self, url, uri=None, debug_=False):
+    def __init__(self, url, uri=None, debug_=False, die_on_error_=False):
         self.debug = debug_
+        self.die_on_error = die_on_error_;
 
         if not url.startswith("http://") and not url.startswith("https://"):
             print("No http:// or https:// found, prepending http:// to "+url)
@@ -45,7 +46,7 @@ class LFRequest:
             raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % url, uri)
 
     # request first url on stack
-    def formPost(self, show_error=True, debug=False):
+    def formPost(self, show_error=True, debug=False, die_on_error_=False):
         if (debug == False) and (self.debug == True):
             debug = True;
         responses = []
@@ -72,7 +73,7 @@ class LFRequest:
             return responses[0]
         except urllib.error.HTTPError as error:
             if (show_error):
-                print("----- formPost() HTTPError: --------------------------------------------")
+                print("----- LFRequest::formPost:75 HTTPError: --------------------------------------------")
                 print("%s: %s; URL: %s"%(error.code, error.reason, request.get_full_url()))
                 LFUtils.debug_printer.pprint(error.headers)
                 #print("Error: ", sys.exc_info()[0])
@@ -86,15 +87,19 @@ class LFRequest:
                     LFUtils.debug_printer.pprint(responses[0].reason)
 
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
         except urllib.error.URLError as uerror:
             if (show_error):
-                print("----- formPost() URLError: ---------------------------------------------")
+                print("----- LFRequest::formPost:91 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
 
         return None
 
-    def jsonPost(self, show_error=True, debug=False):
+    def jsonPost(self, show_error=True, debug=False, die_on_error_=False):
         if (debug == False) and (self.debug == True):
             debug = True
         responses = []
@@ -113,7 +118,7 @@ class LFRequest:
             return responses[0]
         except urllib.error.HTTPError as error:
             if show_error:
-                print("----- jsonPost() HTTPError: --------------------------------------------")
+                print("----- LFRequest::jsonPost:116 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(request.get_full_url(), error.code, error.reason, ))
 
                 print("Error: ", sys.exc_info()[0])
@@ -133,14 +138,18 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(responses[0].reason)
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
-                print("----- jsonPost() URLError: ---------------------------------------------")
+                print("----- LFRequest::jsonPost:138 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
         return None
 
-    def get(self, show_error=True, debug=False):
+    def get(self, show_error=True, debug=False, die_on_error_=False):
         if (debug == False) and (self.debug == True):
             debug = True
         if (debug):
@@ -152,7 +161,7 @@ class LFRequest:
             return myresponses[0]
         except urllib.error.HTTPError as error:
             if show_error:
-                print("----- get() HTTPError: --------------------------------------------")
+                print("----- LFRequest::get:155 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
                 if error.code != 404:
                     print("Error: ", sys.exc_info()[0])
@@ -172,16 +181,20 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
-                print("----- get() URLError: ---------------------------------------------")
+                print("----- LFRequest::get:177 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
+                if (die_on_error_ == True) or (self.die_on_error == True):
+                    exit(1)
         return None
 
-    def getAsJson(self, show_error=True):
+    def getAsJson(self, show_error=True, die_on_error_=False):
         responses = []
-        responses.append(self.get(show_error))
+        responses.append(self.get(show_error, die_on_error_=die_on_error_))
         if (len(responses) < 1):
             return None
         if (responses[0] == None):
