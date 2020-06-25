@@ -206,38 +206,30 @@ class Realm(LFCliBase):
         return station_prof
 
     def new_l3_cx_profile(self):
-        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
+        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
     def new_l4_cx_profile(self):
-        cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
+        cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
     def new_generic_cx_profile(self):
-        cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
+        cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port,local_realm=self, debug_=self.debug)
         return cx_prof
 
 
 class L3CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
-
-    def name_to_eid(self, eid):
-        info = []
-        if eid is None or eid == "":
-            raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
-        else:
-            if '.' in eid:
-                info = eid.split('.')
-        return info
+        self.local_realm = local_realm
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
 
         if type(side_a) == list and type(side_b) != list:
-            side_b_info = self.name_to_eid(side_b)
+            side_b_info = self.local_realm.name_to_eid(side_b)
             if len(side_b_info) == 3:
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
@@ -250,7 +242,7 @@ class L3CXProfile(LFCliBase):
                 raise ValueError("side_b must have a shelf and/or resource number")
 
             for port_name in side_a:
-                side_a_info = self.name_to_eid(port_name)
+                side_a_info = self.local_realm.name_to_eid(port_name)
                 if len(side_a_info) == 3:
                     side_a_shelf = side_a_info[0]
                     side_a_resource = side_a_info[1]
@@ -261,7 +253,7 @@ class L3CXProfile(LFCliBase):
                     side_a_name = side_a_info[1]
 
                 endp_side_a = {
-                    "alias": port_name + "-A",
+                    "alias": side_a_name + "-A",
                     "shelf": side_a_shelf,
                     "resource": side_a_resource,
                     "port": side_a_name,
@@ -272,7 +264,7 @@ class L3CXProfile(LFCliBase):
                     "max_pkt": 0
                 }
                 endp_side_b = {
-                    "alias": port_name + "-B",
+                    "alias": side_b_name + "-B",
                     "shelf": side_b_shelf,
                     "resource": side_b_resource,
                     "port": side_b_name,
@@ -289,15 +281,15 @@ class L3CXProfile(LFCliBase):
                 time.sleep(sleep_time)
 
                 data = {
-                    "alias": port_name + "CX",
+                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
                     "test_mgr": "default_tm",
-                    "tx_endp": port_name + "CX-A",
-                    "rx_endp": port_name + "CX-B"
+                    "tx_endp": side_a_name + "CX-A",
+                    "rx_endp": side_a_name + "CX-B"
                 }
                 post_data.append(data)
 
         elif type(side_b) == list and type(side_a) != list:
-            side_a_info = self.name_to_eid(side_a)
+            side_a_info = self.local_realm.name_to_eid(side_a)
             if len(side_a_info) == 3:
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
@@ -310,8 +302,7 @@ class L3CXProfile(LFCliBase):
                 raise ValueError("side_a must have a shelf and/or resource number")
 
             for port_name in side_b:
-                side_b_info = self.name_to_eid(port_name)
-                print(side_b_info)
+                side_b_info = self.local_realm.name_to_eid(port_name)
                 if len(side_b_info) == 3:
                     side_b_shelf = side_b_info[0]
                     side_b_resource = side_b_info[1]
@@ -321,7 +312,7 @@ class L3CXProfile(LFCliBase):
                     side_b_resource = side_b_info[0]
                     side_b_name = side_b_info[1]
                 endp_side_a = {
-                    "alias": port_name + "-A",
+                    "alias": side_a_name + "-A",
                     "shelf": side_a_shelf,
                     "resource": side_a_resource,
                     "port": side_a_name,
@@ -332,7 +323,7 @@ class L3CXProfile(LFCliBase):
                     "max_pkt": 0
                 }
                 endp_side_b = {
-                    "alias": port_name + "-B",
+                    "alias": side_b_name + "-B",
                     "shelf": side_b_shelf,
                     "resource": side_b_resource,
                     "port": side_b_name,
@@ -349,15 +340,16 @@ class L3CXProfile(LFCliBase):
                 time.sleep(sleep_time)
 
                 data = {
-                    "alias": port_name + "CX",
+                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
                     "test_mgr": "default_tm",
-                    "tx_endp": port_name + "CX-A",
-                    "rx_endp": port_name + "CX-B"
+                    "tx_endp": side_b_name + "CX-A",
+                    "rx_endp": side_b_name + "CX-B"
                 }
                 post_data.append(data)
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
+        print("post_data", post_data)
         for data in post_data:
             url = self.lfclient_url + "/cli-json/add_cx"
             LFCliBase.json_post(self, url, data)
@@ -370,18 +362,19 @@ class L3CXProfile(LFCliBase):
 
 
 class L4CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm,debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.url = "http://localhost/"
         self.requests_per_ten = 600
+        self.local_realm = local_realm
 
     def create(self, ports=[], sleep_time=.5):
         post_data = []
         for port_name in ports:
             data = {
-                "alias": port_name + "_l4",
+                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "shelf": 1,
                 "resource": 1,
                 "port": port_name,
@@ -395,9 +388,9 @@ class L4CXProfile(LFCliBase):
             time.sleep(sleep_time)
 
             data = {
-                "alias": port_name + "_l4CX",
+                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4CX",
                 "test_mgr": "default_tm",
-                "tx_endp": port_name + "_l4",
+                "tx_endp": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "rx_endp": "NA"
             }
             post_data.append(data)
@@ -409,7 +402,7 @@ class L4CXProfile(LFCliBase):
 
 
 class GenCXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
@@ -420,12 +413,13 @@ class GenCXProfile(LFCliBase):
         self.interval = 1
         self.count = 2
         self.cmd = ""
+        self.local_realm = local_realm
 
     def create(self, ports=[], sleep_time=.5):
         post_data = []
         for port_name in ports:
-            gen_name = port_name + "_gen"
-            gen_name2 = port_name + "_gen"
+            gen_name = self.local_realm.name_to_eid(port_name)[-1] + "_gen0"
+            gen_name2 = self.local_realm.name_to_eid(port_name)[-1] + "_gen1"
             genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
             genl.createGenEndp(gen_name, 1, 1, port_name, "gen_generic")
             genl.createGenEndp(gen_name2, 1, 1, port_name, "gen_generic")
@@ -436,7 +430,7 @@ class GenCXProfile(LFCliBase):
             time.sleep(sleep_time)
 
             data = {
-                "alias": port_name + "_gen_CX",
+                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_gen_CX",
                 "test_mgr": "default_tm",
                 "tx_endp": gen_name,
                 "rx_endp": gen_name2
