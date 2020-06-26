@@ -264,7 +264,7 @@ class L3CXProfile(LFCliBase):
                     "max_pkt": 0
                 }
                 endp_side_b = {
-                    "alias": side_b_name + "-B",
+                    "alias": side_a_name + "-B",
                     "shelf": side_b_shelf,
                     "resource": side_b_resource,
                     "port": side_b_name,
@@ -283,8 +283,8 @@ class L3CXProfile(LFCliBase):
                 data = {
                     "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
                     "test_mgr": "default_tm",
-                    "tx_endp": side_a_name + "CX-A",
-                    "rx_endp": side_a_name + "CX-B"
+                    "tx_endp": side_a_name + "-A",
+                    "rx_endp": side_a_name + "-B"
                 }
                 post_data.append(data)
 
@@ -312,7 +312,7 @@ class L3CXProfile(LFCliBase):
                     side_b_resource = side_b_info[0]
                     side_b_name = side_b_info[1]
                 endp_side_a = {
-                    "alias": side_a_name + "-A",
+                    "alias": side_b_name + "-A",
                     "shelf": side_a_shelf,
                     "resource": side_a_resource,
                     "port": side_a_name,
@@ -342,8 +342,8 @@ class L3CXProfile(LFCliBase):
                 data = {
                     "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
                     "test_mgr": "default_tm",
-                    "tx_endp": side_b_name + "CX-A",
-                    "rx_endp": side_b_name + "CX-B"
+                    "tx_endp": side_b_name + "-A",
+                    "rx_endp": side_b_name + "-B"
                 }
                 post_data.append(data)
         else:
