@@ -224,10 +224,15 @@ class L3CXProfile(LFCliBase):
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
+        self.side_a_min = 0
+        self.side_b_min = 0
+        self.side_a_max = 0
+        self.side_b_max = 0
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
-
+        print(self.side_a_min, self.side_a_max)
+        print(self.side_b_min, self.side_b_max)
         if type(side_a) == list and type(side_b) != list:
             side_b_info = self.local_realm.name_to_eid(side_b)
             if len(side_b_info) == 3:
@@ -258,10 +263,11 @@ class L3CXProfile(LFCliBase):
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": 0,
-                    "max_rate": 0,
+                    "min_rate": self.side_a_min,
+                    "max_rate": self.side_a_max,
                     "min_pkt": -1,
-                    "max_pkt": 0
+                    "max_pkt": 0,
+                    "ip_port": -1
                 }
                 endp_side_b = {
                     "alias": side_a_name + "-B",
@@ -269,10 +275,11 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": 0,
-                    "max_rate": 0,
+                    "min_rate": self.side_b_min,
+                    "max_rate": self.side_b_max,
                     "min_pkt": -1,
-                    "max_pkt": 0
+                    "max_pkt": 0,
+                    "ip_port": -1
                 }
 
                 url = "/cli-json/add_endp"
@@ -280,8 +287,24 @@ class L3CXProfile(LFCliBase):
                 self.local_realm.json_post(url, endp_side_b)
                 time.sleep(sleep_time)
 
+                url = "cli-json/set_endp_flag"
                 data = {
-                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
+                    "name": side_a_name + "-A",
+                    "flag": "autohelper",
+                    "val": 1
+                }
+                self.local_realm.json_post(url, data)
+
+                url = "cli-json/set_endp_flag"
+                data = {
+                    "name": side_a_name + "-B",
+                    "flag": "autohelper",
+                    "val": 1
+                }
+                self.local_realm.json_post(url, data)
+
+                data = {
+                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "L3",
                     "test_mgr": "default_tm",
                     "tx_endp": side_a_name + "-A",
                     "rx_endp": side_a_name + "-B"
@@ -302,6 +325,7 @@ class L3CXProfile(LFCliBase):
                 raise ValueError("side_a must have a shelf and/or resource number")
 
             for port_name in side_b:
+                print(side_b)
                 side_b_info = self.local_realm.name_to_eid(port_name)
                 if len(side_b_info) == 3:
                     side_b_shelf = side_b_info[0]
@@ -317,10 +341,11 @@ class L3CXProfile(LFCliBase):
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": 0,
-                    "max_rate": 0,
+                    "min_rate": self.side_a_min,
+                    "max_rate": self.side_a_max,
                     "min_pkt": -1,
-                    "max_pkt": 0
+                    "max_pkt": 0,
+                    "ip_port": -1
                 }
                 endp_side_b = {
                     "alias": side_b_name + "-B",
@@ -328,10 +353,11 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": 0,
-                    "max_rate": 0,
+                    "min_rate": self.side_b_min,
+                    "max_rate": self.side_b_max,
                     "min_pkt": -1,
-                    "max_pkt": 0
+                    "max_pkt": 0,
+                    "ip_port": -1
                 }
 
                 url = "/cli-json/add_endp"
@@ -339,8 +365,24 @@ class L3CXProfile(LFCliBase):
                 self.local_realm.json_post(url, endp_side_b)
                 time.sleep(sleep_time)
 
+                url = "cli-json/set_endp_flag"
                 data = {
-                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "CX",
+                    "name": side_b_name + "-A",
+                    "flag": "autohelper",
+                    "val": 1
+                }
+                self.local_realm.json_post(url, data)
+
+                url = "cli-json/set_endp_flag"
+                data = {
+                    "name": side_b_name + "-B",
+                    "flag": "autohelper",
+                    "val": 1
+                }
+                self.local_realm.json_post(url, data)
+
+                data = {
+                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "L3",
                     "test_mgr": "default_tm",
                     "tx_endp": side_b_name + "-A",
                     "rx_endp": side_b_name + "-B"
