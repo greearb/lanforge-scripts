@@ -81,10 +81,11 @@ class RunCvScenario(LFCliBase):
     def start(self):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
-            "cv load s1101",
+
             "cv apply s1101",
-            "cv click mytest, Start",
-            "cv get mytest 'Report Location:'"
+            "cv create 'Rate vs Range' rvr_instance"
+            "cv click rvr_instance Start",
+            "cv get rvr_instance 'Report Location:'"
         ]
         self.use_preexec = False
         for command in commands:
