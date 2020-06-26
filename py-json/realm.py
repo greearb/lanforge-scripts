@@ -219,15 +219,19 @@ class Realm(LFCliBase):
 
 
 class L3CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, side_a_min=None, side_b_min=None,
+                 side_a_max=None, side_b_max=None, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
-        self.side_a_min = 0
-        self.side_b_min = 0
-        self.side_a_max = 0
-        self.side_b_max = 0
+        if side_a_min is None or side_a_max is None or side_b_min is None or side_b_max is None:
+            raise ValueError("side_a_min, side_a_max, side_b_min, and side_b_max must all be set to a value")
+        else:
+            self.side_a_min = side_a_min
+            self.side_b_min = side_b_min
+            self.side_a_max = side_a_max
+            self.side_b_max = side_b_max
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
