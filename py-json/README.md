@@ -61,20 +61,45 @@ begin with these imports:
     * `new_l4_cx_profile()`: creates a blank Layer-4 (http/ftp) profile, configure it then call `create()`
     * `new_generic_cx_profile()`: creates a blank Generic connection profile (for lfping/iperf3/curl-post/speedtest.net)
                                   then configure and call `create()`
-    * `class L3CXProfile`: this class is the Layer-3 connection profile
+    * class `L3CXProfile`: this class is the Layer-3 connection profile **unfinished**
       * `__init__`: should be called by `Realm::new_l3_cx_profile()`
       * `create()`: pass endpoint-type, side-a list, side-b list, and sleep_time between creating endpoints and connections
       * Parameters for this profile include:
         * prefix
         * txbps
-    * `class L4CXProfile`: this class is the Layer-4 connection profile
+    * class `L4CXProfile`: this class is the Layer-4 connection profile **unfinished**
       * `__init__`: should be called by `Realm::new_l4_cx_profile()`
       * `create()`: pass a list of ports to create endpoints on, note that resulting cross connects are prefixed with `CX_`
       * Parameters for this profile include:
         * url
         * requests_per_ten: number of requests to make in ten minutes
-        *
+    * class `GenCXProfile`: this class is the Generic connection profile **unfinished**
+      * `__init__`: should be called by `Realm::new_gen_cx_profile()`
+      * `create()`: pass a list of ports to create connections on
+      * Parameters for this profile include:
+        * type: includes lfping, iperf3, speedtest, lfcurl or cmd
+        * dest: IP address of destination for command
+    * class `StationProfile`: configure instances of this class for creating series of ports
+      * `__init__`: should be called by `Realm::new_station_profile()`
+      * `use_wpa2()`: pass on=True,ssid=a,passwd,b to set station_command_param add_sta/ssid, add_sta_key
+                      pass on=False,ssid=a to turn off command_flag add_sta/flags/wpa2_enable
+      * `set_command_param()`
+      * `set_command_flag()`
+      * `set_prefix()`
+      * `add_named_flags()`
+      * `create()`: you can use either an integer number of stations or a list of station names, if you want to create a
+                    specific range of ports, create the names first and do not specify `num_stations`
+        * resource: the resource number for the radio
+        * radio: name of the radio, like 'wiphy0'
+        * num_stations: `value > 0` indicates creating station series `sta0000..sta$value`
+        * sta_names_: a list of station names to create, please use `LFUtils.port_name_series()`
+        * dry_run: True avoids posting commands
+        * debug:
+  * `realm_test.py`: exercises realm.py
   * `show_ports.py`: this simple example shows how to gather a digest of ports
+  * `test_l4.py`: example of how to use LFRequest to create a L4 endpoint
+  * `wct-example.py`: example of using expect on port 3990 to operate a WiFi Capacity Test
+  * `ws-sta-monitor.py`: websocket 8081 client that filters interesting station events from the lfclient websocket
 
 
 
