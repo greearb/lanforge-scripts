@@ -104,9 +104,24 @@ begin with these imports:
 
 
 ## LANforge ##
-This directory defines the LANforge module holding:
+This directory defines the LANforge module holding the following classes:
+  * lfcli_base.py / class **LFCliBase**: This is a base class we encourage using for creating tests and
+  other automation scripts. It provides a centralized manner for making uniform JSON GET and POST
+  calls.
+    * `__init__`: call this from your classes __init__ method as super().__init__(...) like below:
 
-  * LFRequest: provides default mechanism to make API queries, use this
+        class MyScript(LFCliBase):
+        def __init__(self, host, port, debug_=False, _exit_on_error=False, _exit_on_fail=False):
+            super().__init__(host, port, _debug=debug_, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+
+   Those parameters provide base functionality:
+     * host: lfclient host running the LANforge GUI or headless LANforgeGUI -daemon
+     * port: lfclient HTTP port, typically 8080
+     * _debug: provides verbose mode behavior
+     * _halt_on_error: if a HTTP 400 or HTTP 500 occurs or some execeptions are raised, exit
+     * _exit_on_fail: if a test calls _fail(), exit
+
+  * LFRequest.py / class **LFRequest**: provides default mechanism to make API queries, use this
       to create most of your API requests, but you may also use the normal
       `urllib.request` library on simple GET requests if you wish.
      * formPost(): post data in url-encoded format
@@ -115,7 +130,7 @@ This directory defines the LANforge module holding:
      * getAsJson(): converts get() JSON results into python objects
      * addPostData(): provide a dictionary to this method before calling formPost() or jsonPost()
 
-  * LFUtils: defines constants and utility methods
+  * LFUtils.py / class **LFUtils**: defines constants and utility methods
     * class PortEID: convenient handle for port objects
     * newStationDownRequest(): create POST data object for station down
     * portSetDhcpDownRequest(): create POST data object for station down, apply `use_dhcp` flags
@@ -129,8 +144,13 @@ This directory defines the LANforge module holding:
     * findPortEids(): returns EIDs of ports
     * waitUntilPortsAdminDown(): watch ports until they report admin down
     * waitUntilPortsAdminUp(): watch ports until they report admin up
-    * waitUntilPortsDisappear(): use this after deleting ports
+    * wait_until_ports_disappear(): use this after deleting ports
+    * ~~waitUntilPortsDisappear()~~: use this after deleting ports, **deprecated**
     * waitUntilPortsAppear(): use this after `add_sta` or `set_port`
+    * removePort(): remove a port using rm_vlan command
+    * removeCX(): request a list of CX names be removed
+    * removeEndps(): request a list of endpoint names be removed
+    * execWrap(): hair trigger method that exits when a command fails when called by os.system()
 
 
 Have fun coding!
