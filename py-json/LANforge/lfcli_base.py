@@ -19,9 +19,10 @@ class LFCliBase:
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
-        self.haltOnError = _halt_on_error
+
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
+        self.halt_on_error = _halt_on_error
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
         # toggle using preexec_cli, preexec_method; the preexec_X parameters are useful
@@ -34,47 +35,47 @@ class LFCliBase:
     def clear_test_results(self):
         self.test_results.clear()
 
-    def json_post(self, _req_url, _data):
+    def json_post(self, _req_url, _data, debug_=False, use_preexec_=True):
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug)
-            if self.use_preexec == True:
-                del _data['suppress_preexec_cli']
-                del _data['suppress_preexec_method']
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
+            if self.use_preexec or use_preexec_:
+                _data['suppress_preexec_cli'] = False
+                _data['suppress_preexec_method'] = False
             else:
                 _data['suppress_preexec_cli'] = True
                 _data['suppress_preexec_method'] = True
             lf_r.addPostData(_data)
-            if (self.debug):
+            if debug_ or self.debug:
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(show_error=self.debug, debug=self.debug)
+            json_response = lf_r.jsonPost(show_error=self.debug, debug=(self.debug or debug_), die_on_error_=self.exit_on_error)
         except Exception as x:
-            if self.debug or self.haltOnError:
+            if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonPost posted to %s" % _req_url)
-                pprint(_data)
+                pprint.pprint(_data)
                 print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            if self.haltOnError:
+            if self.halt_on_error or self.exit_on_error:
                 exit(1)
 
         return json_response
 
-    def json_get(self, _req_url):
-        if self.debug:
+    def json_get(self, _req_url, debug_=False):
+        if self.debug or debug_:
             print("URL: "+_req_url)
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url)
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
             json_response = lf_r.getAsJson(self.debug)
             #debug_printer.pprint(json_response)
-            if (json_response is None) and self.debug:
+            if (json_response is None) and (self.debug or debug_):
                 raise ValueError(json_response)
         except ValueError as ve:
-            if self.debug or self.haltOnError:
+            if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
-            if self.haltOnError:
+            if self.halt_on_error or self.exit_on_error:
                 sys.exit(1)
 
         return json_response
@@ -115,7 +116,7 @@ class LFCliBase:
         # print("lfcli_base error: %s" % exception)
         pprint.pprint(exception)
         traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
-        if self.haltOnError:
+        if self.halt_on_error:
             print("halting on error")
             sys.exit(1)
         # else:
@@ -124,13 +125,13 @@ class LFCliBase:
     def check_connect(self):
         if self.debug:
             print("Checking for LANforge GUI connection: %s" % self.lfclient_url)
-        response = self.json_get("/")
+        response = self.json_get("/", debug_=self.debug)
         duration = 0
         while (response is None) and (duration < 300):
             print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
             duration += 2
             time.sleep(2)
-            response = self.json_get("")
+            response = self.json_get("", debug_=self.debug)
 
         if duration >= 300:
             print("Could not connect to LANforge GUI")
@@ -170,7 +171,7 @@ class LFCliBase:
         self.test_results.append(self.fail_pref + message)
         if print_:
             print(self.fail_pref + message)
-        if self.exit_on_error:
+        if self.exit_on_fail:
             sys.exit(1)
 
     # use this inside the class to log a pass result

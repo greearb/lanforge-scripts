@@ -158,7 +158,8 @@ class StaConnect(LFCliBase):
         for sta_name in self.station_names:
             add_sta_data["sta_name"] = sta_name
             print(" %s," % sta_name, end="")
-            self.json_post("/cli-json/add_sta", add_sta_data)
+            self.json_post("/cli-json/add_sta", add_sta_data, use_preexec_=False)
+            time.sleep(0.01)
 
         set_port_data = {
             "shelf": 1,
@@ -170,13 +171,14 @@ class StaConnect(LFCliBase):
         for sta_name in self.station_names:
             set_port_data["port"] = sta_name
             print(" %s," % sta_name, end="")
-            self.json_post("/cli-json/set_port", set_port_data)
+            self.json_post("/cli-json/set_port", set_port_data, use_preexec_=False)
+            time.sleep(0.01)
         print("\nBringing ports up...")
         data = {"shelf": 1,
                 "resource": self.resource,
                 "port": "ALL",
                 "probe_flags": 1}
-        self.json_post("/cli-json/nc_show_ports", data)
+        self.json_post("/cli-json/nc_show_ports", data, use_preexec_=False)
         LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -216,7 +218,7 @@ class StaConnect(LFCliBase):
                 "port": "ALL",
                 "probe_flags": 1
             }
-            self.json_post("/cli-json/nc_show_ports", data)
+            self.json_post("/cli-json/nc_show_ports", data, use_preexec_=False)
 
         # make a copy of the connected stations for test records
 
@@ -267,14 +269,14 @@ class StaConnect(LFCliBase):
                 "ip_port": "-1",
                 "min_rate": 1000000
             }
-            self.json_post("/cli-json/add_endp", data)
+            self.json_post("/cli-json/add_endp", data, use_preexec_=False)
 
             data = {
                 "name" : "testUDP-%s-A" % sta_name,
                 "flag" : "UseAutoNAT",
                 "val" : 1
             }
-            self.json_post("/cli-json/set_endp_flag", data)
+            self.json_post("/cli-json/set_endp_flag", data, use_preexec_=False)
 
             data = {
                 "alias": "testUDP-%s-B" % sta_name,
@@ -285,14 +287,14 @@ class StaConnect(LFCliBase):
                 "ip_port": "-1",
                 "min_rate": 1000000
             }
-            self.json_post("/cli-json/add_endp", data)
+            self.json_post("/cli-json/add_endp", data, use_preexec_=False)
 
             data = {
                 "name" : "testUDP-%s-B" % sta_name,
                 "flag" : "UseAutoNAT",
                 "val" : 1
             }
-            self.json_post("/cli-json/set_endp_flag", data)
+            self.json_post("/cli-json/set_endp_flag", data, use_preexec_=False)
 
             # Create CX
             data = {
@@ -301,14 +303,14 @@ class StaConnect(LFCliBase):
                 "tx_endp": "testUDP-%s-A" % sta_name,
                 "rx_endp": "testUDP-%s-B" % sta_name,
             }
-            self.json_post("/cli-json/add_cx", data)
+            self.json_post("/cli-json/add_cx", data, use_preexec_=False)
 
             data = {
                 "test_mgr": "default_tm",
                 "cx_name": "testUDP-%s" % sta_name,
                 "milliseconds": 1000
             }
-            self.json_post("/cli-json/set_cx_report_timer", data)
+            self.json_post("/cli-json/set_cx_report_timer", data, use_preexec_=False)
 
             # Create TCP endpoints
             cx_names["testTCP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
@@ -322,7 +324,7 @@ class StaConnect(LFCliBase):
                 "ip_port": "0",
                 "min_rate": 1000000
             }
-            self.json_post("/cli-json/add_endp", data)
+            self.json_post("/cli-json/add_endp", data, use_preexec_=False)
 
             data = {
                 "alias": "testTCP-%s-B" % sta_name,
@@ -333,7 +335,7 @@ class StaConnect(LFCliBase):
                 "ip_port": "-1",
                 "min_rate": 1000000
             }
-            self.json_post("/cli-json/add_endp", data)
+            self.json_post("/cli-json/add_endp", data, use_preexec_=False)
 
             # Create CX
             data = {
@@ -349,7 +351,7 @@ class StaConnect(LFCliBase):
                 "cx_name": "testTCP-%s" % sta_name,
                 "milliseconds": 1000
             }
-            self.json_post("/cli-json/set_cx_report_timer", data)
+            self.json_post("/cli-json/set_cx_report_timer", data, use_preexec_=False)
 
         # start cx traffic
         print("\nStarting CX Traffic")
