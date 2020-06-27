@@ -219,24 +219,31 @@ class Realm(LFCliBase):
 
 
 class L3CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, side_a_min=None, side_b_min=None,
-                 side_a_max=None, side_b_max=None, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, side_a_min_rate=None, side_b_min_rate=None,
+                 side_a_max_rate=None, side_b_max_rate=None, side_a_min_pkt=-1, side_b_min_pkt=-1,
+                 side_a_max_pkt=0, side_b_max_pkt=0, prefix="Unset", debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
-        if side_a_min is None or side_a_max is None or side_b_min is None or side_b_max is None:
-            raise ValueError("side_a_min, side_a_max, side_b_min, and side_b_max must all be set to a value")
+        self.side_a_min_pkt = side_a_min_pkt
+        self.side_b_min_pkt = side_b_min_pkt
+        self.side_a_max_pkt = side_a_max_pkt
+        self.side_b_max_pkt = side_b_max_pkt
+        self.created_cx = {}
+        self.prefix = prefix
+        if side_a_min_rate is None or side_a_max_rate is None or side_b_min_rate is None or side_b_max_rate is None:
+            raise ValueError("side_a_min_rate, side_a_max_rate, side_b_min_rate, and side_b_max_rate must all be set to a value")
         else:
-            self.side_a_min = side_a_min
-            self.side_b_min = side_b_min
-            self.side_a_max = side_a_max
-            self.side_b_max = side_b_max
+            self.side_a_min_rate = side_a_min_rate
+            self.side_b_min_rate = side_b_min_rate
+            self.side_a_max_rate = side_a_max_rate
+            self.side_b_max_rate = side_b_max_rate
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
-        print(self.side_a_min, self.side_a_max)
-        print(self.side_b_min, self.side_b_max)
+        # print(self.side_a_min_rate, self.side_a_max_rate)
+        # print(self.side_b_min_rate, self.side_b_max_rate)
         if type(side_a) == list and type(side_b) != list:
             side_b_info = self.local_realm.name_to_eid(side_b)
             if len(side_b_info) == 3:
@@ -260,17 +267,17 @@ class L3CXProfile(LFCliBase):
                     side_a_shelf = 1
                     side_a_resource = side_a_info[0]
                     side_a_name = side_a_info[1]
-
+                self.created_cx[port_name+"L3"] = [side_a_name + "-A", side_a_name + "-B"]
                 endp_side_a = {
                     "alias": side_a_name + "-A",
                     "shelf": side_a_shelf,
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": self.side_a_min,
-                    "max_rate": self.side_a_max,
-                    "min_pkt": -1,
-                    "max_pkt": 0,
+                    "min_rate": self.side_a_min_rate,
+                    "max_rate": self.side_a_max_rate,
+                    "min_pkt": self.side_a_min_pkt,
+                    "max_pkt": self.side_a_max_pkt,
                     "ip_port": -1
                 }
                 endp_side_b = {
@@ -279,10 +286,10 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": self.side_b_min,
-                    "max_rate": self.side_b_max,
-                    "min_pkt": -1,
-                    "max_pkt": 0,
+                    "min_rate": self.side_b_min_rate,
+                    "max_rate": self.side_b_max_rate,
+                    "min_pkt": self.side_b_min_pkt,
+                    "max_pkt": self.side_b_max_pkt,
                     "ip_port": -1
                 }
 
@@ -339,16 +346,17 @@ class L3CXProfile(LFCliBase):
                     side_b_shelf = 1
                     side_b_resource = side_b_info[0]
                     side_b_name = side_b_info[1]
+                self.created_cx[port_name + "L3"] = [side_a_name + "-A", side_a_name + "-B"]
                 endp_side_a = {
                     "alias": side_b_name + "-A",
                     "shelf": side_a_shelf,
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": self.side_a_min,
-                    "max_rate": self.side_a_max,
-                    "min_pkt": -1,
-                    "max_pkt": 0,
+                    "min_rate": self.side_a_min_rate,
+                    "max_rate": self.side_a_max_rate,
+                    "min_pkt": self.side_a_min_pkt,
+                    "max_pkt": self.side_a_max_pkt,
                     "ip_port": -1
                 }
                 endp_side_b = {
@@ -357,10 +365,10 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": self.side_b_min,
-                    "max_rate": self.side_b_max,
-                    "min_pkt": -1,
-                    "max_pkt": 0,
+                    "min_rate": self.side_b_min_rate,
+                    "max_rate": self.side_b_max_rate,
+                    "min_pkt": self.side_b_min_pkt,
+                    "max_pkt": self.side_b_max_pkt,
                     "ip_port": -1
                 }
 
