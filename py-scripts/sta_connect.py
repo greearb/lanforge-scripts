@@ -56,6 +56,7 @@ class StaConnect(LFCliBase):
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
         self.station_names = []
+        self.cx_names = {}
         if _sta_name is not None:
             self.station_names = [ _sta_name ]
         # self.localrealm :Realm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
@@ -116,6 +117,23 @@ class StaConnect(LFCliBase):
         #super(StaConnect, self).clear_test_results().test_results.clear()
 
     def run(self):
+        if not self.setup():
+            return False
+        if not self.start():
+            return False
+        time.sleep(self.runtime_secs)
+        if not self.stop():
+            return False
+        if not self.finish():
+            return False
+
+        # remove all endpoints and cxs
+        if self.cleanup_on_exit:
+            if not self.cleanup():
+                return False
+        return True
+
+    def setup(self):
         self.clear_test_results()
         self.check_connect()
         eth1IP = self.json_get(self.get_upstream_url())
@@ -255,11 +273,11 @@ class StaConnect(LFCliBase):
 
         # create endpoints and cxs
         # Create UDP endpoints
-        cx_names = {}
+        self.cx_names = {}
 
         for sta_name in self.station_names:
-            cx_names["testUDP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
-                                            "b": "testUDP-%s-B" % sta_name}
+            self.cx_names["testUDP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
+                                                   "b": "testUDP-%s-B" % sta_name}
             data = {
                 "alias": "testUDP-%s-A" % sta_name,
                 "shelf": 1,
@@ -313,8 +331,8 @@ class StaConnect(LFCliBase):
             self.json_post("/cli-json/set_cx_report_timer", data, use_preexec_=False)
 
             # Create TCP endpoints
-            cx_names["testTCP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
-                                            "b": "testUDP-%s-B" % sta_name}
+            self.cx_names["testTCP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
+                                                   "b": "testUDP-%s-B" % sta_name}
             data = {
                 "alias": "testTCP-%s-A" % sta_name,
                 "shelf": 1,
@@ -353,9 +371,12 @@ class StaConnect(LFCliBase):
             }
             self.json_post("/cli-json/set_cx_report_timer", data, use_preexec_=False)
 
+        return True
+
+    def start(self):
         # start cx traffic
         print("\nStarting CX Traffic")
-        for cx_name in cx_names.keys():
+        for cx_name in self.cx_names.keys():
             data = {
                 "test_mgr": "ALL",
                 "cx_name": cx_name,
@@ -366,28 +387,31 @@ class StaConnect(LFCliBase):
         # Refresh stats
 
         print("Refresh CX stats")
-        for cx_name in cx_names.keys():
+        for cx_name in self.cx_names.keys():
             data = {
                 "test_mgr": "ALL",
                 "cross_connect": cx_name
             }
             self.json_post("/cli-json/show_cxe", data)
+        return True
+    
 
-        time.sleep(self.runtime_secs)
-
+    def stop(self):
         # stop cx traffic
         print("Stopping CX Traffic")
-        for cx_name in cx_names.keys():
+        for cx_name in self.cx_names.keys():
             data = {
                 "test_mgr": "ALL",
                 "cx_name": cx_name,
                 "cx_state": "STOPPED"
             }
             self.json_post("/cli-json/set_cx_state", data)
+        return True
 
+    def finish(self):
         # Refresh stats
         print("\nRefresh CX stats")
-        for cx_name in cx_names.keys():
+        for cx_name in self.cx_names.keys():
             data = {
                 "test_mgr": "ALL",
                 "cross_connect": cx_name
@@ -399,19 +423,19 @@ class StaConnect(LFCliBase):
 
         # get data for endpoints JSON
         print("Collecting Data")
-        for cx_name in cx_names.keys():
+        for cx_name in self.cx_names.keys():
 
             try:
                 # ?fields=tx+bytes,rx+bytes
-                endp_url = "/endp/%s" % cx_names[cx_name]["a"]
+                endp_url = "/endp/%s" % self.cx_names[cx_name]["a"]
                 ptest = self.json_get(endp_url)
                 self.resulting_endpoints[endp_url] = ptest
 
                 ptest_a_tx = ptest['endpoint']['tx bytes']
                 ptest_a_rx = ptest['endpoint']['rx bytes']
 
-                #ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
-                endp_url = "/endp/%s" % cx_names[cx_name]["b"]
+                #ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % self.cx_names[cx_name]["b"])
+                endp_url = "/endp/%s" % self.cx_names[cx_name]["b"]
                 ptest = self.json_get(endp_url)
                 self.resulting_endpoints[endp_url] = ptest
 
@@ -432,16 +456,16 @@ class StaConnect(LFCliBase):
         # self.test_results.append("FAILED message will fail")
         # print("\n")
 
-        # remove all endpoints and cxs
-        if self.cleanup_on_exit:
-            for sta_name in self.station_names:
-                LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
-            endp_names = []
-            removeCX(self.lfclient_url, cx_names.keys())
-            for cx_name in cx_names:
-                endp_names.append(cx_names[cx_name]["a"])
-                endp_names.append(cx_names[cx_name]["b"])
-            removeEndps(self.lfclient_url, endp_names)
+
+    def cleanup(self):
+        for sta_name in self.station_names:
+            LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+        endp_names = []
+        removeCX(self.lfclient_url, self.cx_names.keys())
+        for cx_name in self.cx_names:
+            endp_names.append(self.cx_names[cx_name]["a"])
+            endp_names.append(self.cx_names[cx_name]["b"])
+        removeEndps(self.lfclient_url, endp_names)
 
 # ~class
 
