@@ -18,7 +18,8 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, num_stations, prefix="00000", test_duration="5m",
+    def __init__(self, host, port, ssid, security, password, num_stations, side_a_min_rate=56, side_b_min_rate=56, side_a_max_rate=0,
+                 side_b_max_rate=0, prefix="00000", test_duration="5m",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -35,7 +36,9 @@ class IPV4VariableTime(LFCliBase):
                                                     security=self.security, prefix=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_rate=side_a_min_rate,
+                                            side_b_min_rate=side_b_min_rate, side_a_max_rate=side_a_max_rate,
+                                            side_b_max_rate=side_b_max_rate, debug_=False)
         self.test_duration = test_duration
 
     def __set_all_cx_state(self, state, sleep_time=5):
@@ -43,15 +46,15 @@ class IPV4VariableTime(LFCliBase):
         cx_list = list(self.local_realm.cx_list())
         for cx_name in cx_list:
             if cx_name != 'handler' or cx_name != 'uri':
-                req_url  = "cli-json/set_cx_state"
+                req_url = "cli-json/set_cx_state"
                 data = {
                     "test_mgr": "default_tm",
                     "cx_name": cx_name,
                     "cx_state": state
                 }
-
                 super().json_post(req_url, data)
         time.sleep(sleep_time)
+
 
     def run_test(self):
         cur_time = datetime.datetime.now()
@@ -84,15 +87,16 @@ class IPV4VariableTime(LFCliBase):
             super().json_post(req_url, data)
 
         cx_list = list(self.local_realm.cx_list())
-        print("Cleaning up cxs")
-        for cx_name in cx_list:
-            if cx_name != 'handler' or cx_name != 'uri':
-                req_url = "cli-json/rm_cx"
-                data = {
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name
-                }
-                super().json_post(req_url, data)
+        if cx_list is not None:
+            print("Cleaning up cxs")
+            for cx_name in cx_list:
+                if cx_name != 'handler' or cx_name != 'uri':
+                    req_url = "cli-json/rm_cx"
+                    data = {
+                        "test_mgr": "default_tm",
+                        "cx_name": cx_name
+                    }
+                    super().json_post(req_url, data)
 
         print("Cleaning up endps")
         endp_list = super().json_get("/endp")
@@ -107,9 +111,6 @@ class IPV4VariableTime(LFCliBase):
                 super().json_post(req_url, data)
 
     def run(self):
-        super().clear_test_results()
-        print("Cleaning up old stations")
-        self.cleanup()
         sta_list = []
 
         self.station_profile.use_wpa2(True, self.ssid, self.password)
@@ -130,10 +131,14 @@ def main():
     lfjson_port = 8080
     ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, prefix="00", ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
-                                   security="open", num_stations=10, test_duration="1m")
-    ip_var_test.run()
-    ip_var_test.run_test()
+                                   security="open", num_stations=10, test_duration="4m",
+                                   side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup()
+    ip_var_test.run()
+    print(ip_var_test.cx_profile.created_cx)
+    time.sleep(5)
+    ip_var_test.run_test()
+    #ip_var_test.cleanup()
 
 
 if __name__ == "__main__":
