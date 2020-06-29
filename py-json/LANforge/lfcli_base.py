@@ -30,21 +30,43 @@ class LFCliBase:
         # like when developing; you might toggle this with use_preexec = _debug
         # Otherwise, preexec methods use more processing time because they add an extra CLI call
         # into the queue, and inspect it -- typically nc_show_port
-        self.use_preexec = False
+        self.suppress_related_commands = None
 
     def clear_test_results(self):
         self.test_results.clear()
 
-    def json_post(self, _req_url, _data, debug_=False, use_preexec_=True):
+    def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None):
+        """
+        send json to the LANforge client
+        :param _req_url:
+        :param _data:
+        :param debug_:
+        :param suppress_related_commands_: when False, override self.preexec; when True use
+        :return:
+        """
         json_response = None
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
-            if self.use_preexec or use_preexec_:
+            if suppress_related_commands_ is None:
+                if 'suppress_preexec_cli' in _data:
+                    del _data['suppress_preexec_cli']
+                if 'suppress_preexec_method' in _data:
+                    del _data['suppress_preexec_method']
+                if 'suppress_postexec_cli' in _data:
+                    del _data['suppress_postexec_cli']
+                if 'suppress_postexec_method' in _data:
+                    del _data['suppress_postexec_method']
+            elif suppress_related_commands_ == False:
                 _data['suppress_preexec_cli'] = False
                 _data['suppress_preexec_method'] = False
-            else:
-                _data['suppress_preexec_cli'] = True
-                _data['suppress_preexec_method'] = True
+                _data['suppostss_postexec_cli'] = False
+                _data['suppostss_postexec_method'] = False
+            elif self.suppress_related_commands or suppress_related_commands_:
+                _data['suppress_preexec_cli'] = False
+                _data['suppress_preexec_method'] = False
+                _data['suppostss_postexec_cli'] = True
+                _data['suppostss_postexec_method'] = True
+
             lf_r.addPostData(_data)
             if debug_ or self.debug:
                 LANforge.LFUtils.debug_printer.pprint(_data)
