@@ -15,7 +15,7 @@ is intended for utility and library scripts. To use this module, make sure your 
 captures this module by adding it to your `sys.path`. We recommend your scripts in `../py-scripts`
 begin with these imports:
 
-    `if 'py-json' not in sys.path:
+    if 'py-json' not in sys.path:
         sys.path.append('../py-json')
     from LANforge import LFUtils
     from LANforge import lfcli_base
