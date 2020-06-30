@@ -86,19 +86,20 @@ class RunCvScenario(LFCliBase):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
             "cv apply '%s'" % self.cv_scenario,
-            "sleep 2",
             "cv build",
             "sleep 2",
             "cv is_built",
-            "sleep 2",
+            "cv sync",
+            "sleep 1",
             "cv create '%s' test_ref" % self.cv_test,
-            "sleep 2",
+            "sleep 1",
             "cv load test_ref '%s'" % self.test_profile,
-            "sleep 2",
-            # "cv click test_ref 'Auto Save Report'",
-            # "cv click test_ref Start"
-            # "cv get rvr_instance 'Report Location:'"
-            "cv click test_ref Cancel"
+            "sleep 1",
+            "cv click test_ref 'Auto Save Report'",
+            "cv click test_ref Start"
+            "cv get test_ref 'Report Location:'"
+            "cv click test_ref Cancel",
+            "exit"
         ]
         response_json = []
         for command in commands:
