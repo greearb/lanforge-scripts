@@ -99,7 +99,7 @@ class LFRequest:
 
         return None
 
-    def jsonPost(self, show_error=True, debug=False, die_on_error_=False):
+    def jsonPost(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
         if (debug == False) and (self.debug == True):
             debug = True
         responses = []
@@ -114,11 +114,28 @@ class LFRequest:
         request.headers['Content-type'] = 'application/json'
         try:
             resp = urllib.request.urlopen(request)
+            resp_data = resp.read().decode('utf-8')
+            if (debug):
+                print("----- LFRequest::jsonPost:118 debug: --------------------------------------------")
+                print("URL: %s :%d "% (self.requested_url, resp.status))
+                LFUtils.debug_printer.pprint(resp.getheaders())
+                print("----- resp_data -------------------------------------------------")
+                print(resp_data)
+                print("-------------------------------------------------")
             responses.append(resp)
+            if response_json_list_ is not None:
+                if type(response_json_list_) is not list:
+                    raise ValueError("reponse_json_list_ needs to be type list")
+                j = json.loads(resp_data)
+                if debug:
+                    print("----- LFRequest::jsonPost:129 debug: --------------------------------------------")
+                    LFUtils.debug_printer.pprint(j)
+                    print("-------------------------------------------------")
+                response_json_list_.append(j)
             return responses[0]
         except urllib.error.HTTPError as error:
             if show_error:
-                print("----- LFRequest::jsonPost:116 HTTPError: --------------------------------------------")
+                print("----- LFRequest::jsonPost:138 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(request.get_full_url(), error.code, error.reason, ))
 
                 print("Error: ", sys.exc_info()[0])
@@ -142,7 +159,7 @@ class LFRequest:
                     exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
-                print("----- LFRequest::jsonPost:138 URLError: ---------------------------------------------")
+                print("----- LFRequest::jsonPost:162 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
@@ -192,9 +209,9 @@ class LFRequest:
                     exit(1)
         return None
 
-    def getAsJson(self, show_error=True, die_on_error_=False):
+    def getAsJson(self, show_error=True, die_on_error_=False, debug_=False):
         responses = []
-        responses.append(self.get(show_error, die_on_error_=die_on_error_))
+        responses.append(self.get(show_error, die_on_error_=die_on_error_, debug=(debug_ or self.debug)))
         if (len(responses) < 1):
             return None
         if (responses[0] == None):
