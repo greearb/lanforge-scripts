@@ -88,19 +88,34 @@ class RunCvScenario(LFCliBase):
             "cv apply '%s'" % self.cv_scenario,
             "cv build",
             "cv is_built",
-            "cv create '%r' test_ref",
-            "cv load test_ref '%s'" % self.cv_test,
-            "cv click test_ref 'Auto Save Report'",
-            "cv click test_ref Start"
+            "cv create '%s' test_ref" % self.cv_test,
+            "cv load test_ref '%s'" % self.cv_scenario
+            # "cv click test_ref 'Auto Save Report'",
+            # "cv click test_ref Start"
             # "cv get rvr_instance 'Report Location:'"
         ]
         self.use_preexec = False
+        response_json = ["nothing"]
         for command in commands:
             data = {
                 "cmd": command
             }
-            self.json_post("/gui-json/cmd?__debug=1", data, debug_=True)
-            sleep(1)
+            try:
+
+                print("List: ", type(response_json))
+                response = self.json_post("/gui-json/cmd?__debug=1", data, debug_=True, response_json_list_=response_json)
+                if command == "cv is_built":
+                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                    LFUtils.debug_printer.pprint(response_json)
+                    last_response = response_json["LAST"]["response"];
+                    if (last_response != "OK"):
+                        print("keep waiting")
+                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                    exit(1)
+
+                sleep(1)
+            except Exception as x:
+                print(x)
 
         self._fail("start unfinished", print_=True)
 
