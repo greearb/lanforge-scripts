@@ -82,7 +82,7 @@ class RunCvScenario(LFCliBase):
         self._pass("Loaded scenario %s" % self.lanforge_db, True)
         return True
 
-    def start(self):
+    def start(self, debug_=False):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
             "cv apply '%s'" % self.cv_scenario,
@@ -94,24 +94,25 @@ class RunCvScenario(LFCliBase):
             # "cv click test_ref Start"
             # "cv get rvr_instance 'Report Location:'"
         ]
-        self.use_preexec = False
-        response_json = ["nothing"]
+        response_json = []
         for command in commands:
             data = {
                 "cmd": command
             }
             try:
-
+                debug_par = ""
+                if debug_:
+                    debug_par="?_debug=1"
                 print("List: ", type(response_json))
-                response = self.json_post("/gui-json/cmd?__debug=1", data, debug_=True, response_json_list_=response_json)
-                if command == "cv is_built":
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-                    LFUtils.debug_printer.pprint(response_json)
-                    last_response = response_json["LAST"]["response"];
-                    if (last_response != "OK"):
-                        print("keep waiting")
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                if command.endswith("is_built"):
+                    print("xxxxxxxxxx command %s xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" % command)
+                    self.localrealm.wait_while_building(debug_=debug_)
+                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                     exit(1)
+                else:
+                    print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+                    response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=True, response_json_list_=response_json)
+                    print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
 
                 sleep(1)
             except Exception as x:
