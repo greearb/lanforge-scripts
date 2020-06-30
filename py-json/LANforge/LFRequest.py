@@ -73,7 +73,7 @@ class LFRequest:
             return responses[0]
         except urllib.error.HTTPError as error:
             if (show_error):
-                print("----- LFRequest::formPost:75 HTTPError: --------------------------------------------")
+                print("----- LFRequest::formPost:76 HTTPError: --------------------------------------------")
                 print("%s: %s; URL: %s"%(error.code, error.reason, request.get_full_url()))
                 LFUtils.debug_printer.pprint(error.headers)
                 #print("Error: ", sys.exc_info()[0])
@@ -91,7 +91,7 @@ class LFRequest:
                     exit(1)
         except urllib.error.URLError as uerror:
             if (show_error):
-                print("----- LFRequest::formPost:91 URLError: ---------------------------------------------")
+                print("----- LFRequest::formPost:94 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
@@ -178,7 +178,7 @@ class LFRequest:
             return myresponses[0]
         except urllib.error.HTTPError as error:
             if debug:
-                print("----- LFRequest::get:155 HTTPError: --------------------------------------------")
+                print("----- LFRequest::get:181 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
                 if error.code != 404:
                     print("Error: ", sys.exc_info()[0])
@@ -202,7 +202,7 @@ class LFRequest:
                     exit(1)
         except urllib.error.URLError as uerror:
             if debug:
-                print("----- LFRequest::get:177 URLError: ---------------------------------------------")
+                print("----- LFRequest::get:205 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
