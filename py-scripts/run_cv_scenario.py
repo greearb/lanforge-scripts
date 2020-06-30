@@ -21,7 +21,7 @@ import realm
 from realm import Realm
 
 """
-        cvScenario.scenario_db = args.scenario_db
+    cvScenario.scenario_db = args.scenario_db
     if args.cv_test is not None:
         cvScenario.cv_test = args.cv_test
     if args.test_scenario is not None:
@@ -86,13 +86,19 @@ class RunCvScenario(LFCliBase):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
             "cv apply '%s'" % self.cv_scenario,
+            "sleep 2",
             "cv build",
+            "sleep 2",
             "cv is_built",
+            "sleep 2",
             "cv create '%s' test_ref" % self.cv_test,
-            "cv load test_ref '%s'" % self.cv_scenario
+            "sleep 2",
+            "cv load test_ref '%s'" % self.test_profile,
+            "sleep 2",
             # "cv click test_ref 'Auto Save Report'",
             # "cv click test_ref Start"
             # "cv get rvr_instance 'Report Location:'"
+            "cv click test_ref Cancel"
         ]
         response_json = []
         for command in commands:
@@ -103,15 +109,18 @@ class RunCvScenario(LFCliBase):
                 debug_par = ""
                 if debug_:
                     debug_par="?_debug=1"
-                print("List: ", type(response_json))
                 if command.endswith("is_built"):
                     self.localrealm.wait_while_building(debug_=debug_)
+                elif command.startswith("sleep "):
+                    nap = int(command.split(" ")[1])
+                    sleep(nap)
                 else:
-                    print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+                    response_json = []
                     response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=True, response_json_list_=response_json)
-                    print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
+                    if debug_:
+                        LFUtils.debug_printer.pprint(response_json)
 
-                sleep(1)
+
             except Exception as x:
                 print(x)
 
