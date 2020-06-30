@@ -55,15 +55,30 @@ class IPV4VariableTime(LFCliBase):
                 super().json_post(req_url, data)
         time.sleep(sleep_time)
 
+    def __get_rx_values(self):
+        test = LFRequest.LFRequest("localhost:8080", "cx?fields=name,bps+rx+a", debug_=True)
+        cx_list = test.getAsJson()
+        cx_list1 = super().json_get("http://localhost:8080/cx?fields=name,bps+rx+a", debug_=True)
+        print("==============\n", cx_list, "\n==============\n", cx_list1, "\n==============")
+        exit(1)
+        cx_rx_map = {}
+        for cx in list(cx_list):
+            cx_rx_map[cx] = cx_list[cx]["bps rx a"]
+        return cx_rx_map
+
 
     def run_test(self):
         cur_time = datetime.datetime.now()
+        old_cx_rx_values = self.__get_rx_values()
+        test_state = None
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.__set_all_cx_state("RUNNING")
-        while cur_time < end_time:
-            #print(cur_time, end_time)
-            cur_time = datetime.datetime.now()
-            # Run test
+        while cur_time < end_time and not test_state:
+            while cur_time < cur_time + datetime.timedelta(minutes=1):
+                cur_time = datetime.datetime.now()
+                new_cx_rx_values = self.__get_rx_values()
+                print(new_cx_rx_values)
+                time.sleep(59)
             time.sleep(1)
         self.__set_all_cx_state("STOPPED")
 
@@ -131,14 +146,14 @@ def main():
     lfjson_port = 8080
     ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, prefix="00", ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
-                                   security="open", num_stations=10, test_duration="4m",
+                                   security="open", num_stations=10, test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup()
     ip_var_test.run()
     print(ip_var_test.cx_profile.created_cx)
     time.sleep(5)
     ip_var_test.run_test()
-    #ip_var_test.cleanup()
+    ip_var_test.cleanup()
 
 
 if __name__ == "__main__":
