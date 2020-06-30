@@ -52,34 +52,68 @@ class IPV4VariableTime(LFCliBase):
                     "cx_name": cx_name,
                     "cx_state": state
                 }
-                super().json_post(req_url, data)
+                self.json_post(req_url, data)
         time.sleep(sleep_time)
 
     def __get_rx_values(self):
-        test = LFRequest.LFRequest("localhost:8080", "cx?fields=name,bps+rx+a", debug_=True)
-        cx_list = test.getAsJson()
-        cx_list1 = super().json_get("http://localhost:8080/cx?fields=name,bps+rx+a", debug_=True)
-        print("==============\n", cx_list, "\n==============\n", cx_list1, "\n==============")
-        exit(1)
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
+        #print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
-        for cx in list(cx_list):
-            cx_rx_map[cx] = cx_list[cx]["bps rx a"]
+        for cx_name in cx_list['endpoint']:
+            if cx_name != 'uri' and cx_name != 'handler':
+                for item, value in cx_name.items():
+                    for value_name, value_rx in value.items():
+                      if value_name == 'rx bytes':
+                        cx_rx_map[item] = value_rx
         return cx_rx_map
 
+    def __compare_vals(self, old_list, new_list):
+        passes = 0
+        expected_passes = 0
+        if len(old_list) == len(new_list):
+            for item, value in old_list.items():
+                expected_passes += 1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+                # print(item, new_list[item], old_list[item], passes, expected_passes)
 
-    def run_test(self):
+            if passes == expected_passes:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def run_test(self, print_pass=False, print_fail=False):
         cur_time = datetime.datetime.now()
         old_cx_rx_values = self.__get_rx_values()
-        test_state = None
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.__set_all_cx_state("RUNNING")
-        while cur_time < end_time and not test_state:
-            while cur_time < cur_time + datetime.timedelta(minutes=1):
+        passes = 0
+        expected_passes = 0
+        while cur_time < end_time:
+            interval_time = cur_time + datetime.timedelta(minutes=1)
+            while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
-                new_cx_rx_values = self.__get_rx_values()
-                print(new_cx_rx_values)
-                time.sleep(59)
-            time.sleep(1)
+                time.sleep(1)
+
+            new_cx_rx_values = self.__get_rx_values()
+            # print(old_cx_rx_values, new_cx_rx_values)
+            # print("\n-----------------------------------")
+            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
+            # print("-----------------------------------\n")
+            expected_passes += 1
+            if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
+                passes += 1
+            else:
+                self._fail("FAIL: Not all stations increased traffic", print_fail)
+                break
+            old_cx_rx_values = new_cx_rx_values
+            cur_time = datetime.datetime.now()
+
+        if passes == expected_passes:
+            self._pass("PASS: All tests passed", print_pass)
+
         self.__set_all_cx_state("STOPPED")
 
     def cleanup(self):
@@ -99,7 +133,7 @@ class IPV4VariableTime(LFCliBase):
                 "port": sta_name
             }
             # print(data)
-            super().json_post(req_url, data)
+            self.json_post(req_url, data)
 
         cx_list = list(self.local_realm.cx_list())
         if cx_list is not None:
@@ -111,10 +145,10 @@ class IPV4VariableTime(LFCliBase):
                         "test_mgr": "default_tm",
                         "cx_name": cx_name
                     }
-                    super().json_post(req_url, data)
+                    self.json_post(req_url, data)
 
         print("Cleaning up endps")
-        endp_list = super().json_get("/endp")
+        endp_list = self.json_get("/endp")
         if endp_list is not None:
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
@@ -123,7 +157,7 @@ class IPV4VariableTime(LFCliBase):
                 data = {
                     "endp_name": name
                 }
-                super().json_post(req_url, data)
+                self.json_post(req_url, data)
 
     def run(self):
         sta_list = []
@@ -150,9 +184,8 @@ def main():
                                    side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup()
     ip_var_test.run()
-    print(ip_var_test.cx_profile.created_cx)
     time.sleep(5)
-    ip_var_test.run_test()
+    ip_var_test.run_test(print_pass=True, print_fail=True)
     ip_var_test.cleanup()
 
 
