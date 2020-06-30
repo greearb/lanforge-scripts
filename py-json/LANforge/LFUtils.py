@@ -287,7 +287,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(show_error=False)
+            json_response = lf_r.getAsJson(debug_=False)
             if json_response == None:
                 print("port %s disappeared" % port_name)
                 continue
@@ -310,7 +310,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(show_error=False)
+            json_response = lf_r.getAsJson(debug_=False)
             if json_response == None:
                 print("port %s disappeared" % port_name)
                 continue
@@ -338,7 +338,7 @@ def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", 
             if debug:
                 print("checking:" + check_url)
             lf_r = LFRequest.LFRequest(base_url, check_url)
-            json_response = lf_r.getAsJson(show_error=debug)
+            json_response = lf_r.getAsJson(debug_=debug)
             if (json_response != None):
                 found_stations.append(port_name)
     return
@@ -361,7 +361,7 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
             sleep(1)
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(show_error=False)
+            json_response = lf_r.getAsJson(debug_=False)
             if (json_response != None):
                 found_stations.append(port_name)
             else:
