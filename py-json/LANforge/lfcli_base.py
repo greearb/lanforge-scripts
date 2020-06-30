@@ -35,7 +35,7 @@ class LFCliBase:
     def clear_test_results(self):
         self.test_results.clear()
 
-    def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None):
+    def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
         send json to the LANforge client
         :param _req_url:
@@ -70,7 +70,12 @@ class LFCliBase:
             lf_r.addPostData(_data)
             if debug_ or self.debug:
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(show_error=self.debug, debug=(self.debug or debug_), die_on_error_=self.exit_on_error)
+            json_response = lf_r.jsonPost(show_error=self.debug, \
+                                          debug=(self.debug or debug_), \
+                                          response_json_list_=response_json_list_, \
+                                          die_on_error_=self.exit_on_error)
+            if debug_ and (response_json_list_ is not None):
+                pprint.pprint(response_json_list_)
         except Exception as x:
             if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonPost posted to %s" % _req_url)
