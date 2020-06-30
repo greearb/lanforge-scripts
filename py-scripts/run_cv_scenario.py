@@ -105,10 +105,7 @@ class RunCvScenario(LFCliBase):
                     debug_par="?_debug=1"
                 print("List: ", type(response_json))
                 if command.endswith("is_built"):
-                    print("xxxxxxxxxx command %s xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" % command)
                     self.localrealm.wait_while_building(debug_=debug_)
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-                    exit(1)
                 else:
                     print("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
                     response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=True, response_json_list_=response_json)
