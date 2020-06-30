@@ -38,11 +38,12 @@ class LFCliBase:
     def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
         send json to the LANforge client
-        :param _req_url:
-        :param _data:
-        :param debug_:
+        :param _req_url: requested url
+        :param _data: json data to send
+        :param debug_: turn on debugging output
         :param suppress_related_commands_: when False, override self.preexec; when True use
-        :return:
+        :param response_json_list_: array for json results in the response object, (alternative return method)
+        :return: http response object
         """
         json_response = None
         try:
