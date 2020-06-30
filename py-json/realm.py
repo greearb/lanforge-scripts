@@ -30,20 +30,18 @@ class Realm(LFCliBase):
         dbg_param = ""
         if debug_:
             dbg_param = "?__debug=1"
-        print("ZZZZZZzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-        while (last_response != "OK"):
+
+        while (last_response != "YES"):
             response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=True, response_json_list_=response_json)
-            print("ZZZZZZz z z z z z z z z zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
             LFUtils.debug_printer.pprint(response_json)
-
-            print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
-            last_response = response_json[0]["LAST"];
-            if (last_response["response"] != "YES"):
-                print("keep waiting")
+            last_response = response_json[0]["LAST"]["response"];
+            if (last_response != "YES"):
+                last_response = None
+                response_json = []
                 time.sleep(1)
-                continue
-
-            print("z  1  zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+            else:
+                return
+        return
 
     # loads a database
     def load(self, name):
