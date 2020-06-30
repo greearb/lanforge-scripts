@@ -20,6 +20,31 @@ class Realm(LFCliBase):
         self.debug = debug_
         self.check_connect()
 
+    # checks for OK or BUSY when querying cli-json/cv+is_built
+    def wait_while_building(self, debug_=False):
+        response_json=[]
+        data = {
+            "cmd": "cv is_built"
+        }
+        last_response = "BUSY"
+        dbg_param = ""
+        if debug_:
+            dbg_param = "?__debug=1"
+        print("ZZZZZZzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        while (last_response != "OK"):
+            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=True, response_json_list_=response_json)
+            print("ZZZZZZz z z z z z z z z zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+            LFUtils.debug_printer.pprint(response_json)
+
+            print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+            last_response = response_json[0]["LAST"];
+            if (last_response["response"] != "YES"):
+                print("keep waiting")
+                time.sleep(1)
+                continue
+
+            print("z  1  zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+
     # loads a database
     def load(self, name):
         if (name is None) or (name == ""):
