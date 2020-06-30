@@ -1,5 +1,5 @@
 # LANForge Python Scripts 
-This directory contains python scripts useful for unit-tests.  It uses libraries in ../py-json. Please place new tests in this directory. Unless they are libraries, please avoid adding python scripts to ../py-json.
+This directory contains python scripts useful for unit-tests.  It uses libraries in ../py-json. Please place new tests in this directory. Unless they are libraries, please avoid adding python scripts to ../py-json. Please read https://www.candelatech.com/cookbook/cli/json-python to learn about how to use the LANforge client JSON directly. Review http://www.candelatech.com/scripting_cookbook.php to understand more about scripts in general.
 
 # Getting Started
 Please consider using the `LFCliBase` class as your script superclass. It will help you with a consistent set of JSON handling methods and pass and fail methods for recording test results. Below is a sample snippet that includes LFCliBase:
