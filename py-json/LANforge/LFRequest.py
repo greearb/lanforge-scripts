@@ -166,7 +166,7 @@ class LFRequest:
                     exit(1)
         return None
 
-    def get(self, show_error=True, debug=False, die_on_error_=False):
+    def get(self, debug=False, die_on_error_=False):
         if (debug == False) and (self.debug == True):
             debug = True
         if (debug):
@@ -177,7 +177,7 @@ class LFRequest:
             myresponses.append(urllib.request.urlopen(myrequest))
             return myresponses[0]
         except urllib.error.HTTPError as error:
-            if show_error:
+            if debug:
                 print("----- LFRequest::get:155 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
                 if error.code != 404:
@@ -201,7 +201,7 @@ class LFRequest:
                 if (die_on_error_ == True) or (self.die_on_error == True):
                     exit(1)
         except urllib.error.URLError as uerror:
-            if show_error:
+            if debug:
                 print("----- LFRequest::get:177 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
@@ -209,13 +209,14 @@ class LFRequest:
                     exit(1)
         return None
 
-    def getAsJson(self, show_error=True, die_on_error_=False, debug_=False):
+    def getAsJson(self, die_on_error_=False, debug_=False):
         responses = []
-        responses.append(self.get(show_error, die_on_error_=die_on_error_, debug=(debug_ or self.debug)))
-        if (len(responses) < 1):
+        j = self.get(debug=debug_, die_on_error_=die_on_error_)
+        responses.append(j)
+        if len(responses) < 1:
             return None
-        if (responses[0] == None):
-            if (show_error):
+        if responses[0] == None:
+            if debug_:
                 print("No response from "+self.requested_url)
             return None
         json_data = json.loads(responses[0].read().decode('utf-8'))
