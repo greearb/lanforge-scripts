@@ -253,15 +253,17 @@ class L3CXProfile(LFCliBase):
         self.side_b_min_pkt = side_b_min_pkt
         self.side_a_max_pkt = side_a_max_pkt
         self.side_b_max_pkt = side_b_max_pkt
+        self.side_a_min_rate = side_a_min_rate
+        self.side_b_min_rate = side_b_min_rate
+        self.side_a_max_rate = side_a_max_rate
+        self.side_b_max_rate = side_b_max_rate
         self.created_cx = {}
         self.prefix = prefix
-        if side_a_min_rate is None or side_a_max_rate is None or side_b_min_rate is None or side_b_max_rate is None:
+        if (side_a_min_rate is None) \
+                or (side_a_max_rate is None) \
+                or (side_b_min_rate is None) \
+                or (side_b_max_rate is None):
             raise ValueError("side_a_min_rate, side_a_max_rate, side_b_min_rate, and side_b_max_rate must all be set to a value")
-        else:
-            self.side_a_min_rate = side_a_min_rate
-            self.side_b_min_rate = side_b_min_rate
-            self.side_a_max_rate = side_a_max_rate
-            self.side_b_max_rate = side_b_max_rate
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
