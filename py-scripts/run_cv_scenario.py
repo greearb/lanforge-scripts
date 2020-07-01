@@ -87,17 +87,17 @@ class RunCvScenario(LFCliBase):
         commands = [
             "cv apply '%s'" % self.cv_scenario,
             "cv build",
-            "sleep 2",
+            "sleep 4",
             "cv is_built",
             "cv sync",
-            "sleep 1",
+            "sleep 2",
             "cv create '%s' test_ref" % self.cv_test,
-            "sleep 1",
+            "sleep 2",
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 1",
             "cv click test_ref 'Auto Save Report'",
-            "cv click test_ref Start"
-            "cv get test_ref 'Report Location:'"
+            "cv click test_ref Start",
+            "cv get test_ref 'Report Location:'",
             "cv click test_ref Cancel",
             "exit"
         ]
