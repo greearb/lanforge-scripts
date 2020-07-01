@@ -159,7 +159,7 @@ class IPV6VariableTime(LFCliBase):
                 }
                 self.json_post(req_url, data)
 
-    def run(self):
+    def build(self):
         sta_list = []
 
         self.station_profile.use_wpa2(True, self.ssid, self.password)
@@ -183,7 +183,7 @@ def main():
                                    security="open", num_stations=10, test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup()
-    ip_var_test.run()
+    ip_var_test.build()
     time.sleep(5)
     ip_var_test.run_test(print_pass=True, print_fail=True)
     ip_var_test.cleanup()
