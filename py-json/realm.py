@@ -229,7 +229,8 @@ class Realm(LFCliBase):
         return station_prof
 
     def new_l3_cx_profile(self):
-        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, \
+                              local_realm=self, debug_=self.debug)
         return cx_prof
 
     def new_l4_cx_profile(self):
@@ -242,33 +243,53 @@ class Realm(LFCliBase):
 
 
 class L3CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, side_a_min_rate=None, side_b_min_rate=None,
-                 side_a_max_rate=None, side_b_max_rate=None, side_a_min_pkt=-1, side_b_min_pkt=-1,
-                 side_a_max_pkt=0, side_b_max_pkt=0, prefix="Unset", debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm,
+                 side_a_min_bps=None, side_b_min_bps=None,
+                 side_a_max_bps=0, side_b_max_bps=0,
+                 side_a_min_pdu=-1, side_b_min_pdu=-1,
+                 side_a_max_pdu=0, side_b_max_pdu=0,
+                 prefix="Unset", debug_=False):
+        """
+
+        :param lfclient_host:
+        :param lfclient_port:
+        :param local_realm:
+        :param side_a_min_bps:
+        :param side_b_min_bps:
+        :param side_a_max_bps:
+        :param side_b_max_bps:
+        :param side_a_min_pdu:
+        :param side_b_min_pdu:
+        :param side_a_max_pdu:
+        :param side_b_max_pdu:
+        :param prefix:
+        :param debug_:
+        """
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
-        self.side_a_min_pkt = side_a_min_pkt
-        self.side_b_min_pkt = side_b_min_pkt
-        self.side_a_max_pkt = side_a_max_pkt
-        self.side_b_max_pkt = side_b_max_pkt
-        self.side_a_min_rate = side_a_min_rate
-        self.side_b_min_rate = side_b_min_rate
-        self.side_a_max_rate = side_a_max_rate
-        self.side_b_max_rate = side_b_max_rate
+        self.side_a_min_pdu = side_a_min_pdu
+        self.side_b_min_pdu = side_b_min_pdu
+        self.side_a_max_pdu = side_a_max_pdu
+        self.side_b_max_pdu = side_b_max_pdu
+        self.side_a_min_bps = side_a_min_bps
+        self.side_b_min_bps = side_b_min_bps
+        self.side_a_max_bps = side_a_max_bps
+        self.side_b_max_bps = side_b_max_bps
         self.created_cx = {}
         self.prefix = prefix
-        if (side_a_min_rate is None) \
-                or (side_a_max_rate is None) \
-                or (side_b_min_rate is None) \
-                or (side_b_max_rate is None):
-            raise ValueError("side_a_min_rate, side_a_max_rate, side_b_min_rate, and side_b_max_rate must all be set to a value")
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
         post_data = []
         # print(self.side_a_min_rate, self.side_a_max_rate)
         # print(self.side_b_min_rate, self.side_b_max_rate)
+        if (self.side_a_min_bps is None) \
+                or (self.side_a_max_bps is None) \
+                or (self.side_b_min_bps is None) \
+                or (self.side_b_max_bps is None):
+            raise ValueError("side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
+
         if type(side_a) == list and type(side_b) != list:
             side_b_info = self.local_realm.name_to_eid(side_b)
             if len(side_b_info) == 3:
@@ -299,10 +320,10 @@ class L3CXProfile(LFCliBase):
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": self.side_a_min_rate,
-                    "max_rate": self.side_a_max_rate,
-                    "min_pkt": self.side_a_min_pkt,
-                    "max_pkt": self.side_a_max_pkt,
+                    "min_rate": self.side_a_min_bps,
+                    "max_rate": self.side_a_max_bps,
+                    "min_pkt": self.side_a_min_pdu,
+                    "max_pkt": self.side_a_max_pdu,
                     "ip_port": -1
                 }
                 endp_side_b = {
@@ -311,10 +332,10 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": self.side_b_min_rate,
-                    "max_rate": self.side_b_max_rate,
-                    "min_pkt": self.side_b_min_pkt,
-                    "max_pkt": self.side_b_max_pkt,
+                    "min_rate": self.side_b_min_bps,
+                    "max_rate": self.side_b_max_bps,
+                    "min_pkt": self.side_b_min_pdu,
+                    "max_pkt": self.side_b_max_pdu,
                     "ip_port": -1
                 }
 
@@ -378,8 +399,8 @@ class L3CXProfile(LFCliBase):
                     "resource": side_a_resource,
                     "port": side_a_name,
                     "type": endp_type,
-                    "min_rate": self.side_a_min_rate,
-                    "max_rate": self.side_a_max_rate,
+                    "min_rate": self.side_a_min_bps,
+                    "max_rate": self.side_a_max_bps,
                     "min_pkt": self.side_a_min_pkt,
                     "max_pkt": self.side_a_max_pkt,
                     "ip_port": -1
@@ -390,10 +411,10 @@ class L3CXProfile(LFCliBase):
                     "resource": side_b_resource,
                     "port": side_b_name,
                     "type": endp_type,
-                    "min_rate": self.side_b_min_rate,
-                    "max_rate": self.side_b_max_rate,
-                    "min_pkt": self.side_b_min_pkt,
-                    "max_pkt": self.side_b_max_pkt,
+                    "min_rate": self.side_b_min_bps,
+                    "max_rate": self.side_b_max_bps,
+                    "min_pkt": self.side_b_min_pdu,
+                    "max_pkt": self.side_b_max_pdu,
                     "ip_port": -1
                 }
 
@@ -435,9 +456,7 @@ class L3CXProfile(LFCliBase):
             time.sleep(sleep_time)
 
     def to_string(self):
-        print("Endpoint Side A " + self.endp_side_a)
-        print("Endpoint Side B " + self.endp_side_b)
-        print("CX Data " + self.data)
+        pprint.pprint(self)
 
 
 class L4CXProfile(LFCliBase):
@@ -450,9 +469,9 @@ class L4CXProfile(LFCliBase):
         self.local_realm = local_realm
 
     def create(self, ports=[], sleep_time=.5):
-        post_data = []
+        cx_post_data = []
         for port_name in ports:
-            data = {
+            endp_data = {
                 "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "shelf": 1,
                 "resource": 1,
@@ -463,21 +482,21 @@ class L4CXProfile(LFCliBase):
                 "url": self.url
             }
             url = "cli-json/add_l4_endp"
-            self.local_realm.json_post(url, data)
+            self.local_realm.json_post(url, endp_data)
             time.sleep(sleep_time)
 
-            data = {
+            endp_data = {
                 "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4CX",
                 "test_mgr": "default_tm",
                 "tx_endp": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "rx_endp": "NA"
             }
-            post_data.append(data)
+            cx_post_data.append(endp_data)
 
-            for data in post_data:
-                url = "/cli-json/add_cx"
-                self.local_realm.json_post(url, data)
-                time.sleep(sleep_time)
+        for cx_data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.local_realm.json_post(url, cx_data)
+            time.sleep(sleep_time)
 
 
 class GenCXProfile(LFCliBase):
