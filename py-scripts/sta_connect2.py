@@ -33,13 +33,13 @@ class StaConnect2(LFCliBase):
     def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
                  _resource=1, _upstream_resource=1, _upstream_port="eth2",
-                 _sta_name=None, _debugOn=False, _dut_security=OPEN, _exit_on_error=False,
+                 _sta_name=None, debug_=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
-        super().__init__(host, port, _debug=_debugOn, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.debugOn = _debugOn
+        super().__init__(host, port, _debug=debug_, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.debug = debug_
         self.dut_security = _dut_security
         self.dut_ssid = _dut_ssid
         self.dut_passwd = _dut_passwd
@@ -128,12 +128,13 @@ class StaConnect2(LFCliBase):
             return False
 
         if upstream_json['interface']['ip'] == "0.0.0.0":
-            pprint.pprint(upstream_json)
+            if self.debug:
+                pprint.pprint(upstream_json)
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url(), print_=True)
             return False
 
         # remove old stations
-        print("removing old station")
+        print("Removing old stations")
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             response = self.json_get(sta_url)
@@ -145,7 +146,6 @@ class StaConnect2(LFCliBase):
         # Create stations and turn dhcp on
         self.station_profile = self.localrealm.new_station_profile()
 
-        pprint.pprint(self.dut_security)
         if self.dut_security == WPA2:
             self.station_profile.use_wpa2(on=True, ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OPEN:
@@ -153,7 +153,8 @@ class StaConnect2(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
         print("Adding new stations ", end="")
-        self.station_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names, up_=False, debug=True)
+        self.station_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names, up_=False, debug=False)
+        LFUtils.wait_until_ports_appear(self.resource, self.lfclient_url, self.station_names)
 
         # Create UDP endpoints
         self.l3_udp_profile = self.localrealm.new_l3_cx_profile()
@@ -213,11 +214,11 @@ class StaConnect2(LFCliBase):
                         ap = station_info["interface"]["ap"]
 
                 if (ap == "Not-Associated") or (ap == ""):
-                    if self.debugOn:
+                    if self.debug:
                         print(" -%s," % sta_name, end="")
                 else:
                     if ip == "0.0.0.0":
-                        if self.debugOn:
+                        if self.debug:
                             print(" %s (0.0.0.0)" % sta_name, end="")
                     else:
                         connected_stations[sta_name] = sta_url
@@ -228,9 +229,6 @@ class StaConnect2(LFCliBase):
                 "probe_flags": 1
             }
             self.json_post("/cli-json/nc_show_ports", data)
-
-        # make a copy of the connected stations for test records
-
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
@@ -264,26 +262,14 @@ class StaConnect2(LFCliBase):
                 self.remove_stations()
             return False
 
-
         # start cx traffic
         print("\nStarting CX Traffic")
-        # for cx_name in cx_names.keys():
-        #     data = {
-        #         "test_mgr": "ALL",
-        #         "cx_name": cx_name,
-        #         "cx_state": "RUNNING"
-        #     }
-        #     self.json_post("/cli-json/set_cx_state", data)
-
+        self.l3_udp_profile.start_cx()
+        self.l3_tcp_profile.start_cx()
+        time.sleep(1)
         # Refresh stats
-
-        print("Refresh CX stats")
-        # for cx_name in cx_names.keys():
-        #     data = {
-        #         "test_mgr": "ALL",
-        #         "cross_connect": cx_name
-        #     }
-        #     self.json_post("/cli-json/show_cxe", data)
+        self.l3_udp_profile.refresh_cx()
+        self.l3_tcp_profile.refresh_cx()
 
     def collect_endp_stats(self, endp_map):
         print("Collecting Data")
@@ -372,9 +358,10 @@ Example:
     parser.add_argument("--sta_mode", type=str,
                         help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))")
     parser.add_argument("--dut_ssid", type=str, help="DUT SSID")
-    parser.add_argument("--dut_security", type=str, help="DUT security: open, wpa, wpa2, wpa3")
+    parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
+    parser.add_argument("--debug", type=str, help="enable debugging")
 
     args = parser.parse_args()
     if args.dest is not None:
@@ -382,7 +369,13 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    staConnect = StaConnect2(lfjson_host, lfjson_port)
+    on_flags = [ 1, "1", "on", "yes", "true" ]
+    debug_v = False
+    if args.debug is not None:
+        if args.debug in on_flags:
+            debug_v = True
+
+    staConnect = StaConnect2(lfjson_host, lfjson_port, debug_=debug_v)
     staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
