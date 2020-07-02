@@ -60,13 +60,13 @@ class LFCliBase:
             elif suppress_related_commands_ == False:
                 _data['suppress_preexec_cli'] = False
                 _data['suppress_preexec_method'] = False
-                _data['suppostss_postexec_cli'] = False
-                _data['suppostss_postexec_method'] = False
+                _data['suppress_postexec_cli'] = False
+                _data['suppress_postexec_method'] = False
             elif self.suppress_related_commands or suppress_related_commands_:
                 _data['suppress_preexec_cli'] = False
                 _data['suppress_preexec_method'] = False
-                _data['suppostss_postexec_cli'] = True
-                _data['suppostss_postexec_method'] = True
+                _data['suppress_postexec_cli'] = True
+                _data['suppress_postexec_method'] = True
 
             lf_r.addPostData(_data)
             if debug_ or self.debug:

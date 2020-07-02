@@ -50,8 +50,10 @@ class PortEID:
 
 # end class PortEID
 
-def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", ssid="", passphrase="",
-                         debug_on=False):
+def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", ssid="", passphrase="", debug_on=False):
+    return sta_new_down_sta_request(sta_name, resource_id, radio, ssid, passphrase, debug_on)
+
+def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", passphrase="", debug_on=False):
     """
     For use with add_sta. If you don't want to generate mac addresses via patterns (xx:xx:xx:xx:81:*)
     you can generate octets using random_hex.pop(0)[2:] and gen_mac(parent_radio_mac, octet)
@@ -78,6 +80,9 @@ def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", ssid="", passp
 
 
 def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
+    return port_set_dhcp_down_request(resource_id, port_name, debug_on)
+
+def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
     :param resource_id:
@@ -99,6 +104,9 @@ def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
 
 
 def portDhcpUpRequest(resource_id, port_name, debug_on=False):
+    return port_dhcp_up_request(resource_id, port_name, debug_on)
+
+def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
     :param resource_id:
@@ -120,6 +128,9 @@ def portDhcpUpRequest(resource_id, port_name, debug_on=False):
 
 
 def portUpRequest(resource_id, port_name, debug_on=False):
+    return port_up_request(resource_id, port_name, debug_on)
+
+def port_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
     :param resource_id:
@@ -278,7 +289,7 @@ def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(),
 
 
 def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", port_list=()):
-    print("waitUntilPortsAdminDown")
+    print("Waiting until ports appear admin-down...")
     up_stations = port_list.copy()
     sleep(1)
     port_url = "/port/1"
@@ -300,7 +311,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
 
 
 def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
-    print("waitUntilPortsAdminUp")
+    print("Waiting until  ports appear admin-up...")
     down_stations = port_list.copy()
     sleep(1)
     port_url = "/port/1"
@@ -325,8 +336,7 @@ def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", por
     wait_until_ports_disappear(resource_id, base_url, port_list, debug)
 
 def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", port_list=[], debug=False):
-    if (debug):
-        print("waitUntilPortsDisappear")
+    print("Waiting until ports disappear...")
     url = "/port/1"
     found_stations = port_list.copy()
     sleep(1)
@@ -345,8 +355,27 @@ def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", 
 
 
 def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
-    if debug:
-        print("waitUntilPortsAppear")
+    """
+    Deprecated
+    :param resource_id:
+    :param base_url:
+    :param port_list:
+    :param debug:
+    :return:
+    """
+    return wait_until_ports_appear(resource_id, base_url, port_list, debug=debug)
+
+def wait_until_ports_appear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
+    """
+
+    :param resource_id:
+    :param base_url:
+    :param port_list:
+    :param debug:
+    :return:
+    """
+
+    print("Waiting until ports appear...")
     found_stations = []
     sleep(2)
     port_url = "/port/1"
@@ -376,7 +405,7 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
 
 def removePort(resource, port_name, baseurl="http://localhost:8080/", debug=False):
     if debug:
-        print("removePort")
+        print("Removing port %d.%s" % (resource, port_name))
     url = "/cli-json/rm_vlan"
     lf_r = LFRequest.LFRequest(baseurl, url)
     lf_r.addPostData({
@@ -387,9 +416,11 @@ def removePort(resource, port_name, baseurl="http://localhost:8080/", debug=Fals
     lf_r.jsonPost(debug)
 
 
-def removeCX(baseurl, cxNames, debug=False):
+def removeCX(baseurl, cx_names, debug=False):
+    if debug:
+        print("Removing cx %s" % ", ".join(cx_names))
     url = "/cli-json/rm_cx"
-    for name in cxNames:
+    for name in cx_names:
         data = {
             "test_mgr": "all",
             "cx_name": name
@@ -399,10 +430,12 @@ def removeCX(baseurl, cxNames, debug=False):
         lf_r.jsonPost(debug)
 
 
-def removeEndps(baseurl, endpNames, debug=False):
+def removeEndps(baseurl, endp_names, debug=False):
+    if debug:
+        print("Removing endp %s" % ", ".join(endp_names))
     url = "/cli-json/rm_endp"
     lf_r = LFRequest.LFRequest(baseurl, url)
-    for name in endpNames:
+    for name in endp_names:
         data = {
             "endp_name": name
         }

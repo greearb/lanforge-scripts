@@ -31,13 +31,13 @@ class IPv4Test(LFCliBase):
         self.prefix = prefix
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, prefix=self.prefix, mode=0, up=True, dhcp=True,
+                                            security=self.security, number_template_=self.prefix, mode=0, up=True, dhcp=True,
                                             debug_=False)
 
     def build(self):
         # Build stations
         self.profile.use_wpa2(True, self.ssid, self.password)
-        self.profile.set_prefix(self.prefix)
+        self.profile.set_number_template(self.prefix)
         print("Creating stations")
         self.profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)

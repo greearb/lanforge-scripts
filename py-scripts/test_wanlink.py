@@ -30,7 +30,7 @@ class LANtoWAN(LFCliBase):
         self.wan_port = wan_port
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, prefix=self.prefix, mode=0, up=True, dhcp=True,
+                                            security=self.security, number_template_=self.prefix, mode=0, up=True, dhcp=True,
                                             debug_=False)
         self.cxProfile = realm.new_l3_cx_profile()
 
