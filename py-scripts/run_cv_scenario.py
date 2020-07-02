@@ -29,7 +29,7 @@ from realm import Realm
 """
 
 class RunCvScenario(LFCliBase):
-    def __init__(self, lfhost="localhost", lfport=8080, debug_=True, lanforge_db_=None, cv_scenario_=None, cv_test_=None, test_scenario_=None):
+    def __init__(self, lfhost="localhost", lfport=8080, debug_=False, lanforge_db_=None, cv_scenario_=None, cv_test_=None, test_scenario_=None):
         super().__init__( _lfjson_host=lfhost, _lfjson_port=lfport, _debug=debug_, _halt_on_error=True, _exit_on_error=True, _exit_on_fail=True)
         self.lanforge_db = lanforge_db_
         self.cv_scenario = cv_scenario_
@@ -96,9 +96,16 @@ class RunCvScenario(LFCliBase):
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 1",
             "cv click test_ref 'Auto Save Report'",
+            "sleep 5",
             "cv click test_ref Start",
+            "sleep 60",
             "cv get test_ref 'Report Location:'",
+            "sleep 5",
+            #"cv click test_ref 'Save HTML'",
+            "cv click test_ref 'Close'",
+            "sleep 1",
             "cv click test_ref Cancel",
+            "sleep 1",
             "exit"
         ]
         response_json = []
@@ -111,28 +118,34 @@ class RunCvScenario(LFCliBase):
                 if debug_:
                     debug_par="?_debug=1"
                 if command.endswith("is_built"):
-                    self.localrealm.wait_while_building(debug_=debug_)
+                    print("Waiting for scenario to build...", end='')
+                    self.localrealm.wait_while_building(debug_=False)
+                    print("...proceeding")
                 elif command.startswith("sleep "):
                     nap = int(command.split(" ")[1])
+                    print("sleeping %d..." % nap)
                     sleep(nap)
+                    print("...proceeding")
                 else:
                     response_json = []
-                    response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=True, response_json_list_=response_json)
+                    print("running %s..." % command, end='')
+                    response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
                     if debug_:
                         LFUtils.debug_printer.pprint(response_json)
+                    print("...proceeding")
 
 
             except Exception as x:
                 print(x)
 
-        self._fail("start unfinished", print_=True)
+        self._pass("report finished", print_=True)
 
 
     def stop(self):
-        self._fail("stop unfinished", print_=True)
+        pass
 
     def cleanup(self):
-        self._fail("cleanup unfinished", print_=True)
+        pass
 
 
 def main():
@@ -169,7 +182,6 @@ Example:
 
     if (run_cv_scenario.lanforge_db is None) or (run_cv_scenario.lanforge_db == ""):
         raise ValueError("Please specificy scenario database name with --scenario_db")
-
 
     if not (run_cv_scenario.build() and run_cv_scenario.passes()):
         print("scenario failed to build.")
