@@ -31,7 +31,7 @@ class IPv4Test(LFCliBase):
         self.prefix = prefix
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, number_template_=self.prefix, mode=0, up=True, dhcp=True,
+                                            security=self.security, number_template_=self.prefix, mode=0, up=False, dhcp=True,
                                             debug_=False)
 
     def build(self):
@@ -40,15 +40,13 @@ class IPv4Test(LFCliBase):
         self.profile.set_number_template(self.prefix)
         print("Creating stations")
         self.profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.profile.set_command_param("set_port", "report_timer", 1500)
+        self.profile.set_command_flag("set_port", "rpt_timer", 1)
         self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
 
     def start(self):
         # Bring stations up
-        for sta_name in self.sta_list:
-            data = LFUtils.portUpRequest(1, sta_name)
-            url = "json-cli/set_port"
-            print(sta_name)
-            self.json_post(url, data)
+        self.profile.admin_up(1)
 
 
     def stop(self):
@@ -62,6 +60,7 @@ class IPv4Test(LFCliBase):
     def run_test(self, sta_list, print_pass=False, print_fail=False):
         associated_map = {}
         ip_map = {}
+        print("Starting test...")
         for sec in range(self.timeout):
             for sta_name in sta_list:
                 sta_status = self.json_get("port/1/1/" + sta_name + "?fields=port,alias,ip,ap")
@@ -120,17 +119,21 @@ class IPv4Test(LFCliBase):
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=5, padding_number_=10000)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
                        security="open", sta_list=station_list)
     ip_test.cleanup()
     ip_test.timeout = 60
     ip_test.build()
+    if not ip_test.passes():
+        print(ip_test.get_fail_message())
+        exit(1)
     ip_test.start()
     print("Full Test Passed: %s" % ip_test.run_test(ip_test.sta_list))
     ip_test.stop()
-    time.sleep(30)
-    ip_test.start()
+    if not ip_test.passes():
+        print(ip_test.get_fail_message())
+        exit(1)
     time.sleep(30)
     ip_test.cleanup()
 
