@@ -44,18 +44,27 @@ class IPv4Test(LFCliBase):
 
     def start(self):
         # Bring stations up
-        pass
+        for sta_name in self.sta_list:
+            data = LFUtils.portUpRequest(1, sta_name)
+            url = "json-cli/set_port"
+            print(sta_name)
+            self.json_post(url, data)
+
 
     def stop(self):
         # Bring stations down
-        pass
+        for sta_name in self.sta_list:
+            data = LFUtils.portDownRequest(1, sta_name)
+            url = "json-cli/set_port"
+            print(sta_name)
+            self.json_post(url, data)
 
     def run_test(self, sta_list, print_pass=False, print_fail=False):
         associated_map = {}
         ip_map = {}
         for sec in range(self.timeout):
             for sta_name in sta_list:
-                sta_status = super().json_get("port/1/1/" + sta_name + "?fields=port,alias,ip,ap")
+                sta_status = self.json_get("port/1/1/" + sta_name + "?fields=port,alias,ip,ap")
                 # print(sta_status)
                 if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
                     continue
@@ -98,7 +107,7 @@ class IPv4Test(LFCliBase):
                 "port": sta_name
             }
             # print(data)
-            super().json_post(req_url, data)
+            self.json_post(req_url, data)
 
     def run(self):
         if len(self.sta_list) == 0:
@@ -117,10 +126,13 @@ def main():
     ip_test.cleanup()
     ip_test.timeout = 60
     ip_test.build()
-    #ip_test.start()
+    ip_test.start()
     print("Full Test Passed: %s" % ip_test.run_test(ip_test.sta_list))
-
-    #ip_test.cleanup()
+    ip_test.stop()
+    time.sleep(30)
+    ip_test.start()
+    time.sleep(30)
+    ip_test.cleanup()
 
 
 if __name__ == "__main__":
