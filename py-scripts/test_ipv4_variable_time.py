@@ -36,9 +36,9 @@ class IPV4VariableTime(LFCliBase):
                                                     security=self.security, prefix=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
-        self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_rate=side_a_min_rate,
-                                            side_b_min_rate=side_b_min_rate, side_a_max_rate=side_a_max_rate,
-                                            side_b_max_rate=side_b_max_rate, debug_=False)
+        self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=side_a_min_rate,
+                                            side_b_min_bps=side_b_min_rate, side_a_max_bps=side_a_max_rate,
+                                            side_b_max_bps=side_b_max_rate, debug_=False)
         self.test_duration = test_duration
 
     def __set_all_cx_state(self, state, sleep_time=5):
