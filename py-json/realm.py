@@ -784,28 +784,31 @@ class StationProfile:
         else:
             self.station_names = sta_names_
 
-        if len(self.station_names) >= 50:
+        if len(self.station_names) >= 15:
             self.add_sta_data["suppress_preexec_cli"] = "yes"
             self.add_sta_data["suppress_preexec_method"] = 1
             self.set_port_data["suppress_preexec_cli"] = "yes"
             self.set_port_data["suppress_preexec_method"] = 1
 
         num = 0
+        #pprint(self.station_names)
+        #exit(1)
         for name in self.station_names:
+            self.set_port_data["port"] = name
             num += 1
             self.add_sta_data["sta_name"] = name
+            add_sta_r.addPostData(self.add_sta_data)
             if debug:
                 print("- 381 - %s- - - - - - - - - - - - - - - - - - " % name)
                 pprint(self.add_sta_data)
                 pprint(self.set_port_data)
+                pprint(add_sta_r)
                 print("- ~381 - - - - - - - - - - - - - - - - - - - ")
             if dry_run:
                 print("dry run")
                 continue
 
-            add_sta_r.addPostData(self.add_sta_data)
             json_response = add_sta_r.jsonPost(debug)
-            self.set_port_data["port"] = name
             # time.sleep(0.03)
             time.sleep(2)
             set_port_r.addPostData(self.set_port_data)
