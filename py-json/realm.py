@@ -14,8 +14,8 @@ import datetime
 
 
 class Realm(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=True):
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=False, halt_on_error_=False):
+        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_, _halt_on_error=halt_on_error_)
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.check_connect()
@@ -297,6 +297,17 @@ class L3CXProfile(LFCliBase):
             }, debug_=self.debug)
             print(".", end='')
 
+    def start_cx(self):
+        print("Starting CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state":"RUNNING"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
@@ -308,7 +319,10 @@ class L3CXProfile(LFCliBase):
             print(".", end='')
         print("")
 
-    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None):
+    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False):
+        if self.debug:
+            debug_=True
+
         cx_post_data = []
         timer_post_data = []
         # print(self.side_a_min_rate, self.side_a_max_rate)
@@ -359,8 +373,8 @@ class L3CXProfile(LFCliBase):
                 }
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 #print("napping %f sec"%sleep_time)
                 time.sleep(sleep_time)
 
@@ -370,7 +384,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -378,7 +392,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 #print("CXNAME366:")
                 #pprint(cx_name)
                 data = {
@@ -436,8 +450,8 @@ class L3CXProfile(LFCliBase):
                 }
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 #print("napping %f sec" %sleep_time )
                 time.sleep(sleep_time)
 
@@ -447,7 +461,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -455,7 +469,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 #print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
@@ -475,7 +489,7 @@ class L3CXProfile(LFCliBase):
         print("post_data", cx_post_data)
         for data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, data, debug_=True, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             #print(" napping %f sec"%sleep_time, end='')
             time.sleep(sleep_time)
         #print("")
@@ -485,7 +499,7 @@ class L3CXProfile(LFCliBase):
 
 
 class L4CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm,debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
@@ -539,6 +553,8 @@ class GenCXProfile(LFCliBase):
         self.local_realm = local_realm
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if self.debug:
+            debug_ = True;
         post_data = []
         for port_name in ports:
             gen_name = self.local_realm.name_to_eid(port_name)[-1] + "_gen0"
