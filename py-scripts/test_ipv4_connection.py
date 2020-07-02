@@ -134,14 +134,15 @@ def main():
         print(ip_test.get_fail_message())
         exit(1)
     ip_test.start()
-    print("Full Test Passed: %s" % ip_test.run_test(ip_test.sta_list))
+    ip_test.run_test(ip_test.sta_list)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
     ip_test.cleanup(1)
-
+    if ip_test.passes():
+        print("Full test passed, all stations associated and got IP")
 
 if __name__ == "__main__":
     main()
