@@ -685,7 +685,7 @@ class StationProfile:
                 self.desired_add_sta_flags.remove(param_name)
 
         elif command_name == "set_port":
-            if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags):
+            if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags) and (param_name not in set_port.set_port_interest_flags):
                 print("Parameter name [%s] not defined in set_port.py" % param_name)
                 if self.debug:
                     pprint(set_port.set_port_cmd_flags)
