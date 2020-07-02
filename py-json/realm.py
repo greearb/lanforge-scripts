@@ -762,7 +762,7 @@ class StationProfile:
 
         if self.up:
             if "create_admin_down" in self.desired_add_sta_flags:
-                del self.desired_add_sta_flags["create_admin_down"]
+                del self.desired_add_sta_flags[self.desired_add_sta_flags.index("create_admin_down")]
         elif "create_admin_down" not in self.desired_add_sta_flags:
             self.desired_add_sta_flags.append("create_admin_down")
 
@@ -818,7 +818,8 @@ class StationProfile:
         if dry_run:
             return
         if (self.up):
-            self.admin_up()
+            self.admin_up(1)
+            self.admin_up(1)
         # for sta_name in self.station_names:
         #     req = LFUtils.portUpRequest(resource, sta_name, debug_on=False)
         #     set_port_r.addPostData(req)
