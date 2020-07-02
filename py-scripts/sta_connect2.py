@@ -118,42 +118,43 @@ class StaConnect2(LFCliBase):
     def setup(self):
         self.clear_test_results()
         self.check_connect()
-        eth1IP = self.json_get(self.get_upstream_url())
-        if eth1IP is None:
-            self._fail("Unable to query %s, bye" % self.upstream_port, True)
-            return False
-        if eth1IP['interface']['ip'] == "0.0.0.0":
-            self._fail("Warning: %s lacks ip address" % self.get_upstream_url())
+        upstream_json = self.json_get("%s?fields=alias,phantom,down,port,ip" % self.get_upstream_url(), debug_=False)
+
+        if upstream_json is None:
+            self._fail(message="Unable to query %s, bye" % self.upstream_port, print_=True)
             return False
 
+        if upstream_json['interface']['ip'] == "0.0.0.0":
+            pprint.pprint(upstream_json)
+            self._fail("Warning: %s lacks ip address" % self.get_upstream_url(), print_=True)
+            return False
+
+        # remove old stations
+        print("removing old station")
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             response = self.json_get(sta_url)
             if response is not None:
                 if response["interface"] is not None:
-                    print("removing old station")
                     for sta_name in self.station_names:
                         LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
                     LFUtils.wait_until_ports_disappear(self.resource, self.lfclient_url, self.station_names)
 
         # Create stations and turn dhcp on
-        flags = 0x10000
-        if self.dut_security == WPA2:
-            flags += 0x400
-        elif self.dut_security == OPEN:
-            pass
-
         sta_profile = self.localrealm.new_station_profile()
 
-        print("Adding new stations ", end="")
-        if (self.dut_security == WPA2):
+        if self.dut_security == WPA2:
             sta_profile.use_wpa2(on=True, ssid=self.dut_ssid, passwd=self.dut_passwd)
+        elif self.dut_security == OPEN:
+            sta_profile.use_wpa2(on=False, ssid=self.dut_ssid)
+        sta_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
+        print("Adding new stations ", end="")
         sta_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names)
-
 
         # Create endpoints and cxs
         # Create UDP endpoints
+
         cx_names = {}
 
         for sta_name in self.station_names:
@@ -162,13 +163,15 @@ class StaConnect2(LFCliBase):
                  "b": "testUDP-%s-B" % sta_name
              }
 
-        l3_profile = self.localrealm.new_l3_cx_profile()
-        l3_profile.min_bps = self.udp_min_bps
-        l3_profile.max_bps = self.udp_max_bps
-        l3_profile.prefix = "stacon_udp_"
-        l3_profile.create(endp_type="lf_udp",
+        l3_udp_profile = self.localrealm.new_l3_cx_profile()
+        l3_udp_profile.side_a_min_bps = 128000
+        l3_udp_profile.side_b_min_bps = 128000
+        l3_udp_profile.side_a_min_pdu = 1200
+        l3_udp_profile.side_b_min_pdu = 1500
+        l3_udp_profile.prefix = "udp_"
+        l3_udp_profile.create(endp_type="lf_udp",
                           side_a=list(self.localrealm.find_ports_like("sta+")),
-                          side_b=self.resource+'.'+self.upstream_port )
+                          side_b="%d.%s" % (self.resource, self.upstream_port))
         #     data = {
         #         "alias": "testUDP-%s-A" % sta_name,
         #         "shelf": 1,
@@ -317,6 +320,8 @@ class StaConnect2(LFCliBase):
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
+            if station_info is None:
+                print("unable to query %s" % sta_url)
             self.resulting_stations[sta_url] = station_info
             ap = station_info["interface"]["ap"]
             ip = station_info["interface"]["ip"]
@@ -468,7 +473,7 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    staConnect = StaConnect(lfjson_host, lfjson_port)
+    staConnect = StaConnect2(lfjson_host, lfjson_port)
     staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
@@ -494,7 +499,7 @@ Example:
     staConnect.setup()
     staConnect.start()
 
-    time.sleep(self.runtime_secs)
+    time.sleep(staConnect.runtime_secs)
     staConnect.stop()
     run_results = staConnect.get_result_list()
     is_passing = staConnect.passes()
