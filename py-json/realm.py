@@ -32,8 +32,8 @@ class Realm(LFCliBase):
             dbg_param = "?__debug=1"
 
         while (last_response != "YES"):
-            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=True, response_json_list_=response_json)
-            LFUtils.debug_printer.pprint(response_json)
+            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
+            #LFUtils.debug_printer.pprint(response_json)
             last_response = response_json[0]["LAST"]["response"];
             if (last_response != "YES"):
                 last_response = None
@@ -230,7 +230,7 @@ class Realm(LFCliBase):
 
     def new_l3_cx_profile(self):
         cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, \
-                              local_realm=self, debug_=self.debug)
+                              local_realm=self, debug_=self.debug, report_timer_=3000)
         return cx_prof
 
     def new_l4_cx_profile(self):
@@ -248,7 +248,7 @@ class L3CXProfile(LFCliBase):
                  side_a_max_bps=0, side_b_max_bps=0,
                  side_a_min_pdu=-1, side_b_min_pdu=-1,
                  side_a_max_pdu=0, side_b_max_pdu=0,
-                 prefix="Unset", debug_=False):
+                 report_timer_=3000, prefix="Unset", debug_=False):
         """
 
         :param lfclient_host:
@@ -277,11 +277,13 @@ class L3CXProfile(LFCliBase):
         self.side_b_min_bps = side_b_min_bps
         self.side_a_max_bps = side_a_max_bps
         self.side_b_max_bps = side_b_max_bps
+        self.report_timer = report_timer_
         self.created_cx = {}
         self.prefix = prefix
 
     def create(self, endp_type, side_a, side_b, sleep_time=.5):
-        post_data = []
+        cx_post_data = []
+        timer_post_data = []
         # print(self.side_a_min_rate, self.side_a_max_rate)
         # print(self.side_b_min_rate, self.side_b_max_rate)
         if (self.side_a_min_bps is None) \
@@ -360,13 +362,19 @@ class L3CXProfile(LFCliBase):
                 }
                 self.local_realm.json_post(url, data)
 
+                cx_name = self.prefix, self.local_realm.name_to_eid(port_name)[-1]
                 data = {
-                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "L3",
+                    "alias": cx_name,
                     "test_mgr": "default_tm",
                     "tx_endp": side_a_name + "-A",
                     "rx_endp": side_a_name + "-B"
                 }
-                post_data.append(data)
+                cx_post_data.append(data)
+                timer_post_data.append({
+                    "test_mgr":"default_tm",
+                    "cx_name":cx_name,
+                    "milliseconds":self.report_timer
+                })
 
         elif type(side_b) == list and type(side_a) != list:
             side_a_info = self.local_realm.name_to_eid(side_a)
@@ -438,19 +446,24 @@ class L3CXProfile(LFCliBase):
                     "val": 1
                 }
                 self.local_realm.json_post(url, data)
-
+                cx_name = self.local_realm.name_to_eid(port_name)[-1] + "L3"
                 data = {
-                    "alias": self.local_realm.name_to_eid(port_name)[-1] + "L3",
+                    "alias": cx_name,
                     "test_mgr": "default_tm",
                     "tx_endp": side_b_name + "-A",
                     "rx_endp": side_b_name + "-B"
                 }
-                post_data.append(data)
+                cx_post_data.append(data)
+                timer_post_data.append({
+                    "test_mgr":"default_tm",
+                    "cx_name":cx_name,
+                    "milliseconds":self.report_timer
+                })
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
-        print("post_data", post_data)
-        for data in post_data:
+        print("post_data", cx_post_data)
+        for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data)
             time.sleep(sleep_time)
