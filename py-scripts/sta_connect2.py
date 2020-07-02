@@ -155,115 +155,24 @@ class StaConnect2(LFCliBase):
         # Create endpoints and cxs
         # Create UDP endpoints
 
-        cx_names = {}
-
-        for sta_name in self.station_names:
-             cx_names["testUDP-"+sta_name] = {
-                 "a": "testUDP-%s-A" % sta_name,
-                 "b": "testUDP-%s-B" % sta_name
-             }
-
         l3_udp_profile = self.localrealm.new_l3_cx_profile()
         l3_udp_profile.side_a_min_bps = 128000
         l3_udp_profile.side_b_min_bps = 128000
         l3_udp_profile.side_a_min_pdu = 1200
         l3_udp_profile.side_b_min_pdu = 1500
+        l3_udp_profile.report_timer = 1000
         l3_udp_profile.prefix = "udp_"
         l3_udp_profile.create(endp_type="lf_udp",
                           side_a=list(self.localrealm.find_ports_like("sta+")),
                           side_b="%d.%s" % (self.resource, self.upstream_port))
-        #     data = {
-        #         "alias": "testUDP-%s-A" % sta_name,
-        #         "shelf": 1,
-        #         "resource": self.resource,
-        #         "port": sta_name,
-        #         "type": "lf_udp",
-        #         "ip_port": "-1",
-        #         "min_rate": 1000000
-        #     }
-        #     self.json_post("/cli-json/add_endp", data)
-        #
-        #     data = {
-        #         "name" : "testUDP-%s-A" % sta_name,
-        #         "flag" : "UseAutoNAT",
-        #         "val" : 1
-        #     }
-        #     self.json_post("/cli-json/set_endp_flag", data)
-        #
-        #     data = {
-        #         "alias": "testUDP-%s-B" % sta_name,
-        #         "shelf": 1,
-        #         "resource": self.upstream_resource,
-        #         "port": self.upstream_port,
-        #         "type": "lf_udp",
-        #         "ip_port": "-1",
-        #         "min_rate": 1000000
-        #     }
-        #     self.json_post("/cli-json/add_endp", data)
-        #
-        #     data = {
-        #         "name" : "testUDP-%s-B" % sta_name,
-        #         "flag" : "UseAutoNAT",
-        #         "val" : 1
-        #     }
-        #     self.json_post("/cli-json/set_endp_flag", data)
-        #
-        #     # Create CX
-        #     data = {
-        #         "alias": "testUDP-%s" % sta_name,
-        #         "test_mgr": "default_tm",
-        #         "tx_endp": "testUDP-%s-A" % sta_name,
-        #         "rx_endp": "testUDP-%s-B" % sta_name,
-        #     }
-        #     self.json_post("/cli-json/add_cx", data)
-        #
-        #     data = {
-        #         "test_mgr": "default_tm",
-        #         "cx_name": "testUDP-%s" % sta_name,
-        #         "milliseconds": 1000
-        #     }
-        #     self.json_post("/cli-json/set_cx_report_timer", data)
-        #
-        #     # Create TCP endpoints
-        #     cx_names["testTCP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
-        #                                     "b": "testUDP-%s-B" % sta_name}
-        #     data = {
-        #         "alias": "testTCP-%s-A" % sta_name,
-        #         "shelf": 1,
-        #         "resource": self.resource,
-        #         "port": sta_name,
-        #         "type": "lf_tcp",
-        #         "ip_port": "0",
-        #         "min_rate": 1000000
-        #     }
-        #     self.json_post("/cli-json/add_endp", data)
-        #
-        #     data = {
-        #         "alias": "testTCP-%s-B" % sta_name,
-        #         "shelf": 1,
-        #         "resource": self.upstream_resource,
-        #         "port": self.upstream_port,
-        #         "type": "lf_tcp",
-        #         "ip_port": "-1",
-        #         "min_rate": 1000000
-        #     }
-        #     self.json_post("/cli-json/add_endp", data)
-        #
-        #     # Create CX
-        #     data = {
-        #         "alias": "testTCP-%s" % sta_name,
-        #         "test_mgr": "default_tm",
-        #         "tx_endp": "testTCP-%s-A" % sta_name,
-        #         "rx_endp": "testTCP-%s-B" % sta_name,
-        #     }
-        #     self.json_post("/cli-json/add_cx", data)
-        #
-        #     data = {
-        #         "test_mgr": "default_tm",
-        #         "cx_name": "testTCP-%s" % sta_name,
-        #         "milliseconds": 1000
-        #     }
-        #     self.json_post("/cli-json/set_cx_report_timer", data)
+
+        # Create TCP endpoints
+
+        l3_tcp_profile = self.localrealm.new_l3_cx_profile()
+        l3_tcp_profile.side_a_min_bps = 128000
+        l3_tcp_profile.side_b_min_bps = 56000
+        l3_tcp_profile.prefix = "tcp_"
+        l3_tcp_profile.report_timer = 1000
 
 
     def start(self):
