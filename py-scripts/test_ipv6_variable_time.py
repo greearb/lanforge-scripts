@@ -33,7 +33,7 @@ class IPV6VariableTime(LFCliBase):
         self.prefix = prefix
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                                    security=self.security, prefix=self.prefix, mode=0, up=True,
+                                                    security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
         self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_rate=side_a_min_rate,
@@ -163,7 +163,7 @@ class IPV6VariableTime(LFCliBase):
         sta_list = []
 
         self.station_profile.use_wpa2(True, self.ssid, self.password)
-        self.station_profile.set_prefix(self.prefix)
+        self.station_profile.set_number_template(self.prefix)
         print("Creating stations")
         self.station_profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations, debug=False)
 
