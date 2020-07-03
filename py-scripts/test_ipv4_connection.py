@@ -108,6 +108,7 @@ class IPv4Test(LFCliBase):
                 "port": sta_name
             }
             self.json_post(req_url, data, self.debug)
+            time.sleep(.05)
         LFUtils.wait_until_ports_disappear(resource_id=resource, base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
 
 
