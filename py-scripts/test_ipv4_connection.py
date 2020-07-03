@@ -44,25 +44,12 @@ class IPv4Test(LFCliBase):
         self.profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.profile.set_command_param("set_port", "report_timer", 1500)
         self.profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=True)
+        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
         self._pass("PASS: Station build finished")
 
-    def start(self):
+    def start(self, sta_list, print_pass, print_fail):
         # Bring stations up
         self.profile.admin_up(1)
-        #print("===============\nTEST\n===============")
-        #exit(1)
-
-
-    def stop(self):
-        # Bring stations down
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
-            url = "json-cli/set_port"
-            #print(sta_name)
-            self.json_post(url, data)
-
-    def run_test(self, sta_list, print_pass=False, print_fail=False):
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -75,13 +62,15 @@ class IPv4Test(LFCliBase):
                 if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
                     # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map[sta_name] = 1
-                if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':' \
-                        and sta_status['interface']['ip'] != '0.0.0.0':
+                if sta_status['interface']['ip'] != '0.0.0.0':
                     # print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map[sta_name] = 1
                     ip_map[sta_name] = 1
+            if (len(sta_list) == len(ip_map)) and (len(sta_list) == len(associated_map)):
+                break
+            else:
+                time.sleep(1)
 
-            time.sleep(1)
         if self.debug:
             print("sta_list", len(sta_list), sta_list)
             print("ip_map", len(ip_map), ip_map)
@@ -95,6 +84,14 @@ class IPv4Test(LFCliBase):
             print("associated_map", associated_map)
 
         return self.passes()
+
+    def stop(self):
+        # Bring stations down
+        for sta_name in self.sta_list:
+            data = LFUtils.portDownRequest(1, sta_name)
+            url = "json-cli/set_port"
+            # print(sta_name)
+            self.json_post(url, data)
 
     def cleanup(self, resource):
         port_list = self.local_realm.station_list()
@@ -113,12 +110,6 @@ class IPv4Test(LFCliBase):
             }
             self.json_post(req_url, data, self.debug)
         LFUtils.wait_until_ports_disappear(resource_id=resource, base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
-    def run(self):
-        if len(self.sta_list) == 0:
-            sta_list = []
-            for sta_name in list(self.local_realm.find_ports_like("sta[%s..%s]" % (
-                    self.prefix, str(self.prefix[:-len(str(self.num_stations))]) + str(self.num_stations - 1)))):
-                sta_list.append(self.local_realm.name_to_eid(sta_name)[2])
 
 
 def main():
@@ -133,8 +124,7 @@ def main():
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         exit(1)
-    ip_test.start()
-    ip_test.run_test(ip_test.sta_list)
+    ip_test.start(station_list, False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
@@ -143,6 +133,7 @@ def main():
     ip_test.cleanup(1)
     if ip_test.passes():
         print("Full test passed, all stations associated and got IP")
+
 
 if __name__ == "__main__":
     main()
