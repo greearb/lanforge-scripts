@@ -145,8 +145,8 @@ def port_up_request(resource_id, port_name, debug_on=False):
         "interest": 8388610,  # includes use_current_flags + dhcp + dhcp_rls + ifdown
         "report_timer": REPORT_TIMER_MS_FAST,
     }
-    print("portUpRequest")
     if (debug_on):
+        print("Port up request")
         debug_printer.pprint(data)
     return data
 
