@@ -64,7 +64,6 @@ class IPv4Test(LFCliBase):
                     associated_map[sta_name] = 1
                 if sta_status['interface']['ip'] != '0.0.0.0':
                     # print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
-                    associated_map[sta_name] = 1
                     ip_map[sta_name] = 1
             if (len(sta_list) == len(ip_map)) and (len(sta_list) == len(associated_map)):
                 break
