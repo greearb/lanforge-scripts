@@ -97,6 +97,7 @@ class IPv6Test(LFCliBase):
     def cleanup(self, resource):
         port_list = self.local_realm.station_list()
         sta_list = []
+        print("Cleaning up...")
         for item in list(port_list):
             # print(list(item))
             if "sta" in list(item)[0]:
