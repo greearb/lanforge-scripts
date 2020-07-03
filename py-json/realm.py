@@ -525,7 +525,7 @@ class L4CXProfile(LFCliBase):
             time.sleep(sleep_time)
 
             endp_data = {
-                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4CX",
+                "alias": "CX_" + self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "test_mgr": "default_tm",
                 "tx_endp": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
                 "rx_endp": "NA"
