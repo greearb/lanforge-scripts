@@ -510,11 +510,21 @@ class L4CXProfile(LFCliBase):
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
         for port_name in ports:
+            if len(self.local_realm.name_to_eid(port_name)) == 3:
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
+            elif len(self.local_realm.name_to_eid(port_name)) == 2:
+                shelf = 1
+                resource = self.local_realm.name_to_eid(port_name)[0]
+                name = self.local_realm.name_to_eid(port_name)[1]
+            else:
+                raise ValueError("Unexpected name for port_name %s" % port_name)
             endp_data = {
-                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
-                "shelf": 1,
-                "resource": 1,
-                "port": port_name,
+                "alias": name + "_l4",
+                "shelf": shelf,
+                "resource": resource,
+                "port": name,
                 "type": "l4_generic",
                 "timeout": 10,
                 "url_rate": self.requests_per_ten,
