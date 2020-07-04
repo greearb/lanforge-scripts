@@ -68,8 +68,50 @@ class IPV4L4(LFCliBase):
     def stop(self):
         pass
 
-    def cleanup(self, resource):
-        pass
+    def cleanup(self):
+        layer4_list = self.json_get("layer4/list?fields=name")
+        print(layer4_list)
+
+        if layer4_list is not None and 'endpoint' in layer4_list:
+            if layer4_list['endpoint'] is not None:
+
+                for name in self.sta_list:
+                    req_url = "cli-json/rm_cx"
+                    data = {
+                        "test_mgr": "default_tm",
+                        "cx_name": "CX_" + name + "_l4"
+                    }
+                    self.json_post(req_url, data, True)
+
+                time.sleep(5)
+                for endps in list(layer4_list['endpoint']):
+                    for name, info in endps.items():
+                        print(name)
+
+                        req_url = "cli-json/rm_endp"
+                        data = {
+                            "endp_name": name
+                        }
+                        self.json_post(req_url, data, True)
+
+        port_list = self.local_realm.station_list()
+        sta_list = []
+        for item in list(port_list):
+            # print(list(item))
+            if "sta" in list(item)[0]:
+                sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
+
+        for sta_name in sta_list:
+            req_url = "cli-json/rm_vlan"
+            data = {
+                "shelf": 1,
+                "resource": self.resource,
+                "port": sta_name
+            }
+            self.json_post(req_url, data, self.debug)
+            time.sleep(.05)
+        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+                                           debug=self.debug)
 
 
 def main():
@@ -77,8 +119,12 @@ def main():
     lfjson_port = 8080
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
     ip_test = IPV4L4(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                     security="open", station_list=station_list, url="http://localhost", requests_per_ten=600)
+                     security="open", station_list=station_list, url="dl http://localhost:8080/ /dev/null",
+                     requests_per_ten=600)
+    ip_test.cleanup()
     ip_test.build()
+    ip_test.start()
+    ip_test.cleanup()
 
 if __name__ == "__main__":
     main()
