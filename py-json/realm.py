@@ -201,6 +201,40 @@ class Realm(LFCliBase):
             return info
         return [1, int(info[0]), info[1]]
 
+    def wait_for_ip(self):
+        num_ports = 0
+        num_ips = 0
+        print("Waiting for ips...")
+        response = super().json_get("/port/list?fields=alias,ip,port+type")
+        if (response is None) or ("interfaces" not in response):
+            print("station_list: incomplete response:")
+            pprint(response)
+            exit(1)
+
+        for x in range(len(response['interfaces'])):
+            for k, v in response['interfaces'][x].items():
+                if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                    num_ports += 1
+
+        while num_ips != num_ports:
+            num_ips = 0
+            response = super().json_get("/port/list?fields=alias,ip,port+type")
+            if (response is None) or ("interfaces" not in response):
+                print("station_list: incomplete response:")
+                pprint(response)
+                exit(1)
+
+            for x in range(len(response['interfaces'])):
+                for k, v in response['interfaces'][x].items():
+                    if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                        if v['ip'] != '0.0.0.0':
+                            num_ips += 1
+            time.sleep(1)
+
+
+
+
+
     def parse_time(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
