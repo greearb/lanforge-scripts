@@ -231,10 +231,6 @@ class Realm(LFCliBase):
                             num_ips += 1
             time.sleep(1)
 
-
-
-
-
     def parse_time(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
