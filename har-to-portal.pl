@@ -101,6 +101,7 @@ print "-------------------------------------------------------------------------
 my $found_redirect = 0;
 my $found_login_post = 0;
 die("unable to open $::outfile: $!")  unless open($fh, ">", $::outfile);
+
 for my $request_start ( sort keys %ordered_entries ) {
   print "Start: $request_start\n";
   my $entry       = $ordered_entries{$request_start};
@@ -124,10 +125,11 @@ for my $request_start ( sort keys %ordered_entries ) {
     print $fh NL.dQH. $header_e->{name} .CS. $header_e->{value} .qQ;
   }
   print $fh c.NL;
-  if ($method eq "POST") {
+  # seems like HTTP/2 POSTS to google lack any postData?
+  if (($method eq "POST") && ($request->{httpVersion} =~ m|^HTTP/1|)) {
     $found_login_post++;
     print $fh MP.NL;
-    print $fh PD.a. $request->{'postData'}->{text} .a.c.NL;
+    print $fh PD.a. $request->{'postData'}->{'text'} .a.c.NL;
   }
   print $fh q(    'url'=>).Q. $url .Q.c.NL;
   print $fh q(    'print'=>1).NL;
