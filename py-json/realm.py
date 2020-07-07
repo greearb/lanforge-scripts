@@ -554,7 +554,11 @@ class L4CXProfile(LFCliBase):
                             debug_info[name] = {field: info[field.replace("+", " ")]}
             if debug:
                 print(debug_info)
-            return passes == expected_passes
+            if passes == expected_passes:
+                return True
+            else:
+                print(list(debug_info), " Endps in this list showed errors getting to %s " % self.url)
+                return False
 
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
