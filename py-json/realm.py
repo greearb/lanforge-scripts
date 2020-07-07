@@ -537,6 +537,24 @@ class L4CXProfile(LFCliBase):
         self.requests_per_ten = 600
         self.local_realm = local_realm
 
+    def check_errors(self):
+        fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
+                       "timeout", "nf+(4xx)", "http-r", "http-p", "http-t", "login-denied"]
+        endp_list = self.json_get("layer4/list?fields=%s" % ','.join(fields_list))
+
+        if endp_list is not None and endp_list['endpoint'] is not None:
+            endp_list = endp_list['endpoint']
+            expected_passes = len(endp_list)
+            passes = len(endp_list)
+            for item in range(len(endp_list)):
+                for name, info in endp_list[item].items():
+                    for field in fields_list:
+                        if info[field.replace("+", " ")] > 0:
+                            passes -= 1
+
+            return passes == expected_passes
+
+
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
         for port_name in ports:
