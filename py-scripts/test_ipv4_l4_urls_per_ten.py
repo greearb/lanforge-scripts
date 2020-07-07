@@ -179,10 +179,7 @@ def main():
                      requests_per_ten=600)
     ip_test.cleanup()
     ip_test.build()
-    if not ip_test.passes():
-        print(ip_test.get_fail_message())
-        exit(1)
-    ip_test.start(True, True)
+    ip_test.start()
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
