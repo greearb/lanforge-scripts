@@ -537,11 +537,11 @@ class L4CXProfile(LFCliBase):
         self.requests_per_ten = 600
         self.local_realm = local_realm
 
-    def check_errors(self):
+    def check_errors(self, debug=False):
         fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
                        "timeout", "nf+(4xx)", "http-r", "http-p", "http-t", "login-denied"]
         endp_list = self.json_get("layer4/list?fields=%s" % ','.join(fields_list))
-
+        debug_info = {}
         if endp_list is not None and endp_list['endpoint'] is not None:
             endp_list = endp_list['endpoint']
             expected_passes = len(endp_list)
@@ -551,7 +551,9 @@ class L4CXProfile(LFCliBase):
                     for field in fields_list:
                         if info[field.replace("+", " ")] > 0:
                             passes -= 1
-
+                            debug_info[name] = {field: info[field.replace("+", " ")]}
+            if debug:
+                print(debug_info)
             return passes == expected_passes
 
 
