@@ -201,7 +201,7 @@ class Realm(LFCliBase):
             return info
         return [1, int(info[0]), info[1]]
 
-    def wait_for_ip(self):
+    def wait_for_ip(self, ipv6=False):
         num_ports = 0
         num_ips = 0
         print("Waiting for ips...")
@@ -213,23 +213,36 @@ class Realm(LFCliBase):
 
         for x in range(len(response['interfaces'])):
             for k, v in response['interfaces'][x].items():
-                if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" \
+                        or v['port type'] == "Ethernet":
                     num_ports += 1
+        if ipv6:
+            num_ports -= 1  # Prevents eth0 from being counted, preventing infinite loop
 
         while num_ips != num_ports:
             num_ips = 0
-            response = super().json_get("/port/list?fields=alias,ip,port+type")
+            response = super().json_get("/port/list?fields=alias,ip,port+type,ipv6+address")
             if (response is None) or ("interfaces" not in response):
                 print("station_list: incomplete response:")
                 pprint(response)
                 exit(1)
 
-            for x in range(len(response['interfaces'])):
-                for k, v in response['interfaces'][x].items():
-                    if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
-                        if v['ip'] != '0.0.0.0':
-                            num_ips += 1
-            time.sleep(1)
+            if not ipv6:
+                for x in range(len(response['interfaces'])):
+                    for k, v in response['interfaces'][x].items():
+                        if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                            if v['ip'] != '0.0.0.0':
+                                num_ips += 1
+                time.sleep(1)
+            if ipv6:
+                for x in range(len(response['interfaces'])):
+                    for k, v in response['interfaces'][x].items():
+                        if v['alias'] != "eth0" and "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" \
+                                or v['port type'] == "Ethernet":
+                            if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
+                                    and v['ipv6 address'] != 'AUTO':
+                                num_ips += 1
+                time.sleep(1)
 
     def parse_time(self, time_string):
         if isinstance(time_string, str):
