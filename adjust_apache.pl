@@ -65,14 +65,31 @@ if (-f "$fname") {
   #my $blank = 0;
   #my $was_blank = 0;
   my $counter = 0;
-  my $debug = 0;
+  my $debug = 1;
+  my %host_map = (
+    "localhost.localdomain"     => "127.0.0.1",
+    "localhost"                 => "127.0.0.1",
+    "localhost4.localdomain4"   => "127.0.0.1",
+    "localhost4"                => "127.0.0.1",
+    "localhost.localdomain"     => "::1",
+    "localhost"                 => "::1",
+    "localhost6.loaldomain6"    => "::1",
+    "localhost6"                => "::1",
+    $MgrHostname                => $ip,
+    "lanforge.localnet"         => "192.168.1.101",
+    "lanforge.localdomain"      => "192.168.1.101",
+  );
   my %address_map = (
      "127.0.0.1" => "localhost.localdomain localhost localhost4.localdomain4 localhost4",
      "::1" => "localhost.localdomain localhost localhost6.loaldomain6 localhost6",
      $ip => $MgrHostname,
      "192.168.1.101" => "lanforge.localnet lanforge.localdomain",
      );
-  print Dumper(\%address_map) if ($debug);
+  if ($debug){
+      print Dumper(\%address_map);
+      print Dumper(\%host_map);
+  }
+
   my $prevname = "";
   my $previp = "";
 
@@ -92,28 +109,28 @@ if (-f "$fname") {
       print "\n   HUNK",$counter2,"-:$hunk:- " if ($debug);
       $counter2++;
       next if ($hunk =~ /^localhost/);
-      next if ($hunk =~ /^lanforge-srv\b/);
-      next if ($hunk =~ /^lanforge\.local(domain|net)\b/);
+      next if ($hunk =~ /^lanforge-srv$/);
+      next if ($hunk =~ /^lanforge\.local(domain|net)$/);
       next if ($hunk =~ /^extra6?-\d+/);
 
-      if (($hunk =~ /^$ip\b/)
-         || ($hunk =~ /^$MgrHostname\b/)){
+      if ($hunk =~ /^$ip$/) {
          $linehasip++;
+         $lfhostname++;
+      }
+      elsif ($hunk =~ /^$MgrHostname$/) {
          $lfhostname++;
          $prevname = $hunk;
       }
 
       if (($hunk =~ /^127\.0\.0\.1/)
          || ($hunk =~ /^192\.168\.1\.101/)
-         || ($hunk =~ /^::1\b/)){
+         || ($hunk =~ /^::1$/)){
          $previp = $hunk;
          $linehasip++;
       }
-
-      if ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
+      elsif ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/) {
          $linehasip++;
          print " IP4($hunk)" if ($debug);
-         $previp = $hunk;
          if ($counter2 > 0) { # we're not first item on line
             $middleip++ if ($counter2 > 0);
             print "middle" if ($debug);
@@ -122,6 +139,13 @@ if (-f "$fname") {
             $address_map{$hunk} = "";
          }
          print "+IP4" if ($debug);
+
+         if (("" ne $prevname) && ($counter2 > 0)) {
+           print " hunk($hunk)prev($prevname)" if ($debug);
+           $address_map{$hunk} .= " $prevname"
+             if ($address_map{$hunk} !~ /\s*$prevname\s*/);
+           $host_map{$prevname} .= " $hunk";
+         }
          $previp = $hunk;
       }
       elsif (($hunk =~ /[G-Zg-z]+\.?/) || ($hunk =~ /^[^:A-Fa-f0-9]+/)) {
@@ -132,22 +156,26 @@ if (-f "$fname") {
             $address_map{$previp} .= " $hunk"
                if ($address_map{$previp} !~ /\b$hunk\b/);
             $prevname = $hunk;
+            $host_map{$prevname} .= " $previp";
          }
          elsif ($linehasip) {
             print " prev($previp $hunk)" if ($debug);
             $address_map{$previp} .= " $hunk"
-               if ($address_map{$previp} !~ /\b$hunk\b/);
+               if ($address_map{$previp} !~ /\s*$hunk\s*/);
+            $host_map{$hunk} .= " $previp";
          }
          elsif ($lfhostname) {
             $more_hostnames{$hunk} = 1;
+            $host_map{$hunk} .= " $previp";
          }
          else { # strange word
             if ("" eq $previp) {
                print " hunk($hunk) has no IP***" if ($debug);
                $more_hostnames{$hunk} = 1;
             }
-            elsif ($address_map{$previp} !~ /\b$hunk\b/) {
-               $address_map{$previp} .= " $hunk"
+            elsif ($address_map{$previp} !~ /\s*$hunk\s*/) {
+               $address_map{$previp} .= " $hunk";
+               $host_map{$hunk} .= " $previp";
             }
          }
       }
@@ -160,26 +188,24 @@ if (-f "$fname") {
          }
          $previp = $hunk;
       }
-      elsif ($hunk =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) {
-         print " hunk($hunk)prev($prevname)" if ($debug);
-         $address_map{$hunk} .= " $prevname"
-            if ($address_map{$hunk} !~ /\b$prevname\b/);
-         $previp = $hunk;
-      }
-      elsif ($address_map{$previp} !~ /\b$hunk\b/) { # is hostname and not an ip
+      elsif ($address_map{$previp} !~ /\s*$hunk\s*/) { # is hostname and not an ip
          $address_map{$previp} .= " $hunk";
+         $host_map{$hunk} .= " $previp";
       }
-
     } # ~foreach hunk
-
   } # ~foreach line
 
+  if (($host_map{$MgrHostname} !~ /^\s*$/) && ($host_map{$MgrHostname} =~ /\S+\s+\S+/)) {
+    print("Multiple IPs for this hostname: ".$host_map{$MgrHostname}."\n");
+    my @iphunks = split(/\s+/, $host_map{$MgrHostname});
+    print "WARNING changing $MgrHostname for to $ip; line was <<$host_map{$MgrHostname}>> addrmap: <<$address_map{$ip}>>\n"
+      if ($debug);
+    $host_map{$MgrHostname} = $ip;
+  }
   for my $name (sort keys %more_hostnames) {
      $address_map{$ip} .= " $name";
      print "NEWSTUFF $ip $address_map{$ip}\n" if ($debug);
   }
-
-  print Dumper(\%address_map) if ($debug);
 
   unshift(@newlines, "192.168.1.101 ".$address_map{"192.168.1.101"});
   unshift(@newlines, "127.0.0.1  ".$address_map{"127.0.0.1"});
@@ -189,8 +215,16 @@ if (-f "$fname") {
   delete($address_map{"127.0.0.1"});
   delete($address_map{"::1"});
 
+  print Dumper(\%address_map) if ($debug);
+  print Dumper(\%host_map) if ($debug);
+
   for my $key (sort keys %address_map){
      next if ($key eq $ip);
+     if ($address_map{$key} =~ /\s*$MgrHostname\s*/) {
+         print("SKIPPING $key / $address_map{$key}\n")
+           if ($debug);
+         next;
+     }
      push(@newlines, $key."    ".$address_map{$key});
   }
   push(@newlines, "###-LF-HOSTNAME-NEXT-###");
