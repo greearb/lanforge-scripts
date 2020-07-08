@@ -18,11 +18,10 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, num_stations, sta_list, name_prefix,resource=1,
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix,resource=1,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
-                 number_template="00000",
-                 test_duration="5m",
+                 number_template="00000", test_duration="5m",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -33,17 +32,13 @@ class IPV4VariableTime(LFCliBase):
         self.sta_list = sta_list
         self.security = security
         self.password = password
-        self.num_stations = num_stations
         self.number_template = number_template
         self.resource = resource
         self.name_prefix = name_prefix
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
                                                     security=self.security, number_template_=self.number_template,
-                                                    mode=0,
-                                                    up=True,
-                                                    dhcp=True,
-                                                    debug_=False)
+                                                    mode=0, up=True, dhcp=True, debug_=False)
         self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, name_prefix_=self.name_prefix,
                                             side_a_min_bps=side_a_min_rate, side_a_max_bps=side_a_max_rate,
                                             side_b_min_bps=side_b_min_rate, side_b_max_bps=side_b_max_rate,
@@ -94,7 +89,7 @@ class IPV4VariableTime(LFCliBase):
             return False
 
     def start(self, print_pass=False, print_fail=False):
-        self.station_profile.admin_up(1)
+        self.station_profile.admin_up(self.resource)
         self.local_realm.wait_for_ip()
         cur_time = datetime.datetime.now()
         old_cx_rx_values = self.__get_rx_values()
@@ -202,7 +197,7 @@ def main():
                                    ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
                                    resource=1,
-                                   security="open", num_stations=10, test_duration="5m",
+                                   security="open", test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup()
     ip_var_test.build()
