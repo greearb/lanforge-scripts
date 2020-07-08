@@ -38,6 +38,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=side_a_min_rate,
                                             side_b_min_bps=0, side_a_max_bps=side_a_max_rate,
                                             side_b_max_bps=0, debug_=True)
+        
         #download
         self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=0,
                                             side_b_min_bps=side_b_min_rate, side_a_max_bps=0,
@@ -47,6 +48,7 @@ class L3PowersaveTraffic(LFCliBase):
                                                     security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
+        self.station_profile.admin_up(resource=1)
 
 
 
@@ -55,13 +57,15 @@ class L3PowersaveTraffic(LFCliBase):
         #download would set TXBps on B side of endpoint
         #build 
         print("Creating stations for" + UorD +  "traffic") 
-        self.station_profile.use_wpa2(True, self.ssid, self.password)
+        self.station_profile.use_wpa2(False, self.ssid, self.password)
         self.station_profile.set_number_template(self.prefix)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.set_command_flag("add_sta", "power_save_enable", 1)
+
         self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        
         self._pass("PASS: Station build for" + UorD + "finished")
         temp_sta_list = []
         for name in list(self.local_realm.station_list()):
@@ -71,13 +75,16 @@ class L3PowersaveTraffic(LFCliBase):
         self.cx_prof_upload.name_prefix = "UDP_up"
         self.cx_prof_download.name_prefix = "UDP_down"
         print("Beginning create upload")
-        self.cx_prof_upload.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)  #create 2 cx profiles
+        self.cx_prof_upload.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)
+          #create 2 cx profiles
         print("Beginning create download")
-        self.cx_prof_download.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)                          
+        self.cx_prof_download.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)
+
 
     def start(self):
         #start one test, measure
         #start second test, measure
+        #start upload, 
         pass
 
     def stop(self):
@@ -135,9 +142,10 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     #creates object of class L3PowersaveTraffic, inputs rates for upload and download
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    
     ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid = "jedway-open" , security = "open", 
-                        password ="[BLANK]", station_list = station_list , side_a_min_rate=56, side_b_min_rate=56, side_a_max_rate=0,
+                        password ="[BLANK]", station_list = ["sta01", "sta02"] , side_a_min_rate=5600, side_b_min_rate=5600, side_a_max_rate=0,
                         side_b_max_rate=0, prefix="00000", test_duration="5m",
                         _debug_on=True, _exit_on_error=True, _exit_on_fail=True)
     #ip_powersave_test.cleanup()
