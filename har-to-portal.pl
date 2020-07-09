@@ -131,7 +131,7 @@ for my $request_start ( sort keys %ordered_entries ) {
     print $fh MP.NL;
     print $fh PD.a. $request->{'postData'}->{'text'} .a.c.NL;
   }
-  print $fh q(    'url'=>).Q. $url .Q.c.NL;
+  print $fh c.NL.q(    'url'=>).Q. $url .Q.c.NL;
   print $fh q(    'print'=>1).NL;
   print $fh q[}, \@response);].NL;
 
