@@ -57,3 +57,9 @@ test configuration through the GUI.
 
 
 Check /tmp/lf_reports for the report files.
+
+
+The cicd and testbeds directories contain some code that came from another CICD implementation
+Candela worked on.  It is a good starting point, but will need modifications before it fully
+works for your test bed.
+
