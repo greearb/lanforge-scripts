@@ -116,15 +116,15 @@ for my $request_start ( sort keys %ordered_entries ) {
 
   my $url         = $request->{url};
   my $method      = $request->{method};
+  print $fh "\n=pod\n";
   print $fh "------------------------------------------------------------------------------------\n";
   print $fh "$method: $url\n";
   print $fh "------------------------------------------------------------------------------------\n";
+  print $fh "=cut\n";
   print $fh "request({'curl_args'".CA;
-
   for my $header_e (@$req_headers) {
     print $fh NL.dQH. $header_e->{name} .CS. $header_e->{value} .qQ;
   }
-  print $fh c.NL;
   # seems like HTTP/2 POSTS to google lack any postData?
   if (($method eq "POST") && ($request->{httpVersion} =~ m|^HTTP/1|)) {
     $found_login_post++;
@@ -133,12 +133,13 @@ for my $request_start ( sort keys %ordered_entries ) {
   }
   print $fh q(    'url'=>).Q. $url .Q.c.NL;
   print $fh q(    'print'=>1).NL;
-  print $fh q[}, \@response);].NL.NL;
+  print $fh q[}, \@response);].NL;
+
   for my $req_cookie(@$req_cookies) {
     print $fh "    request_cookie ";
     print $fh "{'".$req_cookie->{name}."'} = '".$req_cookie->{value}."';\n";
   }
-  print $fh NL;
+  print $fh "=pod".NL;
   if ($response->{status} == 301 || $response->{status} == 302) {
     $found_redirect++;
     print $fh "Expect redirect: ".$response->{status}.NL;
@@ -146,10 +147,12 @@ for my $request_start ( sort keys %ordered_entries ) {
   for my $header_e (@$res_headers) {
     print $fh "    response_header: ".$header_e->{name} .": ".$header_e->{value} .NL;
   }
+  print $fh "=cut".NL;
   for my $res_cookie(@$res_cookies) {
     print $fh "    response_cookie";
     print $fh "{'".$res_cookie->{name}."'} = '".$res_cookie->{value}."';\n";
   }
+  print $fh NL;
 } # ~for each request sorted by time
 
 #
