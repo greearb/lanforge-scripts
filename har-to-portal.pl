@@ -83,6 +83,8 @@ our $Decoder = JSON->new->utf8;
 #  #print "Server: ".$log_entry->server_ip_address() .NL;
 #}
 
+
+
 ## ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##  Creating a plain JSON object is more efficient,
 ##  and more compatible with FF
@@ -98,9 +100,51 @@ foreach my $entry (@{$json->{log}->{entries}}) {
   $ordered_entries{$request_start} = \$entry;
 }
 print "------------------------------------------------------------------------------------\n";
+die("unable to open $::outfile: $!")  unless open($fh, ">", $::outfile);
+print $fh q[
+##----------------------------------------------------------------------------#
+##                                                                            #
+##   Activate this module with the --bot/-b switch                            #
+##   from the portal-bot.pl command line; EG:                                 #
+##   portal-bot.pl -b h1.pm ...                                               #
+##                                                                            #
+##   It is absolutely necessary that no code in bot:: modules endangers the   #
+##   operation of the portal-bot script. Do not call die() or exit().         #
+##   Communicate your displeasure using logg(), dbgdie() or signal_exit().    #
+##----------------------------------------------------------------------------#
+package bot;
+
+if (defined $ENV{'PBOT_NOFORK'} && $ENV{'PBOT_NOFORK'} eq "1") {
+   use strict;
+   use warnings;
+   use diagnostics;
+   use Carp;
+   $SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
+   use Data::Dumper;
+}
+
+use URI::Escape;
+use botlib qw(dbg isBlank logg signal_exit dbgdie newEvent request);
+use Exporter;
+our @EXPORT_OK = qw(find_redirect_url submit_login submit_logout interpret_login_response);
+#use HTML::TreeBuilder::XPath;
+use Encode;
+
+@main::delays=(0.0, 0.0, 1.1);
+$::curl_args .=" --max-redirs 0";
+our $extra_args = " --max-redirs 0"
+   ." --keepalive-time 6800"
+   ." --max-time 6800"
+   ." -H 'Connection: keep-alive'"
+   ." -H 'User-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0'"
+   ;
+
+sub find_redirect_url {
+}
+]; # end module top
+
 my $found_redirect = 0;
 my $found_login_post = 0;
-die("unable to open $::outfile: $!")  unless open($fh, ">", $::outfile);
 
 for my $request_start ( sort keys %ordered_entries ) {
   print "Start: $request_start\n";
@@ -128,8 +172,8 @@ for my $request_start ( sort keys %ordered_entries ) {
   # seems like HTTP/2 POSTS to google lack any postData?
   if (($method eq "POST") && ($request->{httpVersion} =~ m|^HTTP/1|)) {
     $found_login_post++;
-    print $fh MP.NL;
-    print $fh PD.a. $request->{'postData'}->{'text'} .a.c.NL;
+    print $fh c.NL.MP.NL;
+    print $fh PD.a. $request->{'postData'}->{'text'} .a;
   }
   print $fh c.NL.q(    'url'=>).Q. $url .Q.c.NL;
   print $fh q(    'print'=>1).NL;
