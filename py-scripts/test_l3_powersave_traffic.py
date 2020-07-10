@@ -22,7 +22,7 @@ import datetime
 class L3PowersaveTraffic(LFCliBase):
 
     def __init__(self, host, port, ssid, security, password, station_list, side_a_min_rate=56, side_b_min_rate=56, side_a_max_rate=0,
-                 side_b_max_rate=0, prefix="00000", test_duration="5m",
+                 side_b_max_rate=0, pdu_size = 1000, prefix="00000", test_duration="5m",
                 _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
@@ -34,16 +34,20 @@ class L3PowersaveTraffic(LFCliBase):
         self.prefix = prefix
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=True, halt_on_error_=True)
         #upload
-        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=side_a_min_rate,
-                                            side_b_min_bps=0, side_a_max_bps=side_a_max_rate,
-                                            side_b_max_bps=0, debug_=True)
+        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, 
+                                            side_a_min_bps=side_a_min_rate,side_b_min_bps=0, 
+                                            side_a_max_bps=side_a_max_rate,side_b_max_bps=0, 
+                                            side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size, 
+                                            side_b_min_pdu=0, side_b_max_pdu=0, debug_=True)
         
         #download
-        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=0,
-                                            side_b_min_bps=side_b_min_rate, side_a_max_bps=0,
-                                            side_b_max_bps=side_b_max_rate, debug_=True)
+        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm, 
+                                            side_a_min_bps=0, side_b_min_bps=side_b_min_rate, 
+                                            side_a_max_bps=0,side_b_max_bps=side_b_max_rate, 
+                                            side_a_min_pdu=0, side_a_max_pdu=0,
+                                            side_b_min_pdu=pdu_size,side_b_max_pdu=pdu_size, debug_=True)
         self.test_duration = test_duration
-        self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
+        self.station_profile = realm.StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid, ssid_pass=self.password,
                                                     security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
@@ -131,9 +135,11 @@ class L3PowersaveTraffic(LFCliBase):
         old_cx_rx_values = self.__get_rx_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.__set_all_cx_state("RUNNING")
+
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
+            #DOUBLE CHECK  
             interval_time = cur_time + datetime.timedelta(minutes=1)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
@@ -162,6 +168,7 @@ class L3PowersaveTraffic(LFCliBase):
 
 
     def cleanup(self):
+        print("we're in the cleanup function")
         print("Cleaning up stations")
         port_list = self.local_realm.station_list()
         sta_list = []
@@ -195,6 +202,7 @@ class L3PowersaveTraffic(LFCliBase):
                 self.json_post(req_url, data)
 
         print("Cleaning up endps")
+        
         endp_list = self.json_get("/endp")
         print("The endpoint list about to be printed")
         print(endp_list)
@@ -210,7 +218,7 @@ class L3PowersaveTraffic(LFCliBase):
                 self.json_post(req_url, data)
 
 
-        LFUtils.wait_until_ports_disappear(resource=1,base_url=self.lfclient_url, port_list=self.local_realm.station_list(), debug=self.local_realm.debug)
+        LFUtils.wait_until_ports_disappear(resource_id=1,base_url=self.lfclient_url, port_list=self.local_realm.station_list(), debug=self.local_realm.debug)
              
 
 def main():
@@ -223,14 +231,14 @@ def main():
                         password ="[BLANK]", station_list = ["sta01", "sta02"] , side_a_min_rate=2000, side_b_min_rate=2000, side_a_max_rate=0,
                         side_b_max_rate=0, prefix="00000", test_duration="30s",
                         _debug_on=True, _exit_on_error=True, _exit_on_fail=True)
-   # ip_powersave_test.cleanup()               
+    ip_powersave_test.cleanup()               
     ip_powersave_test.build()
     if not ip_powersave_test.passes():
         print(ip_powersave_test.get_fail_message())
         exit(1)
     print("we've passed the build test")
     ip_powersave_test.start(True, True)
-    #ip_powersave_test.stop()
+    ip_powersave_test.stop()
     if not ip_powersave_test.passes():
         print(ip_powersave_test.get_fail_message())
         exit(1)
