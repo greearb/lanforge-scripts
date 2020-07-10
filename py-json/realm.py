@@ -638,7 +638,6 @@ class L4CXProfile(LFCliBase):
                 return False
 
     def start_cx(self):
-        print("\n\n===================", self.created_cx)
         print("Starting CXs...")
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/set_cx_state", {
