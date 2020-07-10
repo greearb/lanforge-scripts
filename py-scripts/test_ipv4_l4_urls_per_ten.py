@@ -140,7 +140,9 @@ def main():
                      security="open", station_list=station_list, url="dl http://10.40.0.1 /dev/null", num_tests=1,
                      target_requests_per_ten=600,
                      requests_per_ten=600)
-    ip_test.cleanup(station_list)
+    ip_test.local_realm.remove_all_stations(ip_test.resource)
+    ip_test.local_realm.remove_all_cxs()
+    ip_test.local_realm.remove_all_endps()
     ip_test.build()
     ip_test.start()
     ip_test.stop()
