@@ -48,18 +48,6 @@ class IPV4L4(LFCliBase):
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
-    def __set_all_cx_state(self, state, sleep_time=5):
-        print("Setting CX States to %s" % state)
-        for sta_name in self.sta_list:
-            req_url = "cli-json/set_cx_state"
-            data = {
-                "test_mgr": "default_tm",
-                "cx_name": "CX_" + sta_name + "_l4",
-                "cx_state": state
-            }
-            self.json_post(req_url, data)
-        time.sleep(sleep_time)
-
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
@@ -138,7 +126,7 @@ class IPV4L4(LFCliBase):
         # new script; desired minimum urls for 10 min
 
     def stop(self):
-        self.__set_all_cx_state("STOPPED")
+        self.cx_profile.stop_cx()
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
             url = "json-cli/set_port"
