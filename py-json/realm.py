@@ -265,6 +265,51 @@ class Realm(LFCliBase):
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_time
 
+    def remove_all_stations(self, resource):
+        port_list = self.station_list()
+        sta_list = []
+        if sta_list is not None:
+            print("Removing all stations")
+            for item in list(port_list):
+                if "sta" in list(item)[0]:
+                    sta_list.append(self.name_to_eid(list(item)[0])[2])
+
+            for sta_name in sta_list:
+                req_url = "cli-json/rm_vlan"
+                data = {
+                    "shelf": 1,
+                    "resource": resource,
+                    "port": sta_name
+                }
+                self.json_post(req_url, data)
+
+    def remove_all_endps(self):
+        endp_list = self.json_get("/endp")
+        if endp_list is not None:
+            print("Removing all endps")
+            endp_list = list(endp_list['endpoint'])
+            for endp_name in range(len(endp_list)):
+                name = list(endp_list[endp_name])[0]
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": name
+                }
+                self.json_post(req_url, data)
+
+    def remove_all_cxs(self):
+        cx_list = list(self.cx_list())
+        not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
+        if cx_list is not None:
+            print("Removing all cxs")
+            for cx_name in cx_list:
+                if cx_name in not_cx:
+                    continue
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name
+                }
+                self.json_post(req_url, data)
 
     def parse_link(self, link):
         link = self.lfclient_url + link
