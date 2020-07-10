@@ -20,7 +20,7 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
-                 target_requests_per_ten=600, prefix="00000", resource=1, num_tests=1,
+                 target_requests_per_ten=600, number_template="00000", resource=1, num_tests=1,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -32,19 +32,22 @@ class IPV4L4(LFCliBase):
         self.password = password
         self.url = url
         self.requests_per_ten = requests_per_ten
-        self.prefix = prefix
+        self.number_template = number_template
         self.sta_list = station_list
         self.resource = resource
         self.num_tests = num_tests
         self.target_requests_per_ten = target_requests_per_ten
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, number_template_=self.prefix, mode=0, up=False,
-                                            dhcp=True,
-                                            debug_=False, local_realm=self.local_realm)
-        self.cx_profile = realm.L4CXProfile(lfclient_host=self.host, lfclient_port=self.port,
-                                            local_realm=self.local_realm, debug_=False)
+        self.station_profile = self.local_realm.new_station_profile()
+        self.cx_profile = self.local_realm.new_l4_cx_profile()
+
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
@@ -76,13 +79,13 @@ class IPV4L4(LFCliBase):
 
     def build(self):
         # Build stations
-        self.profile.use_wpa2(True, self.ssid, self.password)
-        self.profile.set_number_template(self.prefix)
+        self.station_profile.use_wpa2(True, self.ssid, self.password)
+        self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.profile.set_command_param("set_port", "report_timer", 1500)
-        self.profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
         temp_sta_list = []
         for station in range(len(self.sta_list)):
@@ -96,7 +99,7 @@ class IPV4L4(LFCliBase):
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
         expected_passes = 0
-        self.profile.admin_up(1)
+        self.station_profile.admin_up(1)
         self.local_realm.wait_for_ip()
         self.cx_profile.start_cx()
         for test in range(self.num_tests):
@@ -126,7 +129,7 @@ class IPV4L4(LFCliBase):
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
-        self.profile.cleanup(self.resource, sta_list)
+        self.station_profile.cleanup(self.resource, sta_list)
         self.cx_profile.cleanup()
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)

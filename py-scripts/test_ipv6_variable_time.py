@@ -36,16 +36,26 @@ class IPV6VariableTime(LFCliBase):
         self.password = password
         self.number_template = number_template
         self.resource = resource
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                                    security=self.security, number_template_=self.number_template,
-                                                    mode=0, up=True, dhcp=True, debug_=False,
-                                                    local_realm=self.local_realm)
-        self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, name_prefix_=self.name_prefix,
-                                            side_a_min_bps=side_a_min_rate, side_a_max_bps=side_a_max_rate,
-                                            side_b_min_bps=side_b_min_rate, side_b_max_bps=side_b_max_rate,
-                                            debug_=False)
         self.test_duration = test_duration
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.station_profile = self.local_realm.new_station_profile()
+        self.cx_profile = self.local_realm.new_l3_cx_profile()
+
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
+
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
+
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)

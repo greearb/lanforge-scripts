@@ -17,7 +17,8 @@ import pprint
 
 
 class IPv6Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, num_stations=0, prefix="00000", _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, num_stations=0, prefix="00000",
+                 _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -33,12 +34,16 @@ class IPv6Test(LFCliBase):
         self.prefix = prefix
         self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, number_template_=self.prefix, mode=0, up=False, dhcp=True,
-                                            debug_=False, local_realm=self.local_realm)
+        self.station_profile = self.local_realm.new_station_profile()
+
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
 
     def build(self):
-        # Build stations
         self.profile.use_wpa2(True, self.ssid, self.password)
         self.profile.set_number_template(self.prefix)
         print("Creating stations")

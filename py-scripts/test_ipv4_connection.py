@@ -17,7 +17,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, num_stations=0, prefix="00000", _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, number_template="00000", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -26,30 +26,34 @@ class IPv4Test(LFCliBase):
         self.ssid = ssid
         self.security = security
         self.password = password
-        self.num_stations = num_stations
         self.sta_list = sta_list
         self.resource = resource
         self.timeout = 120
-        self.prefix = prefix
+        self.number_template = number_template
         self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, number_template_=self.prefix, mode=0, up=False, dhcp=True,
-                                            debug_=False, local_realm=self.local_realm)
+        self.station_profile = self.local_realm.new_station_profile()
+
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
 
     def build(self):
         # Build stations
-        self.profile.use_wpa2(True, self.ssid, self.password)
-        self.profile.set_number_template(self.prefix)
+        self.station_profile.use_wpa2(True, self.ssid, self.password)
+        self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.profile.set_command_param("set_port", "report_timer", 1500)
-        self.profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
-        self.profile.admin_up(1)
+        self.station_profile.admin_up(1)
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -93,7 +97,7 @@ class IPv4Test(LFCliBase):
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
-        self.profile.cleanup(self.resource, sta_list)
+        self.station_profile.cleanup(self.resource, sta_list)
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
