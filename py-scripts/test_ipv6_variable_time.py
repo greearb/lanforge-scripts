@@ -157,9 +157,7 @@ def main():
                                    password="jedway-wpa2-x2048-4-4",
                                    resource=1, security="open", test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
-    ip_var_test.local_realm.remove_all_stations(ip_var_test.resource)
-    ip_var_test.local_realm.remove_all_cxs()
-    ip_var_test.local_realm.remove_all_endps()
+    ip_var_test.cleanup(station_list)
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())

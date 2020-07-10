@@ -107,9 +107,7 @@ def main():
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
                        security="open", sta_list=station_list)
-    ip_test.local_realm.remove_all_stations(ip_test.resource)
-    ip_test.local_realm.remove_all_cxs()
-    ip_test.local_realm.remove_all_endps()
+    ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
     if not ip_test.passes():
