@@ -316,7 +316,7 @@ class Realm(LFCliBase):
         info = ()
 
     def new_station_profile(self):
-        station_prof = StationProfile(self.lfclient_url, debug_=self.debug)
+        station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug)
         return station_prof
 
     def new_l3_cx_profile(self):
