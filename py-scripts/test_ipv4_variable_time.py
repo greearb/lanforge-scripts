@@ -125,8 +125,8 @@ class IPV4VariableTime(LFCliBase):
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
-        self.station_profile.cleanup(self.resource, sta_list)
         self.cx_profile.cleanup()
+        self.station_profile.cleanup(self.resource, sta_list)
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
