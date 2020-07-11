@@ -10,6 +10,8 @@ from LANforge import add_sta
 from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from generic_cx import GenericCx
+from LANforge import add_monitor
+from LANforge.add_monitor import *
 import datetime
 
 
@@ -757,6 +759,56 @@ class GenCXProfile(LFCliBase):
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
+
+class WifiMonitor:
+    def __init__(self, lfclient_url, local_realm, up=True, debug_=False, resource_=1):
+        self.debug = debug_
+        self.lfclient_url = lfclient_url
+        self.up = up
+        self.local_realm = local_realm
+        self.station_name = None
+        self.resource = resource_
+        self.flag_names = []
+        self.flag_mask_names = []
+        self.flags_mask = add_monitor.default_flags_mask
+        self.aid = "NA" # used when sniffing /ax radios
+        self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
+
+    def create(self, resource_=1, radio_="wiphy0", name_="moni0" ):
+        computed_flags = 0;
+        for flag_n in self.flag_names:
+            computed_flags += add_monitor.flags[flag_n]
+
+        self.json_post("/cli-json/add_monitor", {
+            "shelf": 1,
+            "resource": resource_,
+            "radio": radio_,
+            "ap_name": name_,
+            "flags": computed_flags,
+            "flags_mask": self.flags_mask
+        })
+        pass
+
+    def set_flag(self, param_name, value):
+        if (param_name not in add_monitor.flags):
+            raise ValueError("Flag '%s' does not exist for add_monitor, consult add_monitor.py" % param_name)
+        if (value == 1) and (param_name not in self.flag_names):
+            self.flag_names.append(param_name)
+        elif (value == 0) and (param_name in self.flag_names):
+            del self.flag_names[param_name]
+            self.flags_mask |= add_monitor.flags[param_name]
+
+    def cleanup(self):
+        LFUtils.removePort(self.resource, self.station_name, baseurl=self.lfclient_url, debug=self.debug)
+        pass
+
+    def admin_up(self):
+        up_request = LFUtils.port_up_request(resource_id_=self.resource, port_name_=self.station_name)
+        self.json_post("/cli-json/set_port", up_request)
+
+    def admin_down(self):
+        down_request = LFUtils.port_down_request(resource_id_=self.resource, port_name_=self.station_name)
+        self.json_post("/cli-json/set_port", down_request)
 
 
 # use the station profile to set the combination of features you want on your stations
