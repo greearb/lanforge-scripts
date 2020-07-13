@@ -150,7 +150,7 @@ def main():
     lfjson_port = 8080
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPV4L4(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                     security="open", station_list=station_list, url="dl http://10.40.0.1 /dev/null", test_duration="5m",
+                     security="wpa2", station_list=station_list, url="dl http://10.40.0.1 /dev/null", test_duration="5m",
                      requests_per_ten=600)
     ip_test.cleanup(station_list)
     ip_test.build()

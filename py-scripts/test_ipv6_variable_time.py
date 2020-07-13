@@ -158,7 +158,7 @@ def main():
                                    name_prefix="var_time",
                                    ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
-                                   resource=1, security="open", test_duration="5m",
+                                   resource=1, security="wpa2", test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
