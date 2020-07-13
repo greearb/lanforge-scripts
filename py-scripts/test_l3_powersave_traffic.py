@@ -53,7 +53,7 @@ class L3PowersaveTraffic(LFCliBase):
                                                     dhcp=True,
                                                     debug_=False)
         self.newMonitor = realm.WifiMonitor(self.lfclient_url, self.local_realm,debug_= _debug_on)
-        self.station_profile.admin_up(resource=1)
+        
 
 
 
@@ -65,9 +65,15 @@ class L3PowersaveTraffic(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.set_command_flag("add_sta", "power_save_enable", 1)
+        #channel = self.json_get("/port/1/%s/%s/"%(1,"wiphy0"))
+        #rint("The channel name is...")
 
+        #pprint.pprint(channel)
+        self.newMonitor.create(resource_=1, channel=157, radio_= "wiphy1", name_="moni0")
         self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
-        self.newMonitor.create(resource_=1, radio_= "wiphy1", name_="moni_powersave")
+       # station_channel = self.json_get("/port/1/%s/%s")
+       # pprint.pprint(station_channel)
+        
         
         self._pass("PASS: Station builds finished")
         temp_sta_list = []
@@ -99,7 +105,7 @@ class L3PowersaveTraffic(LFCliBase):
 
 
     def __get_rx_values(self):
-        cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=True)
+        cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
         #print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
@@ -118,6 +124,10 @@ class L3PowersaveTraffic(LFCliBase):
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         #admin up on new monitor
         self.newMonitor.admin_up()
+        self.newMonitor.start_sniff()
+        #admin up on station
+        self.station_profile.admin_up(resource=1)
+        #self.newMonitor.set_flag()
         self.__set_all_cx_state("RUNNING")
 
         while cur_time < end_time:
@@ -149,7 +159,8 @@ def main():
 
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)    
+    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)    
+    station_list = ["sta0000","sta0001"]
     ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid = "jedway-open" , security = "open", 
                         password ="[BLANK]", station_list = station_list , side_a_min_rate=2000, side_b_min_rate=2000, side_a_max_rate=0,
                         side_b_max_rate=0, prefix="00000", test_duration="30s",
