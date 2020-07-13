@@ -32,6 +32,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.password = password
         self.sta_list = station_list
         self.prefix = prefix
+        self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False, halt_on_error_=True)
         #upload
         self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, 
@@ -51,6 +52,7 @@ class L3PowersaveTraffic(LFCliBase):
                                                     security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
+        self.newMonitor = realm.WifiMonitor(self.lfclient_url, self.local_realm,debug_= _debug_on)
         self.station_profile.admin_up(resource=1)
 
 
@@ -65,6 +67,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "power_save_enable", 1)
 
         self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.newMonitor.create(resource_=1, radio_= "wiphy1", name_="moni_powersave")
         
         self._pass("PASS: Station builds finished")
         temp_sta_list = []
@@ -81,6 +84,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.cx_prof_download.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)
 
     def __set_all_cx_state(self, state, sleep_time=5):
+        
         print("Setting CX States to %s" % state)
         cx_list = list(self.local_realm.cx_list())
         for cx_name in cx_list:
@@ -112,6 +116,8 @@ class L3PowersaveTraffic(LFCliBase):
         #start second test, measure
         cur_time = datetime.datetime.now()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        #admin up on new monitor
+        self.newMonitor.admin_up()
         self.__set_all_cx_state("RUNNING")
 
         while cur_time < end_time:
@@ -123,6 +129,8 @@ class L3PowersaveTraffic(LFCliBase):
 
 
     def stop(self):
+        #switch off new monitor
+        self.newMonitor.admin_down()
         self.__set_all_cx_state("STOPPED")
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
@@ -131,9 +139,11 @@ class L3PowersaveTraffic(LFCliBase):
 
    
     def cleanup(self):
+        self.newMonitor.cleanup()
         self.cx_prof_download.cleanup()
         self.cx_prof_upload.cleanup()
-        self.station_profile.cleanup(resource=1,desired_stations=self.sta_list)         
+        self.station_profile.cleanup(resource=1,desired_stations=self.sta_list)     
+            
 
 def main():
 
