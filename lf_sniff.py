@@ -51,7 +51,7 @@ lfstation = "1.wlan0"
 sniffer_radios = "2.wiphy0"
 upstream = ""
 dur = 5 * 60
-moni_flags = "0x100000000"; # 160Mhz mode enabled
+moni_flags = "0x100000000" # 160Mhz mode enabled
 
 # rssi_adjust = (current_nf - nf_at_calibration)
 
@@ -222,11 +222,11 @@ def main():
        # Create monitor interface
        mname = "moni%sa"%(moni_idx);
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
-                       "--cli_cmd", "add_monitor 1 %s %s %s %s 0xFFFFFFFFFFFF %s %s"%(rad_resource, rad_name, mname, moni_flags, aid, bssid)]);
+                       "--cli_cmd", "add_monitor 1 %s %s %s %s 0xFFFFFFFFFFFF %s %s"%(rad_resource, rad_name, mname, moni_flags, aid, bssid)])
 
-       print("Created monitor interface: %s on resource %s\n"%(mname, rad_resource));
-       monis_n.append(mname);
-       monis_r.append(rad_resource);
+       print("Created monitor interface: %s on resource %s\n"%(mname, rad_resource))
+       monis_n.append(mname)
+       monis_r.append(rad_resource)
 
        idx = idx + 1
 
