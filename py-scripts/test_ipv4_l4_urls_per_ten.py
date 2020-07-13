@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
-
+import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
@@ -100,7 +100,9 @@ class IPV4L4(LFCliBase):
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up(1)
-        self.local_realm.wait_for_ip()
+        temp_stas = self.sta_list.copy()
+        temp_stas.append("eth1")
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
         self.cx_profile.start_cx()
         for test in range(self.num_tests):
             expected_passes += 1
