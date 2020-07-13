@@ -767,7 +767,7 @@ class WifiMonitor:
         self.lfclient_url = lfclient_url
         self.up = up
         self.local_realm = local_realm
-        self.station_name = None
+        self.monitor_name = None
         self.resource = resource_
         self.flag_names = []
         self.flag_mask_names = []
@@ -775,22 +775,29 @@ class WifiMonitor:
         self.aid = "NA" # used when sniffing /ax radios
         self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
 
-    def create(self, resource_=1, radio_="wiphy0", name_="moni0" ):
+    def create(self, resource_=1,channel=None, radio_="wiphy0", name_="moni0" ):
         print("Creating monitor " + name_)
+        self.monitor_name = name_
         computed_flags = 0
         for flag_n in self.flag_names:
             computed_flags += add_monitor.flags[flag_n]
+        data ={
+                "shelf": 1, 
+                "resource": resource_,
+                "radio": radio_,
+                "mode": 0, #0 for AUTO or "NA"
+                "channel": channel
+            }
+        self.local_realm.json_post("/cli-json/set_wifi_radio", _data= data)
 
         self.local_realm.json_post("/cli-json/add_monitor", {
             "shelf": 1,
             "resource": resource_,
             "radio": radio_,
-            "ap_name": name_,
+            "ap_name": self.monitor_name,
             "flags": computed_flags,
             "flags_mask": self.flags_mask
         })
-        
-
     def set_flag(self, param_name, value):
         if (param_name not in add_monitor.flags):
             raise ValueError("Flag '%s' does not exist for add_monitor, consult add_monitor.py" % param_name)
@@ -802,16 +809,32 @@ class WifiMonitor:
 
     def cleanup(self):
         print("Cleaning up monitors")
-        LFUtils.removePort(resource=self.resource, port_name = self.station_name, baseurl=self.lfclient_url, debug=self.debug)
-        pass
+        LFUtils.removePort(resource=self.resource, port_name = self.monitor_name, baseurl=self.lfclient_url, debug=self.debug)
+        
 
     def admin_up(self):
-        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.station_name)
+        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", up_request)
 
     def admin_down(self):
-        down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.station_name)
+        down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", down_request)
+
+    def start_sniff(self):
+        data = {
+                "shelf": 1, 
+                "resource": 1,
+                "port": self.monitor_name,
+                "display": "NA",
+                "flags": 0x2,
+                "outfile": "/home/lanforge/Documents/out.cap",
+                "duration": 45 
+            }
+        self.local_realm.json_post("/cli-json/sniff_port", _data= data)
+           
+
+               # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
+
 
 
 # use the station profile to set the combination of features you want on your stations
