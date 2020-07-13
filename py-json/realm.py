@@ -776,11 +776,12 @@ class WifiMonitor:
         self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
 
     def create(self, resource_=1, radio_="wiphy0", name_="moni0" ):
-        computed_flags = 0;
+        print("Creating monitor " + name_)
+        computed_flags = 0
         for flag_n in self.flag_names:
             computed_flags += add_monitor.flags[flag_n]
 
-        self.json_post("/cli-json/add_monitor", {
+        self.local_realm.json_post("/cli-json/add_monitor", {
             "shelf": 1,
             "resource": resource_,
             "radio": radio_,
@@ -788,7 +789,7 @@ class WifiMonitor:
             "flags": computed_flags,
             "flags_mask": self.flags_mask
         })
-        pass
+        
 
     def set_flag(self, param_name, value):
         if (param_name not in add_monitor.flags):
@@ -800,16 +801,17 @@ class WifiMonitor:
             self.flags_mask |= add_monitor.flags[param_name]
 
     def cleanup(self):
-        LFUtils.removePort(self.resource, self.station_name, baseurl=self.lfclient_url, debug=self.debug)
+        print("Cleaning up monitors")
+        LFUtils.removePort(resource=self.resource, port_name = self.station_name, baseurl=self.lfclient_url, debug=self.debug)
         pass
 
     def admin_up(self):
-        up_request = LFUtils.port_up_request(resource_id_=self.resource, port_name_=self.station_name)
-        self.json_post("/cli-json/set_port", up_request)
+        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.station_name)
+        self.local_realm.json_post("/cli-json/set_port", up_request)
 
     def admin_down(self):
-        down_request = LFUtils.port_down_request(resource_id_=self.resource, port_name_=self.station_name)
-        self.json_post("/cli-json/set_port", down_request)
+        down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.station_name)
+        self.local_realm.json_post("/cli-json/set_port", down_request)
 
 
 # use the station profile to set the combination of features you want on your stations
