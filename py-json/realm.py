@@ -895,7 +895,7 @@ class StationProfile:
     # TODO: create use_wpa3()
 
     def use_security(self, security_type, ssid=None, passwd=None):
-        types = {"WEP": "wep_enable", "WPA": "wpa_enable", "WPA2": "wpa2_enable", "WPA3": "use-wpa3"}
+        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3"}
         self.add_sta_data["ssid"] = ssid
         if security_type in types.keys():
             if (ssid is None) or ("" == ssid):
