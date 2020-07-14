@@ -902,6 +902,13 @@ class StationProfile:
                 raise ValueError("use_security: %s requires ssid" % security_type)
             if (passwd is None) or ("" == passwd):
                 raise ValueError("use_security: %s requires passphrase or [BLANK]" % security_type)
+            for name in types.values():
+                if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
+                    self.desired_add_sta_flags.remove(name)
+                    self.desired_add_sta_flags_mask.remove(name)
+            self.desired_add_sta_flags.append(types[security_type])
+            self.desired_add_sta_flags_mask.append(types[security_type])
+
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
             self.set_command_flag("add_sta", types[security_type], 1)
