@@ -785,8 +785,10 @@ class WifiMonitor:
                 "shelf": 1, 
                 "resource": resource_,
                 "radio": radio_,
-                "mode": 0, #0 for AUTO or "NA"
+                "freqency":5785,
+                "mode": "NA", #0 for AUTO or "NA"
                 "channel": channel
+                
             }
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data= data)
 
