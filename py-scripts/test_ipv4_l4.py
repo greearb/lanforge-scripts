@@ -127,9 +127,8 @@ class IPV4L4(LFCliBase):
                 break
             old_rx_values = new_rx_values
             cur_time = datetime.datetime.now()
-
-        # test for valid url, no 404s
-        # new script; desired minimum urls for 10 min
+        if passes == expected_passes:
+            self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
         self.cx_profile.stop_cx()
