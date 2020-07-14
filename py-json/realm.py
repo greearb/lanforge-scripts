@@ -822,14 +822,16 @@ class WifiMonitor:
         down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", down_request)
 
-    def start_sniff(self):
+    def start_sniff(self, capname=None):
+        if capname is None:
+            raise ValueError("Need a capture file name")
         data = {
                 "shelf": 1, 
                 "resource": 1,
                 "port": self.monitor_name,
                 "display": "NA",
                 "flags": 0x2,
-                "outfile": "/home/lanforge/Documents/out.cap",
+                "outfile": capname,
                 "duration": 45 
             }
         self.local_realm.json_post("/cli-json/sniff_port", _data= data)
@@ -862,7 +864,7 @@ class StationProfile:
         self.security = security
         self.local_realm = local_realm
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []
@@ -911,6 +913,7 @@ class StationProfile:
 
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
+            # unset any other security flag before setting our present flags
             self.set_command_flag("add_sta", types[security_type], 1)
             self.add_sta_data["key"] = passwd
 
@@ -1046,7 +1049,7 @@ class StationProfile:
             self.desired_add_sta_flags.append("create_admin_down")
 
         # create stations down, do set_port on them, then set stations up
-        self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+        self.add_sta_data["flags"]      = self.add_named_flags(self.desired_add_sta_flags,      add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio
         self.add_sta_data["resource"] = resource
