@@ -869,19 +869,19 @@ class StationProfile:
 
     # TODO: create use_wpa3()
 
-    def use_wpa2(self, on=False, ssid=None, passwd=None):
+    def use_security(self, security_type, ssid=None, passwd=None):
+        security_type = security_type.lower()
+        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3"}
         self.add_sta_data["ssid"] = ssid
-        if on:
+        if security_type in types.keys():
             if (ssid is None) or ("" == ssid):
-                raise ValueError("use_wpa2: WPA2 requires ssid")
+                raise ValueError("use_security: %s requires ssid" % security_type)
             if (passwd is None) or ("" == passwd):
-                raise ValueError("use_wpa2: WPA2 requires passphrase or [BLANK]")
+                raise ValueError("use_security: %s requires passphrase or [BLANK]" % security_type)
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
-            self.set_command_flag("add_sta", "wpa2_enable", 1)
+            self.set_command_flag("add_sta", types[security_type], 1)
             self.add_sta_data["key"] = passwd
-        else:
-            self.set_command_flag("add_sta", "wpa2_enable", 0)
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
