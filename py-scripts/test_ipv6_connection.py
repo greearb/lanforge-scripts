@@ -44,8 +44,7 @@ class IPv6Test(LFCliBase):
         self.station_profile.mode = 0
 
     def build(self):
-        if self.security == "wpa2":
-            self.station_profile.use_wpa2(True, self.ssid, self.password)
+        self.station_profile.use_security(self.security, self.ssid, self.password)
         self.profile.set_number_template(self.prefix)
         print("Creating stations")
         self.profile.set_command_flag("add_sta", "create_admin_down", 1)

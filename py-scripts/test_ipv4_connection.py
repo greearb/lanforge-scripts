@@ -43,8 +43,7 @@ class IPv4Test(LFCliBase):
 
     def build(self):
         # Build stations
-        if self.security == "wpa2":
-            self.station_profile.use_wpa2(True, self.ssid, self.password)
+        self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
