@@ -897,7 +897,7 @@ class StationProfile:
     # TODO: create use_wpa3()
 
     def use_security(self, security_type, ssid=None, passwd=None):
-        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3"}
+        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
         self.add_sta_data["ssid"] = ssid
         if security_type in types.keys():
             if (ssid is None) or ("" == ssid):
@@ -908,14 +908,17 @@ class StationProfile:
                 if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
                     self.desired_add_sta_flags.remove(name)
                     self.desired_add_sta_flags_mask.remove(name)
-            self.desired_add_sta_flags.append(types[security_type])
-            self.desired_add_sta_flags_mask.append(types[security_type])
-
+            if security_type != "open":
+                self.desired_add_sta_flags.append(types[security_type])
+                #self.set_command_flag("add_sta", types[security_type], 1)
+                self.desired_add_sta_flags_mask.append(types[security_type])
+            else:
+                passwd = "[BLANK]"
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
             # unset any other security flag before setting our present flags
-            self.set_command_flag("add_sta", types[security_type], 1)
-            self.add_sta_data["key"] = passwd
+            
+            #self.add_sta_data["key"] = passwd
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
