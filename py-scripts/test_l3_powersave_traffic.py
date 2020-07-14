@@ -58,8 +58,7 @@ class L3PowersaveTraffic(LFCliBase):
 
 
     def build(self):
- 
-        self.station_profile.use_wpa2(False, self.ssid, self.password)
+        self.station_profile.use_security("open", self.ssid, passwd=None)
         self.station_profile.set_number_template(self.prefix)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -70,7 +69,8 @@ class L3PowersaveTraffic(LFCliBase):
 
         #pprint.pprint(channel)
         self.newMonitor.create(resource_=1, channel=157, radio_= "wiphy1", name_="moni0")
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=True)
+        exit(1)
        # station_channel = self.json_get("/port/1/%s/%s")
        # pprint.pprint(station_channel)
         
@@ -124,7 +124,7 @@ class L3PowersaveTraffic(LFCliBase):
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         #admin up on new monitor
         self.newMonitor.admin_up()
-        self.newMonitor.start_sniff()
+        self.newMonitor.start_sniff("/home/lanforge/Documents/out2.cap")
         #admin up on station
         self.station_profile.admin_up(resource=1)
         #self.newMonitor.set_flag()
