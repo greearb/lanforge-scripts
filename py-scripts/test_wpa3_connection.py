@@ -5,12 +5,6 @@ import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-#print("single dot")
-#print(os.path.abspath('.'))
-#print("double dot")
-#print(os.path.abspath('..'))
-#print("done printing")
-#exit(1)
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 import LANforge
