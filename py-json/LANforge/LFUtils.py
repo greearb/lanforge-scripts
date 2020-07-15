@@ -159,7 +159,7 @@ def portDownRequest(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
-    print("portDownRequest")
+    
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -169,6 +169,7 @@ def portDownRequest(resource_id, port_name, debug_on=False):
         "report_timer": REPORT_TIMER_MS_FAST,
     }
     if (debug_on):
+        print("Port down request")
         debug_printer.pprint(data)
     return data
 

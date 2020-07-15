@@ -52,13 +52,13 @@ class L3PowersaveTraffic(LFCliBase):
                                                     security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
-        self.newMonitor = realm.WifiMonitor(self.lfclient_url, self.local_realm,debug_= _debug_on)
+        self.new_monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm,debug_= _debug_on)
         
 
 
 
     def build(self):
-        self.station_profile.use_security("open", self.ssid, passwd=None)
+        self.station_profile.use_security("open", ssid=self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.prefix)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -67,10 +67,8 @@ class L3PowersaveTraffic(LFCliBase):
         #channel = self.json_get("/port/1/%s/%s/"%(1,"wiphy0"))
         #rint("The channel name is...")
 
-        #pprint.pprint(channel)
-        self.newMonitor.create(resource_=1, channel=157, radio_= "wiphy1", name_="moni0")
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=True)
-        exit(1)
+        self.new_monitor.create(resource_=1, channel=157, radio_= "wiphy1", name_="moni0")
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
        # station_channel = self.json_get("/port/1/%s/%s")
        # pprint.pprint(station_channel)
         
@@ -123,11 +121,16 @@ class L3PowersaveTraffic(LFCliBase):
         cur_time = datetime.datetime.now()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         #admin up on new monitor
-        self.newMonitor.admin_up()
-        self.newMonitor.start_sniff("/home/lanforge/Documents/out2.cap")
+        self.new_monitor.admin_up()
+        now = datetime.datetime.now()
+        date_time = now.strftime("%Y-%m-%d-%H%M%S")
+        curr_mon_name = self.new_monitor.monitor_name
+        #("date and time: ",date_time)	
+        self.new_monitor.start_sniff("/home/lanforge/Documents/"+curr_mon_name+"-"+date_time+".cap")
         #admin up on station
+
         self.station_profile.admin_up(resource=1)
-        #self.newMonitor.set_flag()
+        #self.new_monitor.set_flag()
         self.__set_all_cx_state("RUNNING")
 
         while cur_time < end_time:
@@ -140,7 +143,7 @@ class L3PowersaveTraffic(LFCliBase):
 
     def stop(self):
         #switch off new monitor
-        self.newMonitor.admin_down()
+        self.new_monitor.admin_down()
         self.__set_all_cx_state("STOPPED")
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
@@ -149,7 +152,7 @@ class L3PowersaveTraffic(LFCliBase):
 
    
     def cleanup(self):
-        self.newMonitor.cleanup()
+        self.new_monitor.cleanup()
         self.cx_prof_download.cleanup()
         self.cx_prof_upload.cleanup()
         self.station_profile.cleanup(resource=1,desired_stations=self.sta_list)     
@@ -172,6 +175,6 @@ def main():
     ip_powersave_test.cleanup()
 
 if __name__ == "__main__":
-    #main(sys.argv[1:])
+    
     main()
 

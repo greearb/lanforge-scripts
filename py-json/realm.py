@@ -595,7 +595,7 @@ class L3CXProfile(LFCliBase):
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
-        print("post_data", cx_post_data)
+        #print("post_data", cx_post_data)
         for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
@@ -770,7 +770,7 @@ class WifiMonitor:
         self.monitor_name = None
         self.resource = resource_
         self.flag_names = []
-        self.flag_mask_names = []
+        self.flag_masgitk_names = []
         self.flags_mask = add_monitor.default_flags_mask
         self.aid = "NA" # used when sniffing /ax radios
         self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
@@ -951,8 +951,10 @@ class StationProfile:
                 return
             if (value == 1) and (param_name not in self.desired_add_sta_flags):
                 self.desired_add_sta_flags.append(param_name)
+                self.desired_add_sta_flags_mask.append(param_name)
             elif value == 0:
                 self.desired_add_sta_flags.remove(param_name)
+                self.desired_add_sta_flags_mask.append(param_name)
 
         elif command_name == "set_port":
             if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags) and (param_name not in set_port.set_port_interest_flags):
