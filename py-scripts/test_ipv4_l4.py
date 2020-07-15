@@ -108,6 +108,7 @@ class IPV4L4(LFCliBase):
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
+        print("Starting Test...")
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(minutes=1)
             while cur_time < interval_time:
