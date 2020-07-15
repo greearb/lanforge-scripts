@@ -770,7 +770,7 @@ class WifiMonitor:
         self.monitor_name = None
         self.resource = resource_
         self.flag_names = []
-        self.flag_masgitk_names = []
+        self.flag_mask_names = []
         self.flags_mask = add_monitor.default_flags_mask
         self.aid = "NA" # used when sniffing /ax radios
         self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
