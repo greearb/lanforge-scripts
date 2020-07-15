@@ -878,6 +878,7 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
+            
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -917,6 +918,8 @@ class StationProfile:
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
             # unset any other security flag before setting our present flags
+            if security_type == "wpa3":
+                self.set_command_param("add_sta", "ieee80211w", 2)
             
             #self.add_sta_data["key"] = passwd
 
@@ -1021,7 +1024,7 @@ class StationProfile:
         if current_stations is not None and current_stations['interfaces'] is not None:
             print("Cleaning up stations")
             for station in current_stations['interfaces']:
-                for eid, info in station.items():
+                for eid,info in station.items():
                     if info['alias'] in desired_stations:
                         req_url = "cli-json/rm_vlan"
                         data = {
@@ -1057,6 +1060,7 @@ class StationProfile:
         self.add_sta_data["flags"]      = self.add_named_flags(self.desired_add_sta_flags,      add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio
+       
         self.add_sta_data["resource"] = resource
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
