@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
-
+import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
@@ -20,7 +20,7 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
-                 target_requests_per_ten=600, prefix="00000", resource=1, num_tests=1,
+                 target_requests_per_ten=600, number_template="00000", resource=1, num_tests=1,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -32,19 +32,22 @@ class IPV4L4(LFCliBase):
         self.password = password
         self.url = url
         self.requests_per_ten = requests_per_ten
-        self.prefix = prefix
+        self.number_template = number_template
         self.sta_list = station_list
         self.resource = resource
         self.num_tests = num_tests
         self.target_requests_per_ten = target_requests_per_ten
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                            security=self.security, number_template_=self.prefix, mode=0, up=False,
-                                            dhcp=True,
-                                            debug_=False)
-        self.cx_profile = realm.L4CXProfile(lfclient_host=self.host, lfclient_port=self.port,
-                                            local_realm=self.local_realm, debug_=False)
+        self.station_profile = self.local_realm.new_station_profile()
+        self.cx_profile = self.local_realm.new_l4_cx_profile()
+
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
@@ -76,13 +79,13 @@ class IPV4L4(LFCliBase):
 
     def build(self):
         # Build stations
-        self.profile.use_wpa2(True, self.ssid, self.password)
-        self.profile.set_number_template(self.prefix)
+        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.profile.set_command_param("set_port", "report_timer", 1500)
-        self.profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
         temp_sta_list = []
         for station in range(len(self.sta_list)):
@@ -91,13 +94,16 @@ class IPV4L4(LFCliBase):
         self.cx_profile.create(ports=temp_sta_list, sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
+        print("Starting test")
         cur_time = datetime.datetime.now()
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
         expected_passes = 0
-        self.profile.admin_up(1)
-        self.local_realm.wait_for_ip()
-        self.__set_all_cx_state("RUNNING")
+        self.station_profile.admin_up(1)
+        temp_stas = self.sta_list.copy()
+        temp_stas.append("eth1")
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
+        self.cx_profile.start_cx()
         for test in range(self.num_tests):
             expected_passes += 1
             while cur_time < interval_time:
@@ -118,53 +124,15 @@ class IPV4L4(LFCliBase):
             self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
-        self.__set_all_cx_state("STOPPED")
+        self.cx_profile.stop_cx()
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
             url = "json-cli/set_port"
             self.json_post(url, data)
 
-    def cleanup(self):
-        layer4_list = self.json_get("layer4/list?fields=name")
-        print(layer4_list)
-
-        if layer4_list is not None and 'endpoint' in layer4_list:
-            if layer4_list['endpoint'] is not None:
-
-                for name in self.sta_list:
-                    req_url = "cli-json/rm_cx"
-                    data = {
-                        "test_mgr": "default_tm",
-                        "cx_name": "CX_" + name + "_l4"
-                    }
-                    self.json_post(req_url, data, True)
-
-                time.sleep(5)
-                for endps in list(layer4_list['endpoint']):
-                    for name, info in endps.items():
-                        print(name)
-
-                        req_url = "cli-json/rm_endp"
-                        data = {
-                            "endp_name": name
-                        }
-                        self.json_post(req_url, data, True)
-
-        port_list = self.local_realm.station_list()
-        sta_list = []
-        for item in list(port_list):
-            if "sta" in list(item)[0]:
-                sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
-
-        for sta_name in sta_list:
-            req_url = "cli-json/rm_vlan"
-            data = {
-                "shelf": 1,
-                "resource": self.resource,
-                "port": sta_name
-            }
-            self.json_post(req_url, data, self.debug)
-            time.sleep(.05)
+    def cleanup(self, sta_list):
+        self.cx_profile.cleanup()
+        self.station_profile.cleanup(self.resource, sta_list)
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
@@ -172,12 +140,12 @@ class IPV4L4(LFCliBase):
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=9, padding_number_=10000)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPV4L4(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                     security="open", station_list=station_list, url="dl http://10.40.0.1 /dev/null", num_tests=1,
+                     security="wpa2", station_list=station_list, url="dl http://10.40.0.1 /dev/null", num_tests=1,
                      target_requests_per_ten=600,
                      requests_per_ten=600)
-    ip_test.cleanup()
+    ip_test.cleanup(station_list)
     ip_test.build()
     ip_test.start()
     ip_test.stop()
@@ -185,7 +153,7 @@ def main():
         print(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    ip_test.cleanup()
+    ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all endpoints met or exceeded 90% of the target rate")
 

@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
+from LANforge import LFUtils
 import realm
 import time
 import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, num_stations, side_a_min_rate=56, side_b_min_rate=56, side_a_max_rate=0,
-                 side_b_max_rate=0, prefix="00000", test_duration="5m",
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1,
+                 side_a_min_rate=56, side_a_max_rate=0,
+                 side_b_min_rate=56, side_b_max_rate=0,
+                 number_template="00000", test_duration="5m",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -27,33 +30,32 @@ class IPV4VariableTime(LFCliBase):
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.sta_list = sta_list
         self.security = security
         self.password = password
-        self.num_stations = num_stations
-        self.prefix = prefix
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
-                                                    security=self.security, number_template_=self.prefix, mode=0, up=True,
-                                                    dhcp=True,
-                                                    debug_=False)
-        self.cx_profile = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=side_a_min_rate,
-                                            side_b_min_bps=side_b_min_rate, side_a_max_bps=side_a_max_rate,
-                                            side_b_max_bps=side_b_max_rate, debug_=False)
+        self.number_template = number_template
+        self.resource = resource
+        self.name_prefix = name_prefix
         self.test_duration = test_duration
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.station_profile = self.local_realm.new_station_profile()
+        self.cx_profile = self.local_realm.new_l3_cx_profile()
 
-    def __set_all_cx_state(self, state, sleep_time=5):
-        print("Setting CX States to %s" % state)
-        cx_list = list(self.local_realm.cx_list())
-        for cx_name in cx_list:
-            if cx_name != 'handler' or cx_name != 'uri':
-                req_url = "cli-json/set_cx_state"
-                data = {
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name,
-                    "cx_state": state
-                }
-                self.json_post(req_url, data)
-        time.sleep(sleep_time)
+        self.station_profile.lfclient_url = self.lfclient_url
+        self.station_profile.ssid = self.ssid
+        self.station_profile.ssid_pass = self.password,
+        self.station_profile.security = self.security
+        self.station_profile.number_template_ = self.number_template
+        self.station_profile.mode = 0
+
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
+
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
@@ -84,11 +86,15 @@ class IPV4VariableTime(LFCliBase):
         else:
             return False
 
-    def run_test(self, print_pass=False, print_fail=False):
+    def start(self, print_pass=False, print_fail=False):
+        self.station_profile.admin_up(self.resource)
+        temp_stas = self.sta_list.copy()
+        temp_stas.append("eth1")
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
         cur_time = datetime.datetime.now()
         old_cx_rx_values = self.__get_rx_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.__set_all_cx_state("RUNNING")
+        self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
@@ -114,79 +120,60 @@ class IPV4VariableTime(LFCliBase):
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
-        self.__set_all_cx_state("STOPPED")
+    def stop(self):
+        self.cx_profile.stop_cx()
+        for sta_name in self.sta_list:
+            data = LFUtils.portDownRequest(1, sta_name)
+            url = "json-cli/set_port"
+            self.json_post(url, data)
 
-    def cleanup(self):
-        print("Cleaning up stations")
-        port_list = self.local_realm.station_list()
-        sta_list = []
-        for item in list(port_list):
-            # print(list(item))
-            if "sta" in list(item)[0]:
-                sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
+    def cleanup(self, sta_list):
+        self.cx_profile.cleanup()
+        self.station_profile.cleanup(self.resource, sta_list)
+        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+                                           debug=self.debug)
 
-        for sta_name in sta_list:
-            req_url = "cli-json/rm_vlan"
-            data = {
-                "shelf": 1,
-                "resource": 1,
-                "port": sta_name
-            }
-            # print(data)
-            self.json_post(req_url, data)
-
-        cx_list = list(self.local_realm.cx_list())
-        if cx_list is not None:
-            print("Cleaning up cxs")
-            for cx_name in cx_list:
-                if cx_name != 'handler' or cx_name != 'uri':
-                    req_url = "cli-json/rm_cx"
-                    data = {
-                        "test_mgr": "default_tm",
-                        "cx_name": cx_name
-                    }
-                    self.json_post(req_url, data)
-
-        print("Cleaning up endps")
-        endp_list = self.json_get("/endp")
-        if endp_list is not None:
-            endp_list = list(endp_list['endpoint'])
-            for endp_name in range(len(endp_list)):
-                name = list(endp_list[endp_name])[0]
-                req_url = "cli-json/rm_endp"
-                data = {
-                    "endp_name": name
-                }
-                self.json_post(req_url, data)
-
-    def run(self):
-        sta_list = []
-
-        self.station_profile.use_wpa2(True, self.ssid, self.password)
-        self.station_profile.set_number_template(self.prefix)
+    def build(self):
+        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.station_profile.create(resource=1, radio="wiphy0", num_stations=self.num_stations, debug=False)
-
-        for name in list(self.local_realm.station_list()):
-            if "sta" in list(name)[0]:
-                sta_list.append(list(name)[0])
-
-        print("sta_list", sta_list)
-        self.cx_profile.create(endp_type="lf_udp", side_a=sta_list, side_b="1.eth1", sleep_time=.5)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        temp_sta_list = []
+        for station in range(len(self.sta_list)):
+            temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.cx_profile.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
+        self._pass("PASS: Station build finished")
 
 
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, prefix="00", ssid="jedway-wpa2-x2048-4-4",
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, number_template="00", sta_list=station_list,
+                                   name_prefix="var_time",
+                                   ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
-                                   security="open", num_stations=10, test_duration="5m",
+                                   resource=1,
+                                   security="wpa2", test_duration="5m",
                                    side_a_min_rate=256, side_b_min_rate=256)
-    ip_var_test.cleanup()
-    ip_var_test.run()
-    time.sleep(5)
-    ip_var_test.run_test(print_pass=True, print_fail=True)
-    ip_var_test.cleanup()
+
+    ip_var_test.cleanup(station_list)
+    ip_var_test.build()
+    if not ip_var_test.passes():
+        print(ip_var_test.get_fail_message())
+        exit(1)
+    ip_var_test.start(False, False)
+    ip_var_test.stop()
+    if not ip_var_test.passes():
+        print(ip_var_test.get_fail_message())
+        exit(1)
+    time.sleep(30)
+    ip_var_test.cleanup(station_list)
+    if ip_var_test.passes():
+        print("Full test passed, all connections increased rx bytes")
 
 
 if __name__ == "__main__":

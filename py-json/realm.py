@@ -10,6 +10,8 @@ from LANforge import add_sta
 from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from generic_cx import GenericCx
+from LANforge import add_monitor
+from LANforge.add_monitor import *
 import datetime
 
 
@@ -34,7 +36,7 @@ class Realm(LFCliBase):
         while (last_response != "YES"):
             response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
             #LFUtils.debug_printer.pprint(response_json)
-            last_response = response_json[0]["LAST"]["response"];
+            last_response = response_json[0]["LAST"]["response"]
             if (last_response != "YES"):
                 last_response = None
                 response_json = []
@@ -201,11 +203,11 @@ class Realm(LFCliBase):
             return info
         return [1, int(info[0]), info[1]]
 
-    def wait_for_ip(self):
+    def wait_for_ip(self, resource, station_list, ipv6=False):
         num_ports = 0
         num_ips = 0
         print("Waiting for ips...")
-        response = super().json_get("/port/list?fields=alias,ip,port+type")
+        response = super().json_get("/port/1/%s/%s?fields=alias,ip,port+type" % (resource, ",".join(station_list)))
         if (response is None) or ("interfaces" not in response):
             print("station_list: incomplete response:")
             pprint(response)
@@ -213,23 +215,37 @@ class Realm(LFCliBase):
 
         for x in range(len(response['interfaces'])):
             for k, v in response['interfaces'][x].items():
-                if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" \
+                        or v['port type'] == "Ethernet":
                     num_ports += 1
+        if ipv6:
+            num_ports -= 1  # Prevents eth0 from being counted, preventing infinite loop
 
         while num_ips != num_ports:
             num_ips = 0
-            response = super().json_get("/port/list?fields=alias,ip,port+type")
+            response = super().json_get("/port/1/%s/%s?fields=alias,ip,port+type,ipv6+address" %
+                                        (resource, ",".join(station_list)))
             if (response is None) or ("interfaces" not in response):
                 print("station_list: incomplete response:")
                 pprint(response)
                 exit(1)
 
-            for x in range(len(response['interfaces'])):
-                for k, v in response['interfaces'][x].items():
-                    if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
-                        if v['ip'] != '0.0.0.0':
-                            num_ips += 1
-            time.sleep(1)
+            if not ipv6:
+                for x in range(len(response['interfaces'])):
+                    for k, v in response['interfaces'][x].items():
+                        if "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" or v['port type'] == "Ethernet":
+                            if v['ip'] != '0.0.0.0':
+                                num_ips += 1
+                time.sleep(1)
+            if ipv6:
+                for x in range(len(response['interfaces'])):
+                    for k, v in response['interfaces'][x].items():
+                        if v['alias'] != "eth0" and "wlan" not in v['alias'] and v['port type'] == "WIFI-STA" \
+                                or v['port type'] == "Ethernet":
+                            if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
+                                    and v['ipv6 address'] != 'AUTO':
+                                num_ips += 1
+                time.sleep(1)
 
     def parse_time(self, time_string):
         if isinstance(time_string, str):
@@ -252,13 +268,58 @@ class Realm(LFCliBase):
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_time
 
+    def remove_all_stations(self, resource):
+        port_list = self.station_list()
+        sta_list = []
+        if sta_list is not None:
+            print("Removing all stations")
+            for item in list(port_list):
+                if "sta" in list(item)[0]:
+                    sta_list.append(self.name_to_eid(list(item)[0])[2])
+
+            for sta_name in sta_list:
+                req_url = "cli-json/rm_vlan"
+                data = {
+                    "shelf": 1,
+                    "resource": resource,
+                    "port": sta_name
+                }
+                self.json_post(req_url, data)
+
+    def remove_all_endps(self):
+        endp_list = self.json_get("/endp")
+        if endp_list is not None:
+            print("Removing all endps")
+            endp_list = list(endp_list['endpoint'])
+            for endp_name in range(len(endp_list)):
+                name = list(endp_list[endp_name])[0]
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": name
+                }
+                self.json_post(req_url, data)
+
+    def remove_all_cxs(self):
+        cx_list = list(self.cx_list())
+        not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
+        if cx_list is not None:
+            print("Removing all cxs")
+            for cx_name in cx_list:
+                if cx_name in not_cx:
+                    continue
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name
+                }
+                self.json_post(req_url, data)
 
     def parse_link(self, link):
         link = self.lfclient_url + link
         info = ()
 
     def new_station_profile(self):
-        station_prof = StationProfile(self.lfclient_url, debug_=self.debug)
+        station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug)
         return station_prof
 
     def new_l3_cx_profile(self):
@@ -333,7 +394,7 @@ class L3CXProfile(LFCliBase):
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
-                "cx_state":"RUNNING"
+                "cx_state": "RUNNING"
             }, debug_=self.debug)
             print(".", end='')
         print("")
@@ -344,10 +405,28 @@ class L3CXProfile(LFCliBase):
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
-                "cx_state":"STOPPED"
+                "cx_state": "STOPPED"
             }, debug_=self.debug)
             print(".", end='')
         print("")
+
+    def cleanup(self):
+        print("Cleaning up cxs and endpoints")
+        if len(self.created_cx) != 0:
+            for cx_name in self.created_cx.keys():
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name
+                }
+                self.json_post(req_url, data)
+
+                for side in range(len(self.created_cx[cx_name])):
+                    req_url = "cli-json/rm_endp"
+                    data = {
+                        "endp_name": self.created_cx[cx_name][side]
+                    }
+                    self.json_post(req_url, data)
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False):
         if self.debug:
@@ -516,7 +595,7 @@ class L3CXProfile(LFCliBase):
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
-        print("post_data", cx_post_data)
+        #print("post_data", cx_post_data)
         for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
@@ -536,6 +615,7 @@ class L4CXProfile(LFCliBase):
         self.url = "http://localhost/"
         self.requests_per_ten = 600
         self.local_realm = local_realm
+        self.created_cx = {}
 
     def check_errors(self, debug=False):
         fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
@@ -560,6 +640,45 @@ class L4CXProfile(LFCliBase):
                 print(list(debug_info), " Endps in this list showed errors getting to %s " % self.url)
                 return False
 
+    def start_cx(self):
+        print("Starting CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "RUNNING"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def stop_cx(self):
+        print("Stopping CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "STOPPED"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def cleanup(self):
+        print("Cleaning up cxs and endpoints")
+        if len(self.created_cx) != 0:
+            for cx_name in self.created_cx.keys():
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": self.created_cx[cx_name]
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": cx_name
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
@@ -568,10 +687,6 @@ class L4CXProfile(LFCliBase):
                 shelf = self.local_realm.name_to_eid(port_name)[0]
                 resource = self.local_realm.name_to_eid(port_name)[1]
                 name = self.local_realm.name_to_eid(port_name)[2]
-            elif len(self.local_realm.name_to_eid(port_name)) == 2:
-                shelf = 1
-                resource = self.local_realm.name_to_eid(port_name)[0]
-                name = self.local_realm.name_to_eid(port_name)[1]
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
             endp_data = {
@@ -589,12 +704,13 @@ class L4CXProfile(LFCliBase):
             time.sleep(sleep_time)
 
             endp_data = {
-                "alias": "CX_" + self.local_realm.name_to_eid(port_name)[-1] + "_l4",
+                "alias": "CX_" + name + "_l4",
                 "test_mgr": "default_tm",
-                "tx_endp": self.local_realm.name_to_eid(port_name)[-1] + "_l4",
+                "tx_endp": name + "_l4",
                 "rx_endp": "NA"
             }
             cx_post_data.append(endp_data)
+            self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
@@ -645,6 +761,85 @@ class GenCXProfile(LFCliBase):
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
+class WifiMonitor:
+    def __init__(self, lfclient_url, local_realm, up=True, debug_=False, resource_=1):
+        self.debug = debug_
+        self.lfclient_url = lfclient_url
+        self.up = up
+        self.local_realm = local_realm
+        self.monitor_name = None
+        self.resource = resource_
+        self.flag_names = []
+        self.flag_mask_names = []
+        self.flags_mask = add_monitor.default_flags_mask
+        self.aid = "NA" # used when sniffing /ax radios
+        self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
+
+    def create(self, resource_=1,channel=None, radio_="wiphy0", name_="moni0" ):
+        print("Creating monitor " + name_)
+        self.monitor_name = name_
+        computed_flags = 0
+        for flag_n in self.flag_names:
+            computed_flags += add_monitor.flags[flag_n]
+        data ={
+                "shelf": 1, 
+                "resource": resource_,
+                "radio": radio_,
+                "freqency":5785,
+                "mode": "NA", #0 for AUTO or "NA"
+                "channel": channel
+                
+            }
+        self.local_realm.json_post("/cli-json/set_wifi_radio", _data= data)
+
+        self.local_realm.json_post("/cli-json/add_monitor", {
+            "shelf": 1,
+            "resource": resource_,
+            "radio": radio_,
+            "ap_name": self.monitor_name,
+            "flags": computed_flags,
+            "flags_mask": self.flags_mask
+        })
+    def set_flag(self, param_name, value):
+        if (param_name not in add_monitor.flags):
+            raise ValueError("Flag '%s' does not exist for add_monitor, consult add_monitor.py" % param_name)
+        if (value == 1) and (param_name not in self.flag_names):
+            self.flag_names.append(param_name)
+        elif (value == 0) and (param_name in self.flag_names):
+            del self.flag_names[param_name]
+            self.flags_mask |= add_monitor.flags[param_name]
+
+    def cleanup(self):
+        print("Cleaning up monitors")
+        LFUtils.removePort(resource=self.resource, port_name = self.monitor_name, baseurl=self.lfclient_url, debug=self.debug)
+        
+
+    def admin_up(self):
+        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
+        self.local_realm.json_post("/cli-json/set_port", up_request)
+
+    def admin_down(self):
+        down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.monitor_name)
+        self.local_realm.json_post("/cli-json/set_port", down_request)
+
+    def start_sniff(self, capname=None):
+        if capname is None:
+            raise ValueError("Need a capture file name")
+        data = {
+                "shelf": 1, 
+                "resource": 1,
+                "port": self.monitor_name,
+                "display": "NA",
+                "flags": 0x2,
+                "outfile": capname,
+                "duration": 45 
+            }
+        self.local_realm.json_post("/cli-json/sniff_port", _data= data)
+           
+
+               # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
+
+
 
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
@@ -657,7 +852,7 @@ class GenCXProfile(LFCliBase):
 #       profile.build(resource, radio, 64)
 #
 class StationProfile:
-    def __init__(self, lfclient_url, ssid="NA", ssid_pass="NA", security="open", number_template_="00000", mode=0, up=True,
+    def __init__(self, lfclient_url, local_realm, ssid="NA", ssid_pass="NA", security="open", number_template_="00000", mode=0, up=True,
                  dhcp=True, debug_=False):
         self.debug = debug_
         self.lfclient_url = lfclient_url
@@ -667,8 +862,9 @@ class StationProfile:
         self.up = up
         self.dhcp = dhcp
         self.security = security
+        self.local_realm = local_realm
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []
@@ -682,6 +878,7 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
+            
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -700,19 +897,31 @@ class StationProfile:
 
     # TODO: create use_wpa3()
 
-    def use_wpa2(self, on=False, ssid=None, passwd=None):
+    def use_security(self, security_type, ssid=None, passwd=None):
+        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
         self.add_sta_data["ssid"] = ssid
-        if on:
+        if security_type in types.keys():
             if (ssid is None) or ("" == ssid):
-                raise ValueError("use_wpa2: WPA2 requires ssid")
+                raise ValueError("use_security: %s requires ssid" % security_type)
             if (passwd is None) or ("" == passwd):
-                raise ValueError("use_wpa2: WPA2 requires passphrase or [BLANK]")
+                raise ValueError("use_security: %s requires passphrase or [BLANK]" % security_type)
+            for name in types.values():
+                if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
+                    self.desired_add_sta_flags.remove(name)
+                    self.desired_add_sta_flags_mask.remove(name)
+            if security_type != "open":
+                self.desired_add_sta_flags.append(types[security_type])
+                #self.set_command_flag("add_sta", types[security_type], 1)
+                self.desired_add_sta_flags_mask.append(types[security_type])
+            else:
+                passwd = "[BLANK]"
             self.set_command_param("add_sta", "ssid", ssid)
             self.set_command_param("add_sta", "key", passwd)
-            self.set_command_flag("add_sta", "wpa2_enable", 1)
-            self.add_sta_data["key"] = passwd
-        else:
-            self.set_command_flag("add_sta", "wpa2_enable", 0)
+            # unset any other security flag before setting our present flags
+            if security_type == "wpa3":
+                self.set_command_param("add_sta", "ieee80211w", 2)
+            
+            #self.add_sta_data["key"] = passwd
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
@@ -745,8 +954,10 @@ class StationProfile:
                 return
             if (value == 1) and (param_name not in self.desired_add_sta_flags):
                 self.desired_add_sta_flags.append(param_name)
+                self.desired_add_sta_flags_mask.append(param_name)
             elif value == 0:
                 self.desired_add_sta_flags.remove(param_name)
+                self.desired_add_sta_flags_mask.append(param_name)
 
         elif command_name == "set_port":
             if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags) and (param_name not in set_port.set_port_interest_flags):
@@ -808,6 +1019,21 @@ class StationProfile:
             json_response = set_port_r.jsonPost(self.debug)
             time.sleep(0.03)
 
+    def cleanup(self, resource, desired_stations):
+        current_stations = self.local_realm.json_get("port/1/%s/%s?fields=alias" % (resource, ','.join(self.station_names)))
+        if current_stations is not None and current_stations['interfaces'] is not None:
+            print("Cleaning up stations")
+            for station in current_stations['interfaces']:
+                for eid,info in station.items():
+                    if info['alias'] in desired_stations:
+                        req_url = "cli-json/rm_vlan"
+                        data = {
+                            "shelf": 1,
+                            "resource": resource,
+                            "port": info['alias']
+                        }
+                        self.local_realm.json_post(req_url, data)
+
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, resource, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False):
         # try:
@@ -831,9 +1057,10 @@ class StationProfile:
             self.desired_add_sta_flags.append("create_admin_down")
 
         # create stations down, do set_port on them, then set stations up
-        self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+        self.add_sta_data["flags"]      = self.add_named_flags(self.desired_add_sta_flags,      add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio
+       
         self.add_sta_data["resource"] = resource
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)

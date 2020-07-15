@@ -21,9 +21,8 @@ import datetime
 #Currently, this test can only be applied to UDP connections
 class L3PowersaveTraffic(LFCliBase):
 
-    #attributes: station list, side_a_min_rate (and max_rate), side_b_min_rate (and max_rate),
     def __init__(self, host, port, ssid, security, password, station_list, side_a_min_rate=56, side_b_min_rate=56, side_a_max_rate=0,
-                 side_b_max_rate=0, prefix="00000", test_duration="5m",
+                 side_b_max_rate=0, pdu_size = 1000, prefix="00000", test_duration="5m",
                 _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
@@ -33,128 +32,149 @@ class L3PowersaveTraffic(LFCliBase):
         self.password = password
         self.sta_list = station_list
         self.prefix = prefix
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.debug = _debug_on
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False, halt_on_error_=True)
         #upload
-        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=side_a_min_rate,
-                                            side_b_min_bps=0, side_a_max_bps=side_a_max_rate,
-                                            side_b_max_bps=0, debug_=True)
+        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm, 
+                                            side_a_min_bps=side_a_min_rate,side_b_min_bps=0, 
+                                            side_a_max_bps=side_a_max_rate,side_b_max_bps=0, 
+                                            side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size, 
+                                            side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
         
         #download
-        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm, side_a_min_bps=0,
-                                            side_b_min_bps=side_b_min_rate, side_a_max_bps=0,
-                                            side_b_max_bps=side_b_max_rate, debug_=True)
+        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm, 
+                                            side_a_min_bps=0, side_b_min_bps=side_b_min_rate, 
+                                            side_a_max_bps=0,side_b_max_bps=side_b_max_rate, 
+                                            side_a_min_pdu=0, side_a_max_pdu=0,
+                                            side_b_min_pdu=pdu_size,side_b_max_pdu=pdu_size, debug_=False)
         self.test_duration = test_duration
-        self.station_profile = realm.StationProfile(self.lfclient_url, ssid=self.ssid, ssid_pass=self.password,
+        self.station_profile = realm.StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid, ssid_pass=self.password,
                                                     security=self.security, number_template_=self.prefix, mode=0, up=True,
                                                     dhcp=True,
                                                     debug_=False)
-        self.station_profile.admin_up(resource=1)
+        self.new_monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm,debug_= _debug_on)
+        
 
 
 
-    def build(self,UorD):
-        #upload would set TXBPs on A side of endpoint
-        #download would set TXBps on B side of endpoint
-        #build 
-        print("Creating stations for" + UorD +  "traffic") 
-        self.station_profile.use_wpa2(False, self.ssid, self.password)
+    def build(self):
+        self.station_profile.use_security("open", ssid=self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.prefix)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.set_command_flag("add_sta", "power_save_enable", 1)
+        #channel = self.json_get("/port/1/%s/%s/"%(1,"wiphy0"))
+        #rint("The channel name is...")
 
+        self.new_monitor.create(resource_=1, channel=157, radio_= "wiphy1", name_="moni0")
         self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+       # station_channel = self.json_get("/port/1/%s/%s")
+       # pprint.pprint(station_channel)
         
-        self._pass("PASS: Station build for" + UorD + "finished")
+        
+        self._pass("PASS: Station builds finished")
         temp_sta_list = []
         for name in list(self.local_realm.station_list()):
             if "sta" in list(name)[0]:
                 temp_sta_list.append(list(name)[0])
-        print("temp_sta_list", temp_sta_list)
+
+        #print("temp_sta_list", temp_sta_list)
         self.cx_prof_upload.name_prefix = "UDP_up"
         self.cx_prof_download.name_prefix = "UDP_down"
-        print("Beginning create upload")
+        print("Creating upload cx profile ")
         self.cx_prof_upload.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)
-          #create 2 cx profiles
-        print("Beginning create download")
+        print("Creating download cx profile")
         self.cx_prof_download.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.05)
 
+    def __set_all_cx_state(self, state, sleep_time=5):
+        
+        print("Setting CX States to %s" % state)
+        cx_list = list(self.local_realm.cx_list())
+        for cx_name in cx_list:
+            req_url = "cli-json/set_cx_state"
+            data = {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": state
+            }
+            self.json_post(req_url, data)
+        time.sleep(sleep_time)
 
-    def start(self):
+
+    def __get_rx_values(self):
+        cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
+        #print("==============\n", cx_list, "\n==============")
+        cx_rx_map = {}
+        for cx_name in cx_list['endpoint']:
+            if cx_name != 'uri' and cx_name != 'handler':
+                for item, value in cx_name.items():
+                    for value_name, value_rx in value.items():
+                        if value_name == 'rx bytes':
+                            cx_rx_map[item] = value_rx
+        return cx_rx_map
+
+
+    def start(self, print_pass=False, print_fail = False):
         #start one test, measure
         #start second test, measure
-        #start upload, 
-        pass
+        cur_time = datetime.datetime.now()
+        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        #admin up on new monitor
+        self.new_monitor.admin_up()
+        now = datetime.datetime.now()
+        date_time = now.strftime("%Y-%m-%d-%H%M%S")
+        curr_mon_name = self.new_monitor.monitor_name
+        #("date and time: ",date_time)	
+        self.new_monitor.start_sniff("/home/lanforge/Documents/"+curr_mon_name+"-"+date_time+".cap")
+        #admin up on station
+
+        self.station_profile.admin_up(resource=1)
+        #self.new_monitor.set_flag()
+        self.__set_all_cx_state("RUNNING")
+
+        while cur_time < end_time:
+            #DOUBLE CHECK  
+            interval_time = cur_time + datetime.timedelta(minutes=1)
+            while cur_time < interval_time:
+                cur_time = datetime.datetime.now()
+                time.sleep(1)
+
 
     def stop(self):
-        pass
-        
-    
+        #switch off new monitor
+        self.new_monitor.admin_down()
+        self.__set_all_cx_state("STOPPED")
+        for sta_name in self.sta_list:
+            data = LFUtils.portDownRequest(1, sta_name)
+            url = "json-cli/set_port"
+            self.json_post(url, data)
+
+   
     def cleanup(self):
-        """print("Cleaning up stations")
-        port_list = self.local_realm.station_list()
-        sta_list = []
-        for item in list(port_list):
-            # print(list(item))
-            if "sta" in list(item)[0]:
-                sta_list.append(self.local_realm.name_to_eid(list(item)[0])[2])
-
-        for sta_name in sta_list:
-            req_url = "cli-json/rm_vlan"
-            data = {
-                "shelf": 1,
-                "resource": 1,
-                "port": sta_name
-            }
-            # print(data)
-            self.json_post(req_url, data)
-
-        cx_list = list(self.local_realm.cx_list())
-        if cx_list is not None:
-            print("Cleaning up cxs")
-            for cx_name in cx_list:
-                if cx_name != 'handler' or cx_name != 'uri':
-                    req_url = "cli-json/rm_cx"
-                    data = {
-                        "test_mgr": "default_tm",
-                        "cx_name": cx_name
-                    }
-                    self.json_post(req_url, data)
-
-        print("Cleaning up endps")
-        endp_list = self.json_get("/endp")
-        if endp_list is not None:
-            endp_list = list(endp_list['endpoint'])
-            for endp_name in range(len(endp_list)):
-                name = list(endp_list[endp_name])[0]
-                req_url = "cli-json/rm_endp"
-                data = {
-                    "endp_name": name
-                }
-                self.json_post(req_url, data) """
-        pass
-        
-        
+        self.new_monitor.cleanup()
+        self.cx_prof_download.cleanup()
+        self.cx_prof_upload.cleanup()
+        self.station_profile.cleanup(resource=1,desired_stations=self.sta_list)     
+            
 
 def main():
-    #param for TCP or UDP for tests
+
     lfjson_host = "localhost"
     lfjson_port = 8080
-    #creates object of class L3PowersaveTraffic, inputs rates for upload and download
-    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
-    
+    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)    
+    station_list = ["sta0000","sta0001"]
     ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid = "jedway-open" , security = "open", 
-                        password ="[BLANK]", station_list = ["sta01", "sta02"] , side_a_min_rate=5600, side_b_min_rate=5600, side_a_max_rate=0,
-                        side_b_max_rate=0, prefix="00000", test_duration="5m",
-                        _debug_on=True, _exit_on_error=True, _exit_on_fail=True)
-    #ip_powersave_test.cleanup()
-    ip_powersave_test.build("upload")
-    # ip_powersave_test.start("upload")
-    #ip_powersave_test.start("download")
-    #ip_powersave_test.cleanup()
+                        password ="[BLANK]", station_list = station_list , side_a_min_rate=2000, side_b_min_rate=2000, side_a_max_rate=0,
+                        side_b_max_rate=0, prefix="00000", test_duration="30s",
+                        _debug_on=False, _exit_on_error=True, _exit_on_fail=True)
+    ip_powersave_test.cleanup()       
+    ip_powersave_test.build()
+    ip_powersave_test.start()
+    ip_powersave_test.stop()
+    ip_powersave_test.cleanup()
 
 if __name__ == "__main__":
-    #main(sys.argv[1:])
+    
     main()
 
