@@ -17,7 +17,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, number_template="00000", _debug_on=True,
+    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, number_template="00000", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -49,8 +49,7 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(resource=1, radio="wiphy2", sta_names_=self.sta_list, debug=True)
-        exit(1)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
