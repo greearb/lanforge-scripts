@@ -5,7 +5,12 @@ import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-
+#print("single dot")
+#print(os.path.abspath('.'))
+#print("double dot")
+#print(os.path.abspath('..'))
+#print("done printing")
+#exit(1)
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 import LANforge
@@ -43,6 +48,7 @@ class IPv4Test(LFCliBase):
 
     def build(self):
         # Build stations
+        #print("We've gotten into the build stations function")
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
@@ -106,7 +112,8 @@ def main():
     lfjson_port = 8080
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa3-44", password="jedway-wpa3-44",
-                       security="wpa3", sta_list=station_list)
+                       security="wpa3", sta_list=station_list,_debug_on=False)
+    #print("created IPv4Test object")
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
