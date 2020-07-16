@@ -299,7 +299,11 @@ class Realm(LFCliBase):
                 }
                 self.json_post(req_url, data)
 
-    def remove_all_cxs(self):
+    def remove_all_cxs(self,remove_all_endpoints=False):
+        # remove cross connects
+        # remove endpoints
+        # nc show endpoints
+        # nc show cross connects
         cx_list = list(self.cx_list())
         not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
         if cx_list is not None:
@@ -313,6 +317,19 @@ class Realm(LFCliBase):
                     "cx_name": cx_name
                 }
                 self.json_post(req_url, data)
+
+        if remove_all_endpoints:
+            self.remove_all_endps()
+            req_url = "cli-json/nc_show_endpoints"
+            data = {
+                "endpoint":"all"
+            }
+            self.json_post(req_url, data)
+            req_url = "cli-json/show_cx"
+            data ={
+                "test_mgr":"all", 
+                "cross_connect":"all"
+            }
 
     def parse_link(self, link):
         link = self.lfclient_url + link
