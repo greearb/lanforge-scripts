@@ -193,9 +193,9 @@ def main():
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('-t', '--endp_type', help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
                         default='lf_udp',type=valid_endp_type)
-    parser.add_argument('-b', '--side_b', help='--side_b <cross connect side b> example --side_b eth1',default='eth1')
-    parser.add_argument('-r','--radio', action='append', nargs=4, metavar=('wiphy', 'number of stations','ssid','passphrase'),
-                         help ='--radio  number_of_wiphy number_of_stations ssid  phassphrase. ',required=True)
+    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number of stations>','<ssid>','<ssid password>'),
+                         help ='--radio  <number_of_wiphy> <number_of_stations> <ssid>  <ssid password> ',required=True)
     args = parser.parse_args()
 
     if args.test_duration:
@@ -204,8 +204,8 @@ def main():
     if args.endp_type:
         endp_type = args.endp_type   
 
-    if args.side_b:
-        side_b = args.side_b
+    if args.upstream_port:
+        side_b = args.upstream_port
 
     if args.radio:
         radios = args.radio
