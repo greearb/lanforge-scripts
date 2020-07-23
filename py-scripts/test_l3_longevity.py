@@ -187,16 +187,69 @@ def main():
     lfjson_port = 8080
 
     parser = argparse.ArgumentParser(
-        description='L3 longevity script for multiple stations on multiple radios  sample command (note remove carriage returns if copy from help): python3 .\\test_l3_longevity.py --test_duration 125s --endp_type lf_tcp --side_b eth1 --radio wiphy0 2 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 --radio wiphy1 3 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 ',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        prog='test_l3_longevity.py',
+        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            Useful Information:
+            1. Polling interval for checking traffic is fixed at 1 minute
+            2. The test will exit when traffic has not changed on a station for 1 minute
+            3. The tx/rx rates are fixed at 256000 bits per second
+            4. Security is fixed at WPA2
+            5. Maximum stations per radio is 64
+            ''',
         
+        description='''\
+        test_l3_longevity.py:
+        --------------------
+        Basic Idea: create stations, create traffic between upstream port and stations,  run traffic. 
+                    The traffic on the stations will be checked once per minute to verify that traffic is transmitted
+                    and recieved.
+
+                    Test will exit on failure of not recieving traffice for one minute on any station.
+
+                    Scripts are executed from: ./lanforge/py-scripts  
+
+        Generic command layout:
+            python3 .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic type> --radio <radio 0> <stations> <ssid> <ssid password>
+
+            Note:   multiple --radio switches may be entered up to the number of radios available:
+                    --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <stations> <ssid> <ssid password>
+
+                <duration>: number followed by one of the following 
+                            d - days
+                            h - hours
+                            m - minutes
+                            s - seconds
+
+                <traffic type>: 
+                            lf_udp  : IPv4 UDP traffic
+                            lf_tcp  : IPv4 TCP traffic
+                            lf_udp6 : IPv6 UDP traffic
+                            lf_tcp6 : IPv6 TCP traffic
+
+        Example:
+            1. Test duration 2 hours
+            2. Traffic IPv4 TCP
+            3. Upstream-port eth1
+            4. Radio #1 wiphy0 has 32 stations, ssid = candelaTech-wpa2-x2048-4-1, ssid password = candelaTech-wpa2-x2048-4-1
+            5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
+
+            Command: 
+            python3 .\\test_l3_longevity.py --test_duration 2h --endp_type lf_tcp --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
+
+        ''')
+
+   
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('-t', '--endp_type', help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
                         default='lf_udp',type=valid_endp_type)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number of stations>','<ssid>','<ssid password>'),
+
+    requiredNamed = parser.add_argument_group('required arguments')
+    requiredNamed.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number of stations>','<ssid>','<ssid password>'),
                          help ='--radio  <number_of_wiphy> <number_of_stations> <ssid>  <ssid password> ',required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(['-h'])
 
     if args.test_duration:
         test_duration = args.test_duration
