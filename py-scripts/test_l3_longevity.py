@@ -191,7 +191,7 @@ def main():
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Useful Information:
+        Useful Information:
             1. Polling interval for checking traffic is fixed at 1 minute
             2. The test will exit when traffic has not changed on a station for 1 minute
             3. The tx/rx rates are fixed at 256000 bits per second
@@ -229,14 +229,14 @@ def main():
                             lf_tcp6 : IPv6 TCP traffic
 
         Example:
-            1. Test duration 2 hours
+            1. Test duration 4 minutes
             2. Traffic IPv4 TCP
             3. Upstream-port eth1
             4. Radio #1 wiphy0 has 32 stations, ssid = candelaTech-wpa2-x2048-4-1, ssid password = candelaTech-wpa2-x2048-4-1
             5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 
             Command: 
-            python3 .\\test_l3_longevity.py --test_duration 2h --endp_type lf_tcp --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
+            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
 
         ''')
 
