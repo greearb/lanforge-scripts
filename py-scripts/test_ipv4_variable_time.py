@@ -34,6 +34,7 @@ class IPV4VariableTime(LFCliBase):
         self.security = security
         self.password = password
         self.number_template = number_template
+        self.debug = _debug_on
         self.resource = resource
         self.name_prefix = name_prefix
         self.test_duration = test_duration
@@ -58,7 +59,7 @@ class IPV4VariableTime(LFCliBase):
 
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
         #print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
@@ -143,7 +144,7 @@ class IPV4VariableTime(LFCliBase):
         temp_sta_list = []
         for station in range(len(self.sta_list)):
             temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
         self._pass("PASS: Station build finished")
 
@@ -151,14 +152,14 @@ class IPV4VariableTime(LFCliBase):
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, number_template="00", sta_list=station_list,
                                    name_prefix="var_time",
                                    ssid="jedway-wpa2-x2048-4-4",
                                    password="jedway-wpa2-x2048-4-4",
                                    resource=1,
                                    security="wpa2", test_duration="5m",
-                                   side_a_min_rate=256, side_b_min_rate=256)
+                                   side_a_min_rate=256, side_b_min_rate=256, _debug_on=True)
 
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
