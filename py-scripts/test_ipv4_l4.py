@@ -60,7 +60,7 @@ class IPV4L4(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                #print(item, new_list[item], old_list[item], passes, expected_passes)
+                # print(item, old_list[item], new_list[item], passes, expected_passes)
 
             if passes == expected_passes:
                 return True
@@ -70,6 +70,7 @@ class IPV4L4(LFCliBase):
             return False
 
     def __get_values(self):
+        time.sleep(1)
         cx_list = self.json_get("layer4/list?fields=name,bytes-rd", debug_=self.debug)
         # print("==============\n", cx_list, "\n==============")
         cx_map = {}
@@ -98,16 +99,17 @@ class IPV4L4(LFCliBase):
         self.cx_profile.create(ports=temp_sta_list, sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
+        temp_stas = self.sta_list.copy()
+        temp_stas.append("eth1")
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.station_profile.admin_up(1)
-        temp_stas = self.sta_list.copy()
-        temp_stas.append("eth1")
-        self.local_realm.wait_for_ip(self.resource, temp_stas)
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
+        print("Starting Test...")
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(minutes=1)
             while cur_time < interval_time:
@@ -150,7 +152,7 @@ def main():
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPV4L4(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
                      security="wpa2", station_list=station_list, url="dl http://10.40.0.1 /dev/null", test_duration="5m",
-                     requests_per_ten=600)
+                     requests_per_ten=600, _debug_on=False)
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():

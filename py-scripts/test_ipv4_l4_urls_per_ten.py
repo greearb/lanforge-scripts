@@ -94,16 +94,16 @@ class IPV4L4(LFCliBase):
         self.cx_profile.create(ports=temp_sta_list, sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
-        print("Starting test")
+        temp_stas = self.sta_list.copy()
+        temp_stas.append("eth1")
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
+        self.cx_profile.start_cx()
         cur_time = datetime.datetime.now()
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up(1)
-        temp_stas = self.sta_list.copy()
-        temp_stas.append("eth1")
-        self.local_realm.wait_for_ip(self.resource, temp_stas)
-        self.cx_profile.start_cx()
+        print("Starting test")
         for test in range(self.num_tests):
             expected_passes += 1
             while cur_time < interval_time:
