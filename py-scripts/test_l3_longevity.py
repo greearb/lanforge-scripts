@@ -249,6 +249,7 @@ def main():
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number of stations>','<ssid>','<ssid password>'),
                          help ='--radio  <number_of_wiphy> <number_of_stations> <ssid>  <ssid password> ',required=True)
+    args = parser.parse_args()
 
     if args.test_duration:
         test_duration = args.test_duration
