@@ -987,9 +987,9 @@ class StationProfile:
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
         self.add_sta_data["ssid"] = ssid
         if security_type in types.keys():
-            if (ssid is None) or ("" == ssid):
+            if (ssid is None) or (ssid == ""):
                 raise ValueError("use_security: %s requires ssid" % security_type)
-            if (passwd is None) or ("" == passwd):
+            if (passwd is None) or (passwd == ""):
                 raise ValueError("use_security: %s requires passphrase or [BLANK]" % security_type)
             for name in types.values():
                 if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
