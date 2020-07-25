@@ -745,33 +745,102 @@ class GenCXProfile(LFCliBase):
         self.type = "lfping"
         self.dest = "127.0.0.1"
         self.interval = 1
-        self.count = 2
         self.cmd = ""
         self.local_realm = local_realm
+        self.created_cx = []
+        self.created_endp = []
+
+    def parse_command(self, sta_name):
+        if self.type == "lfping":
+            if (self.dest is not None or self.dest != "") and (self.interval is not None or self.interval > 0):
+                self.cmd = "%s  -i %.1f -l %s %s" % (self.type, self.interval, sta_name, self.dest)
+                #print(self.cmd)
+            else:
+                raise ValueError("Please ensure dest and interval have been set correctly")
+        else:
+            raise ValueError("Unknown command type")
+
+    def start_cx(self):
+        print("Starting CXs...")
+        print(self.created_cx)
+        print(self.created_endp)
+        for cx_name in self.created_cx:
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": "RUNNING"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def stop_cx(self):
+        print("Stopping CXs...")
+        for cx_name in self.created_cx:
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": "STOPPED"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def cleanup(self):
+        print("Cleaning up cxs and endpoints")
+        for cx_name in self.created_cx:
+            req_url = "cli-json/rm_cx"
+            data = {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name
+            }
+            self.json_post(req_url, data)
+
+        for endp_name in self.created_endp:
+            req_url = "cli-json/rm_endp"
+            data = {
+                "endp_name": endp_name
+            }
+            self.json_post(req_url, data)
+
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         if self.debug:
-            debug_ = True;
+            debug_ = True
         post_data = []
         for port_name in ports:
-            gen_name = self.local_realm.name_to_eid(port_name)[-1] + "_gen0"
-            gen_name2 = self.local_realm.name_to_eid(port_name)[-1] + "_gen1"
+            port_info = self.local_realm.name_to_eid(port_name)
+            if len(port_info) == 2:
+                resource = 1
+                shelf = port_info[0]
+                name = port_info[-1]
+            elif len(port_info) == 3:
+                resource = port_info[0]
+                shelf = port_info[1]
+                name = port_info[-1]
+            else:
+                raise ValueError("Unexpected name for port_name %s" % port_name)
+
+            gen_name = name + "_gen0"
+            gen_name1 = name + "_gen1"
             genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
-            genl.createGenEndp(gen_name, 1, 1, port_name, "gen_generic")
-            genl.createGenEndp(gen_name2, 1, 1, port_name, "gen_generic")
+            genl.createGenEndp(gen_name, shelf, resource, name, "gen_generic")
+            genl.createGenEndp(gen_name1, shelf, resource, name, "gen_generic")
             genl.setFlags(gen_name, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name2, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name2, "Unmanaged", 1)
+            genl.setFlags(gen_name1, "ClearPortOnStart", 1)
+            genl.setFlags(gen_name1, "Unmanaged", 1)
+            self.parse_command(name)
             genl.setCmd(gen_name, self.cmd)
             time.sleep(sleep_time)
 
             data = {
-                "alias": self.local_realm.name_to_eid(port_name)[-1] + "_gen_CX",
+                "alias": "CX_" + name + "_gen",
                 "test_mgr": "default_tm",
                 "tx_endp": gen_name,
-                "rx_endp": gen_name2
+                "rx_endp": gen_name1
             }
             post_data.append(data)
+            self.created_cx.append("CX_" + name + "_gen")
+            self.created_endp.append(gen_name)
+            self.created_endp.append(gen_name1)
 
         for data in post_data:
             url = "/cli-json/add_cx"
