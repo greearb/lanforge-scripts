@@ -753,7 +753,7 @@ class GenCXProfile(LFCliBase):
     def parse_command(self, sta_name):
         if self.type == "lfping":
             if (self.dest is not None or self.dest != "") and (self.interval is not None or self.interval > 0):
-                self.cmd = "%s  -i %.1f -l %s %s" % (self.type, self.interval, sta_name, self.dest)
+                self.cmd = "%s  -i %.1f -I %s %s" % (self.type, self.interval, sta_name, self.dest)
                 #print(self.cmd)
             else:
                 raise ValueError("Please ensure dest and interval have been set correctly")
