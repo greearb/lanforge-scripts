@@ -762,8 +762,8 @@ class GenCXProfile(LFCliBase):
 
     def start_cx(self):
         print("Starting CXs...")
-        print(self.created_cx)
-        print(self.created_endp)
+        #print(self.created_cx)
+        #print(self.created_endp)
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
