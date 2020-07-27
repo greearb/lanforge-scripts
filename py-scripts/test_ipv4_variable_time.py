@@ -159,7 +159,7 @@ def main():
                                    password="jedway-wpa2-x2048-4-4",
                                    resource=1,
                                    security="wpa2", test_duration="5m",
-                                   side_a_min_rate=256, side_b_min_rate=256, _debug_on=False)
+                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=False)
 
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
