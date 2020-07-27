@@ -448,6 +448,11 @@ class Realm(LFCliBase):
     def new_station_profile(self):
         station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
         return station_prof
+    # just here for now for initial coding,  move later to correct spot
+    def new_multicast_profile(self):
+        multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port, \
+                                  local_realm=self, debug_=self.debug, report_timer_=3000)
+        return multi_prof
 
     def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
         wifi_mon_prof = WifiMonitor(self.lfclient_url,
@@ -473,7 +478,225 @@ class Realm(LFCliBase):
         cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port,local_realm=self, debug_=self.debug)
         return cx_prof
 
+class MULTICASTProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm,
+                 side_a_min_bps=None, side_b_min_bps=None,
+                 side_a_max_bps=0, side_b_max_bps=0,
+                 side_a_min_pdu=-1, side_b_min_pdu=-1,
+                 side_a_max_pdu=0, side_b_max_pdu=0,
+                 report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
+        """
 
+        :param lfclient_host:
+        :param lfclient_port:
+        :param local_realm:
+        :param side_a_min_bps:
+        :param side_b_min_bps:
+        :param side_a_max_bps:
+        :param side_b_max_bps:
+        :param side_a_min_pdu:
+        :param side_b_min_pdu:
+        :param side_a_max_pdu:
+        :param side_b_max_pdu:
+        :param name_prefix: prefix string for connection
+        :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
+        :param debug_:
+        """
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
+        self.local_realm = local_realm
+        self.side_a_min_pdu = side_a_min_pdu
+        self.side_b_min_pdu = side_b_min_pdu
+        self.side_a_max_pdu = side_a_max_pdu
+        self.side_b_max_pdu = side_b_max_pdu
+        self.side_a_min_bps = side_a_min_bps
+        self.side_b_min_bps = side_b_min_bps
+        self.side_a_max_bps = side_a_max_bps
+        self.side_b_max_bps = side_b_max_bps
+        self.report_timer = report_timer_
+        self.created_mc = {}
+        self.name_prefix = name_prefix_
+        self.number_template = number_template_
+
+    def get_mc_names(self):
+        return self.created_mc.keys()
+
+    def refresh_mc(self):
+        pass
+
+    def start_mc_tx(self, side_b, suppress_related_commands=None, debug_ = False ):
+        if self.debug:
+            debut_=True
+
+        print("starting mc_tx")
+        # hard code for now
+        endp_name = 'mcast-xmit-sta'
+
+        #start the trasmitter probably should be in start 
+        json_data = {
+                    "endp_name":endp_name,
+        }
+
+        url = "cli-json/start_endp"
+        self.local_realm.json_post(url, json_data)
+ 
+
+    def start_mc_rx(self,side_a, suppress_related_commands=None, debug_ = False):
+        if self.debug:
+            debug_=True
+
+        for port_name in side_a:
+            side_a_info = self.local_realm.name_to_eid(port_name)
+            side_a_resource = side_a_info[2]
+            side_a_name = "%s%s"%(self.name_prefix, side_a_info[2])
+
+            json_data = {
+                            "endp_name":side_a_resource
+            }
+            url = "cli-json/start_endp"
+            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+        pass
+
+    def stop_mc(self):
+        pass
+
+    def cleanup(self):
+        pass
+
+    def create_mc_tx(self, side_b, suppress_related_commands=None, debug_ = False ):
+        if self.debug:
+            debug_=True
+
+        json_data = []
+        
+        # need to eventually us this
+        #mc_tx_name = "%s%s" % (self.name_prefix, side_b)
+
+        # hard code for now
+        endp_name = 'mcast-xmit-sta'
+        # add end point
+        #add_endp mcast-xmit-sta 1 1 eth1 mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
+        json_data = {
+                        'alias':endp_name,
+                        'shelf':1,
+                        'resource':1,
+                        'port':side_b,
+                        'type':'mc_udp',
+                        'ip_port':-1,
+                        'is_rate_bursty':
+                        'NO','min_rate':4000000,
+                        'max_rate':0,
+                        'is_pkt_sz_random':'NO',
+                        'min_pkt':1472,
+                        'max_pkt':0,
+                        'payload_pattern':'INCREASING',
+                        'use_checksum':'NO',
+                        'ttl':32,
+                        'send_bad_crc_per_million':0,
+                        'multi_conn':0
+                    }
+
+        
+        url = "/cli-json/add_endp"
+        self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+       
+        #set_endp_addr mcast-xmit-sta '0c c4 7a e1 ff b1 ' AUTO 0 0
+        json_data =  {
+                        'name':endp_name,
+                        "mac":"xx:xx:xx:xx:*:xx", #'mac':'0c:c4:7a:e1:ff:b1'
+                        'ip':'AUTO',
+                        'min_port':0,
+                        'max_port':0 
+                    }
+
+        url = "cli-json/set_endp_addr" 
+        #self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+        #set_mc_endp mcast-xmit-sta 32 224.9.9.9 9999 No  # critical
+        json_data = {
+                        'name':endp_name,
+                        'ttl':32,'mcast_group':'224.9.9.9',
+                        'mcast_dest_port':9999,
+                        'rcv_mcast':'No'
+                    }
+
+        url = "cli-json/set_mc_endp"
+        self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+      
+
+
+    def create_mc_rx(self,side_a, suppress_related_commands=None, debug_ = False):
+        if self.debug:
+            debug_=True
+
+        for port_name in side_a:
+            side_a_info = self.local_realm.name_to_eid(port_name)
+            side_a_shelf = side_a_info[1]
+            side_a_resource = side_a_info[2]
+            side_a_name = "%s%s"%(self.name_prefix, side_a_info[2])
+            # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
+            json_data = {
+                            'alias':side_a_resource,
+                            'shelf':side_a_shelf,
+                            'resource':1,
+                            'port':side_a_resource,
+                            'type':'mc_udp',
+                            'ip_port':9999,
+                            'is_rate_bursty':
+                            'NO','min_rate':0,
+                            'max_rate':0,
+                            'is_pkt_sz_random':'NO',
+                            'min_pkt':1472,
+                            'max_pkt':0,
+                            'payload_pattern':'INCREASING',
+                            'use_checksum':'NO',
+                            'ttl':32,
+                            'send_bad_crc_per_million':0,
+                            'multi_conn':0
+                        }
+
+            url = "cli-json/add_endp"
+            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+            #set_endp_addr mcast-rcv-sta-001 '00 0e 8e 5b 9d 44 ' AUTO 9999 0
+            #json_data = {
+            #                'name':side_a_resource,
+            #                'mac':'xx:xx:xx:xx:*:xx',
+            #                'ip':'AUTO',
+            #                'min_port':9999,
+            #                'max_port':0
+            #            }
+            #
+            #url = "cli-json/set_endp_addr"
+            #self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+            # set_mc_endp mcast-rcv-sta-001 32 224.9.9.9 9999 Yes
+            json_data = {
+                            'name':side_a_resource,
+                            'ttl':32,
+                            'mcast_group':'224.9.9.9',
+                            'mcast_dest_port':9999,
+                            'rcv_mcast':'Yes'
+                        }
+            url = "cli-json/set_mc_endp"
+            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+            '''json_data = {
+                            "endp_name":side_a_resource
+            }
+            url = "cli-json/start_endp"
+            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            '''
+
+    def to_string(self):
+        pprint.pprint(self)
+
+
+    
 class L3CXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  side_a_min_bps=None, side_b_min_bps=None,
@@ -1397,7 +1620,7 @@ class StationProfile:
             time.sleep(2)
             set_port_r.addPostData(self.set_port_data)
             json_response = set_port_r.jsonPost(debug)
-            time.sleep(.03)
+            time.sleep(0.03)
 
         LFUtils.waitUntilPortsAppear(resource, self.lfclient_url, self.station_names)
 
