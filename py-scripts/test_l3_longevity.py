@@ -294,7 +294,7 @@ def main():
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded")
             quit(1)
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= index*1000, end_id_= number_of_stations + index*1000, padding_number_=10000)
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000, padding_number_=10000)
         station_lists.append(station_list)
         index += 1
     ip_var_test = L3VariableTimeLongevity(lfjson_host, 
