@@ -54,13 +54,35 @@ class GenTest(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up(self.resource)
         temp_stas = self.sta_list.copy()
-        # temp_stas.append("eth1")
+        temp_stas.append("eth1")
         self.local_realm.wait_for_ip(self.resource, temp_stas)
-        # cur_time = datetime.datetime.now()
-        # old_cx_rx_values = self.__get_rx_values()
-        # end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        cur_time = datetime.datetime.now()
+        passes = 0
+        expected_passes = 0
         self.cx_profile.start_cx()
-        time.sleep(30)
+        time.sleep(15)
+        end_time = self.local_realm.parse_time("30s") + cur_time
+        print("Starting Test...")
+        while cur_time < end_time:
+            cur_time = datetime.datetime.now()
+            gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+            if gen_results['endpoints'] is not None:
+                for name in gen_results['endpoints']:
+                    for k, v in name.items():
+                        if v['name'] in self.cx_profile.created_endp and not v['name'].endswith('1'):
+                            expected_passes += 1
+                            if v['last results'] != "" and "Unreachable" not in v['last results']:
+                                passes += 1
+                            else:
+                                self._fail("%s Failed to ping %s " % (v['name'], self.cx_profile.dest), print_fail)
+                                break
+            # print(cur_time)
+            # print(end_time)
+            time.sleep(1)
+
+        if passes == expected_passes:
+            self._pass("PASS: All tests passed", print_pass)
+
 
     def stop(self):
         self.cx_profile.stop_cx()
@@ -106,16 +128,16 @@ def main():
     if not generic_test.passes():
         print(generic_test.get_fail_message())
         exit(1)
-    generic_test.start(False, False)
-    generic_test.stop()
+    generic_test.start()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
         exit(1)
+    generic_test.stop()
     time.sleep(30)
-    exit(1)
     generic_test.cleanup(station_list)
     if generic_test.passes():
         print("Full test passed, all connections increased rx bytes")
+
 
 
 if __name__ == "__main__":
