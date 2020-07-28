@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-
+import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -20,7 +20,8 @@ class IPv6Test(LFCliBase):
     def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, num_stations=0, prefix="00000",
                  _debug_on=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,
+                 number_template="00"):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
@@ -33,6 +34,7 @@ class IPv6Test(LFCliBase):
         self.resource = resource
         self.prefix = prefix
         self.debug = _debug_on
+        self.number_template = number_template
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
 
@@ -45,16 +47,16 @@ class IPv6Test(LFCliBase):
 
     def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.profile.set_number_template(self.prefix)
+        self.station_profile.set_number_template(self.prefix)
         print("Creating stations")
-        self.profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.profile.set_command_param("set_port", "report_timer", 1500)
-        self.profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
-        self.profile.admin_up(1)
+        self.station_profile.admin_up(1)
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -100,7 +102,7 @@ class IPv6Test(LFCliBase):
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
-        self.profile.cleanup(self.resource, sta_list)
+        self.station_profile.cleanup(self.resource, sta_list)
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
