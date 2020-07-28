@@ -336,12 +336,23 @@ class Realm(LFCliBase):
         info = ()
 
     def new_station_profile(self):
-        station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug)
+        station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
         return station_prof
 
+    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
+        wifi_mon_prof = WifiMonitor(self.lfclient_url,
+                                    local_realm=self,
+                                    resource_=resource_,
+                                    up=up_,
+                                    debug_=(self.debug or debug_))
+        return wifi_mon_prof
+
     def new_l3_cx_profile(self):
-        cx_prof = L3CXProfile(self.lfclient_host, self.lfclient_port, \
-                              local_realm=self, debug_=self.debug, report_timer_=3000)
+        cx_prof = L3CXProfile(self.lfclient_host, 
+                              self.lfclient_port,
+                              local_realm=self,
+                              debug_=self.debug,
+                              report_timer_=3000)
         return cx_prof
 
     def new_l4_cx_profile(self):
@@ -886,6 +897,7 @@ class WifiMonitor:
             "flags": computed_flags,
             "flags_mask": self.flags_mask
         })
+
     def set_flag(self, param_name, value):
         if (param_name not in add_monitor.flags):
             raise ValueError("Flag '%s' does not exist for add_monitor, consult add_monitor.py" % param_name)
@@ -964,7 +976,6 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
-            
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -1099,8 +1110,18 @@ class StationProfile:
 
     def admin_up(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
         for sta_name in self.station_names:
-            req_json = LFUtils.portUpRequest(resource, sta_name, debug_on=False)
+            req_json["port"] = sta_name
+            set_port_r.addPostData(req_json)
+            json_response = set_port_r.jsonPost(self.debug)
+            time.sleep(0.03)
+
+    def admin_down(self, resource):
+        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portDownRequest(resource, None, debug_on=False)
+        for sta_name in self.station_names:
+            req_json["port"] = sta_name
             set_port_r.addPostData(req_json)
             json_response = set_port_r.jsonPost(self.debug)
             time.sleep(0.03)
