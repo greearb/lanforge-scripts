@@ -230,10 +230,11 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_disabled_profile.admin_down()
 
     def cleanup(self):
-        self.wifi_monitor_profile.cleanup()
+        self.wifi_monitor_profile.cleanup(resource_=self.resource, desired_ports=[self.monitor_name])
         self.cx_prof_download.cleanup()
         self.cx_prof_upload.cleanup()
-        self.sta_powersave_disabled_profile.cleanup(resource=1, desired_stations=self.normal_sta_list)
+        self.sta_powersave_enabled_profile.cleanup(resource=self.resource, desired_stations=self.powersave_sta_list)
+        self.sta_powersave_disabled_profile.cleanup(resource=self.resource, desired_stations=self.normal_sta_list)
 
 def main():
     lfjson_host = "localhost"
@@ -255,9 +256,9 @@ def main():
                                             traffic_duration_="5s",
                                             pause_duration_="2s",
                                             debug_on_=True,
-                                            exit_on_error_=True,
+                                            exit_on_error_=False,
                                             exit_on_fail_=True)
-    ip_powersave_test.cleanup()       
+    ip_powersave_test.cleanup()
     ip_powersave_test.build()
     ip_powersave_test.start()
     ip_powersave_test.stop()
