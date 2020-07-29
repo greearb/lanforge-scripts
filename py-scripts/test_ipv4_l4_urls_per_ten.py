@@ -80,7 +80,6 @@ class IPV4L4(LFCliBase):
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -96,13 +95,13 @@ class IPV4L4(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
-        self.local_realm.wait_for_ip(self.resource, temp_stas)
-        self.cx_profile.start_cx()
         cur_time = datetime.datetime.now()
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up(1)
+        self.local_realm.wait_for_ip(self.resource, temp_stas)
+        self.cx_profile.start_cx()
         print("Starting test")
         for test in range(self.num_tests):
             expected_passes += 1
