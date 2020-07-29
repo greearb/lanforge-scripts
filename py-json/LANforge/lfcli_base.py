@@ -70,9 +70,9 @@ class LFCliBase:
             lf_r.addPostData(_data)
             if debug_ or self.debug:
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(show_error=self.debug, \
-                                          debug=(self.debug or debug_), \
-                                          response_json_list_=response_json_list_, \
+            json_response = lf_r.jsonPost(show_error=self.debug,
+                                          debug=(self.debug or debug_),
+                                          response_json_list_=response_json_list_,
                                           die_on_error_=self.exit_on_error)
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
@@ -93,10 +93,11 @@ class LFCliBase:
         json_response = None
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
-            json_response = lf_r.getAsJson(self.debug)
+            json_response = lf_r.getAsJson(debug_=self.debug, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
             if (json_response is None) and (self.debug or debug_):
-                raise ValueError(json_response)
+                print("LFCliBase.json_get: no entity/response, probabily status 404")
+                return None
         except ValueError as ve:
             if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
@@ -137,7 +138,6 @@ class LFCliBase:
             reverse_map[k2] = json_entry
 
         return reverse_map
-
 
     def error(self, exception):
         # print("lfcli_base error: %s" % exception)
