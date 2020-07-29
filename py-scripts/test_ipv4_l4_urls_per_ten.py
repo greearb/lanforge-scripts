@@ -51,18 +51,6 @@ class IPV4L4(LFCliBase):
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
-    def __set_all_cx_state(self, state, sleep_time=5):
-        print("Setting CX States to %s" % state)
-        for sta_name in self.sta_list:
-            req_url = "cli-json/set_cx_state"
-            data = {
-                "test_mgr": "default_tm",
-                "cx_name": "CX_" + sta_name + "_l4",
-                "cx_state": state
-            }
-            self.json_post(req_url, data)
-        time.sleep(sleep_time)
-
     def __check_request_rate(self):
         endp_list = self.json_get("layer4/list?fields=urls/s")
         expected_passes = 0
