@@ -21,6 +21,108 @@ class Realm(LFCliBase):
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.check_connect()
+        self.chan_to_freq = {}
+        self.freq_to_chan = {}
+        freq = 0
+        chan = 1
+        for freq in range( 2412, 2472, 5):
+            self.freq_to_chan[freq] = chan
+            self.chan_to_freq[chan] = freq
+            chan += 1
+
+        self.chan_to_freq[14] = 2484
+        self.chan_to_freq[34] = 5170
+        self.chan_to_freq[36] = 5180
+        self.chan_to_freq[38] = 5190
+        self.chan_to_freq[40] = 5200
+        self.chan_to_freq[42] = 5210
+        self.chan_to_freq[44] = 5220
+        self.chan_to_freq[46] = 5230
+        self.chan_to_freq[48] = 5240
+        self.chan_to_freq[52] = 5260
+        self.chan_to_freq[56] = 5280
+        self.chan_to_freq[60] = 5300
+        self.chan_to_freq[64] = 5320
+        self.chan_to_freq[100] = 5500
+        self.chan_to_freq[104] = 5520
+        self.chan_to_freq[108] = 5540
+        self.chan_to_freq[112] = 5560
+        self.chan_to_freq[116] = 5580
+        self.chan_to_freq[120] = 5600
+        self.chan_to_freq[124] = 5620
+        self.chan_to_freq[128] = 5640
+        self.chan_to_freq[132] = 5660
+        self.chan_to_freq[136] = 5680
+        self.chan_to_freq[140] = 5700
+        self.chan_to_freq[144] = 5720
+        self.chan_to_freq[149] = 5745
+        self.chan_to_freq[153] = 5765
+        self.chan_to_freq[157] = 5785
+        self.chan_to_freq[161] = 5805
+        self.chan_to_freq[165] = 5825
+        self.chan_to_freq[169] = 5845
+        self.chan_to_freq[173] = 5865
+
+        self.freq_to_chan[2484] = 14
+        self.freq_to_chan[5170] = 34
+        self.freq_to_chan[5180] = 36
+        self.freq_to_chan[5190] = 38
+        self.freq_to_chan[5200] = 40
+        self.freq_to_chan[5210] = 42
+        self.freq_to_chan[5220] = 44
+        self.freq_to_chan[5230] = 46
+        self.freq_to_chan[5240] = 48
+        self.freq_to_chan[5260] = 52
+        self.freq_to_chan[5280] = 56
+        self.freq_to_chan[5300] = 60
+        self.freq_to_chan[5320] = 64
+        self.freq_to_chan[5500] = 100
+        self.freq_to_chan[5520] = 104
+        self.freq_to_chan[5540] = 108
+        self.freq_to_chan[5560] = 112
+        self.freq_to_chan[5580] = 116
+        self.freq_to_chan[5600] = 120
+        self.freq_to_chan[5620] = 124
+        self.freq_to_chan[5640] = 128
+        self.freq_to_chan[5660] = 132
+        self.freq_to_chan[5680] = 136
+        self.freq_to_chan[5700] = 140
+        self.freq_to_chan[5720] = 144
+        self.freq_to_chan[5745] = 149
+        self.freq_to_chan[5765] = 153
+        self.freq_to_chan[5785] = 157
+        self.freq_to_chan[5805] = 161
+        self.freq_to_chan[5825] = 165
+        self.freq_to_chan[5845] = 169
+        self.freq_to_chan[5865] = 173
+
+        # 4.9Ghz police band
+        self.chan_to_freq[183] = 4915
+        self.chan_to_freq[184] = 4920
+        self.chan_to_freq[185] = 4925
+        self.chan_to_freq[187] = 4935
+        self.chan_to_freq[188] = 4940
+        self.chan_to_freq[189] = 4945
+        self.chan_to_freq[192] = 4960
+        self.chan_to_freq[194] = 4970
+        self.chan_to_freq[196] = 4980
+
+        self.freq_to_chan[4915] = 183
+        self.freq_to_chan[4920] = 184
+        self.freq_to_chan[4925] = 185
+        self.freq_to_chan[4935] = 187
+        self.freq_to_chan[4940] = 188
+        self.freq_to_chan[4945] = 189
+        self.freq_to_chan[4960] = 192
+        self.freq_to_chan[4970] = 194
+        self.freq_to_chan[4980] = 196
+
+
+    def channel_freq(self, channel_=0):
+        return self.chan_to_freq[channel_]
+
+    def freq_channel(self, freq_=0):
+        return self.freq_to_chan[freq_]
 
     # checks for OK or BUSY when querying cli-json/cv+is_built
     def wait_while_building(self, debug_=False):
@@ -878,17 +980,31 @@ class WifiMonitor:
         computed_flags = 0
         for flag_n in self.flag_names:
             computed_flags += add_monitor.flags[flag_n]
-        data ={
-                "shelf": 1, 
-                "resource": resource_,
-                "radio": radio_,
-                "freqency":5785,
-                "mode": "NA", #0 for AUTO or "NA"
-                "channel": channel
-                
-            }
-        self.local_realm.json_post("/cli-json/set_wifi_radio", _data= data)
 
+        # we want to query the existing country code of the radio
+        # there's no reason to change it but we get hollering from server
+        # if we don't provide a value for the parameter
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country"%(resource_, radio_), debug_=self.debug)
+        if jr is None:
+            raise ValueError("No radio %s.%s found"%(resource_, radio_))
+
+        eid = "1.%s.%s"%(resource_, radio_)
+        frequency = 0
+        country = 0
+        if eid in jr:
+            country = jr[eid]["country"]
+
+        data = {
+            "shelf": 1,
+            "resource": resource_,
+            "radio": radio_,
+            "mode": 0, #"NA", #0 for AUTO or "NA"
+            "channel": channel,
+            "country": country,
+            "frequency": self.local_realm.channel_freq(channel_=channel)
+        }
+        self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
+        time.sleep(1)
         self.local_realm.json_post("/cli-json/add_monitor", {
             "shelf": 1,
             "resource": resource_,
@@ -907,10 +1023,36 @@ class WifiMonitor:
             del self.flag_names[param_name]
             self.flags_mask |= add_monitor.flags[param_name]
 
-    def cleanup(self):
+    def cleanup(self, resource_=1, desired_ports=None):
         print("Cleaning up monitors")
-        LFUtils.removePort(resource=self.resource, port_name = self.monitor_name, baseurl=self.lfclient_url, debug=self.debug)
-        
+        if (desired_ports is None) or (len(desired_ports) < 1):
+            if (self.monitor_name is None) or (self.monitor_name == ""):
+                print("No monitor name set to delete")
+                return
+            LFUtils.removePort(resource=resource_,
+                               port_name=self.monitor_name,
+                               baseurl=self.lfclient_url,
+                               debug=self.debug)
+        else:
+            names = ",".join(desired_ports)
+            existing_ports = self.local_realm.json_get("/port/1/%d/%s?fields=alias"%(resource_, names), debug_=False)
+            if (existing_ports is None) or ("interfaces" not in existing_ports) or ("interface" not in existing_ports):
+                print("No monitor names found to delete")
+                return
+            if ("interfaces" in existing_ports):
+                for eid,info in existing_ports["interfaces"].items():
+                    LFUtils.removePort(resource=resource_,
+                                       port_name=info["alias"],
+                                       baseurl=self.lfclient_url,
+                                       debug=self.debug)
+            if ("interface" in existing_ports):
+                for eid,info in existing_ports["interface"].items():
+                    LFUtils.removePort(resource=resource_,
+                                       port_name=info["alias"],
+                                       baseurl=self.lfclient_url,
+                                       debug=self.debug)
+
+
 
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
@@ -1126,20 +1268,52 @@ class StationProfile:
             json_response = set_port_r.jsonPost(self.debug)
             time.sleep(0.03)
 
-    def cleanup(self, resource, desired_stations):
-        current_stations = self.local_realm.json_get("port/1/%s/%s?fields=alias" % (resource, ','.join(self.station_names)))
-        if current_stations is not None and current_stations['interfaces'] is not None:
-            print("Cleaning up stations")
+    def cleanup(self, resource, desired_stations=None, delay=0.03):
+        print("Cleaning up stations")
+        req_url = "/cli-json/rm_vlan"
+        data = {
+            "shelf": 1,
+            "resource": resource,
+            "port": None
+        }
+        if (desired_stations is not None):
+            if len(desired_stations) < 1:
+                print("No stations requested for cleanup, returning.")
+                return
+            names = ','.join(desired_stations)
+            current_stations = self.local_realm.json_get("/port/1/%s/%s?fields=alias" % (resource, names))
+            if current_stations is None:
+                return
+            if "interfaces" in current_stations:
+                for station in current_stations['interfaces']:
+                    for eid,info in station.items():
+                        data["port"] = info["alias"]
+                        self.local_realm.json_post(req_url, data, debug_=self.debug)
+                        time.sleep(delay)
+
+            if "interface" in current_stations:
+                data["port"] = current_stations["interface"]["alias"]
+                self.local_realm.json_post(req_url, data, debug_=self.debug)
+
+            return
+
+        names = ','.join(self.station_names)
+        current_stations = self.local_realm.json_get("/port/1/%s/%s?fields=alias" % (resource, names))
+        if current_stations is None or current_stations['interfaces'] is None:
+            print("No stations to clean up")
+            return
+
+        if "interfaces" in current_stations:
             for station in current_stations['interfaces']:
                 for eid,info in station.items():
-                    if info['alias'] in desired_stations:
-                        req_url = "cli-json/rm_vlan"
-                        data = {
-                            "shelf": 1,
-                            "resource": resource,
-                            "port": info['alias']
-                        }
-                        self.local_realm.json_post(req_url, data)
+                    data["port"] = info["alias"]
+                    self.local_realm.json_post(req_url, data, debug_=self.debug)
+                    time.sleep(delay)
+
+        if "interface" in current_stations:
+            data["port"] = current_stations["interface"]["alias"]
+            self.local_realm.json_post(req_url, data, debug_=self.debug)
+
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, resource, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False):
