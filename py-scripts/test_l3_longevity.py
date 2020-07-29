@@ -211,7 +211,7 @@ def main():
                     Scripts are executed from: ./lanforge/py-scripts  
 
         Generic command layout:
-            python3 .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic type> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password>
+            python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic type> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password>
 
             Note:   multiple --radio switches may be entered up to the number of radios available:
                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <stations> <ssid> <ssid password>
