@@ -47,6 +47,8 @@ class LFRequest:
 
     # request first url on stack
     def formPost(self, show_error=True, debug=False, die_on_error_=False):
+        if self.die_on_error:
+            die_on_error_ = True
         if (debug == False) and (self.debug == True):
             debug = True;
         responses = []
@@ -87,16 +89,15 @@ class LFRequest:
                     LFUtils.debug_printer.pprint(responses[0].reason)
 
                 print("------------------------------------------------------------------------")
-                if (die_on_error_ == True) or (self.die_on_error == True):
+                if die_on_error_:
                     exit(1)
         except urllib.error.URLError as uerror:
-            if (show_error):
+            if show_error:
                 print("----- LFRequest::formPost:94 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
                     exit(1)
-
         return None
 
     def jsonPost(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
@@ -167,10 +168,12 @@ class LFRequest:
         return None
 
     def get(self, debug=False, die_on_error_=False):
-        if (debug == False) and (self.debug == True):
+        if self.debug == True:
             debug = True
-        if (debug):
-            print("get: url: "+self.requested_url)
+        if self.die_on_error == True:
+            die_on_error_ = True
+        if debug:
+            print("LFUtils.get: url: "+self.requested_url)
         myrequest = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
         myresponses = []
         try:
@@ -198,14 +201,15 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
-                if (die_on_error_ == True) or (self.die_on_error == True):
+                if die_on_error_ == True:
+                    # print("--------------------------------------------- s.doe %s v doe %s ---------------------------" % (self.die_on_error, die_on_error_))
                     exit(1)
         except urllib.error.URLError as uerror:
             if debug:
                 print("----- LFRequest::get:205 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
-                if (die_on_error_ == True) or (self.die_on_error == True):
+                if die_on_error_ == True:
                     exit(1)
         return None
 
