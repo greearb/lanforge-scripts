@@ -72,7 +72,7 @@ class IPV4L4(LFCliBase):
             for item in endp_list:
                 expected_passes += 1
                 for name, info in item.items():
-                    if info['urls/s'] * 600 > 600 * .9:
+                    if info['urls/s'] * self.target_requests_per_ten > self.target_requests_per_ten * .9:
                         passes += 1
 
         return passes == expected_passes
