@@ -62,8 +62,7 @@ class TIPStationPowersave(LFCliBase):
         self.local_realm = realm.Realm(lfclient_host=self.host,
                                        lfclient_port=self.port,
                                        debug_=self.debug,
-                                       halt_on_error_=self.debug,
-                                       exit_on_error_=self.debug)
+                                       halt_on_error_=self.exit_on_error)
 
         # background traffic
         self.cx_background = self.local_realm.new_l3_cx_profile()
@@ -106,13 +105,11 @@ class TIPStationPowersave(LFCliBase):
 
     def build(self):
         self.sta_powersave_disabled_profile.use_security("open", ssid=self.ssid, passwd=self.password)
-        self.sta_powersave_disabled_profile.set_number_template(self.powersave_disabled_prefix)
         self.sta_powersave_disabled_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.sta_powersave_disabled_profile.set_command_param("set_port", "report_timer", 5000)
         self.sta_powersave_disabled_profile.set_command_flag("set_port", "rpt_timer", 1)
 
         self.sta_powersave_enabled_profile.use_security("open", ssid=self.ssid, passwd=self.password)
-        self.sta_powersave_enabled_profile.set_number_template(self.powersave_enabled_prefix)
         self.sta_powersave_enabled_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.sta_powersave_enabled_profile.set_command_param("set_port", "report_timer", 5000)
         self.sta_powersave_enabled_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -122,6 +119,9 @@ class TIPStationPowersave(LFCliBase):
                                          channel=self.channel,
                                          radio_=self.monitor_radio,
                                          name_=self.monitor_name)
+        LFUtils.wait_until_ports_appear(resource_id=1,
+                                        base_url=self.local_realm.lfclient_url,
+                                        port_list=[self.monitor_name])
         time.sleep(0.2)
         mon_j = self.json_get("/port/1/%s/%s"%(self.resource, self.monitor_name))
         if ("interface" not in mon_j):
@@ -243,6 +243,7 @@ def main():
     powersave_station_list = ["sta0001"] #,"sta0002","sta0003","sta0004"]
     ip_powersave_test = TIPStationPowersave(lfjson_host, lfjson_port,
                                             ssid="jedway-open",
+                                            channel_=157,
                                             normal_station_list_=normal_station_list,
                                             normal_station_radio_="wiphy0",
                                             powersave_station_list_=powersave_station_list,
