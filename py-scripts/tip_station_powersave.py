@@ -65,11 +65,11 @@ class TIPStationPowersave(LFCliBase):
                                        halt_on_error_=self.exit_on_error)
 
         # background traffic
-        self.cx_background = self.local_realm.new_l3_cx_profile()
-        self.cx_background.side_a_min_bps = side_a_min_rate_
-        self.cx_background.side_b_min_bps = side_a_min_rate_
-        self.cx_background.side_a_max_bps = side_a_max_rate_
-        self.cx_background.side_b_max_bps = side_a_min_rate_
+        self.cx_prof_bg = self.local_realm.new_l3_cx_profile()
+        self.cx_prof_bg.side_a_min_bps = side_a_min_rate_
+        self.cx_prof_bg.side_b_min_bps = side_a_min_rate_
+        self.cx_prof_bg.side_a_max_bps = side_a_max_rate_
+        self.cx_prof_bg.side_b_max_bps = side_a_min_rate_
 
         #upload
         self.cx_prof_upload = self.local_realm.new_l3_cx_profile()
@@ -96,11 +96,20 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_download.side_b_max_pdu = 0
 
         self.test_duration = traffic_duration_
+        if isinstance(self.test_duration, int):
+            self.test_duration = "%s"%traffic_duration_
+        if isinstance(self.test_duration, str):
+            self.test_duration = self.local_realm.parse_time(self.test_duration)
+
         self.pause_duration = pause_duration_
+        if isinstance(self.pause_duration, int):
+            self.pause_duration = "%s"%pause_duration_
+        if isinstance(self.pause_duration, str):
+            self.pause_duration = self.local_realm.parse_time(self.pause_duration)
+
         self.sta_powersave_enabled_profile = self.local_realm.new_station_profile()
         self.sta_powersave_disabled_profile = self.local_realm.new_station_profile()
         self.wifi_monitor_profile = self.local_realm.new_wifi_monitor_profile()
-
 
 
     def build(self):
@@ -114,6 +123,7 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_enabled_profile.set_command_param("set_port", "report_timer", 5000)
         self.sta_powersave_enabled_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.sta_powersave_enabled_profile.set_command_flag("add_sta", "power_save_enable", 1)
+
 
         self.wifi_monitor_profile.create(resource_=self.resource,
                                          channel=self.channel,
@@ -130,42 +140,60 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_disabled_profile.create(resource=1,
                                                    radio=self.normal_sta_radio,
                                                    sta_names_=self.normal_sta_list,
-                                                   debug=self.debug)
+                                                   debug=self.debug,
+                                                   suppress_related_commands_=True)
 
         self.sta_powersave_enabled_profile.create(resource=1,
                                                    radio=self.powersave_sta_radio,
                                                    sta_names_=self.powersave_sta_list,
-                                                   debug=self.debug)
+                                                   debug=self.debug,
+                                                   suppress_related_commands_=True)
+
         temp_sta_map = {}
-        for name in list(self.local_realm.station_list()):
+        for name in  self.powersave_sta_list + self.normal_sta_list:
             if (name in self.sta_powersave_disabled_profile.station_names) \
                     or (name in self.sta_powersave_enabled_profile.station_names):
                 temp_sta_map[name]=1
+        print("Stations we want:")
+        pprint.pprint(temp_sta_map)
+        self.local_realm.wait_until_ports_appear(self.resource, temp_sta_map.keys())
+
         if len(temp_sta_map) == (len(self.sta_powersave_disabled_profile.station_names) + len(self.sta_powersave_enabled_profile.station_names)):
-            self._pass("Stations created")
+            self._pass("Stations created", print_=True)
         else:
-            self._fail("Not all stations created")
+            print("Stations we see created:")
+            pprint.pprint(temp_sta_map)
+            self._fail("Not all stations created", print_=True)
+
+        bg_side_a_eids = []
+        for port in self.normal_sta_list:
+            bg_side_a_eids.append( "%s.%s"%(self.resource, port))
+
+        ul_side_a_eids = []
+        for port in self.normal_sta_list:
+            ul_side_a_eids.append( "%s.%s"%(self.resource, port))
+
+        dl_side_a_eids = []
+        for port in self.normal_sta_list:
+            dl_side_a_eids.append( "%s.%s"%(self.resource, port))
 
         print("Creating background cx profile ")
-        self.cx_background.name_prefix="udp_bg"
-        self.cx_background.create(endp_type="lf_udp",
-                                  side_a=self.normal_sta_list,
-                                  side_b="1.eth1",
-                                  sleep_time=.05)
+        self.cx_prof_bg.name_prefix= "udp_bg"
+        self.cx_prof_bg.create(endp_type="lf_udp",
+                               side_a=bg_side_a_eids,
+                               side_b="1.eth1")
 
         print("Creating upload cx profile ")
         self.cx_prof_upload.name_prefix = "udp_up"
         self.cx_prof_upload.create(endp_type="lf_udp",
-                                   side_a=self.powersave_sta_list,
-                                   side_b="1.eth1",
-                                   sleep_time=.05)
+                                   side_a=ul_side_a_eids,
+                                   side_b="1.eth1")
 
         print("Creating download cx profile")
         self.cx_prof_download.name_prefix = "udp_down"
         self.cx_prof_download.create(endp_type="lf_udp",
-                                     side_a=self.powersave_sta_list,
-                                     side_b="1.eth1",
-                                     sleep_time=.05)
+                                     side_a=ul_side_a_eids,
+                                     side_b="1.eth1")
 
     def __get_rx_values(self):
         cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
@@ -207,17 +235,18 @@ class TIPStationPowersave(LFCliBase):
         LFUtils.waitUntilPortsAdminUp(resource_id=self.resource,
                                       base_url=self.local_realm.lfclient_url,
                                       port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
-        self.cx_prof_background.start_cx()
+        self.cx_prof_bg.start_cx()
         print("Upload starts at: %d"%time.time())
         self.cx_prof_upload.start_cx()
-        time.sleep(float(self.test_duration))
+
+        time.sleep(self.test_duration.total_seconds())
         self.cx_prof_upload.stop_cx()
         print("Upload ends at: %d"%time.time())
-        time.sleep(float(self.pause_duration))
+        time.sleep(float(self.pause_duration.total_seconds()))
         # here is where we should sleep long enough for station to go to sleep
         print("Download begins at: %d"%time.time())
         self.cx_prof_download.start_cx()
-        time.sleep(float(self.test_duration))
+        time.sleep(float(self.test_duration.total_seconds()))
         self.cx_prof_download.stop_cx()
 
 
@@ -226,8 +255,8 @@ class TIPStationPowersave(LFCliBase):
         self.wifi_monitor_profile.admin_down()
         self.cx_prof_download.stop_cx()
         self.cx_prof_upload.stop_cx()
-        self.sta_powersave_enabled_profile.admin_down()
-        self.sta_powersave_disabled_profile.admin_down()
+        self.sta_powersave_enabled_profile.admin_down(self.resource)
+        self.sta_powersave_disabled_profile.admin_down(self.resource)
 
     def cleanup(self):
         self.wifi_monitor_profile.cleanup(resource_=self.resource, desired_ports=[self.monitor_name])
