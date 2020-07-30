@@ -89,7 +89,6 @@ class IPV4VariableTime(LFCliBase):
             return False
 
     def start(self, print_pass=False, print_fail=False):
-        LFUtils.wait_until_ports_disappear
         self.station_profile.admin_up(self.resource)
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
@@ -161,7 +160,7 @@ def main():
                                    password="jedway-wpa2-x2048-4-4",
                                    resource=1,
                                    security="wpa2", test_duration="5m",
-                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=True)
+                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=False)
 
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
