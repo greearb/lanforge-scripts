@@ -101,7 +101,7 @@ class GenTest(LFCliBase):
         temp_sta_list = []
         for station in range(len(self.sta_list)):
             temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(ports=temp_sta_list, sleep_time=.5)
         self._pass("PASS: Station build finished")
 

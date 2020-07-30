@@ -52,7 +52,7 @@ class IPv6Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):

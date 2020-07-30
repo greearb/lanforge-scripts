@@ -145,7 +145,7 @@ class IPV6VariableTime(LFCliBase):
         temp_sta_list = []
         for station in range(len(self.sta_list)):
             temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp6", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
         self._pass("PASS: Station build finished")
 
