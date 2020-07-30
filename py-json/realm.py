@@ -1316,7 +1316,7 @@ class StationProfile:
 
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def create(self, resource, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False):
+    def create(self, resource, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False, suppress_related_commands_=False):
         # try:
         #     resource = resource_radio[0: resource_radio.index(".")]
         #     name = resource_radio[resource_radio.index(".") + 1:]
@@ -1347,7 +1347,8 @@ class StationProfile:
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
-
+        # these are unactivated LFRequest objects that we can modify and
+        # re-use inside a loop, reducing the number of object creations
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
         self.station_names = []
@@ -1356,7 +1357,7 @@ class StationProfile:
         else:
             self.station_names = sta_names_
 
-        if len(self.station_names) >= 15:
+        if (len(self.station_names) >= 15) or (suppress_related_commands_ == True):
             self.add_sta_data["suppress_preexec_cli"] = "yes"
             self.add_sta_data["suppress_preexec_method"] = 1
             self.set_port_data["suppress_preexec_cli"] = "yes"
