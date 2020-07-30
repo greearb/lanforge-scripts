@@ -117,6 +117,14 @@ class Realm(LFCliBase):
         self.freq_to_chan[4970] = 194
         self.freq_to_chan[4980] = 196
 
+    def wait_until_ports_appear(self, resource_=1, sta_list=None, debug_=False):
+        if (sta_list is None) or (len(sta_list) < 1):
+            print("realm.wait_until_ports_appear: no stations provided")
+            return
+        LFUtils.wait_until_ports_appear(resource_id=resource_,
+                                        base_url=self.lfclient_url,
+                                        port_list=sta_list,
+                                        debug=debug_)
 
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]
@@ -579,6 +587,9 @@ class L3CXProfile(LFCliBase):
             side_b_name = "%s%s" % (self.name_prefix, side_b_info[2])
 
             for port_name in side_a:
+                if port_name.find('.') < 0:
+                    port_name = "%d.%s"(side_a_info[1], port_name)
+
                 side_a_info = self.local_realm.name_to_eid(port_name)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
