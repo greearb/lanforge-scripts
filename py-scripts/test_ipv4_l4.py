@@ -78,7 +78,7 @@ class IPV4L4(LFCliBase):
             if cx_name != 'uri' and cx_name != 'handler':
                 for item, value in cx_name.items():
                     for value_name, value_rx in value.items():
-                        if value_name == 'bytes-rd':
+                        if item in self.cx_profile.created_cx.keys() and value_name == 'bytes-rd':
                             cx_map[item] = value_rx
         return cx_map
 
