@@ -324,7 +324,7 @@ def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(debug_=False)
             if json_response == None:
-                print("port %s disappeared" % port_name)
+                print("port %s appeared" % port_name)
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
