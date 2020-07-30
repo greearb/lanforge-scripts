@@ -62,7 +62,7 @@ class StaConnect2(LFCliBase):
         self.localrealm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
         self.resulting_stations = {}
         self.resulting_endpoints = {}
-        self.sta_profile = None
+        self.station_profile = None
         self.l3_udp_profile = None
         self.l3_tcp_profile = None
 
@@ -147,14 +147,14 @@ class StaConnect2(LFCliBase):
         self.station_profile = self.localrealm.new_station_profile()
 
         if self.dut_security == WPA2:
-            self.station_profile.use_wpa2(on=True, ssid=self.dut_ssid, passwd=self.dut_passwd)
+            self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OPEN:
-            self.station_profile.use_wpa2(on=False, ssid=self.dut_ssid)
+            self.station_profile.use_security(security_type="open", ssid=self.dut_ssid, passwd="[BLANK]")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
         print("Adding new stations ", end="")
-        self.station_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names, up_=False, debug=False)
-        LFUtils.wait_until_ports_appear(self.resource, self.lfclient_url, self.station_names)
+        self.station_profile.create(resource=self.resource, radio=self.radio, sta_names_=self.station_names, up_=False, debug=self.debug, suppress_related_commands_=True)
+        LFUtils.wait_until_ports_appear(self.resource, self.lfclient_url, self.station_names, debug=self.debug)
 
         # Create UDP endpoints
         self.l3_udp_profile = self.localrealm.new_l3_cx_profile()
@@ -181,7 +181,12 @@ class StaConnect2(LFCliBase):
                                     suppress_related_commands=True)
 
     def start(self):
-        if not self.station_profile.up:
+        if self.station_profile is None:
+            self._fail("Incorrect setup")
+        pprint.pprint(self.station_profile)
+        if self.station_profile.up is None:
+            self._fail("Incorrect station profile, missing profile.up")
+        if self.station_profile.up == False:
             print("\nBringing ports up...")
             data = {"shelf": 1,
                      "resource": self.resource,
@@ -375,7 +380,10 @@ Example:
         if args.debug in on_flags:
             debug_v = True
 
-    staConnect = StaConnect2(lfjson_host, lfjson_port, debug_=debug_v)
+    staConnect = StaConnect2(lfjson_host, lfjson_port,
+                             debug_=True,
+                             _exit_on_fail=True,
+                             _exit_on_error=False)
     staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
