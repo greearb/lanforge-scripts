@@ -20,7 +20,7 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
-                 target_requests_per_ten=600, number_template="00000", resource=1, num_tests=1,
+                 target_requests_per_ten=60, number_template="00000", resource=1, num_tests=1,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -58,10 +58,12 @@ class IPV4L4(LFCliBase):
         if endp_list is not None and endp_list['endpoint'] is not None:
             endp_list = endp_list['endpoint']
             for item in endp_list:
-                expected_passes += 1
                 for name, info in item.items():
-                    if info['urls/s'] * self.target_requests_per_ten > self.target_requests_per_ten * .9:
-                        passes += 1
+                    if name in self.cx_profile.created_cx.keys():
+                        expected_passes += 1
+                        if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
+                            # print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                            passes += 1
 
         return passes == expected_passes
 
@@ -84,7 +86,7 @@ class IPV4L4(LFCliBase):
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
         cur_time = datetime.datetime.now()
-        interval_time = cur_time + datetime.timedelta(minutes=10)
+        interval_time = cur_time + datetime.timedelta(minutes=2)
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up(1)
@@ -106,7 +108,7 @@ class IPV4L4(LFCliBase):
             else:
                 self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
                 break
-            interval_time = cur_time + datetime.timedelta(minutes=10)
+            interval_time = cur_time + datetime.timedelta(minutes=2)
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
