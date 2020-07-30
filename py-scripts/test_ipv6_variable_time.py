@@ -59,14 +59,15 @@ class IPV6VariableTime(LFCliBase):
 
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
+        # print(self.cx_profile.created_cx.values())
         #print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
                 for item, value in cx_name.items():
                     for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes':
+                      if value_name == 'rx bytes' and item in self.cx_profile.created_cx.values():
                         cx_rx_map[item] = value_rx
         return cx_rx_map
 
