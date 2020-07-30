@@ -126,7 +126,7 @@ class IPV6VariableTime(LFCliBase):
         self.cx_profile.stop_cx()
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
-            url = "json-cli/set_port"
+            url = "cli-json/set_port"
             self.json_post(url, data)
 
     def cleanup(self, sta_list):

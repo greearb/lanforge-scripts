@@ -97,7 +97,7 @@ class IPv6Test(LFCliBase):
         # Bring stations down
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, sta_name)
-            url = "json-cli/set_port"
+            url = "cli-json/set_port"
             # print(sta_name)
             self.json_post(url, data)
 
