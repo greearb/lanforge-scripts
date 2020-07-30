@@ -375,7 +375,6 @@ def wait_until_ports_appear(resource_id=1, base_url="http://localhost:8080", por
     :param debug:
     :return:
     """
-
     print("Waiting until ports appear...")
     found_stations = []
     sleep(2)
