@@ -103,6 +103,8 @@ class LFRequest:
     def jsonPost(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
         if (debug == False) and (self.debug == True):
             debug = True
+        if self.die_on_error:
+            die_on_error_ = True
         responses = []
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             request = urllib.request.Request(url=self.requested_url,
@@ -156,8 +158,8 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(responses[0].reason)
                 print("------------------------------------------------------------------------")
-                if (die_on_error_ == True) or (self.die_on_error == True):
-                    exit(1)
+            if die_on_error_ or (error.code != 404):
+                exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
                 print("----- LFRequest::jsonPost:162 URLError: ---------------------------------------------")
