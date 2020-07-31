@@ -234,9 +234,11 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_disabled_profile.admin_up(resource=1)
         self.sta_powersave_enabled_profile.admin_up(resource=1)
 
-        LFUtils.waitUntilPortsAdminUp(resource_id=self.resource,
-                                      base_url=self.local_realm.lfclient_url,
-                                      port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        LFUtils.wait_until_ports_admin_up(resource_id=self.resource,
+                                          base_url=self.local_realm.lfclient_url,
+                                          port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        self.local_realm.wait_for_ip(resource=self.resource,
+                                     station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         self.cx_prof_bg.start_cx()
         print("Upload starts at: %d"%time.time())
         self.cx_prof_upload.start_cx()
@@ -274,7 +276,8 @@ def main():
     normal_station_list = ["sta1000" ]
     powersave_station_list = ["sta0001"] #,"sta0002","sta0003","sta0004"]
     ip_powersave_test = TIPStationPowersave(lfjson_host, lfjson_port,
-                                            ssid="jedway-open",
+                                            ssid="jedway-open-x2048-5-1",
+                                            password="[BLANK]",
                                             channel_=157,
                                             normal_station_list_=normal_station_list,
                                             normal_station_radio_="wiphy0",
