@@ -226,7 +226,9 @@ class TIPStationPowersave(LFCliBase):
         date_time = now.strftime("%Y-%m-%d-%H%M%S")
         curr_mon_name = self.wifi_monitor_profile.monitor_name
         pcap_file = "/home/lanforge/Documents/%s-%s.pcap"%(curr_mon_name, date_time)
-        self.wifi_monitor_profile.start_sniff(pcap_file)
+
+        capture_duration = 2 * ( self.test_duration.total_seconds() + self.pause_duration.total_seconds() + 4)
+        self.wifi_monitor_profile.start_sniff(pcap_file, capture_duration)
         time.sleep(0.05)
 
         self.sta_powersave_disabled_profile.admin_up(resource=1)
