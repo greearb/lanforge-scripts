@@ -101,7 +101,11 @@ class IPV4L4(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
-        self.local_realm.wait_for_ip(self.resource, temp_stas)
+        if self.local_realm.wait_for_ip(self.resource, temp_stas):
+            self._pass("All stations got IPs", print_pass)
+        else:
+            self._fail("Stations failed to get IPs", print_fail)
+            exit(1)
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time

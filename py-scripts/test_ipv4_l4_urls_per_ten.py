@@ -86,11 +86,15 @@ class IPV4L4(LFCliBase):
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
         cur_time = datetime.datetime.now()
-        interval_time = cur_time + datetime.timedelta(minutes=2)
+        interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up(1)
-        self.local_realm.wait_for_ip(self.resource, temp_stas)
+        if self.local_realm.wait_for_ip(self.resource, temp_stas):
+            self._pass("All stations got IPs", print_pass)
+        else:
+            self._fail("Stations failed to get IPs", print_fail)
+            exit(1)
         self.cx_profile.start_cx()
         print("Starting test")
         for test in range(self.num_tests):
@@ -108,7 +112,7 @@ class IPV4L4(LFCliBase):
             else:
                 self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
                 break
-            interval_time = cur_time + datetime.timedelta(minutes=2)
+            interval_time = cur_time + datetime.timedelta(minutes=10)
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
