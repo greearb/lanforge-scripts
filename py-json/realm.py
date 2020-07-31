@@ -313,7 +313,7 @@ class Realm(LFCliBase):
             return info
         return [1, int(info[0]), info[1]]
 
-    def wait_for_ip(self, resource=1, station_list=None, ipv6=False):
+    def wait_for_ip(self, resource=1, station_list=None, ipv6=False, timeout_sec=60):
         num_ports = 0
         num_ips = 0
         print("Waiting for ips...")
@@ -333,7 +333,7 @@ class Realm(LFCliBase):
         if ipv6:
             num_ports -= 1  # Prevents eth0 from being counted, preventing infinite loop
 
-        while num_ips != num_ports:
+        while num_ips != num_ports and timeout_sec != 0:
             num_ips = 0
             response = super().json_get("/port/1/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                         (resource, ",".join(station_list)))
@@ -349,6 +349,7 @@ class Realm(LFCliBase):
                             if v['ip'] != '0.0.0.0':
                                 num_ips += 1
                 time.sleep(1)
+                timeout_sec -= 1
             if ipv6:
                 for x in range(len(response['interfaces'])):
                     for k, v in response['interfaces'][x].items():
@@ -358,6 +359,11 @@ class Realm(LFCliBase):
                                     and v['ipv6 address'] != 'AUTO':
                                 num_ips += 1
                 time.sleep(1)
+                timeout_sec -= 1
+        if num_ips == num_ports:
+            return True
+        else:
+            return False
 
     def parse_time(self, time_string):
         if isinstance(time_string, str):
@@ -813,7 +819,7 @@ class L3CXProfile(LFCliBase):
 
             for port_name in side_a:
                 if port_name.find('.') < 0:
-                    port_name = "%d.%s"(side_a_info[1], port_name)
+                    port_name = "%d.%s" % (side_a_info[1], port_name)
 
                 side_a_info = self.local_realm.name_to_eid(port_name)
                 side_a_shelf = side_a_info[0]
@@ -1311,11 +1317,43 @@ class WifiMonitor:
                 "duration": duration_sec
             }
         self.local_realm.json_post("/cli-json/sniff_port", _data= data)
-           
+
 
                # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
+class VAPProfile:
+    def __init__(self, lfclient_url, local_realm, radio, ssid="NA", ssid_pass="NA", mode=0, debug_=False):
+        self.debug = debug_
+        self.lfclient_url = lfclient_url
+        self.ssid = ssid
+        self.ssid_pass = ssid_pass
+        self.mode = mode
+        self.local_realm = local_realm
+        self.radio = radio
+        self.created_vaps = []
 
+    def admin_up(self, resource):
+        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
+        for vap_name in self.created_vaps:
+            req_json["port"] = vap_name
+            set_port_r.addPostData(req_json)
+            json_response = set_port_r.jsonPost(self.debug)
+            time.sleep(0.03)
+
+    def admin_down(self, resource):
+        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portDownRequest(resource, None, debug_on=False)
+        for vap_name in self.created_vaps:
+            req_json["port"] = vap_name
+            set_port_r.addPostData(req_json)
+            json_response = set_port_r.jsonPost(self.debug)
+            time.sleep(0.03)
+
+    def create(self):
+        pass
+
+    
 
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
