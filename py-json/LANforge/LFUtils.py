@@ -150,8 +150,10 @@ def port_up_request(resource_id, port_name, debug_on=False):
         debug_printer.pprint(data)
     return data
 
-
 def portDownRequest(resource_id, port_name, debug_on=False):
+    return port_down_request(resource_id, port_name, debug_on)
+
+def port_down_request(resource_id, port_name, debug_on=False):
     """
     Does not change the use_dhcp flag
     See http://localhost:8080/help/set_port
