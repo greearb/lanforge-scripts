@@ -30,9 +30,9 @@ WPA2="wpa2"
 MODE_AUTO=0
 
 class StaConnect2(LFCliBase):
-    def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
+    def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
-                 _resource=1, _upstream_resource=1, _upstream_port="eth2",
+                 _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, debug_=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
