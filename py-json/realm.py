@@ -1296,7 +1296,7 @@ class WifiMonitor:
         down_request = LFUtils.portDownRequest(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", down_request)
 
-    def start_sniff(self, capname=None):
+    def start_sniff(self, capname=None, duration_sec=60):
         if capname is None:
             raise ValueError("Need a capture file name")
         data = {
@@ -1306,7 +1306,7 @@ class WifiMonitor:
                 "display": "NA",
                 "flags": 0x2,
                 "outfile": capname,
-                "duration": 45 
+                "duration": duration_sec
             }
         self.local_realm.json_post("/cli-json/sniff_port", _data= data)
            
