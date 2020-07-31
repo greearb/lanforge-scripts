@@ -312,6 +312,9 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
 
 
 def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    return wait_until_ports_admin_up(resource_id=resource_id, base_url=base_url, port_list=port_list)
+
+def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", port_list=()):
     print("Waiting until  ports appear admin-up...")
     down_stations = port_list.copy()
     sleep(1)
