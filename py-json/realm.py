@@ -313,10 +313,12 @@ class Realm(LFCliBase):
             return info
         return [1, int(info[0]), info[1]]
 
-    def wait_for_ip(self, resource, station_list, ipv6=False):
+    def wait_for_ip(self, resource=1, station_list=None, ipv6=False):
         num_ports = 0
         num_ips = 0
         print("Waiting for ips...")
+        if (station_list is None) or (len(station_list) < 1):
+            raise ValueError("wait_for_ip: expects non-empty list of ports")
         response = super().json_get("/port/1/%s/%s?fields=alias,ip,port+type" % (resource, ",".join(station_list)))
         if (response is None) or ("interfaces" not in response):
             print("station_list: incomplete response:")
