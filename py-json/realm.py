@@ -1368,16 +1368,16 @@ class VAPProfile(LFCliBase):
 
     def admin_up(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
-        req_json["ap_name"] = self.vap_name
+        req_json = LFUtils.portUpRequest(resource, None, debug_on=self.debug)
+        req_json["port"] = self.vap_name
         set_port_r.addPostData(req_json)
         json_response = set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
 
     def admin_down(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.port_down_request(resource, None, debug_on=False)
-        req_json["ap_name"] = self.vap_name
+        req_json = LFUtils.port_down_request(resource, None, debug_on=self.debug)
+        req_json["port"] = self.vap_name
         set_port_r.addPostData(req_json)
         json_response = set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
