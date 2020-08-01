@@ -17,31 +17,13 @@ import realm
 import time
 import datetime
 
-#The valid ways to have multiple TX would be if they were on different ports. 
-# I don't think that we need to add that complexity for now.
-
-#In fact, it occurs to me that a multicast TX profile might actually already 
-# know the right amount of information from which to generate it's RX endpoints
-
-#So if we create a TX endpoint, it has a multicast ip and port. 
-# Those two pieces of information are also useful for creating RXes. 
-# I suggest one profile class.
-
-
-#multicast_profile.createTx(port) and multicast_profile.createRX(port_list)
-
-#the ports have no knowledge of the protocols they will interact with, 
-#the ports are layer-1 devices with some layer2 and layer3 features (mac addresses, IP addresses)
-#so anything you can legally assign an IP to can take a Layer3 connection or better
-
-
 class L3VariableTimeLongevity(LFCliBase):
     def __init__(self, host, port, endp_type, is_multicast, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, security, station_lists, name_prefix, resource=1,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
-                 _debug_on=True,
+                 _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -138,20 +120,20 @@ class L3VariableTimeLongevity(LFCliBase):
             temp_station_list = station_list.copy()
             temp_stations_list.append(temp_station_list)
             temp_stations_list.append(self.side_b)
-            self.local_realm.wait_for_ip(self.resource, temp_station_list)
+            if self.local_realm.wait_for_ip(self.resource, temp_station_list,timeout_sec=120):
+                print("ip's aquired")
+            else:
+                print("print failed to get IP's")
 
+                
 
         temp_station_list = []
         if self.is_multicast:
             for station_list in self.station_lists:     
                 for station in range(len(station_list)):
                     temp_station_list.append(str(self.resource) + "." + station_list[station])
-
-                # start recievers
-                self.multicast_profile.start_mc_rx(side_a=temp_station_list)
-
-            # right now the multicast is hard coded,  need to pass in station
-            self.multicast_profile.start_mc_tx(side_b=self.side_b)
+                self.multicast_profile.start_mc_rx(side_rx=temp_station_list)
+            self.multicast_profile.start_mc_tx(side_tx=self.side_b)
                 
         else:
             self.cx_profile.start_cx()
@@ -249,8 +231,6 @@ class L3VariableTimeLongevity(LFCliBase):
         url = "cli-json/add_br"
         self.json_post(url, data)
 
-        #refactor later
-
         try:
             data = LFUtils.port_dhcp_up_request(resource, self.side_b)
             self.json_post("/cli-json/set_port", data)
@@ -258,28 +238,23 @@ class L3VariableTimeLongevity(LFCliBase):
             print("LFUtils.port_dhcp_up_request didn't complete ")
             print("or the json_post failed either way {} did not set up dhcp so test may no pass ".format(self.side_b))
         
-        #exit(1)
-
         resource = 1
         index = 0 
         for station_profile in self.station_profiles:
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
             print("Creating stations")
-            #station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            #station_profile.set_command_param("set_port", "report_timer", 1500)
-            #station_profile.set_command_flag("set_port", "rpt_timer", 1)
             temp_station_list = []
 
             index = 0 
             for station_list in self.station_lists: 
                 for station in range(len(station_list)):
                     temp_station_list.append(str(self.resource) + "." + station_list[station])
-                station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=True )
+                station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=False )
                 index += 1
             if self.is_multicast:
                 self.multicast_profile.create_mc_tx(self.side_b)
-                self.multicast_profile.create_mc_rx(side_a=temp_station_list)
+                self.multicast_profile.create_mc_rx(side_rx=temp_station_list)
             else:
                 self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.'+self.side_b, sleep_time=.5)
         self._pass("PASS: Stations build finished")
