@@ -1,6 +1,6 @@
 add_vap_flags = {
 "enable_wpa"           : 0x10,            # Enable WPA
-"hostpad_config"       : 0x20,            # Use Custom hostapd config file.
+"hostapd_config"       : 0x20,            # Use Custom hostapd config file.
 "enable_80211d"        : 0x40,            # Enable 802.11D to broadcast country-code & channels in VAPs
 "short_preamble"       : 0x80,            # Allow short-preamble
 "pri_sec_ch_enable"    : 0x100,           # Enable Primary/Secondary channel switch.
