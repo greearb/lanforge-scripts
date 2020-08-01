@@ -231,4 +231,46 @@ class LFRequest:
     def addPostData(self, data):
         self.post_data = data
 
+
+def plain_get(url_=None, debug_=False, die_on_error_=False):
+    myrequest = urllib.request.Request(url=url_)
+    myresponses = []
+    try:
+        myresponses.append(urllib.request.urlopen(myrequest))
+        return myresponses[0]
+    except urllib.error.HTTPError as error:
+        if debug_:
+            print("----- LFRequest::get:181 HTTPError: --------------------------------------------")
+            print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason))
+            if error.code != 404:
+                print("Error: ", sys.exc_info()[0])
+                print("Request URL:", myrequest.get_full_url())
+                print("Request Content-type:", myrequest.get_header('Content-type'))
+                print("Request Accept:", myrequest.get_header('Accept'))
+                print("Request Data:")
+                LFUtils.debug_printer.pprint(myrequest.data)
+
+            if error.headers:
+                # the HTTPError is of type HTTPMessage a subclass of email.message
+                # print(type(error.keys()))
+                for headername in sorted(error.headers.keys()):
+                    print ("Response %s: %s "%(headername, error.headers.get(headername)))
+
+            if len(myresponses) > 0:
+                print("----- Response: --------------------------------------------------------")
+                LFUtils.debug_printer.pprint(myresponses[0].reason)
+            print("------------------------------------------------------------------------")
+            if die_on_error_ == True:
+                # print("--------------------------------------------- s.doe %s v doe %s ---------------------------" % (self.die_on_error, die_on_error_))
+                exit(1)
+    except urllib.error.URLError as uerror:
+        if debug_:
+            print("----- LFRequest::get:205 URLError: ---------------------------------------------")
+            print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
+            print("------------------------------------------------------------------------")
+            if die_on_error_ == True:
+                exit(1)
+    return None
+
+
 # ~LFRequest
