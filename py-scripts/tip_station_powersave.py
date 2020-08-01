@@ -95,6 +95,7 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_download.side_b_min_pdu = pdu_size_
         self.cx_prof_download.side_b_max_pdu = 0
 
+        self.pcap_file = None
         self.test_duration = traffic_duration_
         if isinstance(self.test_duration, int):
             self.test_duration = "%s"%traffic_duration_
@@ -111,6 +112,7 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_disabled_profile = self.local_realm.new_station_profile()
         self.wifi_monitor_profile = self.local_realm.new_wifi_monitor_profile()
 
+        self.pcap_save_path = "/home/lanforge/lf_reports"
 
     def build(self):
         self.sta_powersave_disabled_profile.use_security("open", ssid=self.ssid, passwd=self.password)
@@ -195,6 +197,17 @@ class TIPStationPowersave(LFCliBase):
                                      side_a=ul_side_a_eids,
                                      side_b="1.eth1")
 
+        print("Collecting lanforge eth0 IP...")
+        eth0_resp = self.json_get("/port/1/%s/eth0?fields=port,alias,ip"%self.resource, debug_=self.debug)
+        if (eth0_resp is None) or ("items" in eth0_resp) or ("interface" not in eth0_resp):
+            self._fail("Unable to query %s.eth0"%self.resource, print_=True)
+            exit(1)
+        self.eth0_ip = eth0_resp["interface"]["ip"]
+        if self.eth0_ip == "0.0.0.0":
+            self._fail("eth0 is misconfigured or not our management port", print_=True)
+            exit(1)
+
+
     def __get_rx_values(self):
         cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
         #print("==============\n", cx_list, "\n==============")
@@ -225,10 +238,10 @@ class TIPStationPowersave(LFCliBase):
         now = datetime.datetime.now()
         date_time = now.strftime("%Y-%m-%d-%H%M%S")
         curr_mon_name = self.wifi_monitor_profile.monitor_name
-        pcap_file = "/home/lanforge/Documents/%s-%s.pcap"%(curr_mon_name, date_time)
+        self.pcap_file = "%s/%s-%s.pcap"%(self.pcap_save_path, curr_mon_name, date_time)
 
         capture_duration = 2 * ( self.test_duration.total_seconds() + self.pause_duration.total_seconds() + 4)
-        self.wifi_monitor_profile.start_sniff(pcap_file, capture_duration)
+        self.wifi_monitor_profile.start_sniff(self.pcap_file, capture_duration)
         time.sleep(0.05)
 
         self.sta_powersave_disabled_profile.admin_up(resource=1)
@@ -252,6 +265,7 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_download.start_cx()
         time.sleep(float(self.test_duration.total_seconds()))
         self.cx_prof_download.stop_cx()
+        print("Download ends at: %d"%time.time())
 
 
     def stop(self):
@@ -261,6 +275,20 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_upload.stop_cx()
         self.sta_powersave_enabled_profile.admin_down(self.resource)
         self.sta_powersave_disabled_profile.admin_down(self.resource)
+
+        # check for that pcap file
+        if self.pcap_file is None:
+            self._fail("Did not configure pcap file")
+        homepage_url = "http://%s/"%self.eth0_ip
+        webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
+        if webpage is None:
+            self._fail("Unable to find wepage for LANforge")
+        homepage_url="http://%s/lf_reports/"%self.eth0_ip
+        webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
+        if webpage is None:
+            self._fail("Unable to find /lf_reports/ page")
+        # now check for the pcap file we just created
+
 
     def cleanup(self):
         self.wifi_monitor_profile.cleanup(resource_=self.resource, desired_ports=[self.monitor_name])
