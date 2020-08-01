@@ -1488,7 +1488,28 @@ class VAPProfile(LFCliBase):
 
         return result
 
-    def create(self, resource, radio, up_=None, debug=False, suppress_related_commands_=True):
+    def create(self, resource, radio, channel=None, up_=None, debug=False, suppress_related_commands_=True):
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio), debug_=self.debug)
+        if jr is None:
+            raise ValueError("No radio %s.%s found" % (resource, radio))
+
+        eid = "1.%s.%s" % (resource, radio)
+        frequency = 0
+        country = 0
+        if eid in jr:
+            country = jr[eid]["country"]
+
+        data = {
+            "shelf": 1,
+            "resource": resource,
+            "radio": radio,
+            "mode": 0, #"NA", #0 for AUTO or "NA"
+            "channel": channel,
+            "country": country,
+            "frequency": self.local_realm.channel_freq(channel_=channel)
+        }
+        self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
+
         if up_ is not None:
             self.up = up_
         if self.up:
@@ -1539,7 +1560,6 @@ class VAPProfile(LFCliBase):
 
         if (self.up):
             self.admin_up(1)
-
 
     def cleanup(self, resource, desired_ports=None, delay=0.03):
         print("Cleaning up vaps")
