@@ -23,7 +23,7 @@ class L3VariableTimeLongevity(LFCliBase):
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
-                 _debug_on=False,
+                 _debug_on=True,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -111,9 +111,15 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
+        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.side_b)
+        self.local_realm.json_post("/cli-json/set_port", up_request)
         for station_profile in self.station_profiles:
             print("Bringing up station {}".format(station_profile))
             station_profile.admin_up(self.resource)
+
+        if self.is_multicast:
+            self.multicast_profile.admin_up_mc_tx(self.resource, self.side_b)
+        
 
         temp_stations_list = []
         for station_list in self.station_lists:     
@@ -124,8 +130,6 @@ class L3VariableTimeLongevity(LFCliBase):
                 print("ip's aquired")
             else:
                 print("print failed to get IP's")
-
-                
 
         temp_station_list = []
         if self.is_multicast:
@@ -149,7 +153,6 @@ class L3VariableTimeLongevity(LFCliBase):
         else:
             filtered_old_rx_values = old_rx_values
 
-        
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
 
         passes = 0
@@ -204,8 +207,10 @@ class L3VariableTimeLongevity(LFCliBase):
         
                                         
     def build(self):
-        # refactor in LFUtils.port_zero_request()
+        
+ # refactor in LFUtils.port_zero_request()
         resource = 1
+            
         data ={
                 'shelf':1,
                 'resource':1,
@@ -219,6 +224,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
         url = "cli-json/set_port"
         self.json_post(url, data)
+
     
         # refactor into LFUtils
         data ={
@@ -231,12 +237,13 @@ class L3VariableTimeLongevity(LFCliBase):
         url = "cli-json/add_br"
         self.json_post(url, data)
 
+
         try:
             data = LFUtils.port_dhcp_up_request(resource, self.side_b)
             self.json_post("/cli-json/set_port", data)
         except:
             print("LFUtils.port_dhcp_up_request didn't complete ")
-            print("or the json_post failed either way {} did not set up dhcp so test may no pass ".format(self.side_b))
+            print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(self.side_b))
         
         resource = 1
         index = 0 
@@ -250,7 +257,7 @@ class L3VariableTimeLongevity(LFCliBase):
             for station_list in self.station_lists: 
                 for station in range(len(station_list)):
                     temp_station_list.append(str(self.resource) + "." + station_list[station])
-                station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=False )
+                station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=True )
                 index += 1
             if self.is_multicast:
                 self.multicast_profile.create_mc_tx(self.side_b)

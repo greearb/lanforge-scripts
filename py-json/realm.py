@@ -518,6 +518,23 @@ class MULTICASTProfile(LFCliBase):
     def refresh_mc(self):
         pass
 
+    def admin_up_mc_tx(self, resource, side_mc_tx):
+        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
+        req_json["port"] = side_mc_tx
+        set_port_r.addPostData(req_json)
+        json_response = set_port_r.jsonPost(self.debug)
+        time.sleep(0.03)
+
+    def admin_down_mc_tx(self, resource):
+        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
+        req_json = LFUtils.portDownRequest(resource, None, debug_on=False)
+        for sta_name in self.station_names:
+            req_json["port"] = sta_name
+            set_port_r.addPostData(req_json)
+            json_response = set_port_r.jsonPost(self.debug)
+            time.sleep(0.03)    
+
     def start_mc_tx(self, side_tx, suppress_related_commands=None, debug_ = False ):
         if self.debug:
             debut_=True
