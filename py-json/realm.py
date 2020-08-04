@@ -1466,7 +1466,6 @@ class VAPProfile(LFCliBase):
             "frequency": self.local_realm.channel_freq(channel_=channel)
         }
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
-
         if up_ is not None:
             self.up = up_
         if self.up:
@@ -1515,11 +1514,20 @@ class VAPProfile(LFCliBase):
         json_response = set_port_r.jsonPost(debug)
         time.sleep(0.03)
 
+        # create bridge
+        data = {
+            "shelf": 1,
+            "resource": resource,
+            "port": "br0",
+            "network_devs": "eth1,%s" % self.vap_name
+        }
+        self.local_realm.json_post("cli-json/add_br", data)
+
         if (self.up):
             self.admin_up(1)
 
     def cleanup(self, resource, desired_ports=None, delay=0.03):
-        print("Cleaning up vaps")
+        print("Cleaning up VAPs")
         req_url = "/cli-json/rm_vlan"
         data = {
             "shelf": 1,
