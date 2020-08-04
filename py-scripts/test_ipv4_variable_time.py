@@ -19,7 +19,7 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1,
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1, radio="wiphy0",
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m",
@@ -33,6 +33,7 @@ class IPV4VariableTime(LFCliBase):
         self.sta_list = sta_list
         self.security = security
         self.password = password
+        self.radio = radio
         self.number_template = number_template
         self.debug = _debug_on
         self.resource = resource
@@ -149,7 +150,7 @@ class IPV4VariableTime(LFCliBase):
         temp_sta_list = []
         for station in range(len(self.sta_list)):
             temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(resource=1, radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
         self._pass("PASS: Station build finished")
 
