@@ -45,10 +45,9 @@ class IPV4VariableTime(LFCliBase):
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
+        self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
