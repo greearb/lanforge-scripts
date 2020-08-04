@@ -252,6 +252,7 @@ class TIPStationPowersave(LFCliBase):
                                           port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         self.local_realm.wait_for_ip(resource=self.resource,
                                      station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        time.sleep(2)
         self.cx_prof_bg.start_cx()
         print("Upload starts at: %d"%time.time())
         self.cx_prof_upload.start_cx()
@@ -292,8 +293,9 @@ class TIPStationPowersave(LFCliBase):
 
     def cleanup(self):
         self.wifi_monitor_profile.cleanup(resource_=self.resource, desired_ports=[self.monitor_name])
-        self.cx_prof_download.cleanup()
-        self.cx_prof_upload.cleanup()
+        #self.cx_prof_download.cleanup()
+        self.local_realm.remove_all_cxs(remove_all_endpoints=True)
+        #self.cx_prof_upload.cleanup()
         self.sta_powersave_enabled_profile.cleanup(resource=self.resource, desired_stations=self.powersave_sta_list)
         self.sta_powersave_disabled_profile.cleanup(resource=self.resource, desired_stations=self.normal_sta_list)
 
