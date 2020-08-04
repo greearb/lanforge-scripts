@@ -1594,7 +1594,7 @@ class VAPProfile(LFCliBase):
 #
 class StationProfile:
     def __init__(self, lfclient_url, local_realm, ssid="NA", ssid_pass="NA", security="open", number_template_="00000", mode=0, up=True,
-                 dhcp=True, debug_=False):
+                 dhcp=True, debug_=False, use_ht160=False):
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
@@ -1604,6 +1604,7 @@ class StationProfile:
         self.dhcp = dhcp
         self.security = security
         self.local_realm = local_realm
+        self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
         self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
@@ -1824,6 +1825,12 @@ class StationProfile:
         #     print("Building %s on radio %s.%s" % (num_stations, resource, radio_name))
         # except ValueError as e:
         #     print(e)
+
+        if self.use_ht160:
+            self.desired_add_sta_flags.append("ht160_enable")
+            self.desired_add_sta_flags_mask.append("ht160_enable")
+        self.add_sta_data["mode"] = self.mode
+
         if up_ is not None:
             self.up = up_
 
