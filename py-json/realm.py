@@ -423,19 +423,22 @@ class Realm(LFCliBase):
         # remove endpoints
         # nc show endpoints
         # nc show cross connects
-        cx_list = list(self.cx_list())
-        not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
-        if cx_list is not None:
-            print("Removing all cxs")
-            for cx_name in cx_list:
-                if cx_name in not_cx:
-                    continue
-                req_url = "cli-json/rm_cx"
-                data = {
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name
-                }
-                self.json_post(req_url, data)
+        try:
+            cx_list = list(self.cx_list())
+            not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
+            if cx_list is not None:
+                print("Removing all cxs")
+                for cx_name in cx_list:
+                    if cx_name in not_cx:
+                        continue
+                    req_url = "cli-json/rm_cx"
+                    data = {
+                        "test_mgr": "default_tm",
+                        "cx_name": cx_name
+                    }
+                    self.json_post(req_url, data)
+        except:
+            print("no cxs to remove")
 
         if remove_all_endpoints:
             self.remove_all_endps()
