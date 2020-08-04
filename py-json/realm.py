@@ -1306,6 +1306,7 @@ class VAPProfile(LFCliBase):
             "ap_name": None,
             "flags": 0,
             "flags_mask": 0,
+            "mode": 0,
             "ssid": None,
             "key": None,
             "mac": "xx:xx:xx:xx:*:xx"
@@ -1321,10 +1322,6 @@ class VAPProfile(LFCliBase):
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
-
-        if self.use_ht160:
-            self.desired_add_vap_flags.append("ht160_enable")
-            self.desired_add_vap_flags_mask.append("ht160_enable")
 
     def admin_up(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
@@ -1449,6 +1446,17 @@ class VAPProfile(LFCliBase):
         return result
 
     def create(self, resource, radio, channel=None, up_=None, debug=False, suppress_related_commands_=True):
+
+        if self.use_ht160:
+            self.desired_add_vap_flags.append("enable_80211d")
+            self.desired_add_vap_flags_mask.append("enable_80211d")
+            self.desired_add_vap_flags.append("80211h_enable")
+            self.desired_add_vap_flags_mask.append("80211h_enable")
+            self.desired_add_vap_flags.append("ht160_enable")
+            self.desired_add_vap_flags_mask.append("ht160_enable")
+
+        print("MODE ========= ", self.mode)
+
         jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio), debug_=self.debug)
         if jr is None:
             raise ValueError("No radio %s.%s found" % (resource, radio))
@@ -1463,7 +1471,7 @@ class VAPProfile(LFCliBase):
             "shelf": 1,
             "resource": resource,
             "radio": radio,
-            "mode": 0, #"NA", #0 for AUTO or "NA"
+            "mode": self.mode, #"NA", #0 for AUTO or "NA"
             "channel": channel,
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
@@ -1477,7 +1485,8 @@ class VAPProfile(LFCliBase):
         elif "create_admin_down" not in self.desired_add_vap_flags:
             self.desired_add_vap_flags.append("create_admin_down")
 
-        # create stations down, do set_port on them, then set stations up
+        # create vaps down, do set_port on them, then set vaps up
+        self.add_vap_data["mode"] = self.mode
         self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
         self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
         self.add_vap_data["radio"] = radio
@@ -1588,7 +1597,7 @@ class VAPProfile(LFCliBase):
 #
 class StationProfile:
     def __init__(self, lfclient_url, local_realm, ssid="NA", ssid_pass="NA", security="open", number_template_="00000", mode=0, up=True,
-                 dhcp=True, debug_=False):
+                 dhcp=True, debug_=False, use_ht160=False):
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
@@ -1598,6 +1607,7 @@ class StationProfile:
         self.dhcp = dhcp
         self.security = security
         self.local_realm = local_realm
+        self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
         self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
@@ -1818,6 +1828,12 @@ class StationProfile:
         #     print("Building %s on radio %s.%s" % (num_stations, resource, radio_name))
         # except ValueError as e:
         #     print(e)
+
+        if self.use_ht160:
+            self.desired_add_sta_flags.append("ht160_enable")
+            self.desired_add_sta_flags_mask.append("ht160_enable")
+        self.add_sta_data["mode"] = self.mode
+
         if up_ is not None:
             self.up = up_
 

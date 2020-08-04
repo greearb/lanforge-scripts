@@ -22,7 +22,7 @@ class IPV4VariableTime(LFCliBase):
     def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1, radio="wiphy0",
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
-                 number_template="00000", test_duration="5m",
+                 number_template="00000", test_duration="5m", use_ht160=False,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -49,6 +49,9 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
+        self.station_profile.use_ht160 = use_ht160
+        if self.station_profile.use_ht160:
+            self.station_profile.mode = 9
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -161,10 +164,11 @@ def main():
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, number_template="00", sta_list=station_list,
                                    name_prefix="var_time",
-                                   ssid="jedway-wpa2-x2048-4-4",
-                                   password="jedway-wpa2-x2048-4-4",
+                                   ssid="jedway-wpa2-160",
+                                   password="jedway-wpa2-160",
                                    resource=1,
-                                   security="wpa2", test_duration="5m",
+                                   radio="wiphy2",
+                                   security="wpa2", test_duration="5m", use_ht160=False,
                                    side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=False)
 
     ip_var_test.cleanup(station_list)
