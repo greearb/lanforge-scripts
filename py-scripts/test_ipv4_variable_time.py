@@ -48,6 +48,7 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
+        self.station_profile.debug = self.debug
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
@@ -95,7 +96,7 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.admin_up(self.resource)
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
-        if self.local_realm.wait_for_ip(self.resource, temp_stas):
+        if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
@@ -138,7 +139,7 @@ class IPV4VariableTime(LFCliBase):
 
     def cleanup(self, sta_list):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup(self.resource, sta_list)
+        self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
@@ -152,7 +153,7 @@ class IPV4VariableTime(LFCliBase):
         temp_sta_list = []
         for station in range(len(self.sta_list)):
             temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
         self._pass("PASS: Station build finished")
 
@@ -168,7 +169,7 @@ def main():
                                    resource=1,
                                    radio="wiphy2",
                                    security="wpa2", test_duration="5m", use_ht160=False,
-                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=False)
+                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=True)
 
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
