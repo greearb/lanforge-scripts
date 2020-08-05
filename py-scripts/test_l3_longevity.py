@@ -124,10 +124,13 @@ class L3VariableTimeLongevity(LFCliBase):
         else:
             print("print failed to get IP's")
 
-        self.multicast_profile.start_mc()
+        print("Starting multicast traffic (if any configured)")
+        self.multicast_profile.start_mc(debug_=True)
+        print("Starting layer-3 traffic (if any configured)")
         self.cx_profile.start_cx()
 
         cur_time = datetime.datetime.now()
+        print("Getting initial values.")
         old_rx_values = self.__get_rx_values()
 
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
@@ -191,21 +194,23 @@ class L3VariableTimeLongevity(LFCliBase):
                 index += 1
 
             for etype in self.endp_types:
+                print("Creating connections for endpoint type: %s"%(etype))
                 if etype == "mc_udp" or etype == "mc_udp6":
                     self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profle.station_names)
+                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                 else:
                     self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0)
 
         self._pass("PASS: Stations build finished")
 
-def valid_endp_types(endp_type):
-    etypes = endp_type.split()
+def valid_endp_types(_endp_type):
+    etypes = _endp_type.split()
     for endp_type in etypes:
         valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
         if not (str(endp_type) in valid_endp_type):
             print('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
             exit(1)
+    return _endp_type
 
 def main():
     lfjson_host = "localhost"
@@ -335,6 +340,8 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000, padding_number_=10000)
         station_lists.append(station_list)
         index += 1
+
+    print("endp-types: %s"%(endp_types))
 
     ip_var_test = L3VariableTimeLongevity(lfjson_host, 
                                    lfjson_port, 
