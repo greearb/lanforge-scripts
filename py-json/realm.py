@@ -1803,7 +1803,7 @@ class StationProfile:
 
         # First, request remove on the list.
         for port_eid in desired_stations:
-            eid = self.name_to_eid(port_eid)
+            eid = self.local_realm.name_to_eid(port_eid)
             data["shelf"] = eid[0]
             data["resource"] = eid[1]
             data["port"] = eid[2]
@@ -1811,11 +1811,11 @@ class StationProfile:
             time.sleep(delay)
 
         # And now see if they are gone
-        count = 0;
+        count = 0
         while count < (del_count + 10):
             found_one = False
             for port_eid in desired_stations:
-                eid = self.name_to_eid(port_eid)
+                eid = self.local_realm.name_to_eid(port_eid)
                 data["shelf"] = eid[0]
                 data["resource"] = eid[1]
                 data["port"] = eid[2]
@@ -1872,7 +1872,7 @@ class StationProfile:
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
-        my_sta_names = [];
+        my_sta_names = []
         if num_stations > 0:
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
         else:
@@ -1895,7 +1895,7 @@ class StationProfile:
             self.add_sta_data["radio"] = radio_port
             self.add_sta_data["sta_name"] = name
 
-            self.station_names.append("%s.%s.%s" %(radio_shelf, radio_resource, name))
+            self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)
             if debug:
                 print("- 381 - %s- - - - - - - - - - - - - - - - - - " % name)
