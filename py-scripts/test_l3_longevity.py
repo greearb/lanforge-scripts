@@ -18,8 +18,8 @@ import time
 import datetime
 
 class L3VariableTimeLongevity(LFCliBase):
-    def __init__(self, host, port, endp_type, is_multicast, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, security, station_lists, name_prefix, resource=1,
+    def __init__(self, host, port, endp_types, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
+                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
@@ -29,18 +29,15 @@ class L3VariableTimeLongevity(LFCliBase):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
-        self.endp_type = endp_type
-        self.is_multicast = is_multicast
+        self.endp_types = endp_types.split()
         self.side_b = side_b
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists       
-        self.security = security
+        self.ssid_security_list = ssid_security_list
         self.number_template = number_template
-        self.resource = resource
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.cx_stations_lists = station_lists
         self.radios = radios # from the command line
         self.radio_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
@@ -55,42 +52,37 @@ class L3VariableTimeLongevity(LFCliBase):
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_list[index]
             self.station_profile.ssid_pass = ssid_password_list[index]
-            self.station_profile.security = self.security
+            self.station_profile.security = ssid_security_list[index]
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profiles.append(self.station_profile)
             index += 1
         
-        if is_multicast:
-            self.multicast_profile.host = self.host
-            self.cx_profile.host = self.host
-            self.cx_profile.port = self.port
-            self.cx_profile.name_prefix = self.name_prefix
-            self.cx_profile.side_a_min_bps = 0
-            self.cx_profile.side_a_max_bps = 0
-            self.cx_profile.side_b_min_bps = side_b_min_rate
-            self.cx_profile.side_b_max_bps = side_b_max_rate
-
-
-        else:
-            self.cx_profile.host = self.host
-            self.cx_profile.port = self.port
-            self.cx_profile.name_prefix = self.name_prefix
-            self.cx_profile.side_a_min_bps = side_a_min_rate
-            self.cx_profile.side_a_max_bps = side_a_max_rate
-            self.cx_profile.side_b_min_bps = side_b_min_rate
-            self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.multicast_profile.host = self.host
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
-        cx_rx_map = {}
-        for cx_name in cx_list['endpoint']:
-            if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes':
-                        cx_rx_map[item] = value_rx
-        return cx_rx_map
+        endp_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
+        endp_rx_map = {}
+        our_endps = {}
+        for e in self.multicast_profile.get_mc_names():
+            our_endps[e] = e;
+        for e in self.cx_profile.created_endp.keys():
+            our_endps[e] = e;
+        for endp_name in endp_list['endpoint']:
+            if endp_name != 'uri' and endp_name != 'handler':
+                for item, value in endp_name.items():
+                    if item in our_endps:
+                        for value_name, value_rx in value.items():
+                            if value_name == 'rx bytes':
+                                endp_rx_map[item] = value_rx
+        return endp_rx_map
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
@@ -98,9 +90,14 @@ class L3VariableTimeLongevity(LFCliBase):
         if len(old_list) == len(new_list):
             for item, value in old_list.items():
                 expected_passes += 1
-                if new_list[item] > old_list[item]:
+                if item.startswith("mtx"):
+                    # We ignore the mcast transmitter.
+                    # This is a hack based on naming and could be improved.
                     passes += 1
-                    print(item, new_list[item], old_list[item], passes, expected_passes)
+                else:
+                    if new_list[item] > old_list[item]:
+                        passes += 1
+                        print(item, new_list[item], old_list[item], passes, expected_passes)
 
             if passes == expected_passes:
                 return True
@@ -111,49 +108,31 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
-        up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.side_b)
-        self.local_realm.json_post("/cli-json/set_port", up_request)
+        up_request = self.local_realm.admin_up(self.side_b)
         for station_profile in self.station_profiles:
-            print("Bringing up station {}".format(station_profile))
-            station_profile.admin_up(self.resource)
-
-        if self.is_multicast:
-            self.multicast_profile.admin_up_mc_tx(self.resource, self.side_b)
-        
+            for sta in station_profile.station_names:
+                print("Bringing up station %s"%(sta))
+                up_request = self.local_realm.admin_up(sta)
 
         temp_stations_list = []
-        for station_list in self.station_lists:     
-            temp_station_list = station_list.copy()
-            temp_stations_list.append(temp_station_list)
-            temp_stations_list.append(self.side_b)
-            if self.local_realm.wait_for_ip(self.resource, temp_station_list,timeout_sec=120):
-                print("ip's aquired")
-            else:
-                print("print failed to get IP's")
+        temp_stations_list.append(self.side_b)
+        for station_profile in self.station_profiles:
+            temp_stations_list.extend(station_profile.station_names.copy())
 
-        temp_station_list = []
-        if self.is_multicast:
-            for station_list in self.station_lists:     
-                for station in range(len(station_list)):
-                    temp_station_list.append(str(self.resource) + "." + station_list[station])
-                self.multicast_profile.start_mc_rx(side_rx=temp_station_list)
-            self.multicast_profile.start_mc_tx(side_tx=self.side_b)
-                
+        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120):
+            print("ip's aquired")
         else:
-            self.cx_profile.start_cx()
+            print("print failed to get IP's")
+
+        self.multicast_profile.start_mc()
+        self.cx_profile.start_cx()
 
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_rx_values()
-        filtered_old_rx_values = []
-        if self.is_multicast:
-            for rx_value in old_rx_values:
-                for station in self.station_lists:
-                    if rx_value in station:
-                        filtered_old_rx_values += rx_value
-        else:
-            filtered_old_rx_values = old_rx_values
 
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+
+        print("Monitoring throughput for duration: %s"%(self.test_duration))
 
         passes = 0
         expected_passes = 0
@@ -164,17 +143,9 @@ class L3VariableTimeLongevity(LFCliBase):
                 time.sleep(1)
             
             new_rx_values = self.__get_rx_values()
-            filtered_new_rx_values = []
-            if self.is_multicast:
-                for rx_value in new_rx_values:
-                    for station in self.station_lists:
-                        if rx_value in station:
-                            filtered_new_rx_values += rx_value
-            else:
-                filtered_new_rx_values = new_rx_values
 
             expected_passes += 1
-            if self.__compare_vals(filtered_old_rx_values, filtered_new_rx_values):
+            if self.__compare_vals(old_rx_values, new_rx_values):
                 passes += 1
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
@@ -187,96 +158,59 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def stop(self):
         self.cx_profile.stop_cx()
+        self.multicast_profile.stop_mc()
         for station_list in self.station_lists:
             for station_name in station_list:
-                data = LFUtils.portDownRequest(1, station_name)
-                url = "cli-json/set_port"
-                self.json_post(url, data)
+                self.local_realm.admin_down(station_name)
 
-    def cleanup(self, resource):
-        resource = 1
-        data = {
-                    "name":"BLANK",
-                    "action":"overwrite"
-        }
-        url = "cli-json/load"
-        self.json_post(url, data)
-        #remove_all_endpoints = True
-        #self.local_realm.remove_all_cxs(remove_all_endpoints)
-        #self.local_realm.remove_all_stations(resource)
-        
+    def cleanup(self):
+        self.cx_profile.cleanup()
+        self.multicast_profile.cleanup()
+        for station_profile in self.station_profiles:
+            station_profile.cleanup()
                                         
     def build(self):
+        # This is too fragile and limitted, let outside logic configure the upstream port as needed.
+        #try:
+        #    eid = self.local_realm.name_to_eid(self.side_b)
+        #    data = LFUtils.port_dhcp_up_request(eid[1], eid[2])
+        #    self.json_post("/cli-json/set_port", data)
+        #except:
+        #    print("LFUtils.port_dhcp_up_request didn't complete ")
+        #    print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(self.side_b))
         
- # refactor in LFUtils.port_zero_request()
-        resource = 1
-            
-        data ={
-                'shelf':1,
-                'resource':1,
-                'port':'eth1',
-                'ip_addr':'0.0.0.0',
-                'netmask':'0.0.0.0',
-                'gateway':'0.0.0.0',
-                'current_flags':0,
-                'interest':402653212
-                }
-
-        url = "cli-json/set_port"
-        self.json_post(url, data)
-
-    
-        # refactor into LFUtils
-        data ={
-                "shelf":1,
-                "resource": resource,
-                "port":"br0",
-                "network_devs":"eth1",
-                "br_flags":1
-        }
-        url = "cli-json/add_br"
-        self.json_post(url, data)
-
-
-        try:
-            data = LFUtils.port_dhcp_up_request(resource, self.side_b)
-            self.json_post("/cli-json/set_port", data)
-        except:
-            print("LFUtils.port_dhcp_up_request didn't complete ")
-            print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(self.side_b))
-        
-        resource = 1
         index = 0 
         for station_profile in self.station_profiles:
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
             print("Creating stations")
-            temp_station_list = []
 
-            index = 0 
+            index = 0
             for station_list in self.station_lists: 
-                for station in range(len(station_list)):
-                    temp_station_list.append(str(self.resource) + "." + station_list[station])
-                station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=True )
+                station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=True, sleep_time=0)
                 index += 1
-            if self.is_multicast:
-                self.multicast_profile.create_mc_tx(self.side_b)
-                self.multicast_profile.create_mc_rx(side_rx=temp_station_list)
-            else:
-                self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.'+self.side_b, sleep_time=.5)
+
+            for etype in self.endp_types:
+                if etype == "mc_udp" or etype == "mc_udp6":
+                    self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profle.station_names)
+                else:
+                    self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0)
+
         self._pass("PASS: Stations build finished")
 
-def valid_endp_type(endp_type):
-    valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
-    if str(endp_type) in valid_endp_type:
-        return endp_type
-    else:
-        print('invalid endp_type. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6')    
-        exit(1)
+def valid_endp_types(endp_type):
+    etypes = endp_type.split()
+    for endp_type in etypes:
+        valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
+        if not (str(endp_type) in valid_endp_type):
+            print('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
+            exit(1)
 
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
+    endp_types = "lf_udp"
 
     parser = argparse.ArgumentParser(
         prog='test_l3_longevity.py',
@@ -287,8 +221,7 @@ def main():
             1. Polling interval for checking traffic is fixed at 1 minute
             2. The test will exit when traffic has not changed on a station for 1 minute
             3. The tx/rx rates are fixed at 256000 bits per second
-            4. Security is fixed at WPA2
-            5. Maximum stations per radio is 64
+            4. Maximum stations per radio is 64
             ''',
         
         description='''\
@@ -302,10 +235,10 @@ Basic Idea: create stations, create traffic between upstream port and stations, 
 
             Scripts are executed from: ./lanforge/py-scripts  
 
-             Stations start counting form zero,  thus stations count from zero - number of las 
+            Stations start counting from zero,  thus stations count from zero - number of las
 
 Generic command layout:
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic type> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password>
+python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3>
 
 Note:   multiple --radio switches may be entered up to the number of radios available:
                  --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
@@ -333,26 +266,30 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
             5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 
             Command: 
-            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
+            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
 
         ''')
 
    
+    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
-                        default='lf_udp',type=valid_endp_type)
+    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+                        default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
 
     requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number last station>','<ssid>','<ssid password>'),
-                         help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> ',required=True)
+    requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
+                         help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> <security>', required=True)
     args = parser.parse_args()
 
     if args.test_duration:
         test_duration = args.test_duration
 
     if args.endp_type:
-        endp_type = args.endp_type   
+        endp_types = args.endp_type
+
+    if args.mgr:
+        lfjson_host = args.mgr
 
     if args.upstream_port:
         side_b = args.upstream_port
@@ -360,12 +297,11 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     if args.radio:
         radios = args.radio
     
-    is_multicast = False
-
     radio_offset = 0
     number_of_stations_offset = 1
     ssid_offset = 2
     ssid_password_offset = 3
+    ssid_security_offset = 4
 
     MAX_NUMBER_OF_STATIONS = 64
     
@@ -373,11 +309,8 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     number_of_stations_per_radio_list = []
     ssid_list = []
     ssid_password_list = []
+    ssid_security_list = []
 
-    if endp_type in ['mc_udp','mc_udp6']:
-        is_multicast = True
-
-    index = 0
     for radio in radios:
         radio_name = radio[radio_offset]
         radio_name_list.append(radio_name)
@@ -385,9 +318,12 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         number_of_stations_per_radio_list.append(number_of_stations_per_radio)
         ssid = radio[ssid_offset]
         ssid_list.append(ssid)
-        ssid_password = radio[ssid_password_offset]
-        ssid_password_list.append(ssid_password)
-        index += 1
+        if (len(radio) >= (ssid_password_offset - 1)):
+            ssid_password_list.append(radio[ssid_password_offset])
+            ssid_security_list.append(radio[ssid_security_offset])
+        else:
+            ssid_password_list.append("NA")
+            ssid_security_list.append("open")
 
     index = 0
     station_lists = []
@@ -399,38 +335,43 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000, padding_number_=10000)
         station_lists.append(station_list)
         index += 1
+
     ip_var_test = L3VariableTimeLongevity(lfjson_host, 
                                    lfjson_port, 
                                    number_template="00", 
                                    station_lists= station_lists,
-                                   name_prefix="var_time",
-                                   endp_type=endp_type,
-                                   is_multicast=is_multicast,
+                                   name_prefix="LT-",
+                                   endp_types=endp_types,
                                    side_b=side_b,
                                    radios=radios,
                                    radio_name_list=radio_name_list,
                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                    ssid_list=ssid_list,
                                    ssid_password_list=ssid_password_list,
-                                   resource=1,
-                                   security="wpa2", test_duration=test_duration,
+                                   ssid_security_list=ssid_security_list, test_duration=test_duration,
                                    side_a_min_rate=256000, side_b_min_rate=256000)
 
-    ip_var_test.cleanup(station_list)
+    # This cleanup does not work because objects in the profiles are not yet created.
+    # Not sure the best way to resolve this currently. --Ben
+    ip_var_test.cleanup()
+
     ip_var_test.build()
     if not ip_var_test.passes():
+        print("build step failed.")
         print(ip_var_test.get_fail_message())
         exit(1) 
     ip_var_test.start(False, False)
     ip_var_test.stop()
     if not ip_var_test.passes():
+        print("stop test failed")
         print(ip_var_test.get_fail_message())
         exit(1) 
+
+    print("Pausing 30 seconds after run for manual inspection before we clean up.")
     time.sleep(30)
-    ip_var_test.cleanup(station_list)
+    ip_var_test.cleanup()
     if ip_var_test.passes():
         print("Full test passed, all connections increased rx bytes")
-
 
 if __name__ == "__main__":
     main()

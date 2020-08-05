@@ -360,7 +360,7 @@ def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", 
     return
 
 
-def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
+def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
     Deprecated
     :param resource_id:
@@ -369,12 +369,30 @@ def waitUntilPortsAppear(resource_id=1, base_url="http://localhost:8080", port_l
     :param debug:
     :return:
     """
-    return wait_until_ports_appear(resource_id, base_url, port_list, debug=debug)
+    return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def wait_until_ports_appear(resource_id=1, base_url="http://localhost:8080", port_list=(), debug=False):
+def name_to_eid(eid):
+    rv = [1, 1, ""];
+    info = []
+    if (eid is None) or (eid == ""):
+        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
+    
+    info = eid.split('.')
+    if (len(info) == 1):
+        rv[2] = info[0]; # just port name
+    if len(info) == 2: # resource.port-name
+        rv[1] = int(info[0])
+        rv[2] = info[1]
+    if len(info) == 3: # shelf.resource.port-name
+        rv[0] = int(info[0])
+        rv[1] = int(info[1])
+        rv[2] = info[2]
+
+    return rv;
+
+def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
 
-    :param resource_id:
     :param base_url:
     :param port_list:
     :param debug:
@@ -391,8 +409,13 @@ def wait_until_ports_appear(resource_id=1, base_url="http://localhost:8080", por
 
     while len(found_stations) < len(port_list):
         found_stations = []
-        for port_name in port_list:
-            sleep(1)
+        for port_eid in port_list:
+
+            eid = name_to_eid(port_eid)
+            shelf = eid[0]
+            resource_id = eid[1]
+            port_name = eid[2]
+            
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(debug_=False)
@@ -400,9 +423,11 @@ def wait_until_ports_appear(resource_id=1, base_url="http://localhost:8080", por
                 found_stations.append(port_name)
             else:
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url)
-                lf_r.addPostData({"shelf": 1, "resource": resource_id, "port": port_name, "flags": 1})
+                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
-    sleep(2)
+        if (len(found_stations) < len(port_list)):
+            sleep(2)
+
     if debug:
         print("These stations appeared: " + ", ".join(found_stations))
     return
