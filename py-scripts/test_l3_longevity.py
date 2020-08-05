@@ -19,14 +19,13 @@ import datetime
 
 class L3VariableTimeLongevity(LFCliBase):
     def __init__(self, host, port, endp_types, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix,
+                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
-                 _debug_on=True,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.endp_types = endp_types.split()
@@ -41,7 +40,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.radios = radios # from the command line
         self.radio_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.multicast_profile = self.local_realm.new_multicast_profile()
         self.station_profiles = []
@@ -89,7 +88,7 @@ class L3VariableTimeLongevity(LFCliBase):
         expected_passes = 0
         if len(old_list) == len(new_list):
             for item, value in old_list.items():
-                expected_passes += 1
+                expected_passes +=1
                 if item.startswith("mtx"):
                     # We ignore the mcast transmitter.
                     # This is a hack based on naming and could be improved.
@@ -97,13 +96,18 @@ class L3VariableTimeLongevity(LFCliBase):
                 else:
                     if new_list[item] > old_list[item]:
                         passes += 1
-                        print(item, new_list[item], old_list[item], passes, expected_passes)
+                        print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    else:
+                        print("Failed to increase rx data: ", item, new_list[item], old_list[item])
 
             if passes == expected_passes:
                 return True
             else:
                 return False
         else:
+            print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
+            print("old-list:",old_list)
+            print("new-list:",old_list)
             return False
 
     def start(self, print_pass=False, print_fail=False):
@@ -120,7 +124,7 @@ class L3VariableTimeLongevity(LFCliBase):
             temp_stations_list.extend(station_profile.station_names.copy())
 
         if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120):
-            print("ip's aquired")
+            print("ip's acquired")
         else:
             print("print failed to get IP's")
 
@@ -190,7 +194,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
             index = 0
             for station_list in self.station_lists: 
-                station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=True, sleep_time=0)
+                station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=self.debug, sleep_time=0)
                 index += 1
 
             for etype in self.endp_types:
@@ -216,6 +220,7 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     endp_types = "lf_udp"
+    debug_on = False
 
     parser = argparse.ArgumentParser(
         prog='test_l3_longevity.py',
@@ -243,7 +248,7 @@ Basic Idea: create stations, create traffic between upstream port and stations, 
             Stations start counting from zero,  thus stations count from zero - number of las
 
 Generic command layout:
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3>
+python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
 Note:   multiple --radio switches may be entered up to the number of radios available:
                  --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
@@ -278,6 +283,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
    
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
+    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
@@ -286,6 +292,8 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
                          help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> <security>', required=True)
     args = parser.parse_args()
+
+    debug_on = args.debug
 
     if args.test_duration:
         test_duration = args.test_duration
@@ -356,7 +364,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    ssid_list=ssid_list,
                                    ssid_password_list=ssid_password_list,
                                    ssid_security_list=ssid_security_list, test_duration=test_duration,
-                                   side_a_min_rate=256000, side_b_min_rate=256000)
+                                   side_a_min_rate=256000, side_b_min_rate=256000, debug_on=debug_on)
 
     # This cleanup does not work because objects in the profiles are not yet created.
     # Not sure the best way to resolve this currently. --Ben

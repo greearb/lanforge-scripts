@@ -370,7 +370,7 @@ class Realm(LFCliBase):
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60):
         print("Waiting for ips...")
-        print(station_list)
+        #print(station_list)
 
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("wait_for_ip: expects non-empty list of ports")
@@ -380,28 +380,31 @@ class Realm(LFCliBase):
             wait_more = False
 
             for sta_eid in station_list:
-                print("sta-eid: %s"%(sta_eid))
+                print("checking sta-eid: %s"%(sta_eid))
                 eid = self.name_to_eid(sta_eid)
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                             (eid[0], eid[1], eid[2]))
+                #pprint(response)
+
                 if (response is None) or ("interface" not in response):
                     print("station_list: incomplete response:")
                     pprint(response)
+                    wait_more = True
+                    break
 
-                    if ipv4:
-                        for x in range(len(response['interface'])):
-                            for k, v in response['interface'][x].items():
-                                if v['ip'] == '0.0.0.0':
-                                    wait_more = True
-                                    print("Waiting for port %s to get IPv4 Address."%(sta_eid))
-                    if ipv6:
-                        for x in range(len(response['interface'])):
-                            for k, v in response['interface'][x].items():
-                                if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
-                                       and v['ipv6 address'] != 'AUTO':
-                                    wait_more = True
-                                    print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                if ipv4:
+                    v = response['interface']
+                    if v['ip'] == '0.0.0.0':
+                        wait_more = True
+                        print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                if ipv6:
+                    v = response['interface']
+                    if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
+                           and v['ipv6 address'] != 'AUTO':
+                        wait_more = True
+                        print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+
             if wait_more:
                 time.sleep(1)
                 timeout_sec -= 1
@@ -577,7 +580,7 @@ class MULTICASTProfile(LFCliBase):
 
         pass
 
-    def stop_mc(self):
+    def stop_mc(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
             debug_=True
 
@@ -590,7 +593,10 @@ class MULTICASTProfile(LFCliBase):
 
         pass
 
-    def cleanup(self):
+    def cleanup(self, suppress_related_commands=None, debug_ = False):
+        if self.debug:
+            debug_=True
+
         for endp_name in self.get_mc_names():
             json_data = {
                 "endp_name":endp_name
@@ -606,7 +612,7 @@ class MULTICASTProfile(LFCliBase):
         side_tx_shelf = side_tx_info[0]
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
-        side_tx_name = "mtx-%s-%i-"%(side_tx_port, len(self.created_mc))
+        side_tx_name = "mtx-%s-%i"%(side_tx_port, len(self.created_mc))
 
         json_data = []
         
@@ -619,7 +625,7 @@ class MULTICASTProfile(LFCliBase):
                         'type':endp_type,
                         'ip_port':-1,
                         'is_rate_bursty':
-                        'NO','min_rate':4000000,
+                        'NO','min_rate':256000,
                         'max_rate':0,
                         'is_pkt_sz_random':'NO',
                         'min_pkt':1472,
@@ -663,7 +669,7 @@ class MULTICASTProfile(LFCliBase):
             side_rx_shelf = side_rx_info[0]
             side_rx_resource = side_rx_info[1]
             side_rx_port = side_rx_info[2]
-            side_rx_name = "mrx-%s-%i-"%(side_rx_port, len(self.created_mc))
+            side_rx_name = "mrx-%s-%i"%(side_rx_port, len(self.created_mc))
             # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
             json_data = {
                             'alias':side_rx_name,
