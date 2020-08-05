@@ -1652,6 +1652,29 @@ class VAPProfile(LFCliBase):
             data["port"] = current_stations["interface"]["alias"]
             self.local_realm.json_post(req_url, data, debug_=self.debug)
 
+class PortUtils(LFCliBase):
+    def __init__(self, local_realm):
+        self.local_realm = local_realm
+
+    def set_ftp(self, port_name="", resource=1, on=False):
+        if port_name != "":
+            data = {
+                "shelf": 1,
+                "resource": resource,
+                "port": port_name,
+                "current_flags": 0,
+                "interest": 0
+            }
+
+            if on:
+                data["current_flags"] = 0x400000000000
+                data["interest"] = 0x10000000
+            else:
+                data["interest"] = 0x10000000
+
+            self.local_realm.json_post("cli-json/set_port", data)
+        else:
+            raise ValueError("Port name required")
 
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
@@ -1867,7 +1890,7 @@ class StationProfile:
             time.sleep(delay)
 
         # And now see if they are gone
-        count = 0;
+        count = 0
         while count < (del_count + 10):
             found_one = False
             for port_eid in desired_stations:
@@ -1928,7 +1951,7 @@ class StationProfile:
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
-        my_sta_names = [];
+        my_sta_names = []
         if num_stations > 0:
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
         else:
@@ -1951,7 +1974,7 @@ class StationProfile:
             self.add_sta_data["radio"] = radio_port
             self.add_sta_data["sta_name"] = name
 
-            self.station_names.append("%s.%s.%s" %(radio_shelf, radio_resource, name))
+            self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)
             if debug:
                 print("- 381 - %s- - - - - - - - - - - - - - - - - - " % name)
