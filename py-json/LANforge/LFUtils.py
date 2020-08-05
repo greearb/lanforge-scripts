@@ -400,9 +400,49 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     """
     print("Waiting until ports appear...")
     found_stations = []
-    sleep(2)
     port_url = "/port/1"
     ncshow_url = "/cli-form/nc_show_ports"
+    if base_url.endswith('/'):
+        port_url = port_url[1:]
+        ncshow_url = ncshow_url[1:]
+
+    while len(found_stations) < len(port_list):
+        found_stations = []
+        for port_eid in port_list:
+
+            eid = name_to_eid(port_eid)
+            shelf = eid[0]
+            resource_id = eid[1]
+            port_name = eid[2]
+            
+            uri = "%s/%s/%s" % (port_url, resource_id, port_name)
+            lf_r = LFRequest.LFRequest(base_url, uri)
+            json_response = lf_r.getAsJson(debug_=False)
+            if (json_response != None):
+                found_stations.append(port_name)
+            else:
+                lf_r = LFRequest.LFRequest(base_url, ncshow_url)
+                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
+                lf_r.formPost()
+        if (len(found_stations) < len(port_list)):
+            sleep(2)
+
+    if debug:
+        print("These stations appeared: " + ", ".join(found_stations))
+    return
+
+def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False):
+    """
+
+    :param base_url:
+    :param port_list:
+    :param debug:
+    :return:
+    """
+    print("Waiting until endpoints appear...")
+    found_endps = []
+    port_url = "/port/1"
+    ncshow_url = "/cli-form/show_endp"
     if base_url.endswith('/'):
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]

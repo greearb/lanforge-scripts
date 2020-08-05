@@ -137,7 +137,7 @@ class LFRequest:
                 response_json_list_.append(j)
             return responses[0]
         except urllib.error.HTTPError as error:
-            if show_error:
+            if show_error or die_on_error_ or (error.code != 404):
                 print("----- LFRequest::jsonPost:138 HTTPError: --------------------------------------------")
                 print("<%s> HTTP %s: %s"%(request.get_full_url(), error.code, error.reason, ))
 

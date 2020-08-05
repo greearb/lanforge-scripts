@@ -196,7 +196,7 @@ class LFCliBase:
     # use this inside the class to log a failure result
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
-        if print_:
+        if print_ or self.exit_on_fail:
             print(self.fail_pref + message)
         if self.exit_on_fail:
             sys.exit(1)

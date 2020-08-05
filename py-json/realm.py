@@ -191,6 +191,53 @@ class Realm(LFCliBase):
         response = super().json_get("/cx")
         return response
 
+    def waitUntilEndpsAppear(self, these_endp):
+        wait_more = True;
+        count = 0
+        while wait_more:
+            wait_more = False
+            endp_list = self.json_get("/endp")
+            found_endps = {}
+            if endp_list is not None:
+                endp_list = list(endp_list['endpoint'])
+                for endp_name in range(len(endp_list)):
+                    name = list(endp_list[endp_name])[0]
+                    found_endps[name] = name
+
+            for req in these_endp:
+                if not req in found_endps:
+                    print("Waiting on endpoint: %s"%(req))
+                    wait_more = True
+            count += 1
+            if (count > 100):
+                break
+
+        return not wait_more
+
+    def waitUntilCxsAppear(self, these_cx):
+        wait_more = True;
+        count = 0
+        while wait_more:
+            wait_more = False
+            found_cxs = {}
+            cx_list = list(self.cx_list())
+            not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
+            if cx_list is not None:
+                for cx_name in cx_list:
+                    if cx_name in not_cx:
+                        continue
+                    found_cxs[cx_name] = cx_name
+
+            for req in these_cx:
+                if not req in found_cxs:
+                    print("Waiting on CX: %s"%(req))
+                    wait_more = True
+            count += 1
+            if (count > 100):
+                break
+
+        return not wait_more
+
     # Returns map of all stations with port+type == WIFI-STATION
     def station_map(self):
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
@@ -521,6 +568,7 @@ class MULTICASTProfile(LFCliBase):
             debug_=True
 
         for endp_name in self.get_mc_names():
+            print("Starting mcast endpoint: %s"%(endp_name))
             json_data = {
                 "endp_name":endp_name
             }
@@ -558,7 +606,7 @@ class MULTICASTProfile(LFCliBase):
         side_tx_shelf = side_tx_info[0]
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
-        side_tx_name = "mtx-%s-%i-"%(side_tx_port, len(created_mc))
+        side_tx_name = "mtx-%s-%i-"%(side_tx_port, len(self.created_mc))
 
         json_data = []
         
@@ -598,18 +646,24 @@ class MULTICASTProfile(LFCliBase):
         url = "cli-json/set_mc_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-        created_mc[side_tx_name] = side_tx_name
+        self.created_mc[side_tx_name] = side_tx_name
+
+        these_endp = [side_tx_name]
+        self.local_realm.waitUntilEndpsAppear(these_endp)
+
 
     def create_mc_rx(self, endp_type, side_rx, suppress_related_commands=None, debug_ = False):
         if self.debug:
             debug_=True
+
+        these_endp = []
 
         for port_name in side_rx:
             side_rx_info = self.local_realm.name_to_eid(port_name)
             side_rx_shelf = side_rx_info[0]
             side_rx_resource = side_rx_info[1]
             side_rx_port = side_rx_info[2]
-            side_rx_name = "mrx-%s-%i-"%(side_tx_port, len(created_mc))
+            side_rx_name = "mrx-%s-%i-"%(side_rx_port, len(self.created_mc))
             # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
             json_data = {
                             'alias':side_rx_name,
@@ -644,8 +698,10 @@ class MULTICASTProfile(LFCliBase):
             url = "cli-json/set_mc_endp"
             self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-            created_mc[side_rx_name] = side_rx_name
+            self.created_mc[side_rx_name] = side_rx_name
+            these_endp.append(side_rx_name)
 
+        self.local_realm.waitUntilEndpsAppear(these_endp)
 
     def to_string(self):
         pprint.pprint(self)
@@ -732,6 +788,7 @@ class L3CXProfile(LFCliBase):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
+                print("Cleaning cx: %s"%(cx_name))
                 req_url = "cli-json/rm_cx"
                 data = {
                     "test_mgr": "default_tm",
@@ -740,9 +797,11 @@ class L3CXProfile(LFCliBase):
                 self.json_post(req_url, data)
 
                 for side in range(len(self.created_cx[cx_name])):
+                    ename = self.created_cx[cx_name][side]
+                    print("Cleaning endpoint: %s"%(ename))
                     req_url = "cli-json/rm_endp"
                     data = {
-                        "endp_name": self.created_cx[cx_name][side]
+                        "endp_name": ename
                     }
                     self.json_post(req_url, data)
 
@@ -752,6 +811,9 @@ class L3CXProfile(LFCliBase):
 
         cx_post_data = []
         timer_post_data = []
+        these_endp = []
+        these_cx = []
+
         # print(self.side_a_min_rate, self.side_a_max_rate)
         # print(self.side_b_min_rate, self.side_b_max_rate)
         if (self.side_a_min_bps is None) \
@@ -779,6 +841,9 @@ class L3CXProfile(LFCliBase):
                 self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name;
                 self.created_endp[endp_b_name] = endp_b_name;
+                these_cx.append(cx_name)
+                these_endp.append(endp_a_name)
+                these_endp.append(endp_b_name)
                 endp_side_a = {
                     "alias": endp_a_name,
                     "shelf": side_a_shelf,
@@ -860,6 +925,9 @@ class L3CXProfile(LFCliBase):
                 self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name;
                 self.created_endp[endp_b_name] = endp_b_name;
+                these_cx.append(cx_name)
+                these_endp.append(endp_a_name)
+                these_endp.append(endp_b_name)
                 endp_side_a = {
                     "alias": endp_a_name,
                     "shelf": side_a_shelf,
@@ -927,8 +995,11 @@ class L3CXProfile(LFCliBase):
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             #print(" napping %f sec"%sleep_time, end='')
-            time.sleep(sleep_time)
+            #time.sleep(sleep_time)
         #print("")
+
+        self.local_realm.waitUntilEndpsAppear(these_endp)
+        self.local_realm.waitUntilCxsAppear(these_cx)
 
     def to_string(self):
         pprint.pprint(self)
@@ -1795,8 +1866,10 @@ class StationProfile:
             "port": None
         }
         if (desired_stations is None):
-            return
+            desired_stations = self.station_names;
+
         if len(desired_stations) < 1:
+            print("ERROR:  StationProfile cleanup, list is empty")
             return
 
         del_count = len(desired_stations)
@@ -1807,7 +1880,7 @@ class StationProfile:
             data["shelf"] = eid[0]
             data["resource"] = eid[1]
             data["port"] = eid[2]
-            self.local_realm.json_post(req_url, data, debug_=self.debug)
+            self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
             time.sleep(delay)
 
         # And now see if they are gone
@@ -1826,7 +1899,7 @@ class StationProfile:
                     data["shelf"] = eid[0]
                     data["resource"] = eid[1]
                     data["port"] = eid[2]
-                    self.local_realm.json_post(req_url, data, debug_=self.debug)
+                    self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
                     time.sleep(delay)
             if not found_one:
                 return
