@@ -103,7 +103,7 @@ class L3VariableTimeLongevity(LFCliBase):
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             print("Bringing up station {}".format(station_profile))
             station_profile.admin_up(self.resource)
-            if self.local_realm.wait_for_ip(self.resource, station_list,timeout_sec=120):
+            if self.local_realm.wait_for_ip(self.resource, station_list,timeout_sec=10*len(station_list)):
                 print("ip's aquired {}".format(station_list))
             else:
                 print("print failed to get IP's: {}".format(station_list))
