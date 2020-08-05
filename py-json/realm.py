@@ -1886,8 +1886,14 @@ class StationProfile:
             data["shelf"] = eid[0]
             data["resource"] = eid[1]
             data["port"] = eid[2]
-            self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
-            time.sleep(delay)
+            current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
+            if not current_stations is None:
+                eid = self.local_realm.name_to_eid(port_eid)
+                data["shelf"] = eid[0]
+                data["resource"] = eid[1]
+                data["port"] = eid[2]
+                self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
+                time.sleep(delay)
 
         # And now see if they are gone
         count = 0
