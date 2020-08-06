@@ -154,7 +154,6 @@ def main():
 
             ''')
 
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
