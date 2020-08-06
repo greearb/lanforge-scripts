@@ -186,7 +186,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         ''')
 
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
     args = parser.parse_args()
