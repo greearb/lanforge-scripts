@@ -11,14 +11,15 @@ if 'py-json' not in sys.path:
 import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
+import argparse
 import realm
 import time
 import pprint
 
 
 class IPv6Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, num_stations=0, prefix="00000",
-                 _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, sta_list=None, num_stations=0, prefix="00000",
+                 _debug_on=False, timeout=120, radio="wiphy0",
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  number_template="00"):
@@ -26,12 +27,12 @@ class IPv6Test(LFCliBase):
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.radio = radio
         self.security = security
         self.password = password
         self.num_stations = num_stations
         self.sta_list = sta_list
-        self.timeout = 120
-        self.resource = resource
+        self.timeout = timeout
         self.prefix = prefix
         self.debug = _debug_on
         self.number_template = number_template
@@ -52,17 +53,21 @@ class IPv6Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
-        self.station_profile.admin_up(1)
+        self.station_profile.admin_up()
         associated_map = {}
         ip_map = {}
         print("Starting test...")
         for sec in range(self.timeout):
             for sta_name in sta_list:
-                sta_status = self.json_get("port/1/1/" + sta_name + "?fields=port,alias,ipv6+address,ap", debug_=self.debug)
+                shelf = self.local_realm.name_to_eid(sta_name)[0]
+                resource = self.local_realm.name_to_eid(sta_name)[1]
+                name = self.local_realm.name_to_eid(sta_name)[2]
+                sta_status = self.json_get("port/%s/%s/%s?fields=port,alias,ipv6+address,ap" % (shelf, resource, name),
+                                           debug_=self.debug)
                 # print(sta_status)
                 if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
                     continue
@@ -95,26 +100,52 @@ class IPv6Test(LFCliBase):
 
     def stop(self):
         # Bring stations down
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
-            url = "cli-json/set_port"
-            # print(sta_name)
-            self.json_post(url, data)
+        self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
-        self.station_profile.cleanup(self.resource, sta_list)
-        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup(sta_list)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
 
 def main():
-    lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ipv6_test = IPv6Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                       security="wpa2", sta_list=station_list)
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='test_ipv6_connection.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            Useful Information:
+                1. TBD
+                ''',
+
+        description='''\
+    test_ipv6_connection.py:
+    --------------------
+    TBD
+
+    Generic command layout:
+    python ./test_ipv6_connection.py --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+
+    Note:   multiple --radio switches may be entered up to the number of radios available:
+                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+
+     python3 ./test_ipv6_connection.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+
+            ''')
+
+
+    parser.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=120)
+
+    args = parser.parse_args()
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+                                          radio=args.radio)
+
+    ipv6_test = IPv6Test(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
+                         security=args.security, sta_list=station_list)
     ipv6_test.cleanup(station_list)
-    ipv6_test.timeout = 60
     ipv6_test.build()
     if not ipv6_test.passes():
         print(ipv6_test.get_fail_message())
@@ -124,7 +155,7 @@ def main():
     if not ipv6_test.passes():
         print(ipv6_test.get_fail_message())
         exit(1)
-    time.sleep(30)
+    time.sleep(10)
     ipv6_test.cleanup(station_list)
     if ipv6_test.passes():
         print("Full test passed, all stations associated and got IP")
