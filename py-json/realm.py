@@ -884,6 +884,7 @@ class L3CXProfile(LFCliBase):
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
+                    ename = self.created_cx[cx_name][side]
                     print("Cleaning endpoint: %s"%(ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
