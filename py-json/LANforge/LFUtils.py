@@ -187,7 +187,7 @@ def generateMac(parent_mac, random_octet, debug=False):
     return ":".join(octets)
 
 
-def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000):
+def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000, radio=None):
     """
     This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
     the padding_number is added to the start and end numbers and the resulting sum
@@ -199,10 +199,10 @@ def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     :param padding_number_:
     :return:
     """
-    return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_)
+    return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_, radio=radio)
 
 
-def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000):
+def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
     """
     This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
     the padding_number is added to the start and end numbers and the resulting sum
@@ -214,10 +214,18 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000):
     :param padding_number_: used for width of resulting station number
     :return: list of stations
     """
+
+    eid = None
+    if radio != None:
+        eid = name_to_eid(radio)
+    
     name_list = []
     for i in range((padding_number + start_id), (padding_number + end_id + 1)):
         sta_name = prefix + str(i)[1:]
-        name_list.append(sta_name)
+        if eid != None:
+            name_list.append("%i.%i.%s"%(eid[0], eid[1], sta_name))
+        else:
+            name_list.append(sta_name)
     return name_list
 
 
@@ -338,18 +346,24 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
         sleep(1)
     return None
 
-def waitUntilPortsDisappear(resource_id=1, base_url="http://localhost:8080", port_list=[], debug=False):
-    wait_until_ports_disappear(resource_id, base_url, port_list, debug)
+def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=[], debug=False):
+    wait_until_ports_disappear(base_url, port_list, debug)
 
-def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", port_list=[], debug=False):
+def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], debug=False):
     print("Waiting until ports disappear...")
     url = "/port/1"
     found_stations = port_list.copy()
-    sleep(1)
+
     while len(found_stations) > 0:
         found_stations = []
         sleep(1)
-        for port_name in port_list:
+
+        for port_eid in port_list:
+            eid = name_to_eid(port_eid)
+            shelf = eid[0]
+            resource_id = eid[1]
+            port_name = eid[2]
+
             check_url = "%s/%s/%s" % (url, resource_id, port_name)
             if debug:
                 print("checking:" + check_url)
@@ -363,7 +377,6 @@ def wait_until_ports_disappear(resource_id=1, base_url="http://localhost:8080", 
 def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
     Deprecated
-    :param resource_id:
     :param base_url:
     :param port_list:
     :param debug:

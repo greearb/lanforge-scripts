@@ -19,7 +19,7 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1, radio="wiphy0",
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream="eth1", radio="wiphy0",
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -27,6 +27,7 @@ class IPV4VariableTime(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.upstream = upstream
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -36,7 +37,6 @@ class IPV4VariableTime(LFCliBase):
         self.radio = radio
         self.number_template = number_template
         self.debug = _debug_on
-        self.resource = resource
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
@@ -93,8 +93,8 @@ class IPV4VariableTime(LFCliBase):
             return False
 
     def start(self, print_pass=False, print_fail=False):
-        self.station_profile.admin_up(self.resource)
-        temp_stas = self.sta_list.copy()
+        self.station_profile.admin_up()
+        temp_stas = self.station_profile.station_names.copy()
         temp_stas.append("eth1")
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
@@ -132,46 +132,82 @@ class IPV4VariableTime(LFCliBase):
 
     def stop(self):
         self.cx_profile.stop_cx()
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
-            url = "cli-json/set_port"
-            self.json_post(url, data)
+        self.station_profile.admin_down()
 
-    def cleanup(self, sta_list):
+    def pre_cleanup(self):
+        for sta in self.sta_list:
+            self.local_realm.rm_port(sta, check_exists=True)
+
+    def cleanup(self):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup(sta_list)
-        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup()
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
 
     def build(self):
+        
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        temp_sta_list = []
-        for station in range(len(self.sta_list)):
-            temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(endp_type="lf_udp", side_a=temp_sta_list, side_b="1.eth1", sleep_time=.5)
+        self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream, sleep_time=0)
         self._pass("PASS: Station build finished")
 
 
 def main():
-    lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ip_var_test = IPV4VariableTime(lfjson_host, lfjson_port, number_template="00", sta_list=station_list,
-                                   name_prefix="var_time",
-                                   ssid="jedway-wpa2-160",
-                                   password="jedway-wpa2-160",
-                                   resource=1,
-                                   radio="wiphy2",
-                                   security="wpa2", test_duration="5m", use_ht160=False,
-                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=True)
 
-    ip_var_test.cleanup(station_list)
+    parser = argparse.ArgumentParser(
+        prog='test_ipv4_variable_time.py',
+        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        Useful Information:
+            1. TBD
+            ''',
+        
+        description='''\
+test_ipv4_variable_time.py:
+--------------------
+TBD
+
+Generic command layout:
+python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+
+Note:   multiple --radio switches may be entered up to the number of radios available:
+                 --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+
+ python3 ./test_ipv4_variable_time.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+
+        ''')
+
+   
+    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
+    parser.add_argument('--upstream', help='--upstream <1.eth1, etc>',default='1.eth1')
+    parser.add_argument('--radio', help='--radio <radio EID>',default='wiphy2')
+    parser.add_argument('--ssid', help='--ssid <SSID>',default='jedway-wpa2-160')
+    parser.add_argument('--passwd', help='--passwd <Password>',default='jedway-wpa2-160')
+    parser.add_argument('--security', help='--security <wpa2 | open | wpa3>',default='wpa2')
+    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
+    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+
+    args = parser.parse_args()
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000, radio=args.radio)
+
+    ip_var_test = IPV4VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
+                                   name_prefix="VT",
+                                   upstream=args.upstream,
+                                   ssid=args.ssid,
+                                   password=args.passwd,
+                                   radio=args.radio,
+                                   security=args.security, test_duration="5m", use_ht160=False,
+                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=args.debug)
+
+    ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
@@ -182,7 +218,7 @@ def main():
         print(ip_var_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    ip_var_test.cleanup(station_list)
+    ip_var_test.cleanup()
     if ip_var_test.passes():
         print("Full test passed, all connections increased rx bytes")
 

@@ -118,14 +118,39 @@ class Realm(LFCliBase):
         self.freq_to_chan[4970] = 194
         self.freq_to_chan[4980] = 196
 
-    def wait_until_ports_appear(self, resource_=1, sta_list=None, debug_=False):
+    def wait_until_ports_appear(self, sta_list=None, debug_=False):
         if (sta_list is None) or (len(sta_list) < 1):
             print("realm.wait_until_ports_appear: no stations provided")
             return
-        LFUtils.wait_until_ports_appear(resource_id=resource_,
-                                        base_url=self.lfclient_url,
+        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,
                                         port_list=sta_list,
                                         debug=debug_)
+
+    def rm_port(self, port_eid, check_exists=True):
+        req_url = "/cli-json/rm_vlan"
+        data = {}
+
+        eid = self.name_to_eid(port_eid)
+        do_rm = True;
+        if check_exists:
+            if not self.port_exists(port_eid):
+                do_rm = False
+        if do_rm:
+            data["shelf"] = eid[0]
+            data["resource"] = eid[1]
+            data["port"] = eid[2]
+            self.json_post(req_url, data, debug_=True) #self.debug)
+
+    def port_exists(self, port_eid):
+        data = {}
+        eid = self.name_to_eid(port_eid)
+        data["shelf"] = eid[0]
+        data["resource"] = eid[1]
+        data["port"] = eid[2]
+        current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
+        if not current_stations is None:
+            return True
+        return False
 
     def admin_up(self, port_eid):
         eid = self.name_to_eid(port_eid)
@@ -1844,33 +1869,17 @@ class StationProfile:
 
         return result
 
-    def admin_up(self, resource):
-        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
+    def admin_up(self):
         for sta_name in self.station_names:
-            req_json["port"] = self.local_realm.name_to_eid(sta_name)[-1]
-            set_port_r.addPostData(req_json)
-            json_response = set_port_r.jsonPost(self.debug)
-            time.sleep(0.03)
+            self.local_realm.admin_up(sta_name)
 
-    def admin_down(self, resource):
-        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.portDownRequest(resource, None, debug_on=False)
+    def admin_down(self):
         for sta_name in self.station_names:
-            req_json["port"] = self.local_realm.name_to_eid(sta_name)[-1]
-            set_port_r.addPostData(req_json)
-            json_response = set_port_r.jsonPost(self.debug)
-            time.sleep(0.03)
+            self.local_realm.admin_down(sta_name)
 
     def cleanup(self, desired_stations=None, delay=0.03):
         print("Cleaning up stations")
 
-        req_url = "/cli-json/rm_vlan"
-        data = {
-            "shelf": 1,
-            "resource": 1,
-            "port": None
-        }
         if (desired_stations is None):
             desired_stations = self.station_names;
 
@@ -1882,18 +1891,7 @@ class StationProfile:
 
         # First, request remove on the list.
         for port_eid in desired_stations:
-            eid = self.local_realm.name_to_eid(port_eid)
-            data["shelf"] = eid[0]
-            data["resource"] = eid[1]
-            data["port"] = eid[2]
-            current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
-            if not current_stations is None:
-                eid = self.local_realm.name_to_eid(port_eid)
-                data["shelf"] = eid[0]
-                data["resource"] = eid[1]
-                data["port"] = eid[2]
-                self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
-                time.sleep(delay)
+            self.local_relm.rm_port(port_eid, check_exists=True)
 
         # And now see if they are gone
         count = 0
@@ -1907,12 +1905,7 @@ class StationProfile:
                 current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
                 if not current_stations is None:
                     found_one = True
-                    # Try again to delete
-                    data["shelf"] = eid[0]
-                    data["resource"] = eid[1]
-                    data["port"] = eid[2]
-                    self.local_realm.json_post(req_url, data, debug_=True) #self.debug)
-                    time.sleep(delay)
+                    self.local_relm.rm_port(port_eid, check_exists=False)
             if not found_one:
                 return
             count = count + 1
@@ -1972,8 +1965,9 @@ class StationProfile:
         num = 0
         #pprint(self.station_names)
         #exit(1)
-        for name in my_sta_names:
-            self.set_port_data["port"] = name
+        for eidn in my_sta_names:
+            eid = self.local_realm.name_to_eid(eidn)
+            name = eid[2]
             num += 1
             self.add_sta_data["shelf"] = radio_shelf
             self.add_sta_data["resource"] = radio_resource
