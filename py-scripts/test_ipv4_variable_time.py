@@ -19,7 +19,7 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream="eth1", radio="wiphy0",
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream, radio,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -95,7 +95,7 @@ class IPV4VariableTime(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
-        temp_stas.append("eth1")
+        temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -186,13 +186,12 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
    
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('--upstream', help='--upstream <1.eth1, etc>',default='1.eth1')
+    parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>',default='1.eth1')
     parser.add_argument('--radio', help='--radio <radio EID>',default='wiphy2')
     parser.add_argument('--ssid', help='--ssid <SSID>',default='jedway-wpa2-160')
     parser.add_argument('--passwd', help='--passwd <Password>',default='jedway-wpa2-160')
     parser.add_argument('--security', help='--security <wpa2 | open | wpa3>',default='wpa2')
-    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False, action="store_true")
 
     args = parser.parse_args()
 
@@ -200,7 +199,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
     ip_var_test = IPV4VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
                                    name_prefix="VT",
-                                   upstream=args.upstream,
+                                   upstream=args.upstream_port,
                                    ssid=args.ssid,
                                    password=args.passwd,
                                    radio=args.radio,

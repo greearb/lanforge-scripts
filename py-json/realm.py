@@ -245,7 +245,7 @@ class Realm(LFCliBase):
         while wait_more:
             wait_more = False
             found_cxs = {}
-            cx_list = list(self.cx_list())
+            cx_list = self.cx_list()
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
             if cx_list is not None:
                 for cx_name in cx_list:
@@ -394,7 +394,7 @@ class Realm(LFCliBase):
         return LFUtils.name_to_eid(eid)
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60):
-        print("Waiting for ips...")
+        print("Waiting for ips, timeout: %i..."%(timeout_sec))
         #print(station_list)
 
         if (station_list is None) or (len(station_list) < 1):
@@ -423,18 +423,23 @@ class Realm(LFCliBase):
                     if v['ip'] == '0.0.0.0':
                         wait_more = True
                         print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                    else:
+                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+
                 if ipv6:
                     v = response['interface']
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                            and v['ipv6 address'] != 'AUTO':
                         wait_more = True
                         print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                    else:
+                        print("Found IPv6: %s on port: %s"%(v['ipv6 address'], sta_eid))
 
             if wait_more:
                 time.sleep(1)
                 timeout_sec -= 1
 
-            return not wait_more
+        return not wait_more
 
     def parse_time(self, time_string):
         if isinstance(time_string, str):
@@ -1534,7 +1539,8 @@ class VAPProfile(LFCliBase):
                 if self.debug:
                     pprint(command_ref)
                 raise ValueError("flag %s not in map" % name)
-            result += command_ref[name]
+            #print("add-named-flags: %s  %i"%(name, command_ref[name]))
+            result |= command_ref[name]
 
         return result
 
@@ -1972,7 +1978,8 @@ class StationProfile:
             self.add_sta_data["shelf"] = radio_shelf
             self.add_sta_data["resource"] = radio_resource
             self.add_sta_data["radio"] = radio_port
-            self.add_sta_data["sta_name"] = name
+            self.add_sta_data["sta_name"] = name # for create station calls
+            self.set_port_data["port"] = name  # for set_port calls.
 
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)
