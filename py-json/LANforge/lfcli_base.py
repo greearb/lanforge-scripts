@@ -6,6 +6,7 @@ from pprint import pprint
 
 import LANforge.LFUtils
 from LANforge.LFUtils import *
+import argparse
 
 
 class LFCliBase:
@@ -206,5 +207,19 @@ class LFCliBase:
         self.test_results.append(self.pass_pref + message)
         if print_:
             print(self.pass_pref + message)
+
+    @staticmethod
+    def create_basic_argparse():
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
+        parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>', default='1.eth1')
+        parser.add_argument('--radio', help='--radio <radio EID>', default='wiphy2')
+        parser.add_argument('--ssid', help='--ssid <SSID>', default='jedway-wpa2-160')
+        parser.add_argument('--passwd', help='--passwd <Password>', default='jedway-wpa2-160')
+        parser.add_argument('--security', help='--security <wpa2 | open | wpa3>', default='wpa2')
+        parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
+
+        return parser
 
 # ~class
