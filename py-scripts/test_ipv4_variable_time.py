@@ -161,7 +161,7 @@ class IPV4VariableTime(LFCliBase):
 def main():
     lfjson_port = 8080
 
-    parser = argparse.ArgumentParser(
+    parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -169,7 +169,7 @@ def main():
         Useful Information:
             1. TBD
             ''',
-        
+
         description='''\
 test_ipv4_variable_time.py:
 --------------------
@@ -185,14 +185,9 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
         ''')
 
-   
-    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>',default='1.eth1')
-    parser.add_argument('--radio', help='--radio <radio EID>',default='wiphy2')
-    parser.add_argument('--ssid', help='--ssid <SSID>',default='jedway-wpa2-160')
-    parser.add_argument('--passwd', help='--passwd <Password>',default='jedway-wpa2-160')
-    parser.add_argument('--security', help='--security <wpa2 | open | wpa3>',default='wpa2')
-    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False, action="store_true")
+    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
     args = parser.parse_args()
 
@@ -204,8 +199,8 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    ssid=args.ssid,
                                    password=args.passwd,
                                    radio=args.radio,
-                                   security=args.security, test_duration="5m", use_ht160=False,
-                                   side_a_min_rate=256000, side_b_min_rate=256000, _debug_on=args.debug)
+                                   security=args.security, test_duration=args.test_duration, use_ht160=False,
+                                   side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
     ip_var_test.build()
