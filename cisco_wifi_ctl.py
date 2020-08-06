@@ -11,7 +11,11 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
-./cisco_wifi_ctl.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet 
+./cisco_wifi_ctl.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet
+
+# For LANforge lab system.
+./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action summary --prompt "\(Cisco Controller\) >"
+
 '''
 
 
@@ -46,6 +50,7 @@ def usage():
    print("$0 used connect to controller:")
    print("-d|--dest:  destination host")
    print("-o|--port:  destination port")
+   print("--prompt:   prompt to expect, ie \"\\(Cisco Controller\\) >\"")
    print("-u|--user:  login name")
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
@@ -71,6 +76,7 @@ def main():
    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
    parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
+   parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="\(Cisco Controller\) >")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
@@ -187,12 +193,14 @@ def main():
 
    command = None
    time.sleep(0.1)
-   CCPROMPT = '\(Voice-Talwar\) >'
+   CCPROMPT = args.prompt  #'\(Voice-Talwar\) >'
    LOGOUTPROMPT = 'User:'
    EXITPROMPT = "Would you like to save them now\? \(y/N\)"
    AREYOUSURE = "Are you sure you want to continue\? \(y/n\)"
    CLOSEDBYREMOTE = "closed by remote host."
    CLOSEDCX = "Connection to .* closed."
+
+   logg.info("waiting for prompt: %s"%(CCPROMPT))
    egg.expect(CCPROMPT)
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
