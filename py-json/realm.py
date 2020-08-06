@@ -1930,9 +1930,9 @@ class StationProfile:
             found_one = False
             for port_eid in desired_stations:
                 eid = self.local_realm.name_to_eid(port_eid)
-                data["shelf"] = eid[0]
-                data["resource"] = eid[1]
-                data["port"] = eid[2]
+                # data["shelf"] = eid[0]
+                # data["resource"] = eid[1]
+                # data["port"] = eid[2]
                 current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
                 if not current_stations is None:
                     found_one = True
