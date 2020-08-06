@@ -203,10 +203,8 @@ class L3VariableTimeLongevity(LFCliBase):
             station_profile.set_number_template(station_profile.number_template)
             print("Creating stations")
 
-            index = 0
-            for station_list in self.station_lists: 
-                station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=self.debug, sleep_time=0)
-                index += 1
+            station_profile.create(radio=self.radio_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+            index += 1
 
             for etype in self.endp_types:
                 if etype == "mc_udp" or etype == "mc_udp6":
@@ -365,7 +363,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             quit(1)
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                              padding_number_=10000, radio=radio_name[index])
+                                              padding_number_=10000, radio=radio[index])
         station_lists.append(station_list)
         index += 1
 
