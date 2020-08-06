@@ -154,7 +154,7 @@ def main():
     generic_test = GenTest(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
                            name_prefix="GT", type=args.type, dest=args.dest, interval=1,
                            ssid=args.ssid, upstream=args.upstream_port,
-                           password=args.ssid, security=args.security, test_duration=args.test_duration,
+                           password=args.passwd, security=args.security, test_duration=args.test_duration,
                            _debug_on=args.debug, radio=args.radio)
 
     generic_test.cleanup(station_list)
