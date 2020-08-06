@@ -168,6 +168,43 @@ class Realm(LFCliBase):
         request = LFUtils.port_down_request(resource_id=resource, port_name=port)
         self.json_post("/cli-json/set_port", request)
 
+    def rm_cx(self, cx_name):
+        req_url = "cli-json/rm_cx"
+        data = {
+            "test_mgr": "ALL",
+            "cx_name": cx_name
+            }
+        self.json_post(req_url, data)
+
+    def rm_endp(self, ename, debug_=False, suppress_related_commands_=True):
+        req_url = "cli-json/rm_endp"
+        data = {
+            "endp_name": ename
+            }
+        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+
+    def stop_cx(self, cx_name):
+        self.json_post("/cli-json/set_cx_state", {
+            "test_mgr": "ALL",
+            "cx_name": cx_name,
+            "cx_state": "STOPPED"
+            }, debug_=self.debug)
+
+    def cleanup_cxe_prefix(self, prefix):
+        cx_list = self.cx_list()
+        if cx_list is not None:
+            for cx_name in cx_list:
+                if cx_name.startswith(prefix):
+                    self.rm_cx(cx_name)
+
+        endp_list = self.json_get("/endp")
+        if endp_list is not None:
+            endp_list = list(endp_list['endpoint'])
+            for idx in range(len(endp_list)):
+                endp_name = list(endp_list[idx])[0]
+                if endp_name.startswith(prefix):
+                    self.rm_endp(endp_name)
+
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]
 
@@ -225,8 +262,8 @@ class Realm(LFCliBase):
             found_endps = {}
             if endp_list is not None:
                 endp_list = list(endp_list['endpoint'])
-                for endp_name in range(len(endp_list)):
-                    name = list(endp_list[endp_name])[0]
+                for idx in range(len(endp_list)):
+                    name = list(endp_list[idx])[0]
                     found_endps[name] = name
 
             for req in these_endp:
@@ -623,16 +660,15 @@ class MULTICASTProfile(LFCliBase):
 
         pass
 
+    def cleanup_prefix(self):
+        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
+
     def cleanup(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
             debug_=True
 
         for endp_name in self.get_mc_names():
-            json_data = {
-                "endp_name":endp_name
-            }
-            url = "cli-json/rm_endp"
-            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.rm_endp(endp_name, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
     def create_mc_tx(self, endp_type, side_tx, suppress_related_commands=None, debug_ = False ):
         if self.debug:
@@ -642,7 +678,7 @@ class MULTICASTProfile(LFCliBase):
         side_tx_shelf = side_tx_info[0]
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
-        side_tx_name = "mtx-%s-%i"%(side_tx_port, len(self.created_mc))
+        side_tx_name = "%smtx-%s-%i"%(self.name_prefix, side_tx_port, len(self.created_mc))
 
         json_data = []
         
@@ -699,7 +735,7 @@ class MULTICASTProfile(LFCliBase):
             side_rx_shelf = side_rx_info[0]
             side_rx_resource = side_rx_info[1]
             side_rx_port = side_rx_info[2]
-            side_rx_name = "mrx-%s-%i"%(side_rx_port, len(self.created_mc))
+            side_rx_name = "%smrx-%s-%i"%(self.name_prefix, side_rx_port, len(self.created_mc))
             # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
             json_data = {
                             'alias':side_rx_name,
@@ -812,34 +848,23 @@ class L3CXProfile(LFCliBase):
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
-            self.json_post("/cli-json/set_cx_state", {
-                "test_mgr": "default_tm",
-                "cx_name": cx_name,
-                "cx_state": "STOPPED"
-            }, debug_=self.debug)
+            self.local_realm.stop_cx(cx_name)
             print(".", end='')
         print("")
 
+    def cleanup_prefix(self):
+        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
+                    
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 print("Cleaning cx: %s"%(cx_name))
-                req_url = "cli-json/rm_cx"
-                data = {
-                    "test_mgr": "default_tm",
-                    "cx_name": cx_name
-                }
-                self.json_post(req_url, data)
+                self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
-                    ename = self.created_cx[cx_name][side]
                     print("Cleaning endpoint: %s"%(ename))
-                    req_url = "cli-json/rm_endp"
-                    data = {
-                        "endp_name": ename
-                    }
-                    self.json_post(req_url, data)
+                    self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False):
         if self.debug:

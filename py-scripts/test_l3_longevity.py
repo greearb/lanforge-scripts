@@ -43,6 +43,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.multicast_profile = self.local_realm.new_multicast_profile()
+        self.multicast_profile.name_prefix = "MLT-";
         self.station_profiles = []
         
         index = 0
@@ -169,6 +170,13 @@ class L3VariableTimeLongevity(LFCliBase):
         for station_list in self.station_lists:
             for station_name in station_list:
                 self.local_realm.admin_down(station_name)
+
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        self.multicast_profile.cleanup_prefix()
+        for station_list in self.station_lists:
+            for sta in station_list:
+                self.local_realm.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -345,7 +353,8 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             quit(1)
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000, padding_number_=10000)
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+                                              padding_number_=10000, radio=radio_name[index])
         station_lists.append(station_list)
         index += 1
 
@@ -366,9 +375,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    ssid_security_list=ssid_security_list, test_duration=test_duration,
                                    side_a_min_rate=256000, side_b_min_rate=256000, debug_on=debug_on)
 
-    # This cleanup does not work because objects in the profiles are not yet created.
-    # Not sure the best way to resolve this currently. --Ben
-    ip_var_test.cleanup()
+    ip_var_test.pre_cleanup()
 
     ip_var_test.build()
     if not ip_var_test.passes():

@@ -135,6 +135,7 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.admin_down()
 
     def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
             self.local_realm.rm_port(sta, check_exists=True)
 
