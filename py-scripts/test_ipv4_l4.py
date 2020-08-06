@@ -13,14 +13,15 @@ import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
+import argparse
 import realm
 import time
 import datetime
 
 
 class IPV4L4(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list, number_template="00000",
-                 resource=1,
+    def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
+                 number_template="00000", radio="wiphy0",
                  test_duration="5m",
                  _debug_on=False,
                  _exit_on_error=False,
@@ -28,6 +29,7 @@ class IPV4L4(LFCliBase):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
+        self.radio = radio
         self.ssid = ssid
         self.security = security
         self.password = password
@@ -35,7 +37,6 @@ class IPV4L4(LFCliBase):
         self.requests_per_ten = requests_per_ten
         self.number_template = number_template
         self.sta_list = station_list
-        self.resource = resource
         self.test_duration = test_duration
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
@@ -90,18 +91,16 @@ class IPV4L4(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
-        temp_sta_list = []
-        for station in range(len(self.sta_list)):
-            temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
 
-        self.cx_profile.create(ports=temp_sta_list, sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
+        self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
+                               suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
         temp_stas.append("eth1")
-        if self.local_realm.wait_for_ip(self.resource, temp_stas):
+        if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
@@ -109,7 +108,7 @@ class IPV4L4(LFCliBase):
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.station_profile.admin_up(1)
+        self.station_profile.admin_up()
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
@@ -139,24 +138,58 @@ class IPV4L4(LFCliBase):
     def stop(self):
         self.cx_profile.stop_cx()
         for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
+            data = LFUtils.port_down_request(1, self.local_realm.name_to_eid(sta_name)[2])
             url = "cli-json/set_port"
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup(self.resource, sta_list)
-        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup(sta_list)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
 
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ip_test = IPV4L4(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                     security="wpa2", station_list=station_list, url="dl http://10.40.0.1 /dev/null", test_duration="5m",
-                     requests_per_ten=600, _debug_on=False)
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='test_generic.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            Useful Information:
+                1. TBD
+                ''',
+
+        description='''\
+    test_generic.py:
+    --------------------
+    TBD
+
+    Generic command layout:
+    python ./test_ipv4_l4.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+
+    Note:   multiple --radio switches may be entered up to the number of radios available:
+                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+
+     python3 ./test_ipv4_l4.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+
+            ''')
+
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
+    parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
+
+    args = parser.parse_args()
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+                                          radio=args.radio)
+
+    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
+                     security=args.security, station_list=station_list, url=args.url,
+                     test_duration=args.test_duration,
+                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug)
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
