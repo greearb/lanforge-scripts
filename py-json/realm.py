@@ -183,6 +183,24 @@ class Realm(LFCliBase):
             }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
+    def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
+        req_url = "cli-json/set_endp_tos"
+        tos = _tos;
+        # Convert some human readable values to numeric needed by LANforge.
+        if _tos == "BK":
+            tos = "64"
+        if _tos == "BE":
+            tos = "96"
+        if _tos == "VI":
+            tos = "128"
+        if _tos == "VO":
+            tos = "192"
+        data = {
+            "name": ename,
+            "tos": tos
+            }
+        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+
     def stop_cx(self, cx_name):
         self.json_post("/cli-json/set_cx_state", {
             "test_mgr": "ALL",
@@ -630,8 +648,11 @@ class MULTICASTProfile(LFCliBase):
     def get_mc_names(self):
         return self.created_mc.keys()
 
-    def refresh_mc(self):
-        pass
+    def refresh_mc(self, debug_=False):
+        for endp_name in self.get_mc_names():
+            self.json_post("/cli-json/show_endpoints", {
+                 "endpoint": endp_name
+            }, debug_=debug_)
 
     def start_mc(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
@@ -866,7 +887,7 @@ class L3CXProfile(LFCliBase):
                     print("Cleaning endpoint: %s"%(ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
-    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False):
+    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False, tos=None):
         if self.debug:
             debug_=True
 
@@ -951,6 +972,11 @@ class L3CXProfile(LFCliBase):
                     "val": 1
                 }
                 self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+
+                if tos != None:
+                    self.local_realm.set_endp_tos(endp_a_name, tos)
+                    self.local_realm.set_endp_tos(endp_b_name, tos)
+
                 #print("CXNAME366:")
                 #pprint(cx_name)
                 data = {

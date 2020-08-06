@@ -18,7 +18,7 @@ import time
 import datetime
 
 class L3VariableTimeLongevity(LFCliBase):
-    def __init__(self, host, port, endp_types, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
+    def __init__(self, host, port, endp_types, tos, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
@@ -28,6 +28,7 @@ class L3VariableTimeLongevity(LFCliBase):
         super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
+        self.tos = tos.split()
         self.endp_types = endp_types.split()
         self.side_b = side_b
         self.ssid_list = ssid_list
@@ -130,9 +131,11 @@ class L3VariableTimeLongevity(LFCliBase):
             print("print failed to get IP's")
 
         print("Starting multicast traffic (if any configured)")
-        self.multicast_profile.start_mc(debug_=True)
+        self.multicast_profile.start_mc(debug_=self.debug)
+        self.multicast_profile.refresh_mc(debug_=self.debug)
         print("Starting layer-3 traffic (if any configured)")
         self.cx_profile.start_cx()
+        self.cx_profile.refresh_cx()
 
         cur_time = datetime.datetime.now()
         print("Getting initial values.")
@@ -206,12 +209,14 @@ class L3VariableTimeLongevity(LFCliBase):
                 index += 1
 
             for etype in self.endp_types:
-                print("Creating connections for endpoint type: %s"%(etype))
                 if etype == "mc_udp" or etype == "mc_udp6":
+                    print("Creating Multicast connections for endpoint type: %s"%(etype))
                     self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
                     self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                 else:
-                    self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0)
+                    for _tos in self.tos:
+                        print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
+                        self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
 
         self._pass("PASS: Stations build finished")
 
@@ -276,21 +281,27 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
             mc_udp  : IPv4 multi cast UDP traffic
             mc_udp6 : IPv6 multi cast UDP traffic
 
+<tos>: 
+            BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values.
+            
+
         Example:
             1. Test duration 4 minutes
             2. Traffic IPv4 TCP
             3. Upstream-port eth1
             4. Radio #1 wiphy0 has 32 stations, ssid = candelaTech-wpa2-x2048-4-1, ssid password = candelaTech-wpa2-x2048-4-1
             5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
+            6. Create connections with TOS of BK and VI
 
             Command: 
-            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
 
         ''')
 
    
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
+    parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
@@ -358,7 +369,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         station_lists.append(station_list)
         index += 1
 
-    print("endp-types: %s"%(endp_types))
+    #print("endp-types: %s"%(endp_types))
 
     ip_var_test = L3VariableTimeLongevity(lfjson_host, 
                                    lfjson_port, 
@@ -366,6 +377,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    station_lists= station_lists,
                                    name_prefix="LT-",
                                    endp_types=endp_types,
+                                   tos=args.tos,
                                    side_b=side_b,
                                    radios=radios,
                                    radio_name_list=radio_name_list,
