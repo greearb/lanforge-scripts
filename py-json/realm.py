@@ -1897,7 +1897,7 @@ class StationProfile:
 
         # First, request remove on the list.
         for port_eid in desired_stations:
-            self.local_relm.rm_port(port_eid, check_exists=True)
+            self.local_realm.rm_port(port_eid, check_exists=True)
 
         # And now see if they are gone
         count = 0
@@ -1911,7 +1911,7 @@ class StationProfile:
                 current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
                 if not current_stations is None:
                     found_one = True
-                    self.local_relm.rm_port(port_eid, check_exists=False)
+                    self.local_realm.rm_port(port_eid, check_exists=False)
             if not found_one:
                 return
             count = count + 1
