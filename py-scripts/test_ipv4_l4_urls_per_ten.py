@@ -131,7 +131,7 @@ def main():
     lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
-        prog='test_generic.py',
+        prog='test_ipv4_l4_urls_per_ten',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -140,17 +140,17 @@ def main():
                 ''',
 
         description='''\
-    test_generic.py:
+    test_ipv4_l4_urls_per_ten.py:
     --------------------
     TBD
 
     Generic command layout:
-    python ./test_ipv4_l4.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+    python ./test_ipv4_l4_urls_per_ten.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
     Note:   multiple --radio switches may be entered up to the number of radios available:
                      --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
 
-     python3 ./test_ipv4_l4.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+     python3 ./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
 
             ''')
 
