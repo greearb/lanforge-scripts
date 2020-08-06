@@ -19,9 +19,9 @@ import datetime
 
 
 class GenTest(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, resource=1,
+    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream,
                  number_template="00000", test_duration="5m", type="lfping", dest="127.0.0.1",
-                 interval=1,
+                 interval=1, radio="wiphy0",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -29,11 +29,12 @@ class GenTest(LFCliBase):
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.radio = radio
+        self.upstream = upstream
         self.sta_list = sta_list
         self.security = security
         self.password = password
         self.number_template = number_template
-        self.resource = resource
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
@@ -52,10 +53,10 @@ class GenTest(LFCliBase):
         self.cx_profile.interval = interval
 
     def start(self, print_pass=False, print_fail=False):
-        self.station_profile.admin_up(self.resource)
+        self.station_profile.admin_up()
         temp_stas = self.sta_list.copy()
-        temp_stas.append("eth1")
-        if self.local_realm.wait_for_ip(self.resource, temp_stas):
+        temp_stas.append(self.upstream)
+        if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
@@ -102,30 +103,59 @@ class GenTest(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        temp_sta_list = []
-        for station in range(len(self.sta_list)):
-            temp_sta_list.append(str(self.resource) + "." + self.sta_list[station])
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(ports=temp_sta_list, sleep_time=.5)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+        self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5)
         self._pass("PASS: Station build finished")
 
     def cleanup(self, sta_list):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup(self.resource, sta_list)
-        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup(sta_list)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
 
 def main():
-    lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
-    generic_test = GenTest(lfjson_host, lfjson_port, number_template="00", sta_list=station_list,
-                           name_prefix="var_time", type="lfping", dest="10.40.0.1", interval=1,
-                           ssid="jedway-wpa2-x2048-4-4",
-                           password="jedway-wpa2-x2048-4-4",
-                           resource=1,
-                           security="wpa2", test_duration="5m", )
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='test_generic.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            Useful Information:
+                1. TBD
+                ''',
+
+        description='''\
+    test_generic.py:
+    --------------------
+    TBD
+
+    Generic command layout:
+    python ./test_generic.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+
+    Note:   multiple --radio switches may be entered up to the number of radios available:
+                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+
+     python3 ./test_generic.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+
+            ''')
+
+    parser.add_argument('--type', help='--type type of command to run', default="lfping")
+    parser.add_argument('--dest', help='--dest destination for command', default="10.40.0.1")
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    parser.add_argument('--interval', help='--interval interval to use when running lfping', default=1)
+
+    args = parser.parse_args()
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+                                          radio=args.radio)
+
+    generic_test = GenTest(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
+                           name_prefix="GT", type=args.type, dest=args.dest, interval=1,
+                           ssid=args.ssid, upstream=args.upstream_port,
+                           password=args.ssid, security=args.security, test_duration=args.test_duration,
+                           _debug_on=args.debug, radio=args.radio)
 
     generic_test.cleanup(station_list)
     generic_test.build()
