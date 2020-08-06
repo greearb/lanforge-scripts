@@ -1848,7 +1848,7 @@ class StationProfile:
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
         req_json = LFUtils.portUpRequest(resource, None, debug_on=False)
         for sta_name in self.station_names:
-            req_json["port"] = sta_name
+            req_json["port"] = self.local_realm.name_to_eid(sta_name)[-1]
             set_port_r.addPostData(req_json)
             json_response = set_port_r.jsonPost(self.debug)
             time.sleep(0.03)
@@ -1857,7 +1857,7 @@ class StationProfile:
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
         req_json = LFUtils.portDownRequest(resource, None, debug_on=False)
         for sta_name in self.station_names:
-            req_json["port"] = sta_name
+            req_json["port"] = self.local_realm.name_to_eid(sta_name)[-1]
             set_port_r.addPostData(req_json)
             json_response = set_port_r.jsonPost(self.debug)
             time.sleep(0.03)
