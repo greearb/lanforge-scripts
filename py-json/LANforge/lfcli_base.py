@@ -220,7 +220,6 @@ class LFCliBase:
         parser.add_argument('--security', help='--security <wpa2 | open | wpa3>', default='wpa2')
         parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
 
-        args = parser.parse_args()
-        return args
+        return parser
 
 # ~class
