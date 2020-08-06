@@ -483,12 +483,13 @@ class Realm(LFCliBase):
 
                 if ipv6:
                     v = response['interface']
+                    print(v)
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                            and v['ipv6 address'] != 'AUTO':
+                        print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
+                    else:
                         wait_more = True
                         print("Waiting for port %s to get IPv6 Address."%(sta_eid))
-                    else:
-                        print("Found IPv6: %s on port: %s"%(v['ipv6 address'], sta_eid))
 
             if wait_more:
                 time.sleep(1)
