@@ -144,7 +144,7 @@ class L3VariableTimeLongevity(LFCliBase):
                     sta_count = m.group(1)
                     print("AP line: %s"%(line))
                     print("sta-count: %s"%(sta_count))
-                    if (sta_count != self.total_stas):
+                    if (int(sta_count) != int(self.total_stas)):
                         print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
 
