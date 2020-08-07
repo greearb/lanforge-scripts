@@ -189,7 +189,7 @@ def main():
 
     ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
                      security=args.security, station_list=station_list, url=args.url, test_duration=args.test_duration,
-                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug)
+                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug, upstream_port=args.upstream_port)
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
