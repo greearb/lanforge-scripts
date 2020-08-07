@@ -98,9 +98,9 @@ class IPV4L4(LFCliBase):
         self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug, suppress_related_commands_=True)
 
     def start(self, print_pass=False, print_fail=False):
-        self.port_util.set_ftp(port_name=self.upstream_port, resource=1, on=True)
+        self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         temp_stas = self.sta_list.copy()
-        temp_stas.append(self.upstream_port)
+        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -137,7 +137,7 @@ class IPV4L4(LFCliBase):
             self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
-        self.port_util.set_ftp(port_name=self.upstream_port, resource=1, on=False)
+        self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         self.cx_profile.stop_cx()
         for sta_name in self.sta_list:
             data = LFUtils.portDownRequest(1, self.local_realm.name_to_eid(sta_name)[2])
