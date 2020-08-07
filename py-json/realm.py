@@ -558,7 +558,7 @@ class Realm(LFCliBase):
 
     def remove_all_endps(self):
         endp_list = self.json_get("/endp/list")
-        if "items" in endp_list:
+        if "items" in endp_list or "empty" in endp_list:
             return
         if endp_list is not None or endp_list :
             print("Removing all endps")
@@ -578,7 +578,7 @@ class Realm(LFCliBase):
         # nc show cross connects
         try:
             cx_list = list(self.cx_list())
-            not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
+            not_cx = ['warnings', 'errors', 'handler', 'uri', 'items', 'empty']
             if cx_list is not None:
                 print("Removing all cxs")
                 for cx_name in cx_list:
