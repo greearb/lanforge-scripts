@@ -22,7 +22,7 @@ import datetime
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
                  number_template="00000", radio="wiphy0",
-                 test_duration="5m",
+                 test_duration="5m", upstream_port="eth1",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -30,6 +30,7 @@ class IPV4L4(LFCliBase):
         self.host = host
         self.port = port
         self.radio = radio
+        self.upstream_port = upstream_port
         self.ssid = ssid
         self.security = security
         self.password = password
@@ -99,7 +100,7 @@ class IPV4L4(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
-        temp_stas.append("eth1")
+        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -188,7 +189,7 @@ def main():
 
     ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
                      security=args.security, station_list=station_list, url=args.url,
-                     test_duration=args.test_duration,
+                     test_duration=args.test_duration, upstream_port=args.upstream_port,
                      requests_per_ten=args.requests_per_ten, _debug_on=args.debug)
     ip_test.cleanup(station_list)
     ip_test.build()
