@@ -197,7 +197,8 @@ class TIPStationPowersave(LFCliBase):
 
         print("Collecting lanforge eth0 IP...")
         eth0_resp = self.json_get("/port/1/%s/eth0?fields=port,alias,ip"%self.resource, debug_=self.debug)
-        if (eth0_resp is None) or ("items" in eth0_resp) or ("interface" not in eth0_resp):
+        # would be nice to have a not_found() kind of method
+        if (eth0_resp is None) or ("items" in eth0_resp) or ("empty" in eth0_resp) or ("interface" not in eth0_resp):
             self._fail("Unable to query %s.eth0"%self.resource, print_=True)
             exit(1)
         self.eth0_ip = eth0_resp["interface"]["ip"]
