@@ -547,7 +547,9 @@ class Realm(LFCliBase):
 
     def remove_all_endps(self):
         endp_list = self.json_get("/endp/list")
-        if endp_list is not None:
+        if "items" in endp_list:
+            return
+        if endp_list is not None or endp_list :
             print("Removing all endps")
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
@@ -1341,7 +1343,7 @@ class WifiMonitor:
         self.aid = "NA" # used when sniffing /ax radios
         self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
 
-    def create(self, resource_=1,channel=None, radio_="wiphy0", name_="moni0" ):
+    def create(self, resource_=1, channel=None, radio_="wiphy0", name_="moni0" ):
         print("Creating monitor " + name_)
         self.monitor_name = name_
         computed_flags = 0
