@@ -274,13 +274,17 @@ class Realm(LFCliBase):
         return response
 
     def waitUntilEndpsAppear(self, these_endp, debug=False):
+        return self.wait_until_endps_appear(these_endp, debug=debug)
+
+    def wait_until_endps_appear(self, these_endp, debug=False):
         wait_more = True;
         count = 0
         while wait_more:
+            time.sleep(1)
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
-            if endp_list is not None:
+            if (endp_list is not None) and ("items" not in endp_list):
                 endp_list = list(endp_list['endpoint'])
                 for idx in range(len(endp_list)):
                     name = list(endp_list[idx])[0]
@@ -298,9 +302,13 @@ class Realm(LFCliBase):
         return not wait_more
 
     def waitUntilCxsAppear(self, these_cx, debug=False):
+        return self.wait_until_cxs_appear(these_cx, debug=debug)
+
+    def wait_until_cxs_appear(self, these_cx, debug=False):
         wait_more = True;
         count = 0
         while wait_more:
+            time.sleep(1)
             wait_more = False
             found_cxs = {}
             cx_list = self.cx_list()
@@ -703,7 +711,7 @@ class MULTICASTProfile(LFCliBase):
         for endp_name in self.get_mc_names():
             self.local_realm.rm_endp(endp_name, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-    def create_mc_tx(self, endp_type, side_tx, suppress_related_commands=None, debug_ = False ):
+    def create_mc_tx(self, endp_type, side_tx, suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_=True
 
@@ -754,7 +762,7 @@ class MULTICASTProfile(LFCliBase):
         self.created_mc[side_tx_name] = side_tx_name
 
         these_endp = [side_tx_name]
-        self.local_realm.waitUntilEndpsAppear(these_endp)
+        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
 
     def create_mc_rx(self, endp_type, side_rx, suppress_related_commands=None, debug_ = False):
@@ -806,7 +814,7 @@ class MULTICASTProfile(LFCliBase):
             self.created_mc[side_rx_name] = side_rx_name
             these_endp.append(side_rx_name)
 
-        self.local_realm.waitUntilEndpsAppear(these_endp)
+        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
     def to_string(self):
         pprint.pprint(self)
@@ -1021,7 +1029,7 @@ class L3CXProfile(LFCliBase):
 
                 cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
                 endp_a_name = cx_name + "-A";
-                endp_b_name = ex_name + "-B";
+                endp_b_name = cx_name + "-B";
                 self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name;
                 self.created_endp[endp_b_name] = endp_b_name;
@@ -1069,7 +1077,7 @@ class L3CXProfile(LFCliBase):
 
                 url = "cli-json/set_endp_flag"
                 data = {
-                    "name": enb,
+                    "name": endp_a_name,
                     "flag": "autohelper",
                     "val": 1
                 }
@@ -1090,16 +1098,14 @@ class L3CXProfile(LFCliBase):
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
-        #print("post_data", cx_post_data)
+        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
+
         for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-            #print(" napping %f sec"%sleep_time, end='')
-            #time.sleep(sleep_time)
-        #print("")
+            time.sleep(0.01)
 
-        self.local_realm.waitUntilEndpsAppear(these_endp)
-        self.local_realm.waitUntilCxsAppear(these_cx)
+        self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
 
     def to_string(self):
         pprint.pprint(self)
