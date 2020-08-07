@@ -221,7 +221,7 @@ class LFCliBase:
         parser.add_argument('--radio', help='--radio <radio EID>', default='wiphy2')
         parser.add_argument('--ssid', help='--ssid <SSID>', default='jedway-wpa2-160')
         parser.add_argument('--passwd', help='--passwd <Password>', default='jedway-wpa2-160')
-        parser.add_argument('--security', help='--security <wpa2 | open | wpa3>', default='wpa2')
+        parser.add_argument('--security', help='--security <wpa2 | open | wpa3 | wpa | wep>', default='wpa2')
         parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
 
         return parser
