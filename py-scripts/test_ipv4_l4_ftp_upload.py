@@ -20,7 +20,7 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list, number_template="00000",
-                 upstream_port="eth1",
+                 upstream_port="eth1", radio="wiphy0",
                  test_duration="5m",
                  _debug_on=False,
                  _exit_on_error=False,
@@ -29,6 +29,7 @@ class IPV4L4(LFCliBase):
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.radio = radio
         self.upstream_port = upstream_port
         self.security = security
         self.password = password
@@ -80,7 +81,7 @@ class IPV4L4(LFCliBase):
             if cx_name != 'uri' and cx_name != 'handler':
                 for item, value in cx_name.items():
                     for value_name, value_rx in value.items():
-                        if item in self.cx_profile.created_cx.keys() and value_name == 'bytes-rd':
+                        if item in self.cx_profile.created_cx.keys() and value_name == 'bytes-wr':
                             cx_map[item] = value_rx
         return cx_map
 
@@ -92,7 +93,7 @@ class IPV4L4(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
         self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug, suppress_related_commands_=True)
@@ -100,6 +101,7 @@ class IPV4L4(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         temp_stas = self.sta_list.copy()
+        self.station_profile.admin_up()
         temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
@@ -109,7 +111,6 @@ class IPV4L4(LFCliBase):
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_values()
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.station_profile.admin_up()
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
@@ -164,24 +165,24 @@ def main():
                 ''',
 
         description='''\
-    test_ipv4_l4_ftp.py:
+    test_ipv4_l4_ftp_upload.py:
     --------------------
     TBD
 
     Generic command layout:
-    python ./test_ipv4_l4_ftp.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+    python ./test_ipv4_l4_ftp_upload.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
     Note:   multiple --radio switches may be entered up to the number of radios available:
                      --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
 
-     python3 ./test_ipv4_l4_ftp.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+     python3 ./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
 
             ''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
-                        default="dl ftp://10.40.0.1 /dev/null")
+                        default="ul ftp://10.40.0.1 /dev/null")
 
     args = parser.parse_args()
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
