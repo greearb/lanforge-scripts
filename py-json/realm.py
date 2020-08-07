@@ -1077,7 +1077,7 @@ class L3CXProfile(LFCliBase):
 
                 url = "cli-json/set_endp_flag"
                 data = {
-                    "name": endp_a_name,
+                    "name": endp_b_name,
                     "flag": "autohelper",
                     "val": 1
                 }
