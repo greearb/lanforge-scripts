@@ -21,13 +21,14 @@ import datetime
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
                  target_requests_per_ten=60, number_template="00000", num_tests=1, radio="wiphy0",
-                 _debug_on=False,
+                 _debug_on=False, upstream_port="eth1",
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.radio = radio
+        self.upstream_port = upstream_port
         self.ssid = ssid
         self.security = security
         self.password = password
@@ -81,7 +82,7 @@ class IPV4L4(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
-        temp_stas.append("eth1")
+        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         cur_time = datetime.datetime.now()
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
@@ -165,7 +166,7 @@ def main():
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
+    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd, upstream_port=args.upstream_port,
                      security=args.security, station_list=station_list, url=args.url, num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
                      requests_per_ten=args.requests_per_ten)
