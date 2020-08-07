@@ -217,7 +217,7 @@ class Realm(LFCliBase):
                 if cx_name.startswith(prefix):
                     self.rm_cx(cx_name)
 
-        endp_list = self.json_get("/endp")
+        endp_list = self.json_get("/endp/list")
         if endp_list is not None:
             endp_list = list(endp_list['endpoint'])
             for idx in range(len(endp_list)):
@@ -270,7 +270,7 @@ class Realm(LFCliBase):
 
     # Returns json response from webpage of all layer 3 cross connects
     def cx_list(self):
-        response = super().json_get("/cx")
+        response = self.json_get("/cx/list")
         return response
 
     def waitUntilEndpsAppear(self, these_endp, debug=False):
@@ -278,7 +278,7 @@ class Realm(LFCliBase):
         count = 0
         while wait_more:
             wait_more = False
-            endp_list = self.json_get("/endp")
+            endp_list = self.json_get("/endp/list")
             found_endps = {}
             if endp_list is not None:
                 endp_list = list(endp_list['endpoint'])
@@ -546,7 +546,7 @@ class Realm(LFCliBase):
                 self.json_post(req_url, data)
 
     def remove_all_endps(self):
-        endp_list = self.json_get("/endp")
+        endp_list = self.json_get("/endp/list")
         if endp_list is not None:
             print("Removing all endps")
             endp_list = list(endp_list['endpoint'])
