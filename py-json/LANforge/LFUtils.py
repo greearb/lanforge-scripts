@@ -422,7 +422,6 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     while len(found_stations) < len(port_list):
         found_stations = []
         for port_eid in port_list:
-
             eid = name_to_eid(port_eid)
             shelf = eid[0]
             resource_id = eid[1]
@@ -435,8 +434,8 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
                 found_stations.append(port_name)
             else:
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url)
-                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
-                lf_r.formPost()
+                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": "1"})
+                lf_r.jsonPost()
         if (len(found_stations) < len(port_list)):
             sleep(2)
 
