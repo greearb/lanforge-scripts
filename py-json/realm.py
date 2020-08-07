@@ -1960,7 +1960,7 @@ class StationProfile:
         print("Cleaning up stations")
 
         if (desired_stations is None):
-            desired_stations = self.station_names;
+            desired_stations = self.station_names
 
         if len(desired_stations) < 1:
             print("ERROR:  StationProfile cleanup, list is empty")
@@ -1973,22 +1973,7 @@ class StationProfile:
             self.local_realm.rm_port(port_eid, check_exists=True)
 
         # And now see if they are gone
-        count = 0
-        while count < (del_count + 10):
-            found_one = False
-            for port_eid in desired_stations:
-                eid = self.local_realm.name_to_eid(port_eid)
-                # data["shelf"] = eid[0]
-                # data["resource"] = eid[1]
-                # data["port"] = eid[2]
-                current_stations = self.local_realm.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
-                if not current_stations is None:
-                    found_one = True
-                    self.local_realm.rm_port(port_eid, check_exists=False)
-                    time.sleep(delay)
-            if not found_one:
-                return
-            count = count + 1
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=desired_stations)
 
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
