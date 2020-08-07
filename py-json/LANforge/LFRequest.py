@@ -20,8 +20,7 @@ class LFRequest:
     No_Data = {'No Data':0}
     requested_url = ""
     post_data = No_Data
-    default_headers = {
-        'Accept': 'application/json'}
+    default_headers = { 'Accept': 'application/json'}
 
     def __init__(self, url, uri=None, debug_=False, die_on_error_=False):
         self.debug = debug_
