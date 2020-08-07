@@ -242,8 +242,8 @@ class TIPStationPowersave(LFCliBase):
         self.wifi_monitor_profile.start_sniff(self.pcap_file, capture_duration)
         time.sleep(0.05)
 
-        self.sta_powersave_disabled_profile.admin_up(resource=1)
-        self.sta_powersave_enabled_profile.admin_up(resource=1)
+        self.sta_powersave_disabled_profile.admin_up()
+        self.sta_powersave_enabled_profile.admin_up()
 
         LFUtils.wait_until_ports_admin_up(base_url=self.local_realm.lfclient_url,
                                           port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
