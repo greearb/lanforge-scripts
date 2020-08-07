@@ -128,18 +128,18 @@ class Realm(LFCliBase):
 
     def rm_port(self, port_eid, check_exists=True):
         req_url = "/cli-json/rm_vlan"
-        data = {}
-
         eid = self.name_to_eid(port_eid)
         do_rm = True;
         if check_exists:
             if not self.port_exists(port_eid):
                 do_rm = False
         if do_rm:
-            data["shelf"] = eid[0]
-            data["resource"] = eid[1]
-            data["port"] = eid[2]
-            self.json_post(req_url, data, debug_=True) #self.debug)
+            data = {
+                "shelf": eid[0],
+                "resource": eid[1],
+                "port": eid[2]
+            }
+            rsp = self.json_post(req_url, data, debug_=self.debug)
             return True
         return False
 
@@ -1985,10 +1985,11 @@ class StationProfile:
                 if not current_stations is None:
                     found_one = True
                     self.local_realm.rm_port(port_eid, check_exists=False)
+                    time.sleep(delay)
             if not found_one:
                 return
             count = count + 1
-            time.sleep(1)
+
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False, suppress_related_commands_=True, sleep_time=2):
