@@ -219,11 +219,14 @@ class Realm(LFCliBase):
 
         endp_list = self.json_get("/endp/list")
         if endp_list is not None:
-            endp_list = list(endp_list['endpoint'])
-            for idx in range(len(endp_list)):
-                endp_name = list(endp_list[idx])[0]
-                if endp_name.startswith(prefix):
-                    self.rm_endp(endp_name)
+            try:
+                endp_list = list(endp_list['endpoint'])
+                for idx in range(len(endp_list)):
+                    endp_name = list(endp_list[idx])[0]
+                    if endp_name.startswith(prefix):
+                        self.rm_endp(endp_name)
+            except:
+                print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list) )
 
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]
