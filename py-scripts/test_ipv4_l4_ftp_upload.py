@@ -140,10 +140,7 @@ class IPV4L4(LFCliBase):
     def stop(self):
         self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         self.cx_profile.stop_cx()
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, self.local_realm.name_to_eid(sta_name)[2])
-            url = "cli-json/set_port"
-            self.json_post(url, data)
+        self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
         self.cx_profile.cleanup()
