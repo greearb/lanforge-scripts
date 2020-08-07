@@ -131,34 +131,32 @@ class TIPStationPowersave(LFCliBase):
                                          channel=self.channel,
                                          radio_=self.monitor_radio,
                                          name_=self.monitor_name)
-        LFUtils.wait_until_ports_appear(resource_id=1,
-                                        base_url=self.local_realm.lfclient_url,
+        LFUtils.wait_until_ports_appear(base_url=self.local_realm.lfclient_url,
                                         port_list=[self.monitor_name])
         time.sleep(0.2)
         mon_j = self.json_get("/port/1/%s/%s"%(self.resource, self.monitor_name))
         if ("interface" not in mon_j):
             raise ValueError("No monitor found")
 
-        self.sta_powersave_disabled_profile.create(resource=1,
-                                                   radio=self.normal_sta_radio,
+        self.sta_powersave_disabled_profile.create(radio=self.normal_sta_radio,
                                                    sta_names_=self.normal_sta_list,
                                                    debug=self.debug,
                                                    suppress_related_commands_=True)
 
-        self.sta_powersave_enabled_profile.create(resource=1,
-                                                   radio=self.powersave_sta_radio,
-                                                   sta_names_=self.powersave_sta_list,
-                                                   debug=self.debug,
-                                                   suppress_related_commands_=True)
+        self.sta_powersave_enabled_profile.create(radio=self.powersave_sta_radio,
+                                                  sta_names_=self.powersave_sta_list,
+                                                  debug=self.debug,
+                                                  suppress_related_commands_=True)
 
         temp_sta_map = {}
         for name in  self.powersave_sta_list + self.normal_sta_list:
-            if (name in self.sta_powersave_disabled_profile.station_names) \
-                    or (name in self.sta_powersave_enabled_profile.station_names):
                 temp_sta_map[name]=1
         print("Stations we want:")
         pprint.pprint(temp_sta_map)
-        self.local_realm.wait_until_ports_appear(self.resource, temp_sta_map.keys())
+        if len(temp_sta_map) < 1:
+            self._fail("Misconfigured build(), bye", print_=True)
+            exit(1)
+        self.local_realm.wait_until_ports_appear(temp_sta_map.keys())
 
         if len(temp_sta_map) == (len(self.sta_powersave_disabled_profile.station_names) + len(self.sta_powersave_enabled_profile.station_names)):
             self._pass("Stations created", print_=True)
@@ -247,11 +245,9 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_disabled_profile.admin_up(resource=1)
         self.sta_powersave_enabled_profile.admin_up(resource=1)
 
-        LFUtils.wait_until_ports_admin_up(resource_id=self.resource,
-                                          base_url=self.local_realm.lfclient_url,
+        LFUtils.wait_until_ports_admin_up(base_url=self.local_realm.lfclient_url,
                                           port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
-        self.local_realm.wait_for_ip(resource=self.resource,
-                                     station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         time.sleep(2)
         self.cx_prof_bg.start_cx()
         print("Upload starts at: %d"%time.time())
@@ -274,8 +270,8 @@ class TIPStationPowersave(LFCliBase):
         self.wifi_monitor_profile.admin_down()
         self.cx_prof_download.stop_cx()
         self.cx_prof_upload.stop_cx()
-        self.sta_powersave_enabled_profile.admin_down(self.resource)
-        self.sta_powersave_disabled_profile.admin_down(self.resource)
+        self.sta_powersave_enabled_profile.admin_down()
+        self.sta_powersave_disabled_profile.admin_down()
 
         # check for that pcap file
         if self.pcap_file is None:
@@ -292,12 +288,12 @@ class TIPStationPowersave(LFCliBase):
 
 
     def cleanup(self):
-        self.wifi_monitor_profile.cleanup(resource_=self.resource, desired_ports=[self.monitor_name])
+        self.wifi_monitor_profile.cleanup(desired_ports=[self.monitor_name])
         #self.cx_prof_download.cleanup()
         self.local_realm.remove_all_cxs(remove_all_endpoints=True)
         #self.cx_prof_upload.cleanup()
-        self.sta_powersave_enabled_profile.cleanup(resource=self.resource, desired_stations=self.powersave_sta_list)
-        self.sta_powersave_disabled_profile.cleanup(resource=self.resource, desired_stations=self.normal_sta_list)
+        self.sta_powersave_enabled_profile.cleanup(desired_stations=self.powersave_sta_list)
+        self.sta_powersave_disabled_profile.cleanup(desired_stations=self.normal_sta_list)
 
 def main():
     lfjson_host = "localhost"
