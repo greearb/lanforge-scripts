@@ -58,6 +58,7 @@ class TIPStationPowersave(LFCliBase):
         self.normal_sta_radio = normal_station_radio_
         self.powersave_sta_list = powersave_station_list_
         self.powersave_sta_radio = powersave_station_radio_
+        self.sta_mac_map = {}
         self.debug = debug_on_
         self.local_realm = realm.Realm(lfclient_host=self.host,
                                        lfclient_port=self.port,
@@ -126,11 +127,11 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_enabled_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.sta_powersave_enabled_profile.set_command_flag("add_sta", "power_save_enable", 1)
 
-
         self.wifi_monitor_profile.create(resource_=self.resource,
                                          channel=self.channel,
                                          radio_=self.monitor_radio,
                                          name_=self.monitor_name)
+
         LFUtils.wait_until_ports_appear(base_url=self.local_realm.lfclient_url,
                                         port_list=[self.monitor_name])
         time.sleep(0.2)
@@ -147,7 +148,6 @@ class TIPStationPowersave(LFCliBase):
                                                   sta_names_=self.powersave_sta_list,
                                                   debug=self.debug,
                                                   suppress_related_commands_=True)
-
         temp_sta_map = {}
         for name in  self.powersave_sta_list + self.normal_sta_list:
                 temp_sta_map[name]=1
@@ -206,6 +206,8 @@ class TIPStationPowersave(LFCliBase):
             self._fail("eth0 is misconfigured or not our management port", print_=True)
             exit(1)
 
+        self.sta_mac_map = {}
+
 
     def __get_rx_values(self):
         cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
@@ -250,6 +252,17 @@ class TIPStationPowersave(LFCliBase):
                                           port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         time.sleep(2)
+        # collect BSSID of AP so we can tshark on it
+        uri = "/port/1/%s/%s?fields=alias,ip,mac,ap"%(
+            self.resource,
+            ",".join(self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        )
+        port_info_r = self.json_get(uri)
+        if (port_info_r is None) or ("empty" in port_info_r):
+            self._fail("unable to query for mac addresses", print_=True)
+            exit(1)
+        self.sta_mac_map = LFUtils.portListToAliasMap(port_info_r)
+
         self.cx_prof_bg.start_cx()
         print("Upload starts at: %d"%time.time())
         self.cx_prof_upload.start_cx()
@@ -269,6 +282,7 @@ class TIPStationPowersave(LFCliBase):
     def stop(self):
         #switch off new monitor
         self.wifi_monitor_profile.admin_down()
+        self.cx_prof_bg.stop_cx()
         self.cx_prof_download.stop_cx()
         self.cx_prof_upload.stop_cx()
         self.sta_powersave_enabled_profile.admin_down()
@@ -276,16 +290,31 @@ class TIPStationPowersave(LFCliBase):
 
         # check for that pcap file
         if self.pcap_file is None:
-            self._fail("Did not configure pcap file")
+            self._fail("Did not configure pcap file", print_=True)
+            exit(1)
         homepage_url = "http://%s/"%self.eth0_ip
         webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
         if webpage is None:
-            self._fail("Unable to find wepage for LANforge")
+            self._fail("Unable to find wepage for LANforge", print_=True)
+            exit(1)
         homepage_url="http://%s/lf_reports/"%self.eth0_ip
         webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
         if webpage is None:
-            self._fail("Unable to find /lf_reports/ page")
+            self._fail("Unable to find /lf_reports/ page", print_=True)
+            exit(1)
+
+        pprint.pprint(self.sta_mac_map)
+        interesting_macs = {}
+        for eid,record in self.sta_mac_map.items():
+            interesting_macs[record["mac"]] = 1
+            interesting_macs[record["ap"]] = 1
+
+        mac_str = "-e wlan.addr ".join(interesting_macs.keys())
+        tshark_filter = "tshark -e wlan.addr=="+mac_str+" -r "+self.pcap_file
         # now check for the pcap file we just created
+        print("TSHARK COMMAND: "+tshark_filter)
+        self._fail("not done writing pcap logic", print_=True)
+        exit(1)
 
 
     def cleanup(self):
@@ -316,8 +345,8 @@ def main():
                                             side_b_min_rate_=56000,
                                             traffic_duration_="5s",
                                             pause_duration_="2s",
-                                            debug_on_=True,
-                                            exit_on_error_=False,
+                                            debug_on_=False,
+                                            exit_on_error_=True,
                                             exit_on_fail_=True)
     ip_powersave_test.cleanup()
     ip_powersave_test.build()
