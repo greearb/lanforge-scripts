@@ -140,6 +140,8 @@ class Realm(LFCliBase):
             data["resource"] = eid[1]
             data["port"] = eid[2]
             self.json_post(req_url, data, debug_=True) #self.debug)
+            return True
+        return False
 
     def port_exists(self, port_eid):
         data = {}
@@ -271,7 +273,7 @@ class Realm(LFCliBase):
         response = super().json_get("/cx")
         return response
 
-    def waitUntilEndpsAppear(self, these_endp):
+    def waitUntilEndpsAppear(self, these_endp, debug=False):
         wait_more = True;
         count = 0
         while wait_more:
@@ -286,7 +288,8 @@ class Realm(LFCliBase):
 
             for req in these_endp:
                 if not req in found_endps:
-                    print("Waiting on endpoint: %s"%(req))
+                    if debug:
+                        print("Waiting on endpoint: %s"%(req))
                     wait_more = True
             count += 1
             if (count > 100):
@@ -294,7 +297,7 @@ class Realm(LFCliBase):
 
         return not wait_more
 
-    def waitUntilCxsAppear(self, these_cx):
+    def waitUntilCxsAppear(self, these_cx, debug=False):
         wait_more = True;
         count = 0
         while wait_more:
@@ -310,7 +313,8 @@ class Realm(LFCliBase):
 
             for req in these_cx:
                 if not req in found_cxs:
-                    print("Waiting on CX: %s"%(req))
+                    if debug:
+                        print("Waiting on CX: %s"%(req))
                     wait_more = True
             count += 1
             if (count > 100):
@@ -448,7 +452,7 @@ class Realm(LFCliBase):
     def name_to_eid(self, eid):
         return LFUtils.name_to_eid(eid)
 
-    def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60):
+    def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60, debug=False):
         print("Waiting for ips, timeout: %i..."%(timeout_sec))
         #print(station_list)
 
@@ -460,7 +464,8 @@ class Realm(LFCliBase):
             wait_more = False
 
             for sta_eid in station_list:
-                print("checking sta-eid: %s"%(sta_eid))
+                if debug:
+                    print("checking sta-eid: %s"%(sta_eid))
                 eid = self.name_to_eid(sta_eid)
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
@@ -477,19 +482,23 @@ class Realm(LFCliBase):
                     v = response['interface']
                     if v['ip'] == '0.0.0.0':
                         wait_more = True
-                        print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                        if debug:
+                            print("Waiting for port %s to get IPv4 Address."%(sta_eid))
                     else:
-                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        if debug:
+                            print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
 
                 if ipv6:
                     v = response['interface']
                     print(v)
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                            and v['ipv6 address'] != 'AUTO':
-                        print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
+                        if debug:
+                            print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
                     else:
                         wait_more = True
-                        print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                        if debug:
+                            print("Waiting for port %s to get IPv6 Address."%(sta_eid))
 
             if wait_more:
                 time.sleep(1)

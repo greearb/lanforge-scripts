@@ -16,9 +16,12 @@ from LANforge import LFUtils
 import realm
 import time
 import datetime
+import subprocess
+import re
+
 
 class L3VariableTimeLongevity(LFCliBase):
-    def __init__(self, host, port, endp_types, tos, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
+    def __init__(self, host, port, endp_types, args, tos, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
@@ -46,6 +49,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.multicast_profile = self.local_realm.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-";
         self.station_profiles = []
+        self.args = args
         
         index = 0
         for radio in radios:
@@ -112,6 +116,38 @@ class L3VariableTimeLongevity(LFCliBase):
             print("new-list:",old_list)
             return False
 
+    def verify_controller(self):
+        if self.args == None:
+            return
+
+        if self.args.cisco_ctlr == None:
+            return
+
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "summary"], capture_output=True)
+        pss = advanced.stdout.decode('utf-8', 'ignore');
+        print(pss)
+
+        # Find our station count
+        searchap = False
+        for line in pss.splitlines():
+            if (line.startswith("---------")):
+                searchap = True
+                continue
+
+            if (searchap):
+                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\["%(self.args.cisco_ap)
+                #print("AP line: %s"%(line))
+                m = re.search(pat, line)
+                if (m != None):
+                    sta_count = m.group(1)
+                    print("AP line: %s"%(line))
+                    print("sta-count: %s"%(sta_count))
+                    if (sta_count != self.total_stas):
+                        print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
+
+
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
         up_request = self.local_realm.admin_up(self.side_b)
@@ -129,6 +165,8 @@ class L3VariableTimeLongevity(LFCliBase):
             print("ip's acquired")
         else:
             print("print failed to get IP's")
+
+        self.verify_controller()
 
         print("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
@@ -177,9 +215,25 @@ class L3VariableTimeLongevity(LFCliBase):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
+        self.total_stas = 0
         for station_list in self.station_lists:
             for sta in station_list:
                 self.local_realm.rm_port(sta, check_exists=True)
+                self.total_stas += 1
+
+        # Make sure they are gone
+        count = 0
+        while (count < 10):
+            more = False
+            for station_list in self.station_lists:
+                for sta in station_list:
+                    rv = self.local_realm.rm_port(sta, check_exists=True)
+                    if (rv):
+                        more = True
+            if not more:
+                break
+            count += 1
+            time.sleep(5)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -296,7 +350,13 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
         ''')
 
-   
+
+    parser.add_argument('--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller>',default=None)
+    parser.add_argument('--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
+    parser.add_argument('--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
+    parser.add_argument('--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
+    parser.add_argument('--cisco_ap', help='--cisco_ap <Cisco AP in question>',default="APA453.0E7B.CF9C")
+
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
@@ -369,8 +429,9 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
     #print("endp-types: %s"%(endp_types))
 
-    ip_var_test = L3VariableTimeLongevity(lfjson_host, 
-                                   lfjson_port, 
+    ip_var_test = L3VariableTimeLongevity(lfjson_host,
+                                   lfjson_port,
+                                   args=args,
                                    number_template="00", 
                                    station_lists= station_lists,
                                    name_prefix="LT-",
