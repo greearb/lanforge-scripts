@@ -18,11 +18,13 @@ import time
 import datetime
 import subprocess
 import re
-
+import csv
+#import operator
+#import pandas as pd
 
 class L3VariableTimeLongevity(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on,
+                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
@@ -50,6 +52,14 @@ class L3VariableTimeLongevity(LFCliBase):
         self.multicast_profile.name_prefix = "MLT-";
         self.station_profiles = []
         self.args = args
+        self.outfile = outfile
+        self.csv_started = False
+        self.ts = int(time.time())
+
+        # Full spread-sheet data
+        if self.outfile is not None:
+            self.csv_file = open(self.outfile, "w") 
+            self.csv_writer = csv.writer(self.csv_file, delimiter=",")
         
         index = 0
         for radio in radios:
@@ -73,7 +83,8 @@ class L3VariableTimeLongevity(LFCliBase):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,rx+bytes", debug_=True)
+        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=True)
+        endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
         for e in self.multicast_profile.get_mc_names():
@@ -87,24 +98,115 @@ class L3VariableTimeLongevity(LFCliBase):
                         for value_name, value_rx in value.items():
                             if value_name == 'rx bytes':
                                 endp_rx_map[item] = value_rx
-        return endp_rx_map
+                        for value_name, value_rx_drop in value.items():
+                            if value_name == 'rx drop %':
+                                endp_rx_drop_map[item] = value_rx_drop
+
+        return endp_rx_map, endp_rx_drop_map
+
+    def __record_rx_dropped_percent(self,rx_drop_percent):
+
+        csv_rx_drop_percent_data = [self.ts,'rx_drop_percent']
+        csv_performance_values = []
+
+        # clean up dictionary for only rx values
+        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
+
+        filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
+        average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+        csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
+        csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
+        for i in range(5):
+            csv_rx_drop_percent_data.append(csv_performance_rx_drop_percent_values[i])
+        for i in range(-1,-6,-1):
+            csv_rx_drop_percent_data.append(csv_performance_rx_drop_percent_values[i])
+
+        csv_rx_drop_percent_data.append(average_rx_drop_percent)
+
+        for item, value in rx_drop_percent.items():
+            print(item, "rx drop percent: ", rx_drop_percent[item])
+            csv_rx_drop_percent_data.append(rx_drop_percent[item])
+
+        self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
+        csv_performance_values = []
+        csv_rx_headers = []
+        csv_rx_delta_dict = {}
+
+        # this may need to be a list as more monitoring takes place.
+        csv_rx_row_data = [self.ts,'rx']
+        csv_rx_delta_row_data = [self.ts,'rx_delta']
+
+        for key in [key for key in old_list if "mtx" in key]: del old_list[key]
+        for key in [key for key in new_list if "mtx" in key]: del new_list[key]
+
+        print("rx (ts:{}): calculating worst, best, average".format(self.ts))
+        filtered_values = [v for _, v in new_list.items() if v !=0]
+        average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+        csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
+        csv_performance_values=self.csv_validate_list(csv_performance_values,5)
+        for i in range(5):
+            csv_rx_row_data.append(csv_performance_values[i])
+        for i in range(-1,-6,-1):
+            csv_rx_row_data.append(csv_performance_values[i])
+
+        csv_rx_row_data.append(average_rx)
+        #print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data))
+
         if len(old_list) == len(new_list):
+            print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
             for item, value in old_list.items():
                 expected_passes +=1
-                if item.startswith("mtx"):
-                    # We ignore the mcast transmitter.
-                    # This is a hack based on naming and could be improved.
+                if new_list[item] > old_list[item]:
                     passes += 1
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
-                    if new_list[item] > old_list[item]:
-                        passes += 1
-                        print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    else:
-                        print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                if not self.csv_started:
+                    csv_rx_headers.append(item)
+                csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
+                
+
+            if not self.csv_started:
+                csv_header = self.csv_generate_column_headers()
+                csv_header += csv_rx_headers
+                print(csv_header)
+                self.csv_add_column_headers(csv_header)
+                self.csv_started = True
+
+            # need to generate list first to determine worst and best
+            filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
+            average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+            csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
+            csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
+            for i in range(5):
+                csv_rx_delta_row_data.append(csv_performance_delta_values[i])
+            for i in range(-1,-6,-1):
+                csv_rx_delta_row_data.append(csv_performance_delta_values[i])
+
+            csv_rx_delta_row_data.append(average_rx_delta)
+            #print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
+            
+            for item, value in old_list.items():
+                expected_passes +=1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                else:
+                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                if not self.csv_started:
+                    csv_rx_headers.append(item)
+                csv_rx_row_data.append(new_list[item])
+                csv_rx_delta_row_data.append(new_list[item] - old_list[item])
+
+            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
                 return True
@@ -113,7 +215,7 @@ class L3VariableTimeLongevity(LFCliBase):
         else:
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
-            print("new-list:",old_list)
+            print("new-list:",new_list)
             return False
 
     def verify_controller(self):
@@ -177,7 +279,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
         cur_time = datetime.datetime.now()
         print("Getting initial values.")
-        old_rx_values = self.__get_rx_values()
+        old_rx_values, rx_drop_percent = self.__get_rx_values()
 
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
 
@@ -186,20 +288,23 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(minutes=1)
+            interval_time = cur_time + datetime.timedelta(seconds=60)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
             
-            new_rx_values = self.__get_rx_values()
+            self.ts = int(time.time())
+            new_rx_values, rx_drop_percent = self.__get_rx_values()
 
             expected_passes += 1
             if self.__compare_vals(old_rx_values, new_rx_values):
                 passes += 1
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
-                break
             old_rx_values = new_rx_values
+
+            self.__record_rx_dropped_percent(rx_drop_percent)
+
             cur_time = datetime.datetime.now()
 
         if passes == expected_passes:
@@ -211,6 +316,7 @@ class L3VariableTimeLongevity(LFCliBase):
         for station_list in self.station_lists:
             for station_name in station_list:
                 self.local_realm.admin_down(station_name)
+
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -242,16 +348,8 @@ class L3VariableTimeLongevity(LFCliBase):
             station_profile.cleanup()
                                         
     def build(self):
-        # This is too fragile and limitted, let outside logic configure the upstream port as needed.
-        #try:
-        #    eid = self.local_realm.name_to_eid(self.side_b)
-        #    data = LFUtils.port_dhcp_up_request(eid[1], eid[2])
-        #    self.json_post("/cli-json/set_port", data)
-        #except:
-        #    print("LFUtils.port_dhcp_up_request didn't complete ")
-        #    print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(self.side_b))
-        
-        index = 0 
+        index = 0
+        total_endp = [] 
         for station_profile in self.station_profiles:
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
@@ -269,8 +367,34 @@ class L3VariableTimeLongevity(LFCliBase):
                     for _tos in self.tos:
                         print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
                         self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
-
+        
+        
         self._pass("PASS: Stations build finished")
+
+    def csv_generate_column_headers(self):
+        csv_rx_headers = ['Time epoch','Monitor']
+        for i in range(1,6):
+            csv_rx_headers.append("least_rx_data {}".format(i))
+        for i in range(1,6):
+            csv_rx_headers.append("most_rx_data_{}".format(i))
+        csv_rx_headers.append("average_rx_data")
+        return csv_rx_headers
+
+
+    def csv_add_column_headers(self,headers):
+        if self.csv_file is not None:
+            self.csv_writer.writerow(headers)
+            self.csv_file.flush()
+
+    def csv_validate_list(self, csv_list, length):
+        if len(csv_list) < length:
+            csv_list = csv_list + [('no data','no data')] * (length - len(csv_list))
+        return csv_list
+
+    def csv_add_row(self,row,writer,csv_file):
+        if self.csv_file is not None:
+            writer.writerow(row)
+            csv_file.flush()
 
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split()
@@ -294,7 +418,7 @@ def main():
         epilog='''\
         Useful Information:
             1. Polling interval for checking traffic is fixed at 1 minute
-            2. The test will exit when traffic has not changed on a station for 1 minute
+            2. The test will generate csv file 
             3. The tx/rx rates are fixed at 256000 bits per second
             4. Maximum stations per radio is 64
             ''',
@@ -364,6 +488,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('-o','--outfile', help="Output file for csv data", default='longevity_results')
 
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
@@ -386,7 +511,13 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
     if args.radio:
         radios = args.radio
-    
+
+    if args.outfile != None:
+        current_time = time.strftime("%m_%d_%Y_%H_%M", time.localtime())
+        outfile = "{}_{}.csv".format(args.outfile,current_time)
+        print("csv output file : {}".format(outfile))
+        
+
     radio_offset = 0
     number_of_stations_offset = 1
     ssid_offset = 2
@@ -444,7 +575,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    ssid_list=ssid_list,
                                    ssid_password_list=ssid_password_list,
                                    ssid_security_list=ssid_security_list, test_duration=test_duration,
-                                   side_a_min_rate=256000, side_b_min_rate=256000, debug_on=debug_on)
+                                   side_a_min_rate=256000, side_b_min_rate=256000, debug_on=debug_on, outfile=outfile)
 
     ip_var_test.pre_cleanup()
 
@@ -458,7 +589,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     if not ip_var_test.passes():
         print("stop test failed")
         print(ip_var_test.get_fail_message())
-        exit(1) 
+         
 
     print("Pausing 30 seconds after run for manual inspection before we clean up.")
     time.sleep(30)
