@@ -6,14 +6,14 @@ from pprint import pprint
 
 import LANforge.LFUtils
 from LANforge.LFUtils import *
+import argparse
 
 
 class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
     # very confused.
-    def __init__(self, _lfjson_host, _lfjson_port, _debug=False, _halt_on_error=False, _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(self, _lfjson_host, _lfjson_port, _debug=False, _halt_on_error=False, _exit_on_error=False, _exit_on_fail=False):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
@@ -71,9 +71,9 @@ class LFCliBase:
             lf_r.addPostData(_data)
             if debug_ or self.debug:
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(show_error=self.debug, \
-                                          debug=(self.debug or debug_), \
-                                          response_json_list_=response_json_list_, \
+            json_response = lf_r.jsonPost(show_error=self.debug,
+                                          debug=(self.debug or debug_),
+                                          response_json_list_=response_json_list_,
                                           die_on_error_=self.exit_on_error)
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
@@ -94,10 +94,11 @@ class LFCliBase:
         json_response = None
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
-            json_response = lf_r.getAsJson(self.debug)
+            json_response = lf_r.getAsJson(debug_=self.debug, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
             if (json_response is None) and (self.debug or debug_):
-                raise ValueError(json_response)
+                print("LFCliBase.json_get: no entity/response, probabily status 404")
+                return None
         except ValueError as ve:
             if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
@@ -138,7 +139,6 @@ class LFCliBase:
             reverse_map[k2] = json_entry
 
         return reverse_map
-
 
     def error(self, exception):
         # print("lfcli_base error: %s" % exception)
@@ -197,7 +197,7 @@ class LFCliBase:
     # use this inside the class to log a failure result
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
-        if print_:
+        if print_ or self.exit_on_fail:
             print(self.fail_pref + message)
         if self.exit_on_fail:
             sys.exit(1)
@@ -207,5 +207,23 @@ class LFCliBase:
         self.test_results.append(self.pass_pref + message)
         if print_:
             print(self.pass_pref + message)
+
+    @staticmethod
+    def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
+        if prog is not None or formatter_class is not None or epilog is not None or description is not None:
+            parser = argparse.ArgumentParser(prog=prog, formatter_class=formatter_class, epilog=epilog,
+                                             description=description)
+        else:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
+        parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>', default='1.eth1')
+        parser.add_argument('--radio', help='--radio <radio EID>', default='wiphy2')
+        parser.add_argument('--ssid', help='--ssid <SSID>', default='jedway-wpa2-160')
+        parser.add_argument('--passwd', help='--passwd <Password>', default='jedway-wpa2-160')
+        parser.add_argument('--security', help='--security <wpa2 | open | wpa3 | wpa | wep>', default='wpa2')
+        parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
+
+        return parser
 
 # ~class

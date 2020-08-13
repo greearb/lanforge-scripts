@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+
 import sys
 import os
+import argparse
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -17,7 +20,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, resource=1, sta_list=None, number_template="00000", _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -27,7 +30,6 @@ class IPv4Test(LFCliBase):
         self.security = security
         self.password = password
         self.sta_list = sta_list
-        self.resource = resource
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
@@ -49,11 +51,11 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(resource=1, radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
-        self.station_profile.admin_up(1)
+        self.station_profile.admin_up()
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -97,18 +99,51 @@ class IPv4Test(LFCliBase):
             self.json_post(url, data)
 
     def cleanup(self, sta_list):
-        self.station_profile.cleanup(self.resource, sta_list)
-        LFUtils.wait_until_ports_disappear(resource_id=self.resource, base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup(sta_list)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
 def main():
+   #Params for different tests:
+   #
+   #
+   #
+   #
+   #
     lfjson_host = "localhost"
     lfjson_port = 8080
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='test_ipv4_connection.py',
+        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        Useful Information:
+            1. TBD
+            ''',
+
+        description='''\
+        test_ipv4_variable_tim.py:
+         --------------------
+         TBD
+
+         Generic command layout:
+         python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+
+         Note:   multiple --radio switches may be entered up to the number of radios available:
+                  --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+
+         python3 ./test_ipv4_variable_time.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+
+        ''')
+
+
+    args = parser.parse_args()
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa2-x2048-4-4", password="jedway-wpa2-x2048-4-4",
-                       security="wpa2", sta_list=station_list)
+    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
+                       security=args.security, sta_list=station_list)
     ip_test.cleanup(station_list)
-    ip_test.timeout = 60
+    #ip_test.timeout = 60
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
