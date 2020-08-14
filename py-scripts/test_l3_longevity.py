@@ -288,8 +288,7 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            #interval_time = cur_time + datetime.timedelta(seconds=60)
-            interval_time = cur_time + datetime.timedelta(seconds=5)
+            interval_time = cur_time + datetime.timedelta(seconds=60)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
