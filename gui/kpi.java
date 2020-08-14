@@ -45,7 +45,7 @@ public class kpi {
    public static int PRIORITY_IDX = 6;
    public static int TEST_ID_IDX = 7;
    public static int SHORT_DESC_IDX = 8;
-   public static int PASS_FAIL_IDX = 8;
+   public static int PASS_FAIL_IDX = 9;
    public static int NUMERIC_SCORE_IDX = 10;
    public static int NOTES_IDX = 11;
    public static int UNITS_IDX = 12;
