@@ -602,7 +602,7 @@ class Realm(LFCliBase):
             self.json_post(req_url, data)
             req_url = "cli-json/show_cx"
             data ={
-                "test_mgr":"all", 
+                "test_mgr":"all",
                 "cross_connect":"all"
             }
 
@@ -628,7 +628,7 @@ class Realm(LFCliBase):
         return wifi_mon_prof
 
     def new_l3_cx_profile(self):
-        cx_prof = L3CXProfile(self.lfclient_host, 
+        cx_prof = L3CXProfile(self.lfclient_host,
                               self.lfclient_port,
                               local_realm=self,
                               debug_=self.debug,
@@ -646,6 +646,10 @@ class Realm(LFCliBase):
     def new_vap_profile(self):
         vap_prof = VAPProfile(lfclient_url=self.lfclient_url, local_realm=self, debug_=self.debug)
         return vap_prof
+
+    def new_http_profile(self):
+        http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return http_prof
 
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -725,7 +729,7 @@ class MULTICASTProfile(LFCliBase):
         side_tx_name = "%smtx-%s-%i"%(self.name_prefix, side_tx_port, len(self.created_mc))
 
         json_data = []
-        
+
         #add_endp mcast-xmit-sta 1 1 side_tx mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
         json_data = {
                         'alias':side_tx_name,
@@ -746,7 +750,7 @@ class MULTICASTProfile(LFCliBase):
                         'send_bad_crc_per_million':0,
                         'multi_conn':0
                     }
-        
+
         url = "/cli-json/add_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
@@ -823,7 +827,7 @@ class MULTICASTProfile(LFCliBase):
         pprint.pprint(self)
 
 
-    
+
 class L3CXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  side_a_min_bps=None, side_b_min_bps=None,
@@ -898,7 +902,7 @@ class L3CXProfile(LFCliBase):
 
     def cleanup_prefix(self):
         self.local_realm.cleanup_cxe_prefix(self.name_prefix)
-                    
+
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
@@ -1205,7 +1209,8 @@ class L4CXProfile(LFCliBase):
                 "type": "l4_generic",
                 "timeout": 10,
                 "url_rate": self.requests_per_ten,
-                "url": self.url
+                "url": self.url,
+                "proxy_auth_type": 0x200
             }
             url = "cli-json/add_l4_endp"
             self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
@@ -1444,7 +1449,7 @@ class WifiMonitor:
         if capname is None:
             raise ValueError("Need a capture file name")
         data = {
-                "shelf": 1, 
+                "shelf": 1,
                 "resource": 1,
                 "port": self.monitor_name,
                 "display": "NA",
@@ -1780,6 +1785,171 @@ class PortUtils(LFCliBase):
         else:
             raise ValueError("Port name required")
 
+    def set_http(self, port_name="", resource=1, on=False):
+        if port_name != "":
+            data = {
+                "shelf": 1,
+                "resource": resource,
+                "port": port_name,
+                "current_flags": 0,
+                "interest": 0
+            }
+
+            if on:
+                data["current_flags"] = 0x200000000000
+                data["interest"] = 0x8000000
+            else:
+                data["interest"] = 0x8000000
+
+            self.local_realm.json_post("cli-json/set_port", data)
+        else:
+            raise ValueError("Port name required")
+
+class HTTPProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
+        self.requests_per_ten = 600
+        self.local_realm = local_realm
+        self.created_cx = {}
+        self.created_endp = []
+        self.ip_map = {}
+        self.direction = "dl"
+        self.dest = "/dev/null"
+        self.port_util = PortUtils(self.local_realm)
+
+    def check_errors(self, debug=False):
+        fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
+                       "timeout", "nf+(4xx)", "http-r", "http-p", "http-t", "login-denied"]
+        endp_list = self.json_get("layer4/list?fields=%s" % ','.join(fields_list))
+        debug_info = {}
+        if endp_list is not None and endp_list['endpoint'] is not None:
+            endp_list = endp_list['endpoint']
+            expected_passes = len(endp_list)
+            passes = len(endp_list)
+            for item in range(len(endp_list)):
+                for name, info in endp_list[item].items():
+                    for field in fields_list:
+                        if info[field.replace("+", " ")] > 0:
+                            passes -= 1
+                            debug_info[name] = {field: info[field.replace("+", " ")]}
+            if debug:
+                print(debug_info)
+            if passes == expected_passes:
+                return True
+            else:
+                print(list(debug_info), " Endps in this list showed errors getting to %s " % self.url)
+                return False
+
+    def start_cx(self):
+        print("Starting CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "RUNNING"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def stop_cx(self):
+        print("Stopping CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "STOPPED"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def cleanup(self):
+        print("Cleaning up cxs and endpoints")
+        if len(self.created_cx) != 0:
+            for cx_name in self.created_cx.keys():
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": self.created_cx[cx_name]
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": cx_name
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
+
+    def map_sta_ips(self, sta_list=[]):
+        for sta_eid in sta_list:
+            eid = self.local_realm.name_to_eid(sta_eid)
+            sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" %
+                                        (eid[0], eid[1], eid[2]))
+            if sta_list['interface'] is not None:
+                self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
+
+    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
+               user=None, passwd=None, source=None):
+        cx_post_data = []
+        self.map_sta_ips(ports)
+        for i in range(len(list(self.ip_map))):
+            if i != len(list(self.ip_map)) - 1:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[i+1]]
+            else:
+                port_name = list(self.ip_map)[i]
+                ip_addr = self.ip_map[list(self.ip_map)[0]]
+
+            if len(self.local_realm.name_to_eid(port_name)) == 3:
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
+            else:
+                raise ValueError("Unexpected name for port_name %s" % port_name)
+
+            if http:
+                self.port_util.set_http(port_name=name, resource=resource, on=True)
+                url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+            if ftp:
+                self.port_util.set_ftp(port_name=name, resource=resource, on=True)
+                if user is not None and passwd is not None and source is not None:
+                    url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd,  ip_addr, source, self.dest)
+                else:
+                    raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
+            if not http and not ftp:
+                raise ValueError("Please specify ftp and/or http")
+            endp_data = {
+                "alias": name + "_l4",
+                "shelf": shelf,
+                "resource": resource,
+                "port": name,
+                "type": "l4_generic",
+                "timeout": 10,
+                "url_rate": self.requests_per_ten,
+                "url": url,
+                "proxy_auth_type": 0x200
+            }
+            url = "cli-json/add_l4_endp"
+            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
+
+            endp_data = {
+                "alias": "CX_" + name + "_l4",
+                "test_mgr": "default_tm",
+                "tx_endp": name + "_l4",
+                "rx_endp": "NA"
+            }
+            cx_post_data.append(endp_data)
+            self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
+
+        for cx_data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
+
+
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
 # build() calls will fail if the station already exists. Please survey and clean your resource
@@ -1857,7 +2027,7 @@ class StationProfile:
             # unset any other security flag before setting our present flags
             if security_type == "wpa3":
                 self.set_command_param("add_sta", "ieee80211w", 2)
-            
+
             #self.add_sta_data["key"] = passwd
 
     def set_command_param(self, command_name, param_name, param_value):
@@ -2004,7 +2174,7 @@ class StationProfile:
         self.add_sta_data["flags"]      = self.add_named_flags(self.desired_add_sta_flags,      add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio_port
-       
+
         self.add_sta_data["resource"] = radio_resource
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
