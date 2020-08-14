@@ -118,9 +118,9 @@ class L3VariableTimeLongevity(LFCliBase):
         csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
         for i in range(5):
-            csv_rx_drop_percent_data.append(csv_performance_rx_drop_percent_values[i])
+            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
         for i in range(-1,-6,-1):
-            csv_rx_drop_percent_data.append(csv_performance_rx_drop_percent_values[i])
+            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
 
         csv_rx_drop_percent_data.append(average_rx_drop_percent)
 
@@ -151,9 +151,9 @@ class L3VariableTimeLongevity(LFCliBase):
         csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
         for i in range(5):
-            csv_rx_row_data.append(csv_performance_values[i])
+            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
         for i in range(-1,-6,-1):
-            csv_rx_row_data.append(csv_performance_values[i])
+            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
         #print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data))
@@ -186,9 +186,9 @@ class L3VariableTimeLongevity(LFCliBase):
             csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
             csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
             for i in range(5):
-                csv_rx_delta_row_data.append(csv_performance_delta_values[i])
+                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
             for i in range(-1,-6,-1):
-                csv_rx_delta_row_data.append(csv_performance_delta_values[i])
+                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
             #print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
@@ -288,7 +288,8 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(seconds=60)
+            #interval_time = cur_time + datetime.timedelta(seconds=60)
+            interval_time = cur_time + datetime.timedelta(seconds=5)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
