@@ -90,7 +90,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -256,6 +256,11 @@ def main():
       raise Exception("channel requires ap and value")
    if (args.action == "channel"):
       command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
+
+   if (args.action == "ap_channel" and (args.ap is None)):
+      raise Exception("ap_channel requires ap")
+   if (args.action == "ap_channel"):
+      command = "show ap channel %s"%(args.ap)
 
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
