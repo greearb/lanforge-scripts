@@ -1,6 +1,6 @@
 //
 // LANforge-GUI Source Code
-// Copyright (C) 1999-2018  Candela Technologies Inc
+// Copyright (C) 1999-2020  Candela Technologies Inc
 // http://www.candelatech.com
 //
 // This program is free software; you can redistribute it and/or
@@ -121,6 +121,8 @@ public class kpi {
       String dir = null;
       String results_url = "";
       String caseid = "";
+      String slack_fname = "";
+      String testbed_name = "LANforge CICD";
 
       for (int i = 0; i<args.length; i++) {
          if (args[i].equals("--dir")) {
@@ -132,8 +134,18 @@ public class kpi {
          else if (args[i].equals("--results_url")) {
             results_url = args[i+1];
          }
+         else if (args[i].equals("--slack_fname")) {
+            slack_fname = args[i+1];
+         }
+         else if (args[i].equals("--testbed_name")) {
+            testbed_name = args[i+1];
+         }
          else if (args[i].equals("--help") || args[i].equals("-h") || args[i].equals("-?")) {
-            System.out.println("Usage: $0 --dir /path/to/test-collection");
+            System.out.println("Usage: $0 --dir /path/to/test-collection\n" +
+                               "--caseid [case-id]\n" +
+                               "--results_url [url]\n" +
+                               "--slack_fname [slack url webhook file name]\n" +
+                               "--testbed_name [My Testbed]");
             System.exit(0);
          }
       }
@@ -626,6 +638,24 @@ public class kpi {
                }
                catch (Exception eee) {
                   eee.printStackTrace();
+               }
+            }
+
+            if (!slack_fname.equals("")) {
+               String slack_msg = "'Content-type: application/json' --data '{\"text\":\"<" + results_url + "/|" + testbed_name + ">"
+                  + " <" + results_url + "/" + run.getName() + "|" + run.getName() + ">"
+                  + " Errors: " + (run.getLogCrashes() + run.getLogRestarting() + run.getLogBugs()) + " Warnings: " + run.getLogWarnings()
+                  + "\"}'";
+               try {
+                  BufferedReader br = new BufferedReader(new FileReader(slack_fname));
+                  String slack = br.readLine();
+                  String cmd = "curl -X POST -H " + slack_msg + " " + slack;
+                  System.out.println(cmd);
+                  // TODO:  Call this as system call once we have it debugged
+               }
+               catch (Exception eeee) {
+                  System.out.println("slack_msg: " + slack_msg + " slack_fname: " + slack_fname);
+                  eeee.printStackTrace();
                }
             }
          }
