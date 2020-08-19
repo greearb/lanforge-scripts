@@ -1,6 +1,6 @@
 //
 // LANforge-GUI Source Code
-// Copyright (C) 1999-2018  Candela Technologies Inc
+// Copyright (C) 1999-2020  Candela Technologies Inc
 // http://www.candelatech.com
 //
 // This program is free software; you can redistribute it and/or
@@ -45,7 +45,7 @@ public class kpi {
    public static int PRIORITY_IDX = 6;
    public static int TEST_ID_IDX = 7;
    public static int SHORT_DESC_IDX = 8;
-   public static int PASS_FAIL_IDX = 8;
+   public static int PASS_FAIL_IDX = 9;
    public static int NUMERIC_SCORE_IDX = 10;
    public static int NOTES_IDX = 11;
    public static int UNITS_IDX = 12;
@@ -121,6 +121,8 @@ public class kpi {
       String dir = null;
       String results_url = "";
       String caseid = "";
+      String slack_fname = "";
+      String testbed_name = "LANforge CICD";
 
       for (int i = 0; i<args.length; i++) {
          if (args[i].equals("--dir")) {
@@ -132,8 +134,18 @@ public class kpi {
          else if (args[i].equals("--results_url")) {
             results_url = args[i+1];
          }
+         else if (args[i].equals("--slack_fname")) {
+            slack_fname = args[i+1];
+         }
+         else if (args[i].equals("--testbed_name")) {
+            testbed_name = args[i+1];
+         }
          else if (args[i].equals("--help") || args[i].equals("-h") || args[i].equals("-?")) {
-            System.out.println("Usage: $0 --dir /path/to/test-collection");
+            System.out.println("Usage: $0 --dir /path/to/test-collection\n" +
+                               "--caseid [case-id]\n" +
+                               "--results_url [url]\n" +
+                               "--slack_fname [slack url webhook file name]\n" +
+                               "--testbed_name [My Testbed]");
             System.exit(0);
          }
       }
@@ -149,16 +161,17 @@ public class kpi {
          DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir));
          for (Path file: stream) {
             File f = file.toFile(); // this is the test run dir
-            //System.out.println("Checking sub-directory/file (run): " + f.getAbsolutePath());
             // Inside of it is individual tests.
             if (!f.isDirectory()) {
                continue;
             }
+            //System.out.println("Checking sub-directory/file (run): " + f.getAbsolutePath());
             DirectoryStream<Path> stream2 = Files.newDirectoryStream(file);
             Run run = null;
 
             for (Path file2: stream2) {
                File f2 = file2.toFile(); // this is the test case dir in the test run
+               //System.out.println("Checking test-case directory/file: " + f2.getAbsolutePath());
                // Directory full of test results?
                if (f2.isDirectory()) {
                   DirectoryStream<Path> stream3 = Files.newDirectoryStream(file2);
@@ -617,7 +630,7 @@ public class kpi {
                   bw.write(System.lineSeparator());
                   bw.write(testrails_msg);
                   bw.write(System.lineSeparator());
-                  bw.write("MSG URL: " + results_url);
+                  bw.write("MSG URL: " + results_url + "/" + run.getName());
                   bw.write(System.lineSeparator());
 
                   bw.close();
@@ -626,6 +639,35 @@ public class kpi {
                }
                catch (Exception eee) {
                   eee.printStackTrace();
+               }
+            }
+
+            if (!slack_fname.equals("")) {
+               String slack_content_type = "Content-type: application/json";
+               String slack_msg = "{\"text\":\"<" + results_url + "|" + testbed_name + ">"
+                  + " Results: <" + results_url + "/" + run.getName() + "|" + run.getName() + ">"
+                  + " Errors: " + (run.getLogCrashes() + run.getLogRestarting() + run.getLogBugs()) + " Warnings: " + run.getLogWarnings()
+                  + "\"}";
+               try {
+                  BufferedReader br = new BufferedReader(new FileReader(slack_fname));
+                  String slack = br.readLine();
+                  String cmd = "curl -X POST -H '" + slack_content_type + "' --data '" + slack_msg + "' " + slack;
+                  System.out.println(cmd);
+
+                  ShellExec exec = new ShellExec(true, true);
+                  int rv = exec.execute("curl", null, true,
+                                        "-X", "POST",
+                                        "-H", slack_content_type,
+                                        "--data", slack_msg, slack);
+                  if (rv != 0) {
+                     System.out.println("curl slack post of msg: " + slack_msg + " to: " + slack + " failed.\n");
+                     System.out.println(exec.getOutput());
+                     System.out.println(exec.getError());
+                  }
+               }
+               catch (Exception eeee) {
+                  System.out.println("slack_msg: " + slack_msg + " slack_fname: " + slack_fname);
+                  eeee.printStackTrace();
                }
             }
          }
