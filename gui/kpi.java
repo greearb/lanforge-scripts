@@ -161,16 +161,17 @@ public class kpi {
          DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(dir));
          for (Path file: stream) {
             File f = file.toFile(); // this is the test run dir
-            //System.out.println("Checking sub-directory/file (run): " + f.getAbsolutePath());
             // Inside of it is individual tests.
             if (!f.isDirectory()) {
                continue;
             }
+            //System.out.println("Checking sub-directory/file (run): " + f.getAbsolutePath());
             DirectoryStream<Path> stream2 = Files.newDirectoryStream(file);
             Run run = null;
 
             for (Path file2: stream2) {
                File f2 = file2.toFile(); // this is the test case dir in the test run
+               //System.out.println("Checking test-case directory/file: " + f2.getAbsolutePath());
                // Directory full of test results?
                if (f2.isDirectory()) {
                   DirectoryStream<Path> stream3 = Files.newDirectoryStream(file2);
@@ -629,7 +630,7 @@ public class kpi {
                   bw.write(System.lineSeparator());
                   bw.write(testrails_msg);
                   bw.write(System.lineSeparator());
-                  bw.write("MSG URL: " + results_url);
+                  bw.write("MSG URL: " + results_url + "/" + run.getName());
                   bw.write(System.lineSeparator());
 
                   bw.close();
@@ -642,16 +643,27 @@ public class kpi {
             }
 
             if (!slack_fname.equals("")) {
-               String slack_msg = "'Content-type: application/json' --data '{\"text\":\"<" + results_url + "/|" + testbed_name + ">"
-                  + " <" + results_url + "/" + run.getName() + "|" + run.getName() + ">"
+               String slack_content_type = "Content-type: application/json";
+               String slack_msg = "{\"text\":\"<" + results_url + "|" + testbed_name + ">"
+                  + " Results: <" + results_url + "/" + run.getName() + "|" + run.getName() + ">"
                   + " Errors: " + (run.getLogCrashes() + run.getLogRestarting() + run.getLogBugs()) + " Warnings: " + run.getLogWarnings()
-                  + "\"}'";
+                  + "\"}";
                try {
                   BufferedReader br = new BufferedReader(new FileReader(slack_fname));
                   String slack = br.readLine();
-                  String cmd = "curl -X POST -H " + slack_msg + " " + slack;
+                  String cmd = "curl -X POST -H '" + slack_content_type + "' --data '" + slack_msg + "' " + slack;
                   System.out.println(cmd);
-                  // TODO:  Call this as system call once we have it debugged
+
+                  ShellExec exec = new ShellExec(true, true);
+                  int rv = exec.execute("curl", null, true,
+                                        "-X", "POST",
+                                        "-H", slack_content_type,
+                                        "--data", slack_msg, slack);
+                  if (rv != 0) {
+                     System.out.println("curl slack post of msg: " + slack_msg + " to: " + slack + " failed.\n");
+                     System.out.println(exec.getOutput());
+                     System.out.println(exec.getError());
+                  }
                }
                catch (Exception eeee) {
                   System.out.println("slack_msg: " + slack_msg + " slack_fname: " + slack_fname);
