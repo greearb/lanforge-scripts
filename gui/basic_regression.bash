@@ -104,19 +104,19 @@ function pre_test {
     then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$LF_SERIAL.*"
-        ../openwrt_ctl.py --action lurk --tty $LF_SERIAL --scheme serial --user root --passwd $LFPASSWD --prompt "\[root@" >  $LF_SER_LOG 2>&1 &
+        ../openwrt_ctl.py --action lurk $OWRTCTL_ARGS --tty $LF_SERIAL --scheme serial --user root --passwd $LFPASSWD --prompt "\[root@" >  $LF_SER_LOG 2>&1 &
     fi
 
     if [ "_${AP_SERIAL}" != "_NONE" ]
     then
         # Kill any existing processes on this serial port
         pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
-        ../openwrt_ctl.py --action logread --tty $AP_SERIAL --scheme serial >  $DUT_SER_LOG 2>&1 &
+        ../openwrt_ctl.py --action logread $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial >  $DUT_SER_LOG 2>&1 &
     fi
 }
 
 function reboot_dut {
-     ../openwrt_ctl.py --action reboot --tty $AP_SERIAL --scheme serial
+     ../openwrt_ctl.py --action reboot $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial
      # TODO:  Support hard-power cycle with power-ctl switch as well?
 }
 
