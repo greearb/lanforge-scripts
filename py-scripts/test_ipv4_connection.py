@@ -21,7 +21,7 @@ import pprint
 
 class IPv4Test(LFCliBase):
     def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", _debug_on=False,
-                 _exit_on_error=False,
+                 _exit_on_error=False, radio="wiphy0",
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
@@ -30,6 +30,7 @@ class IPv4Test(LFCliBase):
         self.security = security
         self.password = password
         self.sta_list = sta_list
+        self.radio = radio
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
@@ -51,7 +52,7 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
@@ -141,7 +142,7 @@ def main():
     args = parser.parse_args()
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
-                       security=args.security, sta_list=station_list)
+                       security=args.security, sta_list=station_list, radio=args.radio)
     ip_test.cleanup(station_list)
     #ip_test.timeout = 60
     ip_test.build()
