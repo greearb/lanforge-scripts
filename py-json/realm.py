@@ -1632,7 +1632,7 @@ class VAPProfile(LFCliBase):
             self.desired_add_vap_flags.append("ht160_enable")
             self.desired_add_vap_flags_mask.append("ht160_enable")
 
-        print("MODE ========= ", self.mode)
+        #print("MODE ========= ", self.mode)
 
         jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio), debug_=self.debug)
         if jr is None:
