@@ -20,11 +20,12 @@ import subprocess
 import re
 import csv
 import serial
+import json
 #import operator
 #import pandas as pd
 
 class L3VariableTimeLongevity(LFCliBase):
-    def __init__(self, host, port, endp_types, args, tos, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
+    def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
@@ -44,8 +45,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.radios = radios # from the command line
-        self.radio_list = radio_name_list
+        self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
@@ -62,17 +62,15 @@ class L3VariableTimeLongevity(LFCliBase):
             self.csv_file = open(self.outfile, "w") 
             self.csv_writer = csv.writer(self.csv_file, delimiter=",")
         
-        index = 0
-        for radio in radios:
+        for (radio_, ssid_, ssid_password_, ssid_security_) in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list):
             self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
-            self.station_profile.ssid = ssid_list[index]
-            self.station_profile.ssid_pass = ssid_password_list[index]
-            self.station_profile.security = ssid_security_list[index]
+            self.station_profile.ssid = ssid_
+            self.station_profile.ssid_pass = ssid_password_
+            self.station_profile.security = ssid_security_
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profiles.append(self.station_profile)
-            index += 1
         
         self.multicast_profile.host = self.host
         self.cx_profile.host = self.host
@@ -446,7 +444,7 @@ class L3VariableTimeLongevity(LFCliBase):
             station_profile.set_number_template(station_profile.number_template)
             print("Creating stations")
 
-            station_profile.create(radio=self.radio_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+            station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
             index += 1
 
             for etype in self.endp_types:
@@ -498,8 +496,8 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(seconds=60)
-            #interval_time = cur_time + datetime.timedelta(seconds=5)
+            #interval_time = cur_time + datetime.timedelta(seconds=60)
+            interval_time = cur_time + datetime.timedelta(seconds=5)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
@@ -601,8 +599,9 @@ Basic Idea: create stations, create traffic between upstream port and stations, 
 Generic command layout:
 python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
-Note:   multiple --radio switches may be entered up to the number of radios available:
-                 --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+Note:   multiple --station switches may be entered up to the number of radios available:
+                 example:
+                 --station  "radio==wiphy0 stations==4 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2","--radio","radio==wiphy1 stations==3 ssid==jedway-wpa2-x2048-5-3, ssid_pw==jedway-wpa2-x2048-5-3 security==wpa2"
 
 <duration>: number followed by one of the following 
             d - days
@@ -632,7 +631,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
             6. Create connections with TOS of BK and VI
 
             Command: 
-            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --  "radio==wiphy0 stations==4 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2"
 
         ''')
 
@@ -664,12 +663,15 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
-                         help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> <security>', required=True)
+    #requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
+    #                     help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> <security>', required=True)
+    parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ', required=True)
     args = parser.parse_args()
 
+    #print("args: {}".format(args))
+    
     debug_on = args.debug
-
+ 
     if args.test_duration:
         test_duration = args.test_duration
 
@@ -691,12 +693,6 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
         print("csv output file : {}".format(outfile))
         
 
-    radio_offset = 0
-    number_of_stations_offset = 1
-    ssid_offset = 2
-    ssid_password_offset = 3
-    ssid_security_offset = 4
-
     MAX_NUMBER_OF_STATIONS = 64
     
     radio_name_list = []
@@ -705,29 +701,35 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     ssid_password_list = []
     ssid_security_list = []
 
-    for radio in radios:
-        radio_name = radio[radio_offset]
-        radio_name_list.append(radio_name)
-        number_of_stations_per_radio = radio[number_of_stations_offset]
-        number_of_stations_per_radio_list.append(number_of_stations_per_radio)
-        ssid = radio[ssid_offset]
-        ssid_list.append(ssid)
-        if (len(radio) >= (ssid_password_offset - 1)):
-            ssid_password_list.append(radio[ssid_password_offset])
-            ssid_security_list.append(radio[ssid_security_offset])
-        else:
-            ssid_password_list.append("NA")
-            ssid_security_list.append("open")
+    print("radios {}".format(radios))
+
+    for radio_ in radios:
+        radio_keys = ['radio','stations','ssid','ssid_pw','security']
+        #print("radio_ {}".format(str(radio_).replace('[','').replace(']','').replace("'","")))
+        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
+        print("radio_dict {}".format(radio_info_dict))
+
+        for key in radio_keys:
+            if key not in radio_info_dict:
+                print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                exit(1)
+        
+        radio_name_list.append(radio_info_dict['radio'])
+        number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+        ssid_list.append(radio_info_dict['ssid'])
+        ssid_password_list.append(radio_info_dict['ssid_pw'])
+        ssid_security_list.append(radio_info_dict['security'])
+
 
     index = 0
     station_lists = []
-    for radio in radios:
-        number_of_stations = int(number_of_stations_per_radio_list[index])
+    for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+        number_of_stations = int(number_of_stations_per_radio_)
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             quit(1)
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                              padding_number_=10000, radio=radio[index])
+                                              padding_number_=10000, radio=radio_name_)
         station_lists.append(station_list)
         index += 1
 
@@ -742,7 +744,6 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    endp_types=endp_types,
                                    tos=args.tos,
                                    side_b=side_b,
-                                   radios=radios,
                                    radio_name_list=radio_name_list,
                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                    ssid_list=ssid_list,
