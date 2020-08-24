@@ -19,6 +19,7 @@ import datetime
 import subprocess
 import re
 import csv
+import serial
 #import operator
 #import pandas as pd
 
@@ -83,7 +84,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=True)
+        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
@@ -228,7 +229,7 @@ class L3VariableTimeLongevity(LFCliBase):
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap, "--action", "summary"], capture_output=True)
-        pss = advanced.stdout.decode('utf-8', 'ignore');
+        pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
 
         # Find our station count
@@ -249,7 +250,216 @@ class L3VariableTimeLongevity(LFCliBase):
                     if (int(sta_count) != int(self.total_stas)):
                         print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
+    def controller_show_ap_channel(self):
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "ap_channel"], capture_output=True)
 
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)
+        searchap = False
+        print("checking for 802.11{}".format(self.args.cisco_band))
+
+        for line in pss.splitlines():
+            #print("line {}".format(line))
+            search_str = "802.11{}".format(self.args.cisco_band)
+            if (line.lstrip().startswith(search_str)):
+                print("line {}".format(line))
+                element_list = line.lstrip().split()
+                print("element_list {}".format(element_list))
+                print("ap: {} channel {}  chan_width {}".format(self.args.cisco_ap,element_list[4],element_list[5]))
+                if (str(self.args.cisco_channel) in str(element_list[4])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
+                    print("ap configuration successful: channel {} in expected {}  chan_width {} in expected {}"
+                    .format(self.args.cisco_channel,element_list[4],self.args.cisco_chan_width,element_list[5])) 
+                else:
+                    print("AP WARNING: channel {} expected {}  chan_width {} expected {}"
+                    .format(element_list[4],self.cisco_channel,element_list[5],self.args.cisco_chan_width)) 
+                break
+        
+        print("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
+        # Verify channel and channel width. 
+
+    def controller_disable_ap(self):
+        #(Cisco Controller) >config 802.11a disable APA453.0E7B.CF9C 
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "disable","--band",self.args.cisco_band], capture_output=True)
+
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)
+
+    def controller_set_channel_ap(self):
+        #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "channel","--value",self.args.cisco_channel], capture_output=True)
+
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)      
+
+    # for testing perposes set channel back to 36
+    def controller_set_channel_ap_36(self):
+        #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  36
+        cisco_channel_36 = "36"
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "channel","--value",cisco_channel_36], capture_output=True)
+
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)      
+
+
+    def controller_set_chan_width_ap(self):
+        #(Cisco Controller) >config 802.11a chan_width APA453.0E7B.CF9C  20	
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "bandwidth","--value",self.args.cisco_chan_width], capture_output=True)
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)                                   
+                     
+
+    def controller_enable_ap(self):
+        #(Cisco Controller) >config 802.11a enable APA453.0E7B.CF9C
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                   "-a", self.args.cisco_ap, "--action", "enable","--band",self.args.cisco_band], capture_output=True)
+        pss = advanced.stdout.decode('utf-8', 'ignore')
+        print(pss)          
+
+    def verify_cac_on_ap(self):
+        pass
+        # Do this after you get the configuration Verify CAC
+        # use pySerial to check if the AP is configured:
+        # 1. You can grep for "DFS CAC timer enabled time 60" 
+        # 2. and "changed to DFS channel 52, running CAC for 60 seconds
+        # Wait for 60 sec and check for this log "CAC_EXPIRY_EVT: CAC finished on DFS channel 52"
+        #"make a note of the time and check the CAC timer expired in 60-61 seconds."
+
+        # After CAC expires Verify Traffic. (the loop should start up may want some special detection)
+
+    def lf_hackrf_enable(self):
+        # hard coded for now
+
+        if os.path.isfile(self.args.hackrf):
+            print("hack rf file found {}".format(self.args.hackrf))
+        else:
+            print("WARNING: hack rf file not found at {}".format(self.args.hackrf))
+
+        # look for lf_hackrf.py in local directory the look for in 
+        pass
+
+    def verify_radar_detected_on_ap(self):
+        pass
+        #You will see logs as below in the AP:(show logging will help you getting this info)
+
+        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: radar detected
+        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: sending packet out to capwapd, slotId=1, msgLen=386, chanCnt=1 -100
+        #[*07/07/2020 23:44:27.7900] DOT11_DRV[1]: DFS CAC timer disabled time 0
+        #[*07/07/2020 23:44:27.7960] Enabling Channel and channel width Switch Announcement on current channel 
+        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
+        #[*07/07/2020 23:44:27.8620] DOT11_DRV[1]: DFS CAC timer enabled time 60
+
+    def verify_black_list_time_ap(self):
+        pass
+
+    def lf_hackrf_disable(self):
+        pass
+        #need to save the process id
+
+    # dfs dynamic frequency selection
+    def dfs(self):
+        if self.args == None:
+            return
+        if self.args.cisco_ctlr == None:
+            return
+        if self.args.cisco_dfs == False:
+            return
+        if self.args.cisco_channel == None:
+            return
+        if self.args.cisco_chan_width == None:
+            return
+        print("testing dfs")
+        self.controller_show_ap_channel()
+        self.controller_disable_ap()
+        self.controller_set_channel_ap()
+        self.controller_set_chan_width_ap()
+        self.controller_enable_ap()
+        self.verify_cac_on_ap()                 
+        self.lf_hackrf_enable()
+        self.verify_radar_detected_on_ap()
+        self.verify_black_list_time_ap()
+        self.lf_hackrf_disable()
+
+        # For Testing  only - since hackrf not causing channel changes
+        self.controller_disable_ap()
+        self.controller_set_channel_ap_36()
+        #self.dfs_set_chan_width_ap()
+        self.controller_enable_ap()
+        #check the AP for 52 is configured or not ,  check the CAC timer 
+        # verify the clien can connect back to the AP once the CAC expires (check all connections)
+
+    def controller_channel_chan_width_config(self):
+        if self.args == None:
+            return
+        if self.args.cisco_ctlr == None:
+            return
+        if self.args.cisco_channel == None:
+            return
+        self.controller_disable_ap()
+        self.controller_set_channel_ap()
+        self.controller_set_chan_width_ap()
+        self.controller_enable_ap()
+        self.controller_show_ap_channel()
+        # need to actually check the CAC timer
+        time.sleep(60)
+
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        self.multicast_profile.cleanup_prefix()
+        self.total_stas = 0
+        for station_list in self.station_lists:
+            for sta in station_list:
+                self.local_realm.rm_port(sta, check_exists=True)
+                self.total_stas += 1
+
+        # Make sure they are gone
+        count = 0
+        while (count < 10):
+            more = False
+            for station_list in self.station_lists:
+                for sta in station_list:
+                    rv = self.local_realm.rm_port(sta, check_exists=True)
+                    if (rv):
+                        more = True
+            if not more:
+                break
+            count += 1
+            time.sleep(5)
+
+    def build(self):
+        self.controller_channel_chan_width_config()
+        self.dfs()
+        index = 0
+        total_endp = [] 
+        for station_profile in self.station_profiles:
+            station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
+            station_profile.set_number_template(station_profile.number_template)
+            print("Creating stations")
+
+            station_profile.create(radio=self.radio_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+            index += 1
+
+            for etype in self.endp_types:
+                if etype == "mc_udp" or etype == "mc_udp6":
+                    print("Creating Multicast connections for endpoint type: %s"%(etype))
+                    self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
+                else:
+                    for _tos in self.tos:
+                        print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
+                        self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
+        self._pass("PASS: Stations build finished")        
+        
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
         up_request = self.local_realm.admin_up(self.side_b)
@@ -289,6 +499,7 @@ class L3VariableTimeLongevity(LFCliBase):
         expected_passes = 0
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=60)
+            #interval_time = cur_time + datetime.timedelta(seconds=5)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
@@ -317,60 +528,12 @@ class L3VariableTimeLongevity(LFCliBase):
             for station_name in station_list:
                 self.local_realm.admin_down(station_name)
 
-
-    def pre_cleanup(self):
-        self.cx_profile.cleanup_prefix()
-        self.multicast_profile.cleanup_prefix()
-        self.total_stas = 0
-        for station_list in self.station_lists:
-            for sta in station_list:
-                self.local_realm.rm_port(sta, check_exists=True)
-                self.total_stas += 1
-
-        # Make sure they are gone
-        count = 0
-        while (count < 10):
-            more = False
-            for station_list in self.station_lists:
-                for sta in station_list:
-                    rv = self.local_realm.rm_port(sta, check_exists=True)
-                    if (rv):
-                        more = True
-            if not more:
-                break
-            count += 1
-            time.sleep(5)
-
     def cleanup(self):
         self.cx_profile.cleanup()
         self.multicast_profile.cleanup()
         for station_profile in self.station_profiles:
             station_profile.cleanup()
                                         
-    def build(self):
-        index = 0
-        total_endp = [] 
-        for station_profile in self.station_profiles:
-            station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
-            station_profile.set_number_template(station_profile.number_template)
-            print("Creating stations")
-
-            station_profile.create(radio=self.radio_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
-            index += 1
-
-            for etype in self.endp_types:
-                if etype == "mc_udp" or etype == "mc_udp6":
-                    print("Creating Multicast connections for endpoint type: %s"%(etype))
-                    self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
-                else:
-                    for _tos in self.tos:
-                        print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
-                        self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
-        
-        
-        self._pass("PASS: Stations build finished")
-
     def csv_generate_column_headers(self):
         csv_rx_headers = ['Time epoch','Monitor']
         for i in range(1,6):
@@ -379,7 +542,6 @@ class L3VariableTimeLongevity(LFCliBase):
             csv_rx_headers.append("most_rx_data_{}".format(i))
         csv_rx_headers.append("average_rx_data")
         return csv_rx_headers
-
 
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
@@ -480,6 +642,16 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
     parser.add_argument('--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
     parser.add_argument('--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
     parser.add_argument('--cisco_ap', help='--cisco_ap <Cisco AP in question>',default="APA453.0E7B.CF9C")
+    
+    parser.add_argument('--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
+    parser.add_argument('--hackrf', help='--hackrf <path and file name for hackrf file >',default="/home/lanforge/lf_hackrf.py")
+
+    parser.add_argument('--cisco_channel', help='--cisco_channel <channel>',default=None)
+    parser.add_argument('--cisco_chan_width', help='--cisco_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"])
+    parser.add_argument('--cisco_band', help='--cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"])
+
+    parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
+    parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
@@ -489,6 +661,7 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--outfile', help="Output file for csv data", default='longevity_results')
+    #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
