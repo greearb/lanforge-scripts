@@ -1463,7 +1463,7 @@ class WifiMonitor:
                # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
 class VAPProfile(LFCliBase):
-    def __init__(self, lfclient_url, local_realm, vap_name="", ssid="NA", ssid_pass="NA", mode=0, use_ht160=False, debug_=False):
+    def __init__(self, lfclient_url, local_realm, vap_name="", ssid="NA", ssid_pass="NA", mode=0, debug_=False):
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
@@ -1471,7 +1471,6 @@ class VAPProfile(LFCliBase):
         self.mode = mode
         self.local_realm = local_realm
         self.vap_name = vap_name
-        self.use_ht160 = use_ht160
         self.COMMANDS = ["add_vap", "set_port"]
         self.desired_add_vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_vap_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
@@ -1622,15 +1621,21 @@ class VAPProfile(LFCliBase):
 
         return result
 
-    def create(self, resource, radio, channel=None, up_=None, debug=False, suppress_related_commands_=True):
+    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True, use_ht160=False, suppress_related_commands_=True):
 
-        if self.use_ht160:
+        if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")
             self.desired_add_vap_flags.append("80211h_enable")
             self.desired_add_vap_flags_mask.append("80211h_enable")
             self.desired_add_vap_flags.append("ht160_enable")
             self.desired_add_vap_flags_mask.append("ht160_enable")
+        if not use_ht40:
+            self.desired_add_vap_flags.append("disable_ht40")
+            self.desired_add_vap_flags_mask.append("disable_ht40")
+        if not use_ht80:
+            self.desired_add_vap_flags.append("disable_ht80")
+            self.desired_add_vap_flags_mask.append("disable_ht80")
 
         #print("MODE ========= ", self.mode)
 
