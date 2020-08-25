@@ -2009,6 +2009,29 @@ class StationProfile:
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
 
+        self.wifi_extra_data = {
+            "shelf":1,
+            "resource":1,
+            "port": None,
+            "key_mgmt": None,
+            "eap": None,
+            "hessid": None,
+            "identity": None,
+            "password": None,
+            "realm": None,
+            "domain": None
+        }
+
+    def set_wifi_extra(self, key_mgmt="WPA-EAP", eap="TTLS", identity="testuser", passwd="testpasswd",
+                       realm="localhost.localdomain", domain="localhost.localdomain", hessid="00:00:00:00:00:01"):
+        self.wifi_extra_data["key_mgmt"] = key_mgmt
+        self.wifi_extra_data["eap"] = eap
+        self.wifi_extra_data["identity"] = identity
+        self.wifi_extra_data["password"] = passwd
+        self.wifi_extra_data["realm"] = realm
+        self.wifi_extra_data["domain"] = domain
+        self.wifi_extra_data["hessid"] = hessid
+
     def use_security(self, security_type, ssid=None, passwd=None):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
         self.add_sta_data["ssid"] = ssid
@@ -2152,7 +2175,8 @@ class StationProfile:
 
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def create(self, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False, suppress_related_commands_=True, sleep_time=2):
+    def create(self, radio, num_stations=0, sta_names_=None, dry_run=False, up_=None, debug=False,
+               suppress_related_commands_=True, wifi_extra=False, sleep_time=2):
         radio_eid = self.local_realm.name_to_eid(radio)
         radio_shelf = radio_eid[0]
         radio_resource = radio_eid[1]
@@ -2162,6 +2186,9 @@ class StationProfile:
             self.desired_add_sta_flags.append("ht160_enable")
             self.desired_add_sta_flags_mask.append("ht160_enable")
         self.add_sta_data["mode"] = self.mode
+        if wifi_extra:
+            self.desired_add_sta_flags.append("8021x_radius")
+            self.desired_add_sta_flags_mask.append("8021x_radius")
 
         if up_ is not None:
             self.up = up_
@@ -2189,7 +2216,7 @@ class StationProfile:
         # re-use inside a loop, reducing the number of object creations
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-
+        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
         my_sta_names = []
         if num_stations > 0:
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
@@ -2233,6 +2260,14 @@ class StationProfile:
             set_port_r.addPostData(self.set_port_data)
             json_response = set_port_r.jsonPost(debug)
             time.sleep(0.03)
+            if wifi_extra:
+                self.wifi_extra_data["resource"] = radio_resource
+                self.wifi_extra_data["port"] = name
+                if self.wifi_extra_data["key_mgmt"] is not None:
+                    wifi_extra_r.addPostData(self.wifi_extra_data)
+                    json_response = wifi_extra_r.jsonPost(debug)
+                else:
+                    raise ValueError("set_wifi_extra must be called to use wifi_extra")
 
         LFUtils.waitUntilPortsAppear(self.lfclient_url, self.station_names)
 
@@ -2240,8 +2275,8 @@ class StationProfile:
         if dry_run:
             return
         if (self.up):
-            self.admin_up(1)
-            self.admin_up(1)
+            self.admin_up()
+            self.admin_up()
         # for sta_name in self.station_names:
         #     req = LFUtils.portUpRequest(resource, sta_name, debug_on=False)
         #     set_port_r.addPostData(req)
