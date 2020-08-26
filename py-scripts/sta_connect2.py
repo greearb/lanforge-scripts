@@ -151,6 +151,10 @@ class StaConnect2(LFCliBase):
             self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
         elif self.dut_security == OPEN:
             self.station_profile.use_security(security_type="open", ssid=self.dut_ssid, passwd="[BLANK]")
+        elif self.dut_security == WPA:
+            self.station_profile.use_security(security_type="wpa", ssid=self.dut_ssid, passwd=self.dut_passwd)
+        elif self.dut_security == WEP:
+            self.station_profile.use_security(security_type="wep", ssid=self.dut_ssid, passwd=self.dut_passwd)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
 
         print("Adding new stations ", end="")
