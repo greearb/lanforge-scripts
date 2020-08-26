@@ -85,13 +85,14 @@ def main():
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
    parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
-   parser.add_argument("-a", "--ap",      type=str, help="select AP")
+   parser.add_argument("-a", "--ap",      type=str, help="select AP", default="APA453.0E7B.CF9C")
    parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
+   parser.add_argument("--series", type=str, help="cisco controller series",default="3504")
 
    args = None
    try:
@@ -146,7 +147,7 @@ def main():
             time.sleep(0.1)
             egg.sendline(user)
             time.sleep(0.1)
-            egg.expect('password:')
+            egg.expect('ssword:')
 
       elif (scheme == "ssh"):
          if (port is None):
@@ -156,13 +157,15 @@ def main():
          egg = pexpect.spawn(cmd)
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
-         i = egg.expect(["password:", "continue connecting (yes/no)?"], timeout=3)
+         i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
          time.sleep(0.1)
          if i == 1:
             egg.sendline('yes')
-            egg.expect('password:')
+            egg.expect('ssword:')
          sleep(0.1)
          egg.sendline(passwd)
+
+         
 
       elif (scheme == "telnet"):
          if (port is None):
@@ -177,12 +180,15 @@ def main():
          egg.sendline(user)
          egg.expect('Password\:')
          egg.sendline(passwd)
+         #if args.prompt in "WLC#" or args.prompt in "WLC>":
+         #   egg.sendline("enable")
+         #   time.sleep(0.1)
          egg.sendline('config paging disable')
          #egg.expect('(Voice-Talwar) >', timeout=3)
          #time.sleep(0.1)
          #egg.sendline(user)
          #time.sleep(0.1)
-         #egg.expect('password:')
+         #egg.expect('ssword:')
          #time.sleep(0.1)
          #egg.sendline(passwd)
       else:
@@ -201,7 +207,12 @@ def main():
    CLOSEDCX = "Connection to .* closed."
 
    logg.info("waiting for prompt: %s"%(CCPROMPT))
-   egg.expect(CCPROMPT)
+   egg.expect(CCPROMPT, timeout=3)
+   # sleep(0.1)
+   # if args.series == "9800":
+   #   egg.sendline("enable")
+   #   time.sleep(0.1)
+
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
 
@@ -218,7 +229,10 @@ def main():
        command = "%s"%(args.value)
 
    if (args.action == "summary"):
-      command = "show ap summary"
+      if args.series == "9800":
+         command = "show ap dot 11 5ghz summary"
+      else:
+         command = "show ap summary"
 
    if (args.action == "advanced"):
       command = "show advanced 802.11%s summary"%(band)
@@ -238,9 +252,15 @@ def main():
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
-      command = "config 802.11%s enable %s"%(band, args.ap)
+      if args.series == "9800":
+         command = "ap name %s no dot11 5ghz shutdown"%(args.ap)
+      else:
+         command = "config 802.11%s enable %s"%(band, args.ap)
    if (args.action == "disable"):
-      command = "config 802.11%s disable %s"%(band, args.ap)
+      if args.series == "9800":
+         command = "ap name %s dot11 5ghz shutdown"%(args.ap)
+      else:
+         command = "config 802.11%s disable %s"%(band, args.ap)
 
    if (args.action == "txPower" and ((args.ap is None) or (args.value is None))):
       raise Exception("txPower requires ap and value")
@@ -250,17 +270,26 @@ def main():
    if (args.action == "bandwidth" and ((args.ap is None) or (args.value is None))):
       raise Exception("bandwidth requires ap and value (20, 40, 80, 160)")
    if (args.action == "bandwidth"):
-      command = "config 802.11%s chan_width %s %s"%(band, args.ap, args.value)
+      if args.series == "9800":
+         command = "ap name %s dot11 5ghz channel width %s"%(args.ap, args.value)
+      else:
+         command = "config 802.11%s chan_width %s %s"%(band, args.ap, args.value)
 
    if (args.action == "channel" and ((args.ap is None) or (args.value is None))):
       raise Exception("channel requires ap and value")
    if (args.action == "channel"):
-      command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
+      if args.series == "9800":
+         command = "ap name %s dot11 5ghz channel width %s"%(args.ap, args.value)
+      else:
+         command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
 
    if (args.action == "ap_channel" and (args.ap is None)):
       raise Exception("ap_channel requires ap")
    if (args.action == "ap_channel"):
-      command = "show ap channel %s"%(args.ap)
+      if args.series == "9800":
+         command = "show ap dot 11 5ghz monitor"
+      else:
+         command = "show ap channel %s"%(args.ap)
 
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
@@ -287,18 +316,21 @@ def main():
       logg.info("No command specified, going to log out.")
    else:
       logg.info("Command[%s]"%command)
-      egg.sendline(command);
+      egg.sendline(command)
+      print("CCPROMPT in : {}".format(CCPROMPT))
       while True:
-          i = egg.expect([CCPROMPT, AREYOUSURE, '--More-- or'])
-          print (egg.before.decode('utf-8', 'ignore'))
-          if i == 0:
-              break
-          if i == 1:
-              egg.sendline("y")
-              break
-          if i == 2:
-              egg.sendline(NL)
-          
+         i = egg.expect([CCPROMPT, AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
+         print (egg.before.decode('utf-8', 'ignore'))
+         if i == 0:
+            break
+         if i == 1:
+            egg.sendline("y")
+            break
+         if i == 2:
+            egg.sendline(NL)
+         if i == 3:
+            print("expect timeout")
+            break
 
    egg.sendline("logout")
    i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX])
