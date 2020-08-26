@@ -631,7 +631,7 @@ Note:   multiple --station switches may be entered up to the number of radios av
             6. Create connections with TOS of BK and VI
 
             Command: 
-            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --  "radio==wiphy0 stations==4 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2"
+            python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --radio  "radio==wiphy0 stations==4 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2"
 
         ''')
 
