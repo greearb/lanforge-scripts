@@ -93,11 +93,7 @@ class IPv4Test(LFCliBase):
 
     def stop(self):
         # Bring stations down
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
-            url = "cli-json/set_port"
-            # print(sta_name)
-            self.json_post(url, data)
+        self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
