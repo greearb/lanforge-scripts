@@ -279,7 +279,7 @@ def main():
       raise Exception("channel requires ap and value")
    if (args.action == "channel"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz channel width %s"%(args.ap, args.value)
+         command = "ap name %s dot11 5ghz channel %s"%(args.ap, args.value)
       else:
          command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
 
@@ -310,7 +310,6 @@ def main():
       raise Exception("wlan ID is required")
    if (args.action == "wlan_qos"):
       command = "config wlan qos %s %s"%(args.wlanID, args.value)
-
 
    if (command is None):
       logg.info("No command specified, going to log out.")
