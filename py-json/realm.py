@@ -501,7 +501,7 @@ class Realm(LFCliBase):
 
                 if ipv6:
                     v = response['interface']
-                    print(v)
+                    #print(v)
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                            and v['ipv6 address'] != 'AUTO':
                         if debug:
