@@ -91,10 +91,7 @@ class GenTest(LFCliBase):
 
     def stop(self):
         self.cx_profile.stop_cx()
-        for sta_name in self.sta_list:
-            data = LFUtils.portDownRequest(1, sta_name)
-            url = "cli-json/set_port"
-            self.json_post(url, data)
+        self.station_profile.admin_down()
 
     def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.password)
