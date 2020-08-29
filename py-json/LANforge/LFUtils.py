@@ -175,6 +175,25 @@ def port_down_request(resource_id, port_name, debug_on=False):
         debug_printer.pprint(data)
     return data
 
+def port_reset_request(resource_id, port_name, debug_on=False):
+    """
+    Does not change the use_dhcp flag
+    See http://localhost:8080/help/reset_port
+    :param resource_id:
+    :param port_name:
+    :return:
+    """
+    
+    data = {
+        "shelf": 1,
+        "resource": resource_id,
+        "port": port_name
+    }
+    if (debug_on):
+        print("Port reset request")
+        debug_printer.pprint(data)
+    return data
+
 
 def generateMac(parent_mac, random_octet, debug=False):
     if debug:

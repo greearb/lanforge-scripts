@@ -19,14 +19,14 @@ import datetime
 import subprocess
 import re
 import csv
-import serial
-import json
-#import operator
-#import pandas as pd
+import random
 
 class L3VariableTimeLongevity(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
+                 reset_port_enable_list,
+                 reset_port_time_min_list,
+                 reset_port_time_max_list,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
@@ -42,6 +42,9 @@ class L3VariableTimeLongevity(LFCliBase):
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists       
         self.ssid_security_list = ssid_security_list
+        self.reset_port_enable_list = reset_port_enable_list
+        self.reset_port_time_min_list = reset_port_time_min_list
+        self.reset_port_time_max_list = reset_port_time_max_list
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
@@ -57,12 +60,24 @@ class L3VariableTimeLongevity(LFCliBase):
         self.csv_started = False
         self.ts = int(time.time())
 
+        # Some checking on the duration
+        #self.local_realm.parse_time(self.test_duration)
+        #if (    (radio_info_dict['reset_port_time_min'] >= args.test_duration)  
+        #    or  (radio_info_dict['reset_port_time_max'] >= args.test_duration)):
+        #    print("port reset times min {} max {} mismatched with test duration {}"\
+        #        .format(radio_info_dict['reset_port_time_min'],radio_info_dict['reset_port_time_max'],args.test_duration)))
+        #    exit(1)
+
+
         # Full spread-sheet data
         if self.outfile is not None:
             self.csv_file = open(self.outfile, "w") 
             self.csv_writer = csv.writer(self.csv_file, delimiter=",")
         
-        for (radio_, ssid_, ssid_password_, ssid_security_) in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list):
+        for (radio_, ssid_, ssid_password_, ssid_security_,\
+            reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
+            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
+            reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
             self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_
@@ -70,6 +85,10 @@ class L3VariableTimeLongevity(LFCliBase):
             self.station_profile.security = ssid_security_
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
+            self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
+                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
+                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
+                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
         self.multicast_profile.host = self.host
@@ -106,9 +125,6 @@ class L3VariableTimeLongevity(LFCliBase):
     def __record_rx_dropped_percent(self,rx_drop_percent):
 
         csv_rx_drop_percent_data = [self.ts,'rx_drop_percent']
-        csv_performance_values = []
-
-        # clean up dictionary for only rx values
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
@@ -255,7 +271,6 @@ class L3VariableTimeLongevity(LFCliBase):
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
-        searchap = False
         print("checking for 802.11{}".format(self.args.cisco_band))
 
         for line in pss.splitlines():
@@ -411,6 +426,26 @@ class L3VariableTimeLongevity(LFCliBase):
         # need to actually check the CAC timer
         time.sleep(60)
 
+    def reset_port_check(self):
+        for station_profile in self.station_profiles:
+            if station_profile.reset_port_extra_data['reset_port_enable']:
+                if station_profile.reset_port_extra_data['reset_port_timer_started'] == False:
+                    print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
+                    print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
+                    station_profile.reset_port_extra_data['seconds_till_reset'] = \
+                    random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],\
+                                   station_profile.reset_port_extra_data['reset_port_time_max'])
+                    station_profile.reset_port_extra_data['reset_port_timer_started'] = True
+                    print("seconds_till_reset {}".format(station_profile.reset_port_extra_data['seconds_till_reset']))
+                else:
+                    station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
+                    print("countdown seconds_till_reset {}".format(station_profile.reset_port_extra_data['seconds_till_reset']))
+                    if ((station_profile.reset_port_extra_data['seconds_till_reset']  <= 0)):
+                        station_profile.reset_port_extra_data['reset_port_timer_started'] = False
+                        port_to_reset = random.randint(0,len(station_profile.station_names)-1)
+                        print("reset station number {} station: {}".format(port_to_reset+1,station_profile.station_names[port_to_reset]))
+                        self.local_realm.reset_port(station_profile.station_names[port_to_reset])
+
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
@@ -438,7 +473,6 @@ class L3VariableTimeLongevity(LFCliBase):
         self.controller_channel_chan_width_config()
         self.dfs()
         index = 0
-        total_endp = [] 
         for station_profile in self.station_profiles:
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
@@ -460,11 +494,11 @@ class L3VariableTimeLongevity(LFCliBase):
         
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
-        up_request = self.local_realm.admin_up(self.side_b)
+        self.local_realm.admin_up(self.side_b) 
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
                 print("Bringing up station %s"%(sta))
-                up_request = self.local_realm.admin_up(sta)
+                self.local_realm.admin_up(sta)
 
         temp_stations_list = []
         temp_stations_list.append(self.side_b)
@@ -477,7 +511,6 @@ class L3VariableTimeLongevity(LFCliBase):
             print("print failed to get IP's")
 
         self.verify_controller()
-
         print("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
         self.multicast_profile.refresh_mc(debug_=self.debug)
@@ -500,6 +533,7 @@ class L3VariableTimeLongevity(LFCliBase):
             interval_time = cur_time + datetime.timedelta(seconds=5)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
+                self.reset_port_check()
                 time.sleep(1)
             
             self.ts = int(time.time())
@@ -708,13 +742,12 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-o','--outfile', help="--outfile <Output file for csv data>", default='longevity_results')
+    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
     #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
-    requiredNamed = parser.add_argument_group('required arguments')
-    #requiredNamed.add_argument('-r', '--radio', action='append', nargs=5, metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', 'security'),
-    #                     help ='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> <security>', required=True)
-    parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ', required=True)
+    parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
+                        , required=True)
     args = parser.parse_args()
 
     #print("args: {}".format(args))
@@ -736,10 +769,10 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     if args.radio:
         radios = args.radio
 
-    if args.outfile != None:
+    if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M", time.localtime())
-        outfile = "{}_{}.csv".format(args.outfile,current_time)
-        print("csv output file : {}".format(outfile))
+        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+        print("csv output file : {}".format(csv_outfile))
         
 
     MAX_NUMBER_OF_STATIONS = 64
@@ -750,8 +783,12 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     ssid_password_list = []
     ssid_security_list = []
 
-    print("radios {}".format(radios))
+    #optional radio configuration
+    reset_port_enable_list = []
+    reset_port_time_min_list = []
+    reset_port_time_max_list = []
 
+    print("radios {}".format(radios))
     for radio_ in radios:
         radio_keys = ['radio','stations','ssid','ssid_pw','security']
         #print("radio_ {}".format(str(radio_).replace('[','').replace(']','').replace("'","")))
@@ -769,6 +806,24 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         ssid_password_list.append(radio_info_dict['ssid_pw'])
         ssid_security_list.append(radio_info_dict['security'])
 
+        optional_radio_reset_keys = ['reset_port_enable']
+        radio_reset_found = True
+        for key in optional_radio_reset_keys:
+            if key not in radio_info_dict:
+                print("port reset test not enabled")
+                radio_reset_found = False
+                break
+
+        if radio_reset_found:
+            reset_port_enable_list.append('True')
+            reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
+            reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+        else:
+            reset_port_enable_list.append('False')
+            reset_port_time_min_list.append('0s')
+            reset_port_time_max_list.append('0s')
+
+
 
     index = 0
     station_lists = []
@@ -784,21 +839,29 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     #print("endp-types: %s"%(endp_types))
 
-    ip_var_test = L3VariableTimeLongevity(lfjson_host,
-                                   lfjson_port,
-                                   args=args,
-                                   number_template="00", 
-                                   station_lists= station_lists,
-                                   name_prefix="LT-",
-                                   endp_types=endp_types,
-                                   tos=args.tos,
-                                   side_b=side_b,
-                                   radio_name_list=radio_name_list,
-                                   number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                   ssid_list=ssid_list,
-                                   ssid_password_list=ssid_password_list,
-                                   ssid_security_list=ssid_security_list, test_duration=test_duration,
-                                   side_a_min_rate=256000, side_b_min_rate=256000, debug_on=debug_on, outfile=outfile)
+    ip_var_test = L3VariableTimeLongevity(
+                                    lfjson_host,
+                                    lfjson_port,
+                                    args=args,
+                                    number_template="00", 
+                                    station_lists= station_lists,
+                                    name_prefix="LT-",
+                                    endp_types=endp_types,
+                                    tos=args.tos,
+                                    side_b=side_b,
+                                    radio_name_list=radio_name_list,
+                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+                                    ssid_list=ssid_list,
+                                    ssid_password_list=ssid_password_list,
+                                    ssid_security_list=ssid_security_list, 
+                                    test_duration=test_duration,
+                                    reset_port_enable_list=reset_port_enable_list,
+                                    reset_port_time_min_list=reset_port_time_min_list,
+                                    reset_port_time_max_list=reset_port_time_max_list,
+                                    side_a_min_rate=256000, 
+                                    side_b_min_rate=256000, 
+                                    debug_on=debug_on, 
+                                    outfile=csv_outfile)
 
     ip_var_test.pre_cleanup()
 

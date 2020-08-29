@@ -170,6 +170,14 @@ class Realm(LFCliBase):
         request = LFUtils.port_down_request(resource_id=resource, port_name=port)
         self.json_post("/cli-json/set_port", request)
 
+    def reset_port(self, port_eid):
+        eid = self.name_to_eid(port_eid)
+        shelf = eid[0]
+        resource = eid[1]
+        port = eid[2]
+        request = LFUtils.port_reset_request(resource_id=resource, port_name=port)
+        self.json_post("cli-json/reset_port", request)
+
     def rm_cx(self, cx_name):
         req_url = "cli-json/rm_cx"
         data = {
@@ -517,6 +525,29 @@ class Realm(LFCliBase):
 
         return not wait_more
 
+    def duration_time_to_seconds(self, time_string):
+        if isinstance(time_string, str):
+            pattern = re.compile("^(\d+)([dhms]$)")
+            td = pattern.match(time_string)
+            if td is not None:
+                dur_time = int(td.group(1))
+                dur_measure = str(td.group(2))
+                if dur_measure == "d":
+                    duration_sec = dur_time * 24 * 60 * 60 
+                elif dur_measure == "h":
+                    duration_sec = dur_time * 60 * 60
+                elif dur_measure == "m":
+                    duration_sec = dur_time * 60
+                else:
+                    duration_sec = dur_time * 1
+            else:
+                raise ValueError("Unknown value for time_string: %s" % time_string)
+        else:
+            raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
+        return duration_sec
+
+        pass
+
     def parse_time(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
@@ -613,7 +644,7 @@ class Realm(LFCliBase):
     def new_station_profile(self):
         station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
         return station_prof
-    # just here for now for initial coding,  move later to correct spot
+
     def new_multicast_profile(self):
         multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port, \
                                   local_realm=self, debug_=self.debug, report_timer_=3000)
@@ -2027,6 +2058,19 @@ class StationProfile:
             "domain": None
         }
 
+        self.reset_port_extra_data = {
+            "shelf":1,
+            "resource":1,
+            "port": None,
+            "test_duration": 0,
+            "reset_port_enable": False,
+            "reset_port_time_min": 0,
+            "reset_port_time_max": 0,
+            "reset_port_timer_started": False,
+            "port_to_reset": 0,
+            "seconds_till_reset": 0
+        }
+
     def set_wifi_extra(self, key_mgmt="WPA-EAP", eap="TTLS", identity="testuser", passwd="testpasswd",
                        realm="localhost.localdomain", domain="localhost.localdomain", hessid="00:00:00:00:00:01"):
         self.wifi_extra_data["key_mgmt"] = key_mgmt
@@ -2036,6 +2080,13 @@ class StationProfile:
         self.wifi_extra_data["realm"] = realm
         self.wifi_extra_data["domain"] = domain
         self.wifi_extra_data["hessid"] = hessid
+
+    def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,\
+        reset_port_timer_starte=False, port_to_reset=0, time_till_reset=0):
+        self.reset_port_extra_data["reset_port_enable"] = reset_port_enable
+        self.reset_port_extra_data["test_duration"] = test_duration
+        self.reset_port_extra_data["reset_port_time_min"] = reset_port_min_time
+        self.reset_port_extra_data["reset_port_time_max"] = reset_port_max_time
 
     def use_security(self, security_type, ssid=None, passwd=None):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
