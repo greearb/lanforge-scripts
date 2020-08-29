@@ -18,7 +18,7 @@ $| = 1;
 
 # use lib prepends to @INC, so put lower priority first
 # This is before run-time, so cannot condition this with normal 'if' logic.
-use lib '/home/lanforge/scripts';
+use if (-e "/home/lanforge/scripts"), lib => "/home/lanforge/scripts";
 use lib "../";
 use lib "./";
 
