@@ -48,7 +48,7 @@ def usage():
    print("--prompt   Prompt to look for when commands are done (default: root@OpenWrt)")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file log messages here")
-   print("--action (logread | journalctl | lurk | sysupgrade | download | reboot | cmd")
+   print("--action (logread | journalctl | lurk | sysupgrade | download | upload | reboot | cmd")
    print("--value (option to help complete the action")
    print("--value2 (option to help complete the action, dest filename for download")
    print("-h|--help")
@@ -78,7 +78,7 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["logread", "journalctl", "lurk", "sysupgrade", "download", "reboot", "cmd" ])
+      choices=["logread", "journalctl", "lurk", "sysupgrade", "download", "upload", "reboot", "cmd" ])
    parser.add_argument("--value",         type=str, help="set value")
    parser.add_argument("--value2",        type=str, help="set value2")
    tty = None
@@ -259,6 +259,30 @@ def main():
            i = egg.expect(["password:", "Do you want to continue connecting", "Network unreachable"], timeout=5)
        if i == 2:
            print("ERROR:  Could not connect to LANforge to get download file")
+           exit(2)
+       if i == 1:
+           egg.sendline("y")
+           egg.expect("password:", timeout=5)
+       egg.sendline("lanforge")
+       egg.expect(CCPROMPT, timeout=20)
+       return
+
+   if (args.action == "upload"):
+       command = "scp %s %s"%(args.value, args.value2)
+       logg.info("Command[%s]"%command)
+       egg.sendline(command);
+
+       i = egg.expect(["password:", "Do you want to continue connecting", "Network unreachable"], timeout=5)
+       if i == 2:
+           print("Network unreachable, wait 15 seconds and try again.")
+           time.sleep(15)
+           command = "scp /tmp/%s %s"%(args.value, args.value2)
+           logg.info("Command[%s]"%command)
+           egg.sendline(command);
+
+           i = egg.expect(["password:", "Do you want to continue connecting", "Network unreachable"], timeout=5)
+       if i == 2:
+           print("ERROR:  Could not connect to LANforge to put upload file")
            exit(2)
        if i == 1:
            egg.sendline("y")

@@ -137,6 +137,17 @@ function post_test {
         pkill -f ".*openwrt_ctl.*$AP_SERIAL.*"
         mv $DUT_SER_LOG $DEST/logs/dut_console_log.txt
 
+        # Look for firmware crash files
+        PIDD=$$
+        ../openwrt_ctl.py $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial --action cmd --value "tar -cvzf /tmp/bugcheck.tgz /tmp/bugcheck"
+        ../openwrt_ctl.py $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial --action upload --value "/tmp/bugcheck.tgz" --value2 "lanforge\@$ap_gw:bugcheck-$PIDD.tgz"
+
+        # Grab the file from LANforge
+        scp lanforge\@$LFMANAGER:bugcheck-$PIDD.tgz $DEST/logs/bugcheck.tgz
+
+        # Clean log file
+        ssh lanforge\@$LFMANAGER "rm bugcheck-$PIDD.tgz"
+
         # detect a few fatal flaws and reqest AP restart if found.
         grep "Hardware became unavailable" $DEST/logs/dut_console_log.txt && reboot_dut
     fi
