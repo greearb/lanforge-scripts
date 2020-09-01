@@ -1498,6 +1498,29 @@ class VAPProfile(LFCliBase):
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
 
+        self.wifi_extra_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "key_mgmt": None,
+            "eap": None,
+            "hessid": None,
+            "identity": None,
+            "password": None,
+            "realm": None,
+            "domain": None
+        }
+
+    def set_wifi_extra(self, key_mgmt="WPA-EAP", eap="TTLS", identity="testuser", passwd="testpasswd",
+                       realm="localhost.localdomain", domain="localhost.localdomain", hessid="00:00:00:00:00:01"):
+        self.wifi_extra_data["key_mgmt"] = key_mgmt
+        self.wifi_extra_data["eap"] = eap
+        self.wifi_extra_data["identity"] = identity
+        self.wifi_extra_data["password"] = passwd
+        self.wifi_extra_data["realm"] = realm
+        self.wifi_extra_data["domain"] = domain
+        self.wifi_extra_data["hessid"] = hessid
+
     def admin_up(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
         req_json = LFUtils.portUpRequest(resource, None, debug_on=self.debug)
@@ -1621,7 +1644,8 @@ class VAPProfile(LFCliBase):
 
         return result
 
-    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True, use_ht160=False, suppress_related_commands_=True):
+    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True, use_ht160=False,
+               suppress_related_commands_=True, wifi_extra=False):
 
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
@@ -1636,6 +1660,11 @@ class VAPProfile(LFCliBase):
         if not use_ht80:
             self.desired_add_vap_flags.append("disable_ht80")
             self.desired_add_vap_flags_mask.append("disable_ht80")
+        if wifi_extra:
+            self.desired_add_vap_flags.append("8021x_radius")
+            self.desired_add_vap_flags_mask.append("8021x_radius")
+            self.desired_add_vap_flags.append("hs20_enable")
+            self.desired_add_vap_flags_mask.append("hs20_enable")
 
         #print("MODE ========= ", self.mode)
 
@@ -1682,7 +1711,7 @@ class VAPProfile(LFCliBase):
         # re-use inside a loop, reducing the number of object creations
         add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-
+        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
         if suppress_related_commands_:
             self.add_vap_data["suppress_preexec_cli"] = "yes"
             self.add_vap_data["suppress_preexec_method"] = 1
@@ -1707,6 +1736,14 @@ class VAPProfile(LFCliBase):
         set_port_r.addPostData(self.set_port_data)
         json_response = set_port_r.jsonPost(debug)
         time.sleep(0.03)
+        if wifi_extra:
+            self.wifi_extra_data["resource"] = resource
+            self.wifi_extra_data["port"] = self.vap_name
+            if self.wifi_extra_data["key_mgmt"] is not None:
+                wifi_extra_r.addPostData(self.wifi_extra_data)
+                json_response = wifi_extra_r.jsonPost(debug)
+            else:
+                raise ValueError("set_wifi_extra must be called to use wifi_extra")
 
         # create bridge
         data = {
@@ -1720,51 +1757,19 @@ class VAPProfile(LFCliBase):
         if (self.up):
             self.admin_up(1)
 
-    def cleanup(self, resource, desired_ports=None, delay=0.03):
+    def cleanup(self, resource, delay=0.03):
         print("Cleaning up VAPs")
-        req_url = "/cli-json/rm_vlan"
-        data = {
-            "shelf": 1,
-            "resource": resource,
-            "port": None
-        }
-        if (desired_ports is not None):
-            if len(desired_ports) < 1:
-                print("No stations requested for cleanup, returning.")
-                return
-            names = ','.join(desired_ports)
-            current_stations = self.local_realm.json_get("/port/1/%s/%s?fields=alias" % (resource, names))
-            if current_stations is None:
-                return
-            if "interfaces" in current_stations:
-                for station in current_stations['interfaces']:
-                    for eid, info in station.items():
-                        data["port"] = info["alias"]
-                        self.local_realm.json_post(req_url, data, debug_=self.debug)
-                        time.sleep(delay)
+        desired_ports = ["1.%s.%s" % (resource, self.vap_name), "1.%s.br0" % resource]
 
-            if "interface" in current_stations:
-                data["port"] = current_stations["interface"]["alias"]
-                self.local_realm.json_post(req_url, data, debug_=self.debug)
+        del_count = len(desired_ports)
 
-            return
+        # First, request remove on the list.
+        for port_eid in desired_ports:
+            self.local_realm.rm_port(port_eid, check_exists=True)
 
-        names = ','.join(self.station_names)
-        current_stations = self.local_realm.json_get("/port/1/%s/%s?fields=alias" % (resource, names))
-        if current_stations is None or current_stations['interfaces'] is None:
-            print("No stations to clean up")
-            return
+        # And now see if they are gone
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
 
-        if "interfaces" in current_stations:
-            for station in current_stations['interfaces']:
-                for eid, info in station.items():
-                    data["port"] = info["alias"]
-                    self.local_realm.json_post(req_url, data, debug_=self.debug)
-                    time.sleep(delay)
-
-        if "interface" in current_stations:
-            data["port"] = current_stations["interface"]["alias"]
-            self.local_realm.json_post(req_url, data, debug_=self.debug)
 
 class PortUtils(LFCliBase):
     def __init__(self, local_realm):
@@ -2189,7 +2194,8 @@ class StationProfile:
         if wifi_extra:
             self.desired_add_sta_flags.append("8021x_radius")
             self.desired_add_sta_flags_mask.append("8021x_radius")
-
+            self.desired_add_sta_flags.append("hs20_enable")
+            self.desired_add_sta_flags_mask.append("hs20_enable")
         if up_ is not None:
             self.up = up_
 
