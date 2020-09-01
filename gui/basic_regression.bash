@@ -13,11 +13,15 @@
 
 # Disable stdout buffering in python so that we get serial console log
 # output promptly.
+
+#set -x
+
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
 AP_SERIAL=${AP_SERIAL:-NONE}
 LF_SERIAL=${LF_SERIAL:-NONE}
+APGW=${APGW:-172.16.0.1}
 LFPASSWD=${LFPASSWD:-lanforge}  # Root password on LANforge machine
 AP_AUTO_CFG_FILE=${AP_AUTO_CFG_FILE:-test_configs/AP-Auto-ap-auto-32-64-dual.txt}
 WCT_CFG_FILE=${WCT_CFG_FILE:-test_configs/WCT-64sta.txt}
@@ -140,13 +144,13 @@ function post_test {
         # Look for firmware crash files
         PIDD=$$
         ../openwrt_ctl.py $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial --action cmd --value "tar -cvzf /tmp/bugcheck.tgz /tmp/bugcheck"
-        ../openwrt_ctl.py $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial --action upload --value "/tmp/bugcheck.tgz" --value2 "lanforge\@$ap_gw:bugcheck-$PIDD.tgz"
+        ../openwrt_ctl.py $OWRTCTL_ARGS --tty $AP_SERIAL --scheme serial --action upload --value "/tmp/bugcheck.tgz" --value2 "lanforge@$APGW:bugcheck-$PIDD.tgz"
 
         # Grab the file from LANforge
-        scp lanforge\@$LFMANAGER:bugcheck-$PIDD.tgz $DEST/logs/bugcheck.tgz
+        scp lanforge@$LFMANAGER:bugcheck-$PIDD.tgz $DEST/logs/bugcheck.tgz
 
         # Clean log file
-        ssh lanforge\@$LFMANAGER "rm bugcheck-$PIDD.tgz"
+        ssh lanforge@$LFMANAGER "rm bugcheck-$PIDD.tgz"
 
         # detect a few fatal flaws and reqest AP restart if found.
         grep "Hardware became unavailable" $DEST/logs/dut_console_log.txt && reboot_dut
