@@ -31,7 +31,7 @@
 ##    add: create and delete WiFi Virtual Radios. Also has option to
 ##       create station on specified virtual radio.
 ##
-## (C) 2013, Candela Technologies Inc. support@candelatech.com
+## (C) 2020, Candela Technologies Inc. support@candelatech.com
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 package main;
 use strict;
@@ -612,14 +612,15 @@ sub createEpPair {
 
 sub fmt_port_cmd {
    my($resource, $port_id, $ip_addr, $mac_addr) = @_;
-   my $use_dhcp         = ($ip_addr =~ /DHCP/) ? 1 : 0;
-   my $use_dhcp6        = ($ip_addr =~ /DHCP6/) ? 1 : 0;
-   my $ip               = ($use_dhcp) ? "0.0.0.0" : $ip_addr ;
+   my $use_dhcp         = ($ip_addr =~ /\bDHCP\b/) ? 1 : 0;
+   my $use_dhcp6        = ($ip_addr =~ /\bDHCP6\b/) ? 1 : 0;
+   my $ip               = ($use_dhcp||$use_dhcp6) ? "0.0.0.0" : $ip_addr ;
    $mac_addr            = die("fmt_port_cmd requires mac_addr") if(!$mac_addr); # || $mac_addr eq "NA");
    #print "fmt_port_cmd: RES $resource PORT $port_id IP_A $ip_addr MAC $mac_addr -> $ip\n" unless($::quiet eq "yes");
    my $cmd_flags        = 'NA'; #0;
    my $cur_flags        = 0;
-   $cur_flags           |= 0x80000000 if($use_dhcp);
+   $cur_flags           |= 0x80000000    if ($use_dhcp);
+   $cur_flags           |= 0x20000000000 if ($use_dhcp6);
    #print "fmt_port_cmd: DHCP($use_dhcp) $cur_flags\n" unless($::quiet eq "yes");
    my $ist_flags        = 0;
    $ist_flags           |= 0x2;       # check current flags
@@ -629,7 +630,8 @@ sub fmt_port_cmd {
    $ist_flags           |= 0x20       if ($mac_addr ne "NA");
    $ist_flags           |= 0x4000;    # Always interested in DHCP, we either set it to DHCP or IP
    $ist_flags           |= 0x800000;  # port up
-   $ist_flags           |= 0x1000000  if ($use_dhcp6);
+   $ist_flags           |= 0x1000000; # Always interested in DHCP, we either set it to DHCP or IP
+
 
    my $gw               = "0.0.0.0";
    if (($::gateway ne "") || ($::gateway ne "") || ($::gateway ne "0.0.0.0")) {
@@ -660,9 +662,9 @@ sub fmt_port_down {
    die("fmt_port_down wants ip_addr id, bye.") unless($ip_addr);
    die("fmt_port_down wants ip_mask id, bye.") unless($ip_mask);
 
-   my $use_dhcp         = ($ip_addr =~ /DHCP/) ? 1 : 0;
-   my $use_dhcp6        = ($ip_addr =~ /DHCP6/) ? 1 : 0;
-   my $ip               = ($use_dhcp) ? "0.0.0.0" : $ip_addr ;
+   my $use_dhcp         = ($ip_addr =~ /\bDHCP\b/) ? 1 : 0;
+   my $use_dhcp6        = ($ip_addr =~ /\bDHCP6\b/) ? 1 : 0;
+   my $ip               = ($use_dhcp||$use_dhcp6) ? "0.0.0.0" : $ip_addr ;
    my $cmd_flags        = "NA";
    my $cur_flags        = 0;
    $cur_flags           |= 0x1;       # port down
