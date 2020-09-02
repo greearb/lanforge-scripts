@@ -183,7 +183,8 @@ class L3VariableTimeLongevity(LFCliBase):
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                    if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
                 if not self.csv_started:
@@ -216,7 +217,8 @@ class L3VariableTimeLongevity(LFCliBase):
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                    if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
                 if not self.csv_started:
@@ -533,8 +535,9 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(self.polling_interval_seconds)
-            print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+            #interval_time = cur_time + datetime.timedelta(seconds=5)
+            interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
+            #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
