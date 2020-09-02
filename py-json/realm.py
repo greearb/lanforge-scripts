@@ -2082,7 +2082,7 @@ class StationProfile:
         self.wifi_extra_data["hessid"] = hessid
 
     def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,\
-        reset_port_timer_starte=False, port_to_reset=0, time_till_reset=0):
+        reset_port_timer_start=False, port_to_reset=0, time_till_reset=0):
         self.reset_port_extra_data["reset_port_enable"] = reset_port_enable
         self.reset_port_extra_data["test_duration"] = test_duration
         self.reset_port_extra_data["reset_port_time_min"] = reset_port_min_time

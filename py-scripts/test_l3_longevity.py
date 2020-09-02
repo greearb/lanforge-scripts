@@ -30,6 +30,7 @@ class L3VariableTimeLongevity(LFCliBase):
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
+                 polling_interval="60s",
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -51,6 +52,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.multicast_profile = self.local_realm.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-";
@@ -59,6 +61,8 @@ class L3VariableTimeLongevity(LFCliBase):
         self.outfile = outfile
         self.csv_started = False
         self.ts = int(time.time())
+        self.debug = debug_on
+        
 
         # Some checking on the duration
         #self.local_realm.parse_time(self.test_duration)
@@ -140,7 +144,7 @@ class L3VariableTimeLongevity(LFCliBase):
         csv_rx_drop_percent_data.append(average_rx_drop_percent)
 
         for item, value in rx_drop_percent.items():
-            print(item, "rx drop percent: ", rx_drop_percent[item])
+            #print(item, "rx drop percent: ", rx_drop_percent[item])
             csv_rx_drop_percent_data.append(rx_drop_percent[item])
 
         self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
@@ -159,7 +163,7 @@ class L3VariableTimeLongevity(LFCliBase):
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
-        print("rx (ts:{}): calculating worst, best, average".format(self.ts))
+        #print("rx (ts:{}): calculating worst, best, average".format(self.ts))
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
@@ -171,15 +175,15 @@ class L3VariableTimeLongevity(LFCliBase):
             csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
-        #print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data))
+        if self.debug: print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data)) 
 
         if len(old_list) == len(new_list):
-            print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
+            if self.debug: print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
             for item, value in old_list.items():
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
                 if not self.csv_started:
@@ -206,13 +210,13 @@ class L3VariableTimeLongevity(LFCliBase):
                 csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
-            #print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
+            if self.debug: print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
             
             for item, value in old_list.items():
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
                 if not self.csv_started:
@@ -436,14 +440,14 @@ class L3VariableTimeLongevity(LFCliBase):
                     random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],\
                                    station_profile.reset_port_extra_data['reset_port_time_max'])
                     station_profile.reset_port_extra_data['reset_port_timer_started'] = True
-                    print("seconds_till_reset {}".format(station_profile.reset_port_extra_data['seconds_till_reset']))
+                    print("on radio {} seconds_till_reset {}".format(station_profile.add_sta_data['radio'],station_profile.reset_port_extra_data['seconds_till_reset']))
                 else:
                     station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
-                    print("countdown seconds_till_reset {}".format(station_profile.reset_port_extra_data['seconds_till_reset']))
+                    if self.debug: print("radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio']  ,station_profile.reset_port_extra_data['seconds_till_reset']))
                     if ((station_profile.reset_port_extra_data['seconds_till_reset']  <= 0)):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0,len(station_profile.station_names)-1)
-                        print("reset station number {} station: {}".format(port_to_reset+1,station_profile.station_names[port_to_reset]))
+                        print("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
                         self.local_realm.reset_port(station_profile.station_names[port_to_reset])
 
     def pre_cleanup(self):
@@ -529,8 +533,8 @@ class L3VariableTimeLongevity(LFCliBase):
         passes = 0
         expected_passes = 0
         while cur_time < end_time:
-            #interval_time = cur_time + datetime.timedelta(seconds=60)
-            interval_time = cur_time + datetime.timedelta(seconds=5)
+            interval_time = cur_time + datetime.timedelta(self.polling_interval_seconds)
+            print("polling_interval_seconds {}".format(self.polling_interval_seconds))
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
@@ -743,6 +747,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
+    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
     #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
@@ -751,11 +756,13 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     args = parser.parse_args()
 
     #print("args: {}".format(args))
-    
     debug_on = args.debug
  
     if args.test_duration:
         test_duration = args.test_duration
+
+    if args.polling_interval:
+        polling_interval = args.polling_interval
 
     if args.endp_type:
         endp_types = args.endp_type
@@ -791,7 +798,6 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     print("radios {}".format(radios))
     for radio_ in radios:
         radio_keys = ['radio','stations','ssid','ssid_pw','security']
-        #print("radio_ {}".format(str(radio_).replace('[','').replace(']','').replace("'","")))
         radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
         print("radio_dict {}".format(radio_info_dict))
 
@@ -810,16 +816,16 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         radio_reset_found = True
         for key in optional_radio_reset_keys:
             if key not in radio_info_dict:
-                print("port reset test not enabled")
+                #print("port reset test not enabled")
                 radio_reset_found = False
                 break
 
         if radio_reset_found:
-            reset_port_enable_list.append('True')
+            reset_port_enable_list.append(True)
             reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
             reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
         else:
-            reset_port_enable_list.append('False')
+            reset_port_enable_list.append(False)
             reset_port_time_min_list.append('0s')
             reset_port_time_max_list.append('0s')
 
@@ -855,6 +861,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     ssid_password_list=ssid_password_list,
                                     ssid_security_list=ssid_security_list, 
                                     test_duration=test_duration,
+                                    polling_interval= polling_interval,
                                     reset_port_enable_list=reset_port_enable_list,
                                     reset_port_time_min_list=reset_port_time_min_list,
                                     reset_port_time_max_list=reset_port_time_max_list,
