@@ -612,7 +612,8 @@ sub createEpPair {
 
 sub fmt_port_cmd {
    my($resource, $port_id, $ip_addr, $mac_addr) = @_;
-   my $use_dhcp         = ($ip_addr eq "DHCP") ? 1 : 0;
+   my $use_dhcp         = ($ip_addr =~ /DHCP/) ? 1 : 0;
+   my $use_dhcp6        = ($ip_addr =~ /DHCP6/) ? 1 : 0;
    my $ip               = ($use_dhcp) ? "0.0.0.0" : $ip_addr ;
    $mac_addr            = die("fmt_port_cmd requires mac_addr") if(!$mac_addr); # || $mac_addr eq "NA");
    #print "fmt_port_cmd: RES $resource PORT $port_id IP_A $ip_addr MAC $mac_addr -> $ip\n" unless($::quiet eq "yes");
@@ -628,6 +629,7 @@ sub fmt_port_cmd {
    $ist_flags           |= 0x20       if ($mac_addr ne "NA");
    $ist_flags           |= 0x4000;    # Always interested in DHCP, we either set it to DHCP or IP
    $ist_flags           |= 0x800000;  # port up
+   $ist_flags           |= 0x1000000  if ($use_dhcp6);
 
    my $gw               = "0.0.0.0";
    if (($::gateway ne "") || ($::gateway ne "") || ($::gateway ne "0.0.0.0")) {
@@ -658,7 +660,8 @@ sub fmt_port_down {
    die("fmt_port_down wants ip_addr id, bye.") unless($ip_addr);
    die("fmt_port_down wants ip_mask id, bye.") unless($ip_mask);
 
-   my $use_dhcp         = ($ip_addr eq "DHCP") ? 1 : 0;
+   my $use_dhcp         = ($ip_addr =~ /DHCP/) ? 1 : 0;
+   my $use_dhcp6        = ($ip_addr =~ /DHCP6/) ? 1 : 0;
    my $ip               = ($use_dhcp) ? "0.0.0.0" : $ip_addr ;
    my $cmd_flags        = "NA";
    my $cur_flags        = 0;
@@ -1476,8 +1479,8 @@ sub initStationAddr {
 
    my $ip;
    my $ip_obj;
-   if ($::first_ip eq "DHCP"){
-      $ip   = "DHCP";
+   if ($::first_ip =~ /^DHCP/){
+      $ip   = $::first_ip;
    }
    else {
       $ip   = $::first_ip;
@@ -1686,7 +1689,7 @@ if ($::db_preload ne "") {
 
 if (!($action =~ /del/)) { # Below steps are unrelated to deleting objects
    if(!defined $::first_ip || $::first_ip eq '') {
-      print("Please specify the first IP for stations. You may choose DHCP or an IP that will be incremented.\n");
+      print("Please specify the first IP for stations. You may choose DHCP, DHCP6, or DHCP,DHCP6 or an IP that will be incremented.\n");
       exit(1);
    }
 
