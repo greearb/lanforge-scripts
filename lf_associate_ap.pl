@@ -229,7 +229,8 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       ##       station configuration
       [--num_stations {$num_stations}] # Defaults to 1
       [--first_sta {$first_sta}]
-      [--first_ip {DHCP |ip address}]
+      [--first_ip {DHCP | DHCP6 | DHCP,DHCP6 |<ip address>}]
+          # use DHCP,DHCP6 to enable both DHCP and DHCP6
       [--netmask {$netmask}]
       [--gateway {$gateway}]
       [--change_mac {0|1}]
