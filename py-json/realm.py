@@ -1811,10 +1811,10 @@ class FIOCXProfile(LFCliBase):
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.fio_type = None
-        self.min_read = 0
-        self.max_read = 100
-        self.min_write = 0
-        self.max_write = 100
+        self.min_read = 1544
+        self.max_read = 1544
+        self.min_write = 1544
+        self.max_write = 0
         self.directory = None
         self.prefix = None
         self.local_realm = local_realm
