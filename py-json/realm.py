@@ -682,6 +682,10 @@ class Realm(LFCliBase):
         http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return http_prof
 
+    def new_fio_cx_profile(self):
+        cx_prof = FIOCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return cx_prof
+
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
@@ -1801,6 +1805,103 @@ class VAPProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
 
+class FIOCXProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        self.debug = debug_
+        self.fio_type = None
+        self.min_read = 0
+        self.max_read = 100
+        self.min_write = 0
+        self.max_write = 100
+        self.directory = None
+        self.prefix = None
+        self.local_realm = local_realm
+        self.created_cx = {}
+        self.created_endp = []
+
+    def start_cx(self):
+        print("Starting CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "RUNNING"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def stop_cx(self):
+        print("Stopping CXs...")
+        for cx_name in self.created_cx.keys():
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": self.created_cx[cx_name],
+                "cx_state": "STOPPED"
+            }, debug_=self.debug)
+            print(".", end='')
+        print("")
+
+    def cleanup(self):
+        print("Cleaning up cxs and endpoints")
+        if len(self.created_cx) != 0:
+            for cx_name in self.created_cx.keys():
+                req_url = "cli-json/rm_cx"
+                data = {
+                    "test_mgr": "default_tm",
+                    "cx_name": self.created_cx[cx_name]
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
+                req_url = "cli-json/rm_endp"
+                data = {
+                    "endp_name": cx_name
+                }
+                self.json_post(req_url, data)
+                #pprint(data)
+
+    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        cx_post_data = []
+        for port_name in ports:
+            if len(self.local_realm.name_to_eid(port_name)) == 3:
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
+            else:
+                raise ValueError("Unexpected name for port_name %s" % port_name)
+            if self.directory is None or self.prefix is None or self.fio_type is None:
+                raise ValueError("directory [%s], prefix [%s], and type [%s] must not be None" % (self.directory, self.prefix, self.fio_type))
+            endp_data = {
+                "alias": name + "_fio",
+                "shelf": shelf,
+                "resource": resource,
+                "port": name,
+                "type": self.fio_type,
+                "min_read_rate": self.min_read,
+                "max_read_rate": self.max_read,
+                "min_write_rate": self.min_write,
+                "max_write_rate": self.max_write,
+                "directory": self.directory,
+                "prefix": self.prefix
+            }
+            url = "cli-json/add_file_endp"
+            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
+
+            endp_data = {
+                "alias": "CX_" + name + "_fio",
+                "test_mgr": "default_tm",
+                "tx_endp": name + "_fio",
+                "rx_endp": "NA"
+            }
+            cx_post_data.append(endp_data)
+            self.created_cx[name + "_fio"] = "CX_" + name + "_fio"
+
+        for cx_data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            time.sleep(sleep_time)
 
 class PortUtils(LFCliBase):
     def __init__(self, local_realm):
