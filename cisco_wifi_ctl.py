@@ -51,6 +51,8 @@ def usage():
    print("-d|--dest:  destination host")
    print("-o|--port:  destination port")
    print("--prompt:   prompt to expect, ie \"\\(Cisco Controller\\) >\"")
+   print("--series: cisco controller series, ie \"9800\"")
+
    print("-u|--user:  login name")
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
@@ -58,6 +60,7 @@ def usage():
    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
    print("-w|--wlan:  WLAN name")
    print("-i|--wlanID:  WLAN ID")
+
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -77,6 +80,7 @@ def main():
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
    parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
    parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="\(Cisco Controller\) >")
+   parser.add_argument("--series",        type=str, help="cisco controller series",default="3504")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
@@ -92,7 +96,6 @@ def main():
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
-   parser.add_argument("--series", type=str, help="cisco controller series",default="3504")
 
    args = None
    try:
@@ -112,9 +115,9 @@ def main():
           band = "a"
       filehandler = None
    except Exception as e:
-      logging.exception(e);
+      logging.exception(e)
       usage()
-      exit(2);
+      exit(2)
 
    console_handler = logging.StreamHandler()
    formatter = logging.Formatter(FORMAT)
@@ -141,6 +144,7 @@ def main():
          with serial.Serial('/dev/ttyUSB0', 115200, timeout=5) as ser:
             egg = SerialSpawn(ser);
             egg.logfile = FileAdapter(logg)
+            print("logg {}".format(logg))
             egg.sendline(NL)
             time.sleep(0.1)
             egg.expect('login:', timeout=3)
@@ -157,6 +161,7 @@ def main():
          egg = pexpect.spawn(cmd)
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
+         print("logg {}".format(logg))
          i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
          time.sleep(0.1)
          if i == 1:
@@ -164,8 +169,6 @@ def main():
             egg.expect('ssword:')
          sleep(0.1)
          egg.sendline(passwd)
-
-         
 
       elif (scheme == "telnet"):
          if (port is None):
@@ -207,20 +210,54 @@ def main():
    CLOSEDCX = "Connection to .* closed."
 
    logg.info("waiting for prompt: %s"%(CCPROMPT))
-   egg.expect(CCPROMPT, timeout=3)
-   # sleep(0.1)
-   # if args.series == "9800":
-   #   egg.sendline("enable")
-   #   time.sleep(0.1)
+   print("waiting for prompt: %s"%(CCPROMPT))
+
+   prompt_found = False
+   prompt_elevated = False
+
+   while True:
+      i = egg.expect([CCPROMPT,pexpect.TIMEOUT],timeout=3)
+      print (egg.before.decode('utf-8', 'ignore'))
+      if i == 0:
+         print("login correct prompt found: {}".format(CCPROMPT))
+         prompt_found = True
+         break
+      if i == 1:
+         print("expect timeout looking for login prompt {}".format(CCPROMPT))
+         print("prompt found: {} ".format(egg.before))
+         print("use command line args --prompt to set the correct prompt")
+         print("use substring of prompt for controllers that have prompt levels like 9800 series")
+         print("will now check for any prompt that ends with > or # ")
+         break
+
+   if prompt_found == False:
+      i = egg.expect([">","#",pexpect.TIMEOUT],timeout=3)
+      print("prompt found {}{}".format(egg.before, egg.after))
+
+      if i == 0:
+         print("> found in prompt")
+         print("in user EXEC mode")
+         if args.series == "9800":
+            print("sending enable 9800 series putting in Privileded EXEC mode")
+            egg.sendline("enable")
+            time.sleep(0.1)
+      if i == 1:
+         print("# found in prompt")
+         print("prompt found {}{}".format(egg.before, egg.after))
+
+      if i == 2:
+         print("time out second time check prompt")
+         usage()
+         exit()
 
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
+   print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
    if ((args.action == "show") and (args.value is None)):
       raise Exception("show requires value, like 'country' or 'ap summary'")
 
    if (args.action == "show"):
-      #print ("HI")
       command = "show "+args.value
 
    if (args.action == "cmd"):
