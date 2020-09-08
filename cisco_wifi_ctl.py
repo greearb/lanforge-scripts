@@ -179,14 +179,62 @@ def main():
          egg.logfile = FileAdapter(logg)
          time.sleep(0.1)
          egg.sendline(' ')
-         egg.expect('User\:')
-         egg.sendline(user)
-         egg.expect('Password\:')
-         egg.sendline(passwd)
+         i = egg.expect(["ssword:", "continue connecting (yes/no)?","Escape",">","#","username\:",pexpect.TIMEOUT], timeout=3)
+         time.sleep(0.1)
+         if i == 0:
+            egg.sendline(passwd)
+            print("password")
+         if i == 1:
+            egg.sendline('yes')
+            print("continue connecting")
+         if i == 2:
+            egg.sendline(' ')      
+            print("Escape")
+         if i == 3:
+            egg.sendline('en')
+            print("> sent enable")
+         if i == 4:
+            egg.sendline(' ')
+            print(" # ")
+         if i == 5:
+            egg.sendline(user)
+            print("username")
+         if i == 6:
+            egg.sendline(' ')
+            print("timeout")
+
+         egg.sendline(' ')
+
+         i = egg.expect(["ssword:", "continue connecting (yes/no)?","Escape",">","#",pexpect.TIMEOUT], timeout=3)
+         if i == 0:
+            egg.sendline(passwd)
+            print("password2")
+         if i == 1:
+            egg.sendline('yes')
+            print("continue conneting2")
+         if i == 2:
+            egg.sendline(' ')
+            print("Escape 2")
+         if i == 3:
+            egg.sendline('en')
+            print("send enable 2")
+
+         if i == 4:
+            print("#")
+            pass
+         if i == 5:
+            print("Timeout")
+
+
+
+         #egg.expect('User\:')
+         #egg.sendline(user)
+         #egg.expect('Password\:')
+         #egg.sendline(passwd)
          #if args.prompt in "WLC#" or args.prompt in "WLC>":
          #   egg.sendline("enable")
          #   time.sleep(0.1)
-         egg.sendline('config paging disable')
+         #egg.sendline('config paging disable')
          #egg.expect('(Voice-Talwar) >', timeout=3)
          #time.sleep(0.1)
          #egg.sendline(user)
@@ -228,6 +276,7 @@ def main():
          print("use command line args --prompt to set the correct prompt")
          print("use substring of prompt for controllers that have prompt levels like 9800 series")
          print("will now check for any prompt that ends with > or # ")
+         egg.sendline(' ')
          break
 
    if prompt_found == False:
@@ -241,6 +290,11 @@ def main():
             print("sending enable 9800 series putting in Privileded EXEC mode")
             egg.sendline("enable")
             time.sleep(0.1)
+            j = egg.expect(["ssword",pexpect.TIMEOUT],timeout=3)
+            if j == 0:
+               egg.sendline(passwd)
+            if j == 1:
+               print("timed out")
       if i == 1:
          print("# found in prompt")
          print("prompt found {}{}".format(egg.before, egg.after))
@@ -249,6 +303,8 @@ def main():
          print("time out second time check prompt")
          usage()
          exit()
+
+   
 
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
