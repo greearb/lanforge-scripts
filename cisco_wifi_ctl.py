@@ -291,15 +291,16 @@ def main():
          if args.series == "9800":
             print("sending enable 9800 series putting in Privileded EXEC mode")
             egg.sendline("enable")
-            egg.sendline()
+            #egg.sendline()
             time.sleep(0.1)
             j = egg.expect(["ssword",pexpect.TIMEOUT],timeout=3)
             if j == 0:
                egg.sendline(passwd)
-               egg.sendline()
+               #egg.sendline()
             if j == 1:
-               print("timed out")
-               egg.sendline()
+               print("timed out waiting for password")
+               egg.sendline(passwd)
+
       if i == 1:
          print("# found in prompt")
          print("prompt found {}{}".format(egg.before, egg.after))
