@@ -75,6 +75,7 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
+
 def main():
    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
@@ -178,22 +179,146 @@ def main():
          egg = pexpect.spawn(cmd)
          egg.logfile = FileAdapter(logg)
          time.sleep(0.1)
-         egg.sendline(' ')
-         egg.expect('User\:')
-         egg.sendline(user)
-         egg.expect('Password\:')
-         egg.sendline(passwd)
-         #if args.prompt in "WLC#" or args.prompt in "WLC>":
-         #   egg.sendline("enable")
-         #   time.sleep(0.1)
-         egg.sendline('config paging disable')
-         #egg.expect('(Voice-Talwar) >', timeout=3)
-         #time.sleep(0.1)
-         #egg.sendline(user)
-         #time.sleep(0.1)
-         #egg.expect('ssword:')
-         #time.sleep(0.1)
-         #egg.sendline(passwd)
+         logged_in_9800 = False
+         loop_count = 0
+         if args.series == "9800":
+            while logged_in_9800 == False and loop_count <= 2:
+               egg.sendline()
+               i = egg.expect(["9800 Escape character is ",">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
+               if i == 0:
+                  print("9800 found Escape charter is ... sending carriage return {}".format(i))
+                  egg.sendline()
+                  sleep(0.1)
+                  j = egg.expect([">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
+                  if j == 0:
+                     print("9800 found >  will elevate loging {}".format(j))
+                     egg.sendline("en")
+                     sleep(0.1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt will send password: {}  k: {}".format(args.passwd, k))
+                        egg.sendline(args.passwd)
+                        sleep(0.1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("9800 Successfully received # prompt l {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l {}".format(l))
+                     if k == 1:
+                        print("8900 received timeout after looking for password: prompt k {}".format(k))
+                  if j == 1:
+                     print("9800 found # so logged in can start sending commands j {}".format(j))
+                     logged_in_9800 = True
+                  if j == 2:
+                     print("9800 found User\: will put in args.user {}  j: {}".format(args.user,j))
+                     egg.sendline(args.user)
+                     sleep(0.1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                        egg.sendline(args.passwd)
+                        sleep(0.1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("8900 Successfully received # prompt l: {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l: {}".format(l))
+                     if k == 1:
+                        print("9800 received timeout after looking for password after sending user k: {}".format(k))
+                  if j == 3:
+                     print("9800 received Password prompt will send password j: {}".format(j))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                     k = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if k == 0:
+                        print("8900 Successfully received # prompt k: {}".format(k))
+                        logged_in_9800 = True
+                     if k == 1:
+                        print("9800 Timed out waiting for # prompt k: {}".format(k))
+                  if j == 4:
+                     print("9800 timed out looking for >, #, User, Password j: {}".format(j))
+               
+               if i == 1:
+                  print("9800 found >  will elevate loging i: {}".format(i))
+                  egg.sendline("en")
+                  sleep(0.1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt will send password: {}  k: {}".format(args.passwd, k))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("9800 Successfully received # prompt l {}".format(l))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l {}".format(l))
+                  if k == 1:
+                     print("8900 received timeout after looking for password: prompt k {}".format(k))
+               
+               if i == 2:
+                  print("9800 found # so logged in can start sending commands i {}".format(i))
+                  logged_in_9800 = True
+
+               if i == 3:
+                  print("9800 found User\: will put in args.user {}  j: {}".format(args.user,j))
+                  egg.sendline(args.user)
+                  sleep(0.1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("8900 Successfully received # prompt l: {}".format(l))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l: {}".format(l))
+                  if k == 1:
+                     print("9800 received timeout after looking for password after sending user k: {}".format(k))
+
+               if i == 4:
+                  print("9800 received password prompt will send password: {}  k: {}".format(args.passwd, k))
+                  egg.sendline(args.passwd)
+                  sleep(0.1)
+                  l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                  if l == 0:
+                     print("9800 Successfully received # prompt l {}".format(l))
+                     logged_in_9800 = True
+                  if l == 1:
+                     print("9800 Timed out waiting for # prompt l {}".format(l))
+
+               if i == 5:
+                  print("9800 Timed out waiting for intiial prompt")
+
+               loop_count += 1
+
+            if loop_count >= 3:
+               print("9800 failed at login attempt")
+               exit(1)
+
+
+         # 3504 series
+         else:
+            egg.sendline(' ')
+            egg.expect('User\:')
+            egg.sendline(user)
+            egg.expect('Password\:')
+            egg.sendline(passwd)
+            #if args.prompt in "WLC#" or args.prompt in "WLC>":
+            #   egg.sendline("enable")
+            #   time.sleep(0.1)
+            egg.sendline('config paging disable')
+            #egg.expect('(Voice-Talwar) >', timeout=3)
+            #time.sleep(0.1)
+            #egg.sendline(user)
+            #time.sleep(0.1)
+            #egg.expect('ssword:')
+            #time.sleep(0.1)
+            #egg.sendline(passwd)
       else:
          usage()
          exit(1)
@@ -209,63 +334,14 @@ def main():
    CLOSEDBYREMOTE = "closed by remote host."
    CLOSEDCX = "Connection to .* closed."
 
-   logg.info("waiting for prompt: %s"%(CCPROMPT))
-   egg.expect(CCPROMPT, timeout=3)
-   # sleep(0.1)
-   # if args.series == "9800":
-   #   egg.sendline("enable")
-   #   time.sleep(0.1)
+   sleep(0.1)
+   if args.series == "9800":
+      pass
+   else:
+      logg.info("waiting for prompt: %s"%(CCPROMPT))
+      egg.expect(">", timeout=3)
 
-   ''' This is a work in progress for the 9800 series
-   prompt_found = False
-   prompt_elevated = False
 
-   while True:
-      i = egg.expect([CCPROMPT,pexpect.TIMEOUT],timeout=3)
-      print (egg.before.decode('utf-8', 'ignore'))
-      if i == 0:
-         print("login correct prompt found: {}".format(CCPROMPT))
-         prompt_found = True
-         break
-      if i == 1:
-         print("expect timeout looking for login prompt {}".format(CCPROMPT))
-         print("prompt found: {} ".format(egg.before))
-         print("use command line args --prompt to set the correct prompt")
-         print("use substring of prompt for controllers that have prompt levels like 9800 series")
-         print("will now check for any prompt that ends with > or # ")
-         egg.sendline()
-         egg.sendline()
-         break
-
-   if prompt_found == False:
-      i = egg.expect([">","#",pexpect.TIMEOUT],timeout=3)
-      print("prompt found {}{}".format(egg.before, egg.after))
-
-      if i == 0:
-         print("> found in prompt")
-         print("in user EXEC mode")
-         if args.series == "9800":
-            print("sending enable 9800 series putting in Privileded EXEC mode")
-            egg.sendline("enable")
-            #egg.sendline()
-            time.sleep(0.1)
-            j = egg.expect(["ssword",pexpect.TIMEOUT],timeout=3)
-            if j == 0:
-               egg.sendline(passwd)
-               #egg.sendline()
-            if j == 1:
-               print("timed out waiting for password")
-               egg.sendline(passwd)
-
-      if i == 1:
-         print("# found in prompt")
-         print("prompt found {}{}".format(egg.before, egg.after))
-         egg.sendline()
-
-      if i == 2:
-         print("time out second time check prompt")
-         usage()
-         exit()'''
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
    print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
@@ -369,18 +445,20 @@ def main():
    else:
       logg.info("Command[%s]"%command)
       egg.sendline(command)
-      print("CCPROMPT in : {}".format(CCPROMPT))
+      print("CCPROMPT in : {} or > or # ".format(CCPROMPT))
       while True:
-         i = egg.expect([CCPROMPT, AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
+         i = egg.expect([">","#", AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             break
          if i == 1:
-            egg.sendline("y")
             break
          if i == 2:
-            egg.sendline(NL)
+            egg.sendline("y")
+            break
          if i == 3:
+            egg.sendline(NL)
+         if i == 4:
             print("expect timeout")
             break
 
