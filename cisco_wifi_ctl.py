@@ -181,6 +181,7 @@ def main():
          egg.sendline(' ')
          i = egg.expect(["ssword:", "continue connecting (yes/no)?","Escape",">","#","username\:",pexpect.TIMEOUT], timeout=3)
          time.sleep(0.1)
+         egg.sendline()
          if i == 0:
             egg.sendline(passwd)
             print("password")
@@ -276,7 +277,8 @@ def main():
          print("use command line args --prompt to set the correct prompt")
          print("use substring of prompt for controllers that have prompt levels like 9800 series")
          print("will now check for any prompt that ends with > or # ")
-         egg.sendline(' ')
+         egg.sendline()
+         egg.sendline()
          break
 
    if prompt_found == False:
@@ -289,15 +291,19 @@ def main():
          if args.series == "9800":
             print("sending enable 9800 series putting in Privileded EXEC mode")
             egg.sendline("enable")
+            egg.sendline()
             time.sleep(0.1)
             j = egg.expect(["ssword",pexpect.TIMEOUT],timeout=3)
             if j == 0:
                egg.sendline(passwd)
+               egg.sendline()
             if j == 1:
                print("timed out")
+               egg.sendline()
       if i == 1:
          print("# found in prompt")
          print("prompt found {}{}".format(egg.before, egg.after))
+         egg.sendline()
 
       if i == 2:
          print("time out second time check prompt")
