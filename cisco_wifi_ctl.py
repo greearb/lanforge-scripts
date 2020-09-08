@@ -179,63 +179,14 @@ def main():
          egg.logfile = FileAdapter(logg)
          time.sleep(0.1)
          egg.sendline(' ')
-         i = egg.expect(["ssword:", "continue connecting (yes/no)?","Escape",">","#","username\:",pexpect.TIMEOUT], timeout=3)
-         time.sleep(0.1)
-         egg.sendline()
-         if i == 0:
-            egg.sendline(passwd)
-            print("password")
-         if i == 1:
-            egg.sendline('yes')
-            print("continue connecting")
-         if i == 2:
-            egg.sendline(' ')      
-            print("Escape")
-         if i == 3:
-            egg.sendline('en')
-            print("> sent enable")
-         if i == 4:
-            egg.sendline(' ')
-            print(" # ")
-         if i == 5:
-            egg.sendline(user)
-            print("username")
-         if i == 6:
-            egg.sendline(' ')
-            print("timeout")
-
-         egg.sendline(' ')
-
-         i = egg.expect(["ssword:", "continue connecting (yes/no)?","Escape",">","#",pexpect.TIMEOUT], timeout=3)
-         if i == 0:
-            egg.sendline(passwd)
-            print("password2")
-         if i == 1:
-            egg.sendline('yes')
-            print("continue conneting2")
-         if i == 2:
-            egg.sendline(' ')
-            print("Escape 2")
-         if i == 3:
-            egg.sendline('en')
-            print("send enable 2")
-
-         if i == 4:
-            print("#")
-            pass
-         if i == 5:
-            print("Timeout")
-
-
-
-         #egg.expect('User\:')
-         #egg.sendline(user)
-         #egg.expect('Password\:')
-         #egg.sendline(passwd)
+         egg.expect('User\:')
+         egg.sendline(user)
+         egg.expect('Password\:')
+         egg.sendline(passwd)
          #if args.prompt in "WLC#" or args.prompt in "WLC>":
          #   egg.sendline("enable")
          #   time.sleep(0.1)
-         #egg.sendline('config paging disable')
+         egg.sendline('config paging disable')
          #egg.expect('(Voice-Talwar) >', timeout=3)
          #time.sleep(0.1)
          #egg.sendline(user)
@@ -259,8 +210,13 @@ def main():
    CLOSEDCX = "Connection to .* closed."
 
    logg.info("waiting for prompt: %s"%(CCPROMPT))
-   print("waiting for prompt: %s"%(CCPROMPT))
+   egg.expect(CCPROMPT, timeout=3)
+   # sleep(0.1)
+   # if args.series == "9800":
+   #   egg.sendline("enable")
+   #   time.sleep(0.1)
 
+   ''' This is a work in progress for the 9800 series
    prompt_found = False
    prompt_elevated = False
 
@@ -309,10 +265,7 @@ def main():
       if i == 2:
          print("time out second time check prompt")
          usage()
-         exit()
-
-   
-
+         exit()'''
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
    print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
