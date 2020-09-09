@@ -468,6 +468,17 @@ def main():
             break
          if i == 1:
             print("# prompt received after command sent")
+            try:
+               print("9800 send exit")
+               egg.sendline("exit")
+            except:
+               print("9800 exception on exit")
+            sleep(1)
+            try:
+               print("9800 send carriage return and linefeed")
+               egg.sendline("\r\n")
+            except:
+               print("9800 exception on carriage return and linefeed")
             break
          if i == 2:
             print("are you sure received after command sent")
