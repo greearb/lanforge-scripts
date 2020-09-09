@@ -183,8 +183,8 @@ def main():
          loop_count = 0
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
-               egg.sendline()
-               i = egg.expect(["Escape character is ",">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
+               #egg.sendline()
+               i = egg.expect(["Escape character is",">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is ... sending carriage return {}".format(i))
                   egg.sendline()
