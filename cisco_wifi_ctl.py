@@ -204,9 +204,9 @@ def main():
                            print("9800 Successfully received # prompt l {}".format(l))
                            logged_in_9800 = True
                         if l == 1:
-                           print("9800 Timed out waiting for # prompt l {}".format(l))
+                           print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
                      if k == 1:
-                        print("8900 received timeout after looking for password: prompt k {}".format(k))
+                        print("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 1:
                      print("9800 found # so logged in can start sending commands j {}".format(j))
                      logged_in_9800 = True
@@ -224,7 +224,7 @@ def main():
                            print("8900 Successfully received # prompt l: {}".format(l))
                            logged_in_9800 = True
                         if l == 1:
-                           print("9800 Timed out waiting for # prompt l: {}".format(l))
+                           print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
                      if k == 1:
                         print("9800 received timeout after looking for password after sending user k: {}".format(k))
                   if j == 3:
@@ -236,9 +236,9 @@ def main():
                         print("8900 Successfully received # prompt k: {}".format(k))
                         logged_in_9800 = True
                      if k == 1:
-                        print("9800 Timed out waiting for # prompt k: {}".format(k))
+                        print("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 4:
-                     print("9800 timed out looking for >, #, User, Password j: {}".format(j))
+                     print("9800 timed out looking for >, #, User, Password j: {}  before {} after {}".format(j,egg.before,egg.after))
                
                if i == 1:
                   print("9800 found >  will elevate loging i: {}".format(i))
@@ -254,7 +254,7 @@ def main():
                         print("9800 Successfully received # prompt l {}".format(l))
                         logged_in_9800 = True
                      if l == 1:
-                        print("9800 Timed out waiting for # prompt l {}".format(l))
+                        print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
                   if k == 1:
                      print("8900 received timeout after looking for password: prompt k {}".format(k))
                
@@ -276,7 +276,7 @@ def main():
                         print("8900 Successfully received # prompt l: {}".format(l))
                         logged_in_9800 = True
                      if l == 1:
-                        print("9800 Timed out waiting for # prompt l: {}".format(l))
+                        print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
                   if k == 1:
                      print("9800 received timeout after looking for password after sending user k: {}".format(k))
 
@@ -289,10 +289,10 @@ def main():
                      print("9800 Successfully received # prompt l {}".format(l))
                      logged_in_9800 = True
                   if l == 1:
-                     print("9800 Timed out waiting for # prompt l {}".format(l))
+                     print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
 
                if i == 5:
-                  print("9800 Timed out waiting for intial prompt")
+                  print("9800 Timed out waiting for intial prompt before {} after {}".format(egg.before,egg.after))
 
                loop_count += 1
 
