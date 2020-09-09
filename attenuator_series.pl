@@ -9,6 +9,7 @@ use diagnostics;
 use Carp;
 $SIG{__DIE__} = sub{Carp::confess(@_)};
 use Getopt::Long;
+use lib '/home/lanforge/scripts';
 use Net::Telnet;
 use Time::HiRes qw(usleep);
 use LANforge::Utils;

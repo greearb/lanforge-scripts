@@ -13,12 +13,10 @@ use strict;
 # Un-buffer output
 $| = 1;
 
+use lib '/home/lanforge/scripts';
 use LANforge::Utils;
-
 use Net::Telnet ();
-
 use Getopt::Long;
-
 my $shelf_num = 1;
 
 # Default values for ye ole cmd-line args.
@@ -101,19 +99,9 @@ if ($action eq "set_atten") {
 }
 
 # Open connection to the LANforge server.
-
-my $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-			Timeout => 20);
-
-$t->open(Host    => $lfmgr_host,
-	 Port    => $lfmgr_port,
-	 Timeout => 10);
-
-$t->waitfor("/btbits\>\>/");
-
 # Configure our utils.
 my $utils = new LANforge::Utils();
-$utils->telnet($t);         # Set our telnet object.
+$utils->connect($lfmgr_host, $lfmgr_port);
 if ($quiet eq "yes") {
   $utils->cli_send_silent(1); # Do show input to CLI
   $utils->cli_rcv_silent(1);  # Repress output from CLI ??
