@@ -184,7 +184,7 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                egg.sendline()
-               i = egg.expect(["9800 Escape character is ",">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect(["Escape character is ",">","#","User\:","Password\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is ... sending carriage return {}".format(i))
                   egg.sendline()
@@ -292,7 +292,7 @@ def main():
                      print("9800 Timed out waiting for # prompt l {}".format(l))
 
                if i == 5:
-                  print("9800 Timed out waiting for intiial prompt")
+                  print("9800 Timed out waiting for intial prompt")
 
                loop_count += 1
 
