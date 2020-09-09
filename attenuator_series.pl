@@ -226,16 +226,8 @@ sub attenuate {
 ##
 
 # connect to manager
-
-our $t = new Net::Telnet(Prompt  => '/default\@btbits\>\>/',
-                         Timeout => 60);
-$t->open(Host    => $::lfmgr_host,
-         Port    => $::lfmgr_port,
-         Timeout => 10);
-$t->waitfor("/btbits\>\>/");
-
 our $utils = new LANforge::Utils();
-$::utils->telnet($t);         # Set our telnet object.
+$utils->connect($lfmgr_host, $lfmgr_port);
 if ($::quiet eq "yes") {
   $::utils->cli_send_silent(1); # Do show input to CLI
   $::utils->cli_rcv_silent(1);  # Repress output from CLI ??
