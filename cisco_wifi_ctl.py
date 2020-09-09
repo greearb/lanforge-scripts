@@ -359,7 +359,7 @@ def main():
 
    if (args.action == "summary"):
       if args.series == "9800":
-         command = "show ap dot 11 5ghz summary"
+         command = "show ap dot11 5ghz summary"
       else:
          command = "show ap summary"
 
