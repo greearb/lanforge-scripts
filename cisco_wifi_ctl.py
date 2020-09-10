@@ -479,17 +479,17 @@ def main():
    if (args.action == "open_wlan"):
       print("Configure a open wlan 9800 series")
       egg.sendline("config t")
-      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
          print("elevated to (config)#")
          egg.sendline("wlan open-wlan 1 open-wlan")
-         j = egg.expect(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+         j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
          if j == 0:
             for command in ["no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown","end"]:
                egg.sendline(command)
                sleep(0.1)
-               k = egg.expect(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+               k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                if k == 0:
                   print("command sent: {}".format(command))
                if k == 1:
@@ -505,12 +505,12 @@ def main():
       print("send wireless tag policy")
       egg.sendline("config t")
       sleep(0.1)
-      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
          for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile","end"]:
             egg.sendline(command)
             sleep(0.1)
-            j = egg.expect(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
+            j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                print("command sent: {}".format(command))
             if j == 1:
@@ -524,12 +524,12 @@ def main():
    if (args.action == "no_open_wlan"):
       egg.sendline("config t")
       sleep(0.1)
-      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
          for command in ["no wlan open-wlan","end"]:
             egg.sendline(command)
             sleep(0.1)
-            j = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                print("command sent: {}".format(command))
             if j == 1:
