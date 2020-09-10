@@ -390,6 +390,12 @@ def main():
    if (args.action == "country"):
       command = "config country %s"%(args.value)
 
+   if (args.action == "manual" and args.ap is None):
+      raise Exception("action requires AP name")
+   if (args.action == "manual"):
+      if args.series == "9800":
+         command = "ap name %s dot11 5ghz radio role manual client-serving"%(args.ap)
+
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
@@ -406,7 +412,10 @@ def main():
    if (args.action == "txPower" and ((args.ap is None) or (args.value is None))):
       raise Exception("txPower requires ap and value")
    if (args.action == "txPower"):
-      command = "config 802.11%s txPower ap %s %s"%(band, args.ap, args.value)
+      if args.series == "9800":
+         command = "ap name %s dot11 5ghz txpower %s"%(args.ap, args.value)
+      else:
+         command = "config 802.11%s txPower ap %s %s"%(band, args.ap, args.value)
 
    if (args.action == "bandwidth" and ((args.ap is None) or (args.value is None))):
       raise Exception("bandwidth requires ap and value (20, 40, 80, 160)")
@@ -417,7 +426,7 @@ def main():
          command = "config 802.11%s chan_width %s %s"%(band, args.ap, args.value)
 
    if (args.action == "channel" and ((args.ap is None) or (args.value is None))):
-      raise Exception("channel requires ap and value")
+      raise Exception("channel requires ap and value 5Ghz ")
    if (args.action == "channel"):
       if args.series == "9800":
          command = "ap name %s dot11 5ghz channel %s"%(args.ap, args.value)
@@ -428,7 +437,7 @@ def main():
       raise Exception("ap_channel requires ap")
    if (args.action == "ap_channel"):
       if args.series == "9800":
-         command = "show ap dot 11 5ghz monitor"
+         command = "show ap dot11 5ghz monitor"
       else:
          command = "show ap channel %s"%(args.ap)
 
