@@ -95,7 +95,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -474,6 +474,71 @@ def main():
             command = "show ap dot11 24ghz monitor"
       else:
          command = "show ap channel %s"%(args.ap)
+
+
+   if (args.action == "open_wlan"):
+      print("Configure a open wlan 9800 series")
+      egg.sendline("config t")
+      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         print("elevated to (config)#")
+         egg.sendline("wlan open-wlan 1 open-wlan")
+         j = egg.expect(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            for command in ["no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                        "no security wpa akm dot1x","no shutdown","end"]:
+               egg.sendline(command)
+               sleep(0.1)
+               k = egg.expect(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+               if k == 0:
+                  print("command sent: {}".format(command))
+               if k == 1:
+                  if command == "end":
+                     pass
+                  else:
+                     print("command time out: {}".format(command))
+         if j == 1:
+            print("did not get the (config-wlan)# prompt")
+      if i == 0:
+         print("did not get the (config)# prompt")
+
+      print("send wireless tag policy")
+      egg.sendline("config t")
+      sleep(0.1)
+      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile","end"]:
+            egg.sendline(command)
+            sleep(0.1)
+            j = egg.expect(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               print("command sent: {}".format(command))
+            if j == 1:
+               if command == "end":
+                  pass
+               else:
+                  print("command time out: {}".format(command))
+      if i == 1:
+         print("did not get the (config)# prompt")
+
+   if (args.action == "no_open_wlan"):
+      egg.sendline("config t")
+      sleep(0.1)
+      i = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         for command in ["no wlan open-wlan","end"]:
+            egg.sendline(command)
+            sleep(0.1)
+            j = egg.expect(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               print("command sent: {}".format(command))
+            if j == 1:
+               if command == "end":
+                  pass
+               else:
+                  print("command time out: {}".format(command))
+      if i == 1:
+         print("did not get the (config)# prompt")
 
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
