@@ -95,7 +95,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "manual", "auto","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -402,6 +402,16 @@ def main():
          else:
             command = "ap name %s dot11 24ghz radio role manual client-serving"%(args.ap)
 
+   if (args.action == "auto" and args.ap is None):
+      raise Exception("action requires AP name")
+   if (args.action == "auto"):
+      if args.series == "9800":
+         if band == "a":
+            command = "ap name %s dot11 5ghz radio role auto"%(args.ap)
+         else:
+            command = "ap name %s dot11 24ghz radio role auto"%(args.ap)
+
+
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
@@ -523,6 +533,7 @@ def main():
          if i == 4:
             print("expect timeout")
             break
+
 
    egg.sendline("logout")
    print("logout")
