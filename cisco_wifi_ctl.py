@@ -95,7 +95,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -539,6 +539,15 @@ def main():
                   print("command time out: {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
+
+   if (args.action == "show_wlan_summary"):
+      egg.sendline("show wlan summary")
+      sleep(0.1)
+      i = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         print("show wlan summary sent")
+      if i == 1:
+         print("show wlan summary timed out")
 
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
