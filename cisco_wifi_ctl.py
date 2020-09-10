@@ -371,7 +371,10 @@ def main():
 
    if (args.action == "summary"):
       if args.series == "9800":
-         command = "show ap dot11 5ghz summary"
+         if band == "a":
+            command = "show ap dot11 5ghz summary"
+         else:
+            command = "show ap dot11 24ghz summary"
       else:
          command = "show ap summary"
 
@@ -394,18 +397,27 @@ def main():
       raise Exception("action requires AP name")
    if (args.action == "manual"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz radio role manual client-serving"%(args.ap)
+         if band == "a":
+            command = "ap name %s dot11 5ghz radio role manual client-serving"%(args.ap)
+         else:
+            command = "ap name %s dot11 24ghz radio role manual client-serving"%(args.ap)
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
       if args.series == "9800":
-         command = "ap name %s no dot11 5ghz shutdown"%(args.ap)
+         if band == "a":
+            command = "ap name %s no dot11 5ghz shutdown"%(args.ap)
+         else:
+            command = "ap name %s no dot11 24ghz shutdown"%(args.ap)
       else:
          command = "config 802.11%s enable %s"%(band, args.ap)
    if (args.action == "disable"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz shutdown"%(args.ap)
+         if band == "a":
+            command = "ap name %s dot11 5ghz shutdown"%(args.ap)
+         else:
+            command = "ap name %s dot11 24ghz shutdown"%(args.ap)
       else:
          command = "config 802.11%s disable %s"%(band, args.ap)
 
@@ -413,7 +425,10 @@ def main():
       raise Exception("txPower requires ap and value")
    if (args.action == "txPower"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz txpower %s"%(args.ap, args.value)
+         if band == "a":
+            command = "ap name %s dot11 5ghz txpower %s"%(args.ap, args.value)
+         else:
+            command = "ap name %s dot11 24ghz txpower %s"%(args.ap, args.value)
       else:
          command = "config 802.11%s txPower ap %s %s"%(band, args.ap, args.value)
 
@@ -421,7 +436,10 @@ def main():
       raise Exception("bandwidth requires ap and value (20, 40, 80, 160)")
    if (args.action == "bandwidth"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz channel width %s"%(args.ap, args.value)
+         if band == "a":
+            command = "ap name %s dot11 5ghz channel width %s"%(args.ap, args.value)
+         else:
+            command = "ap name %s dot11 24ghz channel width %s"%(args.ap, args.value)
       else:
          command = "config 802.11%s chan_width %s %s"%(band, args.ap, args.value)
 
@@ -429,7 +447,10 @@ def main():
       raise Exception("channel requires ap and value 5Ghz ")
    if (args.action == "channel"):
       if args.series == "9800":
-         command = "ap name %s dot11 5ghz channel %s"%(args.ap, args.value)
+         if band == "a":
+            command = "ap name %s dot11 5ghz channel %s"%(args.ap, args.value)
+         else:
+            command = "ap name %s dot11 24ghz channel %s"%(args.ap, args.value)
       else:
          command = "config 802.11%s channel ap %s %s"%(band, args.ap, args.value)
 
@@ -437,7 +458,10 @@ def main():
       raise Exception("ap_channel requires ap")
    if (args.action == "ap_channel"):
       if args.series == "9800":
-         command = "show ap dot11 5ghz monitor"
+         if band == "a":
+            command = "show ap dot11 5ghz monitor"
+         else:
+            command = "show ap dot11 24ghz monitor"
       else:
          command = "show ap channel %s"%(args.ap)
 
