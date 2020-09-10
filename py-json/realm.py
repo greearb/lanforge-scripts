@@ -1937,15 +1937,17 @@ class FIOCXProfile(LFCliBase):
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.fio_type = None
-        self.min_read = 1544
-        self.max_read = 1544
-        self.min_write = 1544
+        self.min_read = 0
+        self.max_read = 0
+        self.min_write = 10000000000
         self.max_write = 0
         self.directory = None
-        self.prefix = None
         self.local_realm = local_realm
+        self.server_mount = None
         self.created_cx = {}
         self.created_endp = []
+        self.cx_prefix = "wo_"
+        self.io_direction = "write"
 
     def start_cx(self):
         print("Starting CXs...")
@@ -1968,6 +1970,20 @@ class FIOCXProfile(LFCliBase):
             }, debug_=self.debug)
             print(".", end='')
         print("")
+
+    def create_ro_profile(self):
+        ro_profile = self.local_realm.new_fio_cx_profile()
+        ro_profile.fio_type = self.fio_type
+        ro_profile.min_read = self.min_write
+        ro_profile.max_read = self.max_write
+        ro_profile.min_write = self.min_read
+        ro_profile.max_write = self.max_read
+        ro_profile.directory = self.directory
+        ro_profile.realm = self.local_realm
+        ro_profile.server_mount = self.server_mount
+        ro_profile.io_direction = "read"
+        ro_profile.cx_prefix = "ro_"
+        return ro_profile
 
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
@@ -1996,10 +2012,10 @@ class FIOCXProfile(LFCliBase):
                 name = self.local_realm.name_to_eid(port_name)[2]
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
-            if self.directory is None or self.prefix is None or self.fio_type is None:
-                raise ValueError("directory [%s], prefix [%s], and type [%s] must not be None" % (self.directory, self.prefix, self.fio_type))
+            if self.directory is None or self.server_mount is None or self.fio_type is None:
+                raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fio_type))
             endp_data = {
-                "alias": name + "_fio",
+                "alias": self.cx_prefix + name + "_fio",
                 "shelf": shelf,
                 "resource": resource,
                 "port": name,
@@ -2009,20 +2025,35 @@ class FIOCXProfile(LFCliBase):
                 "min_write_rate": self.min_write,
                 "max_write_rate": self.max_write,
                 "directory": self.directory,
-                "prefix": self.prefix
+                "server_mount": self.server_mount,
+                "mount_dir": "AUTO",
+                "prefix": "AUTO",
+                "payload_pattern": "increasing",
+
             }
+            if self.io_direction == "read":
+                endp_data["prefix"] = "wo_" + name + "_fio"
+                endp_data["directory"] = "/mnt/lf/wo_" + name + "_fio"
+
             url = "cli-json/add_file_endp"
             self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
+            data = {
+                "name": self.cx_prefix + name + "_fio",
+                "io_direction": self.io_direction
+            }
+            self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
+
             endp_data = {
-                "alias": "CX_" + name + "_fio",
+                "alias": "CX_" + self.cx_prefix + name + "_fio",
                 "test_mgr": "default_tm",
-                "tx_endp": name + "_fio",
+                "tx_endp": self.cx_prefix + name + "_fio",
                 "rx_endp": "NA"
             }
             cx_post_data.append(endp_data)
-            self.created_cx[name + "_fio"] = "CX_" + name + "_fio"
+            self.created_cx[self.cx_prefix + name + "_fio"] = "CX_" + self.cx_prefix + name + "_fio"
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
