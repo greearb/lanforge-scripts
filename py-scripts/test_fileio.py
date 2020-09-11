@@ -80,18 +80,19 @@ class IPV4FIO(LFCliBase):
             return False
 
     def __get_values(self):
-        time.sleep(1)
+        time.sleep(3)
         names = ""
         for name in self.station_profile.station_names:
             names += self.local_realm.name_to_eid(name)[2] + ","
         names = names[0:len(names)-1]
-        cx_list = self.json_get("http://localhost:8080/port/1/1/%s?fields=alias,port,bps+tx,bps+rx" % names, debug_=self.debug)
+        cx_list = self.json_get("port/1/1/%s?fields=alias,port,bps+tx,bps+rx" % names, debug_=self.debug)
         # print("==============\n", cx_list, "\n==============")
         cx_map = {}
         if cx_list is not None:
             cx_list = cx_list['interfaces']
             for i in cx_list:
                 for item, value in i.items():
+                    # print(item, value)
                     cx_map[self.local_realm.name_to_eid(item)[2]] = {"bps rx": value['bps rx'], "bps tx": value['bps tx']}
         return cx_map
 
@@ -123,6 +124,7 @@ class IPV4FIO(LFCliBase):
             exit(1)
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_values()
+        # print("Got Values")
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.cx_profile.start_cx()
         time.sleep(2)
@@ -131,23 +133,24 @@ class IPV4FIO(LFCliBase):
         expected_passes = 0
         print("Starting Test...")
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(minutes=1)
+            interval_time = cur_time + datetime.timedelta(seconds=1)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
 
             new_rx_values = self.__get_values()
+            # exit(1)
             print(old_rx_values, new_rx_values)
-            print("\n-----------------------------------")
-            print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            print("-----------------------------------\n")
+            # print("\n-----------------------------------")
+            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
+            # print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_rx_values, new_rx_values):
                 passes += 1
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
                 break
-            # old_rx_values = new_rx_values
+            old_rx_values = new_rx_values
             cur_time = datetime.datetime.now()
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
