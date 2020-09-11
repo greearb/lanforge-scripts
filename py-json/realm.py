@@ -2041,7 +2041,8 @@ class FIOCXProfile(LFCliBase):
 
             data = {
                 "name": self.cx_prefix + name + "_fio",
-                "io_direction": self.io_direction
+                "io_direction": self.io_direction,
+                "num_files": 5
             }
             self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
