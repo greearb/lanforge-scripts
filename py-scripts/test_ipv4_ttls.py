@@ -44,6 +44,8 @@ class TTLSTest(LFCliBase):
         self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
+        self.vap_profile = self.local_realm.new_vap_profile()
+        self.vap_profile.vap_name = "TestNet"
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -54,6 +56,7 @@ class TTLSTest(LFCliBase):
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, passwd="[BLANK]")
+        self.vap_profile.use_security(self.security, self.ssid, passwd="[BLANK]")
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
@@ -62,11 +65,16 @@ class TTLSTest(LFCliBase):
         self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt, eap=self.eap, identity=self.identity, passwd=self.ttls_passwd,
                                             realm=self.ttls_realm, domain=self.domain,
                                             hessid=self.hessid)
+        self.vap_profile.set_wifi_extra(key_mgmt=self.key_mgmt, eap=self.eap, identity=self.identity, passwd=self.ttls_passwd,
+                                            realm=self.ttls_realm, domain=self.domain,
+                                            hessid=self.hessid)
+        self.vap_profile.create(resource=1, radio=self.radio, channel=36, up_=True, debug=False, suppress_related_commands_=True, wifi_extra=True)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug, wifi_extra=True)
         self._pass("PASS: Station build finished")
 
     def start(self, sta_list, print_pass, print_fail):
         self.station_profile.admin_up()
+        self.vap_profile.admin_up(1)
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -104,19 +112,15 @@ class TTLSTest(LFCliBase):
     def stop(self):
         # Bring stations down
         self.station_profile.admin_down()
+        self.vap_profile.admin_down(1)
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
+        self.vap_profile.cleanup(1)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
 def main():
-   #Params for different tests:
-   #
-   #
-   #
-   #
-   #
     lfjson_host = "localhost"
     lfjson_port = 8080
 
