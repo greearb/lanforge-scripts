@@ -93,6 +93,7 @@ def usage():
    print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60")
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
+   print("--series:  9800 the default is 3504")
    print("--outfile: Write results here.")
    print("--station: LANforge station name (sta00000)")
    print("--upstream_port: LANforge upstream port name (eth1)")
@@ -148,6 +149,7 @@ def main():
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
 
+   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
    parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
    parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
@@ -193,6 +195,7 @@ def main():
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
+
       filehandler = None
    except Exception as e:
       logging.exception(e);
@@ -381,7 +384,7 @@ def main():
 
    myrd = ""
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "summary"], capture_output=True)
+                              "--action", "summary","--series",args.series], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
 
@@ -448,9 +451,9 @@ def main():
                    
                    # Disable AP, apply settings, enable AP
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable"])
+                                   "--action", "disable","--series",args.series])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a disable network"])
+                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b disable network"])
 
@@ -466,7 +469,7 @@ def main():
                    if (ch != "NA"):
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch])
-                   
+                   # disables transmission for the entier 802.11z network
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11a enable network"])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -475,10 +478,11 @@ def main():
                                    "--action", "enable"])
 
                    # Wait a bit for AP to come back up
-                   time.sleep(1);
+                   time.sleep(1)
+
                    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced"], capture_output=True)
-                   pss = advanced.stdout.decode('utf-8', 'ignore');
+                   pss = advanced.stdout.decode('utf-8', 'ignore')
                    print(pss)
 
                    searchap = False

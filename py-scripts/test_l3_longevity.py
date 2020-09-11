@@ -248,7 +248,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "summary"], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
 
@@ -273,7 +273,7 @@ class L3VariableTimeLongevity(LFCliBase):
     def controller_show_ap_channel(self):
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "ap_channel"], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "ap_channel"], capture_output=True)
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
@@ -302,7 +302,7 @@ class L3VariableTimeLongevity(LFCliBase):
         #(Cisco Controller) >config 802.11a disable APA453.0E7B.CF9C 
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "disable","--band",self.args.cisco_band], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "disable","--band",self.args.cisco_band], capture_output=True)
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
@@ -311,7 +311,7 @@ class L3VariableTimeLongevity(LFCliBase):
         #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "channel","--value",self.args.cisco_channel], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "channel","--value",self.args.cisco_channel], capture_output=True)
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)      
@@ -322,7 +322,7 @@ class L3VariableTimeLongevity(LFCliBase):
         cisco_channel_36 = "36"
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "channel","--value",cisco_channel_36], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "channel","--value",cisco_channel_36], capture_output=True)
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)      
@@ -332,7 +332,7 @@ class L3VariableTimeLongevity(LFCliBase):
         #(Cisco Controller) >config 802.11a chan_width APA453.0E7B.CF9C  20	
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "bandwidth","--value",self.args.cisco_chan_width], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "bandwidth","--value",self.args.cisco_chan_width], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)                                   
                      
@@ -341,7 +341,7 @@ class L3VariableTimeLongevity(LFCliBase):
         #(Cisco Controller) >config 802.11a enable APA453.0E7B.CF9C
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap, "--action", "enable","--band",self.args.cisco_band], capture_output=True)
+                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "enable","--band",self.args.cisco_band], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)          
 
@@ -738,6 +738,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--cisco_channel', help='--cisco_channel <channel>',default=None)
     parser.add_argument('--cisco_chan_width', help='--cisco_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"])
     parser.add_argument('--cisco_band', help='--cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"])
+    parser.add_argument('--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
 
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
