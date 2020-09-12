@@ -136,6 +136,9 @@ def main():
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
+   print("cisco series {}".format(args.series))
+   print("scheme {}".format(args.scheme))
+
    egg = None # think "eggpect"
    try:
       if (scheme == "serial"):
@@ -163,13 +166,147 @@ def main():
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
          print("logg {}".format(logg))
-         i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
          time.sleep(0.1)
-         if i == 1:
-            egg.sendline('yes')
-            egg.expect('ssword:')
-         sleep(0.1)
-         egg.sendline(passwd)
+         logged_in_9800 = False
+         loop_count = 0
+         found_escape = False
+         if args.series == "9800":
+            while logged_in_9800 == False and loop_count <= 2:
+               #egg.sendline(CR)
+               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               if i == 0:
+                  print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
+                  egg.sendline(CR)
+                  found_escape = True
+                  sleep(1)
+                  j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  if j == 0:
+                     print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
+                     egg.sendline("en")
+                     sleep(1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
+                        egg.sendline(args.passwd)
+                        sleep(1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("9800 Successfully received # prompt l {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                     if k == 1:
+                        print("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 1:
+                     print("9800 found # so logged in can start sending commands j {}".format(j))
+                     logged_in_9800 = True
+                  if j == 2:
+                     print("9800 found User\: will put in args.user {}  j: {}".format(args.user,j))
+                     egg.sendline(args.user)
+                     sleep(1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                        egg.sendline(args.passwd)
+                        sleep(1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("8900 Successfully received # prompt l: {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                     if k == 1:
+                        print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 3:
+                     print("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(1)
+                     k = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if k == 0:
+                        print("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logged_in_9800 = True
+                     if k == 1:
+                        print("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 4:
+                     print("9800 timed out looking for >, #, User, Password j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     egg.sendline(CR)
+               
+               if i == 1:
+                  print("9800 found >  will elevate loging i: {} before {} after {}".format(i,egg.before,egg.after))
+                  egg.sendline("en")
+                  sleep(1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("9800 Successfully received # prompt l {} before {} after {}".format(l, egg.before,egg.after))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                  if k == 1:
+                     print("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+               
+               if i == 2:
+                  print("9800 found # so logged in can start sending commands i {} before {} after {}".format(i,egg.before,egg.after))
+                  logged_in_9800 = True
+
+               if i == 3:
+                  print("9800 found User will put in args.user {}  j: {} before {} after {}".format(args.user,j, egg.before,egg.after))
+                  egg.sendline(args.user)
+                  sleep(1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt after sending User, sending password: {} k: {} before {} after {}".format(args.passwd,k, egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("8900 Successfully received # prompt l: {}".format(l))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                  if k == 1:
+                     print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k, egg.before,egg.after))
+
+               if i == 4:
+                  print("9800 received password prompt will send password: {}  k: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  egg.sendline(args.passwd)
+                  sleep(1)
+                  l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                  if l == 0:
+                     print("9800 Successfully received # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                     logged_in_9800 = True
+                  if l == 1:
+                     print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+
+               #if i == 5:
+               #   print("9800 pexpect found end of line i {} before {} after {}".format(i,egg.before,egg.after))
+               #   egg.sendline(CR)
+
+               if i == 5:
+                  print("9800 Timed out waiting for intial prompt will send carriage return and line feed i: {} before {} after {}".format(i, egg.before,egg.after))
+                  egg.sendline(CR)
+                  sleep(2)
+               loop_count += 1
+
+            if loop_count >= 3:
+               if found_escape == True:
+                  print("9800 there may be another prompt present that not aware of")
+                  print("9800 the excape was found see if we can send command")
+               else:
+                  print("9800 did not find the initial escape will try the command anyway")
+         # 3504 series
+         else:
+            i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
+            time.sleep(0.1)
+            if i == 1:
+               egg.sendline('yes')
+               egg.expect('ssword:')
+            sleep(0.1)
+            egg.sendline(passwd)
 
       elif (scheme == "telnet"):
          if (port is None):
@@ -316,9 +453,9 @@ def main():
          # 3504 series
          else:
             egg.sendline(' ')
-            egg.expect('User\:')
+            egg.expect('User\:',timeout=3)
             egg.sendline(user)
-            egg.expect('Password\:')
+            egg.expect('Password\:',timeout=3)
             egg.sendline(passwd)
             #if args.prompt in "WLC#" or args.prompt in "WLC>":
             #   egg.sendline("enable")
@@ -372,9 +509,9 @@ def main():
    if (args.action == "summary"):
       if args.series == "9800":
          if band == "a":
-            command = "show ap dot11 5ghz summary"
+            command = "show ap dot11 5ghz monitor"
          else:
-            command = "show ap dot11 24ghz summary"
+            command = "show ap dot11 24ghz monitor"
       else:
          command = "show ap summary"
 
@@ -469,9 +606,9 @@ def main():
    if (args.action == "ap_channel"):
       if args.series == "9800":
          if band == "a":
-            command = "show ap dot11 5ghz monitor"
+            command = "show ap dot11 5ghz summary"
          else:
-            command = "show ap dot11 24ghz monitor"
+            command = "show ap dot11 24ghz summary"
       else:
          command = "show ap channel %s"%(args.ap)
 
