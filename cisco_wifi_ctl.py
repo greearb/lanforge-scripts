@@ -311,7 +311,11 @@ def main():
             port = 23
          cmd = "telnet %s %d"%(host, port)
          logg.info("Spawn: "+cmd+NL)
-         egg = pexpect.spawn(cmd)
+         try:
+            egg = pexpect.spawn(cmd)
+         except:
+            print("Telnet failed exiting")
+            exit(1)
          egg.logfile = FileAdapter(logg)
          time.sleep(0.1)
          logged_in_9800 = False
