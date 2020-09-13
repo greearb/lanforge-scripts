@@ -311,11 +311,7 @@ def main():
             port = 23
          cmd = "telnet %s %d"%(host, port)
          logg.info("Spawn: "+cmd+NL)
-         try:
-            egg = pexpect.spawn(cmd)
-         except:
-            print("Telnet failed exiting")
-            exit(1)
+         egg = pexpect.spawn(cmd)
          egg.logfile = FileAdapter(logg)
          time.sleep(0.1)
          logged_in_9800 = False
@@ -324,7 +320,15 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               try:
+                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               except pexpect.EOF as e:
+                  print('connection failed. or refused')
+                  exit(1)
+               except:
+                  print('unknown exception on initial pexpect after login')
+                  exit(1)
+               
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   egg.sendline(CR)
