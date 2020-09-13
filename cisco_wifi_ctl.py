@@ -95,7 +95,9 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary",
+      "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos",
+      "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz" ])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -173,7 +175,7 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#","ssword\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   egg.sendline(CR)
@@ -254,8 +256,8 @@ def main():
                   logged_in_9800 = True
 
                if i == 3:
-                  print("9800 found User will put in args.user {}  j: {} before {} after {}".format(args.user,j, egg.before,egg.after))
-                  egg.sendline(args.user)
+                  print("9800 found User will put in args.user {}  i: {} before {} after {}".format(args.user,i, egg.before,egg.after))
+                  #egg.sendline(args.user)
                   sleep(1)
                   k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
                   if k == 0:
@@ -272,7 +274,7 @@ def main():
                      print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k, egg.before,egg.after))
 
                if i == 4:
-                  print("9800 received password prompt will send password: {}  k: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  print("9800 received password prompt will send password: {}  i: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(1)
                   l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
@@ -321,7 +323,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ssword\:",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   print('connection failed. or refused')
                   exit(1)
@@ -553,6 +555,22 @@ def main():
             command = "ap name %s dot11 5ghz radio role auto"%(args.ap)
          else:
             command = "ap name %s dot11 24ghz radio role auto"%(args.ap)
+
+   if (args.action == "disable_network_5ghz"):
+      if args.series == "9800":
+         command = "ap dot11 5ghz shutdown"
+
+   if (args.action == "disable_network_24ghz"):
+      if args.series == "9800":
+         command = "ap dot11 24ghz shutdown"
+
+   if (args.action == "enable_network_5ghz"):
+      if args.series == "9800":
+         command = "no ap dot11 5ghz shutdown"
+
+   if (args.action == "enable_network_24ghz"):
+      if args.series == "9800":
+         command = "no ap dot11 24ghz shutdown"
 
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
