@@ -293,11 +293,9 @@ def main():
                loop_count += 1
 
             if loop_count >= 3:
-               if found_escape == True:
-                  print("9800 there may be another prompt present that not aware of")
-                  print("9800 the excape was found see if we can send command")
-               else:
-                  print("9800 did not find the initial escape will try the command anyway")
+               print("could not log into 9800 exiting")
+               exit(1)
+
          # 3504 series
          else:
             i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
