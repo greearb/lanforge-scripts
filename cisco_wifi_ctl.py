@@ -173,7 +173,7 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.",">","#","ssword\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   egg.sendline(CR)
@@ -196,7 +196,7 @@ def main():
                         if l == 1:
                            print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
                      if k == 1:
-                        print("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                        print("9800 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 1:
                      print("9800 found # so logged in can start sending commands j {}".format(j))
                      logged_in_9800 = True
@@ -321,7 +321,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ssword\:",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   print('connection failed. or refused')
                   exit(1)
