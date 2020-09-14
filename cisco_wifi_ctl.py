@@ -524,7 +524,13 @@ def main():
          command = "show ap summary"
 
    if (args.action == "advanced"):
-      command = "show advanced 802.11%s summary"%(band)
+      if args.series == "9800":
+         if band == "a":
+            command = "show ap dot11 5ghz summary"
+         else:
+            command = "show ap dot11 24ghz summary"
+      else:
+         command = "show advanced 802.11%s summary"%(band)
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
       raise  Exception("ap_country requires country and AP name")
