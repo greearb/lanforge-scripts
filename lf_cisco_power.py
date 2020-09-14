@@ -506,7 +506,42 @@ def main():
                    time.sleep(1)
                    # TODO figure out equivalent of the advanced command for 9800
                    if args.series == "9800":
-                       pass
+                       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced"], capture_output=True)
+                       pss = advanced.stdout.decode('utf-8', 'ignore')
+                       print(pss)
+
+                       searchap = False
+                       cc_mac = ""
+                       cc_ch = ""
+                       cc_bw = ""
+                       cc_power = ""
+                       cc_dbm = ""
+                       for line in pss.splitlines():
+                           if (line.startswith("---------")):
+                               searchap = True
+                               continue
+
+                           if (searchap):
+                               pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap)
+                               m = re.search(pat, line)
+                               if (m != None):
+                                   cc_mac = m.group(1)
+                                   cc_ch = m.group(5);  # (132,136,140,144)
+                                   cc_power = m.group(3)
+                                   cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                   cc_dbm = m.group(4)
+
+                                   ch_count = cc_ch.count(",")
+                                   cc_bw = m.group(2)
+                                   break
+
+                       if (cc_dbm == ""):
+                          # Could not talk to controller?
+                          err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                          print(err)
+                          e_tot += err
+                          e_tot += "  "
                    else:
                        advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced"], capture_output=True)
