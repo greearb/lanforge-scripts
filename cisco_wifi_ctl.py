@@ -517,9 +517,9 @@ def main():
    if (args.action == "summary"):
       if args.series == "9800":
          if band == "a":
-            command = "show ap dot11 5ghz monitor"
+            command = "show ap summary"
          else:
-            command = "show ap dot11 24ghz monitor"
+            command = "show ap summary"
       else:
          command = "show ap summary"
 
