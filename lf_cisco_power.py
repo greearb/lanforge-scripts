@@ -396,7 +396,10 @@ def main():
            continue
 
        if (searchap):
-           pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  (\S+)\s+\S+\s*\S+\s+\["%(args.ap)
+           if args.series == "9800":
+               pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)"%(args.ap)
+           else:
+               pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  (\S+)\s+\S+\s*\S+\s+\["%(args.ap)
            m = re.search(pat, line)
            if (m != None):
                myrd = m.group(1)
