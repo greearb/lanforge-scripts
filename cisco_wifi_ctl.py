@@ -660,7 +660,7 @@ def main():
       if i == 1:
          print("did not get the (config)# prompt")
 
-   if (args.action == "wlan" and (args.wlan is None)):
+   if (args.action == "no_wlan" and (args.wlan is None)):
       raise Exception("wlan is required")
    if (args.action == "no_wlan"):
       egg.sendline("config t")
