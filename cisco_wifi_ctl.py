@@ -97,7 +97,8 @@ def main():
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos",
-      "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz" ])
+      "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
+      "wlan_enable", "wlan_disable","wireless_tag_policy"])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -498,8 +499,6 @@ def main():
       logg.info("waiting for prompt: %s"%(CCPROMPT))
       egg.expect(">", timeout=3)
 
-
-
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
    print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
@@ -642,6 +641,34 @@ def main():
       else:
          command = "show ap channel %s"%(args.ap)
 
+   if (args.action == ["enable_wlan","disable_wlan"]):
+      egg.sendline("config t")
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         print("elevated to (config)#")
+         egg.sendline("wlan open-wlan")
+         j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            if (args.action == "enable_wlan"):
+               command = "no shutdown"
+            else:
+               commane = "shutdown"
+            egg.sendline(command)
+            sleep(0.1)
+            k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+            if k == 0:
+               print("command sent: {}".format(command))
+            if k == 1:
+               if command == "end":
+                  pass
+               else:
+                  print("command time out: {}".format(command))
+         if j == 1:
+            print("did not get the (config-wlan)# prompt")
+      if i == 0:
+         print("did not get the (config)# prompt")
+
+
 
    if (args.action == "open_wlan"):
       print("Configure a open wlan 9800 series")
@@ -669,6 +696,7 @@ def main():
       if i == 0:
          print("did not get the (config)# prompt")
 
+   if (args.action == "wireless_tag_policy"):
       print("send wireless tag policy")
       egg.sendline("config t")
       sleep(0.1)
