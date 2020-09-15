@@ -396,7 +396,10 @@ def main():
            continue
 
        if (searchap):
-           pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  (\S+)\s+\S+\s*\S+\s+\["%(args.ap)
+           if args.series == "9800":
+               pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)"%(args.ap)
+           else:
+               pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  (\S+)\s+\S+\s*\S+\s+\["%(args.ap)
            m = re.search(pat, line)
            if (m != None):
                myrd = m.group(1)
@@ -452,9 +455,20 @@ def main():
                    # Disable AP, apply settings, enable AP
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable","--series",args.series])
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                
+                   if args.series == "9800": 
+                       # 9800 series need to  "Configure radio for manual channel assignment"
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series])                 
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_24ghz","--series",args.series])                 
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "manual","--series",args.series])
+
+                   else:
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series])
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b disable network"])
 
                    if (tx != "NA"):
@@ -469,53 +483,112 @@ def main():
                    if (ch != "NA"):
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch])
-                   # disables transmission for the entier 802.11z network
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+
+                   # TODO do not know when to configure open wlan
+                   if args.series == "9800":
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "open_wlan","--series",args.series])                 
+
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "wireless_tag_policy","--series",args.series])                 
+
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "wlan_enable","--series",args.series])                 
+
+
+                   # enable transmission for the entier 802.11z network
+                   if args.series == "9800":
+
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_5ghz","--series",args.series])                 
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_24ghz","--series",args.series])                 
+
+                   else:    
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11a enable network"])
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b enable network"])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable"])
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
-
-                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   # TODO figure out equivalent of the advanced command for 9800
+                   if args.series == "9800":
+                       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced"], capture_output=True)
-                   pss = advanced.stdout.decode('utf-8', 'ignore')
-                   print(pss)
+                       pss = advanced.stdout.decode('utf-8', 'ignore')
+                       print(pss)
 
-                   searchap = False
-                   cc_mac = ""
-                   cc_ch = ""
-                   cc_bw = ""
-                   cc_power = ""
-                   cc_dbm = ""
-                   for line in pss.splitlines():
-                       if (line.startswith("---------")):
-                           searchap = True
-                           continue
+                       searchap = False
+                       cc_mac = ""
+                       cc_ch = ""
+                       cc_bw = ""
+                       cc_power = ""
+                       cc_dbm = ""
+                       for line in pss.splitlines():
+                           if (line.startswith("---------")):
+                               searchap = True
+                               continue
 
-                       if (searchap):
-                           pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(args.ap)
-                           m = re.search(pat, line)
-                           if (m != None):
-                               cc_mac = m.group(1)
-                               cc_ch = m.group(2);  # (132,136,140,144)
-                               cc_power = m.group(3)
-                               cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
-                               cc_dbm = m.group(4)
+                           if (searchap):
+                               pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap)
+                               m = re.search(pat, line)
+                               if (m != None):
+                                   cc_mac = m.group(1)
+                                   cc_ch = m.group(5);  # (132,136,140,144)
+                                   cc_power = m.group(3)
+                                   cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                   cc_dbm = m.group(4)
 
-                               ch_count = cc_ch.count(",")
-                               cc_bw = 20 * (ch_count + 1)
-                               break
+                                   ch_count = cc_ch.count(",")
+                                   cc_bw = m.group(2)
+                                   break
 
-                   if (cc_dbm == ""):
-                      # Could not talk to controller?
-                      err = "ERROR:  Could not query dBm from controller, maybe controller died?"
-                      print(err)
-                      e_tot += err
-                      e_tot += "  "
+                       if (cc_dbm == ""):
+                          # Could not talk to controller?
+                          err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                          print(err)
+                          e_tot += err
+                          e_tot += "  "
+                   else:
+                       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced"], capture_output=True)
+                       pss = advanced.stdout.decode('utf-8', 'ignore')
+                       print(pss)
+
+                       searchap = False
+                       cc_mac = ""
+                       cc_ch = ""
+                       cc_bw = ""
+                       cc_power = ""
+                       cc_dbm = ""
+                       for line in pss.splitlines():
+                           if (line.startswith("---------")):
+                               searchap = True
+                               continue
+
+                           if (searchap):
+                               pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(args.ap)
+                               m = re.search(pat, line)
+                               if (m != None):
+                                   cc_mac = m.group(1)
+                                   cc_ch = m.group(2);  # (132,136,140,144)
+                                   cc_power = m.group(3)
+                                   cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                   cc_dbm = m.group(4)
+
+                                   ch_count = cc_ch.count(",")
+                                   cc_bw = 20 * (ch_count + 1)
+                                   break
+
+                       if (cc_dbm == ""):
+                          # Could not talk to controller?
+                          err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                          print(err)
+                          e_tot += err
+                          e_tot += "  "
 
                    # Up station
                    subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
@@ -891,9 +964,16 @@ def main():
    # Disable AP, apply settings, enable AP
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "disable"])
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+
+   if args.series == "9800":
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series])                 
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_24ghz","--series",args.series])                 
+   else:
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11a disable network"])
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11b disable network"])
 
    if (tx != "NA"):
@@ -908,11 +988,21 @@ def main():
    if (ch != "NA"):
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        "--action", "channel", "--value", "36"])
-                   
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+
+   if args.series == "9800":
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_5ghz","--series",args.series])                 
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_24ghz","--series",args.series]) 
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "auto","--series",args.series])
+
+   else:                    
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11a enable network"])
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11b enable network"])
+
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "enable"])
 

@@ -16,6 +16,8 @@ $ pip3 install pexpect-serial
 # For LANforge lab system.
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action summary --prompt "\(Cisco Controller\) >"
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action cmd --value "show ap config general APA453.0E7B.CF9C"
+
+telnet 172.19.36.168(Pwd:Wnbulab@123), go to the privileged mode and execute the command “clear line 43”.
 '''
 
 
@@ -56,7 +58,7 @@ def usage():
    print("-u|--user:  login name")
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-   print("-l|--log file: log messages here")
+   print("-l|--log file: log messages here ")
    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
    print("-w|--wlan:  WLAN name")
    print("-i|--wlanID:  WLAN ID")
@@ -95,7 +97,10 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary","ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos" ])
+      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_wlan","show_wlan_summary",
+      "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos",
+      "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
+      "wireless_tag_policy"])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -136,6 +141,9 @@ def main():
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
+   print("cisco series {}".format(args.series))
+   print("scheme {}".format(args.scheme))
+
    egg = None # think "eggpect"
    try:
       if (scheme == "serial"):
@@ -163,13 +171,145 @@ def main():
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
          print("logg {}".format(logg))
-         i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
          time.sleep(0.1)
-         if i == 1:
-            egg.sendline('yes')
-            egg.expect('ssword:')
-         sleep(0.1)
-         egg.sendline(passwd)
+         logged_in_9800 = False
+         loop_count = 0
+         found_escape = False
+         if args.series == "9800":
+            while logged_in_9800 == False and loop_count <= 2:
+               #egg.sendline(CR)
+               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               if i == 0:
+                  print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
+                  egg.sendline(CR)
+                  found_escape = True
+                  sleep(1)
+                  j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  if j == 0:
+                     print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
+                     egg.sendline("en")
+                     sleep(1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
+                        egg.sendline(args.passwd)
+                        sleep(1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("9800 Successfully received # prompt l {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                     if k == 1:
+                        print("9800 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 1:
+                     print("9800 found # so logged in can start sending commands j {}".format(j))
+                     logged_in_9800 = True
+                  if j == 2:
+                     print("9800 found User\: will put in args.user {}  j: {}".format(args.user,j))
+                     egg.sendline(args.user)
+                     sleep(1)
+                     k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                     if k == 0:
+                        print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                        egg.sendline(args.passwd)
+                        sleep(1)
+                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        if l == 0:
+                           print("8900 Successfully received # prompt l: {}".format(l))
+                           logged_in_9800 = True
+                        if l == 1:
+                           print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                     if k == 1:
+                        print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 3:
+                     print("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(1)
+                     k = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if k == 0:
+                        print("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logged_in_9800 = True
+                     if k == 1:
+                        print("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                  if j == 4:
+                     print("9800 timed out looking for >, #, User, Password j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     egg.sendline(CR)
+               
+               if i == 1:
+                  print("9800 found >  will elevate loging i: {} before {} after {}".format(i,egg.before,egg.after))
+                  egg.sendline("en")
+                  sleep(1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("9800 Successfully received # prompt l {} before {} after {}".format(l, egg.before,egg.after))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                  if k == 1:
+                     print("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+               
+               if i == 2:
+                  print("9800 found # so logged in can start sending commands i {} before {} after {}".format(i,egg.before,egg.after))
+                  logged_in_9800 = True
+
+               if i == 3:
+                  print("9800 found User will put in args.user {}  i: {} before {} after {}".format(args.user,i, egg.before,egg.after))
+                  #egg.sendline(args.user)
+                  sleep(1)
+                  k = egg.expect(["ssword\:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     print("9800 received password prompt after sending User, sending password: {} k: {} before {} after {}".format(args.passwd,k, egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     if l == 0:
+                        print("8900 Successfully received # prompt l: {}".format(l))
+                        logged_in_9800 = True
+                     if l == 1:
+                        print("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                  if k == 1:
+                     print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k, egg.before,egg.after))
+
+               if i == 4:
+                  print("9800 received password prompt will send password: {}  i: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  egg.sendline(args.passwd)
+                  sleep(1)
+                  l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                  if l == 0:
+                     print("9800 Successfully received # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                     logged_in_9800 = True
+                  if l == 1:
+                     print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+
+               #if i == 5:
+               #   print("9800 pexpect found end of line i {} before {} after {}".format(i,egg.before,egg.after))
+               #   egg.sendline(CR)
+
+               if i == 5:
+                  print("9800 Timed out waiting for intial prompt will send carriage return and line feed i: {} before {} after {}".format(i, egg.before,egg.after))
+                  egg.sendline(CR)
+                  sleep(2)
+               loop_count += 1
+
+            if loop_count >= 3:
+               print("could not log into 9800 exiting")
+               exit(1)
+
+         # 3504 series
+         else:
+            i = egg.expect(["ssword:", "continue connecting (yes/no)?"], timeout=3)
+            time.sleep(0.1)
+            if i == 1:
+               egg.sendline('yes')
+               egg.expect('ssword:')
+            sleep(0.1)
+            egg.sendline(passwd)
 
       elif (scheme == "telnet"):
          if (port is None):
@@ -185,7 +325,15 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               try:
+                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               except pexpect.EOF as e:
+                  print('connection failed. or refused')
+                  exit(1)
+               except:
+                  print('unknown exception on initial pexpect after login')
+                  exit(1)
+               
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   egg.sendline(CR)
@@ -316,9 +464,9 @@ def main():
          # 3504 series
          else:
             egg.sendline(' ')
-            egg.expect('User\:')
+            egg.expect('User\:',timeout=3)
             egg.sendline(user)
-            egg.expect('Password\:')
+            egg.expect('Password\:',timeout=3)
             egg.sendline(passwd)
             #if args.prompt in "WLC#" or args.prompt in "WLC>":
             #   egg.sendline("enable")
@@ -353,8 +501,6 @@ def main():
       logg.info("waiting for prompt: %s"%(CCPROMPT))
       egg.expect(">", timeout=3)
 
-
-
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
    print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
@@ -372,14 +518,20 @@ def main():
    if (args.action == "summary"):
       if args.series == "9800":
          if band == "a":
-            command = "show ap dot11 5ghz summary"
+            command = "show ap summary"
          else:
-            command = "show ap dot11 24ghz summary"
+            command = "show ap summary"
       else:
          command = "show ap summary"
 
    if (args.action == "advanced"):
-      command = "show advanced 802.11%s summary"%(band)
+      if args.series == "9800":
+         if band == "a":
+            command = "show ap dot11 5ghz summary"
+         else:
+            command = "show ap dot11 24ghz summary"
+      else:
+         command = "show advanced 802.11%s summary"%(band)
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
       raise  Exception("ap_country requires country and AP name")
@@ -410,6 +562,22 @@ def main():
             command = "ap name %s dot11 5ghz radio role auto"%(args.ap)
          else:
             command = "ap name %s dot11 24ghz radio role auto"%(args.ap)
+
+   if (args.action == "disable_network_5ghz"):
+      if args.series == "9800":
+         command = "ap dot11 5ghz shutdown"
+
+   if (args.action == "disable_network_24ghz"):
+      if args.series == "9800":
+         command = "ap dot11 24ghz shutdown"
+
+   if (args.action == "enable_network_5ghz"):
+      if args.series == "9800":
+         command = "no ap dot11 5ghz shutdown"
+
+   if (args.action == "enable_network_24ghz"):
+      if args.series == "9800":
+         command = "no ap dot11 24ghz shutdown"
 
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
@@ -469,39 +637,13 @@ def main():
    if (args.action == "ap_channel"):
       if args.series == "9800":
          if band == "a":
-            command = "show ap dot11 5ghz monitor"
+            command = "show ap dot11 5ghz summary"
          else:
-            command = "show ap dot11 24ghz monitor"
+            command = "show ap dot11 24ghz summary"
       else:
          command = "show ap channel %s"%(args.ap)
 
-
-   if (args.action == "open_wlan"):
-      print("Configure a open wlan 9800 series")
-      egg.sendline("config t")
-      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      if i == 0:
-         print("elevated to (config)#")
-         egg.sendline("wlan open-wlan 1 open-wlan")
-         j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            for command in ["no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown","end"]:
-               egg.sendline(command)
-               sleep(0.1)
-               k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-               if k == 0:
-                  print("command sent: {}".format(command))
-               if k == 1:
-                  if command == "end":
-                     pass
-                  else:
-                     print("command time out: {}".format(command))
-         if j == 1:
-            print("did not get the (config-wlan)# prompt")
-      if i == 0:
-         print("did not get the (config)# prompt")
-
+   if (args.action == "wireless_tag_policy"):
       print("send wireless tag policy")
       egg.sendline("config t")
       sleep(0.1)
@@ -514,29 +656,25 @@ def main():
             if j == 0:
                print("command sent: {}".format(command))
             if j == 1:
-               if command == "end":
-                  pass
-               else:
-                  print("command time out: {}".format(command))
+               print("command time out: {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
 
-   if (args.action == "no_open_wlan"):
+   if (args.action == "no_wlan" and (args.wlan is None)):
+      raise Exception("wlan is required")
+   if (args.action == "no_wlan"):
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         for command in ["no wlan open-wlan","end"]:
-            egg.sendline(command)
-            sleep(0.1)
-            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-            if j == 0:
-               print("command sent: {}".format(command))
-            if j == 1:
-               if command == "end":
-                  pass
-               else:
-                  print("command time out: {}".format(command))
+         command = "no wlan %s"%(args.wlan)
+         egg.sendline(command)
+         sleep(0.1)
+         j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            print("command sent: {}".format(command))
+         if j == 1:
+            print("command timed out {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
 
@@ -552,17 +690,69 @@ def main():
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
    if (args.action == "wlan"):
-      command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
+      if args.series == "9800":
+          egg.sendline("config t")
+          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+          if i == 0:
+             print("elevated to (config)#")
+             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
+             egg.sendline(command)
+             j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+             if j == 0:
+                 for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                        "no security wpa akm dot1x","no shutdown","end"]:
+                    egg.sendline(command)
+                    sleep(0.1)
+                    k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+                    if k == 0:
+                       print("command sent: {}".format(command))
+                    if k == 1:
+                       if command == "end":
+                         pass
+                       else:
+                         print("command time out: {}".format(command))
+             if j == 1:
+                print("did not get the (config-wlan)# prompt")
+          if i == 0:
+             print("did not get the (config)# prompt")
+      else:   
+         command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
 
-   if (args.action == "enable_wlan" and (args.wlanID is None)):
-      raise Exception("wlan ID is required")
-   if (args.action == "enable_wlan"):
-      command = "config wlan enable %s"%(args.wlanID)
-
-   if (args.action == "delete_wlan" and (args.wlanID is None)):
-      raise Exception("wlan ID is required")
-   if (args.action == "delete_wlan"):
-      command = "config wlan delete %s"%(args.wlanID)
+   if (args.action == ["enable_wlan","disble_wlan"]):
+      if args.series == "9800":
+         if (args.wlan is None):
+            raise Exception("9800 series wlan is required")
+         else:
+            egg.sendline("config t")
+            i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if i == 0:
+               print("elevated to (config)#")
+               command = "wlan %s"%(args.wlan)
+               egg.sendline(command)
+               j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+               if j == 0:
+                  if (args.action == "enable_wlan"):
+                      command = "no shutdown"
+                  else:
+                      command = "shutdown"
+                  egg.sendline(command)
+                  sleep(0.1)
+                  k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+                  if k == 0:
+                      print("command sent: {}".format(command))
+                  if k == 1:
+                      print("command timed out: {}".format(command))
+               if j == 1:
+                  print("did not get the (config-wlan)# prompt")
+            if i == 1:
+               print("did not get the (config)# prompt")
+   else:
+      if (args.action == ["enable_wlan","disable_wlan"] and (args.wlanID is None)):
+         raise Exception("wlan ID is required")
+      if (args.action == "enable_wlan"):
+         command = "config wlan enable %s"%(args.wlanID)
+      else:   
+         command = "config wlan delete %s"%(args.wlanID) 
 
    if (args.action == "wlan_qos" and (args.wlanID is None)):
       raise Exception("wlan ID is required")

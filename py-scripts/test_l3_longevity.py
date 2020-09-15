@@ -246,7 +246,7 @@ class L3VariableTimeLongevity(LFCliBase):
         if self.args.cisco_ctlr == None:
             return
 
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -258,7 +258,7 @@ class L3VariableTimeLongevity(LFCliBase):
             if (line.startswith("---------")):
                 searchap = True
                 continue
-
+            #TODO need to test with 9800 series to chelck the values
             if (searchap):
                 pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\["%(self.args.cisco_ap)
                 #print("AP line: %s"%(line))
@@ -271,36 +271,57 @@ class L3VariableTimeLongevity(LFCliBase):
                         print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
     def controller_show_ap_channel(self):
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "ap_channel"], capture_output=True)
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)
-        print("checking for 802.11{}".format(self.args.cisco_band))
 
-        for line in pss.splitlines():
-            #print("line {}".format(line))
-            search_str = "802.11{}".format(self.args.cisco_band)
-            if (line.lstrip().startswith(search_str)):
+        if self.args.cisco_series == "9800":
+            for line in pss.splitlines():
+                search_str = self.args.cisco_ap
                 print("line {}".format(line))
                 element_list = line.lstrip().split()
                 print("element_list {}".format(element_list))
-                print("ap: {} channel {}  chan_width {}".format(self.args.cisco_ap,element_list[4],element_list[5]))
-                if (str(self.args.cisco_channel) in str(element_list[4])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
-                    print("ap configuration successful: channel {} in expected {}  chan_width {} in expected {}"
-                    .format(self.args.cisco_channel,element_list[4],self.args.cisco_chan_width,element_list[5])) 
-                else:
-                    print("AP WARNING: channel {} expected {}  chan_width {} expected {}"
-                    .format(element_list[4],self.cisco_channel,element_list[5],self.args.cisco_chan_width)) 
-                break
+                if (line.lstrip().startswith(search_str)):
+                    print("line {}".format(line))
+                    element_list = line.lstrip().split()
+                    print("element_list {}".format(element_list))
+                    # AP Name (0) mac (1) slot (2) Admin State [enable/disable] (3) Oper State [Up/Down] (4) Width (5) Txpwr (6,7) channel (8) mode (9)
+                    print("ap: {} slof {} channel {}  chan_width {}".format(element_list[0],element_list[2],element_list[8],element_list[5]))
+                    if (str(self.args.cisco_channel) in str(element_list[8])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
+                        print("ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}"
+                        .format(element_list[0],self.args.cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
+                    else:
+                        print("WARNING ap {} configuration: channel {} in expected {}  chan_width {} in expected {}"
+                        .format(element_list[0],self.args.cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
+                    break
+        else:
+            print("checking for 802.11{}".format(self.args.cisco_band))
+
+            for line in pss.splitlines():
+                #print("line {}".format(line))
+                search_str = "802.11{}".format(self.args.cisco_band)
+                if (line.lstrip().startswith(search_str)):
+                    print("line {}".format(line))
+                    element_list = line.lstrip().split()
+                    print("element_list {}".format(element_list))
+                    print("ap: {} channel {}  chan_width {}".format(self.args.cisco_ap,element_list[4],element_list[5]))
+                    if (str(self.args.cisco_channel) in str(element_list[4])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
+                        print("ap configuration successful: channel {} in expected {}  chan_width {} in expected {}"
+                        .format(self.args.cisco_channel,element_list[4],self.args.cisco_chan_width,element_list[5])) 
+                    else:
+                        print("AP WARNING: channel {} expected {}  chan_width {} expected {}"
+                        .format(element_list[4],self.cisco_channel,element_list[5],self.args.cisco_chan_width)) 
+                    break
         
         print("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
         # Verify channel and channel width. 
 
     def controller_disable_ap(self):
         #(Cisco Controller) >config 802.11a disable APA453.0E7B.CF9C 
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "disable","--band",self.args.cisco_band], capture_output=True)
 
@@ -309,7 +330,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def controller_set_channel_ap(self):
         #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "channel","--value",self.args.cisco_channel], capture_output=True)
 
@@ -320,7 +341,7 @@ class L3VariableTimeLongevity(LFCliBase):
     def controller_set_channel_ap_36(self):
         #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  36
         cisco_channel_36 = "36"
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "channel","--value",cisco_channel_36], capture_output=True)
 
@@ -330,7 +351,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def controller_set_chan_width_ap(self):
         #(Cisco Controller) >config 802.11a chan_width APA453.0E7B.CF9C  20	
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "bandwidth","--value",self.args.cisco_chan_width], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -339,7 +360,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def controller_enable_ap(self):
         #(Cisco Controller) >config 802.11a enable APA453.0E7B.CF9C
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", "ssh", "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "enable","--band",self.args.cisco_band], capture_output=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -739,6 +760,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--cisco_chan_width', help='--cisco_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"])
     parser.add_argument('--cisco_band', help='--cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"])
     parser.add_argument('--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
+    parser.add_argument('--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
+    
 
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
