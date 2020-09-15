@@ -95,10 +95,10 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_open_wlan","show_wlan_summary",
+      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
-      "wlan_enable", "wlan_disable","wireless_tag_policy"])
+      "wireless_tag_policy"])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -641,61 +641,6 @@ def main():
       else:
          command = "show ap channel %s"%(args.ap)
 
-   if (args.action == ["enable_wlan","disable_wlan"]):
-      egg.sendline("config t")
-      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      if i == 0:
-         print("elevated to (config)#")
-         egg.sendline("wlan open-wlan")
-         j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            if (args.action == "enable_wlan"):
-               command = "no shutdown"
-            else:
-               commane = "shutdown"
-            egg.sendline(command)
-            sleep(0.1)
-            k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-            if k == 0:
-               print("command sent: {}".format(command))
-            if k == 1:
-               if command == "end":
-                  pass
-               else:
-                  print("command time out: {}".format(command))
-         if j == 1:
-            print("did not get the (config-wlan)# prompt")
-      if i == 0:
-         print("did not get the (config)# prompt")
-
-
-
-   if (args.action == "open_wlan"):
-      print("Configure a open wlan 9800 series")
-      egg.sendline("config t")
-      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      if i == 0:
-         print("elevated to (config)#")
-         egg.sendline("wlan open-wlan 1 open-wlan")
-         j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown","end"]:
-               egg.sendline(command)
-               sleep(0.1)
-               k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-               if k == 0:
-                  print("command sent: {}".format(command))
-               if k == 1:
-                  if command == "end":
-                     pass
-                  else:
-                     print("command time out: {}".format(command))
-         if j == 1:
-            print("did not get the (config-wlan)# prompt")
-      if i == 0:
-         print("did not get the (config)# prompt")
-
    if (args.action == "wireless_tag_policy"):
       print("send wireless tag policy")
       egg.sendline("config t")
@@ -716,22 +661,24 @@ def main():
       if i == 1:
          print("did not get the (config)# prompt")
 
-   if (args.action == "no_open_wlan"):
+   if (args.action == "wlan" and (args.wlan is None)):
+      raise Exception("wlan is required")
+   if (args.action == "no_wlan"):
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         for command in ["no wlan open-wlan","end"]:
-            egg.sendline(command)
-            sleep(0.1)
-            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-            if j == 0:
-               print("command sent: {}".format(command))
-            if j == 1:
-               if command == "end":
-                  pass
-               else:
-                  print("command time out: {}".format(command))
+         command = "no wlan %s"%(args.wlan)
+         egg.sendline(command)
+         sleep(0.1)
+         j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            print("command sent: {}".format(command))
+         if j == 1:
+            if command == "end":
+               pass
+            else:
+               print("command time out: {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
 
@@ -747,17 +694,69 @@ def main():
    if (args.action == "wlan" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
    if (args.action == "wlan"):
-      command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
+      if args.series == "9800":
+          egg.sendline("config t")
+          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+          if i == 0:
+             print("elevated to (config)#")
+             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
+             egg.sendline(command)
+             j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+             if j == 0:
+                 for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                        "no security wpa akm dot1x","no shutdown","end"]:
+                    egg.sendline(command)
+                    sleep(0.1)
+                    k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+                    if k == 0:
+                       print("command sent: {}".format(command))
+                    if k == 1:
+                       if command == "end":
+                         pass
+                       else:
+                         print("command time out: {}".format(command))
+             if j == 1:
+                print("did not get the (config-wlan)# prompt")
+          if i == 0:
+             print("did not get the (config)# prompt")
+      else:   
+         command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
 
-   if (args.action == "enable_wlan" and (args.wlanID is None)):
-      raise Exception("wlan ID is required")
-   if (args.action == "enable_wlan"):
-      command = "config wlan enable %s"%(args.wlanID)
-
-   if (args.action == "delete_wlan" and (args.wlanID is None)):
-      raise Exception("wlan ID is required")
-   if (args.action == "delete_wlan"):
-      command = "config wlan delete %s"%(args.wlanID)
+   if (args.action == ["enable_wlan","disble_wlan"]):
+      if args.series == "9800":
+         if (args.wlan is None):
+            raise Exception("9800 series wlan is required")
+         else:
+            egg.sendline("config t")
+            i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if i == 0:
+               print("elevated to (config)#")
+               command = "wlan %s"%(args.wlan)
+               egg.sendline(command)
+               j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+               if j == 0:
+                  if (args.action == "enable_wlan"):
+                      command = "no shutdown"
+                  else:
+                      command = "shutdown"
+                  egg.sendline(command)
+                  sleep(0.1)
+                  k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+                  if k == 0:
+                      print("command sent: {}".format(command))
+                  if k == 1:
+                      command == "end"
+               if j == 1:
+                  print("did not get the (config-wlan)# prompt")
+            if i == 1:
+               print("did not get the (config)# prompt")
+   else:
+      if (args.action == ["enable_wlan","disable_wlan"] and (args.wlanID is None)):
+         raise Exception("wlan ID is required")
+      if (args.action == "enable_wlan"):
+         command = "config wlan enable %s"%(args.wlanID)
+      else:   
+         command = "config wlan delete %s"%(args.wlanID) 
 
    if (args.action == "wlan_qos" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
