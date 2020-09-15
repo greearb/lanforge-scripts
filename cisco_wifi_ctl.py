@@ -652,7 +652,7 @@ def main():
          egg.sendline("wlan open-wlan 1 open-wlan")
          j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
          if j == 0:
-            for command in ["no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+            for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown","end"]:
                egg.sendline(command)
                sleep(0.1)
