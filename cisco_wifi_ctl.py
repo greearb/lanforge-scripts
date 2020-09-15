@@ -97,7 +97,7 @@ def main():
                        choices=["a", "b", "abgn"])
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
-      "cmd", "txPower", "bandwidth", "manual", "auto", "open_wlan","no_wlan","show_wlan_summary",
+      "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "wlan", "enable_wlan", "delete_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
       "wireless_tag_policy"])
@@ -700,14 +700,14 @@ def main():
              j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown","end"]:
+                        "no security wpa akm dot1x","no shutdown","exit"]:
                     egg.sendline(command)
                     sleep(0.1)
                     k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        print("command sent: {}".format(command))
                     if k == 1:
-                       if command == "end":
+                       if command == "exit":
                          pass
                        else:
                          print("command time out: {}".format(command))
@@ -746,13 +746,13 @@ def main():
                   print("did not get the (config-wlan)# prompt")
             if i == 1:
                print("did not get the (config)# prompt")
-   else:
-      if (args.action == ["enable_wlan","disable_wlan"] and (args.wlanID is None)):
-         raise Exception("wlan ID is required")
-      if (args.action == "enable_wlan"):
-         command = "config wlan enable %s"%(args.wlanID)
-      else:   
-         command = "config wlan delete %s"%(args.wlanID) 
+      else:
+         if (args.action == ["enable_wlan","disable_wlan"] and (args.wlanID is None)):
+            raise Exception("wlan ID is required")
+         if (args.action == "enable_wlan"):
+            command = "config wlan enable %s"%(args.wlanID)
+         else:   
+            command = "config wlan delete %s"%(args.wlanID) 
 
    if (args.action == "wlan_qos" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
