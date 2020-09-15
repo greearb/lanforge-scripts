@@ -16,6 +16,8 @@ $ pip3 install pexpect-serial
 # For LANforge lab system.
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action summary --prompt "\(Cisco Controller\) >"
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action cmd --value "show ap config general APA453.0E7B.CF9C"
+
+telnet 172.19.36.168(Pwd:Wnbulab@123), go to the privileged mode and execute the command “clear line 43”.
 '''
 
 
@@ -56,7 +58,7 @@ def usage():
    print("-u|--user:  login name")
    print("-p|--pass:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-   print("-l|--log file: log messages here")
+   print("-l|--log file: log messages here ")
    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
    print("-w|--wlan:  WLAN name")
    print("-i|--wlanID:  WLAN ID")
@@ -654,10 +656,7 @@ def main():
             if j == 0:
                print("command sent: {}".format(command))
             if j == 1:
-               if command == "end":
-                  pass
-               else:
-                  print("command time out: {}".format(command))
+               print("command time out: {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
 
@@ -675,10 +674,7 @@ def main():
          if j == 0:
             print("command sent: {}".format(command))
          if j == 1:
-            if command == "end":
-               pass
-            else:
-               print("command time out: {}".format(command))
+            print("command timed out {}".format(command))
       if i == 1:
          print("did not get the (config)# prompt")
 
@@ -745,7 +741,7 @@ def main():
                   if k == 0:
                       print("command sent: {}".format(command))
                   if k == 1:
-                      command == "end"
+                      print("command timed out: {}".format(command))
                if j == 1:
                   print("did not get the (config-wlan)# prompt")
             if i == 1:
