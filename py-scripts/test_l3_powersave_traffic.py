@@ -165,8 +165,8 @@ def main():
     ip_powersave_test.cleanup()
     ip_powersave_test.build()
     ip_powersave_test.start()
-    # ip_powersave_test.stop()
-    # ip_powersave_test.cleanup()
+    ip_powersave_test.stop()
+    ip_powersave_test.cleanup()
 
 
 if __name__ == "__main__":
