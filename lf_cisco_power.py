@@ -544,6 +544,7 @@ def main():
 
                                    ch_count = cc_ch.count(",")
                                    cc_bw = m.group(2)
+                                   print("group 1: {} 2: {} 3: {} 4: {} 5: {} ".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5)))
                                    break
 
                        if (cc_dbm == ""):
@@ -581,6 +582,7 @@ def main():
 
                                    ch_count = cc_ch.count(",")
                                    cc_bw = 20 * (ch_count + 1)
+                                   
                                    break
 
                        if (cc_dbm == ""):
