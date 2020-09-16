@@ -700,16 +700,13 @@ def main():
              j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown","exit"]:
+                        "no security wpa akm dot1x","no shutdown","end"]:
                     egg.sendline(command)
                     sleep(0.1)
                     k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        print("command sent: {}".format(command))
                     if k == 1:
-                       if command == "exit":
-                         pass
-                       else:
                          print("command time out: {}".format(command))
              if j == 1:
                 print("did not get the (config-wlan)# prompt")
