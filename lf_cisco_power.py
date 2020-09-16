@@ -473,16 +473,16 @@ def main():
 
                    if (tx != "NA"):
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "txPower", "--value", tx])
+                                       "--action", "txPower", "--value", tx, "--series" , args.series])
                    if (bw != "NA"):
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "bandwidth", "--value", bw])
+                                       "--action", "bandwidth", "--value", bw, "--series" , args.series])
 
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "channel", "--value", ch])
+                                       "--action", "channel", "--value", ch, "--series" , args.series])
 
                    # TODO do not know when to configure open wlan
                    if args.series == "9800":
@@ -510,14 +510,14 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b enable network"])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable"])
+                                   "--action", "enable", "--series" , args.series])
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
                    # TODO figure out equivalent of the advanced command for 9800
                    if args.series == "9800":
                        advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced"], capture_output=True)
+                                              "--action", "advanced","--series" , args.series], capture_output=True)
                        pss = advanced.stdout.decode('utf-8', 'ignore')
                        print(pss)
 
@@ -963,7 +963,7 @@ def main():
    # Set things back to defaults
    # Disable AP, apply settings, enable AP
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "disable"])
+                   "--action", "disable", "--series" , args.series])
 
    if args.series == "9800":
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -978,16 +978,16 @@ def main():
 
    if (tx != "NA"):
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "txPower", "--value", "1"])
+                       "--action", "txPower", "--value", "1", "--series" , args.series])
    if (bw != "NA"):
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "bandwidth", "--value", "20"])
+                       "--action", "bandwidth", "--value", "20", "--series" , args.series])
 
    # NSS is set on the station earlier...
                        
    if (ch != "NA"):
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "channel", "--value", "36"])
+                       "--action", "channel", "--value", "36", "--series" , args.series])
 
    if args.series == "9800":
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -1004,7 +1004,7 @@ def main():
                    "--action", "cmd", "--value", "config 802.11b enable network"])
 
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "enable"])
+                   "--action", "enable", "--series" , args.series])
 
    # Remove LANforge traffic connection
    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
@@ -1016,7 +1016,7 @@ def main():
 
    # Show controller status
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "advanced"], capture_output=True)
+                              "--action", "advanced", "--series" , args.series], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
 
