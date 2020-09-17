@@ -464,6 +464,11 @@ def main():
                        print("9800 Configure radio for manual channel assignment")
                        print("9800 cisco_wifi_ctl.py: disable_network_5ghz")
 
+                       print("9800  cisco_wifi_ctl.py: disable_wlan")
+
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_wlan","--series",args.series])                 
+
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_network_5ghz","--series",args.series]) 
 

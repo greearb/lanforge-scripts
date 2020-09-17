@@ -694,7 +694,7 @@ def main():
          if i == 1:
             print("timed out on (config) prompt")
 
-   if (args.action in ["enable", "disable" ] and (args.ap is None)):
+   if (args.action == "enable" and (args.ap is None)):
       raise Exception("action requires AP name")
    if (args.action == "enable"):
       if args.series == "9800":
@@ -704,6 +704,9 @@ def main():
             command = "ap name %s no dot11 24ghz shutdown"%(args.ap)
       else:
          command = "config 802.11%s enable %s"%(band, args.ap)
+
+   if (args.action == "disable" and (args.ap is None)):
+      raise Exception("action requires AP name")
    if (args.action == "disable"):
       if args.series == "9800":
          if band == "a":
