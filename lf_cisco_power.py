@@ -513,7 +513,6 @@ def main():
                                    "--action", "cmd", "--value", "config 802.11b enable network"])
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable", "--series" , args.series])
-                   exit(1)
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
