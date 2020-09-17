@@ -796,8 +796,8 @@ def main():
       if i == 1:
          print("show wlan summary timed out")
 
-   if (args.action == "wlan" and (args.wlanID is None)):
-      raise Exception("wlan ID is required")
+   if (args.action == "wlan" and ((args.wlanID is None) or (args.wlan is None))):
+      raise Exception("wlan  and wlanID is required an")
    if (args.action == "wlan"):
       if args.series == "9800":
           egg.sendline("config t")

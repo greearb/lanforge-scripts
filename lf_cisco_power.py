@@ -149,6 +149,8 @@ def main():
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
 
+   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
+   parser.add_argument("--wlanID",      type=str, help="--series  9800 , defaults to 1",default="1")
    parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
    parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
    parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
@@ -487,7 +489,7 @@ def main():
                    # TODO do not know when to configure open wlan
                    if args.series == "9800":
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "open_wlan","--series",args.series])                 
+                                   "--action", "wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])                 
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "wireless_tag_policy","--series",args.series])                 
