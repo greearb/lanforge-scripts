@@ -575,11 +575,11 @@ def main():
             egg.sendline("ap dot11 5ghz shutdown")
             i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
-               egg.sendline("y")
+               egg.sendline(CR)
             if j == 1:
                print("did not get Are you sure you wan to continue? (y/n) [y]:")
          if i == 1:
-            print("timed out on disable_network_5ghz")
+            print("timed out on (config)# disable_network_5ghz")
 
    if (args.action == "disable_network_24ghz"):
       if args.series == "9800":
@@ -590,11 +590,11 @@ def main():
             egg.sendline("ap dot11 24ghz shutdown")
             i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
-               egg.sendline("y")
+               egg.sendline(CR)
             if j == 1:
                print("did not get Are you sure you wan to continue? (y/n) [y]:")
          if i == 1:
-            print("timed out on disable_network_24ghz")
+            print("timed out on (config)# disable_network_24ghz")
 
    if (args.action == "enable_network_5ghz"):
       if args.series == "9800":
@@ -603,7 +603,7 @@ def main():
          if i == 0:
             command = "no ap dot11 5ghz shutdown"
          else:
-            print("timed out on no ap dot11 5ghz shutdown")
+            print("timed out (config)# on no ap dot11 5ghz shutdown")
 
    if (args.action == "enable_network_24ghz"):
       if args.series == "9800":
@@ -612,7 +612,7 @@ def main():
          if i == 0:
             command = "no ap dot11 24ghz shutdown"
          else:
-            print("timed out on no ap dot11 24ghz shutdown")      
+            print("timed out on (config)# no ap dot11 24ghz shutdown")      
 
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
