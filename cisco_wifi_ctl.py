@@ -599,20 +599,30 @@ def main():
    if (args.action == "enable_network_5ghz"):
       if args.series == "9800":
          egg.sendline("config t")
-         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
-            command = "no ap dot11 5ghz shutdown"
-         else:
-            print("timed out (config)# on no ap dot11 5ghz shutdown")
+            egg.sendline("no ap dot11 5ghz shutdown")
+            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               egg.sendline("end")
+            if j == 1:
+               print("timed out on (config)# no ap dot11 5ghz shutdown")   
+         if i == 1:
+            print("timed out on (config) prompt")
 
    if (args.action == "enable_network_24ghz"):
       if args.series == "9800":
          egg.sendline("config t")
          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
-            command = "no ap dot11 24ghz shutdown"
-         else:
-            print("timed out on (config)# no ap dot11 24ghz shutdown")      
+            egg.sendline("no ap dot11 24ghz shutdown")
+            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               egg.sendline("end")
+            if j == 1:
+               print("timed out on (config)# no ap dot11 24ghz shutdown")   
+         if i == 1:
+            print("timed out on (config) prompt")
+                  
 
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
@@ -690,6 +700,7 @@ def main():
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                print("command sent: {}".format(command))
+               egg.sendline("end")
             if j == 1:
                print("command time out: {}".format(command))
       if i == 1:
@@ -708,8 +719,10 @@ def main():
          j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if j == 0:
             print("command sent: {}".format(command))
+            egg.sendline("end")
          if j == 1:
             print("command timed out {}".format(command))
+            egg.sendline("end")
       if i == 1:
          print("did not get the (config)# prompt")
 
@@ -741,8 +754,10 @@ def main():
                     k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        print("command sent: {}".format(command))
+                       egg.sendline("end")
                     if k == 1:
                          print("command time out: {}".format(command))
+                         egg.sendline("end")
              if j == 1:
                 print("did not get the (config-wlan)# prompt")
           if i == 0:
@@ -759,21 +774,23 @@ def main():
             i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
             if i == 0:
                print("elevated to (config)#")
-               command = "wlan %s"%(args.wlan)
-               egg.sendline(command)
+               cmd = "wlan %s"%(args.wlan)
+               egg.sendline(cmd)
                j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                if j == 0:
                   if (args.action == "enable_wlan"):
-                      command = "no shutdown"
+                      cmd = "no shutdown"
                   else:
-                      command = "shutdown"
-                  egg.sendline(command)
+                      cmd = "shutdown"
+                  egg.sendline(cmd)
                   sleep(0.1)
                   k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                   if k == 0:
-                      print("command sent: {}".format(command))
+                      print("cmd sent: {}".format(cmd))
+                      egg.sendline("end")
                   if k == 1:
-                      print("command timed out: {}".format(command))
+                      print("cmd timed out: {}".format(cmd))
+                      egg.sendline("end")
                if j == 1:
                   print("did not get the (config-wlan)# prompt")
             if i == 1:
@@ -792,7 +809,10 @@ def main():
       command = "config wlan qos %s %s"%(args.wlanID, args.value)
 
    if (command is None):
-      logg.info("No command specified, going to log out.")
+      if args.series == "9800":
+         logg.info("9800 series command completed by earlier logic")
+      else:
+         logg.info("No command specified, going to log out.")
    else:
       logg.info("Command[%s]"%command)
       egg.sendline(command)
