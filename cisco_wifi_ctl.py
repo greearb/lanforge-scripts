@@ -81,7 +81,7 @@ class FileAdapter(object):
 def main():
    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",    type=int, help="control port on the controller", default=2043)
+   parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
    parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="\(Cisco Controller\) >")
    parser.add_argument("--series",        type=str, help="cisco controller series",default="3504")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
