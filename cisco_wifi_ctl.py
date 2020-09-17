@@ -178,13 +178,13 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#",":","ssword\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.",">","WLC#",":","ssword\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
-                  j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect([">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
                   if j == 0:
                      print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
                      egg.sendline("en")
@@ -194,7 +194,7 @@ def main():
                         print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(1)
-                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            print("9800 Successfully received # prompt l {}".format(l))
                            logged_in_9800 = True
@@ -214,7 +214,7 @@ def main():
                         print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
                         egg.sendline(args.passwd)
                         sleep(1)
-                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            print("8900 Successfully received # prompt l: {}".format(l))
                            logged_in_9800 = True
@@ -226,7 +226,7 @@ def main():
                      print("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(1)
-                     k = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         print("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
                         logged_in_9800 = True
@@ -245,7 +245,7 @@ def main():
                      print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(1)
-                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if l == 0:
                         print("9800 Successfully received # prompt l {} before {} after {}".format(l, egg.before,egg.after))
                         logged_in_9800 = True
@@ -267,7 +267,7 @@ def main():
                      print("9800 received password prompt after sending User, sending password: {} k: {} before {} after {}".format(args.passwd,k, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if l == 0:
                         print("8900 Successfully received # prompt l: {}".format(l))
                         logged_in_9800 = True
@@ -280,7 +280,7 @@ def main():
                   print("9800 received password prompt will send password: {}  i: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(1)
-                  l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                  l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                   if l == 0:
                      print("9800 Successfully received # prompt l {} before {} after {}".format(l,egg.before,egg.after))
                      logged_in_9800 = True
@@ -327,7 +327,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   print('connection failed. or refused')
                   exit(1)
@@ -340,7 +340,7 @@ def main():
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
-                  j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect([">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
                   sleep(1)
                   if j == 0:
                      print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
@@ -351,7 +351,7 @@ def main():
                         print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(1)
-                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            print("9800 Successfully received # prompt l {}".format(l))
                            logged_in_9800 = True
@@ -371,7 +371,7 @@ def main():
                         print("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
                         egg.sendline(args.passwd)
                         sleep(1)
-                        l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            print("8900 Successfully received # prompt l: {}".format(l))
                            logged_in_9800 = True
@@ -384,7 +384,7 @@ def main():
                      print("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(1)
-                     k = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         print("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
                         logged_in_9800 = True
@@ -403,7 +403,7 @@ def main():
                      print("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(1)
-                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if l == 0:
                         print("9800 Successfully received # prompt l {} before {} after {}".format(l, egg.before,egg.after))
                         logged_in_9800 = True
@@ -425,7 +425,7 @@ def main():
                      print("9800 received password prompt after sending User, sending password: {} k: {} before {} after {}".format(args.passwd,k, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if l == 0:
                         print("8900 Successfully received # prompt l: {}".format(l))
                         logged_in_9800 = True
@@ -438,7 +438,7 @@ def main():
                   print("9800 received password prompt will send password: {}  k: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(1)
-                  l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+                  l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                   if l == 0:
                      print("9800 Successfully received # prompt l {} before {} after {}".format(l,egg.before,egg.after))
                      logged_in_9800 = True
@@ -716,7 +716,7 @@ def main():
    if (args.action == "show_wlan_summary"):
       egg.sendline("show wlan summary")
       sleep(0.1)
-      i = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
+      i = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
          print("show wlan summary sent")
       if i == 1:
@@ -800,7 +800,7 @@ def main():
 
       sleep(1)
       while True:
-         i = egg.expect([">","#", AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
+         i = egg.expect([">","WLC#", AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             print("> prompt received after command sent")
