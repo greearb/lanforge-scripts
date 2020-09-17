@@ -136,7 +136,7 @@ def main():
 
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
+   parser.add_argument("-o", "--port",    type=str, help="control port on the controller", default=23)
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
@@ -175,6 +175,7 @@ def main():
       user = args.user
       passwd = args.passwd
       logfile = args.log
+      port = args.port
       if (args.station != None):
           lfstation = args.station
       if (args.upstream_port != None):
@@ -386,7 +387,7 @@ def main():
 
    myrd = ""
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "summary","--series",args.series,"--port", args.port], capture_output=True)
+                              "--action", "summary","--series",args.series,"--port",args.port], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
 
