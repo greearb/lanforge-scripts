@@ -98,7 +98,7 @@ def main():
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
-      "ap_channel", "channel", "show", "wlan", "enable_wlan", "disable_wlan", "wlan_qos",
+      "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
       "wireless_tag_policy"])
    parser.add_argument("--value",       type=str, help="set value")
@@ -286,10 +286,6 @@ def main():
                      logged_in_9800 = True
                   if l == 1:
                      print("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
-
-               #if i == 5:
-               #   print("9800 pexpect found end of line i {} before {} after {}".format(i,egg.before,egg.after))
-               #   egg.sendline(CR)
 
                if i == 5:
                   print("9800 Timed out waiting for intial prompt will send carriage return and line feed i: {} before {} after {}".format(i, egg.before,egg.after))
@@ -670,6 +666,7 @@ def main():
    if (args.action == "enable_network_5ghz"):
       if args.series == "9800":
          egg.sendline("config t")
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
             egg.sendline("no ap dot11 5ghz shutdown")
             j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
@@ -807,7 +804,7 @@ def main():
       if i == 1:
          print("show wlan summary timed out")
 
-   if (args.action == "wlan" and ((args.wlanID is None) or (args.wlan is None))):
+   if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
       raise Exception("wlan  and wlanID is required an")
    if (args.action == "wlan"):
       if args.series == "9800":
@@ -836,6 +833,31 @@ def main():
              print("did not get the (config)# prompt")
       else:   
          command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
+
+   if (args.action == "delete_wlan"):
+      if args.series == "9800":
+         if (args.wlan is None):
+            raise Exception("9800 series wlan is required")
+         else:
+            egg.sendline("config t")
+            i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if i == 0:
+               print("elevated to (config)#")
+               cmd = "no wlan %s"%(args.wlan)
+               egg.sendline(cmd)
+               j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+               if j == 0:
+                  print("received elevated (config)# after no wlan {}".format(args.wlan))
+                  egg.sendline(cmd)
+               if j == 1:
+                  print("did not get the (config# prompt")
+                  egg.sendline(cmd)  
+            if i == 1:
+               print("did not get the (config)# prompt")                            
+      else:
+         if (args.action == "delete_wlan" and (args.wlanID is None)):
+            raise Exception("wlan ID is required")
+         command = "config wlan delete %s"%(args.wlanID) 
 
    if (args.action == ["enable_wlan","disble_wlan"]):
       if args.series == "9800":

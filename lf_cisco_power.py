@@ -510,12 +510,14 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch, "--series" , args.series])
 
-                   # TODO do not know when to configure open wlan
                    if args.series == "9800":
-                       print("9800  cisco_wifi_ctl.py: wlan")
+                       #print("9800 cisco_wifi_ctl.py: delete_wlan")
+                       #subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       #            "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
 
+                       print("9800  cisco_wifi_ctl.py: create_wlan")
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
+                                   "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
                        print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -529,6 +531,8 @@ def main():
 
                    # enable transmission for the entier 802.11z network
                    if args.series == "9800":
+
+
                        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
                        
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
