@@ -178,13 +178,13 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","WLC#",":","ssword\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#",":","ssword\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
-                  j = egg.expect([">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect(["WLC>","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
                   if j == 0:
                      print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
                      egg.sendline("en")
@@ -327,7 +327,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.",">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   print('connection failed. or refused')
                   exit(1)
@@ -340,7 +340,7 @@ def main():
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
-                  j = egg.expect([">","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect(["WLC>","WLC#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
                   sleep(1)
                   if j == 0:
                      print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
@@ -622,8 +622,6 @@ def main():
                print("timed out on (config)# no ap dot11 24ghz shutdown")   
          if i == 1:
             print("timed out on (config) prompt")
-                  
-
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
       raise Exception("action requires AP name")
@@ -820,19 +818,19 @@ def main():
 
       sleep(1)
       while True:
-         i = egg.expect([">","WLC#", AREYOUSURE, '--More-- or',pexpect.TIMEOUT],timeout=3)
+         i = egg.expect(["WLC>","WLC#", "WLC(config)#",AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             print("> prompt received after command sent")
             break
          if i == 1:
-            print("# prompt received after command sent")
+            print("WLC# prompt received after command sent")
             try:
                print("9800 send exit")
                egg.sendline("exit")
             except:
                print("9800 exception on exit")
-            sleep(1)
+               sleep(1)
             try:
                print("9800 send carriage return and linefeed")
                egg.sendline("\r\n")
@@ -840,13 +838,17 @@ def main():
                print("9800 exception on carriage return and linefeed")
             break
          if i == 2:
+            egg.sendline("end")
+            sleep(0.2)
+            egg.sendline("exit")
+         if i == 3:
             print("are you sure received after command sent")
             egg.sendline("y")
             break
-         if i == 3:
+         if i == 4:
             print("--More-- or received")
             egg.sendline(NL)
-         if i == 4:
+         if i == 5:
             print("expect timeout")
             break
 
