@@ -337,7 +337,7 @@ def main():
                
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
-                  egg.sendline(CR)
+                  #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
                   j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
