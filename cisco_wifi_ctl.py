@@ -632,13 +632,17 @@ def main():
          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
             egg.sendline("ap dot11 5ghz shutdown")
-            i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
+            i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
+               print("did get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
                sleep(0.1)
                egg.sendline("end")
             if j == 1:
-               print("did not get Are you sure you wan to continue? (y/n) [y]:")
+               print("did not get Are you sure you want to continue? (y/n)[y]:")
+               egg.sendline(CR)
+               sleep(0.1)
+               egg.sendline("end")
          if i == 1:
             print("timed out on (config)# disable_network_5ghz")
 
@@ -649,13 +653,17 @@ def main():
          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
             egg.sendline("ap dot11 24ghz shutdown")
-            i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
+            i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
+               print("did get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
                sleep(0.1)
                egg.sendline("end")
             if j == 1:
-               print("did not get Are you sure you wan to continue? (y/n) [y]:")
+               print("did not get Are you sure you want to continue? (y/n)[y]:")
+               egg.sendline(CR)
+               sleep(0.1)
+               egg.sendline("end")
          if i == 1:
             print("timed out on (config)# disable_network_24ghz")
 
