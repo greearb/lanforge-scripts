@@ -327,7 +327,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
                try:
-                  i = egg.expect_exact([">","#","ssword\:",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact([">","#","ssword:",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   print('connection failed. or refused')
                   exit(1)
