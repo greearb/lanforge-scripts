@@ -813,20 +813,20 @@ def main():
           if i == 0:
              print("elevated to (config)#")
              command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
+             print("open network command {}".format(command))
              egg.sendline(command)
-             j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+             j = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown","end"]:
                     egg.sendline(command)
                     sleep(0.1)
-                    k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+                    k = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        print("command sent: {}".format(command))
-                       egg.sendline("end")
                     if k == 1:
                          print("command time out: {}".format(command))
-                         egg.sendline("end")
+                 egg.sendline("end")
              if j == 1:
                 print("did not get the (config-wlan)# prompt")
           if i == 0:
