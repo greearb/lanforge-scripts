@@ -143,11 +143,17 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
-   parser.add_argument("-a", "--ap",      type=str, help="select AP")
+   parser.add_argument("-a", "--ap",       type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test. NA means no change")
    parser.add_argument("-c", "--channel",        type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
+
+   parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
+   parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
+   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="wlan-open")
+   parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
+   parser.add_argument("--security",       type=str, help="security default open",default="open")
 
    parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
    parser.add_argument("--wlanID",      type=str, help="--series  9800 , defaults to 1",default="1")
@@ -357,6 +363,19 @@ def main():
    channels = args.channel.split()
    nss = args.nss.split()
    txpowers = args.txpower.split()
+       
+   if (args.create_station != None):
+       if (args.radio == None):
+           print("WARNING --create needs a radio")
+           exit(1)
+       else:
+           print("creating station: {} on radio {}".format(args.create_station,args.radio))
+           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.passwd,
+                   "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                   "--first_sta",args.create_station,"--duration","1","--cxtype","udp"], capture_output=True)
+           sleep(3)
+           exit(1)
+
 
    # Find LANforge station parent radio
    parent = None
@@ -367,6 +386,7 @@ def main():
        m = re.search('Parent/Peer:\s+(.*)', line)
        if (m != None):
            parent = m.group(1)
+
 
    # Create downstream connection
    # First, delete any old one
