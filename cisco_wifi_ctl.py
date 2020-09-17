@@ -799,13 +799,16 @@ def main():
             break
 
 
-   egg.sendline("logout")
-   print("logout")
-   i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
-   if i == 0:
-       egg.sendline("y")
-   if i == 4:
-      print("pexpect timeout on logout")
+   if args.series == "9800":
+      pass     
+   else:
+      egg.sendline("logout")
+      print("logout")
+      i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
+      if i == 0:
+         egg.sendline("y")
+      if i == 4:
+         print("pexpect timeout on logout")
 
 
 
