@@ -461,6 +461,7 @@ def main():
                                 
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
+                       print("9800 Configure radio for manual channel assignment")
                        print("9800 cisco_wifi_ctl.py: disable_network_5ghz")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
@@ -679,6 +680,13 @@ def main():
                            print(err)
                            e_tot += err
                            e_tot += "  "
+                           if args.series == "9800":
+                               print("9800  resending cisco_wifi_ctl.py: advanced")
+
+                               advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced","--series" , args.series], capture_output=True)
+                               pss = advanced.stdout.decode('utf-8', 'ignore')
+                               print(pss)
                            if (args.wait_forever):
                                print("Will continue waiting, you may wish to debug the system...")
                                i = 0
