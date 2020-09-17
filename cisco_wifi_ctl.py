@@ -576,6 +576,8 @@ def main():
             i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                egg.sendline(CR)
+               sleep(0.1)
+               egg.sendline("end")
             if j == 1:
                print("did not get Are you sure you wan to continue? (y/n) [y]:")
          if i == 1:
@@ -591,6 +593,8 @@ def main():
             i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                egg.sendline(CR)
+               sleep(0.1)
+               egg.sendline("end")
             if j == 1:
                print("did not get Are you sure you wan to continue? (y/n) [y]:")
          if i == 1:
