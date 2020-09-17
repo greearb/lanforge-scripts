@@ -81,7 +81,7 @@ class FileAdapter(object):
 def main():
    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
+   parser.add_argument("-o", "--port",    type=int, help="control port on the controller", default=2043)
    parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="\(Cisco Controller\) >")
    parser.add_argument("--series",        type=str, help="cisco controller series",default="3504")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
@@ -568,19 +568,51 @@ def main():
 
    if (args.action == "disable_network_5ghz"):
       if args.series == "9800":
-         command = "ap dot11 5ghz shutdown"
+         egg.sendline("config t")
+         sleep(0.1)
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            egg.sendline("ap dot11 5ghz shutdown")
+            i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               egg.sendline("y")
+            if j == 1:
+               print("did not get Are you sure you wan to continue? (y/n) [y]:")
+         if i == 1:
+            print("timed out on disable_network_5ghz")
 
    if (args.action == "disable_network_24ghz"):
       if args.series == "9800":
-         command = "ap dot11 24ghz shutdown"
+         egg.sendline("config t")
+         sleep(0.1)
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            egg.sendline("ap dot11 24ghz shutdown")
+            i = egg.expect_exact(["Are you sure you wan to continue? (y/n) [y]:",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               egg.sendline("y")
+            if j == 1:
+               print("did not get Are you sure you wan to continue? (y/n) [y]:")
+         if i == 1:
+            print("timed out on disable_network_24ghz")
 
    if (args.action == "enable_network_5ghz"):
       if args.series == "9800":
-         command = "no ap dot11 5ghz shutdown"
+         egg.sendline("config t")
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            command = "no ap dot11 5ghz shutdown"
+         else:
+            print("timed out on no ap dot11 5ghz shutdown")
 
    if (args.action == "enable_network_24ghz"):
       if args.series == "9800":
-         command = "no ap dot11 24ghz shutdown"
+         egg.sendline("config t")
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            command = "no ap dot11 24ghz shutdown"
+         else:
+            print("timed out on no ap dot11 24ghz shutdown")      
 
 
    if (args.action in ["enable", "disable" ] and (args.ap is None)):
