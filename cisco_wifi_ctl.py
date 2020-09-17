@@ -88,7 +88,7 @@ def main():
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
-   parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
+   parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
    parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
@@ -178,10 +178,10 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                #egg.sendline(CR)
-               i = egg.expect_exact(["Escape character is '^]'.",">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.",">","#",":","ssword\:",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   print("9800 found Escape charter is sending carriage return i: {} before: {} after: {}".format(i,egg.before,egg.after))
-                  egg.sendline(CR)
+                  #egg.sendline(CR)
                   found_escape = True
                   sleep(1)
                   j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
@@ -312,6 +312,7 @@ def main():
             egg.sendline(passwd)
 
       elif (scheme == "telnet"):
+         sleep(1)
          if (port is None):
             port = 23
          cmd = "telnet %s %d"%(host, port)
@@ -340,6 +341,7 @@ def main():
                   found_escape = True
                   sleep(1)
                   j = egg.expect([">","#","ser\:","ssword\:",pexpect.TIMEOUT],timeout=3)
+                  sleep(1)
                   if j == 0:
                      print("9800 found >  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
                      egg.sendline("en")
@@ -378,6 +380,7 @@ def main():
                      if k == 1:
                         print("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 3:
+                     sleep(1)
                      print("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(1)
@@ -749,7 +752,7 @@ def main():
          if (args.action == "enable_wlan"):
             command = "config wlan enable %s"%(args.wlanID)
          else:   
-            command = "config wlan delete %s"%(args.wlanID) 
+            command = "config wlan disable %s"%(args.wlanID) 
 
    if (args.action == "wlan_qos" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
