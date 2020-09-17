@@ -515,10 +515,10 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "wireless_tag_policy","--series",args.series]) 
 
-                       print("9800  cisco_wifi_ctl.py: wlan_enable")
+                       print("9800  cisco_wifi_ctl.py: enable_wlan")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wlan_enable","--series",args.series])                 
+                                   "--action", "enable_wlan","--series",args.series])                 
 
 
                    # enable transmission for the entier 802.11z network
