@@ -358,7 +358,7 @@ def main():
                   logged_in_9800 = True
 
                if i == 2:
-                  print("9800 received password prompt will send password: {}  k: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  print("9800 received password prompt will send password: {}  i: {}  before {} after {}".format(args.passwd, i, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(1)
                   l = egg.expect(["#",pexpect.TIMEOUT],timeout=2)
