@@ -783,11 +783,13 @@ def main():
          for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile","end"]:
             egg.sendline(command)
             sleep(0.1)
-            j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
+            j = egg.expect_exact(["(config-policy-tag)#","(config)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("command sent: {}".format(command))
             if j == 1:
-               logg.info("command time out: {}".format(command))
+               logg.info("command sent end: {}".format(command))
+            if j == 2:
+               logg.info("command timed out {}".format(command))   
       if i == 1:
          logg.info("did not get the (config)# prompt")
 
