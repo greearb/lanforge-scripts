@@ -953,17 +953,8 @@ def main():
             break
          if i == 1:
             logg.info("WLC# prompt received after command sent")
-            try:
-               logg.info("9800 send exit")
-               egg.sendline("exit")
-               sleep(0.1)
-            except:
-               logg.info("9800 exception on exit")
-               sleep(1)
          if i == 2:
             egg.sendline("end")
-            sleep(0.2)
-            egg.sendline("exit")
             sleep(0.1)
          if i == 3:
             logg.info("are you sure received after command sent")
