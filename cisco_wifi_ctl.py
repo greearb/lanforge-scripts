@@ -780,7 +780,7 @@ def main():
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile","end"]:
+         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
             sleep(0.1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
