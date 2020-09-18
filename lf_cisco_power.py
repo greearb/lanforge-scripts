@@ -30,6 +30,22 @@ The user is responsible for setting up the station oustide of this script, howev
   --station sta00000 --bandwidth "20" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2
 
+# To create a station run test against station create open-wlan 
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+--station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --band a \
+--upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
+--ssidpw [BLANK] --security open
+
+# station already present
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+--station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --band a \
+--upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 
+
+# to create a station 
+./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1\
+--first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
+
+
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
 '''
