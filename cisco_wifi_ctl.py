@@ -935,7 +935,7 @@ def main():
 
    if (command is None):
       if args.series == "9800":
-         logg.info("9800 series command completed by earlier logic")
+         logg.info("9800 series command completed by earlier logic: {}".format(command))
       else:
          logg.info("No command specified, going to log out.")
    else:
@@ -960,13 +960,6 @@ def main():
             except:
                logg.info("9800 exception on exit")
                sleep(1)
-            try:
-               logg.info("9800 send carriage return and linefeed")
-               egg.sendline("\r\n")
-               sleep(0.1)
-            except:
-               logg.info("9800 exception on carriage return and linefeed")
-            break
          if i == 2:
             egg.sendline("end")
             sleep(0.2)

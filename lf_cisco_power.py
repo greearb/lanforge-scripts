@@ -597,7 +597,6 @@ def main():
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
-                   # TODO figure out equivalent of the advanced command for 9800
                    if args.series == "9800":
                        print("9800  cisco_wifi_ctl.py: advanced")
 
