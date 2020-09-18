@@ -62,7 +62,7 @@ lfstation = "sta00000"
 lfresource = "1"
 lfresource2 = "1"
 outfile = "cisco_power_results.txt"
-full_outfile = "full_cisco_power_results.txt"
+full_outfile = "cisco_full_power_results.txt"
 outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
@@ -374,7 +374,6 @@ def main():
                    "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                    "--first_sta",args.create_station,"--duration","1","--cxtype","udp"], capture_output=True)
            sleep(3)
-           exit(1)
 
 
    # Find LANforge station parent radio
