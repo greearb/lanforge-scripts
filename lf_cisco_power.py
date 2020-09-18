@@ -533,10 +533,17 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port])
                    if (bw != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth")
+                       print("*********************************************")
+                       print("*********************************************")
+                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port])
+                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
+                       print("*********************************************")
+                       print("*********************************************")
+
+                                       
 
                    # NSS is set on the station earlier...
                        
