@@ -967,7 +967,6 @@ def main():
             logg.info("--More-- or received")
             egg.sendline(NL)
             sleep(0.1)
-            break
          if i == 5:
             logg.info("expect timeout")
             break
