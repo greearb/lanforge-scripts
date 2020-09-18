@@ -953,9 +953,11 @@ def main():
             break
          if i == 1:
             logg.info("WLC# prompt received after command sent")
+            break
          if i == 2:
             egg.sendline("end")
             sleep(0.1)
+            break
          if i == 3:
             logg.info("are you sure received after command sent")
             egg.sendline("y")
@@ -965,6 +967,7 @@ def main():
             logg.info("--More-- or received")
             egg.sendline(NL)
             sleep(0.1)
+            break
          if i == 5:
             logg.info("expect timeout")
             break
