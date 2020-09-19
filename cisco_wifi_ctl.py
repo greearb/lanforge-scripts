@@ -95,6 +95,7 @@ def main():
    parser.add_argument("-a", "--ap",      type=str, help="select AP", default="APA453.0E7B.CF9C")
    parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
                        choices=["a", "b", "abgn"])
+
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
@@ -934,6 +935,7 @@ def main():
       command = "config wlan qos %s %s"%(args.wlanID, args.value)
 
    if (command is None):
+      sleep(0.5)
       if args.series == "9800":
          logg.info("9800 series command completed by earlier logic: {}".format(command))
       else:
@@ -941,7 +943,7 @@ def main():
    else:
       logg.info("Command[%s]"%command)
       egg.sendline(command)
-      sleep(0.1)
+      sleep(0.5)
       logg.info("command sent {}".format(command))
 
       sleep(1)

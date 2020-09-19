@@ -27,12 +27,12 @@ The user is responsible for setting up the station oustide of this script, howev
 
 # Per-channel path-loss example
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
+  --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2
 
 # To create a station run test against station create open-wlan 
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
---station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --band a \
+--station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open
 
@@ -102,26 +102,38 @@ def usage():
    print("-d|--dest:  destination host")
    print("-o|--port:  destination port")
    print("-u|--user:  login name")
-   print("-p|--pass:  password")
+   print("-p|--passwd:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-   print("-l|--log file: log messages here")
+   print("-t|--tty tty serial device")
+   print("-l|--log file: log messages here ,stdout means output to console")
+   print("-a|--ap select AP")
    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160")
    print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60")
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
    print("--series:  9800 the default is 3504")
+   print("-k|--keep_state  keep the state, no configuration change at the end of the test, store true flage present ")
    print("--outfile: Write results here.")
-   print("--station: LANforge station name (sta00000)")
+   print("--station: LANforge station name for test(sta00000)")
    print("--upstream_port: LANforge upstream port name (eth1)")
    print("--lfmgr: LANforge manager IP address")
    print("--lfresource: LANforge resource ID for station")
    print("--lfresource2: LANforge resource ID for upstream port")
+   print("--outfile: Output file for csv data")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
    print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+   print("--wlan: for 9800, wlan identifier defaults to wlan-open")
+   print("--wlanID: wlanID  for 9800 , defaults to 1")
+   print("--series: controller series  9800 , defaults to 3504")
+   print("--create_station", "create LANforge station at the beginning of the test")
+   print("--radio", "radio to create LANforge station on at the beginning of the test")
+   print("--ssid", "ssid default open-wlan")
+   print("--ssidpw", "ssidpw default [BLANK]")
+   print("--security", "security default open")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -160,22 +172,16 @@ def main():
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",       type=str, help="select AP")
-   parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test. NA means no change")
-   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
+   parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
+   parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
-   parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
+   parser.add_argument("-T", "--txpower",    type=str, help="List of txpowers to test.  NA means no change")
 
-   parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
-   parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="wlan-open")
-   parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
-   parser.add_argument("--security",       type=str, help="security default open",default="open")
+   parser.add_argument("-k","--keep_state", help="keep the state, no configuration change at the end of the test",action="store_true")
 
-   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
-   parser.add_argument("--wlanID",      type=str, help="--series  9800 , defaults to 1",default="1")
-   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
-   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
    parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
+   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
+
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
    parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
@@ -187,7 +193,18 @@ def main():
    parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   
+
+   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
+   parser.add_argument("--wlanID",      type=str, help="--wlanID  9800 , defaults to 1",default="1")
+   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
+
+   parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
+   parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
+   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="wlan-open")
+   parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
+   parser.add_argument("--security",       type=str, help="security default open",default="open")
+
+
    args = None
    try:
       args = parser.parse_args()
@@ -533,16 +550,11 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port])
                    if (bw != "NA"):
-                       print("*********************************************")
-                       print("*********************************************")
                        print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port])
                        print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
-                       print("*********************************************")
-                       print("*********************************************")
-
                                        
 
                    # NSS is set on the station earlier...
@@ -677,7 +689,7 @@ def main():
                                    cc_bw = 20 * (ch_count + 1)
                                    
                                    break
-
+                                
                        if (cc_dbm == ""):
                           # Could not talk to controller?
                           err = "ERROR:  Could not query dBm from controller, maybe controller died?"
@@ -1062,6 +1074,21 @@ def main():
 
    workbook.close()
 
+   # check if keeping the existing state
+   if(args.keep_state):
+       print("9800/3504 flag --keep_state set thus keeping state")
+       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+          "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
+       pss = advanced.stdout.decode('utf-8', 'ignore')
+       print(pss)
+
+       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+          "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True)
+       pss = advanced.stdout.decode('utf-8', 'ignore')
+       print(pss)
+
+       exit(1)
+  
    # Set things back to defaults
    # Disable AP, apply settings, enable AP
    print("9800/3504  cisco_wifi_ctl.py: disable")
