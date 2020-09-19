@@ -217,6 +217,10 @@ def main():
       port = args.port
       if (args.station != None):
           lfstation = args.station
+      if (args.create_station != None):
+          lfstation = args.create_station
+          if (args.station != None):
+              print("NOTE: both station: {} and create_station: {} on command line, test will use create_station {} ".format(args.station, args.create_station, args.create_station))
       if (args.upstream_port != None):
           upstream_port = args.upstream_port
       if (args.lfmgr != None):
