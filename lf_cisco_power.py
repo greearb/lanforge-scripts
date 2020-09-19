@@ -548,23 +548,22 @@ def main():
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port])
 
+                   print("9800 test_parameters_summary: set : tx: {} ch: {} bw: {}".format(tx,ch,bw))
                    if (tx != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: txPower")
+                       print("9800 test_parameters: set txPower: {}".format(tx))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port])
                    if (bw != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
+                       print("9800 test_parameters bandwidth: set : {}".format(bw))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port])
-                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth  {}".format(bw))
-                                       
 
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: channel")
+                       print("9800 test_parameters set channel: {}".format(ch))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port])
@@ -590,7 +589,6 @@ def main():
 
                    # enable transmission for the entier 802.11z network
                    if args.series == "9800":
-
 
                        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
                        
@@ -652,6 +650,11 @@ def main():
                                    ch_count = cc_ch.count(",")
                                    cc_bw = m.group(2)
                                    print("group 1: {} 2: {} 3: {} 4: {} 5: {} ".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5)))
+                                   print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
+                                   print("9800 test_parameters tx: read : {}".format(cc_power))
+                                   print("9800 test_parameters bandwidth: read : {}".format(cc_bw))
+                                   print("9800 test_parameters channel: read : {}".format(cc_ch))
+
                                    break
 
                        if (cc_dbm == ""):
