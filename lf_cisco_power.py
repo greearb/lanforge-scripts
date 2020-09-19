@@ -200,7 +200,7 @@ def main():
 
    parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="wlan-open")
+   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="open-wlan")
    parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
    parser.add_argument("--security",       type=str, help="security default open",default="open")
 
@@ -403,7 +403,7 @@ def main():
            exit(1)
        else:
            print("creating station: {} on radio {}".format(args.create_station,args.radio))
-           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.passwd,
+           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
                    "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                    "--first_sta",args.create_station,"--duration","1","--cxtype","udp"], capture_output=True)
            sleep(3)
