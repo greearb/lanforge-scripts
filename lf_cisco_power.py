@@ -409,7 +409,7 @@ def main():
            print("creating station: {} on radio {}".format(args.create_station,args.radio))
            subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
                    "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                   "--first_sta",args.create_station,"--duration","1","--cxtype","udp"], capture_output=True)
+                   "--first_sta",args.create_station,"--duration","1","--cxtype","udp","--action","add"], timeout=20, capture_output=True)
            sleep(3)
 
 
