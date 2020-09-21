@@ -77,9 +77,9 @@ lfmgr = "127.0.0.1"
 lfstation = "sta00000"
 lfresource = "1"
 lfresource2 = "1"
-outfile = "cisco_power_results.txt"
-full_outfile = "cisco_full_power_results.txt"
-outfile_xlsx = "cisco_power_results.xlsx"
+outfile = ""
+full_outfile = ""
+outfile_xlsx = ""
 upstream_port = "eth1"
 pf_dbm = 6
 # Allow one chain to have a lower signal, since customer's DUT has
@@ -185,7 +185,7 @@ def main():
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
    parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
-   parser.add_argument("--outfile",     type=str, help="Output file for csv data")
+   parser.add_argument("--outfile",     type=str, help="Output file for csv data",default="cisco_power_results")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
@@ -241,6 +241,15 @@ def main():
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
+
+      if args.outfile != None:
+        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+        outfile = "{}_{}.txt".format(args.outfile,current_time)
+        full_outfile = "{}_full_{}.txt".format(args.outfile,current_time)
+        outfile_xlsx = "{}_{}.xlsx".format(args.outfile,current_time)
+        print("output file: {}".format(outfile))
+        print("output file full: {}".format(full_outfile))
+        print("output file xlsx: {}".format(outfile_xlsx))
 
       filehandler = None
    except Exception as e:
