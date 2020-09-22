@@ -656,8 +656,9 @@ def main():
                                        cc_slot = m.group(2)
                                        cc_ch = m.group(6);  # (132,136,140,144)
                                        cc_power = m.group(4)
-                                       cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                       cc_power = cc_power.replace("/", " of ") # spread-sheets turn 1/8 into a date
                                        cc_dbm = m.group(5)
+                                       cc_dbm = cc_dbm.replace("(","")
 
                                        cc_ch_count = cc_ch.count(",")
                                        cc_bw = m.group(3)
