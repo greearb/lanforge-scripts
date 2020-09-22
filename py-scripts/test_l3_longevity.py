@@ -804,7 +804,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         radios = args.radio
 
     if args.csv_outfile != None:
-        current_time = time.strftime("%m_%d_%Y_%H_%M", time.localtime())
+        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
         print("csv output file : {}".format(csv_outfile))
         

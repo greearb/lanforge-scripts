@@ -27,8 +27,24 @@ The user is responsible for setting up the station oustide of this script, howev
 
 # Per-channel path-loss example
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
+  --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2
+
+# To create a station run test against station create open-wlan 
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+--station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --band a \
+--upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
+--ssidpw [BLANK] --security open
+
+# station already present
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+--station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --band a \
+--upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 
+
+# to create a station 
+./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1\
+--first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
+
 
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
@@ -61,9 +77,9 @@ lfmgr = "127.0.0.1"
 lfstation = "sta00000"
 lfresource = "1"
 lfresource2 = "1"
-outfile = "cisco_power_results.txt"
-full_outfile = "full_cisco_power_results.txt"
-outfile_xlsx = "cisco_power_results.xlsx"
+outfile = ""
+full_outfile = ""
+outfile_xlsx = ""
 upstream_port = "eth1"
 pf_dbm = 6
 # Allow one chain to have a lower signal, since customer's DUT has
@@ -86,26 +102,38 @@ def usage():
    print("-d|--dest:  destination host")
    print("-o|--port:  destination port")
    print("-u|--user:  login name")
-   print("-p|--pass:  password")
+   print("-p|--passwd:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-   print("-l|--log file: log messages here")
+   print("-t|--tty tty serial device")
+   print("-l|--log file: log messages here ,stdout means output to console")
+   print("-a|--ap select AP")
    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160")
    print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60")
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
    print("--series:  9800 the default is 3504")
+   print("-k|--keep_state  keep the state, no configuration change at the end of the test, store true flage present ")
    print("--outfile: Write results here.")
-   print("--station: LANforge station name (sta00000)")
+   print("--station: LANforge station name for test(sta00000)")
    print("--upstream_port: LANforge upstream port name (eth1)")
    print("--lfmgr: LANforge manager IP address")
    print("--lfresource: LANforge resource ID for station")
    print("--lfresource2: LANforge resource ID for upstream port")
+   print("--outfile: Output file for csv data")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
    print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+   print("--wlan: for 9800, wlan identifier defaults to wlan-open")
+   print("--wlanID: wlanID  for 9800 , defaults to 1")
+   print("--series: controller series  9800 , defaults to 3504")
+   print("--create_station", "create LANforge station at the beginning of the test")
+   print("--radio", "radio to create LANforge station on at the beginning of the test")
+   print("--ssid", "ssid default open-wlan")
+   print("--ssidpw", "ssidpw default [BLANK]")
+   print("--security", "security default open")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -136,28 +164,28 @@ def main():
 
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
+   parser.add_argument("-o", "--port",    type=str, help="control port on the controller", default=23)
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
-   parser.add_argument("-a", "--ap",      type=str, help="select AP")
-   parser.add_argument("-b", "--bandwidth",        type=str, help="List of bandwidths to test. NA means no change")
-   parser.add_argument("-c", "--channel",        type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
+   parser.add_argument("-a", "--ap",       type=str, help="select AP")
+   parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
+   parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
-   parser.add_argument("-T", "--txpower",        type=str, help="List of txpowers to test.  NA means no change")
+   parser.add_argument("-T", "--txpower",    type=str, help="List of txpowers to test.  NA means no change")
 
-   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
-   parser.add_argument("--wlanID",      type=str, help="--series  9800 , defaults to 1",default="1")
-   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
-   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
+   parser.add_argument("-k","--keep_state", help="keep the state, no configuration change at the end of the test",action="store_true")
+
    parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
+   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
+
    parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
    parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
-   parser.add_argument("--outfile",     type=str, help="Output file for csv data")
+   parser.add_argument("--outfile",     type=str, help="Output file for csv data",default="cisco_power_results")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
@@ -165,7 +193,19 @@ def main():
    parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   
+
+   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
+   parser.add_argument("--wlanID",      type=str, help="--wlanID  9800 , defaults to 1",default="1")
+   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
+   parser.add_argument("--slot",        type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
+
+   parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
+   parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
+   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="open-wlan")
+   parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
+   parser.add_argument("--security",       type=str, help="security default open",default="open")
+
+
    args = None
    try:
       args = parser.parse_args()
@@ -175,8 +215,13 @@ def main():
       user = args.user
       passwd = args.passwd
       logfile = args.log
+      port = args.port
       if (args.station != None):
           lfstation = args.station
+      if (args.create_station != None):
+          lfstation = args.create_station
+          if (args.station != None):
+              print("NOTE: both station: {} and create_station: {} on command line, test will use create_station {} ".format(args.station, args.create_station, args.create_station))
       if (args.upstream_port != None):
           upstream_port = args.upstream_port
       if (args.lfmgr != None):
@@ -197,6 +242,15 @@ def main():
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
+
+      if args.outfile != None:
+        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+        outfile = "{}_{}.txt".format(args.outfile,current_time)
+        full_outfile = "{}_full_{}.txt".format(args.outfile,current_time)
+        outfile_xlsx = "{}_{}.xlsx".format(args.outfile,current_time)
+        print("output file: {}".format(outfile))
+        print("output file full: {}".format(full_outfile))
+        print("output file xlsx: {}".format(outfile_xlsx))
 
       filehandler = None
    except Exception as e:
@@ -356,6 +410,18 @@ def main():
    channels = args.channel.split()
    nss = args.nss.split()
    txpowers = args.txpower.split()
+       
+   if (args.create_station != None):
+       if (args.radio == None):
+           print("WARNING --create needs a radio")
+           exit(1)
+       else:
+           print("creating station: {} on radio {}".format(args.create_station,args.radio))
+           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
+                   "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                   "--first_sta",args.create_station,"--duration","1","--cxtype","udp","--action","add"], timeout=20, capture_output=True)
+           sleep(3)
+
 
    # Find LANforge station parent radio
    parent = None
@@ -366,6 +432,7 @@ def main():
        m = re.search('Parent/Peer:\s+(.*)', line)
        if (m != None):
            parent = m.group(1)
+
 
    # Create downstream connection
    # First, delete any old one
@@ -386,7 +453,7 @@ def main():
 
    myrd = ""
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "summary","--series",args.series], capture_output=True)
+                              "--action", "summary","--series",args.series,"--port",args.port], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
 
@@ -457,106 +524,115 @@ def main():
                    # Disable AP, apply settings, enable AP
                    print("3504/9800 cisco_wifi_ctl.py: disable")
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable","--series",args.series])
+                                   "--action", "disable","--series",args.series,"--port", args.port])
                                 
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
+                       print("9800 Configure radio for manual channel assignment")
                        print("9800 cisco_wifi_ctl.py: disable_network_5ghz")
 
+                       print("9800  cisco_wifi_ctl.py: disable_wlan")
+
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series]) 
+                                   "--action", "disable_wlan","--series",args.series,"--port", args.port])                 
+
+                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port]) 
 
                        print("9800 cisco_wifi_ctl.py: disable_network_24ghz")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series])    
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port])    
                        print("9800 cisco_wifi_ctl.py: manual")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "manual","--series",args.series])
+                                   "--action", "manual","--series",args.series,"--port", args.port])
 
                    else:
                        print("3504 cisco_wifi_ctl.py: onfig 802.11a disable network")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series])
+                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port])
                        print("3504 cisco_wifi_ctl.py: config 802.11b disable network")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b disable network"])
+                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port])
 
+                   print("9800 test_parameters_summary: set : tx: {} ch: {} bw: {}".format(tx,ch,bw))
                    if (tx != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: txPower")
+                       print("9800 test_parameters: set txPower: {}".format(tx))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "txPower", "--value", tx, "--series" , args.series])
+                                       "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port])
                    if (bw != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: bandwidth")
+                       print("9800 test_parameters bandwidth: set : {}".format(bw))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "bandwidth", "--value", bw, "--series" , args.series])
+                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port])
 
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
-                       print("9800 / 3504 cisco_wifi_ctl.py: channel")
+                       print("9800 test_parameters set channel: {}".format(ch))
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "channel", "--value", ch, "--series" , args.series])
+                                       "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port])
 
-                   # TODO do not know when to configure open wlan
                    if args.series == "9800":
-                       print("9800  cisco_wifi_ctl.py: wlan")
+                       #print("9800 cisco_wifi_ctl.py: delete_wlan")
+                       #subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       #            "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
 
+                       print("9800  cisco_wifi_ctl.py: create_wlan")
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
+                                   "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port])    
                        print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wireless_tag_policy","--series",args.series]) 
+                                   "--action", "wireless_tag_policy","--series",args.series,"--port", args.port]) 
 
                        print("9800  cisco_wifi_ctl.py: enable_wlan")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--series",args.series])                 
+                                   "--action", "enable_wlan","--series",args.series,"--port", args.port])                 
 
 
                    # enable transmission for the entier 802.11z network
                    if args.series == "9800":
+
                        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
                        
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series])   
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port])   
 
                        print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series])                 
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port])                 
 
                    else:    
                        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a enable network"])
+                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port])
 
                        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
 
                        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b enable network"])
+                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port])
 
                    print("9800/3504  cisco_wifi_ctl.py: enable")
 
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable", "--series" , args.series])
+                                   "--action", "enable", "--series" , args.series,"--port", args.port])
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
-                   # TODO figure out equivalent of the advanced command for 9800
                    if args.series == "9800":
                        print("9800  cisco_wifi_ctl.py: advanced")
 
                        advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series], capture_output=True)
+                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
                        pss = advanced.stdout.decode('utf-8', 'ignore')
                        print(pss)
 
@@ -572,19 +648,29 @@ def main():
                                continue
 
                            if (searchap):
-                               pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap)
+                               pat = "%s\s+(\S+)\s+%s\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap,args.slot)
                                m = re.search(pat, line)
                                if (m != None):
-                                   cc_mac = m.group(1)
-                                   cc_ch = m.group(5);  # (132,136,140,144)
-                                   cc_power = m.group(3)
-                                   cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
-                                   cc_dbm = m.group(4)
+                                    cc_mac = m.group(1)
+                                    cc_slot = args.slot
+                                    cc_ch = m.group(5);  # (132,136,140,144)
+                                    cc_power = m.group(3)
+                                    cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                    cc_dbm = m.group(4)
 
-                                   ch_count = cc_ch.count(",")
-                                   cc_bw = m.group(2)
-                                   print("group 1: {} 2: {} 3: {} 4: {} 5: {} ".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5)))
-                                   break
+                                    cc_ch_count = cc_ch.count(",")
+                                    cc_bw = m.group(2)
+                                    print("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
+                                    print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
+
+                                    print("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                                    print("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                    print("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                                    print("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                    print("9800 test_parameters cc_power: read : {}".format(cc_power))
+                                    print("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                    print("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                    break
 
                        if (cc_dbm == ""):
                           # Could not talk to controller?
@@ -592,11 +678,16 @@ def main():
                           print(err)
                           e_tot += err
                           e_tot += "  "
+                       
+                       wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True)
+                       pss = wlan_summary.stdout.decode('utf-8', 'ignore')
+                       print(pss)
                    else:
                        print("3504 cisco_wifi_ctl.py: advanced")
 
                        advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced"], capture_output=True)
+                                              "--action", "advanced","--port", args.port], capture_output=True)
                        pss = advanced.stdout.decode('utf-8', 'ignore')
                        print(pss)
 
@@ -625,7 +716,7 @@ def main():
                                    cc_bw = 20 * (ch_count + 1)
                                    
                                    break
-
+                                
                        if (cc_dbm == ""):
                           # Could not talk to controller?
                           err = "ERROR:  Could not query dBm from controller, maybe controller died?"
@@ -679,6 +770,13 @@ def main():
                            print(err)
                            e_tot += err
                            e_tot += "  "
+                           if args.series == "9800":
+                               print("9800  resending cisco_wifi_ctl.py: advanced")
+
+                               advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
+                               pss = advanced.stdout.decode('utf-8', 'ignore')
+                               print(pss)
                            if (args.wait_forever):
                                print("Will continue waiting, you may wish to debug the system...")
                                i = 0
@@ -1003,43 +1101,58 @@ def main():
 
    workbook.close()
 
+   # check if keeping the existing state
+   if(args.keep_state):
+       print("9800/3504 flag --keep_state set thus keeping state")
+       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+          "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
+       pss = advanced.stdout.decode('utf-8', 'ignore')
+       print(pss)
+
+       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+          "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True)
+       pss = advanced.stdout.decode('utf-8', 'ignore')
+       print(pss)
+
+       exit(1)
+  
    # Set things back to defaults
    # Disable AP, apply settings, enable AP
    print("9800/3504  cisco_wifi_ctl.py: disable")
 
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "disable", "--series" , args.series])
+                   "--action", "disable", "--series" , args.series,"--port", args.port])
 
    if args.series == "9800":
        print("9800  cisco_wifi_ctl.py: disable_network_5ghz")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series])      
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port])      
 
        print("9800  cisco_wifi_ctl.py: disable_network_24ghz")
                   
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series])                 
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port])                 
    else:
        print("3504  cisco_wifi_ctl.py: config 802.11a disable network")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a disable network"])
+                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port])
        print("3504  cisco_wifi_ctl.py: config 802.11b disable network")
        
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b disable network"])
+                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port])
 
    if (tx != "NA"):
        print("9800/3504  cisco_wifi_ctl.py: txPower")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "txPower", "--value", "1", "--series" , args.series])
+                       "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port])
    if (bw != "NA"):
        print("9800/3504  cisco_wifi_ctl.py: bandwidth")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "bandwidth", "--value", "20", "--series" , args.series])
+                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port])
 
    # NSS is set on the station earlier...
                        
@@ -1047,36 +1160,36 @@ def main():
        print("9800/3504  cisco_wifi_ctl.py: channel")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "channel", "--value", "36", "--series" , args.series])
+                       "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port])
 
    if args.series == "9800":
        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series])         
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port])         
        print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series]) 
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port]) 
        print("9800  cisco_wifi_ctl.py: auto")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "auto","--series",args.series])
+                                   "--action", "auto","--series",args.series,"--port", args.port])
 
    else:     
        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a enable network"])
+                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port])
        print("3504  cisco_wifi_ctl.py: config 802.11b enable network")
 
        subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b enable network"])
+                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port])
 
    print("9800/3504  cisco_wifi_ctl.py: enable")
    
    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "enable", "--series" , args.series])
+                   "--action", "enable", "--series" , args.series,"--port", args.port])
 
    # Remove LANforge traffic connection
    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
@@ -1090,7 +1203,7 @@ def main():
    print("9800/3504  cisco_wifi_ctl.py: advanced")
 
    advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "advanced", "--series" , args.series], capture_output=True)
+                              "--action", "advanced", "--series" , args.series,"--port", args.port], capture_output=True)
    pss = advanced.stdout.decode('utf-8', 'ignore');
    print(pss)
 
