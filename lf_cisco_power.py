@@ -199,6 +199,8 @@ def main():
    parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
    parser.add_argument("--slot",        type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
 
+   parser.add_argument("--rssi",    type=str, help="Select rssi to use for calculation (combined | beacon) Default is beacon",choices=["beacon","combined"])
+
    parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
    parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="open-wlan")
@@ -238,6 +240,10 @@ def main():
           band = args.band
       else:
           band = "a"
+      if(args.rssi != None):
+          rssi_to_use = args.rssi 
+      else:
+          rssi_to_use = "combined"
       if (args.pf_dbm != None):
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
@@ -294,9 +300,17 @@ def main():
        print("ERROR:  Pathloss must be specified.")
        exit(1)
 
+   if (rssi_to_use == "beacon"):
+       use_beacon   = "-USED"
+       use_combined = ""
+   else:
+       use_beacon   = ""
+       use_combined = "-USED"
+
+        
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Regulatory Domain\tCabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
+   csv.write("Regulatory Domain\tCabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
    csv.write("\n");
    csv.flush()
 
@@ -384,10 +398,14 @@ def main():
 
    worksheet.set_column(col, col, 15) # Set width
    worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold); col += 1
-   
-   worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
-   worksheet.set_column(col, col, 10) # Set width
-   worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
+   if(rssi_to_use == "beacon"):
+       worksheet.write(row, col, 'Beacon\nRSSI USED\n', dpeach_bold); col += 1
+       worksheet.set_column(col, col, 10) # Set width
+       worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
+   else:
+       worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
+       worksheet.set_column(col, col, 10) # Set width
+       worksheet.write(row, col, 'Combined\nRSSI USED\n', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n1', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n2', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n3', dpeach_bold); col += 1
@@ -804,7 +822,7 @@ def main():
                        time.sleep(1)
                        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                                     "--cli_cmd", "probe_port 1 %s %s"%(lfresource, lfstation)], capture_output=True);
-                       pss = port_stats.stdout.decode('utf-8', 'ignore');
+                       pss = port_stats.stdout.decode('utf-8', 'ignore')
 
                        foundit = False
                        for line in pss.splitlines():
@@ -818,7 +836,7 @@ def main():
                                    ants[q] = ants[q].replace(",", "", 1)
                                    q += 1
 
-                               #print("sig: %s  ants: %s ants-len: %s n: %s"%(sig, m.group(2), len(ants), n))
+                               print("sig: %s  ants: %s ants-len: %s n: %s"%(sig, m.group(2), len(ants), n))
 
                                if (len(ants) == int(n)):
                                    foundit = True
@@ -828,6 +846,7 @@ def main():
                            m = re.search('beacon signal avg:\s+(\S+)\s+dBm', line)
                            if (m != None):
                                beacon_sig = m.group(1)
+                               print("beacon_sig: %s "%(beacon_sig))
                                
                        if (foundit):
                            break
@@ -921,8 +940,14 @@ def main():
                        e_tot += "ERROR:  Could not detect signal level.  "
                        sig = -100
 
-                   pi = int(pathloss)                   
-                   calc_dbm = int(sig) + pi + rssi_adj
+                   pi = int(pathloss)   
+                   if(rssi_to_use == "beacon"):
+                       print("rssi_to_use == beacon: beacon_sig: %s "%(beacon_sig))
+                       calc_dbm = int(beacon_sig) + pi + rssi_adj
+                   else:
+                       print("rssi_to_use == combined: sig: %s"%sig)
+                       calc_dbm = int(sig) + pi + rssi_adj
+                   print("calc_dbm %s"%(calc_dbm))
                    calc_ant1 = 0
                    if (ants[0] != ""):
                        calc_ant1 = int(ants[0]) + pi + rssi_adj
