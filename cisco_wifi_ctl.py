@@ -18,6 +18,13 @@ $ pip3 install pexpect-serial
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action cmd --value "show ap config general APA453.0E7B.CF9C"
 
 telnet 172.19.36.168(Pwd:Wnbulab@123), go to the privileged mode and execute the command “clear line 43”.
+
+Cisco uses 9130 AP
+show controllers dot11Radio 1 wlan
+
+AP 
+Command on AP to erase the config:"capwap ap erase all"
+
 '''
 
 
