@@ -663,6 +663,8 @@ def main():
                                    print("9800 test_parameters tx: read : {}".format(cc_power))
                                    print("9800 test_parameters bandwidth: read : {}".format(cc_bw))
                                    print("9800 test_parameters channel: read : {}".format(cc_ch))
+                                   print("9800 test_parameters dbm: read : {}".format(cc_dbm))
+
 
                                    break
 
