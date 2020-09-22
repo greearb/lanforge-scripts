@@ -197,6 +197,7 @@ def main():
    parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
    parser.add_argument("--wlanID",      type=str, help="--wlanID  9800 , defaults to 1",default="1")
    parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
+   parser.add_argument("--slot",        type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
 
    parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
@@ -647,26 +648,32 @@ def main():
                                continue
 
                            if (searchap):
-                               pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap)
+                               pat = "%s\s+(\S+)\s+(\S+)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap)
                                m = re.search(pat, line)
                                if (m != None):
-                                   cc_mac = m.group(1)
-                                   cc_ch = m.group(5);  # (132,136,140,144)
-                                   cc_power = m.group(3)
-                                   cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
-                                   cc_dbm = m.group(4)
+                                   cc_slot= m.group(2)
+                                   print("cc_slot: {}".format(cc_slot))
+                                   if (args.slot == cc_slot):
+                                       cc_mac = m.group(1)
+                                       cc_slot = m.group(2)
+                                       cc_ch = m.group(6);  # (132,136,140,144)
+                                       cc_power = m.group(4)
+                                       cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                       cc_dbm = m.group(5)
 
-                                   ch_count = cc_ch.count(",")
-                                   cc_bw = m.group(2)
-                                   print("group 1: {} 2: {} 3: {} 4: {} 5: {} ".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5)))
-                                   print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
-                                   print("9800 test_parameters tx: read : {}".format(cc_power))
-                                   print("9800 test_parameters bandwidth: read : {}".format(cc_bw))
-                                   print("9800 test_parameters channel: read : {}".format(cc_ch))
-                                   print("9800 test_parameters dbm: read : {}".format(cc_dbm))
+                                       cc_ch_count = cc_ch.count(",")
+                                       cc_bw = m.group(3)
+                                       print("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
+                                       print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
 
-
-                                   break
+                                       print("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                                       print("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                       print("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                                       print("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                       print("9800 test_parameters cc_power: read : {}".format(cc_power))
+                                       print("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                       print("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                       break
 
                        if (cc_dbm == ""):
                           # Could not talk to controller?
