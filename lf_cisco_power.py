@@ -648,29 +648,30 @@ def main():
                                continue
 
                            if (searchap):
-                               pat = "%s\s+(\S+)\s+%s\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm\)+\s+(\S+)\*+\s"%(args.ap,args.slot)
+                               pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
                                m = re.search(pat, line)
                                if (m != None):
-                                    cc_mac = m.group(1)
-                                    cc_slot = args.slot
-                                    cc_ch = m.group(5);  # (132,136,140,144)
-                                    cc_power = m.group(3)
-                                    cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
-                                    cc_dbm = m.group(4)
+                                   if(m.group(2) == args.slot):
+                                       cc_mac = m.group(1)
+                                       cc_slot = m.group(2)
+                                       cc_ch = m.group(6);  # (132,136,140,144)
+                                       cc_power = m.group(4)
+                                       cc_power = cc_power.replace("*/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                       cc_dbm = m.group(5)
 
-                                    cc_ch_count = cc_ch.count(",")
-                                    cc_bw = m.group(2)
-                                    print("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
-                                    print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
+                                       cc_ch_count = cc_ch.count(",")
+                                       cc_bw = m.group(3)
+                                       print("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
+                                       print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
 
-                                    print("9800 test_parameters cc_mac: read : {}".format(cc_mac))
-                                    print("9800 test_parameters cc_slot: read : {}".format(cc_slot))
-                                    print("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
-                                    print("9800 test_parameters cc_bw: read : {}".format(cc_bw))
-                                    print("9800 test_parameters cc_power: read : {}".format(cc_power))
-                                    print("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
-                                    print("9800 test_parameters cc_ch: read : {}".format(cc_ch))
-                                    break
+                                       print("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                                       print("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                       print("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                                       print("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                       print("9800 test_parameters cc_power: read : {}".format(cc_power))
+                                       print("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                       print("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                       break
 
                        if (cc_dbm == ""):
                           # Could not talk to controller?
