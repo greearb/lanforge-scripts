@@ -672,6 +672,11 @@ def main():
                           print(err)
                           e_tot += err
                           e_tot += "  "
+                       
+                       wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True)
+                       pss = wlan_summary.stdout.decode('utf-8', 'ignore')
+                       print(pss)
                    else:
                        print("3504 cisco_wifi_ctl.py: advanced")
 
