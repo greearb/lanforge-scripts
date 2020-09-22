@@ -660,7 +660,7 @@ def main():
                                        cc_dbm = m.group(5)
                                        cc_dbm = cc_dbm.replace("(","")
 
-                                       cc_ch_count = cc_ch.count(",")
+                                       cc_ch_count = cc_ch.count(",") + 1
                                        cc_bw = m.group(3)
                                        print("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
                                        print("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
