@@ -326,6 +326,7 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                egg.sendline(CR)
+               sleep(1)
                try:
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","ser\:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
