@@ -7,8 +7,12 @@
     In this example, Another Lanforge is used as DUT
     It also have a function : GenerateReport that generates the report in xlsx format as well as it plots the Graph of throughput over time with temperature
     It also have Plot function that generates a html page that contains the plot
-    Prerequisite Installation
-
+    
+    
+    Prerequisite 
+    Start the Lanforge Manager both Sides
+    
+    Installation
     pip install paramiko
     pip install bokeh
     pip install XlsxWriter
@@ -72,6 +76,7 @@ class Login_DUT:
         self.data_core1.append(out_lines[len(out_lines)-3])
         self.data_core2.append(out_lines[len(out_lines)-2])
         
+
     def Connect(self):
         self.CLIENT.load_system_host_keys()
         self.CLIENT.set_missing_host_key_policy(pm.AutoAddPolicy())
@@ -90,7 +95,7 @@ class LoadScenario(LFCliBase):
         self.host = host
         self.port = port
         self.json_post("/cli-json/load", { "name": db_name, "action": 'overwrite' })
-        print("Scenario Loaded...")
+        print(host+ " : Scenario Loaded...")
         time.sleep(2)
 
 # Class to create stations and run L3 Cross connects and run them for given time. It also stores the endpoint names for measuring throughput
@@ -173,7 +178,7 @@ class CreateSTA_CX(LFCliBase):
            self.cx_names.append(i)
         for j in self.cx_names:
             x=self.local_realm.json_get("/cx/"+j)
-            self.endp.append(x.get(j).get('endpoints')[0])
+            self.endp.append(x.get(j).get('endpoints')[1])
         #print(self.endp)
         return 0
         
@@ -193,8 +198,22 @@ class CreateSTA_CX(LFCliBase):
         return 0
 
     def cleanup(self):
+        # Removing Connections
         self.local_realm.cleanup_cxe_prefix(self.cx_profile.name_prefix)
+        
+        vap = self.local_realm.find_ports_like("vap+")
+        bridges = self.local_realm.find_ports_like("br+")
         station_map = self.local_realm.find_ports_like("sta+")
+        #Removing Bridges
+        for eid,record in bridges.items():
+            self.local_realm.remove_vlan_by_eid(eid)
+            time.sleep(0.03)
+        #Removing VAP
+        for eid,record in vap.items():
+            self.local_realm.remove_vlan_by_eid(eid)
+            time.sleep(0.03)
+        
+        #Removing stations
         for eid,record in station_map.items():
             self.local_realm.remove_vlan_by_eid(eid)
             time.sleep(0.03)
@@ -265,19 +284,19 @@ def plot(throughput_sta, throughput_vap, core1_temp, core2_temp, Time):
     s1.yaxis.axis_label = "Throughput in Mbps"
 
     s1.line( Time, throughput_sta, color='black')
-    s1.circle(Time, throughput_sta, color='red')
+    #s1.circle(Time, throughput_sta, color='red')
 
-    s1.line( Time, throughput_vap, color='orange')
-    s1.circle(Time, throughput_vap, color='blue')
+    s1.line( Time, throughput_vap, color='blue')
+    #s1.circle(Time, throughput_vap, color='blue')
     
     s1.extra_y_ranges = {"Temperature": Range1d(start=0, end=150)}
     s1.add_layout(LinearAxis(y_range_name="Temperature", axis_label="Temperature in Degree Celsius"), 'right')
     
-    s1.line(Time, core1_temp, y_range_name='Temperature', color='black')
-    s1.circle(Time, core1_temp, y_range_name='Temperature', color='red')
+    s1.line(Time, core1_temp, y_range_name='Temperature', color='red')
+    #s1.circle(Time, core1_temp, y_range_name='Temperature', color='red')
 
     s1.line(Time, core2_temp, y_range_name='Temperature', color='green')
-    s1.circle(Time, core2_temp, y_range_name='Temperature', color='blue')
+    #s1.circle(Time, core2_temp, y_range_name='Temperature', color='blue')
 
     show(s1)
 
@@ -294,107 +313,146 @@ def main():
 
     parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
     
-    parser.add_argument("-m", "--lf_host", type=str, help="Enter the address of LF which will test the DUT")
-    parser.add_argument("-d", "--dut_host", type=str, help="Enter the address of LF Which is to be dut")
-    parser.add_argument("-lr", "--lf_radio", type=str, help="Enter the radio on which you want to create a station/s on (Lanforge Side)")
-    parser.add_argument("-dr", "--dut_radio", type=str, help="Enter the radio on which you want to create a station/s on (DUT Side)")
+    parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
+    parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
+    parser.add_argument("-r", "--radio", type=str, help="Enter the radio on which you want to create a station/s on ")
     parser.add_argument("-n", "--num_sta", type=int, help="Enter the Number of Stations You want to create")
-    parser.add_argument("-st", "--sta_id", type=int, help="Enter Station id [for sta001, enter 1]")
-
-    parser.add_argument("-ls", "--lf_ssid", type=str, help="Enter the ssid, with which you want to associate your stations (Enter the SSID of VAP in Lanforge)")
-    parser.add_argument("-ds", "--dut_ssid", type=str, help="Enter the ssid, with which you want to associate your stations (Enter the SSID of VAP in DUT)")
+    parser.add_argument("-i", "--sta_id", type=int, help="Enter Station id [for sta001, enter 1]")
+    parser.add_argument("-ss", "--ssid", type=str, help="Enter the ssid, with which you want to associate your stations (Enter the SSID of DUT AP)")
+    parser.add_argument("-up", "--upstream", type=str, help="Enter the upstream ethernet port")
     parser.add_argument("-sec", "--security", type=str, help="Enter the security type [open, wep, wpa, wpa2]")
     parser.add_argument("-p", "--password", type=str, help="Enter the password if security is not open")
-    parser.add_argument("-lu", "--lf_upstream", type=str, help="Enter the upstream ethernet port")
-    parser.add_argument("-du", "--dut_upstream", type=str, help="Enter the upstream ethernet port")
     parser.add_argument("-pr", "--protocol", type=str, help="Enter the protocol on which you want to run your connections [lf_udp, lf_tcp]")
-    parser.add_argument("-minb", "--min_bps", type=str, help="Enter the Minimum Rate")
-    parser.add_argument("-maxb", "--max_bps", type=str, help="Enter the Maximum Rate")
+    parser.add_argument("-mn", "--min_mbps", type=str, help="Enter the Minimum Rate")
+    parser.add_argument("-mx", "--max_mbps", type=str, help="Enter the Maximum Rate")
     parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)")
-    parser.add_argument("-r", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
-    
+    parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
     args = None
      
     try:
       args = parser.parse_args()
-      if (args.lf_host is not None):
-         lf_host = args.lf_host
-      if (args.dut_host is not None):
-         dut_host = args.dut_host
-      if (args.lf_radio is not None):
-         lf_radio = args.lf_radio
-      if (args.dut_radio is not None):
-         dut_radio = args.dut_radio
+      # Lanforge Manager IP Address
+      if (args.manager is None):
+         manager = "localhost"
+      if (args.manager is not None):
+         manager = args.manager
+      
+      # Scenario Name
+      if (args.scenario is not None):
+         scenario = args.scenario
+      # Radio Name
+      if (args.radio is not None):
+         radio = args.radio
+      
+      # Number of Stations
+      if (args.num_sta is None):
+         num_sta = 0
       if (args.num_sta is not None):
          num_sta = args.num_sta   
+      
+      # Station ID
+      if (args.sta_id is None):
+         sta_id = '0'
       if (args.sta_id is not None):
-         sta_id = args.sta_id   
-      if (args.dut_ssid is not None):
-         dut_ssid = args.dut_ssid
-      if (args.lf_ssid is not None):
-         lf_ssid = args.lf_ssid
+         sta_id = args.sta_id
+      
+      # SSID
+      if (args.ssid is not None):
+         ssid = args.ssid
+      if (args.ssid is not None):
+         ssid = args.ssid
+
+      # Security (Open by Default)
+      if (args.security is None):
+         security = 'open'
       if (args.security is not None):
          security = args.security
+
+      # Password (if Security is not Open)
       if (args.password is not None):
          password = args.password
+      if (args.password is 'open'):
+         password = "[Blank]"
       if (args.password is None):
          password = "[Blank]"
-      if (args.lf_upstream is not None):
-         lf_upstream = args.lf_upstream
-      if (args.dut_upstream is not None):
-         dut_upstream = args.dut_upstream
+      
+      # Upstream Port (By default br0000)
+      if (args.upstream is None):
+         upstream = 'br0000'
+      if (args.upstream is not None):
+         upstream = args.upstream
+      
+      # Protocol (By Default lf_udp)
       if (args.protocol is not None):
          protocol = args.protocol
-      if (args.min_bps is not None):
-         min_bps = int(args.min_bps)*1000000
-      if (args.max_bps is not None and args.max_bps is not "same"):
-         max_bps = int(args.max_bps)*1000000
-      if (args.max_bps is not None and args.max_bps is "same"):
-         max_bps = args.min_bps
+      if (args.protocol is None):
+         protocol = 'lf_udp'
+      
+      #Min BPS
+      if (args.min_mbps is not None):
+         min_bps = int(args.min_mbps)*1000000
+      if (args.min_mbps is None):
+         min_bps = int(1000)*1000000
+      if (args.max_mbps is None ):
+         max_bps = int(1000)*1000000
+
+      if (args.min_mbps is not None):
+         min_bps = int(args.min_mbps)*1000000
+      if (args.max_mbps is not None and args.max_mbps is not "same"):
+         max_bps = int(args.max_mbps)*1000000
+      if (args.max_mbps is not None and args.max_mbps is "same"):
+         max_bps = args.min_mbps
       if (args.duration is not None):
          duration = (args.duration * 60)/5
       if (args.report_name is not None):
          report_name = args.report_name
+      if (args.duration is None):
+         duration = (1 * 60)/5
+      if (args.report_name is None):
+         report_name = "report.xlsx"
     except Exception as e:
       logging.exception(e)
       
       exit(2)
+    
 
-    DB_Lanforge_1 = "Lexus_DUT"
+    
+    # Start DUT
+    
+
     #Loading the Scenario on Lanforge_1 (Here Considered as DUT) [Created VAP With SSID 'lexusap' on wiphy0 with eth1 as backhaul]
-    Scenario_1 = LoadScenario(dut_host, 8080, DB_Lanforge_1)
+    Scenario_1 = LoadScenario("192.168.200.18", 8080, "Lexus_DUT")
+    
+    dut_traffic_profile = CreateSTA_CX("192.168.200.18", 8080, "wiphy1", 1, 0, 'lanforge_ap', 'open', password, 'br0000', 'lf_udp', min_bps, max_bps)
+    dut_traffic_profile.build()
+
+    print("DUT All Set... Lets setup Lanforge")
+    
+
+    #Loading the Scenario on Lanforge_2 (Here Considered as LANFORGE Test) [Created VAP With SSID 'lanforge_ap' on wiphy0 with eth2 as backhaul]
     
     DB_Lanforge_2 = "LANforge_TEST"
-    #Loading the Scenario on Lanforge_2 (Here Considered as LANFORGE Test) [Created VAP With SSID 'lanforge_ap' on wiphy0 with eth2 as backhaul]
-    Scenario_2 = LoadScenario(lf_host, 8080, DB_Lanforge_2)
+    Scenario_2 = LoadScenario(manager, 8080, scenario)
+    
 
-    # Object to Measure the Traffic at VAP
-    vap_measure_obj = VAP_Measure(lf_host, 8080)
-    
-    
-    
-    
-    
-    #Create Station and cross connects on Lanforge_1 that connects on VAP on Lanforge_2
-    dut_traffic_profile = CreateSTA_CX(dut_host, 8080, dut_radio, num_sta, sta_id, lf_ssid, security, password, dut_upstream, protocol, min_bps, max_bps)
-    dut_traffic_profile.build()
-    
-    
-    #Create Station and cross connects on Lanforge_2 that connects on VAP on Lanforge_1 (lexus_ap)
-    lf_traffic_profile = CreateSTA_CX(lf_host, 8080, lf_radio, num_sta, sta_id, dut_ssid, security, password, lf_upstream, protocol, min_bps, max_bps)
+    lf_traffic_profile = CreateSTA_CX(manager, 8080, radio, num_sta, sta_id, ssid, security, password, upstream, protocol, min_bps, max_bps)
     lf_traffic_profile.build()
 
+    print("Lanforge System is All set... Lets start and Measure")
 
-    # Starting Running Traffic 
     lf_traffic_profile.start()
     dut_traffic_profile.start()
-    
-    
-    print("Collecting Throughput Values...")
-    dut_temp_obj = Login_DUT(1, "Thread-1", dut_host)
-    
+
     time.sleep(10)
-    
+
+    print("Collecting Throughput Values...")
+
+    # Object to Measure Throughput at VAP Side
+    vap_measure_obj = VAP_Measure(manager, 8080)
+
+    #
+    dut_temp_obj = Login_DUT(1, "Thread-1", "192.168.200.18")
+
     #List for Storing the Total Throughput
     throughput_sta =[]
     throughput_vap =[]
@@ -414,9 +472,8 @@ def main():
     print(throughput_sta)
     dut_traffic_profile.cleanup()
     lf_traffic_profile.cleanup()
-    GenerateReport(throughput_sta, throughput_vap, dut_temp_obj.data_core1, dut_temp_obj.data_core2, duration)
-    
-    
+    GenerateReport(throughput_sta, throughput_vap, dut_temp_obj.data_core1, dut_temp_obj.data_core2, duration, report_name)
+        
 
     
 if __name__ == '__main__':
