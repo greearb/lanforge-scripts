@@ -1685,7 +1685,13 @@ class VAPProfile(LFCliBase):
 
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True, use_ht160=False,
                suppress_related_commands_=True, wifi_extra=False):
-
+        port_list = self.local_realm.json_get("port/1/1/list")
+        if port_list is not None:
+            port_list = port_list['interfaces']
+            for port in port_list:
+                for k,v in port.items():
+                    if v['alias'] == self.vap_name:
+                        self.local_realm.rm_port(k, check_exists=True)
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")
@@ -1784,6 +1790,15 @@ class VAPProfile(LFCliBase):
             else:
                 raise ValueError("set_wifi_extra must be called to use wifi_extra")
 
+        port_list = self.local_realm.json_get("port/1/1/list")
+        if port_list is not None:
+            port_list = port_list['interfaces']
+            for port in port_list:
+                for k,v in port.items():
+                    if v['alias'] == 'br0':
+                        self.local_realm.rm_port(k, check_exists=True)
+                        time.sleep(5)
+
         # create bridge
         data = {
             "shelf": 1,
@@ -1792,6 +1807,17 @@ class VAPProfile(LFCliBase):
             "network_devs": "eth1,%s" % self.vap_name
         }
         self.local_realm.json_post("cli-json/add_br", data)
+
+        bridge_set_port = {
+            "shelf": 1,
+            "resource": 1,
+            "port": "br0",
+            "current_flags": 0x80000000,
+            "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+        }
+        self.local_realm.json_post("cli-json/set_port", bridge_set_port)
+
+        exit(1)
 
         if (self.up):
             self.admin_up(1)
