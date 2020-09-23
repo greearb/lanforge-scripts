@@ -1817,7 +1817,7 @@ class VAPProfile(LFCliBase):
         }
         self.local_realm.json_post("cli-json/set_port", bridge_set_port)
 
-        exit(1)
+
 
         if (self.up):
             self.admin_up(1)
