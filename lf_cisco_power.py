@@ -942,6 +942,10 @@ def main():
                        e_tot += "ERROR:  Could not detect signal level.  "
                        sig = -100
 
+                   if (beacon_sig == None):   
+                       e_tot += "ERROR:  Could not detect beacon signal level.  "
+                       beacon_sig = -100
+
                    pi = int(pathloss)   
                    if(rssi_to_use == "beacon"):
                        print("rssi_to_use == beacon: beacon_sig: %s "%(beacon_sig))
