@@ -43,7 +43,7 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.vap_profile = self.local_realm.new_vap_profile()
-        self.vap_profile.vap_name = "TestNet"
+        self.vap_profile.vap_name = "vap0000"
         self.monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
 
         self.station_profile.lfclient_url = self.lfclient_url
@@ -103,9 +103,12 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.vap_profile.create(resource=1, radio=self.radio, channel=149, up_=True, debug=False,
+
+        self.vap_profile.set_command_flag("add_vap", "use-bss-load", 1)
+        self.vap_profile.set_command_flag("add_vap", "use-bss-transition", 1)
+        self.vap_profile.create(resource=1, radio="wiphy1", channel=161, up_=True, debug=False,
                                 suppress_related_commands_=True)
-        self.monitor.create(resource_=1, channel=149, radio_="wiphy1", name_="moni0")
+        self.monitor.create(resource_=1, channel=161, radio_="wiphy2", name_="moni0")
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
                                sleep_time=0)
@@ -113,6 +116,7 @@ class IPV4VariableTime(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
+        self.vap_profile.admin_up(1)
         temp_stas = self.station_profile.station_names.copy()
         temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
@@ -126,6 +130,11 @@ class IPV4VariableTime(LFCliBase):
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
+        curr_mon_name = self.monitor.monitor_name
+        now = datetime.datetime.now()
+        date_time = now.strftime("%Y-%m-%d-%H%M%S")
+        self.monitor.start_sniff("/home/lanforge/Documents/" + curr_mon_name + "-" + date_time + ".pcap")
+
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(minutes=1)
             while cur_time < interval_time:
@@ -152,6 +161,7 @@ class IPV4VariableTime(LFCliBase):
     def stop(self):
         self.cx_profile.stop_cx()
         self.station_profile.admin_down()
+        self.vap_profile.admin_down(1)
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -161,6 +171,7 @@ class IPV4VariableTime(LFCliBase):
     def cleanup(self):
         self.cx_profile.cleanup()
         self.station_profile.cleanup()
+        self.vap_profile.cleanup(1)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
 
