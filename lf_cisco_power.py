@@ -399,10 +399,12 @@ def main():
    worksheet.set_column(col, col, 15) # Set width
    worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold); col += 1
    if(rssi_to_use == "beacon"):
+       worksheet.set_column(col, col, 10) # Set width
        worksheet.write(row, col, 'Beacon\nRSSI USED\n', dpeach_bold); col += 1
        worksheet.set_column(col, col, 10) # Set width
        worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
    else:
+       worksheet.set_column(col, col, 10) # Set width
        worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
        worksheet.set_column(col, col, 10) # Set width
        worksheet.write(row, col, 'Combined\nRSSI USED\n', dpeach_bold); col += 1
