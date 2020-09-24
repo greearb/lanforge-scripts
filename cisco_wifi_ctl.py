@@ -206,7 +206,6 @@ def main():
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found WLC#  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
-                     logg.info()
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
@@ -428,7 +427,6 @@ def main():
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found WLC#  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
-                     logg.info()
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
