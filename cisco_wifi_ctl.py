@@ -648,13 +648,9 @@ def main():
                logg.info("did get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
                sleep(0.1)
-               egg.sendline("end")
-               sleep(0.1)
             if j == 1:
                logg.info("did not get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
-               sleep(0.1)
-               egg.sendline("end")
                sleep(0.1)
          if i == 1:
             logg.info("timed out on (config)# disable_network_5ghz")
@@ -672,13 +668,9 @@ def main():
                logg.info("did get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
                sleep(0.1)
-               egg.sendline("end")
-               sleep(0.1)
             if j == 1:
                logg.info("did not get Are you sure you want to continue? (y/n)[y]:")
                egg.sendline(CR)
-               sleep(0.1)
-               egg.sendline("end")
                sleep(0.1)
          if i == 1:
             logg.info("timed out on (config)# disable_network_24ghz")
@@ -691,12 +683,6 @@ def main():
          if i == 0:
             egg.sendline("no ap dot11 5ghz shutdown")
             sleep(0.1)
-            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-            if j == 0:
-               egg.sendline("end")
-               sleep(0.1)
-            if j == 1:
-               logg.info("timed out on (config)# no ap dot11 5ghz shutdown")   
          if i == 1:
             logg.info("timed out on (config) prompt")
 
@@ -708,12 +694,6 @@ def main():
          if i == 0:
             egg.sendline("no ap dot11 24ghz shutdown")
             sleep(0.1)
-            j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-            if j == 0:
-               egg.sendline("end")
-               sleep(0.1)
-            if j == 1:
-               logg.info("timed out on (config)# no ap dot11 24ghz shutdown")   
          if i == 1:
             logg.info("timed out on (config) prompt")
 
@@ -789,15 +769,13 @@ def main():
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile","end"]:
+         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
             sleep(0.1)
             j = egg.expect_exact(["(config-policy-tag)#","(config)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("command sent: {}".format(command))
             if j == 1:
-               logg.info("command sent end: {}".format(command))
-            if j == 2:
                logg.info("command timed out {}".format(command))   
       if i == 1:
          logg.info("did not get the (config)# prompt")
@@ -812,15 +790,6 @@ def main():
          command = "no wlan %s"%(args.wlan)
          egg.sendline(command)
          sleep(0.1)
-         j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            logg.info("command sent: {}".format(command))
-            egg.sendline("end")
-            sleep(0.1)
-         if j == 1:
-            logg.info("command timed out {}".format(command))
-            egg.sendline("end")
-            sleep(0.1)
       if i == 1:
          logg.info("did not get the (config)# prompt")
 
@@ -857,8 +826,6 @@ def main():
                        logg.info("command sent: {}".format(command))
                     if k == 1:
                          logg.info("command time out: {}".format(command))
-                 egg.sendline("end")
-                 sleep(0.1)
              if j == 1:
                 logg.info("did not get the (config-wlan)# prompt")
           if i == 0:
@@ -879,15 +846,6 @@ def main():
                cmd = "no wlan %s"%(args.wlan)
                egg.sendline(cmd)
                sleep(0.1)
-               j = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-               if j == 0:
-                  logg.info("received elevated (config)# after no wlan {}".format(args.wlan))
-                  egg.sendline(cmd)
-                  sleep(0.1)
-               if j == 1:
-                  logg.info("did not get the (config# prompt")
-                  egg.sendline(cmd)
-                  sleep(0.1)  
             if i == 1:
                logg.info("did not get the (config)# prompt")                            
       else:
@@ -916,15 +874,6 @@ def main():
                       cmd = "shutdown"
                   egg.sendline(cmd)
                   sleep(0.1)
-                  k = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
-                  if k == 0:
-                      logg.info("cmd sent: {}".format(cmd))
-                      egg.sendline("end")
-                      sleep(0.1)
-                  if k == 1:
-                      logg.info("cmd timed out: {}".format(cmd))
-                      egg.sendline("end")
-                      sleep(0.1)
                if j == 1:
                   logg.info("did not get the (config-wlan)# prompt")
             if i == 1:
@@ -942,66 +891,88 @@ def main():
    if (args.action == "wlan_qos"):
       command = "config wlan qos %s %s"%(args.wlanID, args.value)
 
-   if (command is None):
-      sleep(0.5)
-      if args.series == "9800":
-         logg.info("9800 series command completed by earlier logic: {}".format(command))
-      else:
+   # separate the 3504 and 9800 logouts as the are conflicting
+   if (args.series == "9800"):
+      if (command is None ):
+         sleep(0.5)
          logg.info("No command specified, going to log out.")
-   else:
-      logg.info("Command[%s]"%command)
-      egg.sendline(command)
-      sleep(0.5)
-      logg.info("command sent {}".format(command))
+      else:
+         logg.info("Command[%s]"%command)
+         egg.sendline(command)
+         sleep(0.5)
+         logg.info("command sent {}".format(command))
 
-      sleep(1)
       while True:
-         i = egg.expect(["WLC>","WLC#", "WLC(config)#",AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
+         i = egg.expect(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#",pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
-            logg.info("> prompt received after command sent")
+            logg.info("WLC> prompt received can send logout")
+            egg.sendline("logout")
             break
          if i == 1:
-            logg.info("WLC# prompt received after command sent")
+            logg.info("WLC# prompt received will send end")
             try:
-               logg.info("9800 send exit")
-               egg.sendline("exit")
+               egg.sendline("end")
                sleep(0.1)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end")
                sleep(0.1)
+         if i == 2:
+            logg.info("WLC(config)# prompt received will send end")
+            try:
+               egg.sendline("end")
+               sleep(0.1)
+            except:
+               logg.info("9800 exception on end")
+               sleep(0.1)
+         if i == 3:
+            logg.info("WLC(config-wlan)# prompt received will send end")
+            try:
+               egg.sendline("end")
+               sleep(0.1)
+            except:
+               logg.info("9800 exception on end")
+               sleep(0.1)
+         if i == 4:
+            logg.info("(config-policy-tag)# prompt received will send end")
+            try:
+               egg.sendline("end")
+               sleep(0.1)
+            except:
+               logg.info("9800 exception on end")
+               sleep(0.1)
+         if i == 5:
+            logg.info("9800 expect timeout send logout")
+            egg.sendline("logout")
+            break
+   # 3504         
+   else:
+      if (command is None ):
+         sleep(0.5)
+         logg.info("No command specified, going to log out.")
+      else:
+         logg.info("Command[%s]"%command)
+         egg.sendline(command)
+         sleep(0.5)
+         logg.info("command sent {}".format(command))
+
+      while True:
+         i = egg.expect([CCPROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
+         print (egg.before.decode('utf-8', 'ignore'))
+         if i == 0:
+            logg.info("{} prompt received after command sent".format(CCPROMPT))
+            break
+         if i == 1:
+            egg.sendline("y")
             break
          if i == 2:
-            egg.sendline("end")
-            sleep(0.2)
-            egg.sendline("exit")
-            sleep(0.1)
-            break
-         if i == 3:
-            logg.info("are you sure received after command sent")
-            egg.sendline("y")
-            sleep(0.1)
-            break
-         if i == 4:
-            logg.info("--More-- or received")
             egg.sendline(NL)
-            sleep(0.1)
-         if i == 5:
-            logg.info("expect timeout")
-            break
 
-
-   if args.series == "9800":
-      pass     
-   else:
       egg.sendline("logout")
       logg.info("logout")
       i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
       if i == 0:
          egg.sendline("y")
-         sleep(0.1)
-      if i == 4:
-         logg.info("pexpect timeout on logout")
 
 
 

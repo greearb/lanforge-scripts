@@ -77,9 +77,9 @@ lfmgr = "127.0.0.1"
 lfstation = "sta00000"
 lfresource = "1"
 lfresource2 = "1"
-outfile = ""
-full_outfile = ""
-outfile_xlsx = ""
+outfile = "cisco_power_results.txt"
+full_outfile = "cisco_power_results_full.txt"
+outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
 # Allow one chain to have a lower signal, since customer's DUT has
