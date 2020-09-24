@@ -130,7 +130,6 @@ def main():
       filehandler = None
    except Exception as e:
       logging.exception(e)
-      usage()
       exit(2)
 
    console_handler = logging.StreamHandler()
@@ -840,11 +839,11 @@ def main():
          for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
             sleep(0.1)
-            j = egg.expect_exact(["(config-policy-tag)#","(config)#",pexpect.TIMEOUT],timeout=2)
+            j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("command sent: {}".format(command))
             if j == 1:
-               logg.info("command timed out {}".format(command))   
+               logg.info("timmed out on command prompt (config-policy-tag)# for command {}".format(command))   
       if i == 1:
          logg.info("did not get the (config)# prompt")
 
@@ -886,7 +885,7 @@ def main():
              j = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown","end"]:
+                        "no security wpa akm dot1x","no shutdown"]:
                     egg.sendline(command)
                     sleep(0.1)
                     k = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
@@ -978,36 +977,37 @@ def main():
             egg.sendline("logout")
             break
          if i == 1:
-            logg.info("WLC# prompt received will send end")
+            logg.info("WLC# prompt received needs exit to logout")
             try:
-               egg.sendline("end")
+               egg.sendline("exit")
                sleep(0.1)
+               break
             except:
-               logg.info("9800 exception on end")
+               logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 2:
-            logg.info("WLC(config)# prompt received will send end")
+            logg.info("WLC(config)# prompt received will send exit")
             try:
-               egg.sendline("end")
+               egg.sendline("exit")
                sleep(0.1)
             except:
-               logg.info("9800 exception on end")
+               logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 3:
-            logg.info("WLC(config-wlan)# prompt received will send end")
+            logg.info("WLC(config-wlan)# prompt received will send exit")
             try:
-               egg.sendline("end")
+               egg.sendline("exit")
                sleep(0.1)
             except:
-               logg.info("9800 exception on end")
+               logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 4:
-            logg.info("(config-policy-tag)# prompt received will send end")
+            logg.info("(config-policy-tag)# prompt received will send exit")
             try:
-               egg.sendline("end")
+               egg.sendline("exit")
                sleep(0.1)
             except:
-               logg.info("9800 exception on end")
+               logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 5:
             logg.info("9800 expect timeout send logout")
