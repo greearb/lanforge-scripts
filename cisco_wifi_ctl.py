@@ -187,15 +187,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                egg.sendline(CR)
                sleep(3)
-               try:
-                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
-               except pexpect.EOF as e:
-                  logg.info('connection failed. or refused')
-                  exit(1)
-               except:
-                  logg.info('unknown exception on initial pexpect after login')
-                  exit(1)
-               
+               i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   logg.info("9800 found Escape character is '^] i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
@@ -411,8 +403,7 @@ def main():
                try:
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
-                  logg.info('connection failed. or refused')
-                  #cmd = "telnet %s %d"%(host, port)
+                  logg.info('connection failed. or refused Connection open by other process')
                   exit(1)
                except:
                   logg.info('unknown exception on initial pexpect after login')

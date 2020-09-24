@@ -472,11 +472,15 @@ def main():
                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True);
 
    myrd = ""
-   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "summary","--series",args.series,"--port",args.port], capture_output=True)
-   pss = advanced.stdout.decode('utf-8', 'ignore');
-   print(pss)
-
+   try:
+      advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                 "--action", "summary","--series",args.series,"--port",args.port], capture_output=True, check=True)
+      pss = advanced.stdout.decode('utf-8', 'ignore');
+      print(pss)
+   except subprocess.CalledProcessError as process_error:
+      print("error code {}  output {}".format(process_error.returncode, process_error.output))
+      exit(1)
+         
    # Find our current regulatory domain so we can report it properly
    searchap = False
    for line in pss.splitlines():
@@ -543,8 +547,12 @@ def main():
                    
                    # Disable AP, apply settings, enable AP
                    print("3504/9800 cisco_wifi_ctl.py: disable")
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable","--series",args.series,"--port", args.port])
+                   try:
+                      subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable","--series",args.series,"--port", args.port], capture_output=True, check=True)
+                   except subprocess.CalledProcessError as process_error:
+                      print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                      exit(1)
                                 
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
@@ -553,108 +561,166 @@ def main():
 
                        print("9800  cisco_wifi_ctl.py: disable_wlan")
 
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_wlan","--series",args.series,"--port", args.port])                 
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port]) 
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_wlan","--series",args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port], capture_output=True, check=True) 
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                        print("9800 cisco_wifi_ctl.py: disable_network_24ghz")
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port], capture_output=True, check=True)    
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port])    
                        print("9800 cisco_wifi_ctl.py: manual")
 
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "manual","--series",args.series,"--port", args.port])
-
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "manual","--series",args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
                    else:
                        print("3504 cisco_wifi_ctl.py: onfig 802.11a disable network")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port])
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                         print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                         exit(1)
+                         
                        print("3504 cisco_wifi_ctl.py: config 802.11b disable network")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port])
+ 
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+                          exit(1) 
 
                    print("9800 test_parameters_summary: set : tx: {} ch: {} bw: {}".format(tx,ch,bw))
                    if (tx != "NA"):
                        print("9800 test_parameters: set txPower: {}".format(tx))
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port])
                    if (bw != "NA"):
                        print("9800 test_parameters bandwidth: set : {}".format(bw))
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port])
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+                          exit(1) 
 
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
                        print("9800 test_parameters set channel: {}".format(ch))
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port])
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                    if args.series == "9800":
                        #print("9800 cisco_wifi_ctl.py: delete_wlan")
                        #subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       #            "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID])    
+                       #            "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID], capture_output=True, check=True)    
 
                        print("9800  cisco_wifi_ctl.py: create_wlan")
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port])    
-                       print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
+                       try:
+                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port], capture_output=True, check=True)    
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wireless_tag_policy","--series",args.series,"--port", args.port]) 
+                       print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=True, check=True) 
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                        print("9800  cisco_wifi_ctl.py: enable_wlan")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--series",args.series,"--port", args.port])                 
-
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_wlan","--series",args.series,"--port", args.port], capture_output=True, check=True)                 
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                    # enable transmission for the entier 802.11z network
                    if args.series == "9800":
-
                        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
-                       
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port])   
+                       try:                       
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port], capture_output=True, check=True)   
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                        print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port])                 
-
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port], capture_output=True, check=True)                 
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
                    else:    
                        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port])
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
-
-                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port])
+                       try:
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port], capture_output=True, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                    print("9800/3504  cisco_wifi_ctl.py: enable")
-
-                   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable", "--series" , args.series,"--port", args.port])
+                   try: 
+                      subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable", "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                   except subprocess.CalledProcessError as process_error:
+                      print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                      exit(1)
 
                    # Wait a bit for AP to come back up
                    time.sleep(1)
                    if args.series == "9800":
                        print("9800  cisco_wifi_ctl.py: advanced")
-
-                       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
-                       pss = advanced.stdout.decode('utf-8', 'ignore')
-                       print(pss)
+                       try:
+                          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                          pss = advanced.stdout.decode('utf-8', 'ignore')
+                          print(pss)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                          exit(1)
 
                        searchap = False
                        cc_mac = ""
@@ -700,18 +766,23 @@ def main():
                           print(err)
                           e_tot += err
                           e_tot += "  "
-                       
-                       wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True)
-                       pss = wlan_summary.stdout.decode('utf-8', 'ignore')
-                       print(pss)
+                       try:
+                          wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                          pss = wlan_summary.stdout.decode('utf-8', 'ignore')
+                          print(pss)
+                       except subprocess.CalledProcessError as process_error:
+                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                    else:
                        print("3504 cisco_wifi_ctl.py: advanced")
-
-                       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--port", args.port], capture_output=True)
-                       pss = advanced.stdout.decode('utf-8', 'ignore')
-                       print(pss)
+                       try:
+                           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced","--port", args.port], capture_output=True, check=True)
+                           pss = advanced.stdout.decode('utf-8', 'ignore')
+                           print(pss)
+                       except subprocess.CalledProcessError as process_error:
+                           print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                           exit(1)
 
                        searchap = False
                        cc_mac = ""
@@ -756,7 +827,7 @@ def main():
                    # Wait untill LANforge station connects
                    while True:
                        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
-                                                    "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True);
+                                                    "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"],capture_output=True, check=True)
                        pss = port_stats.stdout.decode('utf-8', 'ignore');
 
                        _status = None
@@ -794,11 +865,15 @@ def main():
                            e_tot += "  "
                            if args.series == "9800":
                                print("9800  resending cisco_wifi_ctl.py: advanced")
+                               try:
+                                  advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                                  pss = advanced.stdout.decode('utf-8', 'ignore')
+                                  print(pss)
+                               except subprocess.CalledProcessError as process_error:
+                                  print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                                  exit(1)
 
-                               advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
-                               pss = advanced.stdout.decode('utf-8', 'ignore')
-                               print(pss)
                            if (args.wait_forever):
                                print("Will continue waiting, you may wish to debug the system...")
                                i = 0
@@ -809,7 +884,7 @@ def main():
 
                    # Start traffic
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
-                                   "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True);
+                                   "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
 
                    # Wait 10 more seconds
                    print("Waiting 10 seconds to let traffic run for a bit, Channel %s NSS %s BW %s TX-Power %s"%(ch, n, bw, tx))
@@ -823,7 +898,7 @@ def main():
                    while True:                       
                        time.sleep(1)
                        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
-                                                    "--cli_cmd", "probe_port 1 %s %s"%(lfresource, lfstation)], capture_output=True);
+                                                    "--cli_cmd", "probe_port 1 %s %s"%(lfresource, lfstation)],capture_output=True, check=True)
                        pss = port_stats.stdout.decode('utf-8', 'ignore')
 
                        foundit = False
@@ -832,7 +907,7 @@ def main():
                            m = re.search('signal avg:\s+(\S+)\s+\[(.*)\]\s+dBm', line)
                            if (m != None):
                                sig = m.group(1)
-                               ants = m.group(2).split();
+                               ants = m.group(2).split()
                                q = 0
                                for a in ants:
                                    ants[q] = ants[q].replace(",", "", 1)
@@ -856,7 +931,7 @@ def main():
                        i += 1
                        if (i > 10):
                            err = "Tried and failed 10 times to find correct spatial streams, continuing."
-                           print(err);
+                           print(err)
                            e_tot += err
                            e_tot += "  "
                            while (len(ants) < int(n)):
@@ -864,7 +939,8 @@ def main():
                            break
 
                    endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--endp_vals", "rx_bps",
-                                                "--cx_name", "c-udp-power"], capture_output=True);
+                                                "--cx_name", "c-udp-power"],capture_output=True, check=True)
+
                    pss = endp_stats.stdout.decode('utf-8', 'ignore');
 
                    for line in pss.splitlines():
@@ -879,7 +955,7 @@ def main():
 
                    # Stop traffic
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
-                                   "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True);
+                                   "--cmd", "set_cx_state all c-udp-power STOPPED"],capture_output=True, check=True)
 
                    antstr = ""
                    for x in range(4):
@@ -891,7 +967,7 @@ def main():
                        antstr += "\t"
 
                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
-                                                "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True);
+                                                "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True, check=True)
                    pss = port_stats.stdout.decode('utf-8', 'ignore');
 
                    _ap = None
@@ -1137,92 +1213,146 @@ def main():
    # check if keeping the existing state
    if(args.keep_state):
        print("9800/3504 flag --keep_state set thus keeping state")
-       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-          "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True)
-       pss = advanced.stdout.decode('utf-8', 'ignore')
-       print(pss)
-
-       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-          "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True)
-       pss = advanced.stdout.decode('utf-8', 'ignore')
-       print(pss)
+       try:
+          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+             "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+          pss = advanced.stdout.decode('utf-8', 'ignore')
+          print(pss)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
+       try:
+          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+             "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+          pss = advanced.stdout.decode('utf-8', 'ignore')
+          print(pss)
+       except subprocess.CalledProcessError as process_error:
+           print("error code: {} output {}".format(process_error.returncode, process_error.output))
+           exit(1) 
 
        exit(1)
   
    # Set things back to defaults
    # Disable AP, apply settings, enable AP
    print("9800/3504  cisco_wifi_ctl.py: disable")
-
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "disable", "--series" , args.series,"--port", args.port])
+   try:
+      subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "disable", "--series" , args.series,"--port", args.port],capture_output=True, check=True)
+   except subprocess.CalledProcessError as process_error:
+      print("error code: {} output {}".format(process_error.returncode, process_error.output))
+      exit(1) 
 
    if args.series == "9800":
        print("9800  cisco_wifi_ctl.py: disable_network_5ghz")
-
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port])      
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port],capture_output=True, check=True)      
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
        print("9800  cisco_wifi_ctl.py: disable_network_24ghz")
-                  
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port])                 
+       try:        
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port],capture_output=True, check=True)                 
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
+
    else:
        print("3504  cisco_wifi_ctl.py: config 802.11a disable network")
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port])
        print("3504  cisco_wifi_ctl.py: config 802.11b disable network")
-       
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port])
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
    if (tx != "NA"):
        print("9800/3504  cisco_wifi_ctl.py: txPower")
+       try: 
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port])
    if (bw != "NA"):
        print("9800/3504  cisco_wifi_ctl.py: bandwidth")
-
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port])
-
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1)
    # NSS is set on the station earlier...
                        
    if (ch != "NA"):
        print("9800/3504  cisco_wifi_ctl.py: channel")
-
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port])
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
    if args.series == "9800":
        print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port],capture_output=True, check=True)         
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port])         
        print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port],capture_output=True, check=True) 
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port]) 
        print("9800  cisco_wifi_ctl.py: auto")
-
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "auto","--series",args.series,"--port", args.port])
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "auto","--series",args.series,"--port", args.port],capture_output=True, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
    else:     
        print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
-
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port])
-       print("3504  cisco_wifi_ctl.py: config 802.11b enable network")
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
-       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+       print("3504  cisco_wifi_ctl.py: config 802.11b enable network")
+       try:
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port])
+       except subprocess.CalledProcessError as process_error:
+          print("error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1) 
 
    print("9800/3504  cisco_wifi_ctl.py: enable")
-   
-   subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "enable", "--series" , args.series,"--port", args.port])
+   try:
+      subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                   "--action", "enable", "--series" , args.series,"--port", args.port],capture_output=True, check=True)
+   except subprocess.CalledProcessError as process_error:
+      print("error code: {} output {}".format(process_error.returncode, process_error.output))
+      exit(1) 
 
    # Remove LANforge traffic connection
    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
@@ -1235,10 +1365,14 @@ def main():
    # Show controller status
    print("9800/3504  cisco_wifi_ctl.py: advanced")
 
-   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "advanced", "--series" , args.series,"--port", args.port], capture_output=True)
-   pss = advanced.stdout.decode('utf-8', 'ignore');
-   print(pss)
+   try:
+      advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                              "--action", "advanced", "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+      pss = advanced.stdout.decode('utf-8', 'ignore');
+      print(pss)
+   except subprocess.CalledProcessError as process_error:
+      print("error code: {} output {}".format(process_error.returncode, process_error.output))
+      exit(1) 
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
