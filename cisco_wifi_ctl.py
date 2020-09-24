@@ -962,7 +962,7 @@ def main():
    if (args.series == "9800"):
       if (command is None ):
          sleep(0.5)
-         logg.info("No command specified, going to log out.")
+         logg.info("9800 Command processed earlier will logout")
       else:
          logg.info("Command[%s]"%command)
          egg.sendline(command)
@@ -970,7 +970,7 @@ def main():
          logg.info("command sent {}".format(command))
 
       while True:
-         i = egg.expect(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#",pexpect.TIMEOUT],timeout=3)
+         i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#",pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("WLC> prompt received can send logout")
@@ -979,12 +979,12 @@ def main():
          if i == 1:
             logg.info("WLC# prompt received needs exit to logout")
             try:
-               egg.sendline("exit")
+               egg.sendline("logout")
                sleep(0.1)
-               break
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
+            break
          if i == 2:
             logg.info("WLC(config)# prompt received will send exit")
             try:
