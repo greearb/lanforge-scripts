@@ -977,12 +977,12 @@ def main():
             egg.sendline("logout")
             break
          if i == 1:
-            logg.info("WLC# prompt received needs exit to logout")
+            logg.info("WLC# prompt received will send logout")
             try:
                egg.sendline("logout")
                sleep(0.1)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on logout")
                sleep(0.1)
             break
          if i == 2:
