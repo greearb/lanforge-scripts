@@ -252,7 +252,7 @@ def main():
                      if k == 1:
                         logg.info("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 timed out looking for >, #, User, Password j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: j: {}  before {} after {}".format(j,egg.before,egg.after))
                      egg.sendline(CR)
                      sleep(0.1)
                
@@ -473,7 +473,7 @@ def main():
                      if k == 1:
                         logg.info("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 timed out looking for >, #, User, Password j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: j: {}  before {} after {}".format(j,egg.before,egg.after))
                      egg.sendline(CR)
                      sleep(0.1)
                
@@ -587,7 +587,8 @@ def main():
                      egg.sendline(CR)
                      sleep(0.1)
                if i == 6:
-                  logg.info("9800 Timed out waiting for intial prompt will send carriage return and line feed i: {} before {} after {}".format(i, egg.before,egg.after))
+                  logg.info("9800 Timed out waiting for initial prompt send logout i: {} before {} after {}".format(i, egg.before,egg.after))
+                  egg.sendline("logout")
                   egg.sendline(CR)
                   sleep(0.2)
 
