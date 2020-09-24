@@ -993,8 +993,8 @@ def main():
          if i == 2:
             logg.info("WLC(config)# prompt received will send end and exit")
             try:
-               egg.sendline("end")
-               sleep(1)
+               #egg.sendline("end")
+               #sleep(1)
                egg.sendline("exit")
                sleep(1)
             except:
