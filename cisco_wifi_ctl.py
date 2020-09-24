@@ -597,9 +597,11 @@ def main():
             if loop_count >= 3:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
-                  logg.info("9800 the excape was found see if we can send command")
+                  logg.info("9800 the excape was found... exiting")
+                  exit(1)
                else:
-                  logg.info("9800 did not find the initial escape will try the command anyway")
+                  logg.info("9800 did not find the initial escape... exiting")
+                  exit(1)
 
          # 3504 series
          else:
