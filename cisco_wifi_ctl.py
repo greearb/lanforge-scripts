@@ -975,6 +975,8 @@ def main():
          if i == 0:
             logg.info("WLC> prompt received can send logout")
             egg.sendline("logout")
+            sleep(0.1)
+
             break
          if i == 1:
             logg.info("WLC# prompt received will send logout")
@@ -989,7 +991,7 @@ def main():
             logg.info("WLC(config)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(0.1)
+               sleep(0.5)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1005,7 +1007,7 @@ def main():
             logg.info("(config-policy-tag)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(0.1)
+               sleep(0.5)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
