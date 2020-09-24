@@ -218,7 +218,7 @@ class FindPorts(LFCliBase):
          return self.local_realm.vap_list()
 
 # Utility to Find the Traffic Running on Existing CX and VAP   
-def PortUtils(host, port, duration, report_name, scenario, detail):
+def PortUtility(host, port, duration, report_name, scenario, detail):
 
     lf_utils = FindPorts(host, port)
     
@@ -324,7 +324,7 @@ def main():
     time.sleep(10)
    
     # Port Utility function for reading CX and VAP
-    PortUtils(manager,8080, duration, report_name, scenario, test_detail)
+    PortUtility(manager,8080, duration, report_name, scenario, test_detail)
     
     
         
