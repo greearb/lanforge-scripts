@@ -412,6 +412,7 @@ def main():
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   logg.info('connection failed. or refused')
+                  #cmd = "telnet %s %d"%(host, port)
                   exit(1)
                except:
                   logg.info('unknown exception on initial pexpect after login')
@@ -988,12 +989,14 @@ def main():
                sleep(0.1)
             break
          if i == 2:
-            logg.info("WLC(config)# prompt received will send exit")
+            logg.info("WLC(config)# prompt received will send end and exit")
             try:
+               egg.sendline("end")
+               sleep(1)
                egg.sendline("exit")
-               sleep(2)
+               sleep(1)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end then exit")
                sleep(0.1)
          if i == 3:
             logg.info("WLC(config-wlan)# prompt received will send exit")
