@@ -418,34 +418,34 @@ def main():
                   exit(1)
                
                if i == 0:
-                  logg.info("9800 found Escape character is '^] i: {} before: {} after: {}".format(i,egg.before,egg.after))
+                  logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
                   j = egg.expect_exact(["WLC>","WLC#","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
-                     logg.info("9800 found WLC#  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 found WLC#  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
                      if k == 0:
-                        logg.info("9800 received password prompt will send password: {} i:{} j:{} k: {} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
+                        logg.info("9800 received password prompt will send password: {} i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
                         l = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
-                           logg.info("9800 Successfully received # prompt l {}".format(l))
+                           logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
                         if l == 1:
-                           logg.info("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                           logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                      if k == 1:
-                        logg.info("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("8900 received timeout after looking for password: prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 1:
                      logg.info("9800 found # so logged in can start sending commands i:{} j:{}".format(i,j))
                      logged_in_9800 = True
                   if j == 2:
-                     logg.info("9800 found User\: will put in args.user {} i:{} j: {}".format(args.user,i,j))
+                     logg.info("9800 found User\: will put in args.user {} i:{} j:{}".format(args.user,i,j))
                      egg.sendline(args.user)
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
@@ -460,7 +460,7 @@ def main():
                         if l == 1:
                            logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                      if k == 1:
-                        logg.info("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 3:
                      sleep(0.1)
                      logg.info("9800 received Password prompt will send password {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
@@ -991,7 +991,7 @@ def main():
             logg.info("WLC(config)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(0.5)
+               sleep(2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -999,7 +999,7 @@ def main():
             logg.info("WLC(config-wlan)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(0.1)
+               sleep(2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1007,7 +1007,7 @@ def main():
             logg.info("(config-policy-tag)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(0.5)
+               sleep(2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
