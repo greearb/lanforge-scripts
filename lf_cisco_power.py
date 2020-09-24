@@ -207,7 +207,7 @@ def main():
    parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
    parser.add_argument("--security",       type=str, help="security default open",default="open")
 
-   parser.add_argument("--verbose",       type=str, help="--verbose , switch present will have verbose logging", action='store_true')
+   parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
 
 
    args = None
@@ -250,6 +250,11 @@ def main():
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
+      if (args.verbose):
+          # capture the controller output , thus won't got to stdout some output always present
+          cap_ctl_out = False
+      else:
+          cap_ctl_out = True        
 
       if args.outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
@@ -567,22 +572,16 @@ def main():
                        print("9800  cisco_wifi_ctl.py: disable_wlan")
 
                        try:
-                          sub_proc_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_wlan","--series",args.series,"--port", args.port], capture_output=True, check=True)
-                          if(args.verbose):             
-                              pss = sub_proc_output.stdout.decode('utf-8', 'ignore')
-                              print(pss)             
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_wlan","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
 
                        except subprocess.CalledProcessError as process_error:
                           print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
                        try:
-                          sub_proc_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port], capture_output=True, check=True) 
-                          if(args.verbose):  
-                              pss = sub_proc_output.stdout.decode('utf-8', 'ignore')
-                              print(pss)      
-
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
+                          
                        except subprocess.CalledProcessError as process_error:
                           print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
@@ -590,7 +589,7 @@ def main():
                        print("9800 cisco_wifi_ctl.py: disable_network_24ghz")
                        try:
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port], capture_output=True, check=True)    
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)    
                        except subprocess.CalledProcessError as process_error:
                           print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
@@ -607,7 +606,7 @@ def main():
                        print("3504 cisco_wifi_ctl.py: onfig 802.11a disable network")
                        try:
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port], capture_output=True, check=True)
+                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                          print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                          exit(1)
@@ -616,7 +615,7 @@ def main():
  
                        try:
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port], capture_output=True, check=True)
+                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                           print("error code: {} output {}".format(process_error.returncode, process_error.output))
                           exit(1) 
@@ -626,7 +625,7 @@ def main():
                        print("9800 test_parameters: set txPower: {}".format(tx))
                        try:
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                                       "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                           print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
