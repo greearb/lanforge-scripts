@@ -430,7 +430,7 @@ def main():
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
                      if k == 0:
-                        logg.info("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
+                        logg.info("9800 received password prompt will send password: {} i:{} j:{} k: {} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
                         l = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=2)
@@ -442,91 +442,91 @@ def main():
                      if k == 1:
                         logg.info("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 1:
-                     logg.info("9800 found # so logged in can start sending commands j {}".format(j))
+                     logg.info("9800 found # so logged in can start sending commands i:{} j:{}".format(i,j))
                      logged_in_9800 = True
                   if j == 2:
-                     logg.info("9800 found User\: will put in args.user {}  j: {}".format(args.user,j))
+                     logg.info("9800 found User\: will put in args.user {} i:{} j: {}".format(args.user,i,j))
                      egg.sendline(args.user)
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
                      if k == 0:
-                        logg.info("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                        logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
                         l = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
-                           logg.info("8900 Successfully received # prompt l: {}".format(l))
+                           logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
                         if l == 1:
-                           logg.info("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                           logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                      if k == 1:
                         logg.info("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
                   if j == 3:
                      sleep(0.1)
-                     logg.info("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
+                     logg.info("9800 received Password prompt will send password {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
                      k = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if k == 0:
-                        logg.info("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
                      if k == 1:
-                        logg.info("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: i:{} j:{}  before {} after {}".format(i,j,egg.before,egg.after))
                      egg.sendline(CR)
                      sleep(0.1)
                
                if i == 1:
-                  logg.info("9800 found WLC>  will elevate loging i: {} before {} after {}".format(i,egg.before,egg.after))
+                  logg.info("9800 found WLC>  will elevate loging i:{} before {} after {}".format(i,egg.before,egg.after))
                   egg.sendline("en")
                   sleep(0.1)
-                  k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
-                  if k == 0:
-                     logg.info("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  j = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
+                  if j == 0:
+                     logg.info("9800 received password prompt will send password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
-                     if l == 0:
-                        logg.info("9800 Successfully received # prompt l {} before {} after {}".format(l, egg.before,egg.after))
+                     k = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
+                     if k == 0:
+                        logg.info("9800 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k, egg.before,egg.after))
                         logged_in_9800 = True
-                     if l == 1:
-                        logg.info("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
-                  if k == 1:
-                     logg.info("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                     if k == 1:
+                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
+                  if j == 1:
+                     logg.info("8900 received timeout after looking for password: prompt  i:{} j:{} k:{}  before {} after {}".format(i,j,k,egg.before,egg.after))
                
                if i == 2:
-                  logg.info("9800 found WLC# This implies in incorrect logout or killed prior run test i {} before {} after {}".format(i,egg.before,egg.after))
+                  logg.info("9800 found WLC# This implies in incorrect logout or killed prior run test i:{} before {} after {}".format(i,egg.before,egg.after))
                   logged_in_9800 = True
 
                if i == 3:
-                  logg.info("9800 found User will put in args.user {}  j: {} before {} after {}".format(args.user,j, egg.before,egg.after))
+                  logg.info("9800 found User will put in args.user {} i:{} j:{} before {} after {}".format(args.user,i,j,egg.before,egg.after))
                   egg.sendline(args.user)
                   sleep(0.1)
-                  k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
-                  if k == 0:
-                     logg.info("9800 received password prompt after sending User, sending password: {} k: {} before {} after {}".format(args.passwd,k, egg.before,egg.after))
+                  j = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
+                  if j == 0:
+                     logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} before {} after {}".format(args.passwd,i,k,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
                      l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
-                     if l == 0:
-                        logg.info("8900 Successfully received # prompt l: {}".format(l))
+                     if k == 0:
+                        logg.info("8900 Successfully received # prompt i:{} j:{} k:{}".format(i,j,k))
                         logged_in_9800 = True
-                     if l == 1:
-                        logg.info("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
-                  if k == 1:
-                     logg.info("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k, egg.before,egg.after))
+                     if k == 1:
+                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
+                  if j == 1:
+                     logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
 
                if i == 4:
-                  logg.info("9800 received password prompt will send password: {}  k: {}  before {} after {}".format(args.passwd, k, egg.before,egg.after))
+                  logg.info("9800 received password prompt will send password: {}   i:{} j:{} k:{}  before {} after {}".format(args.passwd,i,j,k, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(0.1)
-                  l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
-                  if l == 0:
-                     logg.info("9800 Successfully received # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                  j = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
+                  if j == 0:
+                     logg.info("9800 Successfully received # prompt i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      logged_in_9800 = True
-                  if l == 1:
-                     logg.info("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                  if j == 1:
+                     logg.info("9800 Timed out waiting for # prompt i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
 
                if i == 5:
                   logg.info("9800 received WLC(config)# prompt doing some cleanup")
@@ -535,60 +535,59 @@ def main():
                   j = egg.expect_exact(["WLC>","WLC#","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
-                     logg.info("9800 found WLC>  will elevate loging j: {} before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 found WLC>  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
                      if k == 0:
-                        logg.info("9800 received password prompt will send password: {}  k: {} before {} after {}".format(args.passwd, k,egg.before,egg.after))
+                        logg.info("9800 received password prompt will send password: {}  i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
                         l = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
-                           logg.info("9800 Successfully received # prompt l {}".format(l))
+                           logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
                         if l == 1:
-                           logg.info("9800 Timed out waiting for # prompt l {} before {} after {}".format(l,egg.before,egg.after))
+                           logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                      if k == 1:
-                        logg.info("8900 received timeout after looking for password: prompt k {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("8900 received timeout after looking for password: prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 1:
-                     logg.info("9800 found # so logged in can start sending commands j {}".format(j))
+                     logg.info("9800 found # so logged in can start sending commands i:{} j:{}".format(i,j))
                      logged_in_9800 = True
                   if j == 2:
-                     logg.info("9800 found User: will put in args.user {}  j: {}".format(args.user,j))
+                     logg.info("9800 found User: will put in args.user {}  i:{} j:{}".format(args.user,i,j))
                      egg.sendline(args.user)
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
                      if k == 0:
-                        logg.info("9800 received password prompt after sending User, sending password: {} k: {}".format(args.passwd,k))
+                        logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
                         l = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
-                           logg.info("8900 Successfully received # prompt l: {}".format(l))
+                           logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
                         if l == 1:
-                           logg.info("9800 Timed out waiting for # prompt l: {} before {} after {}".format(l,egg.before,egg.after))
+                           logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                      if k == 1:
-                        logg.info("9800 received timeout after looking for password after sending user k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 3:
                      sleep(0.1)
-                     logg.info("9800 received Password prompt will send password {} j: {} before {} after {}".format(args.passwd,j,egg.before,egg.after))
+                     logg.info("9800 received Password prompt will send password {} i:{} j:{}  before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
                      k = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
                      if k == 0:
-                        logg.info("8900 Successfully received # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
                      if k == 1:
-                        logg.info("9800 Timed out waiting for # prompt k: {} before {} after {}".format(k,egg.before,egg.after))
+                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 timed out looking WLC>,  WLC#, User:, Password:j: {}  before {} after {}".format(j,egg.before,egg.after))
+                     logg.info("9800 timed out looking WLC>,  WLC#, User:, Password:  i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      egg.sendline(CR)
                      sleep(0.1)
                if i == 6:
                   logg.info("9800 Timed out waiting for initial prompt send logout i: {} before {} after {}".format(i, egg.before,egg.after))
-                  egg.sendline("logout")
                   egg.sendline(CR)
                   sleep(0.2)
 
