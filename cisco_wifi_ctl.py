@@ -187,7 +187,7 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                egg.sendline(CR)
                sleep(3)
-               i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
+               i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   logg.info("9800 found Escape character is '^] i: {} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
@@ -401,7 +401,7 @@ def main():
                egg.sendline(CR)
                sleep(3)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   logg.info('connection failed. or refused Connection open by other process')
                   exit(1)
@@ -579,6 +579,10 @@ def main():
                      egg.sendline(CR)
                      sleep(0.1)
                if i == 6:
+                  logg.info("9800 recieved Bad secrets, to many password attempts i: {} before {} after {}".format(i, egg.before,egg.after))
+                  egg.sendline(CR)
+                  sleep(0.2)
+               if i == 7:
                   logg.info("9800 Timed out waiting for initial prompt send logout i: {} before {} after {}".format(i, egg.before,egg.after))
                   egg.sendline(CR)
                   sleep(0.2)
@@ -1013,6 +1017,8 @@ def main():
             egg.sendline("logout")
             logged_out_9800 = True
             break
+      if( logged_out_9800 == False):
+         logg.info("9800 did not send logout at end of command processing this could tie up the connection")   
    # 3504         
    else:
       if (command is None ):
