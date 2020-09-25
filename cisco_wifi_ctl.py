@@ -707,12 +707,12 @@ def main():
             i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("did get Are you sure you want to continue? (y/n)[y]:")
-               egg.sendline(CR)
-               sleep(0.1)
+               egg.sendline("y")
+               sleep(0.5)
             if j == 1:
                logg.info("did not get Are you sure you want to continue? (y/n)[y]:")
-               egg.sendline(CR)
-               sleep(0.1)
+               egg.sendline("y")
+               sleep(0.5)
          if i == 1:
             logg.info("timed out on (config)# disable_network_5ghz")
 
@@ -723,16 +723,16 @@ def main():
          i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
          if i == 0:
             egg.sendline("ap dot11 24ghz shutdown")
-            sleep(0.1)
+            sleep(0.5)
             i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("did get Are you sure you want to continue? (y/n)[y]:")
-               egg.sendline(CR)
-               sleep(0.1)
+               egg.sendline("y")
+               sleep(0.5)
             if j == 1:
                logg.info("did not get Are you sure you want to continue? (y/n)[y]:")
-               egg.sendline(CR)
-               sleep(0.1)
+               egg.sendline("y")
+               sleep(0.5)
          if i == 1:
             logg.info("timed out on (config)# disable_network_24ghz")
 
@@ -832,7 +832,7 @@ def main():
       if i == 0:
          for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
-            sleep(0.1)
+            sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
                logg.info("command sent: {}".format(command))
@@ -868,20 +868,20 @@ def main():
    if (args.action == "wlan"):
       if args.series == "9800":
           egg.sendline("config t")
-          sleep(0.1)
+          sleep(0.4)
           i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
           if i == 0:
              logg.info("elevated to (config)#")
              command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
              logg.info("open network command {}".format(command))
              egg.sendline(command)
-             sleep(0.1)
+             sleep(0.4)
              j = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown"]:
                     egg.sendline(command)
-                    sleep(0.1)
+                    sleep(1)
                     k = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        logg.info("command sent: {}".format(command))
