@@ -962,14 +962,17 @@ def main():
          egg.sendline(command)
          sleep(0.5)
          logg.info("command sent {}".format(command))
-
-      while True:
+      logged_out_9800 = False
+      loop_count = 0
+      while logged_out_9800 == False and loop_count <= 6:
+         loop_count += 1
          i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#",pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("WLC> prompt received can send logout")
             egg.sendline("logout")
             sleep(0.1)
+            logged_out_9800 = True
 
             break
          if i == 1:
@@ -977,6 +980,7 @@ def main():
             try:
                egg.sendline("logout")
                sleep(0.1)
+               logged_out_9800 = True
             except:
                logg.info("9800 exception on logout")
                sleep(0.1)
@@ -1010,6 +1014,7 @@ def main():
          if i == 5:
             logg.info("9800 expect timeout send logout")
             egg.sendline("logout")
+            logged_out_9800 = True
             break
    # 3504         
    else:
@@ -1022,7 +1027,10 @@ def main():
          sleep(0.5)
          logg.info("command sent {}".format(command))
 
-      while True:
+      logged_out = False
+      loop_count = 0
+      while logged_out == False and loop_count <= 6:
+         loop_count += 1
          i = egg.expect([CCPROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
