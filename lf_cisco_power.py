@@ -556,10 +556,7 @@ def main():
                    print("3504/9800 cisco_wifi_ctl.py: disable")
                    subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
-                   except subprocess.CalledProcessError as process_error:
-                      print("error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                      exit(1)
-                                
+
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
                        print("9800 Configure radio for manual channel assignment")
