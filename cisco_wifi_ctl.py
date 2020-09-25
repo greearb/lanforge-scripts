@@ -973,7 +973,6 @@ def main():
             egg.sendline("logout")
             sleep(0.1)
             logged_out_9800 = True
-
             break
          if i == 1:
             logg.info("WLC# prompt received will send logout")
@@ -986,14 +985,12 @@ def main():
                sleep(0.1)
             break
          if i == 2:
-            logg.info("WLC(config)# prompt received will send end and exit")
+            logg.info("WLC(config)# prompt received will send exit")
             try:
-               #egg.sendline("end")
-               #sleep(1)
                egg.sendline("exit")
                sleep(1)
             except:
-               logg.info("9800 exception on end then exit")
+               logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 3:
             logg.info("WLC(config-wlan)# prompt received will send exit")
@@ -1027,17 +1024,20 @@ def main():
          sleep(0.5)
          logg.info("command sent {}".format(command))
 
-      logged_out = False
+      command_sent = False
       loop_count = 0
-      while logged_out == False and loop_count <= 6:
+      while command_sent == False and loop_count <= 6:
          loop_count += 1
          i = egg.expect([CCPROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("{} prompt received after command sent".format(CCPROMPT))
+            # granted the break will exit the loop
+            command_sent = True
             break
          if i == 1:
             egg.sendline("y")
+            command_sent = True
             break
          if i == 2:
             egg.sendline(NL)
