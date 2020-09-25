@@ -17,7 +17,7 @@ $ pip3 install pexpect-serial
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action summary --prompt "\(Cisco Controller\) >"
 ./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action cmd --value "show ap config general APA453.0E7B.CF9C"
 
-telnet 172.19.36.168(Pwd:Wnbulab@123), go to the privileged mode and execute the command “clear line 43”.
+telnet 172.19.36.168(Pwd:), go to the privileged mode and execute the command “clear line 43”.
 
 Cisco uses 9130 AP
 show controllers dot11Radio 1 wlan
@@ -466,8 +466,10 @@ def main():
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
                      logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: i:{} j:{}  before {} after {}".format(i,j,egg.before,egg.after))
+                     logg.info("9800 send  carriage return to see if get prompt back ")
                      egg.sendline(CR)
-                     sleep(0.1)
+                     sleep(0.4)
+
                
                if i == 1:
                   logg.info("9800 found WLC>  will elevate loging i:{} before {} after {}".format(i,egg.before,egg.after))
@@ -592,9 +594,13 @@ def main():
             if loop_count >= 3:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
+                  logg.info("9800 the telnet session may need to be cleared will try to send logout")
+                  egg.sendline("logout")
                   logg.info("9800 the excape was found... exiting")
                   exit(1)
                else:
+                  logg.info("9800 the telnet session may need to be cleared will try to send logout")
+                  egg.sendline("logout")
                   logg.info("9800 did not find the initial escape... exiting")
                   exit(1)
 
