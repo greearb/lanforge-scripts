@@ -480,6 +480,7 @@ def main():
 
    myrd = ""
    try:
+      print("9800/3504 cisco_wifi_ctl.py: summary")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                  "--action", "summary","--series",args.series,"--port",args.port], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
@@ -560,11 +561,9 @@ def main():
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
                        print("9800 Configure radio for manual channel assignment")
-                       print("9800 cisco_wifi_ctl.py: disable_network_5ghz")
-
-                       print("9800  cisco_wifi_ctl.py: disable_wlan")
 
                        try:
+                          print("9800 cisco_wifi_ctl.py: disable_wlan")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_wlan","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
 
@@ -572,6 +571,7 @@ def main():
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
                        try:
+                          print("9800 cisco_wifi_ctl.py: disable_network_5ghz")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_network_5ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
                           
@@ -579,34 +579,33 @@ def main():
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("9800 cisco_wifi_ctl.py: disable_network_24ghz")
                        try:
+                          print("9800 cisco_wifi_ctl.py: disable_network_24ghz")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_network_24ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)    
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("9800 cisco_wifi_ctl.py: manual")
-
                        try:
+                          print("9800 cisco_wifi_ctl.py: manual")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "manual","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
                    else:
-                       print("3504 cisco_wifi_ctl.py: onfig 802.11a disable network")
                        try:
+                          print("3504 cisco_wifi_ctl.py: config 802.11a disable network")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                          print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                          exit(1)
                          
-                       print("3504 cisco_wifi_ctl.py: config 802.11b disable network")
  
                        try:
+                          print("3504 cisco_wifi_ctl.py: config 802.11b disable network")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -617,6 +616,7 @@ def main():
                    if (tx != "NA"):
                        print("9800 test_parameters: set txPower: {}".format(tx))
                        try:
+                          print("9800 cisco_wifi_ctl.py: txPower {}".format(tx))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -626,6 +626,7 @@ def main():
                    if (bw != "NA"):
                        print("9800 test_parameters bandwidth: set : {}".format(bw))
                        try:
+                          print("9800 cisco_wifi_ctl.py: bandwidth {}".format(bw))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -637,6 +638,7 @@ def main():
                    if (ch != "NA"):
                        print("9800 test_parameters set channel: {}".format(ch))
                        try:
+                          print("9800 cisco_wifi_ctl.py: channel {}".format(ch))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -648,24 +650,24 @@ def main():
                        #subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        #            "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID], capture_output=True, check=True)    
 
-                       print("9800  cisco_wifi_ctl.py: create_wlan")
                        try:
+                           print("9800  cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
                            subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port], capture_output=cap_ctl_out, check=True)    
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
                        try:
+                          print("9800  cisco_wifi_ctl.py: wireless_tag_policy")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("9800  cisco_wifi_ctl.py: enable_wlan")
                        try:
+                          print("9800  cisco_wifi_ctl.py: enable_wlan")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable_wlan","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)                 
                        except subprocess.CalledProcessError as process_error:
@@ -674,40 +676,40 @@ def main():
 
                    # enable transmission for the entier 802.11z network
                    if args.series == "9800":
-                       print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
-                       try:                       
+                       try:  
+                          print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable_network_5ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)   
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
                        try:
+                          print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable_network_24ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)                 
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
                    else:    
-                       print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
                        try:
+                          print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                       print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
                        try:
+                          print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                   print("9800/3504  cisco_wifi_ctl.py: enable")
                    try: 
+                      print("9800/3504  cisco_wifi_ctl.py: enable")
                       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable", "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                    except subprocess.CalledProcessError as process_error:
@@ -717,8 +719,8 @@ def main():
                    # Wait a bit for AP to come back up
                    time.sleep(1)
                    if args.series == "9800":
-                       print("9800  cisco_wifi_ctl.py: advanced")
                        try:
+                          print("9800  cisco_wifi_ctl.py: advanced")
                           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
                           pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -774,6 +776,7 @@ def main():
                           e_tot += err
                           e_tot += "  "
                        try:
+                          print("9800  cisco_wifi_ctl.py: show_wlan_summary")
                           wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
                           pss = wlan_summary.stdout.decode('utf-8', 'ignore')
@@ -781,8 +784,8 @@ def main():
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                    else:
-                       print("3504 cisco_wifi_ctl.py: advanced")
                        try:
+                           print("3504 cisco_wifi_ctl.py: advanced")
                            advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced","--port", args.port], capture_output=True, check=True)
                            pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -871,8 +874,8 @@ def main():
                            e_tot += err
                            e_tot += "  "
                            if args.series == "9800":
-                               print("9800  resending cisco_wifi_ctl.py: advanced")
                                try:
+                                  print("9800  cisco_wifi_ctl.py: advanced")
                                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                               "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
                                   pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -1221,6 +1224,7 @@ def main():
    if(args.keep_state):
        print("9800/3504 flag --keep_state set thus keeping state")
        try:
+          print("9800/3504  cisco_wifi_ctl.py: advanced")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -1229,6 +1233,7 @@ def main():
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
        try:
+          print("9800/3504  cisco_wifi_ctl.py: summary")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
              "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -1241,8 +1246,8 @@ def main():
   
    # Set things back to defaults
    # Disable AP, apply settings, enable AP
-   print("9800/3504  cisco_wifi_ctl.py: disable")
    try:
+      print("9800/3504  cisco_wifi_ctl.py: disable AP {}".format(args.ap))
       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "disable", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
    except subprocess.CalledProcessError as process_error:
@@ -1250,16 +1255,16 @@ def main():
       exit(1) 
 
    if args.series == "9800":
-       print("9800  cisco_wifi_ctl.py: disable_network_5ghz")
        try:
+          print("9800  cisco_wifi_ctl.py: disable_network_5ghz")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_network_5ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)      
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-       print("9800  cisco_wifi_ctl.py: disable_network_24ghz")
-       try:        
+       try:
+          print("9800  cisco_wifi_ctl.py: disable_network_24ghz")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "disable_network_24ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)                 
        except subprocess.CalledProcessError as process_error:
@@ -1267,16 +1272,16 @@ def main():
           exit(1) 
 
    else:
-       print("3504  cisco_wifi_ctl.py: config 802.11a disable network")
        try:
+          print("3504  cisco_wifi_ctl.py: config 802.11a disable network")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-       print("3504  cisco_wifi_ctl.py: config 802.11b disable network")
        try:
+          print("3504  cisco_wifi_ctl.py: config 802.11b disable network")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
@@ -1284,8 +1289,8 @@ def main():
           exit(1) 
 
    if (tx != "NA"):
-       print("9800/3504  cisco_wifi_ctl.py: txPower")
        try: 
+          print("9800/3504  cisco_wifi_ctl.py: txPower tx 1")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
@@ -1293,8 +1298,8 @@ def main():
           exit(1) 
 
    if (bw != "NA"):
-       print("9800/3504  cisco_wifi_ctl.py: bandwidth")
        try:
+          print("9800/3504  cisco_wifi_ctl.py: bandwidth 20")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
@@ -1303,8 +1308,8 @@ def main():
    # NSS is set on the station earlier...
                        
    if (ch != "NA"):
-       print("9800/3504  cisco_wifi_ctl.py: channel")
        try:
+          print("9800/3504  cisco_wifi_ctl.py: channel 36")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
@@ -1312,24 +1317,24 @@ def main():
           exit(1) 
 
    if args.series == "9800":
-       print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
        try:
+          print("9800  cisco_wifi_ctl.py: enable_network_5ghz")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable_network_5ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)         
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-       print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
        try:
+          print("9800  cisco_wifi_ctl.py: enable_network_24ghz")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "enable_network_24ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True) 
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-       print("9800  cisco_wifi_ctl.py: auto")
        try:
+          print("9800  cisco_wifi_ctl.py: auto")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "auto","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
        except subprocess.CalledProcessError as process_error:
@@ -1337,24 +1342,24 @@ def main():
           exit(1) 
 
    else:     
-       print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
        try:
+          print("3504  cisco_wifi_ctl.py: config 802.11a enable network")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port])
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-       print("3504  cisco_wifi_ctl.py: config 802.11b enable network")
        try:
+          print("3504  cisco_wifi_ctl.py: config 802.11b enable network")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port])
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-   print("9800/3504  cisco_wifi_ctl.py: enable")
    try:
+      print("9800/3504  cisco_wifi_ctl.py: enable")
       subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                    "--action", "enable", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
    except subprocess.CalledProcessError as process_error:
@@ -1370,9 +1375,8 @@ def main():
                    "--cmd", "rm_endp c-udp-power-B"], capture_output=True);
 
    # Show controller status
-   print("9800/3504  cisco_wifi_ctl.py: advanced")
-
    try:
+      print("9800/3504  cisco_wifi_ctl.py: advanced")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                               "--action", "advanced", "--series" , args.series,"--port", args.port], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
