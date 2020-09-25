@@ -623,16 +623,6 @@ def main():
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
 
-                   if (bw != "NA"):
-                       print("9800 test_parameters bandwidth: set : {}".format(bw))
-                       try:
-                          print("9800 cisco_wifi_ctl.py: bandwidth {}".format(bw))
-                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
-                       except subprocess.CalledProcessError as process_error:
-                          print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
-                          exit(1) 
-
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
@@ -644,6 +634,16 @@ def main():
                        except subprocess.CalledProcessError as process_error:
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit(1)
+
+                   if (bw != "NA"):
+                       print("9800 test_parameters bandwidth: set : {}".format(bw))
+                       try:
+                          print("9800 cisco_wifi_ctl.py: bandwidth {}".format(bw))
+                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                       except subprocess.CalledProcessError as process_error:
+                          print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                          exit(1) 
 
                    if args.series == "9800":
                        #print("9800 cisco_wifi_ctl.py: delete_wlan")
@@ -1297,16 +1297,7 @@ def main():
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
 
-   if (bw != "NA"):
-       try:
-          print("9800/3504 cisco_wifi_ctl.py: bandwidth 20")
-          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
-       except subprocess.CalledProcessError as process_error:
-          print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
-          exit(1)
    # NSS is set on the station earlier...
-                       
    if (ch != "NA"):
        try:
           print("9800/3504 cisco_wifi_ctl.py: channel 36")
@@ -1315,6 +1306,15 @@ def main():
        except subprocess.CalledProcessError as process_error:
           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           exit(1) 
+
+   if (bw != "NA"):
+       try:
+          print("9800/3504 cisco_wifi_ctl.py: bandwidth 20")
+          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+       except subprocess.CalledProcessError as process_error:
+          print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+          exit(1)
 
    if args.series == "9800":
        try:
