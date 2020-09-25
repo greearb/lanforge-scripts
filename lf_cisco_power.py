@@ -769,6 +769,8 @@ def main():
                           # Could not talk to controller?
                           err = "ERROR:  Could not query dBm from controller, maybe controller died?"
                           print(err)
+                          print("Exiting:  check controller and AP , Command on AP to erase the config: capwap ap erase all")
+                          exit(1)
                           e_tot += err
                           e_tot += "  "
                        try:
