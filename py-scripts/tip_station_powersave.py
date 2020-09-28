@@ -237,11 +237,12 @@ class TIPStationPowersave(LFCliBase):
         #admin up on new monitor
         self.wifi_monitor_profile.admin_up()
         now = datetime.datetime.now()
+        test_start = time.time()
         date_time = now.strftime("%Y-%m-%d-%H%M%S")
         curr_mon_name = self.wifi_monitor_profile.monitor_name
         self.pcap_file = "%s/%s-%s.pcap"%(self.pcap_save_path, curr_mon_name, date_time)
 
-        capture_duration = 2 * ( self.test_duration.total_seconds() + self.pause_duration.total_seconds() + 4)
+        capture_duration = 60 + 4 * (self.test_duration.total_seconds() + self.pause_duration.total_seconds() + 4)
         self.wifi_monitor_profile.start_sniff(self.pcap_file, capture_duration)
         time.sleep(0.05)
 
@@ -253,11 +254,17 @@ class TIPStationPowersave(LFCliBase):
         self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         time.sleep(2)
         # collect BSSID of AP so we can tshark on it
+        temp_stas = []
+        for sta in self.sta_powersave_disabled_profile.station_names:
+            temp_stas.append(self.local_realm.name_to_eid(sta)[2])
+        for sta in self.sta_powersave_enabled_profile.station_names:
+            temp_stas.append(self.local_realm.name_to_eid(sta)[2])
         uri = "/port/1/%s/%s?fields=alias,ip,mac,ap"%(
             self.resource,
-            ",".join(self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+            ",".join(temp_stas)
         )
         port_info_r = self.json_get(uri)
+        # print("="*10, uri, port_info_r, "="*10)
         if (port_info_r is None) or ("empty" in port_info_r):
             self._fail("unable to query for mac addresses", print_=True)
             exit(1)
@@ -277,6 +284,7 @@ class TIPStationPowersave(LFCliBase):
         time.sleep(float(self.test_duration.total_seconds()))
         self.cx_prof_download.stop_cx()
         print("Download ends at: %d"%time.time())
+        print(" %d " % (time.time() - test_start))
 
 
     def stop(self):
@@ -306,13 +314,22 @@ class TIPStationPowersave(LFCliBase):
         pprint.pprint(self.sta_mac_map)
         interesting_macs = {}
         for eid,record in self.sta_mac_map.items():
-            interesting_macs[record["mac"]] = 1
-            interesting_macs[record["ap"]] = 1
+            interesting_macs[record['alias']] = [record['mac'], record['ap']]
 
-        mac_str = "-e wlan.addr ".join(interesting_macs.keys())
-        tshark_filter = "tshark -e wlan.addr=="+mac_str+" -r "+self.pcap_file
-        # now check for the pcap file we just created
-        print("TSHARK COMMAND: "+tshark_filter)
+        print(interesting_macs)
+        # mac_str = ""
+        # for mac in interesting_macs.keys():
+        #     mac_str += "wlan.addr==%s or " % mac
+        # mac_str = mac_str[:-3]
+
+        for station, info in interesting_macs.items():
+            mac_str = "wlan.addr==%s or wlan.addr==%s" % (info[0], info[1])
+            tshark_filter = "tshark -r " + self.pcap_file + " -T fields -e wlan.fc.type_subtype -e wlan.addr -e " \
+                                                        "wlan.fc.pwrmgt " + mac_str
+            # now check for the pcap file we just created
+            print("TSHARK COMMAND: %s " % station + tshark_filter)
+
+
         self._fail("not done writing pcap logic", print_=True)
         exit(1)
 
@@ -332,18 +349,18 @@ def main():
     normal_station_list = ["sta1000" ]
     powersave_station_list = ["sta0001"] #,"sta0002","sta0003","sta0004"]
     ip_powersave_test = TIPStationPowersave(lfjson_host, lfjson_port,
-                                            ssid="jedway-open-x2048-5-1",
+                                            ssid="jedway-open-149",
                                             password="[BLANK]",
-                                            channel_=157,
+                                            channel_=149,
                                             normal_station_list_=normal_station_list,
                                             normal_station_radio_="wiphy0",
                                             powersave_station_list_=powersave_station_list,
                                             powersave_station_radio_="wiphy0",
                                             monitor_name_="moni0",
                                             monitor_radio_="wiphy1",
-                                            side_a_min_rate_=56000,
-                                            side_b_min_rate_=56000,
-                                            traffic_duration_="5s",
+                                            side_a_min_rate_=1000000,
+                                            side_b_min_rate_=1000000,
+                                            traffic_duration_="30s",
                                             pause_duration_="2s",
                                             debug_on_=False,
                                             exit_on_error_=True,
