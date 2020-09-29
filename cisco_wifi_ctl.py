@@ -594,14 +594,16 @@ def main():
             if loop_count >= 3:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
-                  logg.info("9800 the telnet session may need to be cleared will try to send logout")
-                  egg.sendline("logout")
-                  logg.info("9800 the excape was found... exiting")
+                  logg.info("9800 will send escape to close telnet")
+                  egg.sendline("\x1b\r")
+                  logg.info("9800 the excape was found... close egg session")
+                  egg.close()
                   exit(1)
                else:
                   logg.info("9800 the telnet session may need to be cleared will try to send logout")
                   egg.sendline("logout")
                   logg.info("9800 did not find the initial escape... exiting")
+                  egg.close()
                   exit(1)
 
          # 3504 series
@@ -1024,7 +1026,13 @@ def main():
             logged_out_9800 = True
             break
       if( logged_out_9800 == False):
-         logg.info("9800 did not send logout at end of command processing this could tie up the connection")   
+         logg.info("9800 did not send logout at end of command processing this could tie up the connection") 
+      if( scheme == "telnet"):
+         egg.sendline("\x1b\r")
+         sleep(0.2)
+      logg.info("send close to the egg child process")   
+      egg.close()   
+      logg.info("send escape to exit connection")  
    # 3504         
    else:
       if (command is None ):
