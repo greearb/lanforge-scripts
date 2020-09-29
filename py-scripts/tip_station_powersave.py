@@ -221,8 +221,34 @@ class TIPStationPowersave(LFCliBase):
                             cx_rx_map[item] = value_rx
         return cx_rx_map
 
+    def parse_text_dump(self, station):
+        dump_stats = {
+            "subtypes": {},
+            "macs": {},
+            "ps_vals_true": 0
+        }
+        with open("%s/%s.txt" % (self.pcap_save_path, station)) as file:
+            for line in file:
+                line_split = line.rstrip().split('\t')
+                subtype = line_split[0]
+                macs = line_split[1].split(',')
+                ps_val = line_split[2]
+                if subtype not in dump_stats['subtypes']:
+                    dump_stats['subtypes'][subtype] = 1
+                else:
+                    dump_stats['subtypes'][subtype] += 1
+                for mac in macs:
+                    if mac != 'ff:ff:ff:ff:ff:ff':
+                        if mac not in dump_stats['macs']:
+                            dump_stats['macs'][mac] = 1
+                        else:
+                            dump_stats['macs'][mac] += 1
+                if int(ps_val) > 0:
+                    dump_stats['ps_vals_true'] += 1
 
-    def start(self, print_pass=False, print_fail = False):
+        return dump_stats
+
+    def start(self, print_pass=False, print_fail=False):
         """
         This method is intended to start the monitor, the normal station (without powersave),
         and the remaining power save stations. The powersave stations will transmit for tx duration,
@@ -316,7 +342,7 @@ class TIPStationPowersave(LFCliBase):
         for eid,record in self.sta_mac_map.items():
             interesting_macs[record['alias']] = [record['mac'], record['ap']]
 
-        print(interesting_macs)
+        # print(interesting_macs)
         # mac_str = ""
         # for mac in interesting_macs.keys():
         #     mac_str += "wlan.addr==%s or " % mac
@@ -328,10 +354,14 @@ class TIPStationPowersave(LFCliBase):
                                                         "wlan.fc.pwrmgt " + mac_str
             # now check for the pcap file we just created
             print("TSHARK COMMAND: %s " % station + tshark_filter)
-
-
+            os.system("%s > %s/%s.txt"%(tshark_filter, self.pcap_save_path, station))
+            print(station)
+            pprint.pprint(self.parse_text_dump(station))
+            
         self._fail("not done writing pcap logic", print_=True)
         exit(1)
+
+
 
 
     def cleanup(self):
