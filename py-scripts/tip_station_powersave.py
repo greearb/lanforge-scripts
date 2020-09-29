@@ -277,7 +277,8 @@ class TIPStationPowersave(LFCliBase):
 
         LFUtils.wait_until_ports_admin_up(base_url=self.local_realm.lfclient_url,
                                           port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
-        self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+        if not self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names):
+            raise ValueError("Unable to obtain ip addresses")
         time.sleep(2)
         # collect BSSID of AP so we can tshark on it
         temp_stas = []
@@ -347,22 +348,19 @@ class TIPStationPowersave(LFCliBase):
         # for mac in interesting_macs.keys():
         #     mac_str += "wlan.addr==%s or " % mac
         # mac_str = mac_str[:-3]
-
+        print(interesting_macs.items())
         for station, info in interesting_macs.items():
-            mac_str = "wlan.addr==%s or wlan.addr==%s" % (info[0], info[1])
+            mac_str = "-Y \"(wlan.addr==%s or wlan.addr==%s)" % (info[0], info[1])
             tshark_filter = "tshark -r " + self.pcap_file + " -T fields -e wlan.fc.type_subtype -e wlan.addr -e " \
-                                                        "wlan.fc.pwrmgt " + mac_str
+                                                        "wlan.fc.pwrmgt " + mac_str + " and wlan.fc.pwrmgt==1\""
             # now check for the pcap file we just created
             print("TSHARK COMMAND: %s " % station + tshark_filter)
             os.system("%s > %s/%s.txt"%(tshark_filter, self.pcap_save_path, station))
             print(station)
             pprint.pprint(self.parse_text_dump(station))
-            
+
         self._fail("not done writing pcap logic", print_=True)
         exit(1)
-
-
-
 
     def cleanup(self):
         self.wifi_monitor_profile.cleanup(desired_ports=[self.monitor_name])
@@ -375,9 +373,9 @@ class TIPStationPowersave(LFCliBase):
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)    
+    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
     normal_station_list = ["sta1000" ]
-    powersave_station_list = ["sta0001"] #,"sta0002","sta0003","sta0004"]
+    powersave_station_list = ["sta0001","sta0002","sta0003","sta0004"]
     ip_powersave_test = TIPStationPowersave(lfjson_host, lfjson_port,
                                             ssid="jedway-open-149",
                                             password="[BLANK]",
@@ -399,6 +397,7 @@ def main():
     ip_powersave_test.build()
     ip_powersave_test.start()
     ip_powersave_test.stop()
+    exit(1)
     ip_powersave_test.cleanup()
 
 if __name__ == "__main__":
