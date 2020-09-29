@@ -597,13 +597,13 @@ def main():
                   logg.info("9800 will send escape to close telnet")
                   egg.sendline("\x1b\r")
                   logg.info("9800 the excape was found... close egg session")
-                  egg.close()
+                  egg.close(force = True)
                   exit(1)
                else:
                   logg.info("9800 the telnet session may need to be cleared will try to send logout")
                   egg.sendline("logout")
                   logg.info("9800 did not find the initial escape... exiting")
-                  egg.close()
+                  egg.close(force = True)
                   exit(1)
 
          # 3504 series
@@ -1031,7 +1031,7 @@ def main():
          egg.sendline("\x1b\r")
          sleep(0.2)
       logg.info("send close to the egg child process")   
-      egg.close()   
+      egg.close(force = True)   
       logg.info("send escape to exit connection")  
    # 3504         
    else:
