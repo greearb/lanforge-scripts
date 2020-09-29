@@ -1029,10 +1029,10 @@ def main():
          logg.info("9800 did not send logout at end of command processing this could tie up the connection") 
       if( scheme == "telnet"):
          egg.sendline("\x1b\r")
+         logg.info("send escape to exit connection")  
          sleep(0.2)
       logg.info("send close to the egg child process")   
       egg.close(force = True)   
-      logg.info("send escape to exit connection")  
    # 3504         
    else:
       if (command is None ):
