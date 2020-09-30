@@ -398,6 +398,8 @@ def main():
          #9800 series
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
+               logg.info("9800 establishing Telnet egg {} ".format(egg))
+               sleep(5)
                egg.sendline(CR)
                sleep(3)
                try:
