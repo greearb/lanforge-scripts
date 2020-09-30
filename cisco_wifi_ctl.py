@@ -54,6 +54,7 @@ Q = '"'
 A = "'"
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 band = "a"
+egg = None # think "eggpect"  Need global scope for recovery
 
 def usage():
    print("$0 used connect to controller:")
@@ -151,7 +152,6 @@ def main():
    print("cisco series {}".format(args.series))
    print("scheme {}".format(args.scheme))
 
-   egg = None # think "eggpect"
    try:
       if (scheme == "serial"):
          #eggspect = pexpect.fdpexpect.fdspan(telcon, logfile=sys.stdout.buffer)
@@ -185,8 +185,8 @@ def main():
          #9800 series
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
+               loop_count += 1
                egg.sendline(CR)
-               sleep(3)
                i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   logg.info("9800 found Escape character is '^] i: {} before: {} after: {}".format(i,egg.before,egg.after))
@@ -391,13 +391,14 @@ def main():
          logg.info("Spawn: "+cmd+NL)
          egg = pexpect.spawn(cmd)
          egg.logfile = FileAdapter(logg)
-         time.sleep(0.1)
+         time.sleep(2)
          logged_in_9800 = False
          loop_count = 0
          found_escape = False
          #9800 series
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
+               loop_count += 1
                logg.info("9800 establishing Telnet egg {} ".format(egg))
                sleep(5)
                egg.sendline(CR)
@@ -479,9 +480,8 @@ def main():
                      logg.info("Spawn: "+cmd+NL)
                      egg = pexpect.spawn(cmd)
                      egg.logfile = FileAdapter(logg)
-                     time.sleep(0.1)
+                     time.sleep(2)
                      logged_in_9800 = False
-                     loop_count = 0
                      found_escape = False
                
                if i == 1:
@@ -603,9 +603,8 @@ def main():
                      logg.info("Spawn: "+cmd+NL)
                      egg = pexpect.spawn(cmd)
                      egg.logfile = FileAdapter(logg)
-                     time.sleep(0.1)
+                     time.sleep(2)
                      logged_in_9800 = False
-                     loop_count = 0
                      found_escape = False
                if i == 6:
                   logg.info("9800 recieved Bad secrets, to many password attempts i: {} before {} after {}".format(i, egg.before,egg.after))
@@ -624,9 +623,8 @@ def main():
                   logg.info("Spawn: "+cmd+NL)
                   egg = pexpect.spawn(cmd)
                   egg.logfile = FileAdapter(logg)
-                  time.sleep(0.1)
+                  time.sleep(2)
                   logged_in_9800 = False
-                  loop_count = 0
                   found_escape = False
 
             if loop_count >= 3:
