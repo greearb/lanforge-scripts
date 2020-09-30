@@ -417,7 +417,7 @@ def main():
                   j = egg.expect_exact(["WLC>","WLC#","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
-                     logg.info("9800 found WLC#  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
+                     logg.info("9800 found WLC>  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
@@ -437,7 +437,7 @@ def main():
                      logg.info("9800 found # so logged in can start sending commands i:{} j:{}".format(i,j))
                      logged_in_9800 = True
                   if j == 2:
-                     logg.info("9800 found User\: will put in args.user {} i:{} j:{}".format(args.user,i,j))
+                     logg.info("9800 found User: will put in args.user {} i:{} j:{}".format(args.user,i,j))
                      egg.sendline(args.user)
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
