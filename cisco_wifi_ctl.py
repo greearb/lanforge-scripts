@@ -588,13 +588,24 @@ def main():
                   logg.info("9800 Timed out waiting for initial prompt send logout i: {} before {} after {}".format(i, egg.before,egg.after))
                   egg.sendline(CR)
                   sleep(0.2)
-
+                  r = 0
+                  while( r <= 120):
+                     egg.expect(pexpect.TIMEOUT,timeout=0)
+                     logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
+                     egg.sendline("Hello?")
+                     sleep(1)
                loop_count += 1
 
             if loop_count >= 3:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
                   logg.info("9800 will send escape to close telnet")
+                  r = 0
+                  while( r <= 120):
+                     egg.expect(pexpect.TIMEOUT,timeout=0)
+                     logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
+                     egg.sendline("Hello?")
+                     sleep(1)
                   egg.sendline("\x1b\r")
                   logg.info("9800 the excape was found... close egg session")
                   egg.close(force = True)
