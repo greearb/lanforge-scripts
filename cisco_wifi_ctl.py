@@ -400,9 +400,9 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                loop_count += 1
                logg.info("9800 establishing Telnet egg {} ".format(egg))
-               sleep(5)
+               sleep(2)
                egg.sendline(CR)
-               sleep(3)
+               sleep(0.4)
                try:
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
