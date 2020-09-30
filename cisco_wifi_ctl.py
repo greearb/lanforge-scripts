@@ -399,7 +399,7 @@ def main():
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 2:
                loop_count += 1
-               logg.info("9800 establishing Telnet egg {} ".format(egg))
+               #logg.info("9800 establishing Telnet egg {} ".format(egg))
                sleep(2)
                egg.sendline(CR)
                sleep(0.4)
