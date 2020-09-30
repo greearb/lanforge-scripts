@@ -187,7 +187,6 @@ def main():
             while logged_in_9800 == False and loop_count <= 2:
                loop_count += 1
                egg.sendline(CR)
-               sleep(3)
                i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
                if i == 0:
                   logg.info("9800 found Escape character is '^] i: {} before: {} after: {}".format(i,egg.before,egg.after))
@@ -392,7 +391,7 @@ def main():
          logg.info("Spawn: "+cmd+NL)
          egg = pexpect.spawn(cmd)
          egg.logfile = FileAdapter(logg)
-         time.sleep(0.1)
+         time.sleep(2)
          logged_in_9800 = False
          loop_count = 0
          found_escape = False
@@ -481,7 +480,7 @@ def main():
                      logg.info("Spawn: "+cmd+NL)
                      egg = pexpect.spawn(cmd)
                      egg.logfile = FileAdapter(logg)
-                     time.sleep(0.1)
+                     time.sleep(2)
                      logged_in_9800 = False
                      found_escape = False
                
@@ -604,7 +603,7 @@ def main():
                      logg.info("Spawn: "+cmd+NL)
                      egg = pexpect.spawn(cmd)
                      egg.logfile = FileAdapter(logg)
-                     time.sleep(0.1)
+                     time.sleep(2)
                      logged_in_9800 = False
                      found_escape = False
                if i == 6:
@@ -624,7 +623,7 @@ def main():
                   logg.info("Spawn: "+cmd+NL)
                   egg = pexpect.spawn(cmd)
                   egg.logfile = FileAdapter(logg)
-                  time.sleep(0.1)
+                  time.sleep(2)
                   logged_in_9800 = False
                   found_escape = False
 
