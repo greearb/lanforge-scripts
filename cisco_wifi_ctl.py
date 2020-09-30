@@ -465,11 +465,22 @@ def main():
                      if k == 1:
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: i:{} j:{}  before {} after {}".format(i,j,egg.before,egg.after))
-                     logg.info("9800 send  carriage return to see if get prompt back ")
-                     egg.sendline(CR)
-                     sleep(0.4)
+                     logg.info("9800 timed out looking for WLC>,WLC#,User:,Password: loop_count {} i {} j {}  before {} after {}".format(loop_count,i,j,egg.before,egg.after))
+                     logg.info("9800  Closing the connection and try to re-establish loop_count {} i {} j {}".format(loop_count,i,j))
+                     egg.close(force = True)
+                     sleep(1)
+                     #egg.close(force = True)
+                     #sleep(0.2)
 
+                     # re establish telnet
+                     cmd = "telnet %s %d"%(host, port)
+                     logg.info("Spawn: "+cmd+NL)
+                     egg = pexpect.spawn(cmd)
+                     egg.logfile = FileAdapter(logg)
+                     time.sleep(0.1)
+                     logged_in_9800 = False
+                     loop_count = 0
+                     found_escape = False
                
                if i == 1:
                   logg.info("9800 found WLC>  will elevate loging i:{} before {} after {}".format(i,egg.before,egg.after))
@@ -578,34 +589,54 @@ def main():
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
                      logg.info("9800 timed out looking WLC>,  WLC#, User:, Password:  i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
-                     egg.sendline(CR)
-                     sleep(0.1)
+                     logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} j: {} before {} after {}".format(loop_count, i, j, egg.before,egg.after))
+                     logg.info("9800  Closing the connection and try to re-establish, ")
+                     egg.close(force = True)
+                     sleep(1)
+                     #egg.close(force = True)
+                     #sleep(0.2)
+
+                     # re establish telnet
+                     cmd = "telnet %s %d"%(host, port)
+                     logg.info("Spawn: "+cmd+NL)
+                     egg = pexpect.spawn(cmd)
+                     egg.logfile = FileAdapter(logg)
+                     time.sleep(0.1)
+                     logged_in_9800 = False
+                     loop_count = 0
+                     found_escape = False
                if i == 6:
                   logg.info("9800 recieved Bad secrets, to many password attempts i: {} before {} after {}".format(i, egg.before,egg.after))
                   egg.sendline(CR)
                   sleep(0.2)
                if i == 7:
-                  logg.info("9800 Timed out waiting for initial prompt send logout i: {} before {} after {}".format(i, egg.before,egg.after))
-                  egg.sendline(CR)
-                  sleep(0.2)
-                  r = 0
-                  while( r <= 120):
-                     egg.expect(pexpect.TIMEOUT,timeout=0)
-                     logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
-                     egg.sendline("Hello?")
-                     sleep(1)
-               loop_count += 1
+                  logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before,egg.after))
+                  logg.info("9800  Closing the connection and try to re-establish, ")
+                  egg.close(force = True)
+                  sleep(0.1)
+                  #egg.close(force = True)
+                  #sleep(0.2)
+
+                  # re establish telnet
+                  cmd = "telnet %s %d"%(host, port)
+                  logg.info("Spawn: "+cmd+NL)
+                  egg = pexpect.spawn(cmd)
+                  egg.logfile = FileAdapter(logg)
+                  time.sleep(0.1)
+                  logged_in_9800 = False
+                  loop_count = 0
+                  found_escape = False
 
             if loop_count >= 3:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
                   logg.info("9800 will send escape to close telnet")
                   r = 0
-                  while( r <= 120):
+                  while( r <= 10):
                      egg.expect(pexpect.TIMEOUT,timeout=0)
                      logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
                      egg.sendline("Hello?")
-                     sleep(1)
+                     sleep(3)
                   egg.sendline("\x1b\r")
                   logg.info("9800 the excape was found... close egg session")
                   egg.close(force = True)
