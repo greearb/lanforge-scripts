@@ -423,7 +423,7 @@ def main():
                   egg.sendline("en")
                   sleep(0.1)
                   j = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
-                  if k == 0:
+                  if j == 0:
                      logg.info("9800 received password prompt will send password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
