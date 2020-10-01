@@ -48,106 +48,106 @@ def htmlobj(text):
 def htmlpointview():
     pointview = """
 <!--For Point view -->
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-ul, #myUL {
-  list-style-type: none;
-}
+<meta name="viewport" content="width=device-width, initial-scale=1">\n
+<style>\n
+ul, #myUL {\n
+  list-style-type: none;\n
+}\n
 
-#myUL {
-  margin: 0;
-  padding: 0;
-}
+#myUL {\n
+  margin: 0;\n
+  padding: 0;\n
+}\n
 
-.box {
-  cursor: pointer;
-  -webkit-user-select: none; /* Safari 3.1+ */
-  -moz-user-select: none; /* Firefox 2+ */
-  -ms-user-select: none; /* IE 10+ */
-  user-select: none;
-}
+.box {\n
+  cursor: pointer;\n
+  -webkit-user-select: none; /* Safari 3.1+ */\n
+  -moz-user-select: none; /* Firefox 2+ */\n
+  -ms-user-select: none; /* IE 10+ */\n
+  user-select: none;\n
+}\n
 
-.box::before {
-  content: "\\2610";
-  color: black;
-  display: inline-block;
-  margin-right: 6px;
-}
+.box::before {\n
+  content: "\\2610";\n
+  color: black;\n
+  display: inline-block;\n
+  margin-right: 6px;\n
+}\n
 
-.check-box::before {
-  content: "\\2611";
-  color: dodgerblue;
-}
+.check-box::before {\n
+  content: "\\2611";\n
+  color: dodgerblue;\n
+}\n
 
-.nested {
-  display: none;
-}
+.nested {\n
+  display: none;\n
+}\n
 
-.active {
-  display: block;
-}
+.active {\n
+  display: block;\n
+}\n
 
-* {
-  box-sizing: border-box;
-}
+* {\n
+  box-sizing: border-box;\n
+}\n
 
-.column {
-  float: left;
-  width: 100%;
+.column {\n
+  float: left;\n
+  width: 100%;\n
 
-}
+}\n
 
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
-}
+.row::after {\n
+  content: "";\n
+  clear: both;\n
+  display: table;\n
+}\n
 
-.borderexample {
- border-style:solid;
- border-color: hsl(0, 0%, 73%);
-}
-.btn {
-  background-color: DodgerBlue;
-  border: none;
-  color: white;
-  padding: 12px 30px;
-  cursor: pointer;
-  font-size: 20px;
-}
+.borderexample {\n
+ border-style:solid;\n
+ border-color: hsl(0, 0%, 73%);\n
+}\n
+.btn {\n
+  background-color: DodgerBlue;\n
+  border: none;\n
+  color: white;\n
+  padding: 12px 30px;\n
+  cursor: pointer;\n
+  font-size: 20px;\n
+}\n
 
-/* Darker background on mouse-over 
-.btn:hover {
-  background-color: RoyalBlue;
-}
-</style>
-</head>
+/* Darker background on mouse-over */
+.btn:hover {\n
+  background-color: RoyalBlue;\n
+}\n
+</style>\n
+</head>\n
 """
     html.write(str(pointview))
 
 def htmlTableSummary(Summary):
-    tableSummary = "<body><!-- This is heading and Summary --><h2> About: </h2> \
+    tableSummary = "<body><!-- This is heading and Summary --><h2> About: </h2> \n \
     <p>"+str(Summary)+"</p> \n"
 
     html.write(str(tableSummary))
 
 def myUL():
-    html.write("<ul id='myUL'>")
+    html.write("<ul id='myUL'> \n")
 
 
 def htmlSpanBox(Table):
-    tablespan = "<li><span class= 'box borderexample'>"+str(Table)+"</span> <ul class='nested'> "
+    tablespan = "<li><span class= 'box borderexample'>"+str(Table)+"</span> <ul class='nested'> \n"
     html.write(tablespan)
 
 def htmlSpanBox1():
-    tablespan = "<li><span class='box'> Table </span> <ul class='nested'> "
+    tablespan = "<li><span class='box'> Table </span> <ul class='nested'> \n"
     html.write(tablespan)
 
-def htmltable(Heading,data,image1,image2,image3):
+def htmltable(Heading,data,image1,image2,image3,summary):
     # htmlBreak(1)
     htmlSpanBox(Heading)
-    htmlTableSummary("This is table summary below Objective \n")
-    htmlSpanBox1()
+    htmlTableSummary(str(summary)+"\n")
+    # htmlSpanBox1()
     html.write("<li><span> ")
     html.write(str(data))
     html.write("</span></li> ")
@@ -223,10 +223,8 @@ def htmlSpace(space):
     </style>"""
     html.write(Space)
 
-def htmlText(text, title):
-    title = "<h2" + str(title) + "</h2>"
+def htmlText(text):
     data = "<p>" + str(text) + "<p/>"
-    html.write(title)
     html.write(data)
 
 

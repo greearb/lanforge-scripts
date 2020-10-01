@@ -19,7 +19,7 @@ class Plot:
         # print("In Plot")
         pass
 
-    def bar(self, datax="", datay=" ", title="Temp", xaxis="xaxis", yaxis="yaxis",figname="temp"):
+    def bar(self, datax="", datay=" ", title="Temp", xaxis="yaxis", yaxis="xaxis",figname="temp"):
         # fig = plt.figure()
         self.tmpfile = BytesIO()
 
