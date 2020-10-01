@@ -421,7 +421,14 @@ def main():
                if i == 1:
                   logg.info("9800 found WLC>  will elevate loging i:{} before {} after {}".format(i,egg.before,egg.after))
                   egg.sendline("en")
-                  sleep(0.4)
+                  sleep(0.1)
+                  j = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
+                  if k == 0:
+                     logg.info("9800 received password prompt will send password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
+                     egg.sendline(args.passwd)
+                     sleep(0.1)
+                  if j == 1:
+                     logg.info("9800 received timeout after looking for password after sending user i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                
                if i == 2:
                   logg.info("9800 found WLC#  i:{} before {} after {}".format(i,egg.before,egg.after))
