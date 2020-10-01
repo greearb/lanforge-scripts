@@ -397,10 +397,10 @@ def main():
          found_escape = False
          #9800 series
          if args.series == "9800":
-            while logged_in_9800 == False and loop_count <= 2:
+            while logged_in_9800 == False and loop_count <= 7:
                loop_count += 1
                #logg.info("9800 establishing Telnet egg {} ".format(egg))
-               sleep(2)
+               #sleep(2)
                egg.sendline(CR)
                sleep(0.4)
                try:
@@ -411,8 +411,58 @@ def main():
                except:
                   logg.info('unknown exception on initial pexpect after login')
                   exit(1)
-               
+
                if i == 0:
+                  logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
+                  #egg.sendline(CR)
+                  found_escape = True
+                  sleep(0.4)
+
+               if i == 1:
+                  logg.info("9800 found WLC>  will elevate loging i:{} before {} after {}".format(i,egg.before,egg.after))
+                  egg.sendline("en")
+                  sleep(0.4)
+               
+               if i == 2:
+                  logg.info("9800 found WLC#  i:{} before {} after {}".format(i,egg.before,egg.after))
+                  logged_in_9800 = True
+                  sleep(0.4)
+
+               if i == 3:
+                  logg.info("9800 found User will put in args.user {} i:{}  before {} after {}".format(args.user,i,egg.before,egg.after))
+                  egg.sendline(args.user)
+                  sleep(0.4)
+
+               if i == 4:
+                  logg.info("9800 received password prompt will send password: {}   i:{}  before {} after {}".format(args.passwd,i, egg.before,egg.after))
+                  egg.sendline(args.passwd)
+                  sleep(0.4)
+
+               if i == 5:
+                  logg.info("9800 received WLC(config)# prompt doing some cleanup")
+                  egg.sendline("end")
+                  sleep(0.4)
+
+               if i == 7 or i == 6:
+                  logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before,egg.after))
+                  logg.info("9800  Closing the connection and try to re-establish, ")
+                  egg.close(force = True)
+                  sleep(0.4)
+                  #egg.close(force = True)
+                  #sleep(0.2)
+
+                  # re establish telnet
+                  cmd = "telnet %s %d"%(host, port)
+                  logg.info("Spawn: "+cmd+NL)
+                  egg = pexpect.spawn(cmd)
+                  egg.logfile = FileAdapter(logg)
+                  time.sleep(2)
+                  logged_in_9800 = False
+                  found_escape = False
+
+
+#####################################               
+               '''if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
                   #egg.sendline(CR)
                   found_escape = True
@@ -625,9 +675,9 @@ def main():
                   egg.logfile = FileAdapter(logg)
                   time.sleep(2)
                   logged_in_9800 = False
-                  found_escape = False
+                  found_escape = False'''
 
-            if loop_count >= 3:
+            if loop_count >= 6:
                if found_escape == True:
                   logg.info("9800 there may be another prompt present that not aware of")
                   logg.info("9800 will send escape to close telnet")

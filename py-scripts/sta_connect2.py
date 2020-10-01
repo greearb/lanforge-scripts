@@ -15,6 +15,7 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 import argparse
+import LANforge
 from LANforge import LFUtils
 # from LANforge import LFCliBase
 from LANforge import lfcli_base

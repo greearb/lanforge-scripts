@@ -129,7 +129,7 @@ class Realm(LFCliBase):
     def rm_port(self, port_eid, check_exists=True):
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
-        do_rm = True;
+        do_rm = True
         if check_exists:
             if not self.port_exists(port_eid):
                 do_rm = False
@@ -195,7 +195,7 @@ class Realm(LFCliBase):
 
     def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/set_endp_tos"
-        tos = _tos;
+        tos = _tos
         # Convert some human readable values to numeric needed by LANforge.
         if _tos == "BK":
             tos = "64"
@@ -276,7 +276,7 @@ class Realm(LFCliBase):
             "clean_dut":"yes",
             "clean_chambers": "yes"
         }
-        self.json_post("/cli-json/load", debug_=self.debug)
+        self.json_post("/cli-json/load", _data=data, debug_=self.debug)
         time.sleep(1)
 
     # Returns json response from webpage of all layer 3 cross connects
@@ -288,7 +288,7 @@ class Realm(LFCliBase):
         return self.wait_until_endps_appear(these_endp, debug=debug)
 
     def wait_until_endps_appear(self, these_endp, debug=False):
-        wait_more = True;
+        wait_more = True
         count = 0
         while wait_more:
             time.sleep(1)
@@ -316,7 +316,7 @@ class Realm(LFCliBase):
         return self.wait_until_cxs_appear(these_cx, debug=debug)
 
     def wait_until_cxs_appear(self, these_cx, debug=False):
-        wait_more = True;
+        wait_more = True
         count = 0
         while wait_more:
             time.sleep(1)
@@ -450,6 +450,7 @@ class Realm(LFCliBase):
                         matched_map[port_eid] = record
 
             elif pattern.find("[") > 0:
+                # TODO: regex below might have too many hack escapes
                 match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
                 if match.group(0):
                     if debug_:
@@ -646,7 +647,7 @@ class Realm(LFCliBase):
         return station_prof
 
     def new_multicast_profile(self):
-        multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port, \
+        multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
                                   local_realm=self, debug_=self.debug, report_timer_=3000)
         return multi_prof
 
@@ -675,11 +676,11 @@ class Realm(LFCliBase):
         return cx_prof
 
     def new_vap_profile(self):
-        vap_prof = VAPProfile(lfclient_url=self.lfclient_url, local_realm=self, debug_=self.debug)
+        vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self, debug_=self.debug)
         return vap_prof
 
     def new_vr_profile(self):
-        vap_prof = VRProfile(lfclient_url=self.lfclient_url, local_realm=self, debug_=self.debug)
+        vap_prof = VRProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self, debug_=self.debug)
         return vap_prof
 
     def new_http_profile(self):
@@ -698,7 +699,7 @@ class MULTICASTProfile(LFCliBase):
         :param lfclient_host:
         :param lfclient_port:
         :param local_realm:
-        :param name_prefix: prefix string for connection
+        :param name_prefix_: prefix string for connection
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
@@ -875,7 +876,6 @@ class L3CXProfile(LFCliBase):
                  side_a_max_pdu=0, side_b_max_pdu=0,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
         """
-
         :param lfclient_host:
         :param lfclient_port:
         :param local_realm:
@@ -887,7 +887,7 @@ class L3CXProfile(LFCliBase):
         :param side_b_min_pdu:
         :param side_a_max_pdu:
         :param side_b_max_pdu:
-        :param name_prefix: prefix string for connection
+        :param name_prefix_: prefix string for connection
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
@@ -977,19 +977,19 @@ class L3CXProfile(LFCliBase):
             side_b_resource = side_b_info[1]
 
             for port_name in side_a:
-                if port_name.find('.') < 0:
-                    port_name = "%d.%s" % (side_a_info[1], port_name)
-
                 side_a_info = self.local_realm.name_to_eid(port_name)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
+                if port_name.find('.') < 0:
+                    port_name = "%d.%s" % (side_a_info[1], port_name)
+
                 cx_name = "%s%s-%i"%(self.name_prefix, side_a_info[2], len(self.created_cx))
 
-                endp_a_name = cx_name + "-A";
-                endp_b_name = cx_name + "-B";
+                endp_a_name = cx_name + "-A"
+                endp_b_name = cx_name + "-B"
                 self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
-                self.created_endp[endp_a_name] = endp_a_name;
-                self.created_endp[endp_b_name] = endp_b_name;
+                self.created_endp[endp_a_name] = endp_a_name
+                self.created_endp[endp_b_name] = endp_b_name
                 these_cx.append(cx_name)
                 these_endp.append(endp_a_name)
                 these_endp.append(endp_b_name)
@@ -1027,25 +1027,24 @@ class L3CXProfile(LFCliBase):
                 url = "cli-json/set_endp_flag"
                 data = {
                     "name": endp_a_name,
-                    "flag": "autohelper",
+                    "flag": "AutoHelper",
                     "val": 1
                 }
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                data["name"] = endp_b_name
                 self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-                url = "cli-json/set_endp_flag"
-                data = {
-                    "name": endp_b_name,
-                    "flag": "autohelper",
-                    "val": 1
-                }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
+                    data["name"] = endp_a_name
+                    data["flag"] = "UseAutoNAT"
+                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                    data["name"] = endp_b_name
+                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 if tos != None:
                     self.local_realm.set_endp_tos(endp_a_name, tos)
                     self.local_realm.set_endp_tos(endp_b_name, tos)
 
-                #print("CXNAME366:")
-                #pprint(cx_name)
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -1064,7 +1063,7 @@ class L3CXProfile(LFCliBase):
             side_a_info = self.local_realm.name_to_eid(side_a)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
-            side_a_name = side_a_info[2]
+            #side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
@@ -1074,11 +1073,11 @@ class L3CXProfile(LFCliBase):
                 side_b_name = side_b_info[2]
 
                 cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
-                endp_a_name = cx_name + "-A";
-                endp_b_name = cx_name + "-B";
+                endp_a_name = cx_name + "-A"
+                endp_b_name = cx_name + "-B"
                 self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
-                self.created_endp[endp_a_name] = endp_a_name;
-                self.created_endp[endp_b_name] = endp_b_name;
+                self.created_endp[endp_a_name] = endp_a_name
+                self.created_endp[endp_b_name] = endp_b_name
                 these_cx.append(cx_name)
                 these_endp.append(endp_a_name)
                 these_endp.append(endp_b_name)
@@ -1090,8 +1089,8 @@ class L3CXProfile(LFCliBase):
                     "type": endp_type,
                     "min_rate": self.side_a_min_bps,
                     "max_rate": self.side_a_max_bps,
-                    "min_pkt": self.side_a_min_pkt,
-                    "max_pkt": self.side_a_max_pkt,
+                    "min_pkt": self.side_a_min_pdu,
+                    "max_pkt": self.side_a_max_pdu,
                     "ip_port": -1
                 }
                 endp_side_b = {
@@ -1287,7 +1286,7 @@ class GenCXProfile(LFCliBase):
 
     def parse_command(self, sta_name):
         if self.type == "lfping":
-            if (self.dest is not None or self.dest != "") and (self.interval is not None or self.interval > 0):
+            if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
                 #print(self.cmd)
             else:
@@ -1502,9 +1501,10 @@ class WifiMonitor:
                # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
 class VAPProfile(LFCliBase):
-    def __init__(self, lfclient_url, local_realm, vap_name="", ssid="NA", ssid_pass="NA", mode=0, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, vap_name="", ssid="NA", ssid_pass="NA", mode=0, debug_=False):
+        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
         self.debug = debug_
-        self.lfclient_url = lfclient_url
+        #self.lfclient_url = lfclient_url # done in super()
         self.ssid = ssid
         self.ssid_pass = ssid_pass
         self.mode = mode
@@ -1836,9 +1836,10 @@ class VAPProfile(LFCliBase):
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
 
 class VRProfile(LFCliBase):
-    def __init__(self, lfclient_url, local_realm, ssid="NA", ssid_pass="NA", mode=0, debug_=False):
-        self.debug = debug_
-        self.lfclient_url = lfclient_url
+    def __init__(self, lfclient_host, lfclient_port, local_realm, ssid="NA", ssid_pass="NA", mode=0, debug_=False):
+        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
+        #self.debug = debug_
+        # self.lfclient_url = lfclient_url
         self.ssid = ssid
         self.ssid_pass = ssid_pass
         self.mode = mode
@@ -2087,7 +2088,7 @@ class FIOCXProfile(LFCliBase):
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
-class PortUtils(LFCliBase):
+class PortUtils():
     def __init__(self, local_realm):
         self.local_realm = local_realm
 
@@ -2165,7 +2166,7 @@ class HTTPProfile(LFCliBase):
             if passes == expected_passes:
                 return True
             else:
-                print(list(debug_info), " Endps in this list showed errors getting to %s " % self.url)
+                print(list(debug_info), " Endps in this list showed errors getting to its URL") #   %s") % self.url)
                 return False
 
     def start_cx(self):
@@ -2221,12 +2222,16 @@ class HTTPProfile(LFCliBase):
         cx_post_data = []
         self.map_sta_ips(ports)
         for i in range(len(list(self.ip_map))):
+            url = None
             if i != len(list(self.ip_map)) - 1:
                 port_name = list(self.ip_map)[i]
                 ip_addr = self.ip_map[list(self.ip_map)[i+1]]
             else:
                 port_name = list(self.ip_map)[i]
                 ip_addr = self.ip_map[list(self.ip_map)[0]]
+
+            if (ip_addr is None) or (ip_addr == ""):
+                raise ValueError("HTTPProfile::create encountered blank ip/hostname")
 
             if len(self.local_realm.name_to_eid(port_name)) == 3:
                 shelf = self.local_realm.name_to_eid(port_name)[0]
@@ -2246,6 +2251,10 @@ class HTTPProfile(LFCliBase):
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
             if not http and not ftp:
                 raise ValueError("Please specify ftp and/or http")
+
+            if (url is None) or (url == ""):
+                raise ValueError("HTTPProfile::create: url unset")
+
             endp_data = {
                 "alias": name + "_l4",
                 "shelf": shelf,
@@ -2366,8 +2375,8 @@ class StationProfile:
         self.wifi_extra_data["domain"] = domain
         self.wifi_extra_data["hessid"] = hessid
 
-    def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,\
-        reset_port_timer_start=False, port_to_reset=0, time_till_reset=0):
+    def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,
+                        reset_port_timer_start=False, port_to_reset=0, time_till_reset=0):
         self.reset_port_extra_data["reset_port_enable"] = reset_port_enable
         self.reset_port_extra_data["test_duration"] = test_duration
         self.reset_port_extra_data["reset_port_time_min"] = reset_port_min_time
@@ -2406,8 +2415,8 @@ class StationProfile:
         if (param_name is None) or (param_name == ""):
             return
         if command_name not in self.COMMANDS:
-            self.error("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
-            return
+            raise ValueError("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
+            # return
         if command_name == "add_sta":
             self.add_sta_data[param_name] = param_value
         elif command_name == "set_port":
