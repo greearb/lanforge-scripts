@@ -1255,7 +1255,7 @@ def main():
    # Set things back to defaults
    # remove the station
    print("Deleting all stations on radio {}".format(args.radio))
-   subprocess.run(["./lf_associate_ap.pl", "--action", "--del_all_phy","--port_del", args.radio], timeout=20, capture_output=True)
+   subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy","--port_del", args.radio], timeout=20, capture_output=True)
          
 
 
