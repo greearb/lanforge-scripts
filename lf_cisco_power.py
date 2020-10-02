@@ -48,6 +48,7 @@ The user is responsible for setting up the station oustide of this script, howev
 
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
+
 '''
 
 # TODO:  Maybe HTML output too?
@@ -207,6 +208,7 @@ def main():
    parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
    parser.add_argument("--security",       type=str, help="security default open",default="open")
 
+   parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
    parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
 
 
@@ -442,11 +444,17 @@ def main():
        if (args.radio == None):
            print("WARNING --create needs a radio")
            exit(1)
-       else:
+       elif (args.vht160):
+           print("creating station with VHT160 set: {} on radio {}".format(args.create_station,args.radio))
+           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
+                   "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                   "--first_sta",args.create_station,"--action","add","--xsec","ht160_enable"], timeout=20, capture_output=True)
+           sleep(3)
+       else:    
            print("creating station: {} on radio {}".format(args.create_station,args.radio))
            subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
-                   "security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                   "--first_sta",args.create_station,"--duration","1","--cxtype","udp","--action","add"], timeout=20, capture_output=True)
+                   "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                   "--first_sta",args.create_station,"--action","add"], timeout=20, capture_output=True)
            sleep(3)
 
 
@@ -516,7 +524,7 @@ def main():
        for n in nss:
            for bw in bandwidths:
                if (n != "NA"):
-                   ni = int(n);
+                   ni = int(n)
                    if (parent == None):
                        print("ERROR:  Skipping setting the spatial streams because cannot find Parent radio for station: %s."%(lfstation))
                    else:
@@ -1245,6 +1253,13 @@ def main():
        exit(1)
   
    # Set things back to defaults
+   # remove the station
+   print("Deleting all stations on radio {}".format(args.radio))
+   subprocess.run(["./lf_associate_ap.pl", "--action", "--del_all_phy","--port_del", args.radio], timeout=20, capture_output=True)
+         
+
+
+
    # Disable AP, apply settings, enable AP
    try:
       print("9800/3504 cisco_wifi_ctl.py: disable AP {}".format(args.ap))
