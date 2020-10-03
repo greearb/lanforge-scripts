@@ -533,10 +533,11 @@ def main():
                            # 9984 hardware needs 2 chains to do one NSS at 160Mhz
                            if (ni > 2):
                                if(args.vht160):
-                                   print("NOTE: --vht160 set will set spacial streams to 2")
                                    ni = 2
+                                   print("NOTE: --vht160 set will set ni : {}".format(ni))
                                    # Set radio to 2x requested value
                                    ni *=2
+                                   print("NOTE: --vht160 set will set  ni * 2 : {}".format(ni))
                                else:    
                                    print("NOTE: Skipping NSS %s for 160Mhz, LANforge radios do not support more than 2NSS at 160Mhz currently."%(n))
                                    print("NOTE: use --vht160 to force 2NSS at 160Mhz")
