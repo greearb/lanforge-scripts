@@ -472,8 +472,8 @@ def main():
                      logg.info("9800  Closing the connection and try to re-establish loop_count {} i {} j {}".format(loop_count,i,j))
                      egg.close(force = True)
                      sleep(1)
-                     #egg.close(force = True)
-                     #sleep(0.2)
+                     egg.close(force = True)
+                     sleep(1)
 
                      # re establish telnet
                      cmd = "telnet %s %d"%(host, port)
