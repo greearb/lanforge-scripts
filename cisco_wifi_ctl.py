@@ -472,8 +472,8 @@ def main():
                      logg.info("9800  Closing the connection and try to re-establish loop_count {} i {} j {}".format(loop_count,i,j))
                      egg.close(force = True)
                      sleep(1)
-                     #egg.close(force = True)
-                     #sleep(0.2)
+                     egg.close(force = True)
+                     sleep(1)
 
                      # re establish telnet
                      cmd = "telnet %s %d"%(host, port)
@@ -614,7 +614,7 @@ def main():
                   logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before,egg.after))
                   logg.info("9800  Closing the connection and try to re-establish, ")
                   egg.close(force = True)
-                  sleep(0.1)
+                  sleep(1)
                   #egg.close(force = True)
                   #sleep(0.2)
 
@@ -1075,6 +1075,7 @@ def main():
          sleep(0.2)
       logg.info("send close to the egg child process")   
       egg.close(force = True)   
+      sleep(1)
    # 3504         
    else:
       if (command is None ):
