@@ -4,7 +4,8 @@
 Description=Simple Label Printer service on port 8082
 
 [Service]
-Type=oneshot
+Type=simple
+Restart=on-failure
 RemainAfterExit=yes
 ExecStart=/usr/bin/python3 /usr/local/bin/label-printer.py
 
