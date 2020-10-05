@@ -1,4 +1,10 @@
 #!/bin/bash
 
-curl -d 'model=lf0350&mac=00:0e:84:33:44:55:66&hostname=&serial=' -X POST http://localhost:8082/
-curl -d 'model=lf0350&mac=00:00' -X POST http://localhost:8082/
+#printer="LabelWriter-450"
+printer="QL-800"
+
+curl -v -d "printer=${printer}&model=lf0350&mac=00:0e:84:33:44:55:66&hostname=vm-atlas20&serial=zoso1234" http://localhost:8082/
+sleep 4
+curl -v -d "printer=${printer}&model=lf0350&mac=00:0e:84:33:44:55:66&hostname=&serial=" http://localhost:8082/
+sleep 4
+curl -v -d "printer=${printer}&model=lf0350&mac=00:0e:84:33:44:55:66"  http://localhost:8082/
