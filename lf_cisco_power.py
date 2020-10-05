@@ -99,7 +99,6 @@ nf_at_calibration = -105
 
 def usage():
    print("$0 used connect to controller:")
-   print("-a|--ap:  AP to act upon")
    print("-d|--dest:  destination host")
    print("-o|--port:  destination port")
    print("-u|--user:  login name")
@@ -113,7 +112,7 @@ def usage():
    print("-n|--nss: List of spatial streams to test: 1 2 3 4")
    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
    print("-k|--keep_state  keep the state, no configuration change at the end of the test, store true flage present ")
-   print("--station: LANforge station name for test(sta00000)")
+   print("--station: LANforge station name for test(sta00000), use if station present and --create_station not used")
    print("--upstream_port: LANforge upstream port name (eth1)")
    print("--lfmgr: LANforge manager IP address")
    print("--lfresource: LANforge resource ID for station")
@@ -130,7 +129,6 @@ def usage():
    print("--series: controller series  9800 , defaults to 3504")
    print("--slot: 9800 AP slot defaults to 1")
    print("--rssi: Select rssi to use for calculation (combined | beacon) Default is combined")
-
    print("--create_station", "create LANforge station at the beginning of the test")
    print("--radio", "radio to create LANforge station on at the beginning of the test")
    print("--ssid", "ssid default open-wlan")
@@ -175,7 +173,6 @@ def main():
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
-   #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-a", "--ap",       type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
    parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
@@ -200,13 +197,11 @@ def main():
    parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
    parser.add_argument("--slot",        type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--rssi",    type=str, help="Select rssi to use for calculation (combined | beacon) Default is combined",choices=["beacon","combined"])
-
    parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
    parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="open-wlan")
    parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
    parser.add_argument("--security",       type=str, help="security default open",default="open")
-
    parser.add_argument("--cleanup", help="--cleanup , Clean up stations after test completes ", action='store_true')
    parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
    parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
