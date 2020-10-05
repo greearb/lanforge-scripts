@@ -208,6 +208,7 @@ def main():
    parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
    parser.add_argument("--security",       type=str, help="security default open",default="open")
 
+   parser.add_argument("--cleanup", help="--cleanup , Clean up stations after test completes ", action='store_true')
    parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
    parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
 
@@ -1262,11 +1263,9 @@ def main():
   
    # Set things back to defaults
    # remove the station
-   print("Deleting all stations on radio {}".format(args.radio))
-   subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy","--port_del", args.radio], timeout=20, capture_output=True)
-         
-
-
+   if(args.cleanup):
+       print("--cleanup set Deleting all stations on radio {}".format(args.radio))
+       subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy","--port_del", args.radio], timeout=20, capture_output=True)
 
    # Disable AP, apply settings, enable AP
    try:
