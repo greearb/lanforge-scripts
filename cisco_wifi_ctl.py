@@ -317,7 +317,7 @@ def main():
                      logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
 
                if i == 4:
-                  logg.info("9800 received password prompt will send password: {}   i:{} j:{} k:{}  before {} after {}".format(args.passwd,i,j,k, egg.before,egg.after))
+                  logg.info("9800 received password prompt will send password: {}  i:{} before {} after {}".format(args.passwd,i,egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(0.1)
                   j = egg.expect(["WLC#",pexpect.TIMEOUT],timeout=2)
