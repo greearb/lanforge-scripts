@@ -95,6 +95,14 @@ begin with these imports:
         * sta_names_: a list of station names to create, please use `LFUtils.port_name_series()`
         * dry_run: True avoids posting commands
         * debug:
+    * class `PacketFilter` : This class provides filters that can be used with tshark
+        * `get_filter_wlan_assoc_packets()` : This packet filter will look for wlan.fc.type_subtype<=3. It takes
+                                             two arguments: `ap_mac` and `sta_mac`
+        * `get_filter_wlan_null_packets()` : This packet filter will look for wlan.fc.type_subtype==44. It takes
+                                             two arguments: `ap_mac` and `sta_mac`
+        * `run_filter()` : This function will run the filter specified by the `filter` argument on the pcap
+                          file specified by the `pcap_file` argument. It redirects this output into a txt file in /tmp
+                          and returns the lines in that file as an array.
   * `realm_test.py`: exercises realm.py
   * `show_ports.py`: this simple example shows how to gather a digest of ports
   * `test_l4.py`: example of how to use LFRequest to create a L4 endpoint
