@@ -13,6 +13,7 @@ from LANforge.lfcli_base import LFCliBase
 from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
+import os
 import datetime
 
 
@@ -2087,6 +2088,30 @@ class FIOCXProfile(LFCliBase):
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
+
+class PacketFilter():
+
+    def get_filter_wlan_assoc_packets(self, ap_mac, sta_mac):
+        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
+        return filter
+
+    def get_filter_wlan_null_packets(self, ap_mac, sta_mac):
+        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
+        return filter
+
+    def run_filter(self, pcap_file, filter):
+        filename = "/tmp/tshark_dump.txt"
+        cmd = "tshark -r %s %s > %s" % (pcap_file, filter, filename)
+        # print("CMD: ", cmd)
+        os.system(cmd)
+        lines = []
+        with open(filename) as tshark_file:
+            for line in tshark_file:
+                lines.append(line.rstrip())
+
+        return lines
 
 class PortUtils():
     def __init__(self, local_realm):
