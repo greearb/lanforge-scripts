@@ -246,11 +246,21 @@ class L3VariableTimeLongevity(LFCliBase):
         if self.args.cisco_ctlr == None:
             return
 
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
-        pss = advanced.stdout.decode('utf-8', 'ignore')
-        print(pss)
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"summary"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                       self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                       "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+                 .format(process_error.returncode, process_error.output))
+            time.sleep(1)
+            exit(1)
+    
 
         # Find our station count
         searchap = False
@@ -270,6 +280,403 @@ class L3VariableTimeLongevity(LFCliBase):
                     if (int(sta_count) != int(self.total_stas)):
                         print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
+    #show summary (to get AP) 
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action summary --series 9800 --log stdout
+    def controller_show_summary(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"summary"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "summary"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+                print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+                    .format(process_error.returncode, process_error.output))
+                time.sleep(1)
+                exit(1)
+
+
+    #show ap dot11 5ghz summary (band defaults to 5ghz) --band a
+    #show ap dot11 24ghz summary use --band b for 2.4 ghz
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action advanced --series 9800 --log stdout
+    def controller_show_ap_summary(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"advanced"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "advanced"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+    #show wlan summary
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action show_wlan_summary --series 9800 --log stdout
+    def controller_show_wlan_summary(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"show wlan summary"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "show_wlan_summary"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+    #disable AP
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable --series 9800
+    def controller_disable_ap(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #disable wlan
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_wlan --series 9800
+    def controller_disable_wlan(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable_wlan"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_wlan"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #disable network 5ghz
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_5ghz --series 9800
+    def controller_disable_network_5ghz(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable_network_5ghz"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_5ghz"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #disable network 24ghz
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_24ghz --series 9800
+    def controller_disable_network_24ghz(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable_network_24ghz"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_24ghz"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #set manual mode - Series 9800 must be set to manual mode
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action manual --series 9800
+    # ap name <AP NAME> dot11 5ghz radio role manual client-serving
+    def controller_role_manual(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"manual"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "manual"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+    #set manual mode - Series 9800 must be set to auto mode
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action auto --series 9800
+    # ap name <AP NAME> dot11 5ghz radio role manual client-serving
+    def controller_role_auto(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"auto"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "auto"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #test parameters summary (txPower 1-8)
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action txPower  --value 5 --series 9800
+    def controller_set_tx_power(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {} value {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"txPower", self.args.cisco_tx_power ))  # TODO fix txPower to tx_power in cisco_wifi_ctl.py
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "txPower","--value", self.args.cisco_tx_power], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #set channel [36, 64, 100]
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action channel  --value 36 --series 9800
+    # 9800 : ap name <AP> dot11 [5ghz | 24ghz] channel <channel>
+    # 3504 : (Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
+    def controller_set_channel(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {} value {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"channel", self.args.cisco_channel ))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "channel","--value", self.args.cisco_channel], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #set bandwidth [20 40 80 160]
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action bandwidth  --value 40 --series 9800
+    def controller_set_bandwidth(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {} value {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"channel", self.args.cisco_chan_width ))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "channel","--value", self.args.cisco_chan_width], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #create wlan
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action create_wlan  --wlan "open-wlan"  --wlanID 1 --series 9800
+    def controller_create_wlan(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {} wlan {} wlanID".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID ))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #create wireless tag policy  --9800 series needs to have wireless tag policy set
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action wireless_tag_policy --series 9800
+    def controller_set_wireless_tag_policy(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"wireless_tag_policy" ))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "wireless_tag_policy"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #enable wlan
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_wlan --series 9800
+    def controller_enable_wlan(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"enable_wlan"))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "enable_wlan"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #enable 5ghz
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_5ghz --series 9800
+    def controller_enable_network_5ghz(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"enable_network_5ghz"))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "enable_network_5ghz"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+    #enable 24ghz
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_24ghz --series 9800
+    def controller_enable_network_24ghz(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"enable_network_24ghz"))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "enable_network_24ghz"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #enable (band a)
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable --series 9800
+    def controller_enable_ap(self):
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"enable"))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "enable"], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
+    #advanced (showes summary)
+    #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action advanced --series 9800
     def controller_show_ap_channel(self):
         advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
@@ -319,24 +726,6 @@ class L3VariableTimeLongevity(LFCliBase):
         print("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
         # Verify channel and channel width. 
 
-    def controller_disable_ap(self):
-        #(Cisco Controller) >config 802.11a disable APA453.0E7B.CF9C 
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "disable","--band",self.args.cisco_band], capture_output=True)
-
-        pss = advanced.stdout.decode('utf-8', 'ignore')
-        print(pss)
-
-    def controller_set_channel_ap(self):
-        #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "channel","--value",self.args.cisco_channel], capture_output=True)
-
-        pss = advanced.stdout.decode('utf-8', 'ignore')
-        print(pss)      
-
     # for testing perposes set channel back to 36
     def controller_set_channel_ap_36(self):
         #(Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  36
@@ -347,24 +736,6 @@ class L3VariableTimeLongevity(LFCliBase):
 
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)      
-
-
-    def controller_set_chan_width_ap(self):
-        #(Cisco Controller) >config 802.11a chan_width APA453.0E7B.CF9C  20	
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "bandwidth","--value",self.args.cisco_chan_width], capture_output=True)
-        pss = advanced.stdout.decode('utf-8', 'ignore')
-        print(pss)                                   
-                     
-
-    def controller_enable_ap(self):
-        #(Cisco Controller) >config 802.11a enable APA453.0E7B.CF9C
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                   self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                   "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "enable","--band",self.args.cisco_band], capture_output=True)
-        pss = advanced.stdout.decode('utf-8', 'ignore')
-        print(pss)          
 
     def verify_cac_on_ap(self):
         pass
@@ -761,7 +1132,13 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--cisco_band', help='--cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"])
     parser.add_argument('--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
-    
+
+    parser.add_argument('--cisco_wlan', help='--cisco_wlan <wlan name> default: NA, NA means no change',default="NA")
+    parser.add_argument('--cisco_wlanID', help='--cisco_wlanID <wlanID> default: NA , NA means not change',default="NA")
+    parser.add_argument('--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
+                        ,choices=["1","2","3","4","5","6","7","8","NA"])
+
+
 
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
@@ -780,6 +1157,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
                         , required=True)
+    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
+
     args = parser.parse_args()
 
     #print("args: {}".format(args))
