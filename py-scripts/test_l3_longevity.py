@@ -60,7 +60,7 @@ class L3VariableTime(LFCliBase):
         self.args = args
         self.outfile = outfile
         self.csv_started = False
-        self.ts = int(time.time())
+        self.epoch_time = int(time.time())
         self.debug = debug_on
         
 
@@ -126,9 +126,12 @@ class L3VariableTime(LFCliBase):
 
         return endp_rx_map, endp_rx_drop_map
 
+    def time_stamp(self):
+        return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
+
     def __record_rx_dropped_percent(self,rx_drop_percent):
 
-        csv_rx_drop_percent_data = [self.ts,'rx_drop_percent']
+        csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent']
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
@@ -157,8 +160,8 @@ class L3VariableTime(LFCliBase):
         csv_rx_delta_dict = {}
 
         # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = [self.ts,'rx']
-        csv_rx_delta_row_data = [self.ts,'rx_delta']
+        csv_rx_row_data = [self.epoch_time, self.time_stamp(),'rx']
+        csv_rx_delta_row_data = [self.epoch_time, self.time_stamp(),'rx_delta']
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
@@ -935,7 +938,7 @@ class L3VariableTime(LFCliBase):
                 self.reset_port_check()
                 time.sleep(1)
             
-            self.ts = int(time.time())
+            self.epoch_time = int(time.time())
             new_rx_values, rx_drop_percent = self.__get_rx_values()
 
             expected_passes += 1
