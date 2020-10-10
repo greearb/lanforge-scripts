@@ -21,7 +21,7 @@ import re
 import csv
 import random
 
-class L3VariableTimeLongevity(LFCliBase):
+class L3VariableTime(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
                  reset_port_enable_list,
@@ -1251,7 +1251,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     #print("endp-types: %s"%(endp_types))
 
-    ip_var_test = L3VariableTimeLongevity(
+    ip_var_test = L3VariableTime(
                                     lfjson_host,
                                     lfjson_port,
                                     args=args,
