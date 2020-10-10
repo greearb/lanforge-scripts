@@ -32,7 +32,7 @@ def main():
     debug_on = False
 
     parser = argparse.ArgumentParser(
-        prog='test_l3_longevity.py',
+        prog='lf_cisco_snp.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -44,7 +44,7 @@ def main():
             ''',
         
         description='''\
-test_l3_longevity.py:
+lf_cisco_snp.py:
 --------------------
 
 Summary : 
@@ -55,12 +55,12 @@ and recieved.
 
 Generic command layout:
 -----------------------
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
+python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
         --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 5 min
-python3 test_l3_longevity.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
+python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
@@ -119,7 +119,7 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
+python3 .\\lf_cisco_snp.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
@@ -136,7 +136,7 @@ Example #2 using cisco controller
 10. duration 5m
 
 Command:
-python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
+python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
     --cisco_channel 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
@@ -278,7 +278,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     #print("endp-types: %s"%(endp_types))
 
-    ip_var_test = SNP.L3VariableTime(
+    snp = SNP.L3VariableTime(
                                     lfjson_host,
                                     lfjson_port,
                                     args=args,
@@ -303,24 +303,24 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     debug_on=debug_on, 
                                     outfile=csv_outfile)
 
-    ip_var_test.pre_cleanup()
+    snp.pre_cleanup()
 
-    ip_var_test.build()
-    if not ip_var_test.passes():
+    snp.build()
+    if not snp.passes():
         print("build step failed.")
-        print(ip_var_test.get_fail_message())
+        print(snp.get_fail_message())
         exit(1) 
-    ip_var_test.start(False, False)
-    ip_var_test.stop()
-    if not ip_var_test.passes():
+    snp.start(False, False)
+    snp.stop()
+    if not snp.passes():
         print("stop test failed")
-        print(ip_var_test.get_fail_message())
+        print(snp.get_fail_message())
          
 
     print("Pausing 30 seconds after run for manual inspection before we clean up.")
     time.sleep(30)
-    ip_var_test.cleanup()
-    if ip_var_test.passes():
+    snp.cleanup()
+    if snp.passes():
         print("Full test passed, all connections increased rx bytes")
 
 if __name__ == "__main__":
