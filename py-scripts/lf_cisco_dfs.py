@@ -13,7 +13,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge import LFUtils
 import time
-import test_l3_longevity as SNP
+import test_l3_longevity as DFS
 
 
 def valid_endp_types(_endp_type):
@@ -32,7 +32,7 @@ def main():
     debug_on = False
 
     parser = argparse.ArgumentParser(
-        prog='lf_cisco_snp.py',
+        prog='lf_cisco_dfs.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -44,7 +44,7 @@ def main():
             ''',
         
         description='''\
-lf_cisco_snp.py:
+lf_cisco_dfs.py:
 --------------------
 
 Summary : 
@@ -55,12 +55,12 @@ and recieved.
 
 Generic command layout:
 -----------------------
-python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
+python .\\lf_cisco_dfs.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
         --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 5 min
-python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
+python3 lf_cisco_dfs.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
@@ -119,7 +119,7 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 .\\lf_cisco_snp.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
+python3 .\\lf_cisco_dfs.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
@@ -136,7 +136,7 @@ Example #2 using cisco controller
 10. duration 5m
 
 Command:
-python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
+python3 lf_cisco_dfs.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
     --cisco_channel 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
@@ -278,7 +278,7 @@ python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.
 
     #print("endp-types: %s"%(endp_types))
 
-    snp = SNP.L3VariableTime(
+    dfs = DFS.L3VariableTime(
                                     lfjson_host,
                                     lfjson_port,
                                     args=args,
@@ -303,24 +303,24 @@ python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.
                                     debug_on=debug_on, 
                                     outfile=csv_outfile)
 
-    snp.pre_cleanup()
+    dfs.pre_cleanup()
 
-    snp.build()
-    if not snp.passes():
+    dfs.build()
+    if not dfs.passes():
         print("build step failed.")
-        print(snp.get_fail_message())
+        print(dfs.get_fail_message())
         exit(1) 
-    snp.start(False, False)
-    snp.stop()
-    if not snp.passes():
+    dfs.start(False, False)
+    dfs.stop()
+    if not dfs.passes():
         print("stop test failed")
-        print(snp.get_fail_message())
+        print(dfs.get_fail_message())
          
 
     print("Pausing 30 seconds after run for manual inspection before we clean up.")
     time.sleep(30)
-    snp.cleanup()
-    if snp.passes():
+    dfs.cleanup()
+    if dfs.passes():
         print("Full test passed, all connections increased rx bytes")
 
 if __name__ == "__main__":
