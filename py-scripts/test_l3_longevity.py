@@ -969,7 +969,7 @@ class L3VariableTime(LFCliBase):
             station_profile.cleanup()
                                         
     def csv_generate_column_headers(self):
-        csv_rx_headers = ['Time epoch','Monitor']
+        csv_rx_headers = ['Time epoch','Time','Monitor']
         for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
