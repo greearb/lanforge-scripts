@@ -1078,7 +1078,6 @@ def main():
                    pfs = "PASS"
                    pfrange = pf_dbm;
                    allowed_per_path = cc_dbmi
-                   print("allowed_per_path {}".format(cc_dbmi))
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
                        if (abs(diff_a1) > pfrange):
