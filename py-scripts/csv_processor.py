@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import os
 
@@ -16,13 +18,13 @@ import numpy as np
 #https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html
 #https://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
 
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
 
 class L3CSVParcer():
     def __init__(self,csv_file):
@@ -37,9 +39,9 @@ class L3CSVParcer():
             if row[1] == 'rx':
                 print(row)'''
 
-        inclu = ['Time','LT','MLT']
+        include = ['Time','LT','MLT']
         self.csv_file = csv_file
-        df = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in inclu)
+        df = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include))
 
         total_cols = len(df.axes[1])
 
@@ -123,8 +125,7 @@ def main():
  Useful Information:
             ''',
         
-        description='''\
-quick_test.py:
+        description='''quick_test.py:
 
         ''')
 
