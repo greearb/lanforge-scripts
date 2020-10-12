@@ -1026,6 +1026,9 @@ def main():
                        if (m != None):
                            _rxrate = m.group(1)
 
+                   # ath10k radios now take noise-floor into account, so adjust_nf
+                   # should remain set to false when using those radios.  Possibly other
+                   # radios would need this, so leave code in place.
                    rssi_adj = 0
                    if (args.adjust_nf and _noise_bare != None):
                        _noise_i = int(_noise_bare)
@@ -1051,6 +1054,11 @@ def main():
                        print("rssi_to_use == combined: sig: %s"%sig)
                        calc_dbm = int(sig) + pi + rssi_adj
                    print("calc_dbm %s"%(calc_dbm))
+
+
+                   # Calculated per-antenna power is what we calculate the AP transmitted
+                   # at (rssi + pathloss).  So, if we see -30 rssi, with pathloss of 50,
+                   # then we calculate AP transmitted at +20
                    calc_ant1 = 0
                    if (ants[0] != ""):
                        calc_ant1 = int(ants[0]) + pi + rssi_adj
@@ -1077,12 +1085,19 @@ def main():
                    pf = 1
                    pfs = "PASS"
                    pfrange = pf_dbm;
+
+                   # Allowed per path is what we expect the AP should be transmitting at.
+                   # calc_ant1 is what we calculated it actually transmitted at based on rssi
+                   # and pathloss.  Allowed per-path is modified taking into account that multi
+                   # NSS tranmission will mean that each chain should be decreased so that sum total
+                   # of all chains is equal to the maximum allowed txpower.
                    allowed_per_path = cc_dbmi
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
                        if (abs(diff_a1) > pfrange):
                            pf = 0
                    if (int(_nss) == 2):
+                       # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
                        allowed_per_path = cc_dbmi - 3
                        diff_a1 = calc_ant1 - allowed_per_path
                        diff_a2 = calc_ant2 - allowed_per_path
@@ -1090,6 +1105,7 @@ def main():
                            (abs(diff_a2) > pfrange)):
                            pf = 0
                    if (int(_nss) == 3):
+                       # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
                        allowed_per_path = cc_dbmi - 5
                        diff_a1 = calc_ant1 - allowed_per_path
                        diff_a2 = calc_ant2 - allowed_per_path
@@ -1099,6 +1115,7 @@ def main():
                            (abs(diff_a3) > pfrange)):
                            pf = 0
                    if (int(_nss) == 4):
+                       # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
                        allowed_per_path = cc_dbmi - 6
                        diff_a1 = calc_ant1 - allowed_per_path
                        diff_a2 = calc_ant2 - allowed_per_path
