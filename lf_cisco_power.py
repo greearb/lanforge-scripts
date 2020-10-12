@@ -1149,6 +1149,8 @@ def main():
                            pf = 0
                        if (diff_a4 > pfrange):
                            pf = 0
+                       
+                   print("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
                    if (pf == 0):
                        pfs = "FAIL"
