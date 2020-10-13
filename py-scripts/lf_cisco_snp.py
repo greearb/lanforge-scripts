@@ -21,267 +21,12 @@ import re
 import csv
 import random
 
-class L3VariableTime(LFCliBase):
-    def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
-                 reset_port_enable_list,
-                 reset_port_time_min_list,
-                 reset_port_time_max_list,
-                 side_a_min_rate=560000, side_a_max_rate=0,
-                 side_b_min_rate=560000, side_b_max_rate=0,
-                 number_template="00", test_duration="256s",
-                 polling_interval="60s",
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
-        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
-        self.tos = tos.split()
-        self.endp_types = endp_types.split()
-        self.side_b = side_b
-        self.ssid_list = ssid_list
-        self.ssid_password_list = ssid_password_list
-        self.station_lists = station_lists       
-        self.ssid_security_list = ssid_security_list
-        self.reset_port_enable_list = reset_port_enable_list
-        self.reset_port_time_min_list = reset_port_time_min_list
-        self.reset_port_time_max_list = reset_port_time_max_list
-        self.number_template = number_template
-        self.name_prefix = name_prefix
-        self.test_duration = test_duration
-        self.radio_name_list = radio_name_list
-        self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
-        self.multicast_profile = self.local_realm.new_multicast_profile()
-        self.multicast_profile.name_prefix = "MLT-";
-        self.station_profiles = []
+
+######################################
+
+class cisco_():
+    def __init__(self, args):
         self.args = args
-        self.outfile = outfile
-        self.csv_started = False
-        self.epoch_time = int(time.time())
-        self.debug = debug_on
-        
-
-        # Some checking on the duration
-        #self.local_realm.parse_time(self.test_duration)
-        #if (    (radio_info_dict['reset_port_time_min'] >= args.test_duration)  
-        #    or  (radio_info_dict['reset_port_time_max'] >= args.test_duration)):
-        #    print("port reset times min {} max {} mismatched with test duration {}"\
-        #        .format(radio_info_dict['reset_port_time_min'],radio_info_dict['reset_port_time_max'],args.test_duration)))
-        #    exit(1)
-
-
-        # Full spread-sheet data
-        if self.outfile is not None:
-            self.csv_file = open(self.outfile, "w") 
-            self.csv_writer = csv.writer(self.csv_file, delimiter=",")
-        
-        for (radio_, ssid_, ssid_password_, ssid_security_,\
-            reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
-            reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
-            self.station_profile = self.local_realm.new_station_profile()
-            self.station_profile.lfclient_url = self.lfclient_url
-            self.station_profile.ssid = ssid_
-            self.station_profile.ssid_pass = ssid_password_
-            self.station_profile.security = ssid_security_
-            self.station_profile.number_template = self.number_template
-            self.station_profile.mode = 0
-            self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
-                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
-                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
-            self.station_profiles.append(self.station_profile)
-        
-        self.multicast_profile.host = self.host
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
-        self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = side_a_min_rate
-        self.cx_profile.side_a_max_bps = side_a_max_rate
-        self.cx_profile.side_b_min_bps = side_b_min_rate
-        self.cx_profile.side_b_max_bps = side_b_max_rate
-
-    def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=False)
-        endp_rx_drop_map = {}
-        endp_rx_map = {}
-        our_endps = {}
-        for e in self.multicast_profile.get_mc_names():
-            our_endps[e] = e;
-        for e in self.cx_profile.created_endp.keys():
-            our_endps[e] = e;
-        for endp_name in endp_list['endpoint']:
-            if endp_name != 'uri' and endp_name != 'handler':
-                for item, value in endp_name.items():
-                    if item in our_endps:
-                        for value_name, value_rx in value.items():
-                            if value_name == 'rx bytes':
-                                endp_rx_map[item] = value_rx
-                        for value_name, value_rx_drop in value.items():
-                            if value_name == 'rx drop %':
-                                endp_rx_drop_map[item] = value_rx_drop
-
-        return endp_rx_map, endp_rx_drop_map
-
-    def time_stamp(self):
-        return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
-
-    def __record_rx_dropped_percent(self,rx_drop_percent):
-
-        csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent']
-        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
-
-        filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
-        average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
-        for i in range(5):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-
-        csv_rx_drop_percent_data.append(average_rx_drop_percent)
-
-        for item, value in rx_drop_percent.items():
-            #print(item, "rx drop percent: ", rx_drop_percent[item])
-            csv_rx_drop_percent_data.append(rx_drop_percent[item])
-
-        self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
-
-    def __compare_vals(self, old_list, new_list):
-        passes = 0
-        expected_passes = 0
-        csv_performance_values = []
-        csv_rx_headers = []
-        csv_rx_delta_dict = {}
-
-        # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = [self.epoch_time, self.time_stamp(),'rx']
-        csv_rx_delta_row_data = [self.epoch_time, self.time_stamp(),'rx_delta']
-
-        for key in [key for key in old_list if "mtx" in key]: del old_list[key]
-        for key in [key for key in new_list if "mtx" in key]: del new_list[key]
-
-        #print("rx (ts:{}): calculating worst, best, average".format(self.ts))
-        filtered_values = [v for _, v in new_list.items() if v !=0]
-        average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_values=self.csv_validate_list(csv_performance_values,5)
-        for i in range(5):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-
-        csv_rx_row_data.append(average_rx)
-        if self.debug: print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data)) 
-
-        if len(old_list) == len(new_list):
-            if self.debug: print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
-            for item, value in old_list.items():
-                expected_passes +=1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
-                if not self.csv_started:
-                    csv_rx_headers.append(item)
-                csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
-                
-
-            if not self.csv_started:
-                csv_header = self.csv_generate_column_headers()
-                csv_header += csv_rx_headers
-                print(csv_header)
-                self.csv_add_column_headers(csv_header)
-                self.csv_started = True
-
-            # need to generate list first to determine worst and best
-            filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
-            average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-            csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
-            csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
-            for i in range(5):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-            for i in range(-1,-6,-1):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-
-            csv_rx_delta_row_data.append(average_rx_delta)
-            if self.debug: print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
-            
-            for item, value in old_list.items():
-                expected_passes +=1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
-                if not self.csv_started:
-                    csv_rx_headers.append(item)
-                csv_rx_row_data.append(new_list[item])
-                csv_rx_delta_row_data.append(new_list[item] - old_list[item])
-
-            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
-            self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
-
-            if passes == expected_passes:
-                return True
-            else:
-                return False
-        else:
-            print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
-            print("old-list:",old_list)
-            print("new-list:",new_list)
-            return False
-
-    def verify_controller(self):
-        if self.args == None:
-            return
-
-        if self.args.cisco_ctlr == None:
-            return
-
-        try:
-            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
-                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"summary"))
-
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
-                                       self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                       "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
-        except subprocess.CalledProcessError as process_error:
-            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
-                 .format(process_error.returncode, process_error.output))
-            time.sleep(1)
-            exit(1)
-    
-
-        # Find our station count
-        searchap = False
-        for line in pss.splitlines():
-            if (line.startswith("---------")):
-                searchap = True
-                continue
-            #TODO need to test with 9800 series to chelck the values
-            if (searchap):
-                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\["%(self.args.cisco_ap)
-                #print("AP line: %s"%(line))
-                m = re.search(pat, line)
-                if (m != None):
-                    sta_count = m.group(1)
-                    print("AP line: %s"%(line))
-                    print("sta-count: %s"%(sta_count))
-                    if (int(sta_count) != int(self.total_stas)):
-                        print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
     #show summary (to get AP) 
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action summary --series 9800 --log stdout
@@ -740,6 +485,272 @@ class L3VariableTime(LFCliBase):
         pss = advanced.stdout.decode('utf-8', 'ignore')
         print(pss)      
 
+
+##########################################
+
+class L3VariableTime(LFCliBase):
+    def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
+                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
+                 reset_port_enable_list,
+                 reset_port_time_min_list,
+                 reset_port_time_max_list,
+                 side_a_min_rate=560000, side_a_max_rate=0,
+                 side_b_min_rate=560000, side_b_max_rate=0,
+                 number_template="00", test_duration="256s",
+                 polling_interval="60s",
+                 _exit_on_error=False,
+                 _exit_on_fail=False):
+        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.host = host
+        self.port = port
+        self.tos = tos.split()
+        self.endp_types = endp_types.split()
+        self.side_b = side_b
+        self.ssid_list = ssid_list
+        self.ssid_password_list = ssid_password_list
+        self.station_lists = station_lists       
+        self.ssid_security_list = ssid_security_list
+        self.reset_port_enable_list = reset_port_enable_list
+        self.reset_port_time_min_list = reset_port_time_min_list
+        self.reset_port_time_max_list = reset_port_time_max_list
+        self.number_template = number_template
+        self.name_prefix = name_prefix
+        self.test_duration = test_duration
+        self.radio_name_list = radio_name_list
+        self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
+        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.multicast_profile = self.local_realm.new_multicast_profile()
+        self.multicast_profile.name_prefix = "MLT-";
+        self.station_profiles = []
+        self.args = args
+        self.outfile = outfile
+        self.csv_started = False
+        self.epoch_time = int(time.time())
+        self.debug = debug_on
+        
+
+        # Some checking on the duration
+        #self.local_realm.parse_time(self.test_duration)
+        #if (    (radio_info_dict['reset_port_time_min'] >= args.test_duration)  
+        #    or  (radio_info_dict['reset_port_time_max'] >= args.test_duration)):
+        #    print("port reset times min {} max {} mismatched with test duration {}"\
+        #        .format(radio_info_dict['reset_port_time_min'],radio_info_dict['reset_port_time_max'],args.test_duration)))
+        #    exit(1)
+
+
+        # Full spread-sheet data
+        if self.outfile is not None:
+            self.csv_file = open(self.outfile, "w") 
+            self.csv_writer = csv.writer(self.csv_file, delimiter=",")
+        
+        for (radio_, ssid_, ssid_password_, ssid_security_,\
+            reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
+            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
+            reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile.lfclient_url = self.lfclient_url
+            self.station_profile.ssid = ssid_
+            self.station_profile.ssid_pass = ssid_password_
+            self.station_profile.security = ssid_security_
+            self.station_profile.number_template = self.number_template
+            self.station_profile.mode = 0  # TODO be able to set the mode 
+            self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
+                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
+                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
+                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
+            self.station_profiles.append(self.station_profile)
+        
+        self.multicast_profile.host = self.host
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
+
+    def __get_rx_values(self):
+        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=False)
+        endp_rx_drop_map = {}
+        endp_rx_map = {}
+        our_endps = {}
+        for e in self.multicast_profile.get_mc_names():
+            our_endps[e] = e;
+        for e in self.cx_profile.created_endp.keys():
+            our_endps[e] = e;
+        for endp_name in endp_list['endpoint']:
+            if endp_name != 'uri' and endp_name != 'handler':
+                for item, value in endp_name.items():
+                    if item in our_endps:
+                        for value_name, value_rx in value.items():
+                            if value_name == 'rx bytes':
+                                endp_rx_map[item] = value_rx
+                        for value_name, value_rx_drop in value.items():
+                            if value_name == 'rx drop %':
+                                endp_rx_drop_map[item] = value_rx_drop
+
+        return endp_rx_map, endp_rx_drop_map
+
+    def time_stamp(self):
+        return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
+
+    def __record_rx_dropped_percent(self,rx_drop_percent):
+
+        csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent']
+        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
+
+        filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
+        average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+        csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
+        csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
+        for i in range(5):
+            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
+        for i in range(-1,-6,-1):
+            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
+
+        csv_rx_drop_percent_data.append(average_rx_drop_percent)
+
+        for item, value in rx_drop_percent.items():
+            #print(item, "rx drop percent: ", rx_drop_percent[item])
+            csv_rx_drop_percent_data.append(rx_drop_percent[item])
+
+        self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
+
+    def __compare_vals(self, old_list, new_list):
+        passes = 0
+        expected_passes = 0
+        csv_performance_values = []
+        csv_rx_headers = []
+        csv_rx_delta_dict = {}
+
+        # this may need to be a list as more monitoring takes place.
+        csv_rx_row_data = [self.epoch_time, self.time_stamp(),'rx']
+        csv_rx_delta_row_data = [self.epoch_time, self.time_stamp(),'rx_delta']
+
+        for key in [key for key in old_list if "mtx" in key]: del old_list[key]
+        for key in [key for key in new_list if "mtx" in key]: del new_list[key]
+
+        #print("rx (ts:{}): calculating worst, best, average".format(self.ts))
+        filtered_values = [v for _, v in new_list.items() if v !=0]
+        average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+        csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
+        csv_performance_values=self.csv_validate_list(csv_performance_values,5)
+        for i in range(5):
+            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
+        for i in range(-1,-6,-1):
+            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
+
+        csv_rx_row_data.append(average_rx)
+        if self.debug: print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data)) 
+
+        if len(old_list) == len(new_list):
+            if self.debug: print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
+            for item, value in old_list.items():
+                expected_passes +=1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                else:
+                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                if not self.csv_started:
+                    csv_rx_headers.append(item)
+                csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
+                
+
+            if not self.csv_started:
+                csv_header = self.csv_generate_column_headers()
+                csv_header += csv_rx_headers
+                print(csv_header)
+                self.csv_add_column_headers(csv_header)
+                self.csv_started = True
+
+            # need to generate list first to determine worst and best
+            filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
+            average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+            csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
+            csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
+            for i in range(5):
+                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
+            for i in range(-1,-6,-1):
+                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
+
+            csv_rx_delta_row_data.append(average_rx_delta)
+            if self.debug: print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
+            
+            for item, value in old_list.items():
+                expected_passes +=1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                else:
+                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                if not self.csv_started:
+                    csv_rx_headers.append(item)
+                csv_rx_row_data.append(new_list[item])
+                csv_rx_delta_row_data.append(new_list[item] - old_list[item])
+
+            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
+
+            if passes == expected_passes:
+                return True
+            else:
+                return False
+        else:
+            print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
+            print("old-list:",old_list)
+            print("new-list:",new_list)
+            return False
+
+    def verify_controller(self):
+        if self.args == None:
+            return
+
+        if self.args.cisco_ctlr == None:
+            return
+
+        try:
+            print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
+                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"summary"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "-d", self.args.cisco_ctlr, "-u",
+                                       self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                       "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            print(pss)
+        except subprocess.CalledProcessError as process_error:
+            print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+                 .format(process_error.returncode, process_error.output))
+            time.sleep(1)
+            exit(1)
+    
+
+        # Find our station count
+        searchap = False
+        for line in pss.splitlines():
+            if (line.startswith("---------")):
+                searchap = True
+                continue
+            #TODO need to test with 9800 series to chelck the values
+            if (searchap):
+                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\["%(self.args.cisco_ap)
+                #print("AP line: %s"%(line))
+                m = re.search(pat, line)
+                if (m != None):
+                    sta_count = m.group(1)
+                    print("AP line: %s"%(line))
+                    print("sta-count: %s"%(sta_count))
+                    if (int(sta_count) != int(self.total_stas)):
+                        print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
+
+
     def verify_cac_on_ap(self):
         pass
         # Do this after you get the configuration Verify CAC
@@ -1144,7 +1155,7 @@ Detailed test loop description 10/9/2020 - Karthik Recommendation
 Script logic loops:
 
 AP {Axel, Vanc} Dynamic
-      frequency {24ghz, 5ghz} Common
+      frequency {24ghz, 5ghz} Common (band)
             wifimode{11ax, 11ac, 11n, 11bg} Common
                   Bandwidth {20, 40, 80, 160}
                         data-encryption {enable/disable} Common
@@ -1193,22 +1204,26 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
         ''')
 
-    parser.add_argument('-ca','--cisco_ap', help='List of APs to test  default:  Axel',default="Axel")
-    parser.add_argument('-cf','--cisco_frequency', help='List of frequency to test default: 24ghz 5ghz',default="24ghz 5ghz")
+    # reorder to follow looping
+    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="Axel")
+    parser.add_argument('-ccb','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn",choices=["a", "b", "abgn"])
+    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="11ax 11ac 11n 11gb")
+    parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
+    parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80 160")
+    parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect>',default="local flexconnect")
+    parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
+    parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities defaults 1 10 20 50 100 200 ',
+                            default="1 10 20 50 100 200" )
 
 
-
-    parser.add_argument('--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller>',default=None)
-    parser.add_argument('--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
-    parser.add_argument('--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
+    parser.add_argument('-cs','--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
+    parser.add_argument('-cc','--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
+    parser.add_argument('-cu','--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
+    parser.add_argument('-cp','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
     parser.add_argument('--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
     
     parser.add_argument('--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
 
-    parser.add_argument('--cisco_channel', help='--cisco_channel <channel>',default=None)
-    parser.add_argument('--cisco_chan_width', help='--cisco_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"])
-    parser.add_argument('--cisco_band', help='--cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"])
-    parser.add_argument('--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
 
     parser.add_argument('--cisco_wlan', help='--cisco_wlan <wlan name> default: NA, NA means no change',default="NA")
@@ -1218,29 +1233,30 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
                             
 
-
-
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
+    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='2m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
-    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
+    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='30s')
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
+    #to do add wifimode
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=True)
     parser.add_argument("--side_a_min_rate",  help="--side_a_min_rate, station transfer rate default 256000", default=256000)
     parser.add_argument("--side_b_min_rate",  help="--side_b_min_rate , upstream min tx rate default 256000 ", default=256000)
 
     args = parser.parse_args()
+
+    cisco_args = args
 
     #print("args: {}".format(args))
     debug_on = args.debug
@@ -1287,6 +1303,44 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
+    
+    cisco_aps             = args.cisco_ap.split()
+    print(cisco_aps)
+    cisco_bands           = args.cisco_band.split()
+    print(cisco_bands)
+    cisco_wifimodes       = args.cisco_wifimode.split()
+    print(cisco_wifimodes)
+    cisco_chan_widths     = args.cisco_chan_width.split()
+    print(cisco_chan_widths)
+    cisco_ap_modes        = args.cisco_ap_mode.split()
+    print(cisco_ap_modes)
+    cisco_client_densitys = args.cisco_client_density.split()
+    print(cisco_client_densitys)
+    cisco_packet_types    = args.endp_type.split()
+    print(cisco_packet_types)
+    cisco_packet_sizes       = args.cisco_packet_size.split()
+    print(cisco_packet_sizes)
+
+    for cisco_ap in cisco_aps:
+        for cisco_band in cisco_bands:  #TODO may
+            for cisco_wifimode in cisco_wifimodes:
+                for cisco_chan_width in cisco_chan_widths:
+                    for cisco_ap_mode in cisco_ap_modes:
+                        for cisco_packet_size in cisco_packet_sizes:
+                            # over write the configurations of args for controller
+                            cisco_args.cisco_ap          = cisco_ap
+                            cisco_args.cisco_band        = cisco_band
+                            cisco_args.cisco_chan_width  = cisco_chan_width
+                            cisco_args.cisco_ap_mode     = cisco_ap_mode
+                            print(cisco_args)
+                            
+                            cisco = cisco_(cisco_args)
+
+                            #Disable AP
+                            cisco.controller_disable_ap()
+
+
+    # TODO may need a static list of radios read for scaling and performance
     print("radios {}".format(radios))
     for radio_ in radios:
         radio_keys = ['radio','stations','ssid','ssid_pw','security']
@@ -1336,6 +1390,10 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         index += 1
 
     #print("endp-types: %s"%(endp_types))
+
+    #enstanciate the 
+
+
 
     ip_var_test = L3VariableTime(
                                     lfjson_host,
