@@ -27,8 +27,8 @@ class L3VariableTime(LFCliBase):
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
-                 side_a_min_rate=56000, side_a_max_rate=0,
-                 side_b_min_rate=56000, side_b_max_rate=0,
+                 side_a_min_rate=560000, side_a_max_rate=0,
+                 side_b_min_rate=560000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
                  polling_interval="60s",
                  _exit_on_error=False,
@@ -1008,7 +1008,7 @@ def main():
     debug_on = False
 
     parser = argparse.ArgumentParser(
-        prog='test_l3_longevity.py',
+        prog='lf_cisco_snp.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -1020,7 +1020,7 @@ def main():
             ''',
         
         description='''\
-test_l3_longevity.py:
+lf_cisco_snp.py:
 --------------------
 
 Summary : 
@@ -1031,12 +1031,12 @@ and recieved.
 
 Generic command layout:
 -----------------------
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
+python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
         --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 5 min
-python3 test_l3_longevity.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
+python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
@@ -1095,7 +1095,7 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
+python3 .\\lf_cisco_snp.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
@@ -1112,21 +1112,96 @@ Example #2 using cisco controller
 10. duration 5m
 
 Command:
-python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
+python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
     --cisco_channel 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
     --test_duration 5m
 
 
+TODO:
+our %wifi_modes = (
+   "a"      => "1",
+   "b"      => "2",
+   "g"      => "3",
+   "abg"    => "4",
+   "abgn"   => "5",
+   "bgn"    => "6",
+   "bg"     => "7",
+   "abgnAC" => "8",
+   "anAC"   => "9",
+   "an"     => "10",
+   "bgnAC"  => "11",
+   "abgnAX" => "12",
+   "bgnAX"  => "13",
+   "anAX"   => "14"
+);
+
+TODO:
+##############################################################################
+Detailed test loop description 10/9/2020 - Karthik Recommendation
+##############################################################################
+Script logic loops:
+
+AP {Axel, Vanc} Dynamic
+      frequency {24ghz, 5ghz} Common
+            wifimode{11ax, 11ac, 11n, 11bg} Common
+                  Bandwidth {20, 40, 80, 160}
+                        data-encryption {enable/disable} Common
+                              AP-mode {local/flexconnect} Common
+                                    client-density {1, 10, 20, 50, 100, 200} Dynamic
+                                          Packet-type {TCP, UDP} Common
+                                                Direction {Downstream, Upstream}
+                                                      Packet-size { 88, 512, 1370, 1518}   Common
+                                                            Time (4 iterations of 30 sec and get the best average TP out of it) 
+
+TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corresponds to the shelf
+
+1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523
+1.wiphy8  802.11an-AC    ath10k(9984)    523
+1.wiphy9  802.11an-AC    ath10k(9984)    523
+
+2.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
+2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+
+3.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
+3.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+
+4.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
+4.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+
+5.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
+5.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+
+6.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523
+6.wiphy8  802.11an-AC    ath10k(9984)    523
+6.wiphy9  802.11an-AC    ath10k(9984)    523
+
         ''')
+
+    parser.add_argument('-ca','--cisco_ap', help='List of APs to test  default:  Axel',default="Axel")
+    parser.add_argument('-cf','--cisco_frequency', help='List of frequency to test default: 24ghz 5ghz',default="24ghz 5ghz")
+
 
 
     parser.add_argument('--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller>',default=None)
     parser.add_argument('--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
     parser.add_argument('--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
     parser.add_argument('--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
-    parser.add_argument('--cisco_ap', help='--cisco_ap <Cisco AP in question>',default="APA453.0E7B.CF9C")
     
     parser.add_argument('--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
 
@@ -1140,6 +1215,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--cisco_wlanID', help='--cisco_wlanID <wlanID> default: NA , NA means not change',default="NA")
     parser.add_argument('--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
+    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
+                            
 
 
 
@@ -1155,17 +1232,23 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
-    #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
+    parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
                         , required=True)
-    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
+    parser.add_argument("--side_a_min_rate",  help="--side_a_min_rate, station transfer rate default 256000", default=256000)
+    parser.add_argument("--side_b_min_rate",  help="--side_b_min_rate , upstream min tx rate default 256000 ", default=256000)
 
     args = parser.parse_args()
 
     #print("args: {}".format(args))
     debug_on = args.debug
+
+    ##################################################################
+    # Gather Test Data
+    #################################################################
+
  
     if args.test_duration:
         test_duration = args.test_duration
@@ -1274,13 +1357,13 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     reset_port_enable_list=reset_port_enable_list,
                                     reset_port_time_min_list=reset_port_time_min_list,
                                     reset_port_time_max_list=reset_port_time_max_list,
-                                    side_a_min_rate=256000, 
-                                    side_b_min_rate=256000, 
+                                    side_a_min_rate=args.side_a_min_rate, 
+                                    side_b_min_rate=args.side_b_min_rate, 
                                     debug_on=debug_on, 
                                     outfile=csv_outfile)
 
-    ip_var_test.pre_cleanup()
 
+    ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print("build step failed.")
