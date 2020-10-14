@@ -623,11 +623,11 @@ def main():
                           print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                           exit(1) 
 
-                   print("9800 test_parameters_summary: set : tx: {} ch: {} bw: {}".format(tx,ch,bw))
+                   print("9800/3504 test_parameters_summary: set : tx: {} ch: {} bw: {}".format(tx,ch,bw))
                    if (tx != "NA"):
-                       print("9800 test_parameters: set txPower: {}".format(tx))
+                       print("9800/3504 test_parameters: set txPower: {}".format(tx))
                        try:
-                          print("9800 cisco_wifi_ctl.py: txPower {}".format(tx))
+                          print("9800/3504 cisco_wifi_ctl.py: txPower {}".format(tx))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "txPower", "--value", tx, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -637,9 +637,9 @@ def main():
                    # NSS is set on the station earlier...
                        
                    if (ch != "NA"):
-                       print("9800 test_parameters set channel: {}".format(ch))
+                       print("9800/3504 test_parameters set channel: {}".format(ch))
                        try:
-                          print("9800 cisco_wifi_ctl.py: channel {}".format(ch))
+                          print("9800/3504 cisco_wifi_ctl.py: channel {}".format(ch))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -647,9 +647,9 @@ def main():
                           exit(1)
 
                    if (bw != "NA"):
-                       print("9800 test_parameters bandwidth: set : {}".format(bw))
+                       print("9800/3504 test_parameters bandwidth: set : {}".format(bw))
                        try:
-                          print("9800 cisco_wifi_ctl.py: bandwidth {}".format(bw))
+                          print("9800/3504 cisco_wifi_ctl.py: bandwidth {}".format(bw))
                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
                        except subprocess.CalledProcessError as process_error:
@@ -837,6 +837,13 @@ def main():
                           print(err)
                           e_tot += err
                           e_tot += "  "
+                          print("3504 test_parameters cc_mac: read : {}".format(cc_mac))
+                          print("3504 test_parameters cc_count: read : {}".format(cc_ch_count))
+                          print("3504 test_parameters cc_bw: read : {}".format(cc_bw))
+                          print("3504 test_parameters cc_power: read : {}".format(cc_power))
+                          print("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                          print("3504 test_parameters cc_ch: read : {}".format(cc_ch))
+
 
                    # Up station
                    subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,

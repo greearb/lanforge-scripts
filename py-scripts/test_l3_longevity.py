@@ -971,10 +971,10 @@ class L3VariableTime(LFCliBase):
     def csv_generate_column_headers(self):
         csv_rx_headers = ['Time epoch','Time','Monitor']
         for i in range(1,6):
-            csv_rx_headers.append("least_rx_data {}".format(i))
+            csv_rx_headers.append("least_rx_data_bytes {}".format(i))
         for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")
+            csv_rx_headers.append("most_rx_data_bytes{}".format(i))
+        csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
