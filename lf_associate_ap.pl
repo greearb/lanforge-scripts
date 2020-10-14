@@ -142,6 +142,15 @@ our %sec_options        = (
    "txo-enable"            =>    0x8000000000,  # Enable/disable tx-offloads, typically managed by set_wifi_txo command
    "wpa3"                  =>    0x10000000000, # Enable WPA-3 (SAE Personal) mode.
 );
+our %ieee80211w_options = (
+   "disabled"  => 0,
+   "optional"  => 1,
+   "required"  => 2,
+   "0"         => 0,
+   "1"         => 1,
+   "2"         => 2
+);
+our $ieee80211w = "NA";
 
 our $cx_type            = "tcp";
 our %cx_types           = (
@@ -225,6 +234,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
       [--passphrase {...}]       # Set security too if you want to enable security
       [--wifi_mode {$mode_list}]
+      [--ieee80211w {disabled,optional,required}] # protected management frames (wpa2-ent/wpa3) also { NA, 0, 1, 2 }
 
       ##       station configuration
       [--num_stations {$num_stations}] # Defaults to 1
@@ -533,10 +543,24 @@ sub fmt_vsta_cmd {
    $flags      = "+0" if ($flags       == 0); # perl goes funny on zeros
    $flags_mask = "+0" if ($flags_mask  == 0);
    $flags      = "NA" if ($flags eq "");
+
+   $::ieee80211w = "NA"
+      if (!(defined $::ieee80211w) || ($::ieee80211w eq ""));
+   if ($::ieee80211w ne "NA") {
+      if ( exists $::ieee80211w_options{ $::ieee80211w }) {
+         $::ieee80211w = $::ieee80211w_options{ $::ieee80211w };
+      }
+      elsif ((int($::ieee80211w) < 0) || (int($::ieee80211w) > 2)) {
+         print("\n* ieee80211w value outside of values {0, 1, 2} or {disabled, optional, required} -- being set to NA\n");
+         $::ieee80211w = "NA";
+      }
+      # print("\n* ieee80211w value set to $::ieee80211w \n");
+   }
+
    return $::utils->fmt_cmd("add_sta", 1, $resource, $sta_wiphy, $sta_name, "$flags",
                   "$ssid", "NA", "$key", $ap, $cfg_file, $mac,
                   $mode, $rate, $amsdu, $ampdu_factor, $ampdu_density,
-                  $sta_br_id, "$flags_mask" );
+                  $sta_br_id, "$flags_mask", $::ieee80211w );
 }
 
 sub fmt_vrad_cmd {
@@ -1639,6 +1663,7 @@ GetOptions
   'vrad_chan=i'               => \$::vrad_chan,
   'port_del=s'                => \$::port_del,
   'admin_down_on_add'         => \$::admin_down_on_add,
+  'ieee80211w=s'              => \$::ieee80211w,
   'log_cli=s{0,1}'            => \$log_cli, # use ENV{LOG_CLI} elsewhere
   'help|?'                    => \$help,
 ) || (print($usage) && exit(1));
