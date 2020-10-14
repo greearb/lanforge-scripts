@@ -9,11 +9,14 @@ Consider these commands to install printer drivers:
 
 **Dymo LabelWriter-450:**
     `apt install printer-driver-dymo`
+
 **Brother QL-800:**
     `$ sudo apt install brother-cups-wrapper-common brother-cups-wrapper-extra brother-lpr-drivers-common brother-lpr-drivers-extra`
-​  Download drivers here:
+
+Download drivers here:
 ​  https://support.brother.com/g/b/downloadtop.aspx?c=us&lang=en&prod=lpql800eus
-​   install driver using:
+
+Install driver using:
     `$ sudo dpkg -i dymo*.dpkg`
 
 Use these commands to install the script:
@@ -35,6 +38,7 @@ traffic to port 8082:
 `$ sudo ufw reload`
 
 **Using kinstall to print labels:**
+
 Dymo LabelWriter:
     `$ ./lf_kinstall.pl --print-label http://192.168.9.1:8082/ --printer LabelWriter-450`
 
