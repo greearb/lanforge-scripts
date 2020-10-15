@@ -29,8 +29,34 @@ Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_
 
 | Name | Purpose |
 |------|---------|
-| `lf_tos_test.py`      | Python script to generate traffic at different QoS and report performance in a spreadsheet |
-| `lf_sniff.py`         | Python script to create packet capture files, especially OFDMA /AX captures |
+| `lf_tos_test.py`                   | Python script to generate traffic at different QoS and report performance in a spreadsheet |
+| `lf_sniff.py`                      | Python script to create packet capture files, especially OFDMA /AX captures |
+| `cicd_TipIntegration.py`           | Python script for Facebook TIP infrastructure|
+| `cicd_testrail.py`                 | TestRail API binding for Python 3 |
+| `cicd_testrailAndInfraSetup.py`    | Python script for Facebook TIP infrastructure |
+| `lf_cisco_dfs.py`                  | Python scripts customized for cisco controllers |
+| `lf_cisco_snp.py`                  | Python script customized for cisco controllers  |
+| `lf_dut_sta_vap_test.py`           | Python script to load an existing scenario, start some layer 3 traffic, and test the Linux based DUT that has SSH server |
+| `run_cv_scenario.py`               | Python script to set the LANforge to a BLANK database then it will load the specified database and start a graphical report |
+| `sta_connect2.py`                  | Python script to create a station, run TCP and UDP traffic then verify traffic was received. Stations are cleaned up afterwards |
+| `test_fileio.py`                   | Python script to test FileIO traffic |
+| `test_generic.py`                  | Python script to test generic traffic using generic cross-connect and endpoint type |
+| `test_ipv4_connection.py`          | Python script to test connections to a VAP of varying security types (WEP, WPA, WPA2, WPA3, Open) |
+| `test_ipv4_l4.py`                  | Python script to test layer 4 traffic using layer 4 cross-connect and endpoint type |
+| `test_ipv4_l4_ftp_upload.py`       | Python script to test ftp upload traffic |
+| `test_ipv4_l4_ftp_urls_per_ten.py` | Python script to test the number of urls per ten minutes in ftp traffic |
+| `test_ipv4_l4_ftp_wifi.py`         | Python script to test ftp upload traffic wifi-wifi |
+| `test_ipv4_l4_urls_per_ten.py`     | Python script to test urls per ten minutes in layer 4 traffic |
+| `test_ipv4_l4_wifi.py`             | Python script to test layer 4 upload traffic wifi-wifi|
+| `test_ipv4_ttls.py`                | Python script to test connection to ttls system |
+| `test_ipv4_variable_time.py`       | Python script to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
+| `test_ipv6_connection.py`          | Python script to test IPV6 connection to VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
+| `test_ipv6_variable_time.py`       | Python script to test IPV6 connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open) |
+| `test_l3_WAN_LAN.py`               | Python script to test traffic over a bridged NAT connection |
+| `test_l3_longevity.py`             | Python script customized for cisco controllers |
+| `test_l3_scenario_throughput.py`   | Python script to load an existing scenario and run the simultaneous throughput over time and generate report and P=plot the G=graph|
+| `test_l3_unicast_traffic_gen.py`   | Python script to generate unicast traffic over a list of stations|
+| `tip_station_powersave.py`         | Python script to generate and test for powersave packets within traffic run over multiple stations |
 
 
 ### Perl and Shell Scripts ###
