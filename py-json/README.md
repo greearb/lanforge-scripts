@@ -33,13 +33,17 @@ begin with these imports:
                 `import LANforge`
                 `from LANforge import LFUtils`
                 `from LANforge import LFRequest`
-  * `create_sta.py`: Please follow though `create_sta.py` to see how you can
-                     utilize the JSON API provided by the LANforge client. It
-                     is possible to use similar commands to create virtual Access points.
-  * `create_wanlink.py`: example that creates a WANlink
-  * `generic_cx.py`: example that creates a cross connect
-  * `realm.py`: module defining the Realm class. `Realm` is a toolbox class that also serves as a facade
-                for finer-grained methods in LFUtils and LFRequest:
+## create_sta.py ## 
+Please follow though `create_sta.py` to see how you can
+utilize the JSON API provided by the LANforge client. It
+is possible to use similar commands to create virtual Access points.
+## create_wanlink.py ##
+Example that creates a WANlink
+## generic_cx.py ##
+Example that creates a cross connect
+## realm.py ## 
+Module defining the Realm class. `Realm` is a toolbox class that also serves as a facade for finer-grained methods in LFUtils and LFRequest:
+
     * `__init__`: our constructor
     * `load()`: load a test scenario database, as you would find in the GUI Status tab
     * `cx_list()`: request json list of cross connects
@@ -103,11 +107,16 @@ begin with these imports:
         * `run_filter()` : This function will run the filter specified by the `filter` argument on the pcap
                           file specified by the `pcap_file` argument. It redirects this output into a txt file in /tmp
                           and returns the lines in that file as an array.
-  * `realm_test.py`: exercises realm.py
-  * `show_ports.py`: this simple example shows how to gather a digest of ports
-  * `test_l4.py`: example of how to use LFRequest to create a L4 endpoint
-  * `wct-example.py`: example of using expect on port 3990 to operate a WiFi Capacity Test
-  * `ws-sta-monitor.py`: websocket 8081 client that filters interesting station events from the lfclient websocket
+## realm_test.py ## 
+Exercises realm.py
+## show_ports.py ##
+This simple example shows how to gather a digest of ports
+## test_l4.py ##
+Example of how to use LFRequest to create a L4 endpoint
+## wct-example.py ##
+Example of using expect on port 3990 to operate a WiFi Capacity Test
+## ws-sta-monitor.py ## 
+Websocket 8081 client that filters interesting station events from the lfclient websocket
 
 
 
@@ -132,33 +141,33 @@ This directory defines the LANforge module holding the following classes:
   * LFRequest.py / class **LFRequest**: provides default mechanism to make API queries, use this
       to create most of your API requests, but you may also use the normal
       `urllib.request` library on simple GET requests if you wish.
-     * formPost(): post data in url-encoded format
-     * jsonPost(): post data in JSON format
+     * form_post(): post data in url-encoded format
+     * json_post(): post data in JSON format
      * get(): GET method returns text (which could be JSON)
-     * getAsJson(): converts get() JSON results into python objects
-     * addPostData(): provide a dictionary to this method before calling formPost() or jsonPost()
+     * get_as_json(): converts get() JSON results into python objects
+     * add_post_data(): provide a dictionary to this method before calling formPost() or jsonPost()
 
   * LFUtils.py / class **LFUtils**: defines constants and utility methods
     * class PortEID: convenient handle for port objects
-    * newStationDownRequest(): create POST data object for station down
-    * portSetDhcpDownRequest(): create POST data object for station down, apply `use_dhcp` flags
-    * portDhcpUpRequest(): apply `use_dhcp`, ask for station to come up
-    * portUpRequest(): ask for station to come up
-    * portDownRequest(): ask for station to go down
-    * generateMac(): generate mac addresses
-    * portNameSeries(): produce a padded-number series of port names
-    * generateRandomHex(): series of random octets
+    * sta_new_down_sta_request(): create POST data object for station down
+    * port_set_dhcp_down_request(): create POST data object for station down, apply `use_dhcp` flags
+    * port_dhcp_up_request(): apply `use_dhcp`, ask for station to come up
+    * port_up_request(): ask for station to come up
+    * port_down_request(): ask for station to go down
+    * generate_mac(): generate mac addresses
+    * port_name_series(): produce a padded-number series of port names
+    * generate_random_hex(): series of random octets
     * portAliasesInList(): returns station aliases from `/port` listing
-    * findPortEids(): returns EIDs of ports
-    * waitUntilPortsAdminDown(): watch ports until they report admin down
-    * waitUntilPortsAdminUp(): watch ports until they report admin up
+    * find_port_eids(): returns EIDs of ports
+    * wait_until_ports_admin_down(): watch ports until they report admin down
+    * wait_until_ports_admin_up(): watch ports until they report admin up
     * wait_until_ports_disappear(): use this after deleting ports
     * ~~waitUntilPortsDisappear()~~: use this after deleting ports, **deprecated**
-    * waitUntilPortsAppear(): use this after `add_sta` or `set_port`
-    * removePort(): remove a port using rm_vlan command
-    * removeCX(): request a list of CX names be removed
-    * removeEndps(): request a list of endpoint names be removed
-    * execWrap(): hair trigger method that exits when a command fails when called by os.system()
+    * wait_until_ports_appear(): use this after `add_sta` or `set_port`
+    * remove_port(): remove a port using rm_vlan command
+    * remove_cx(): request a list of CX names be removed
+    * remove_endps(): request a list of endpoint names be removed
+    * exec_wrap(): hair trigger method that exits when a command fails when called by os.system()
 
 
 Have fun coding!
