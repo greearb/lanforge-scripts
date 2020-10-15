@@ -39,20 +39,20 @@ class L3CSVParcer():
             if row[1] == 'rx':
                 print(row)'''
 
-        include = ['Time','LT','MLT']
+        include = ['Time','Monitor','least','most','average','drop']
         self.csv_file = csv_file
         df = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include))
 
-        total_cols = len(df.axes[1])
+        total_cols = len(df.axes[0])
 
         #print(total_cols)
         #self.df = pd.read_csv('longevity_results_08_12_2020_10_19.csv')
         #print("df:{}".format(df))
 
-        #print(df.columns)
+        print(df.columns)
 
-        #print(df.loc[df['Monitor'] == 'rx_delta'])
-        #print(df.loc[df['Monitor'] == 'rx'])
+        print(df.loc[df['Monitor'] == 'rx_delta'])
+        print(df.loc[df['Monitor'] == 'rx'])
 
         df_rx_delta = df.loc[df['Monitor'] == 'rx_delta']
 
@@ -61,8 +61,12 @@ class L3CSVParcer():
         df_rx_delta.plot(x='Time epoch', y='average_rx_data')
         plt.show()
 
+        df_rx_delta.plot(x='Time', y='average_rx_data')
+        plt.show()
+
         df_rx_drop_pct = df.loc[df['Monitor'] == 'rx_drop_percent']
-        df_rx_delta.plot(x='Time epoch', y='average_rx_data')
+        print(df_rx_drop_pct)
+        df_rx_delta.plot(x='Time epoch', y='rx_drop_percent')
         plt.show()
 
 
