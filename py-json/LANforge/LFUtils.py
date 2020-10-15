@@ -196,6 +196,9 @@ def port_reset_request(resource_id, port_name, debug_on=False):
 
 
 def generateMac(parent_mac, random_octet, debug=False):
+    return generate_mac(parent_mac=parent_mac, random_octet=random_octet, debug=debug)
+
+def generate_mac(parent_mac, random_octet, debug=False):
     if debug:
         print("************ random_octet: %s **************" % (random_octet))
     my_oct = random_octet
@@ -248,8 +251,12 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     return name_list
 
 
-# generate random hex if you need it for mac addresses
+
 def generateRandomHex():
+    return generate_random_hex()
+
+# generate random hex if you need it for mac addresses
+def generate_random_hex():
     # generate a few random numbers and convert them into hex:
     random_hex = []
     for rn in range(0, 254):
@@ -270,11 +277,15 @@ def generateRandomHex():
 #   },
 #   { ... }
 def portListToAliasMap(json_list, debug_=False):
+    return port_list_to_alias_map(json_list=json_list, debug_=debug_)
+
+
+def port_list_to_alias_map(json_list, debug_=False):
     reverse_map = {}
     if (json_list is None) or (len(json_list) < 1):
         if debug_:
-            print("portListToAliasMap: no json_list provided")
-            raise ValueError("portListToAliasMap: no json_list provided")
+            print("port_list_to_alias_map: no json_list provided")
+            raise ValueError("port_list_to_alias_map: no json_list provided")
         return reverse_map
 
     json_interfaces = json_list
@@ -301,6 +312,10 @@ def portListToAliasMap(json_list, debug_=False):
 
 
 def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(), debug=False):
+    return find_port_eids(resource_id=resource_id, base_url=base_url, port_names=port_names, debug=debug)
+
+
+def find_port_eids(resource_id=1, base_url="http://localhost:8080", port_names=(), debug=False):
     port_eids = []
     if len(port_names) < 0:
         return []
@@ -319,6 +334,10 @@ def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(),
 
 
 def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", port_list=()):
+    return wait_until_ports_admin_down(resource_id=resource_id, base_url=base_url, port_list=port_list)
+
+
+def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", port_list=()):
     print("Waiting until ports appear admin-down...")
     up_stations = port_list.copy()
     sleep(1)
@@ -505,6 +524,10 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
 
 
 def removePort(resource, port_name, baseurl="http://localhost:8080/", debug=False):
+    remove_port(resource=resource, port_name=port_name, baseurl=baseurl, debug=debug)
+
+
+def remove_port(resource, port_name, baseurl="http://localhost:8080/", debug=False):
     if debug:
         print("Removing port %d.%s" % (resource, port_name))
     url = "/cli-json/rm_vlan"
@@ -518,6 +541,10 @@ def removePort(resource, port_name, baseurl="http://localhost:8080/", debug=Fals
 
 
 def removeCX(baseurl, cx_names, debug=False):
+    remove_cx(baseurl=baseurl, cx_names=cx_names, debug=debug)
+
+
+def remove_cx(baseurl, cx_names, debug=False):
     if debug:
         print("Removing cx %s" % ", ".join(cx_names))
     url = "/cli-json/rm_cx"
@@ -532,6 +559,10 @@ def removeCX(baseurl, cx_names, debug=False):
 
 
 def removeEndps(baseurl, endp_names, debug=False):
+    remove_endps(baseurl=baseurl, endp_names=endp_names, debug=debug)
+
+
+def remove_endps(baseurl, endp_names, debug=False):
     if debug:
         print("Removing endp %s" % ", ".join(endp_names))
     url = "/cli-json/rm_endp"
@@ -545,6 +576,10 @@ def removeEndps(baseurl, endp_names, debug=False):
 
 
 def execWrap(cmd):
+    exec_wrap(cmd=cmd)
+
+
+def exec_wrap(cmd):
     if os.system(cmd) != 0:
         print("\nError with '" + cmd + "', bye\n")
         exit(1)

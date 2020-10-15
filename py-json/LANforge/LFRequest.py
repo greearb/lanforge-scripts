@@ -46,6 +46,9 @@ class LFRequest:
 
     # request first url on stack
     def formPost(self, show_error=True, debug=False, die_on_error_=False):
+        return self.form_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_)
+
+    def form_post(self, show_error=True, debug=False, die_on_error_=False):
         if self.die_on_error:
             die_on_error_ = True
         if (debug == False) and (self.debug == True):
@@ -100,6 +103,9 @@ class LFRequest:
         return None
 
     def jsonPost(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
+        return self.json_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_, response_json_list_=response_json_list_)
+
+    def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
         if (debug == False) and (self.debug == True):
             debug = True
         if self.die_on_error:
@@ -215,6 +221,9 @@ class LFRequest:
         return None
 
     def getAsJson(self, die_on_error_=False, debug_=False):
+        return self.get_as_json(die_on_error_=die_on_error_, debug_=debug_)
+
+    def get_as_json(self, die_on_error_=False, debug_=False):
         responses = []
         j = self.get(debug=debug_, die_on_error_=die_on_error_)
         responses.append(j)
@@ -228,6 +237,9 @@ class LFRequest:
         return json_data
 
     def addPostData(self, data):
+        self.add_post_data(data=data)
+
+    def add_post_data(self, data):
         self.post_data = data
 
 
