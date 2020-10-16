@@ -1231,6 +1231,17 @@ our %wifi_modes = (
 );
 
 TODO:
+11a     5ghz
+11b     24ghz
+11g     24ghz
+11bg    24ghz
+
+11n     5ghz/24ghz
+
+11ac    5ghz
+
+
+TODO:
 ##############################################################################
 Detailed test loop description 10/9/2020 - Karthik Recommendation
 ##############################################################################
@@ -1248,45 +1259,51 @@ AP {Axel, Vanc} Dynamic
                                                       Packet-size { 88, 512, 1370, 1518}   Common
                                                             Time (4 iterations of 30 sec and get the best average TP out of it) 
 
+wifimode:
+802.11ax
+
 Radio descriptions:
-ath10K(9988x)  - wave -1 , dual band card it can be ac, n , a/b/g modes, up to 3x3 spacial streams
-ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz
+ax200 radio can be /ax - forcing it to lesser capabilities may not work
+ath10K(998x)  - wave -1 , dual band card it can be ac, n , a/b/g modes, up to 3x3 spacial streams
+ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , n)
+
+Note: wave-2 radios can act as ac, n, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
 TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corresponds to the shelf
 
-1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523
-1.wiphy8  802.11an-AC    ath10k(9984)    523
-1.wiphy9  802.11an-AC    ath10k(9984)    523
+1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+1.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz 
+1.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
-2.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
-2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+2.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
+2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax 
 
-3.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
-3.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+3.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
+3.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
 
-4.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
-4.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+4.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
+4.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
 
-5.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521
-5.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521
+5.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
+5.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax
 
-6.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523
-6.wiphy8  802.11an-AC    ath10k(9984)    523
-6.wiphy9  802.11an-AC    ath10k(9984)    523
+6.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax
+6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
+6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
         ''')
 
