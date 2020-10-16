@@ -964,8 +964,6 @@ class L3VariableTime(LFCliBase):
             time.sleep(5)
 
     def build(self):
-        self.controller_channel_chan_width_config()
-        self.dfs()
         index = 0
         for station_profile in self.station_profiles:
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
@@ -1308,7 +1306,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         ''')
 
     # reorder to follow looping
-    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="Axel")
+    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="C9120AXE-B")
     parser.add_argument('-ccb','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn",choices=["a", "b", "abgn"])
     parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="11ax 11ac 11n 11gb")
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
@@ -1440,7 +1438,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             cisco = cisco_(cisco_args)
                             #Disable AP
                             cisco.controller_disable_ap()
-                            if cisco_args.series == "9800":
+                            if cisco_args.cisco_series == "9800":
                                 cisco.controller_disable_wlan()
                                 cisco.controller_disable_network_5ghz()
                                 cisco.controller_disable_network_24ghz()
@@ -1451,7 +1449,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
                             cisco.controller_set_bandwidth()
 
-                            if cisco_args.series == "9800":
+                            if cisco_args.cisco_series == "9800":
                                 cisco.controller_create_wlan()
                                 cisco.controller_set_wireless_tag_policy()
                                 cisco.controller_enable_wlan()
