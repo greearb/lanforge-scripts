@@ -1442,112 +1442,126 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             cisco.controller_disable_ap()
                             if cisco_args.series == "9800":
                                 cisco.controller_disable_wlan()
-                                cisco.controller_network_5ghz()
-                                cisco.controller_network_24ghz()
+                                cisco.controller_disable_network_5ghz()
+                                cisco.controller_disable_network_24ghz()
                                 cisco.controller_role_manual()
                             else:
-                                pass
+                                cisco.controller_disable_network_5ghz()
+                                cisco.controller_disable_network_24ghz()
+
+                            cisco.controller_set_bandwidth()
+
+                            if cisco_args.series == "9800":
+                                cisco.controller_create_wlan()
+                                cisco.controller_set_wireless_tag_policy()
+                                cisco.controller_enable_wlan()
+
+                            cisco.controller_enable_network_5ghz()
+                            cisco.controller_enable_network_24ghz()
+                            cisco.controller_enable_ap()
+
+                            
 
 
-    # TODO may need a static list of radios read for scaling and performance
-    print("radios {}".format(radios))
-    for radio_ in radios:
-        radio_keys = ['radio','stations','ssid','ssid_pw','security']
-        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
-        print("radio_dict {}".format(radio_info_dict))
+                            # TODO may need a static list of radios read for scaling and performance
+                            print("radios {}".format(radios))
+                            for radio_ in radios:
+                                radio_keys = ['radio','stations','ssid','ssid_pw','security']
+                                radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
+                                print("radio_dict {}".format(radio_info_dict))
 
-        for key in radio_keys:
-            if key not in radio_info_dict:
-                print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
-                exit(1)
-        
-        radio_name_list.append(radio_info_dict['radio'])
-        number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-        ssid_list.append(radio_info_dict['ssid'])
-        ssid_password_list.append(radio_info_dict['ssid_pw'])
-        ssid_security_list.append(radio_info_dict['security'])
+                                for key in radio_keys:
+                                    if key not in radio_info_dict:
+                                        print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                                        exit(1)
 
-        optional_radio_reset_keys = ['reset_port_enable']
-        radio_reset_found = True
-        for key in optional_radio_reset_keys:
-            if key not in radio_info_dict:
-                #print("port reset test not enabled")
-                radio_reset_found = False
-                break
+                                radio_name_list.append(radio_info_dict['radio'])
+                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                ssid_list.append(radio_info_dict['ssid'])
+                                ssid_password_list.append(radio_info_dict['ssid_pw'])
+                                ssid_security_list.append(radio_info_dict['security'])
 
-        if radio_reset_found:
-            reset_port_enable_list.append(True)
-            reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
-            reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
-        else:
-            reset_port_enable_list.append(False)
-            reset_port_time_min_list.append('0s')
-            reset_port_time_max_list.append('0s')
-
-
-
-    index = 0
-    station_lists = []
-    for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
-        number_of_stations = int(number_of_stations_per_radio_)
-        if number_of_stations > MAX_NUMBER_OF_STATIONS:
-            print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
-            quit(1)
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                              padding_number_=10000, radio=radio_name_)
-        station_lists.append(station_list)
-        index += 1
-
-    #print("endp-types: %s"%(endp_types))
-
-    #enstanciate the 
+                                optional_radio_reset_keys = ['reset_port_enable']
+                                radio_reset_found = True
+                                for key in optional_radio_reset_keys:
+                                    if key not in radio_info_dict:
+                                        #print("port reset test not enabled")
+                                        radio_reset_found = False
+                                        break
+                                    
+                                if radio_reset_found:
+                                    reset_port_enable_list.append(True)
+                                    reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
+                                    reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+                                else:
+                                    reset_port_enable_list.append(False)
+                                    reset_port_time_min_list.append('0s')
+                                    reset_port_time_max_list.append('0s')
 
 
 
-    ip_var_test = L3VariableTime(
-                                    lfjson_host,
-                                    lfjson_port,
-                                    args=args,
-                                    number_template="00", 
-                                    station_lists= station_lists,
-                                    name_prefix="LT-",
-                                    endp_types=endp_types,
-                                    tos=args.tos,
-                                    side_b=side_b,
-                                    radio_name_list=radio_name_list,
-                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                    ssid_list=ssid_list,
-                                    ssid_password_list=ssid_password_list,
-                                    ssid_security_list=ssid_security_list, 
-                                    test_duration=test_duration,
-                                    polling_interval= polling_interval,
-                                    reset_port_enable_list=reset_port_enable_list,
-                                    reset_port_time_min_list=reset_port_time_min_list,
-                                    reset_port_time_max_list=reset_port_time_max_list,
-                                    side_a_min_rate=args.side_a_min_rate, 
-                                    side_b_min_rate=args.side_b_min_rate, 
-                                    debug_on=debug_on, 
-                                    outfile=csv_outfile)
+                            index = 0
+                            station_lists = []
+                            for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+                                number_of_stations = int(number_of_stations_per_radio_)
+                                if number_of_stations > MAX_NUMBER_OF_STATIONS:
+                                    print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+                                    quit(1)
+                                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+                                                                      padding_number_=10000, radio=radio_name_)
+                                station_lists.append(station_list)
+                                index += 1
+
+                            #print("endp-types: %s"%(endp_types))
+
+                            #enstanciate the 
 
 
-    ip_var_test.pre_cleanup()
-    ip_var_test.build()
-    if not ip_var_test.passes():
-        print("build step failed.")
-        print(ip_var_test.get_fail_message())
-        exit(1) 
-    ip_var_test.start(False, False)
-    ip_var_test.stop()
-    if not ip_var_test.passes():
-        print("stop test failed")
-        print(ip_var_test.get_fail_message())
-         
 
-    print("Pausing 30 seconds after run for manual inspection before we clean up.")
-    time.sleep(30)
-    ip_var_test.cleanup()
-    if ip_var_test.passes():
-        print("Full test passed, all connections increased rx bytes")
+                            ip_var_test = L3VariableTime(
+                                                            lfjson_host,
+                                                            lfjson_port,
+                                                            args=args,
+                                                            number_template="00", 
+                                                            station_lists= station_lists,
+                                                            name_prefix="LT-",
+                                                            endp_types=endp_types,
+                                                            tos=args.tos,
+                                                            side_b=side_b,
+                                                            radio_name_list=radio_name_list,
+                                                            number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+                                                            ssid_list=ssid_list,
+                                                            ssid_password_list=ssid_password_list,
+                                                            ssid_security_list=ssid_security_list, 
+                                                            test_duration=test_duration,
+                                                            polling_interval= polling_interval,
+                                                            reset_port_enable_list=reset_port_enable_list,
+                                                            reset_port_time_min_list=reset_port_time_min_list,
+                                                            reset_port_time_max_list=reset_port_time_max_list,
+                                                            side_a_min_rate=args.side_a_min_rate, 
+                                                            side_b_min_rate=args.side_b_min_rate, 
+                                                            debug_on=debug_on, 
+                                                            outfile=csv_outfile)
+
+
+                            ip_var_test.pre_cleanup()
+                            ip_var_test.build()
+                            if not ip_var_test.passes():
+                                print("build step failed.")
+                                print(ip_var_test.get_fail_message())
+                                exit(1) 
+                            ip_var_test.start(False, False)
+                            ip_var_test.stop()
+                            if not ip_var_test.passes():
+                                print("stop test failed")
+                                print(ip_var_test.get_fail_message())
+
+
+    #print("Pausing 30 seconds after run for manual inspection before we clean up.")
+    #time.sleep(30)
+                            ip_var_test.cleanup()
+                            if ip_var_test.passes():
+                                print("Full test passed, all connections increased rx bytes")
 
 if __name__ == "__main__":
     main()
