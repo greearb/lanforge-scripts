@@ -1351,9 +1351,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     parser.add_argument('-cs','--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-cc','--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
-    parser.add_argument('-ccp','--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
+    parser.add_argument('-cp','--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
     parser.add_argument('-cu','--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
-    parser.add_argument('-cp','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
+    parser.add_argument('-cpw','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
     parser.add_argument('-ccp','--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
     parser.add_argument('-cd','--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
     parser.add_argument('-cs','--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
