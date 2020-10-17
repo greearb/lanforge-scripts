@@ -39,8 +39,9 @@ class cisco_():
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
@@ -62,8 +63,9 @@ class cisco_():
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "advanced"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -83,8 +85,9 @@ class cisco_():
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "show_wlan_summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -104,8 +107,9 @@ class cisco_():
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -126,8 +130,9 @@ class cisco_():
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -149,8 +154,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_5ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -168,8 +174,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -191,8 +198,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_24ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -210,8 +218,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -235,8 +244,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "manual"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -260,8 +270,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "auto"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -284,8 +295,10 @@ class cisco_():
                                     "--action", "txPower","--value", self.args.cisco_tx_power], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -308,8 +321,10 @@ class cisco_():
                                     "--action", "channel","--value", self.args.cisco_channel], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -330,8 +345,10 @@ class cisco_():
                                     "--action", "channel","--value", self.args.cisco_chan_width], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+            
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -353,8 +370,10 @@ class cisco_():
                                         "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
+                
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
@@ -377,8 +396,10 @@ class cisco_():
                                         "--action", "wireless_tag_policy"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
+
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
@@ -401,8 +422,10 @@ class cisco_():
                                     "--action", "enable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+            
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -424,8 +447,10 @@ class cisco_():
                                         "--action", "enable_network_5ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
+                
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
@@ -442,8 +467,10 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
+
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
@@ -466,8 +493,10 @@ class cisco_():
                                         "--action", "enable_network_24ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
+
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
@@ -484,8 +513,9 @@ class cisco_():
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                print(pss)
+                if self.args.cap_ctl_out:
+                    pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                    print(pss)
 
             except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -508,8 +538,10 @@ class cisco_():
                                     "--action", "enable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
