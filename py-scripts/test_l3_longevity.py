@@ -294,8 +294,9 @@ class L3VariableTime(LFCliBase):
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
                 print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
@@ -316,8 +317,10 @@ class L3VariableTime(LFCliBase):
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "advanced"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -337,8 +340,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "show_wlan_summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -358,8 +362,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -380,8 +385,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -402,8 +408,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_5ghz"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -424,8 +431,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_24ghz"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -447,8 +455,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "manual"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -469,8 +478,9 @@ class L3VariableTime(LFCliBase):
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "auto"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
 
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -492,8 +502,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "txPower","--value", self.args.cisco_tx_power], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -516,8 +527,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "channel","--value", self.args.cisco_channel], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -527,7 +539,7 @@ class L3VariableTime(LFCliBase):
 
     #set bandwidth [20 40 80 160]
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action bandwidth  --value 40 --series 9800
-    def controller_set_bandwidth(self):
+    def controller_set_chan_width(self):
         try:
             print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {} value {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                 self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
@@ -538,8 +550,10 @@ class L3VariableTime(LFCliBase):
                                     "--action", "channel","--value", self.args.cisco_chan_width], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -560,8 +574,10 @@ class L3VariableTime(LFCliBase):
                                     "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
+
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -582,8 +598,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "wireless_tag_policy"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -604,8 +621,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "enable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -626,8 +644,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "enable_network_5ghz"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -647,8 +666,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "enable_network_24ghz"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -669,8 +689,9 @@ class L3VariableTime(LFCliBase):
                                     "--action", "enable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            print(pss)
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                print(pss)
         except subprocess.CalledProcessError as process_error:
             print("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
@@ -795,8 +816,8 @@ class L3VariableTime(LFCliBase):
         print("testing dfs")
         self.controller_show_ap_channel()
         self.controller_disable_ap()
-        self.controller_set_channel_ap()
-        self.controller_set_chan_width_ap()
+        self.controller_set_channel()
+        self.controller_set_chan_width()
         self.controller_enable_ap()
         self.verify_cac_on_ap()                 
         self.lf_hackrf_enable()
@@ -820,8 +841,8 @@ class L3VariableTime(LFCliBase):
         if self.args.cisco_channel == None:
             return
         self.controller_disable_ap()
-        self.controller_set_channel_ap()
-        self.controller_set_chan_width_ap()
+        self.controller_set_channel()
+        self.controller_set_chan_width()
         self.controller_enable_ap()
         self.controller_show_ap_channel()
         # need to actually check the CAC timer

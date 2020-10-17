@@ -1306,7 +1306,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         ''')
 
     # reorder to follow looping
-    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="C9120AXE-B")
+    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccb','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn",choices=["a", "b", "abgn"])
     parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="11ax 11ac 11n 11gb")
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
@@ -1365,7 +1365,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     ##################################################################
     # Gather Test Data
     #################################################################
-
  
     if args.test_duration:
         test_duration = args.test_duration
