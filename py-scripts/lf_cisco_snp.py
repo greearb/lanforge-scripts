@@ -604,7 +604,7 @@ class cisco_():
 
 class L3VariableTime(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
+                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
@@ -624,6 +624,7 @@ class L3VariableTime(LFCliBase):
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists       
         self.ssid_security_list = ssid_security_list
+        self.wifimode_list = wifimode_list
         self.reset_port_enable_list = reset_port_enable_list
         self.reset_port_time_min_list = reset_port_time_min_list
         self.reset_port_time_max_list = reset_port_time_max_list
@@ -659,17 +660,18 @@ class L3VariableTime(LFCliBase):
             self.csv_file = open(self.outfile, "w") 
             self.csv_writer = csv.writer(self.csv_file, delimiter=",")
         
-        for (radio_, ssid_, ssid_password_, ssid_security_,\
+        for (radio_, ssid_, ssid_password_, ssid_security_, wifimode_,\
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
+            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list, wifimode_list,\
             reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
             self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_
             self.station_profile.ssid_pass = ssid_password_
             self.station_profile.security = ssid_security_
+            self.station_profile.mode = wifimode_ 
             self.station_profile.number_template = self.number_template
-            self.station_profile.mode = 0  # TODO be able to set the mode 
+            self.station_profile.mode = wifimode_  
             self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
                 test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
                 reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
@@ -1155,15 +1157,19 @@ and recieved.
 Generic command layout:
 -----------------------
 python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
-        --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
+        --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3> wifimode==AUTO" --debug
+
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 5 min
 python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
-    --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
-    --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
+    --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
+    --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
     --duration 5m
+
+wifimode:
+   <a  b   g   abg   abgn   bgn   bg   abgnAC   anAC   an   bgnAC   abgnAX   bgnAX   anAX 
 
 
 <duration>: number followed by one of the following 
@@ -1242,23 +1248,7 @@ python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.
     --test_duration 5m
 
 
-TODO:
-our %wifi_modes = (
-   "a"      => "1",
-   "b"      => "2",
-   "g"      => "3",
-   "abg"    => "4",
-   "abgn"   => "5",
-   "bgn"    => "6",
-   "bg"     => "7",
-   "abgnAC" => "8",
-   "anAC"   => "9",
-   "an"     => "10",
-   "bgnAC"  => "11",
-   "abgnAX" => "12",
-   "bgnAX"  => "13",
-   "anAX"   => "14"
-);
+
 
 TODO:
 11a     5ghz
@@ -1427,6 +1417,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     ssid_list = []
     ssid_password_list = []
     ssid_security_list = []
+    wifimode_list = []
 
     #optional radio configuration
     reset_port_enable_list = []
@@ -1493,7 +1484,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             # TODO may need a static list of radios read for scaling and performance
                             print("radios {}".format(radios))
                             for radio_ in radios:
-                                radio_keys = ['radio','stations','ssid','ssid_pw','security']
+                                radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
                                 radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
                                 print("radio_dict {}".format(radio_info_dict))
 
@@ -1507,6 +1498,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                 ssid_list.append(radio_info_dict['ssid'])
                                 ssid_password_list.append(radio_info_dict['ssid_pw'])
                                 ssid_security_list.append(radio_info_dict['security'])
+                                wifimode_list.append(radio_info_dict['wifimode'])
 
                                 optional_radio_reset_keys = ['reset_port_enable']
                                 radio_reset_found = True
@@ -1560,6 +1552,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                             ssid_list=ssid_list,
                                                             ssid_password_list=ssid_password_list,
                                                             ssid_security_list=ssid_security_list, 
+                                                            wifimode_list=wifimode_list, 
                                                             test_duration=test_duration,
                                                             polling_interval= polling_interval,
                                                             reset_port_enable_list=reset_port_enable_list,
