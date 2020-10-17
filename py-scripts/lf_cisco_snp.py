@@ -862,7 +862,7 @@ class L3VariableTime(LFCliBase):
                     print("AP line: %s"%(line))
                     print("sta-count: %s"%(sta_count))
                     if (int(sta_count) != int(self.total_stas)):
-                        print("WARNING:  Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
+                        print("WARNING: Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
 
     def verify_cac_on_ap(self):
@@ -1033,7 +1033,7 @@ class L3VariableTime(LFCliBase):
             print("ip's acquired")
         else:
             print("print failed to get IP's")
-
+        time.sleep(30)
         self.verify_controller()
         print("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
