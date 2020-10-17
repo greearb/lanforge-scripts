@@ -1489,8 +1489,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             cisco.controller_enable_network_24ghz()
                             cisco.controller_enable_ap()
 
-                            
-
+                            # need to actually check the CAC timer
+                            time.sleep(30)
 
                             # TODO may need a static list of radios read for scaling and performance
                             print("radios {}".format(radios))
