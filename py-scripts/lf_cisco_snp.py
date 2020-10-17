@@ -1371,7 +1371,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     #to do add wifimode
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
-                        , required=True)
+                        , required=False)
     parser.add_argument('-amr','--side_a_min_rate',  help='--side_a_min_rate, station transfer rate default 256000', default=256000)
     parser.add_argument('-bmr','--side_b_min_rate',  help='--side_b_min_rate , upstream min tx rate default 256000', default=256000)
 
@@ -1403,6 +1403,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     if args.radio:
         radios = args.radio
+    else:
+        radios = [['radio==1.wiphy1 stations==3 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
+        ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
