@@ -127,7 +127,7 @@ class L3VariableTime(LFCliBase):
         return endp_rx_map, endp_rx_drop_map
 
     def time_stamp(self):
-        return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
+        return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
 
     def __record_rx_dropped_percent(self,rx_drop_percent):
 
@@ -992,9 +992,9 @@ class L3VariableTime(LFCliBase):
     def csv_generate_column_headers(self):
         csv_rx_headers = ['Time epoch','Time','Monitor']
         for i in range(1,6):
-            csv_rx_headers.append("least_rx_data_bytes {}".format(i))
+            csv_rx_headers.append("least_rx_data_bytes_{}".format(i))
         for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_bytes{}".format(i))
+            csv_rx_headers.append("most_rx_data_bytes_{}".format(i))
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
@@ -1313,6 +1313,12 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         print("stop test failed")
         print(ip_var_test.get_fail_message())
          
+    try: 
+        sub_output = subprocess.run(["./csv_processor.py", "--infile",csv_outfile],capture_output=True, check=True)
+        pss = sub_output.stdout.decode('utf-8', 'ignore')
+        print(pss)
+    except Exception as e:
+        print("Exception: {} failed creating summary and raw for {}, are all packages installed , pandas?".format(e,csv_outfile))
 
     print("Pausing 30 seconds after run for manual inspection before we clean up.")
     time.sleep(30)
