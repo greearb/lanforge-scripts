@@ -1178,7 +1178,7 @@ def main():
       egg.sendline("logout")
       logg.info("logout")
       i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
-      if i == 0:
+      if i == 1:
          egg.sendline("y")
 
 
