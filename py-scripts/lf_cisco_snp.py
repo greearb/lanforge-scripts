@@ -1330,7 +1330,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     # reorder to follow looping
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccb','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn",choices=["a", "b", "abgn"])
-    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="11ax 11ac 11n 11gb")
+    # cisco wanted 11ax , 11ac, 11n, 11gb
+    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="a anAX anAC abgn bg",
+                        choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80 160")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect>',default="local flexconnect")
@@ -1427,12 +1429,37 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
+    wifi_mode_dict = {
+        "auto"   : "0",
+        "a"      : "1",
+        "b"      : "2",
+        "g"      : "3",
+        "abg"    : "4",
+        "abgn"   : "5",
+        "bgn"    : "6",
+        "bg"     : "7",
+        "abgnAC" : "8",
+        "anAC"   : "9",
+        "an"     : "10",
+        "bgnAC"  : "11",
+        "abgnAX" : "12",
+        "bgnAX"  : "13",
+        "anAX"   : "14"
+        }
+
     
     cisco_aps             = args.cisco_ap.split()
     print(cisco_aps)
     cisco_bands           = args.cisco_band.split()
     print(cisco_bands)
     cisco_wifimodes       = args.cisco_wifimode.split()
+    for mode in cisco_wifimodes:
+        if mode in wifi_mode_dict.keys():
+            pass
+        else:
+            print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
+            exit(1)
+
     print(cisco_wifimodes)
     cisco_chan_widths     = args.cisco_chan_width.split()
     print(cisco_chan_widths)
@@ -1501,7 +1528,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                 ssid_list.append(radio_info_dict['ssid'])
                                 ssid_password_list.append(radio_info_dict['ssid_pw'])
                                 ssid_security_list.append(radio_info_dict['security'])
-                                wifimode_list.append(radio_info_dict['wifimode'])
+                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
 
                                 optional_radio_reset_keys = ['reset_port_enable']
                                 radio_reset_found = True
