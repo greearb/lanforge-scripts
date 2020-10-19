@@ -144,7 +144,7 @@ class cisco_():
     #disable network 5ghz
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_5ghz --series 9800
     def controller_disable_network_5ghz(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
                     self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable_network_5ghz"))
@@ -188,7 +188,7 @@ class cisco_():
     #disable network 24ghz
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_24ghz --series 9800
     def controller_disable_network_24ghz(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
                     self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"disable_network_24ghz"))
@@ -234,7 +234,7 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action manual --series 9800
     # ap name <AP NAME> dot11 5ghz radio role manual client-serving
     def controller_role_manual(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
                     self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"manual"))
@@ -260,7 +260,7 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action auto --series 9800
     # ap name <AP NAME> dot11 5ghz radio role manual client-serving
     def controller_role_auto(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
                     self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"auto"))
@@ -359,7 +359,7 @@ class cisco_():
     #create wlan
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action create_wlan  --wlan "open-wlan"  --wlanID 1 --series 9800
     def controller_create_wlan(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
@@ -385,7 +385,7 @@ class cisco_():
     #create wireless tag policy  --9800 series needs to have wireless tag policy set
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action wireless_tag_policy --series 9800
     def controller_set_wireless_tag_policy(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
@@ -436,7 +436,7 @@ class cisco_():
     #enable 5ghz
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_5ghz --series 9800
     def controller_enable_network_5ghz(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
@@ -482,7 +482,7 @@ class cisco_():
     #enable 24ghz
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_24ghz --series 9800
     def controller_enable_network_24ghz(self):
-        if self.args.cisco_scheme == "9800":
+        if self.args.cisco_series == "9800":
             try:
                 print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
