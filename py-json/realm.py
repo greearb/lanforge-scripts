@@ -714,7 +714,7 @@ class Realm(LFCliBase):
         return http_prof
 
     def new_fio_endp_profile(self):
-        cx_prof = FIOCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
 class MULTICASTProfile(LFCliBase):
@@ -1996,12 +1996,10 @@ class VRProfile(LFCliBase):
         # TODO: Cleanup for VRProfile
         pass
 
-class FIOCXProfile(LFCliBase):
+class FIOEndpProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
-        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
-        self.debug = debug_
-        self.fio_type = None
+        self.fs_type = None
         self.min_read = 0
         self.max_read = 0
         self.min_write = 10000000000
@@ -2038,7 +2036,7 @@ class FIOCXProfile(LFCliBase):
 
     def create_ro_profile(self):
         ro_profile = self.local_realm.new_fio_endp_profile()
-        ro_profile.fio_type = self.fio_type
+        ro_profile.fs_type = self.fs_type
         ro_profile.min_read = self.min_write
         ro_profile.max_read = self.max_write
         ro_profile.min_write = self.min_read
@@ -2077,14 +2075,14 @@ class FIOCXProfile(LFCliBase):
                 name = self.local_realm.name_to_eid(port_name)[2]
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
-            if self.directory is None or self.server_mount is None or self.fio_type is None:
-                raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fio_type))
+            if self.directory is None or self.server_mount is None or self.fs_type is None:
+                raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fs_type))
             endp_data = {
                 "alias": self.cx_prefix + name + "_fio",
                 "shelf": shelf,
                 "resource": resource,
                 "port": name,
-                "type": self.fio_type,
+                "type": self.fs_type,
                 "min_read_rate": self.min_read,
                 "max_read_rate": self.max_read,
                 "min_write_rate": self.min_write,
