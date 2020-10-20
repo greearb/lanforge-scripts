@@ -713,7 +713,7 @@ class Realm(LFCliBase):
         http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return http_prof
 
-    def new_fio_cx_profile(self):
+    def new_fio_endp_profile(self):
         cx_prof = FIOCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
@@ -2037,7 +2037,7 @@ class FIOCXProfile(LFCliBase):
         print("")
 
     def create_ro_profile(self):
-        ro_profile = self.local_realm.new_fio_cx_profile()
+        ro_profile = self.local_realm.new_fio_endp_profile()
         ro_profile.fio_type = self.fio_type
         ro_profile.min_read = self.min_write
         ro_profile.max_read = self.max_write
