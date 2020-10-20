@@ -1539,6 +1539,7 @@ class VAPProfile(LFCliBase):
         self.COMMANDS = ["add_vap", "set_port"]
         self.desired_add_vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_vap_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+
         self.add_vap_data = {
             "shelf": 1,
             "resource": 1,
@@ -1562,7 +1563,7 @@ class VAPProfile(LFCliBase):
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
-
+        self.self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
             "shelf": 1,
             "resource": 1,
@@ -1587,6 +1588,7 @@ class VAPProfile(LFCliBase):
                        realm="localhost.localdomain",
                        domain="localhost.localdomain",
                        hessid="00:00:00:00:00:01"):
+        self.self.wifi_extra_data_modified = True
         self.wifi_extra_data["key_mgmt"] = key_mgmt
         self.wifi_extra_data["eap"] = eap
         self.wifi_extra_data["identity"] = identity
@@ -1820,11 +1822,11 @@ class VAPProfile(LFCliBase):
 
         self.wifi_extra_data["resource"] = resource
         self.wifi_extra_data["port"] = self.vap_name
-        if self.wifi_extra_data["key_mgmt"] is not None:
+        if self.self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
             json_response = wifi_extra_r.jsonPost(debug)
         else:
-            raise ValueError("set_wifi_extra must be called to use wifi_extra")
+            print("set_wifi_extra must be called to use wifi_extra")
 
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
@@ -2406,7 +2408,7 @@ class StationProfile:
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
-
+        self.wifi_extra_data_modified = False;
         self.wifi_extra_data = {
             "shelf":1,
             "resource":1,
@@ -2462,6 +2464,7 @@ class StationProfile:
                        network_auth_type="NA",
                        anqp_3gpp_cell_net="NA"
                        ):
+        self.self.wifi_extra_data_modified = True;
         self.wifi_extra_data["key_mgmt"] = key_mgmt
         self.wifi_extra_data["pairwise"] = pairwise
         self.wifi_extra_data["group"] = group
@@ -2738,11 +2741,11 @@ class StationProfile:
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
-            if self.wifi_extra_data["key_mgmt"] is not None:
+            if self.self.self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
             else:
-                raise ValueError("set_wifi_extra must be called to use wifi_extra")
+                print("set_wifi_extra must be called to use wifi_extra")
 
         LFUtils.waitUntilPortsAppear(self.lfclient_url, self.station_names)
 
