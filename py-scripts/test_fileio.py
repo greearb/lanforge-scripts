@@ -21,9 +21,20 @@ import datetime
 
 class FileIOTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, station_list,
-                 number_template="00000", radio="wiphy0", fio_type="fe_nfs4", min_read=0, max_read=0, min_write="1G",
-                 max_write=0, directory="AUTO", test_duration="5m", upstream_port="eth1", server_mount="10.40.0.1:/var/tmp/test",
-                 _debug_on=False, min_tx_bps="100Mbps", min_rx_bps="1Gbps",
+                 number_template="00000",
+                 radio="wiphy0",
+                 fs_type="fe_nfs4",
+                 min_read=0,
+                 max_read=0,
+                 min_write="1G",
+                 max_write=0,
+                 min_tx_bps="100Mbps",
+                 min_rx_bps="1Gbps",
+                 directory="AUTO",
+                 test_duration="5m",
+                 upstream_port="eth1",
+                 server_mount="10.40.0.1:/var/tmp/test",
+                 _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -42,7 +53,7 @@ class FileIOTest(LFCliBase):
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_fio_cx_profile()
+        self.endp_profile = self.local_realm.new_fio_endp_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -51,15 +62,15 @@ class FileIOTest(LFCliBase):
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
 
-        self.cx_profile.fio_type = fio_type
-        self.cx_profile.min_read = self.parse_size(min_read)
-        self.cx_profile.max_read = self.parse_size(max_read)
-        self.cx_profile.min_write = self.parse_size(min_write)
-        self.cx_profile.max_write = self.parse_size(max_write)
-        self.cx_profile.directory = directory
-        self.cx_profile.server_mount = server_mount
+        self.endp_profile.fio_type = fs_type
+        self.endp_profile.min_read = self.parse_size(min_read)
+        self.endp_profile.max_read = self.parse_size(max_read)
+        self.endp_profile.min_write = self.parse_size(min_write)
+        self.endp_profile.max_write = self.parse_size(max_write)
+        self.endp_profile.directory = directory
+        self.endp_profile.server_mount = server_mount
 
-        self.ro_profile = self.cx_profile.create_ro_profile()
+        self.ro_profile = self.endp_profile.create_ro_profile()
 
     def parse_size_bps(self, size_string):
         if isinstance(size_string, str):
@@ -126,7 +137,7 @@ class FileIOTest(LFCliBase):
 
     def __get_values(self):
         time.sleep(3)
-        cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (','.join(self.cx_profile.created_cx.keys()), ','.join(self.ro_profile.created_cx.keys())),
+        cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (','.join(self.endp_profile.created_cx.keys()), ','.join(self.ro_profile.created_cx.keys())),
                                 debug_=self.debug)
         # print(cx_list)
         # print("==============\n", cx_list, "\n==============")
@@ -152,8 +163,8 @@ class FileIOTest(LFCliBase):
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
-        self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
-                               suppress_related_commands_=None)
+        self.endp_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
+                                 suppress_related_commands_=None)
         self.ro_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
                                suppress_related_commands_=None)
 
@@ -169,7 +180,7 @@ class FileIOTest(LFCliBase):
         cur_time = datetime.datetime.now()
         # print("Got Values")
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.cx_profile.start_cx()
+        self.endp_profile.start_cx()
         time.sleep(2)
         self.ro_profile.start_cx()
         passes = 0
@@ -199,12 +210,12 @@ class FileIOTest(LFCliBase):
             self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
-        self.cx_profile.stop_cx()
+        self.endp_profile.stop_cx()
         self.ro_profile.stop_cx()
         self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
-        self.cx_profile.cleanup()
+        self.endp_profile.cleanup()
         self.ro_profile.cleanup()
         self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
@@ -251,7 +262,7 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     ip_test = FileIOTest(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
                          security=args.security, station_list=station_list,
                          test_duration=args.test_duration, upstream_port=args.upstream_port,
-                         _debug_on=args.debug, fio_type=args.fio_type, min_read=args.min_read,
+                         _debug_on=args.debug, fs_type=args.fio_type, min_read=args.min_read,
                          max_read=args.max_read, min_write=args.min_write, max_write=args.max_write,
                          directory=args.directory, min_rx_bps=args.min_rx_bps, min_tx_bps=args.min_tx_bps)
     ip_test.cleanup(station_list)
