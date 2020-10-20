@@ -2741,7 +2741,7 @@ class StationProfile:
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
-            if self.self.self.wifi_extra_data_modified:
+            if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
             else:
