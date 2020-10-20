@@ -218,24 +218,19 @@ def main():
         prog='test_fileio.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-            Useful Information:
-                1. TBD
-                ''',
+        epilog='''Creates FileIO endpoints which can be NFS, CIFS or iSCSI endpoints.''',
 
         description='''\
-    test_fileio.py:
-    --------------------
-    TBD
+test_fileio.py:
+--------------------
+Generic command layout:
+python ./test_fileio.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
-    Generic command layout:
-    python ./test_fileio.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+Note:   multiple --radio switches may be entered up to the number of radios available:
+                --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
 
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
-     python3 ./test_fileio.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
-                    ''')
+python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbps --min_write 1Gbps --server_mount 192.168.93.195:/tmp/test
+''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--fio_type', help='--fio_type endpoint type', default="fe_nfs4")
