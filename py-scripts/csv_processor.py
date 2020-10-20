@@ -4,16 +4,16 @@ import sys
 import os
 
 import argparse
-import time
-import datetime
-import subprocess
-import re
-import csv
-import time
-import operator
+#import time
+#import datetime
+#import subprocess
+#import re
+#import csv
+#import time
+#import operator
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
+#import matplotlib.pyplot as plt
+#import numpy as np
 
 #https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html
 #https://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
@@ -30,7 +30,7 @@ class L3CSVParcer():
     def __init__(self,csv_file):
 
 
-        # left this in
+        # left this in for testing
         '''csv_obj = open(csv_file, 'r')
         csv_reader = csv.reader(csv_obj)
         print(csv_reader)
@@ -39,20 +39,37 @@ class L3CSVParcer():
             if row[1] == 'rx':
                 print(row)'''
 
-        include = ['Time','Monitor','least','most','average','drop']
+        include_summary = ['Time epoch','Time','Monitor','least','most','average']
         self.csv_file = csv_file
-        df = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include))
+        df_s = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include_summary))
+
+        print('{}'.format(csv_file))
+        csv_file_summary = self.csv_file.replace('results_','results_summary_')
+
+        df_s.to_csv(csv_file_summary, index = False, header=True)
+
+        include_raw = ['Time epoch','Time','Monitor','LT','MT']
+        self.csv_file = csv_file
+        df_r = pd.read_csv(self.csv_file,header = 0, usecols = lambda column : any(substr in column for substr in include_raw))
+
+        csv_file_raw = self.csv_file.replace('results_','results_raw_')
+        df_r.to_csv(csv_file_raw, index = False, header=True)
+
+        '''df_rx_delta = df_r.loc[df['Monitor'] == 'rx_delta']
+
+        df_rx_delta.plot(x='Time epoch', y='average_rx_data')
+        plt.show()
 
         total_cols = len(df.axes[0])
 
-        #print(total_cols)
-        #self.df = pd.read_csv('longevity_results_08_12_2020_10_19.csv')
-        #print("df:{}".format(df))
 
         print(df.columns)
 
         print(df.loc[df['Monitor'] == 'rx_delta'])
         print(df.loc[df['Monitor'] == 'rx'])
+
+        print(df.loc[df['Monitor'] == 'rx_delta', df.columns != 'Time'])
+
 
         df_rx_delta = df.loc[df['Monitor'] == 'rx_delta']
 
@@ -111,17 +128,12 @@ class L3CSVParcer():
         #print(df_LT_rx_delta_mean)
         x = np.linspace(0, 20, 100)
         plt.plot(x, np.sin(x))
-        plt.show()
-
-
-
-    
-
+        plt.show()'''
 
 
 def main():
 
-    debug_on = False
+    #debug_on = False
     parser = argparse.ArgumentParser(
         prog='quick_test.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -140,12 +152,12 @@ def main():
 
     args = parser.parse_args()
 
-    debug_on = args.debug
+    #debug_on = args.debug
 
     if args.infile:
         csv_file_name = args.infile
 
-    l3_csv_analysis = L3CSVParcer(csv_file_name)
+    L3CSVParcer(csv_file_name)
 
 
 
