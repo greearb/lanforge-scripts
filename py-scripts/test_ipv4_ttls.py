@@ -54,6 +54,7 @@ class TTLSTest(LFCliBase):
                  network_auth_type="NA",
                  anqp_3gpp_cell_net="NA",
                  ieee80211w=1,
+                 hs20_enable=False,
                  enable_pkc=False,
                  number_template="00000",
                  sta_list=None,
@@ -100,6 +101,7 @@ class TTLSTest(LFCliBase):
         self.anqp_3gpp_cell_net = anqp_3gpp_cell_net
 
         self.ieee80211w = ieee80211w
+        self.hs20_enable = hs20_enable
         self.enable_pkc = enable_pkc
 
         self.timeout = 120
@@ -120,23 +122,34 @@ class TTLSTest(LFCliBase):
         # Build stations
         keyphrase = "[BLANK]"
 
-        self.station_profile.use_security(self.security, self.ssid, passwd="[BLANK]")
-        self.vap_profile.use_security(self.security, self.ssid, passwd="[BLANK]")
+        self.station_profile.use_security(self.security, self.ssid, passwd=self.password)
+        self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
-
+                                            pairwise="DEFAULT",
+                                            group="DEFAULT",
+                                            psk=self.password,
                                             eap=self.eap,
                                             identity=self.identity,
                                             passwd=self.ttls_passwd,
                                             realm=self.ttls_realm,
                                             domain=self.domain,
-                                            hessid=self.hessid
-                                            )
+                                            hessid=self.hessid )
+        if self.ieee80211w:
+            self.station_profile.set_command_param("add_sta", "ieee80211w", self.ieee80211w)
+        if self.enable_pkc:
+            self.station_profile.set_command_flag("add_sta", "enable_pkc", 1)
+        if self.hs20_enable:
+            self.station_profile.set_command_flag("add_sta", "hs20_enable", 1)
+
         self.vap_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
+                                        pairwise="DEFAULT",
+                                        group="DEFAULT",
+                                        psk=self.password,
                                         eap=self.eap,
                                         identity=self.identity,
                                         passwd=self.ttls_passwd,
@@ -149,12 +162,16 @@ class TTLSTest(LFCliBase):
                                 up_=True,
                                 debug=False,
                                 suppress_related_commands_=True,
-                                wifi_extra=True)
+                                use_radius=True,
+                                hs20_enable=False)
         self.station_profile.create(radio=self.radio,
                                     sta_names_=self.sta_list,
                                     debug=self.debug,
-                                    wifi_extra=True)
+                                    use_radius=True,
+                                    hs20_enable=False)
         self._pass("Station build finished")
+        if self.debug:
+            pprint.pprint(self.station_profile.add_sta_data)
 
     def start(self, sta_list, print_pass, print_fail):
         self.station_profile.admin_up()
@@ -191,7 +208,10 @@ class TTLSTest(LFCliBase):
             print("ip_map", ip_map)
             print("associated_map", associated_map)
 
+        # notice that this does not actually generate traffic
+        # please see test_ipv4_variable_time for example of generating traffic
         return self.passes()
+
 
     def stop(self):
         # Bring stations down
@@ -215,25 +235,23 @@ def main():
         epilog='''Demonstration showing wpa2-ent ttls authentication''',
 
         description='''\
-        test_ipv4_ttls.py:
-         --------------------
-         TBD
+test_ipv4_ttls.py:
+ --------------------
+ Generic command layout:
+ python ./test_ipv4_ttls.py --upstream_port <port> 
+    --radio <radio 0> 
+    --num_stations <stations> 
+    --ssid <ssid> 
+    --keyphrase <ssid password> 
+    --security <security type: wpa2, open, wpa3> 
+    --debug
 
-         Generic command layout:
-         python ./test_ipv4_ttls.py --upstream_port <port> 
-            --radio <radio 0> 
-            --num_stations <stations> 
-            --ssid <ssid> 
-            --keyphrase <ssid password> 
-            --security <security type: wpa2, open, wpa3> 
-            --debug
-
-        ''')
+''')
 
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--key-mgmt', help="--key-mgt: { %s }"%", ".join(realm.wpa_ent_list()), default="CCMP TKIP")
+    parser.add_argument('--key-mgmt', help="--key-mgt: { %s }"%", ".join(realm.wpa_ent_list()), default="WPA-EAP")
     parser.add_argument('--wpa_psk', help='wpa-ent pre shared key', default="[BLANK]")
     parser.add_argument('--eap', help='--eap eap method to use', default="TTLS")
     parser.add_argument('--identity', help='--identity eap identity string', default="testuser")
@@ -261,7 +279,8 @@ def main():
                          domain=args.domain,
                          hessid=args.hessid,
                          ieee80211w=args.ieee80211w,
-                         enable_pkc=args.enable_pkc
+                         hs20_enable=args.use_hs20,
+                         enable_pkc=args.enable_pkc,
                          )
     ttls_test.cleanup(station_list)
     #ttls_test.timeout = 60
