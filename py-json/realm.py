@@ -17,6 +17,31 @@ import os
 import datetime
 
 
+def wpa_ent_list():
+    return [
+        "DEFAULT",
+        "NONE",
+        "WPA-PSK",
+        "FT-PSK",
+        "FT-EAP",
+        "FT-SAE",
+        "FT-EAP-SHA384",
+        "WPA-EAP",
+        "OSEN",
+        "IEEE8021X",
+        "WPA-PSK-SHA256",
+        "WPA-EAP-SHA256",
+        "WPA-PSK WPA-EAP",
+        "WPA-PSK-SHA256 WPA-EAP-SHA256",
+        "WPA-PSK WPA-EAP WPA-PSK-SHA256 WPA-EAP-SHA256"
+        "SAE",
+        "WPA-EAP-SUITE-B",
+        "WPA-EAP-SUITE-B-192",
+        "FILS-SHA256",
+        "FILS-SHA384",
+        "OWE"
+    ]
+
 class Realm(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=False, halt_on_error_=False):
         super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_, _halt_on_error=halt_on_error_)
@@ -2390,15 +2415,63 @@ class StationProfile:
             "seconds_till_reset": 0
         }
 
-    def set_wifi_extra(self, key_mgmt="WPA-EAP", eap="TTLS", identity="testuser", passwd="testpasswd",
-                       realm="localhost.localdomain", domain="localhost.localdomain", hessid="00:00:00:00:00:01"):
+    def set_wifi_extra(self, key_mgmt="WPA-EAP",
+                       pairwise="CCMP TKIP",
+                       group="CCMP TKIP",
+                       psk="[BLANK]",
+                       key="[BLANK]", #wep key
+                       ca_cert="[BLANK]",
+                       eap="TTLS",
+                       identity="testuser",
+                       anonymous_identity="[BLANK]",
+                       phase1="NA", # outter auth
+                       phase2="NA", # inner auth
+                       passwd="testpasswd", # eap passphrase
+                       pin="NA",
+                       pac_file="NA",
+                       private_key="NA",
+                       pk_password="NA", # priv key password
+                       hessid="00:00:00:00:00:01",
+                       realm="localhost.localdomain",
+                       client_cert="NA",
+                       imsi="NA",
+                       milenage="NA",
+                       domain="localhost.localdomain",
+                       roaming_consortium="NA",
+                       venue_group="NA",
+                       network_type="NA",
+                       ipaddr_type_avail="NA",
+                       network_auth_type="NA",
+                       anqp_3gpp_cell_net="NA"
+                       ):
         self.wifi_extra_data["key_mgmt"] = key_mgmt
+        self.wifi_extra_data["pairwise"] = pairwise
+        self.wifi_extra_data["group"] = group
+        self.wifi_extra_data["psk"] = psk
+        self.wifi_extra_data["key"] = key
+        self.wifi_extra_data["ca_cert"] = ca_cert
         self.wifi_extra_data["eap"] = eap
         self.wifi_extra_data["identity"] = identity
+        self.wifi_extra_data["anonymous_identity"] = anonymous_identity
+        self.wifi_extra_data["phase1"] = phase1
+        self.wifi_extra_data["phase2"] = phase2
         self.wifi_extra_data["password"] = passwd
-        self.wifi_extra_data["realm"] = realm
-        self.wifi_extra_data["domain"] = domain
+        self.wifi_extra_data["pin"] = pin
+        self.wifi_extra_data["pac_file"] = pac_file
+        self.wifi_extra_data["private_key"] = private_key
+        self.wifi_extra_data["pk_passwd"] = pk_password
         self.wifi_extra_data["hessid"] = hessid
+        self.wifi_extra_data["realm"] = realm
+        self.wifi_extra_data["client_cert"] = client_cert
+        self.wifi_extra_data["imsi"] = imsi
+        self.wifi_extra_data["milenage"] = milenage
+        self.wifi_extra_data["domain"] = domain
+        self.wifi_extra_data["roaming_consortium"] = roaming_consortium
+        self.wifi_extra_data["venue_group"] = venue_group
+        self.wifi_extra_data["network_type"] = network_type
+        self.wifi_extra_data["ipaddr_type_avail"] = ipaddr_type_avail
+        self.wifi_extra_data["network_auth_type"] = network_auth_type
+        self.wifi_extra_data["anqp_3gpp_cell_net"] = anqp_3gpp_cell_net
 
     def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,
                         reset_port_timer_start=False, port_to_reset=0, time_till_reset=0):
