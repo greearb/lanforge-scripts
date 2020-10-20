@@ -19,7 +19,7 @@ import time
 import datetime
 
 
-class IPV4FIO(LFCliBase):
+class FileIOTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, station_list,
                  number_template="00000", radio="wiphy0", fio_type="fe_nfs4", min_read=0, max_read=0, min_write="1G",
                  max_write=0, directory="AUTO", test_duration="5m", upstream_port="eth1", server_mount="10.40.0.1:/var/tmp/test",
@@ -248,12 +248,12 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4FIO(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                     security=args.security, station_list=station_list,
-                     test_duration=args.test_duration, upstream_port=args.upstream_port,
-                     _debug_on=args.debug, fio_type=args.fio_type, min_read=args.min_read,
-                      max_read=args.max_read, min_write=args.min_write, max_write=args.max_write,
-                      directory=args.directory, min_rx_bps=args.min_rx_bps, min_tx_bps=args.min_tx_bps)
+    ip_test = FileIOTest(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
+                         security=args.security, station_list=station_list,
+                         test_duration=args.test_duration, upstream_port=args.upstream_port,
+                         _debug_on=args.debug, fio_type=args.fio_type, min_read=args.min_read,
+                         max_read=args.max_read, min_write=args.min_write, max_write=args.max_write,
+                         directory=args.directory, min_rx_bps=args.min_rx_bps, min_tx_bps=args.min_tx_bps)
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
