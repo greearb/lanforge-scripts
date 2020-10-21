@@ -210,7 +210,7 @@ class LFCliBase:
 
     @staticmethod
     def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
-        if prog is not None or formatter_class is not None or epilog is not None or description is not None:
+        if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog, formatter_class=formatter_class, epilog=epilog,
                                              description=description)
         else:
@@ -224,6 +224,7 @@ class LFCliBase:
         parser.add_argument('--passwd', help='--passwd <Password>', default='jedway-wpa2-160')
         parser.add_argument('--security', help='--security <wpa2 | open | wpa3 | wpa | wep>', default='wpa2')
         parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
+        parser.add_argument('--num_stations', help='--debug:  Enable debugging', default=False, action="store_true")
 
         return parser
 
