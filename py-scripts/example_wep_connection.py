@@ -12,6 +12,7 @@ import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 import realm
+import argparse
 import time
 import pprint
 
@@ -59,16 +60,47 @@ class IPv4Test(LFCliBase):
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wep-48", password="0123456789",
-                       security="wep", sta_list=station_list)
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='example_wep_connection.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+                Example code that creates a specified amount of stations on a specified SSID using WEP security.
+                ''',
+
+        description='''\
+        example_wpa_connection.py
+        --------------------
+
+        Generic command example:
+    python3 ./example_wpa_connection.py  \\
+        --host localhost (optional) \\
+        --port 8080  (optional) \\
+        --num_stations 3 \\
+        --security {open|wep|wpa|wpa2|wpa3} \\
+        --ssid netgear-wep \\
+        --passwd admin123-wep \\
+        --debug 
+
+    Note:   multiple --radio switches may be entered up to the number of radios available:
+                     --radio wiphy0 <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+            ''')
+
+    args = parser.parse_args()
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_sta = int(args.num_stations)
+
+    station_list = LFUtils.portNameSeries(prefix_="sta",
+                                        start_id_=0,
+                                        end_id_=num_sta-1,
+                                        padding_number_=10000)
+    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
+                       security=args.security, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
-    time.sleep(30)
-
-
-
 
 if __name__ == "__main__":
     main()
