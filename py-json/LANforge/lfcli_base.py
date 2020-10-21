@@ -216,15 +216,18 @@ class LFCliBase:
         else:
             parser = argparse.ArgumentParser()
 
-        parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
-        parser.add_argument('--mgr_port', help='--mgr_port <port LANforge GUI HTTP service is running on>', default=8080)
-        parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>', default='1.eth1')
-        parser.add_argument('--radio', help='--radio <radio EID>', default='wiphy2')
-        parser.add_argument('--ssid', help='--ssid <SSID>', default='jedway-wpa2-160')
-        parser.add_argument('--passwd', help='--passwd <Password>', default='jedway-wpa2-160')
-        parser.add_argument('--security', help='--security <wpa2 | open | wpa3 | wpa | wep>', default='wpa2')
-        parser.add_argument('--debug', help='--debug:  Enable debugging', default=False, action="store_true")
-        parser.add_argument('--num_stations', help='--debug:  Enable debugging', default=False, action="store_true")
+        parser.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
+        parser.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
+        parser.add_argument('-u', '--upstream_port',
+                            help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
+                            default='1.eth1')
+        parser.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', default='wiphy2')
+        parser.add_argument('--security',       help='WiFi Security protocol: <open | wep | wpa | wpa2 | wpa3 >', default='wpa2')
+        parser.add_argument('--ssid',           help='SSID for stations to associate to', default='jedway-wpa2-160')
+        parser.add_argument('--passwd',         help='WiFi passphrase', default='jedway-wpa2-160')
+        parser.add_argument('--num_stations',   help='Number of stations to create', default=2)
+        parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+
 
         return parser
 
