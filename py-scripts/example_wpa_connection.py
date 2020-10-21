@@ -8,6 +8,7 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+import argparse
 import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
@@ -49,6 +50,8 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.admin_up()
+    
         self._pass("PASS: Station build finished")
 
     def cleanup(self, sta_list):
@@ -56,12 +59,55 @@ class IPv4Test(LFCliBase):
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
+
+
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa-1", password="jedway-wpa-1",
-                       security="wpa", sta_list=station_list)
+
+    parser = LFCliBase.create_basic_argparse(
+        prog='example_wpa_connection.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+                Create layer-4 endpoints and test that the bytes-rd from the chosen URL are increasing over the
+                duration of the test
+                ''',
+
+        description='''\
+        example_wpa_connection.py
+        --------------------
+
+        Generic command example:
+    python3 ./example_wpa_connection.py  \\
+        --host localhost (optional) \\
+        --port 8080  (optional) \\
+        --num_stations 3 \\
+        --security {open|wep|wpa|wpa2|wpa3} \\
+        --ssid netgear \\
+        --password admin123 \\
+        --debug 
+
+    Note:   multiple --radio switches may be entered up to the number of radios available:
+                     --radio wiphy0 <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
+            ''')
+
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
+
+    args = parser.parse_args()
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_sta = int(args.num_stations)
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", 
+                                        start_id_=0, 
+                                        end_id_=num_sta-1, 
+                                        padding_number_=10000)
+    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
+                       security=args.security, sta_list=station_list)
+   # ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa-1", password="jedway-wpa-1",
+                       #security="wpa", sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
