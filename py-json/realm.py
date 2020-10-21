@@ -1379,28 +1379,28 @@ class GenCXProfile(LFCliBase):
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
 
-            gen_name = name + "_gen0"
-            gen_name1 = name + "_gen1"
+            gen_name_a = name + "-A"
+            gen_name_b = name + "-B"
             genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
-            genl.createGenEndp(gen_name, shelf, resource, name, "gen_generic")
-            genl.createGenEndp(gen_name1, shelf, resource, name, "gen_generic")
-            genl.setFlags(gen_name, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name1, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name1, "Unmanaged", 1)
+            genl.createGenEndp(gen_name_a, shelf, resource, name, "gen_generic")
+            genl.createGenEndp(gen_name_b, shelf, resource, name, "gen_generic")
+            genl.setFlags(gen_name_a, "ClearPortOnStart", 1)
+            genl.setFlags(gen_name_b, "ClearPortOnStart", 1)
+            genl.setFlags(gen_name_b, "Unmanaged", 1)
             self.parse_command(name)
-            genl.setCmd(gen_name, self.cmd)
+            genl.setCmd(gen_name_a, self.cmd)
             time.sleep(sleep_time)
 
             data = {
                 "alias": "CX_" + name + "_gen",
                 "test_mgr": "default_tm",
-                "tx_endp": gen_name,
-                "rx_endp": gen_name1
+                "tx_endp": gen_name_a,
+                "rx_endp": gen_name_b
             }
             post_data.append(data)
             self.created_cx.append("CX_" + name + "_gen")
-            self.created_endp.append(gen_name)
-            self.created_endp.append(gen_name1)
+            self.created_endp.append(gen_name_a)
+            self.created_endp.append(gen_name_b)
 
         for data in post_data:
             url = "/cli-json/add_cx"
