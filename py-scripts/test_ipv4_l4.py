@@ -168,24 +168,44 @@ def main():
 
     Note:   multiple --radio switches may be entered up to the number of radios available:
                      --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
-     python3 ./test_ipv4_l4.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
+    Command Line Example: 
+     python3 ./test_ipv4_l4.py --upstream_port eth1 \\
+        --radio wiphy0 \\
+        --num_stations 3 \\
+        --security {open|wep|wpa|wpa2|wpa3} \\
+        --ssid netgear \\
+        --password admin123 \\
+        --test_duration 2m \\
+        --requests_per_ten 50 \\
+        --debug 
 
             ''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
+   # parser.add_argument('--upstream_port', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
+
 
     args = parser.parse_args()
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_sta = args.num_stations
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
-                                          radio=args.radio)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_= num_sta-1, padding_number_=10000, radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                     security=args.security, station_list=station_list, url=args.url,
-                     test_duration=args.test_duration, upstream_port=args.upstream_port,
-                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug)
+    ip_test = IPV4L4(args.mgr, 
+                    lfjson_port, 
+                    ssid=args.ssid, 
+                    password=args.passwd,
+                    security=args.security, 
+                    station_list=station_list, 
+                    url=args.url,
+                    test_duration=args.test_duration, 
+                    upstream_port=args.upstream_port,
+                    requests_per_ten=args.requests_per_ten, 
+                    _debug_on=args.debug)
+
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
