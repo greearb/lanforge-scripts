@@ -13,11 +13,16 @@ class GenericCx(LFCliBase):
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
 
-    def createGenEndp(self, alias, shelf, rsrc, port, type):
+    def createGenEndp(self, alias=None, shelf=1, resource=1, port=None, type=None):
+        if port is None:
+            raise ValueError("createGenEndp: port required")
+        if type is None:
+            raise ValueError("createGenEndp: type required")
+
         data = {
             "alias": alias,
             "shelf": shelf,
-            "resource": rsrc,
+            "resource": resource,
             "port": port,
             "type": type
         }
