@@ -166,15 +166,12 @@ def main():
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        Useful Information:
-            1. TBD
+            Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
             ''',
 
         description='''\
 test_ipv4_variable_time.py:
 --------------------
-TBD
-
 Generic command layout:
 python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 

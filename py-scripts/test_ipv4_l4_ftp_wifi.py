@@ -160,15 +160,13 @@ def main():
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Useful Information:
-                1. TBD
+                Create layer-4 endpoints and test that the bytes-rd from the chosen URL are increasing over the
+                duration of the test
                 ''',
 
         description='''\
-    test_ipv4_l4_ftp_wifi.py_upload.py:
-    --------------------
-    TBD
-
+        test_ipv4_l4_ftp_wifi.py
+        --------------------------
     Generic command layout:
     python ./test_ipv4_l4_ftp_wifi.py_upload.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 

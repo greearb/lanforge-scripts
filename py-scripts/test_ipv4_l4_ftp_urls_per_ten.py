@@ -137,15 +137,12 @@ def main():
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Useful Information:
-                1. TBD
+                Create layer-4 endpoints to connect to an ftp server and test that urls/s are meeting or exceeding the target rate
                 ''',
 
         description='''\
-    test_ipv4_l4_urls_per_ten.py:
-    --------------------
-    TBD
-
+        test_ipv4_l4_ftp_urls_per_ten.py
+        --------------------------
     Generic command layout:
     python ./test_ipv4_l4_urls_per_ten.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 

@@ -119,15 +119,12 @@ def main():
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Useful Information:
-                1. TBD
+                Create generic endpoints and test for their ability to execute chosen commands
                 ''',
 
         description='''\
-    test_generic.py:
+    test_generic.py
     --------------------
-    TBD
-
     Generic command layout:
     python ./test_generic.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 

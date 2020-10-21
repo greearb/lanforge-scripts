@@ -115,15 +115,13 @@ def main():
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        Useful Information:
-            1. TBD
+         Create stations that attempt to authenticate, associate, and receive IP addresses on the 
+         chosen SSID
             ''',
 
         description='''\
-        test_ipv4_variable_tim.py:
-         --------------------
-         TBD
-
+        test_ipv4_connection.py
+        ------------------------
          Generic command layout:
          python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
