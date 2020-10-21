@@ -129,7 +129,7 @@ python3 ./test_generic.py --upstream_port eth1 \\
     --num_stations 3 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
-    --password admin123 \\
+    --passwd admin123 \\
     --type lfping # {generic|lfping|iperf3|lf_curl} \\
     --dest 10.40.0.1 \\
     --test_duration 2m \\

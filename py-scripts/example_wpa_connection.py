@@ -70,8 +70,7 @@ def main():
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-                Create layer-4 endpoints and test that the bytes-rd from the chosen URL are increasing over the
-                duration of the test
+                Example code that creates a specified amount of stations on a specified SSID using WPA security.
                 ''',
 
         description='''\
@@ -84,8 +83,8 @@ def main():
         --port 8080  (optional) \\
         --num_stations 3 \\
         --security {open|wep|wpa|wpa2|wpa3} \\
-        --ssid netgear \\
-        --password admin123 \\
+        --ssid netgear-wpa \\
+        --passwd admin123-wpa \\
         --debug 
 
     Note:   multiple --radio switches may be entered up to the number of radios available:
