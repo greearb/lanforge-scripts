@@ -697,7 +697,15 @@ class Realm(LFCliBase):
         cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
+    def new_generic_endp_profile(self):
+        endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return endp_prof
+
     def new_generic_cx_profile(self):
+        """
+        @deprecated
+        :return: new GenCXProfile
+        """
         cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
@@ -1307,6 +1315,7 @@ class GenCXProfile(LFCliBase):
         self.interval = 1
         self.cmd = ""
         self.local_realm = local_realm
+        self.name_prefix = "generic"
         self.created_cx = []
         self.created_endp = []
 
@@ -1361,11 +1370,11 @@ class GenCXProfile(LFCliBase):
             }
             self.json_post(req_url, data)
 
-
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         if self.debug:
             debug_ = True
         post_data = []
+        endp_tpls = []
         for port_name in ports:
             port_info = self.local_realm.name_to_eid(port_name)
             if len(port_info) == 2:
@@ -1379,33 +1388,72 @@ class GenCXProfile(LFCliBase):
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
 
-            gen_name_a = name + "-A"
-            gen_name_b = name + "-B"
-            genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port)
-            genl.createGenEndp(gen_name_a, shelf, resource, name, "gen_generic")
-            genl.createGenEndp(gen_name_b, shelf, resource, name, "gen_generic")
-            genl.setFlags(gen_name_a, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name_b, "ClearPortOnStart", 1)
-            genl.setFlags(gen_name_b, "Unmanaged", 1)
-            self.parse_command(name)
-            genl.setCmd(gen_name_a, self.cmd)
-            time.sleep(sleep_time)
+            # this naming convention follows what you see when you use
+            # lf_firemod.pl --action list_endp after creating a generic endpoint
+            gen_name_a = "%s-%s"%(self.name_prefix, name)
+            gen_name_b = "D_%s-%s"%(self.name_prefix, name)
+            endp_tpls.append( (resource, name, gen_name_a, gen_name_b))
 
+        for endp_tpl in endp_tpls:
+            resource    = endp_tpl[0]
+            name        = endp_tpl[1]
+            gen_name_a  = endp_tpl[2]
+            #gen_name_b  = endp_tpl[3]
+            genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, debug_=self.debug)
+            # (self, alias=None, shelf=1, resource=1, port=None, type=None):
+            genl.create_gen_endp(alias=gen_name_a, shelf=shelf, resource=resource, port=name)
+            # genl.create_gen_endp(alias=gen_name_b, shelf=shelf, resource=resource, port=name)
+
+        self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        time.sleep(sleep_time)
+        
+        for endp_tpl in endp_tpls:
+            gen_name_a  = endp_tpl[2]
+            gen_name_b  = endp_tpl[3]
+            genl.set_flags(gen_name_a, "ClearPortOnStart", 1)
+            # genl.set_flags(gen_name_b, "ClearPortOnStart", 1)
+            # genl.set_flags(gen_name_b, "Unmanaged", 1)
+        time.sleep(sleep_time)
+
+        for endp_tpl in endp_tpls:
+            name        = endp_tpl[1]
+            gen_name_a  = endp_tpl[2]
+            # gen_name_b  = endp_tpl[3]
+            self.parse_command(name)
+            genl.set_cmd(gen_name_a, self.cmd)
+        time.sleep(sleep_time)
+
+        for endp_tpl in endp_tpls:
+            name        = endp_tpl[1]
+            gen_name_a  = endp_tpl[2]
+            gen_name_b  = endp_tpl[3]
+            cx_name     = "CX_%s-%s"%(self.name_prefix, name)
             data = {
-                "alias": "CX_" + name + "_gen",
+                "alias": cx_name,
                 "test_mgr": "default_tm",
                 "tx_endp": gen_name_a,
                 "rx_endp": gen_name_b
             }
             post_data.append(data)
-            self.created_cx.append("CX_" + name + "_gen")
+            self.created_cx.append(cx_name)
             self.created_endp.append(gen_name_a)
             self.created_endp.append(gen_name_b)
 
+        time.sleep(sleep_time)
+
         for data in post_data:
             url = "/cli-json/add_cx"
+            if self.debug:
+                pprint(data)
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
-            time.sleep(sleep_time)
+            time.sleep(10)
+        time.sleep(sleep_time)
+        for data in post_data:
+            self.local_realm.json_post("/cli-json/show_cx", {
+                "test_mgr":"default_tm",
+                "cross_connect": data["alias"]
+            })
+        time.sleep(sleep_time)
 
 class WifiMonitor:
     def __init__(self, lfclient_url, local_realm, up=True, debug_=False, resource_=1):
