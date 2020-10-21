@@ -1825,8 +1825,7 @@ class VAPProfile(LFCliBase):
         if self.self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
             json_response = wifi_extra_r.jsonPost(debug)
-        else:
-            print("set_wifi_extra must be called to use wifi_extra")
+       
 
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
@@ -2778,8 +2777,7 @@ class StationProfile:
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
-            else:
-                print("set_wifi_extra must be called to use wifi_extra")
+ 
 
         LFUtils.waitUntilPortsAppear(self.lfclient_url, self.station_names)
 
