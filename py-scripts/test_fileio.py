@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-import re
+# import re
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -9,10 +9,12 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
-import argparse
+# import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
+from LANforge import add_file_endp
+from LANforge.add_file_endp import *
 import argparse
 import realm
 import time
@@ -23,13 +25,15 @@ class FileIOTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, station_list,
                  number_template="00000",
                  radio="wiphy0",
-                 fs_type="fe_nfs4",
-                 min_read=0,
-                 max_read=0,
-                 min_write="1G",
-                 max_write=0,
-                 min_tx_bps="100Mbps",
-                 min_rx_bps="1Gbps",
+                 fs_type=fe_fstype.EP_FE_NFS4.name,
+                 min_rw_size=64*1024,
+                 max_rw_size=64*1024,
+                 min_file_size=25*1024*1024,
+                 max_file_size=25*1024*1024,
+                 min_read_rate_bps=1000*1000,
+                 max_read_rate_bps=1000*1000,
+                 min_write_rate_bps="1G",
+                 max_write_rate_bps=1000*1000,
                  directory="AUTO",
                  test_duration="5m",
                  upstream_port="eth1",
@@ -48,8 +52,14 @@ class FileIOTest(LFCliBase):
         self.number_template = number_template
         self.sta_list = station_list
         self.test_duration = test_duration
-        self.min_tx_bps = self.parse_size_bps(min_tx_bps)
-        self.min_rx_bps = self.parse_size_bps(min_rx_bps)
+        #self.min_rw_size = self.parse_size(min_rw_size)
+        #self.max_rw_size = self.parse_size(max_rw_size)
+        #self.min_file_size = self.parse_size(min_file_size)
+        #self.min_file_size = self.parse_size(min_file_size)
+        #self.min_read_rate_bps = self.parse_size_bps(min_read_rate_bps)
+        #self.max_read_rate_bps = self.parse_size_bps(max_read_rate_bps)
+        #self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
+        #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
@@ -62,56 +72,20 @@ class FileIOTest(LFCliBase):
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
 
-        self.endp_profile.fio_type = fs_type
-        self.endp_profile.min_read = self.parse_size(min_read)
-        self.endp_profile.max_read = self.parse_size(max_read)
-        self.endp_profile.min_write = self.parse_size(min_write)
-        self.endp_profile.max_write = self.parse_size(max_write)
+        self.endp_profile.fs_type = fs_type
+        self.endp_profile.min_rw_size = LFUtils.parse_size(min_rw_size)
+        self.endp_profile.max_rw_size = LFUtils.parse_size(max_rw_size)
+        self.endp_profile.min_file_size = LFUtils.parse_size(min_file_size)
+        self.endp_profile.min_file_size = LFUtils.parse_size(min_file_size)
+        self.endp_profile.min_read_rate_bps = LFUtils.parse_size(min_read_rate_bps)
+        self.endp_profile.max_read_rate_bps = LFUtils.parse_size(max_read_rate_bps)
+        self.endp_profile.min_write_rate_bps = LFUtils.parse_size(min_write_rate_bps)
+        self.endp_profile.max_write_rate_bps = LFUtils.parse_size(max_write_rate_bps)
         self.endp_profile.directory = directory
         self.endp_profile.server_mount = server_mount
 
         self.ro_profile = self.endp_profile.create_ro_profile()
 
-    def parse_size_bps(self, size_string):
-        if isinstance(size_string, str):
-            size_string.upper()
-            # print(size_string)
-            pattern = re.compile(r"^(\d+)([MGKmgk]?)bps$")
-            td = pattern.match(size_string)
-            if td is not None:
-                size = int(td.group(1))
-                unit = str(td.group(2)).lower()
-                # print(1, size, unit)
-                if unit == 'g':
-                    size *= 10000000
-                elif unit == 'm':
-                    size *= 100000
-                elif unit == 'k':
-                    size *= 1000
-                # print(2, size, unit)
-                return size
-        else:
-            return size_string
-
-    def parse_size(self, size_string):
-        if isinstance(size_string, str):
-            size_string.upper()
-            pattern = re.compile(r"^(\d+)([MGKmgk]?b?$)")
-            td = pattern.match(size_string)
-            if td is not None:
-                size = int(td.group(1))
-                unit = str(td.group(2)).lower()
-                # print(1, size, unit)
-                if unit == 'g':
-                    size *= 10000000
-                elif unit == 'm':
-                    size *= 100000
-                elif unit == 'k':
-                    size *= 1000
-                # print(2, size, unit)
-                return size
-        else:
-            return size_string
 
     def __compare_vals(self, val_list):
         passes = 0
@@ -121,12 +95,20 @@ class FileIOTest(LFCliBase):
             expected_passes += 1
             print(item)
             if item[0] == 'r':
-                print("TEST", item, val_list[item]['read-bps'], self.min_rx_bps, val_list[item]['read-bps'] > self.min_rx_bps)
-                if val_list[item]['read-bps'] > self.min_rx_bps:
+                print("TEST", item,
+                      val_list[item]['read-bps'],
+                      self.endp_profile.min_read_rate_bps,
+                      val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps)
+
+                if val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps:
                     passes += 1
             else:
-                print("TEST", item, val_list[item]['write-bps'], self.min_tx_bps, val_list[item]['write-bps'] > self.min_tx_bps)
-                if val_list[item]['write-bps'] > self.min_tx_bps:
+                print("TEST", item,
+                      val_list[item]['write-bps'],
+                      self.endp_profile.min_write_rate_bps,
+                      val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps)
+
+                if val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps:
                     passes += 1
             if passes == expected_passes:
                 return True
@@ -243,14 +225,16 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbps --min_write 1Gbps --server_mount 192.168.93.195:/tmp/test
 ''')
 
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--fio_type', help='--fio_type endpoint type', default="fe_nfs4")
-    parser.add_argument('--min_read', help='--min_read sets the minimum bps read rate', default=0)
-    parser.add_argument('--max_read', help='--max_read sets the maximum bps read rate', default=0)
-    parser.add_argument('--min_write', help='--min_write sets the minimum bps write rate', default="1G")
-    parser.add_argument('--max_write', help='--max_write sets the maximum bps write rate', default=0)
-    parser.add_argument('--min_tx_bps', help='--min_tx_bps sets threshold for write bps test', default="100Mbps")
-    parser.add_argument('--min_rx_bps', help='--min_rx_bps sets threshold for read bps test', default="100Mbps")
+    parser.add_argument('--test_duration', help='sets the duration of the test', default="5m")
+    parser.add_argument('--fs_type', help='endpoint type', default="fe_nfs4")
+    parser.add_argument('--min_rw_size', help='minimum read/write size', default=64*1024)
+    parser.add_argument('--max_rw_size', help='maximum read/write size', default=64*1024)
+    parser.add_argument('--min_file_size', help='minimum file size', default=50*1024*1024)
+    parser.add_argument('--max_file_size', help='maximum file size', default=50*1024*1024)
+    parser.add_argument('--min_read_rate_bps', help='minimum bps read rate', default=10e9)
+    parser.add_argument('--max_read_rate_bps', help='maximum bps read rate', default=10e9)
+    parser.add_argument('--min_write_rate_bps', help='minimum bps write rate', default=10e9)
+    parser.add_argument('--max_write_rate_bps', help='maximum bps write rate', default="1G")
     parser.add_argument('--directory', help='--directory directory to read/write in. Absolute path suggested', default="AUTO")
     parser.add_argument('--server_mount', help='--server_mount The server to mount, ex: 192.168.100.5/exports/test1',
                         default="10.40.0.1:/var/tmp/test")
@@ -259,12 +243,30 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = FileIOTest(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                         security=args.security, station_list=station_list,
-                         test_duration=args.test_duration, upstream_port=args.upstream_port,
-                         _debug_on=args.debug, fs_type=args.fio_type, min_read=args.min_read,
-                         max_read=args.max_read, min_write=args.min_write, max_write=args.max_write,
-                         directory=args.directory, min_rx_bps=args.min_rx_bps, min_tx_bps=args.min_tx_bps)
+    ip_test = FileIOTest(args.mgr,
+                         args.mgr_port,
+                         ssid=args.ssid,
+                         password=args.passwd,
+                         security=args.security,
+                         station_list=station_list,
+                         test_duration=args.test_duration,
+                         upstream_port=args.upstream_port,
+                         _debug_on=args.debug,
+
+                         fs_type=args.fs_type,
+                         min_rw_size=args.min_rw_size,
+                         max_rw_size=args.max_rw_size,
+                         min_file_size=args.min_file_size,
+                         max_file_size=args.max_file_size,
+                         min_read_rate_bps=args.min_read_rate_bps,
+                         max_read_rate_bps=args.max_read_rate_bps,
+                         min_write_rate_bps=args.min_write_rate_bps,
+                         max_write_rate_bps=args.max_write_rate_bps,
+                         directory=args.directory,
+                         server_mount=args.server_mount,
+                         # want a mount options param
+                         )
+
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
