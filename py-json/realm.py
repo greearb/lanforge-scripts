@@ -1997,20 +1997,47 @@ class VRProfile(LFCliBase):
         pass
 
 class FIOEndpProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+    """
+    Very often you will create the FileIO writer profile first so that it creates the data
+    that a reader profile will subsequently use.
+    """
+    def __init__(self, lfclient_host, lfclient_port, local_realm, io_direction="write", debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
-        self.fs_type = None
-        self.min_read = 0
-        self.max_read = 0
-        self.min_write = 10000000000
-        self.max_write = 0
-        self.directory = None
         self.local_realm = local_realm
-        self.server_mount = None
+        self.fs_type = "fe_nfsv4"
+        self.min_rw_size = 128 * 1024
+        self.max_rw_size = 128 * 1024
+        self.min_file_size = 10 * 1024 * 1024
+        self.max_file_size = 10 * 1024 * 1024
+
+        self.min_read_rate_bps = 10 * 1000 * 1000
+        self.max_read_rate_bps = 10 * 1000 * 1000
+        self.min_write_rate_bps = 1000 * 1000 * 1000
+        self.max_write_rate_bps = 1000 * 1000 * 1000
+
+        self.file_num = 10           # number of files to write
+        self.directory = None       # directory like /mnt/lf/$endp_name
+
+        # this refers to locally mounted directories presently used for writing
+        # you would set this when doing read tests simultaneously to write tests
+        # so like, if your endpoint names are like wo_300GB_001, your Directory value
+        # defaults to /mnt/lf/wo_300GB_001; but reader enpoint would be named
+        # /mnt/lf/ro_300GB_001, this overwrites a readers directory name to wo_300GB_001
+        self.mount_dir = "AUTO"
+
+        self.server_mount = None    # like cifs://10.0.0.1/bashful or 192.168.1.1:/var/tmp
+        self.mount_options = None
+        self.iscsi_vol = None
+        self.retry_timer_ms = 2000
+        self.io_direction = io_direction # read / write
+        self.quiesce_ms = 3000
+        self.pattern = "increasing"
+        self.file_prefix = "AUTO" # defaults to endp_name
+        self.cx_prefix = "wo_"
+
         self.created_cx = {}
         self.created_endp = []
-        self.cx_prefix = "wo_"
-        self.io_direction = "write"
+
 
     def start_cx(self):
         print("Starting CXs...")
@@ -2036,15 +2063,24 @@ class FIOEndpProfile(LFCliBase):
 
     def create_ro_profile(self):
         ro_profile = self.local_realm.new_fio_endp_profile()
-        ro_profile.fs_type = self.fs_type
-        ro_profile.min_read = self.min_write
-        ro_profile.max_read = self.max_write
-        ro_profile.min_write = self.min_read
-        ro_profile.max_write = self.max_read
-        ro_profile.directory = self.directory
         ro_profile.realm = self.local_realm
+
+        ro_profile.fs_type = self.fs_type
+        ro_profile.min_read_rate_bps = self.min_write_rate_bps
+        ro_profile.max_read_rate_bps = self.max_write_rate_bps
+        ro_profile.min_write_rate_bps = self.min_read_rate_bps
+        ro_profile.max_write_rate_bps = self.max_read_rate_bps
+        ro_profile.file_num = self.file_num
+        ro_profile.directory = self.directory
+        ro_profile.mount_dir = self.directory
         ro_profile.server_mount = self.server_mount
+        ro_profile.mount_options = self.mount_options
+        ro_profile.iscsi_vol = self.iscsi_vol
+        ro_profile.retry_timer_ms = self.retry_timer_ms
         ro_profile.io_direction = "read"
+        ro_profile.quiesce_ms = self.quiesce_ms
+        ro_profile.pattern = self.pattern
+        ro_profile.file_prefix = self.file_prefix
         ro_profile.cx_prefix = "ro_"
         return ro_profile
 
@@ -2083,15 +2119,15 @@ class FIOEndpProfile(LFCliBase):
                 "resource": resource,
                 "port": name,
                 "type": self.fs_type,
-                "min_read_rate": self.min_read,
-                "max_read_rate": self.max_read,
-                "min_write_rate": self.min_write,
-                "max_write_rate": self.max_write,
+                "min_read_rate": self.min_read_rate_bps,
+                "max_read_rate": self.max_read_rate_bps,
+                "min_write_rate": self.min_write_rate_bps,
+                "max_write_rate": self.max_write_rate_bps,
                 "directory": self.directory,
                 "server_mount": self.server_mount,
-                "mount_dir": "AUTO",
-                "prefix": "AUTO",
-                "payload_pattern": "increasing",
+                "mount_dir": self.mount_dir,
+                "prefix": self.file_prefix,
+                "payload_pattern": self.pattern,
 
             }
             if self.io_direction == "read":
