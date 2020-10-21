@@ -20,12 +20,13 @@ import datetime
 
 
 class IPV4L4(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, url, requests_per_ten, station_list,
-                 number_template="00000", radio="wiphy0",
-                 test_duration="5m", upstream_port="eth1",
-                 _debug_on=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(self, host, port, ssid, security, password, url, 
+                station_list,
+                number_template="00000", radio="wiphy0",
+                test_duration="5m", upstream_port="eth1",
+                _debug_on=False,
+                _exit_on_error=False,
+                _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
@@ -35,7 +36,7 @@ class IPV4L4(LFCliBase):
         self.security = security
         self.password = password
         self.url = url
-        self.requests_per_ten = requests_per_ten
+        #self.requests_per_ten = requests_per_ten
         self.number_template = number_template
         self.sta_list = station_list
         self.test_duration = test_duration
@@ -52,7 +53,7 @@ class IPV4L4(LFCliBase):
         self.station_profile.mode = 0
 
         self.cx_profile.url = self.url
-        self.cx_profile.requests_per_ten = self.requests_per_ten
+        #self.cx_profile.requests_per_ten = self.requests_per_ten
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
@@ -176,15 +177,13 @@ def main():
         --ssid netgear \\
         --password admin123 \\
         --test_duration 2m \\
-        --requests_per_ten 50 \\
         --debug 
 
             ''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
-   # parser.add_argument('--upstream_port', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
+
 
 
     args = parser.parse_args()
@@ -203,7 +202,6 @@ def main():
                     url=args.url,
                     test_duration=args.test_duration, 
                     upstream_port=args.upstream_port,
-                    requests_per_ten=args.requests_per_ten, 
                     _debug_on=args.debug)
 
     ip_test.cleanup(station_list)
