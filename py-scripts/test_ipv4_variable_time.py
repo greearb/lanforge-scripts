@@ -173,13 +173,20 @@ def main():
 test_ipv4_variable_time.py:
 --------------------
 Generic command layout:
-python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
 Note:   multiple --radio switches may be entered up to the number of radios available:
                  --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
 
- python3 ./test_ipv4_variable_time.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
-
+ python3 ./test_ipv4_variable_time.py 
+            --upstream_port eth1 
+            --radio wiphy0 
+            --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --ssid netgear \\
+            --password admin123 \\
+            --a_min 1000
+            --b_min 1000
+            --debug
         ''')
 
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -188,7 +195,12 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
     args = parser.parse_args()
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000, radio=args.radio)
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_sta = args.num_stations
+
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
 
     ip_var_test = IPV4VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
                                    name_prefix="VT",
@@ -196,8 +208,12 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
                                    ssid=args.ssid,
                                    password=args.passwd,
                                    radio=args.radio,
-                                   security=args.security, test_duration=args.test_duration, use_ht160=False,
-                                   side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug)
+                                   security=args.security, 
+                                   test_duration=args.test_duration, 
+                                   use_ht160=False,
+                                   side_a_min_rate=args.a_min, 
+                                   side_b_min_rate=args.b_min, 
+                                   _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
     ip_var_test.build()
