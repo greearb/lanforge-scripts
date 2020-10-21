@@ -166,15 +166,18 @@ def main():
 
         description='''\
         test_ipv4_l4_ftp_wifi.py
-        --------------------------
-    Generic command layout:
-    python ./test_ipv4_l4_ftp_wifi.py_upload.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
-
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
-     python3 ./test_ipv4_l4_ftp_wifi.py_upload.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
-
+--------------------
+Generic command example:
+python3 ./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 \\
+    --radio wiphy0 \\
+    --num_stations 3 \\
+    --security {open|wep|wpa|wpa2|wpa3} \\
+    --ssid netgear \\
+    --passwd admin123 \\
+    --dest 10.40.0.1 \\
+    --test_duration 2m \\
+    --interval 1s \\
+    --debug
             ''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
