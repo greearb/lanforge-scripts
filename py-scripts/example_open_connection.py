@@ -153,29 +153,6 @@ def main():
     ip_test.timeout = 60
     ip_test.build()
 
-    if not ip_test.passes() : 
-        print(ip_test.get_fail_message())
-        exit(1)
-    ip_test.start()
-
-    if not ip_test.passes() : 
-        print(ip_test.get_fail_message())
-        exit(1)
-    sleep(ip_test.timeout)
-    ip_test.stop()
-
-    if not ip_test.passes() : 
-        print(ip_test.get_fail_message())
-        exit(1)
-
-
-    ip_test.run()
-    print("Full Test Passed: %s" % ip_test.run_test_full())
-    print("Range Test Passed: %s" % ip_test.run_test_custom("00005", "00009"))
-    print("Custom Test Passed: %s" % ip_test.run_test_custom(sta_list=["sta00001", "sta00003", "sta00009", "sta00002"]))
-
-    ip_test.cleanup()
-
 
 if __name__ == "__main__":
     main()
