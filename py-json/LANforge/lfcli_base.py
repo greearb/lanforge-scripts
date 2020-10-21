@@ -217,6 +217,7 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
 
         parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
+        parser.add_argument('--mgr_port', help='--mgr_port <port LANforge GUI HTTP service is running on>', default=8080)
         parser.add_argument('-u', '--upstream_port', help='--upstream_port <1.eth1, etc>', default='1.eth1')
         parser.add_argument('--radio', help='--radio <radio EID>', default='wiphy2')
         parser.add_argument('--ssid', help='--ssid <SSID>', default='jedway-wpa2-160')
