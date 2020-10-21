@@ -36,7 +36,6 @@ class IPV4L4(LFCliBase):
         self.security = security
         self.password = password
         self.url = url
-        #self.requests_per_ten = requests_per_ten
         self.number_template = number_template
         self.sta_list = station_list
         self.test_duration = test_duration
@@ -53,7 +52,6 @@ class IPV4L4(LFCliBase):
         self.station_profile.mode = 0
 
         self.cx_profile.url = self.url
-        #self.cx_profile.requests_per_ten = self.requests_per_ten
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
@@ -175,6 +173,7 @@ def main():
         --num_stations 3 \\
         --security {open|wep|wpa|wpa2|wpa3} \\
         --ssid netgear \\
+        --url dl http://10.40.0.1 /dev/null \\
         --password admin123 \\
         --test_duration 2m \\
         --debug 
@@ -196,6 +195,7 @@ def main():
     ip_test = IPV4L4(args.mgr, 
                     lfjson_port, 
                     ssid=args.ssid, 
+                    radio=args.radio,
                     password=args.passwd,
                     security=args.security, 
                     station_list=station_list, 
