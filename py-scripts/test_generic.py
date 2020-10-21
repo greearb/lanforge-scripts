@@ -88,7 +88,6 @@ class GenTest(LFCliBase):
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
-
     def stop(self):
         self.cx_profile.stop_cx()
         self.station_profile.admin_down()
@@ -116,29 +115,28 @@ def main():
 
     parser = LFCliBase.create_basic_argparse(
         prog='test_generic.py',
-        # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-                Create generic endpoints and test for their ability to execute chosen commands
-                ''',
+        epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
+        description='''test_generic.py
+--------------------
+Generic command example:
+python3 ./test_generic.py --upstream_port eth1 \\
+    --radio wiphy0 \\
+    --num_stations 3 \\
+    --security {open|wep|wpa|wpa2|wpa3} \\
+    --ssid netgear \\
+    --password admin123 \\
+    --type lfping # {generic|lfping|iperf3|lf_curl} \\
+    --dest 10.40.0.1 \\
+    --test_duration 2m \\
+    --interval 1s \\
+    --debug 
+''')
 
-        description='''\
-    test_generic.py
-    --------------------
-    Generic command layout:
-    python ./test_generic.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
-
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
-     python3 ./test_generic.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
-
-            ''')
-
-    parser.add_argument('--type', help='--type type of command to run', default="lfping")
-    parser.add_argument('--dest', help='--dest destination for command', default="10.40.0.1")
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--interval', help='--interval interval to use when running lfping', default=1)
+    parser.add_argument('--type', help='type of command to run: generic, lfping, ifperf3, lfcurl', default="lfping")
+    parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
+    parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
+    parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
 
     args = parser.parse_args()
 
