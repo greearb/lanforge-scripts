@@ -11,6 +11,7 @@ import pprint
 import time
 from time import sleep
 from random import seed
+import re
 
 seed(int(round(time.time() * 1000)))
 from random import randint
@@ -22,6 +23,47 @@ NA = "NA"  # used to indicate parameter to skip
 ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
 REPORT_TIMER_MS_FAST = 1500
 REPORT_TIMER_MS_SLOW = 3000
+
+def parse_size_bps(size_val):
+    if isinstance(size_val, str):
+        size_val.upper()
+        # print(size_string)
+        pattern = re.compile(r"^(\d+)([MGKmgk]?)bps$")
+        td = pattern.match(size_val)
+        if td is not None:
+            size = int(td.group(1))
+            unit = str(td.group(2)).lower()
+            # print(1, size, unit)
+            if unit == 'g':
+                size *= 10000000
+            elif unit == 'm':
+                size *= 100000
+            elif unit == 'k':
+                size *= 1000
+            # print(2, size, unit)
+            return size
+    else:
+        return size_val
+
+def parse_size(size_val):
+    if isinstance(size_val, str):
+        size_val.upper()
+        pattern = re.compile(r"^(\d+)([MGKmgk]?b?$)")
+        td = pattern.match(size_val)
+        if td is not None:
+            size = int(td.group(1))
+            unit = str(td.group(2)).lower()
+            # print(1, size, unit)
+            if unit == 'g':
+                size *= 10000000
+            elif unit == 'm':
+                size *= 100000
+            elif unit == 'k':
+                size *= 1000
+            # print(2, size, unit)
+            return size
+    else:
+        return size_val
 
 
 class PortEID:
