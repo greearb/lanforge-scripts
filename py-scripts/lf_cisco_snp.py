@@ -749,7 +749,6 @@ class L3VariableTime(LFCliBase):
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
-        #print("rx (ts:{}): calculating worst, best, average".format(self.ts))
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
@@ -761,10 +760,8 @@ class L3VariableTime(LFCliBase):
             csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
-        if self.debug: print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data)) 
 
         if len(old_list) == len(new_list):
-            if self.debug: print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
             for item, value in old_list.items():
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
@@ -797,7 +794,6 @@ class L3VariableTime(LFCliBase):
                 csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
-            if self.debug: print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
             
             for item, value in old_list.items():
                 expected_passes +=1
@@ -1031,7 +1027,7 @@ class L3VariableTime(LFCliBase):
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120):
+        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
             print("ip's acquired")
         else:
             print("print failed to get IP's")
@@ -1210,7 +1206,7 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 -t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types
 -u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
--o / --outfile <Output file for csv data>", default='longevity_results'
+-o / --outfile <Output file for csv data>", default='snp'
 
 #########################################
 # Examples
@@ -1362,11 +1358,11 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='2m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
-    parser.add_argument('-db','--debug', help='--debug:  Enable debugging',default=False)
+    parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
+    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
@@ -1406,7 +1402,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     if args.radio:
         radios = args.radio
     else:
-        radios = [['radio==1.wiphy1 stations==3 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
+        radios = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
         ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
 
     if args.csv_outfile != None:
@@ -1479,7 +1475,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                     for cisco_ap_mode in cisco_ap_modes:
                         for cisco_packet_size in cisco_packet_sizes:
                             # over write the configurations of args for controller
-                            cisco_args.cisco_ap          = cisco_ap
+                            '''cisco_args.cisco_ap          = cisco_ap
                             cisco_args.cisco_band        = cisco_band
                             cisco_args.cisco_chan_width  = cisco_chan_width
                             cisco_args.cisco_ap_mode     = cisco_ap_mode
@@ -1509,7 +1505,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             cisco.controller_enable_ap()
 
                             # need to actually check the CAC timer
-                            time.sleep(30)
+                            time.sleep(30)'''
 
                             # TODO may need a static list of radios read for scaling and performance
                             print("radios {}".format(radios))

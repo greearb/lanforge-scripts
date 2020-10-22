@@ -1611,7 +1611,7 @@ class VAPProfile(LFCliBase):
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
-        self.self.wifi_extra_data_modified = False
+        self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
             "shelf": 1,
             "resource": 1,
@@ -1636,7 +1636,7 @@ class VAPProfile(LFCliBase):
                        realm="localhost.localdomain",
                        domain="localhost.localdomain",
                        hessid="00:00:00:00:00:01"):
-        self.self.wifi_extra_data_modified = True
+        self.wifi_extra_data_modified = True
         self.wifi_extra_data["key_mgmt"] = key_mgmt
         self.wifi_extra_data["eap"] = eap
         self.wifi_extra_data["identity"] = identity
@@ -1870,7 +1870,7 @@ class VAPProfile(LFCliBase):
 
         self.wifi_extra_data["resource"] = resource
         self.wifi_extra_data["port"] = self.vap_name
-        if self.self.wifi_extra_data_modified:
+        if self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
             json_response = wifi_extra_r.jsonPost(debug)
        
@@ -2489,7 +2489,7 @@ class StationProfile:
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
-        self.wifi_extra_data_modified = False;
+        self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
             "shelf":1,
             "resource":1,
@@ -2545,7 +2545,7 @@ class StationProfile:
                        network_auth_type="NA",
                        anqp_3gpp_cell_net="NA"
                        ):
-        self.self.wifi_extra_data_modified = True;
+        self.wifi_extra_data_modified = True
         self.wifi_extra_data["key_mgmt"] = key_mgmt
         self.wifi_extra_data["pairwise"] = pairwise
         self.wifi_extra_data["group"] = group
