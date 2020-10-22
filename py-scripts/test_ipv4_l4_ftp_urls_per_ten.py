@@ -153,6 +153,10 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
     --dest 10.40.0.1 \\
     --test_duration 2m \\
     --interval 1s \\
+    --requests_per_ten 600 \\
+    --num_tests 1 \\
+    --url "dl http://10.40.0.1 /dev/null" \\
+    --target_per_ten 600 \\
     --debug
             ''')
 

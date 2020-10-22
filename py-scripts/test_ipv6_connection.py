@@ -133,6 +133,7 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     --dest 10.40.0.1 \\
     --test_duration 2m \\
     --interval 1s \\
+    -- timeout 120 \\
     --debug
             ''')
 

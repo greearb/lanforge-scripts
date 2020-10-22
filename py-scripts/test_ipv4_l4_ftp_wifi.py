@@ -177,6 +177,11 @@ python3 ./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 \\
     --dest 10.40.0.1 \\
     --test_duration 2m \\
     --interval 1s \\
+    --requests_per_ten 600 \\
+    --dest /var/www/html/data_slug_4K.bin \\
+    --source /tmp/data_slug_4K.bin \\
+    --ftp_user lanforge \\
+    --ftp_passwd lanforge \\
     --debug
             ''')
 
