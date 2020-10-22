@@ -14,6 +14,8 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 import argparse
+import pprint
+from pprint import pprint
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import add_dut
@@ -32,17 +34,23 @@ class UpdateDUT(LFCliBase):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host       = host
         self.port       = port
+        self.notes      = "NA"
         self.params     = {}
         self.flags      = 0x0
         self.flags_mask = 0x0
-
-    def add_flag(self, ):
-        pass
+        self.data       = {}
+        self.url        = "/cli-json/add_dut"
 
     def build(self):
-        pass
+
+        for param in self.params:
+            print("param: %s: %s"%(param, self.params[param]))
+
+        for flag in self.flags:
+            print("flags: %s: %s"%(flag, self.flags[flag]))
 
     def start(self, print_pass=False, print_fail=False):
+        self.json_post(self.url, self.data)
         self._pass("DUT updated")
         pass
 
@@ -66,27 +74,47 @@ def main():
 
     parser = LFCliBase.create_bare_argparse( prog='update_dut.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog="Update parameters of a DUT record",
         description='''{file}
 --------------------
 Generic command layout:
-python ./{file} --create [name] # create new DUT record
---update [name]   # update existing DUT record
---entry [key,value] # update/add entry by specifying key and value
-
-Command Line Example: 
-python3 ./{file} --mgr 192.168.100.24 --update Pathfinder --entry MAC1,"00:00:ae:f0:b1:b9" --entry api,"build 2901"
-
+python ./{file} --dut [DUT name]     # update existing DUT record
+                --entry [key,value]     # update/add entry by specifying key and value
+                --flag [flag,0|1]       # toggle a flag on 1 or off 0
+                --notes "going to mars...."
 DUT Parameters:
-{params}
+    {params}
 DUT Flags:
-{flags}
-'''.format(file=__file__, params=param_string, flags=flags_string)
-    )
+    {flags}
+    
+Command Line Example: 
+python3 {file} --mgr 192.168.100.24 --update Pathfinder \
+    --entry MAC1,"00:00:ae:f0:b1:b9" \
+    --notes "build 2901" \
+    --flag STA_MODE,0
+    --flag AP_MODE,1
 
+'''.format(file=__file__, params=param_string, flags=flags_string),
+         epilog="See",
+    )
+    parser.add_argument("-d", "--dut",      type=str, help="name of DUT record")
+    parser.add_argument("-p", "--param",    type=str, action="append", help="name,value pair to set parameter")
+    parser.add_argument("-f", "--flag",     type=str, action="append", help="name,1/0/True/False pair to turn parameter on or off")
+    parser.add_argument("--notes",          type=str, help="add notes to the DUT")
     args = parser.parse_args()
 
     update_dut = UpdateDUT(args.mgr, lfjson_port, _debug_on=args.debug)
+    pprint.pprint(args)
+    for param in args.param:
+        (name,value) = param.split(",")
+        update_dut.params[name] = value
+
+    for flag in args.flags:
+        (name,value) = flag.split(",")
+        update_dut.flags[name] = (False,True)[value]
+        update_dut.flags_mask[name] = True
+
+    if (args.notes is not None) and (args.notes != ""):
+        update_dut.notes = args.notes
 
     update_dut.build()
     update_dut.start()
