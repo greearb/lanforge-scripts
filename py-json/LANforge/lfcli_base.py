@@ -213,6 +213,22 @@ class LFCliBase:
             print(self.pass_pref + message)
 
     @staticmethod
+    def create_bare_argparse(prog=None, formatter_class=None, epilog=None, description=None):
+        if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
+            parser = argparse.ArgumentParser(prog=prog,
+                                             formatter_class=formatter_class,
+                                             epilog=epilog,
+                                             description=description)
+        else:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
+        parser.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
+        parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+
+        return parser
+
+    @staticmethod
     def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog, formatter_class=formatter_class, epilog=epilog,
