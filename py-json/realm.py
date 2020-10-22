@@ -7,6 +7,7 @@ from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
+from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
@@ -2042,6 +2043,57 @@ class VRProfile(LFCliBase):
     def cleanup(self, resource, delay=0.03):
         # TODO: Cleanup for VRProfile
         pass
+
+class DUTProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.name            = "NA"
+        self.flags           = "NA"
+        self.img_file        = "NA"
+        self.sw_version      = "NA"
+        self.hw_version      = "NA"
+        self.model_num       = "NA"
+        self.serial_num      = "NA"
+        self.serial_port     = "NA"
+        self.wan_port        = "NA"
+        self.lan_port        = "NA"
+        self.ssid1           = "NA"
+        self.ssid2           = "NA"
+        self.ssid3           = "NA"
+        self.passwd1         = "NA"
+        self.passwd2         = "NA"
+        self.passwd3         = "NA"
+        self.mgt_ip          = "NA"
+        self.api_id          = "NA"
+        self.flags_mask      = "NA"
+        self.antenna_count1  = "NA"
+        self.antenna_count2  = "NA"
+        self.antenna_count3  = "NA"
+        self.bssid1          = "NA"
+        self.bssid2          = "NA"
+        self.bssid3          = "NA"
+        self.top_left_x      = "NA"
+        self.top_left_y      = "NA"
+        self.eap_id          = "NA"
+        self.flags           = {}
+        self.flags_mask      = {}
+
+    def set_flag(self, name, value):
+        if (value != 0) or (value != 1) or (value != True) or (value != False):
+            raise ValueError("DUTProfile::set_flag wants values to be 0, 1, True or False")
+        if (name not in add_dut.dut_flags):
+            raise ValueError("DUTProfile::set_flag wants flag %s to be in add_dut.dut_flags"%name)
+        self.flags[name] = value
+        self.flags_mask[name] = 1
+
+    def create(self):
+        data = {}
+        for param in add_dut.dut_params:
+            if (param.name in self) and (self[param.name] != "NA"):
+                data[param.name] = self[param.name]
+        # todo: compute masks
+        url = "/cli-json/add_dut"
+        self.json_post(url, data)
 
 class FIOEndpProfile(LFCliBase):
     """
