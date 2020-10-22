@@ -166,7 +166,6 @@ class L3VariableTime(LFCliBase):
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
-        #print("rx (ts:{}): calculating worst, best, average".format(self.ts))
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
@@ -178,10 +177,8 @@ class L3VariableTime(LFCliBase):
             csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
-        if self.debug: print("rx (ts:{}): worst, best, average {}".format(self.ts,csv_rx_row_data)) 
 
         if len(old_list) == len(new_list):
-            if self.debug: print("rx_delta (ts:{}): calculating worst, best, average".format(self.ts))
             for item, value in old_list.items():
                 expected_passes +=1
                 if new_list[item] > old_list[item]:
@@ -214,7 +211,6 @@ class L3VariableTime(LFCliBase):
                 csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
-            if self.debug: print("rx_delta (ts:{}): worst, best, average {}".format(self.ts,csv_rx_delta_row_data))
             
             for item, value in old_list.items():
                 expected_passes +=1
@@ -1170,7 +1166,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
-    parser.add_argument('--debug', help='--debug:  Enable debugging',default=False)
+    parser.add_argument('--debug', help='--debug flag present debug on  enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
