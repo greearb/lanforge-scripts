@@ -217,6 +217,7 @@ class LFCliBase:
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog,
                                              formatter_class=formatter_class,
+                                             allow_abbrev=True,
                                              epilog=epilog,
                                              description=description)
         else:
