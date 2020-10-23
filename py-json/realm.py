@@ -16,7 +16,7 @@ from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
 import datetime
-
+import base64
 
 def wpa_ent_list():
     return [
@@ -725,6 +725,9 @@ class Realm(LFCliBase):
     def new_fio_endp_profile(self):
         cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
+
+    def new_dut_profile(self):
+        return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -2046,7 +2049,7 @@ class VRProfile(LFCliBase):
 
 class DUTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True, _local_realm=local_realm)
         self.name            = "NA"
         self.flags           = "NA"
         self.img_file        = "NA"
@@ -2075,25 +2078,85 @@ class DUTProfile(LFCliBase):
         self.top_left_x      = "NA"
         self.top_left_y      = "NA"
         self.eap_id          = "NA"
-        self.flags           = {}
-        self.flags_mask      = {}
+        self.flags           = 0
+        self.flags_mask      = 0
+        self.notes           = []
+        self.append          = []
 
-    def set_flag(self, name, value):
-        if (value != 0) or (value != 1) or (value != True) or (value != False):
-            raise ValueError("DUTProfile::set_flag wants values to be 0, 1, True or False")
-        if (name not in add_dut.dut_flags):
-            raise ValueError("DUTProfile::set_flag wants flag %s to be in add_dut.dut_flags"%name)
-        self.flags[name] = value
-        self.flags_mask[name] = 1
+    def set_param(self, name, value):
+        if (name in self.__dict__):
+            self.__dict__[name] = value
 
-    def create(self):
+    def create(self, name=None, param_=None, flags=None, flags_mask=None, notes=None):
         data = {}
+        if (name is not None) and (name != ""):
+            data["name"] = name
+        elif (self.name is not None) and (self.name != ""):
+            data["name"] = self.name
+        else:
+            raise ValueError("cannot create/update DUT record lacking a name")
+
         for param in add_dut.dut_params:
-            if (param.name in self) and (self[param.name] != "NA"):
-                data[param.name] = self[param.name]
-        # todo: compute masks
+            if (param.name in self.__dict__):
+                if (self.__dict__[param.name] is not None) \
+                    and (self.__dict__[param.name] != "NA"):
+                    data[param.name] = self.__dict__[param.name]
+            else:
+                print("---------------------------------------------------------")
+                pprint(self.__dict__[param.name])
+                print("---------------------------------------------------------")
+                raise ValueError("parameter %s not in dut_profile"%param)
+
+        if (flags is not None) and (int(flags) > -1):
+            data["flags"] = flags
+        elif (self.flags is not None) and (self.flags > -1):
+            data["flags"] = self.flags
+
+        if (flags_mask is not None) and (int(flags_mask) > -1):
+            data["flags_mask"] = flags_mask
+        elif (self.flags_mask is not None) and (int(self.flags_mask) > -1):
+            data["flags_mask"] = self.flags_mask
+
         url = "/cli-json/add_dut"
-        self.json_post(url, data)
+        if self.debug:
+            print("---- DATA -----------------------------------------------")
+            pprint(data)
+            pprint(self.notes)
+            pprint(self.append)
+            print("---------------------------------------------------------")
+        self.json_post(url, data, debug_=self.debug)
+
+        if (self.notes is not None) and (len(self.notes)>0):
+            self.json_post("/cli-json/add_dut_notes", {
+                "dut": self.name,
+                "text": "[BLANK]"
+            }, self.debug)
+            notebytes = None
+            for line in self.notes:
+                notebytes = base64.b64encode(line.encode('ascii'))
+                if self.debug:
+                    print("------ NOTES ---------------------------------------------------")
+                    pprint(self.notes)
+                    pprint(str(notebytes))
+                    print("---------------------------------------------------------")
+                self.json_post("/cli-json/add_dut_notes", {
+                    "dut": self.name,
+                    "text-64": notebytes.decode('ascii')
+                }, self.debug)
+        if (self.append is not None) and (len(self.append)>0):
+            notebytes = None
+            for line in self.append:
+                notebytes = base64.b64encode(line.encode('ascii'))
+                if self.debug:
+                    print("----- APPEND ----------------------------------------------------")
+                    pprint(line)
+                    pprint(str(notebytes))
+                    print("---------------------------------------------------------")
+                self.json_post("/cli-json/add_dut_notes", {
+                    "dut": self.name,
+                    "text-64": notebytes.decode('ascii')
+                }, self.debug)
+
 
 class FIOEndpProfile(LFCliBase):
     """
