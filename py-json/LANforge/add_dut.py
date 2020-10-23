@@ -32,6 +32,18 @@ class dut_params(namedtuple("dut_params", "key maxlen"), Enum):
     top_left_y      = "top_left_y",     20
     eap_id          = "eap_id",         64
 
+    def has(name):
+        for param in dut_params:
+            if name == param.key:
+                return True
+        return False
+
+    def to_flag(name):
+        for param in dut_params:
+            # print("checking %s =? %s"%(name, param.key))
+            if name == param.key:
+                return param
+        return None
 
 class dut_flags(namedtuple("dut_flags", "name value"), Enum):
     STA_MODE        = "STA_MODE",          0x1  # (1) DUT acts as Station.
@@ -48,5 +60,18 @@ class dut_flags(namedtuple("dut_flags", "name value"), Enum):
     EAP_PEAP        = "EAP-PEAP",        0x800  # Use EAP-PEAP connection logic.
     NOT_DHCPCD      = "NOT-DHCPCD",     0x1000  # Station/edge device that is NOT using DHCP.
                                                 # Otherwise, automation logic assumes it is using dhcp client.
+    def has(name):
+        for flag in dut_flags:
+            # print("checking %s =? %s"%(name, flag.name))
+            if name == flag.name:
+                return True
+        return False
+
+    def to_flag(name):
+        for flag in dut_flags:
+            # print("checking %s =? %s"%(name, flag.name))
+            if name == flag.name:
+                return flag
+        return None
 
 #eof
