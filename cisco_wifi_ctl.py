@@ -38,12 +38,9 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-import re
 import logging
 import time
 from time import sleep
-import pprint
-import telnetlib
 import argparse
 import pexpect
 
@@ -133,7 +130,6 @@ def main():
               band = "-abgn"
       else:
           band = "a"
-      filehandler = None
    except Exception as e:
       logging.exception(e)
       exit(2)
@@ -493,16 +489,8 @@ def main():
 
             if loop_count >= 6:
                if found_escape == True:
-                  logg.info("9800 there may be another prompt present that not aware of")
+                  logg.info("9800 initial prompt and log messages interfering")
                   logg.info("9800 will send escape to close telnet")
-                  r = 0
-                  while( r <= 10):
-                     egg.expect(pexpect.TIMEOUT,timeout=0)
-                     logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
-                     egg.sendline("Hello?")
-                     sleep(3)
-                  egg.sendline("\x1b\r")
-                  logg.info("9800 the excape was found... close egg session")
                   egg.close(force = True)
                   exit(1)
                else:
@@ -537,16 +525,20 @@ def main():
          logged_in_9800 = False
          loop_count = 0
          found_escape = False
+         CONFIG_I = "%SYS-5-CONFIG_I: Configured from console by console"
+         PRESS_RETURN = "Press RETURN to get started."
+
          #9800 series
          if args.series == "9800":
             while logged_in_9800 == False and loop_count <= 7:
                loop_count += 1
+               logg.info("9800 loop_count {}".format(loop_count))
                #logg.info("9800 establishing Telnet egg {} ".format(egg))
                #sleep(2)
                egg.sendline(CR)
                sleep(0.4)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
                except pexpect.EOF as e:
                   logg.info('connection failed. or refused Connection open by other process')
                   exit(1)
@@ -572,7 +564,7 @@ def main():
                         sleep(0.1)
                         l = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=2)
                         if l == 0:
-                           logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
+                           logg.info("9800 Successfully received WLC# prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
                         if l == 1:
                            logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
@@ -817,7 +809,15 @@ def main():
                   egg.sendline(CR)
                   sleep(0.2)
                if i == 7:
-                  logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before,egg.after))
+                  logg.info("9800 received: {}  i: {} before {} after {}  send cr".format(PRESS_RETURN,i, egg.before, egg.after))
+                  egg.sentline(CR)
+                  sleep(0.2)
+               if i == 8:
+                  logg.info("9800 received: {} i: {} before {} after {} send cr".format(CONFIG_I,i, egg.before, egg.after))
+                  egg.sentline(CR)
+                  sleep(0.2)
+               if i == 9:
+                  logg.info("9800 Timed out waiting for initial prompt, Log message from controller interfering with expected prompts loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before,egg.after))
                   logg.info("9800  Closing the connection and try to re-establish, ")
                   egg.close(force = True)
                   sleep(1)
@@ -833,20 +833,21 @@ def main():
                   logged_in_9800 = False
                   found_escape = False
 
-            if loop_count >= 6:
+            if loop_count >= 8:
                if found_escape == True:
-                  logg.info("9800 there may be another prompt present that not aware of")
-                  logg.info("9800 will send escape to close telnet")
-                  r = 0
-                  while( r <= 3):
-                     egg.expect(pexpect.TIMEOUT,timeout=0)
-                     logg.info("Not seeing prompts r {} before {}  after {}".format(r,egg.before,egg.after))
-                     egg.sendline("Hello?")
-                     sleep(3)
-                  egg.sendline("\x1b\r")
-                  logg.info("9800 the excape was found... close egg session")
-                  egg.close(force = True)
-                  exit(1)
+                  logg.info("9800 outside major loop loop_count {}".format(loop_count))
+                  logg.info("9800 will look one more time for WLC#")
+                  egg.sentline(CR)
+                  sleep(0.2)
+                  r = egg.expect_exact(["WLC#",pexpect.TIMEOUT],timeout=3)
+                  if r == 0:
+                     logg.info("Found WLC# r {} before {}  after {} can move forward".format(r,egg.before,egg.after))
+                  if r == 1:
+                     egg.sendline("\x1b\r")
+                     egg.sendline("logout")
+                     logg.info("9800 the excape was found yet could not loging... close egg session")
+                     egg.close(force = True)
+                     exit(1)
                else:
                   logg.info("9800 the telnet session may need to be cleared will try to send logout")
                   egg.sendline("logout")
