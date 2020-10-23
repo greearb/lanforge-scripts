@@ -1,5 +1,6 @@
 #!env /usr/bin/python
 
+import sys
 import traceback
 # Extend this class to use common set of debug and request features for your script
 from pprint import pprint
@@ -17,12 +18,15 @@ class LFCliBase:
                  _debug=False,
                  _halt_on_error=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,
+                 _local_realm=False):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
+        if (_local_realm is not False):
+            self.local_realm = _local_realm;
 
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
