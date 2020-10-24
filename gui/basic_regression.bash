@@ -288,6 +288,7 @@ then
         --modifier_key "Test Rig ID:" --modifier_val "$TEST_RIG_ID" \
         --modifier_key "DUT_NAME" --modifier_val "$DUT" \
         --modifier_key "Band-Steering" --modifier_val false \
+        --modifier_key "Multi-Station Throughput vs Pkt Size" --modifier_val false \
         --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_basic_cx
     post_test $RSLTS_DIR/ap_auto_basic_cx
@@ -306,6 +307,7 @@ then
         --modifier_key "Throughput vs Pkt Size" --modifier_val true \
         --modifier_key "Dual Band Performance" --modifier_val true \
         --modifier_key "Band-Steering" --modifier_val false \
+        --modifier_key "Multi-Station Throughput vs Pkt Size" --modifier_val false \
         --modifier_key "Capacity" --modifier_val true \
         --rpt_dest $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_capacity
@@ -324,6 +326,7 @@ then
         --modifier_key "Basic Client Connectivity" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Band-Steering" --modifier_val false \
+        --modifier_key "Multi-Station Throughput vs Pkt Size" --modifier_val false \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
         --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_ports
@@ -343,6 +346,7 @@ then
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Band-Steering" --modifier_val false \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
+        --modifier_key "Multi-Station Throughput vs Pkt Size" --modifier_val false \
         --modifier_key "Reset Radios" --modifier_val true \
         --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
     mv $RPT_TMPDIR/* $RSLTS_DIR/ap_auto_stability_reset_radios
@@ -362,6 +366,7 @@ then
         --modifier_key "Band-Steering" --modifier_val false \
         --modifier_key "Stability" --modifier_val true \
         --modifier_key "Stability Duration:" --modifier_val $STABILITY_DURATION \
+        --modifier_key "Multi-Station Throughput vs Pkt Size" --modifier_val false \
         --modifier_key "VOIP Call Count:" --modifier_val 0 \
         --modifier_key "Concurrent Ports To Reset:" --modifier_val 0 \
         --rpt_dest  $RPT_TMPDIR > $REGLOG 2>&1
