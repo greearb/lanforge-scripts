@@ -107,7 +107,7 @@ def main():
                        choices=["a", "b", "abgn"])
 
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["config", "country", "ap_country", "enable", "disable", "summary", "advanced",
+      choices=["config", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
@@ -193,11 +193,9 @@ def main():
                sleep(0.4)
                try:
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets",pexpect.TIMEOUT],timeout=2)
-               except pexpect.EOF as e:
+               except Exception as e:
                   logg.info('connection failed. or refused Connection open by other process')
-                  exit(1)
-               except:
-                  logg.info('unknown exception on initial pexpect after login')
+                  logging.exception(e)
                   exit(1)
 
                if i == 0:
@@ -539,11 +537,9 @@ def main():
                sleep(0.4)
                try:
                   i = egg.expect_exact(["Escape character is '^]'.","WLC>","WLC#","User:","Password:","WLC(config)#","Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
-               except pexpect.EOF as e:
+               except Exception as e:
                   logg.info('connection failed. or refused Connection open by other process')
-                  exit(1)
-               except:
-                  logg.info('unknown exception on initial pexpect after login')
+                  logg.exception(e)
                   exit(1)
 
                if i == 0:
@@ -1098,9 +1094,43 @@ def main():
             if j == 0:
                logg.info("command sent: {}".format(command))
             if j == 1:
-               logg.info("timmed out on command prompt (config-policy-tag)# for command {}".format(command))   
+               logg.info("timed out on command prompt (config-policy-tag)# for command {}".format(command))   
       if i == 1:
          logg.info("did not get the (config)# prompt")
+
+   if (args.action == "no_logging_console"):
+      logg.info("send no logging console")
+      egg.sendline("config t")
+      sleep(0.2)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         egg.sendline("no logging console")
+         sleep(0.2)
+         j = egg.expect_exact(["(config)#", pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            logg.info("command sent: no logging console")
+         if j == 1:
+            logg.info("timed out on command prompt (config)#")
+      if i == 1:
+         logg.info("did not get the (config)# prompt")   
+
+   if (args.action == "line console 0"):
+      logg.info("send: line console 0")
+      egg.sendline("config t")
+      sleep(0.2)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         egg.sendline("line console 0")
+         sleep(0.1)
+         j = egg.expect_exact(["(config-line)#","(config)#",pexpect.TIMEOUT],timeout=2)
+         if j == 0:
+            logg.info("command sent: line console 0 received prompt (config-line)#")
+         if j == 1:
+            logg.info("command sent: line console 0 received prompt (config)#")
+         if j == 2:
+            logg.info("timed out on command prompt (config-line)#")
+      if i == 1:
+         logg.info("did not get the (config)# prompt") 
 
    if (args.action == "no_wlan" and (args.wlan is None)):
       raise Exception("wlan is required")
@@ -1227,7 +1257,7 @@ def main():
       loop_count = 0
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
-         i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#",pexpect.TIMEOUT],timeout=5)
+         i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#","(config-line)#",pexpect.TIMEOUT],timeout=5)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("WLC> prompt received can send logout")
@@ -1270,6 +1300,14 @@ def main():
                logg.info("9800 exception on exit")
                sleep(0.1)
          if i == 5:
+            logg.info("(config-line)# prompt received will send exit")
+            try:
+               egg.sendline("exit")
+               sleep(2)
+            except:
+               logg.info("9800 exception on exit")
+               sleep(0.1)
+         if i == 6:
             logg.info("9800 expect timeout send exit")
             egg.sendline("exit")
             break
