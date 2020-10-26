@@ -119,6 +119,7 @@ def usage():
    print("--lfresource2: LANforge resource ID for upstream port")
    print("--outfile: Output file for txt and xlsx data")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
+   print("--antenna_gain: Antenna gain for AP , since no Antenna in cabled connection between AP and lanforge , antenna gain needs to be taken into account")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
    print("--pf_dbm: Pass/Fail range, default is 6")
    print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
@@ -186,6 +187,7 @@ def main():
    parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
    parser.add_argument("--outfile",     type=str, help="Output file for csv data",default="cisco_power_results")
    parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
+   parser.add_argument("--antenna_gain",     type=str, help="Antenna gain,  take into account the gain due to the antenna")
    parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
@@ -304,6 +306,10 @@ def main():
        print("ERROR:  Pathloss must be specified.")
        exit(1)
 
+   if (args.antenna_gain == None):
+       print("ERROR: Antenna gain must be specified.")
+       exit(1)
+
    if (rssi_to_use == "beacon"):
        use_beacon   = "-USED"
        use_combined = ""
@@ -314,13 +320,13 @@ def main():
         
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Regulatory Domain\tCabling Pathloss\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
+   csv.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
    csv.write("\n");
    csv.flush()
 
    # Summary spread-sheet data
    csvs = open(outfile, "w")
-   csvs.write("Regulatory Domain\tCabling Pathloss\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
+   csvs.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
    csvs.write("\n");
    csvs.flush()
 
@@ -396,6 +402,7 @@ def main():
    worksheet.write(row, col, 'Tx\nPower', dtan_bold); col += 1
    worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold); col += 1
    worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold); col += 1
+   worksheet.write(row, col, 'Antenna\nGain', dtan_bold); col += 1
    worksheet.write(row, col, 'Noise\n', dpeach_bold); col += 1
    if (args.adjust_nf):
        worksheet.write(row, col, 'Noise\nAdjust\n(vs -105)', dpeach_bold); col += 1
@@ -511,6 +518,7 @@ def main():
    # Loop through all iterations and run txpower tests.
    for ch in channels:
        pathloss = args.pathloss
+       antenna_gain = args.antenna_gain
        ch_colon = ch.count(":")
        if (ch_colon == 1):
            cha = ch.split(":")
@@ -1052,18 +1060,20 @@ def main():
                        e_tot += "ERROR:  Could not detect beacon signal level.  "
                        beacon_sig = -100
 
-                   pi = int(pathloss)   
+                   pi = int(pathloss)
+                   ag = int(antenna_gain)   
                    if(rssi_to_use == "beacon"):
                        print("rssi_to_use == beacon: beacon_sig: %s "%(beacon_sig))
-                       calc_dbm = int(beacon_sig) + pi + rssi_adj
+                       calc_dbm = int(beacon_sig) + pi + ag + rssi_adj
                    else:
                        print("rssi_to_use == combined: sig: %s"%sig)
-                       calc_dbm = int(sig) + pi + rssi_adj
+                       calc_dbm = int(sig) + pi + ag + rssi_adj
                    print("calc_dbm %s"%(calc_dbm))
 
 
                    # Calculated per-antenna power is what we calculate the AP transmitted
-                   # at (rssi + pathloss).  So, if we see -30 rssi, with pathloss of 50,
+                   # at (rssi + pathloss + antenna_gain ).  So, if we see -30 rssi, with pathloss of 44 ,
+                   # with antenna gain of 6 
                    # then we calculate AP transmitted at +20
                    calc_ant1 = 0
                    if (ants[0] != ""):
@@ -1094,7 +1104,7 @@ def main():
 
                    # Allowed per path is what we expect the AP should be transmitting at.
                    # calc_ant1 is what we calculated it actually transmitted at based on rssi
-                   # and pathloss.  Allowed per-path is modified taking into account that multi
+                   # pathloss and antenna gain.  Allowed per-path is modified taking into account that multi
                    # NSS tranmission will mean that each chain should be decreased so that sum total
                    # of all chains is equal to the maximum allowed txpower.
                    allowed_per_path = cc_dbmi
@@ -1161,8 +1171,8 @@ def main():
                    if (pf == 0):
                        pfs = "FAIL"
                        
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       myrd, pathloss, ch, n, bw, tx, beacon_sig, sig,
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
                        calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
@@ -1173,8 +1183,8 @@ def main():
                    csv.write(ln)
                    csv.write("\t")
 
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
-                       myrd, pathloss, _ch, _nss, _bw, tx, allowed_per_path,
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                       myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
                        antstr,
                        calc_ant1, calc_ant2, calc_ant3, calc_ant4,
                        diff_a1, diff_a2, diff_a3, diff_a4, pfs
@@ -1191,6 +1201,7 @@ def main():
                    worksheet.write(row, col, tx, center_tan); col += 1
                    worksheet.write(row, col, allowed_per_path, center_tan); col += 1
                    worksheet.write(row, col, pathloss, center_tan); col += 1
+                   worksheet.write(row, col, antenna_gain, center_tan); col += 1
                    worksheet.write(row, col, _noise, center_tan); col += 1
                    if (args.adjust_nf):
                        worksheet.write(row, col, rssi_adj, center_tan); col += 1
