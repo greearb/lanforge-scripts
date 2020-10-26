@@ -1114,7 +1114,7 @@ def main():
       if i == 1:
          logg.info("did not get the (config)# prompt")   
 
-   if (args.action == "line console 0"):
+   if (args.action == "line_console_0"):
       logg.info("send: line console 0")
       egg.sendline("config t")
       sleep(0.2)
