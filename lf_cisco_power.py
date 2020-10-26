@@ -1064,10 +1064,10 @@ def main():
                    ag = int(antenna_gain)   
                    if(rssi_to_use == "beacon"):
                        print("rssi_to_use == beacon: beacon_sig: %s "%(beacon_sig))
-                       calc_dbm = int(beacon_sig) + pi + ag + rssi_adj
+                       calc_dbm = int(beacon_sig) + pi + rssi_adj + ag
                    else:
                        print("rssi_to_use == combined: sig: %s"%sig)
-                       calc_dbm = int(sig) + pi + ag + rssi_adj
+                       calc_dbm = int(sig) + pi + rssi_adj + ag
                    print("calc_dbm %s"%(calc_dbm))
 
 
@@ -1077,16 +1077,16 @@ def main():
                    # then we calculate AP transmitted at +20
                    calc_ant1 = 0
                    if (ants[0] != ""):
-                       calc_ant1 = int(ants[0]) + pi + rssi_adj
+                       calc_ant1 = int(ants[0]) + pi + rssi_adj + ag
                    calc_ant2 = 0
                    calc_ant3 = 0
                    calc_ant4 = 0
                    if (len(ants) > 1 and ants[1] != ""):
-                       calc_ant2 = int(ants[1]) + pi + rssi_adj
+                       calc_ant2 = int(ants[1]) + pi + rssi_adj + ag
                    if (len(ants) > 2 and ants[2] != ""):
-                       calc_ant3 = int(ants[2]) + pi + rssi_adj
+                       calc_ant3 = int(ants[2]) + pi + rssi_adj + ag
                    if (len(ants) > 3 and ants[3] != ""):
-                       calc_ant4 = int(ants[3]) + pi + rssi_adj
+                       calc_ant4 = int(ants[3]) + pi + rssi_adj + ag
 
                    diff_a1 = ""
                    diff_a2 = ""
