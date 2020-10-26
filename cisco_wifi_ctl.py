@@ -1106,11 +1106,6 @@ def main():
       if i == 0:
          egg.sendline("no logging console")
          sleep(0.2)
-         j = egg.expect_exact(["(config)#", pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            logg.info("command sent: no logging console")
-         if j == 1:
-            logg.info("timed out on command prompt (config)#")
       if i == 1:
          logg.info("did not get the (config)# prompt")   
 
@@ -1122,13 +1117,6 @@ def main():
       if i == 0:
          egg.sendline("line console 0")
          sleep(0.1)
-         j = egg.expect_exact(["(config-line)#","(config)#",pexpect.TIMEOUT],timeout=2)
-         if j == 0:
-            logg.info("command sent: line console 0 received prompt (config-line)#")
-         if j == 1:
-            logg.info("command sent: line console 0 received prompt (config)#")
-         if j == 2:
-            logg.info("timed out on command prompt (config-line)#")
       if i == 1:
          logg.info("did not get the (config)# prompt") 
 
