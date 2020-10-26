@@ -818,6 +818,7 @@ def main():
                        cc_bw = ""
                        cc_power = ""
                        cc_dbm = ""
+                       ch_count = ""
                        for line in pss.splitlines():
                            if (line.startswith("---------")):
                                searchap = True
@@ -844,8 +845,9 @@ def main():
                           print(err)
                           e_tot += err
                           e_tot += "  "
+
                        print("3504 test_parameters cc_mac: read : {}".format(cc_mac))
-                       print("3504 test_parameters cc_count: read : {}".format(cc_ch_count))
+                       print("3504 test_parameters cc_count: read : {}".format(ch_count))
                        print("3504 test_parameters cc_bw: read : {}".format(cc_bw))
                        print("3504 test_parameters cc_power: read : {}".format(cc_power))
                        print("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
