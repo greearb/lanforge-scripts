@@ -1267,7 +1267,7 @@ def main():
             logg.info("WLC(config)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(1)
+               sleep(0.2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1275,7 +1275,7 @@ def main():
             logg.info("WLC(config-wlan)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(2)
+               sleep(0.2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1283,7 +1283,7 @@ def main():
             logg.info("(config-policy-tag)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(2)
+               sleep(0.2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1291,7 +1291,7 @@ def main():
             logg.info("(config-line)# prompt received will send exit")
             try:
                egg.sendline("exit")
-               sleep(2)
+               sleep(0.2)
             except:
                logg.info("9800 exception on exit")
                sleep(0.1)
@@ -1307,7 +1307,7 @@ def main():
          sleep(0.2)
       logg.info("send close to the egg child process")   
       egg.close(force = True)   
-      sleep(1)
+      sleep(0.1)
    # 3504         
    else:
       if (command is None ):
