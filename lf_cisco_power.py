@@ -489,6 +489,30 @@ def main():
                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True);
 
    myrd = ""
+
+   if args.series == "9800": 
+
+      try:
+         print("9800 cisco_wifi_ctl.py: no_logging_console")
+         advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                    "--action", "no_logging_console","--series",args.series,"--port",args.port], capture_output=True, check=True)
+         pss = advanced.stdout.decode('utf-8', 'ignore');
+         print(pss)
+      except subprocess.CalledProcessError as process_error:
+         print("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
+         exit(1)
+
+      try:
+         print("9800 cisco_wifi_ctl.py: line_console_0")
+         advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                    "--action", "line_console_0","--series",args.series,"--port",args.port], capture_output=True, check=True)
+         pss = advanced.stdout.decode('utf-8', 'ignore');
+         print(pss)
+      except subprocess.CalledProcessError as process_error:
+         print("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
+         exit(1)
+
+
    try:
       print("9800/3504 cisco_wifi_ctl.py: summary")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
