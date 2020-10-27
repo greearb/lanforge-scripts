@@ -20,7 +20,7 @@ import datetime
 
 class GenTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream,
-                 number_template="000", test_duration="5m", type="lfping", dest="127.0.0.1",
+                 number_template="000", test_duration="5m", type="lfping", dest="127.0.0.1", cmd ="",
                  interval=1, radio="wiphy0",
                  _debug_on=False,
                  _exit_on_error=False,
@@ -51,14 +51,16 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.name = name_prefix
         self.generic_endps_profile.type = type
         self.generic_endps_profile.dest = dest
+        self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
+        temp_stas = []
+        for station in self.sta_list.copy():
+            temp_stas.append(self.local_realm.name_to_eid(station)[2])
         pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
-        temp_stas = self.sta_list.copy()
-        temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -138,6 +140,7 @@ python3 ./test_generic.py --upstream_port eth1 \\
 ''')
 
     parser.add_argument('--type', help='type of command to run: generic, lfping, ifperf3, lfcurl', default="lfping")
+    parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
     parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
     parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
@@ -159,6 +162,7 @@ python3 ./test_generic.py --upstream_port eth1 \\
                            name_prefix="GT",
                            type=args.type,
                            dest=args.dest,
+                           cmd=args.cmd,
                            interval=1,
                            ssid=args.ssid,
                            upstream=args.upstream_port,
@@ -180,7 +184,7 @@ python3 ./test_generic.py --upstream_port eth1 \\
     time.sleep(30)
     generic_test.cleanup(station_list)
     if generic_test.passes():
-        print("Full test passed, all connections increased rx bytes")
+        print("Full test passed")
 
 
 
