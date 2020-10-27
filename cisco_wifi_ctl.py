@@ -878,6 +878,7 @@ def main():
    command = None
    time.sleep(0.1)
    CCPROMPT = args.prompt  #'\(Voice-Talwar\) >'
+   LEGACY_PROMPT = "(cisco) >"
    LOGOUTPROMPT = 'User:'
    EXITPROMPT = "Would you like to save them now\? \(y/N\)"
    AREYOUSURE = "Are you sure you want to continue\? \(y/n\)"
@@ -888,7 +889,8 @@ def main():
    if args.series == "9800":
       pass
    else:
-      logg.info("waiting for prompt: %s"%(CCPROMPT))
+      #TODO  clean up 
+      logg.info("waiting for prompt: {} or {} ".format(CCPROMPT,LEGACY_PROMPT))
       egg.expect(">", timeout=3)
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
@@ -1323,18 +1325,18 @@ def main():
       loop_count = 0
       while command_sent == False and loop_count <= 6:
          loop_count += 1
-         i = egg.expect([CCPROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
+         i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
          print (egg.before.decode('utf-8', 'ignore'))
-         if i == 0:
-            logg.info("{} prompt received after command sent".format(CCPROMPT))
+         if i == 0 or i == 1:
+            logg.info("{} or {} prompt received after command sent".format(CCPROMPT, LEGACY_PROMPT))
             # granted the break will exit the loop
             command_sent = True
             break
-         if i == 1:
+         if i == 2:
             egg.sendline("y")
             command_sent = True
             break
-         if i == 2:
+         if i == 3:
             egg.sendline(NL)
 
       egg.sendline("logout")
