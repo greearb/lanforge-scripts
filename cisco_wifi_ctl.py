@@ -1325,25 +1325,30 @@ def main():
       loop_count = 0
       while command_sent == False and loop_count <= 6:
          loop_count += 1
-         i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
-         print (egg.before.decode('utf-8', 'ignore'))
-         if i == 0 or i == 1:
-            logg.info("{} or {} prompt received after command sent".format(CCPROMPT, LEGACY_PROMPT))
-            # granted the break will exit the loop
-            command_sent = True
-            break
-         if i == 2:
+         try:
+            i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
+            print (egg.before.decode('utf-8', 'ignore'))
+            if i == 0 or i == 1:
+               logg.info("{} or {} prompt received after command sent".format(CCPROMPT, LEGACY_PROMPT))
+               # granted the break will exit the loop
+               command_sent = True
+               break
+            if i == 2:
+               egg.sendline("y")
+               command_sent = True
+               break
+            if i == 3:
+               egg.sendline(NL)
+         except:
+            logg.info("exception in logout loop")      
+      try:  
+         egg.sendline("logout")
+         logg.info("logout")
+         i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
+         if i == 1:
             egg.sendline("y")
-            command_sent = True
-            break
-         if i == 3:
-            egg.sendline(NL)
-
-      egg.sendline("logout")
-      logg.info("logout")
-      i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
-      if i == 1:
-         egg.sendline("y")
+      except:
+         logg.info("exception is logout")      
 
 
 
