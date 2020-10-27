@@ -3,46 +3,54 @@
 LANforge 192.168.100.178
 Controller at 192.168.100.112 admin/Cisco123
 Controller is 192.1.0.10
-AP is 192.1.0.2
+AP is 192.1.0.2'''
 
+EPILOG = '''\
 make sure pexpect is installed:
 $ sudo yum install python3-pexpect
 $ sudo yum install python3-xlsxwriter
 
-You might need to install pexpect-serial using pip:
-$ pip3 install pexpect-serial
-$ pip3 install XlsxWriter
+You might need to install pexpect-serial using pip: 
+$ pip3 install pexpect-serial 
+$ pip3 install XlsxWriter 
 
 This script will automatically create and start a layer-3 UDP connection between the
 configured upstream port and station.
 
-The user is responsible for setting up the station oustide of this script, however.
+The user also has the option of setting up the station oustide of this script, however.
 
-# Example run to cycle through all 8 power settings
+# Examples:
 # See cisco_power_results.txt when complete.
+# See cisco_power_results.xlsx when complete.
+
+./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 2043 --scheme telnet --ap "APA453.0E7B.CF60" \ 
+    --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
+    --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
+    --wlan open-wlan --wlanID 1 --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
+    --verbose  --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1 --verbose
 
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
-  --band a --upstream_port eth2 --lfresource2 2
+  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 \
+  --band a --upstream_port eth2 --lfresource2 2 --verbose \
 
-# Per-channel path-loss example
+# Per-channel path-loss example station present
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
-  --band a --upstream_port eth2 --lfresource2 2
+  --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --antenna_gain 5 --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
+  --band a --upstream_port eth2 --lfresource2 2 --verbose
 
 # To create a station run test against station create open-wlan 
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
---station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --band a \
+--station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
---ssidpw [BLANK] --security open
+--ssidpw [BLANK] --security open --verbose
 
 # station already present
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
---station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --band a \
---upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 
+--station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
+--upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --verbose
 
 # to create a station 
-./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1\
+./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1 \
 --first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
 
 
@@ -166,7 +174,8 @@ def main():
 
    scheme = "ssh"
 
-   parser = argparse.ArgumentParser(description="Cisco TX Power report Script")
+   parser = argparse.ArgumentParser(description="Cisco TX Power report Script",epilog=EPILOG,
+      formatter_class=argparse.RawTextHelpFormatter)
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
    parser.add_argument("-o", "--port",    type=str, help="control port on the controller", default=23)
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
