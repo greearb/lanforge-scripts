@@ -1339,6 +1339,9 @@ def main():
                break
             if i == 3:
                egg.sendline(NL)
+               logg.info(" check prompt received exiting")
+               command_sent = True
+
          except:
             logg.info("exception in logout loop")      
       try:  
