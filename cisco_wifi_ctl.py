@@ -1333,17 +1333,14 @@ def main():
                logg.info("{} prompt received after command sent".format(CCPROMPT))
                # granted the break will exit the loop
                command_sent = True
-               break
             if i == 1:
                logg.info("{} prompt received after command sent".format(LEGACY_PROMPT))
                # granted the break will exit the loop
                if loop_count > 2:
                   command_sent = True
-               break
             if i == 2:
                egg.sendline("y")
                command_sent = True
-               break
             if i == 3:
                egg.sendline(NL)
                logg.info("received --More-- or")
