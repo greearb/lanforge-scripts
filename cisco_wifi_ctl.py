@@ -1099,17 +1099,25 @@ def main():
                logg.info("timed out on command prompt (config-policy-tag)# for command {}".format(command))   
       if i == 1:
          logg.info("did not get the (config)# prompt")
+   if (args.action == "debug_disable_all"):
+      if args.series == "9800":
+         logg.info("action {} not avilable on 9800".format(args.action))
+      else:
+         command = "debug disable-all"
 
    if (args.action == "no_logging_console"):
-      logg.info("send no logging console")
-      egg.sendline("config t")
-      sleep(0.2)
-      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      if i == 0:
-         egg.sendline("no logging console")
+      if args.series == "9800": 
+         logg.info("send no logging console")
+         egg.sendline("config t")
          sleep(0.2)
-      if i == 1:
-         logg.info("did not get the (config)# prompt")   
+         i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            egg.sendline("no logging console")
+            sleep(0.2)
+         if i == 1:
+            logg.info("did not get the (config)# prompt")  
+      else:
+         command = "config logging console debugging disable" 
 
    if (args.action == "line_console_0"):
       logg.info("send: line console 0")
