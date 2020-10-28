@@ -1354,11 +1354,11 @@ def main():
       try:  
          egg.sendline("logout")
          logg.info("logout")
-         i = egg.expect([LOGOUTPROMPT, EXITPROMPT, CLOSEDBYREMOTE, CLOSEDCX,pexpect.TIMEOUT],timeout=3)
-         if i == 1:
-            egg.sendline("y")
+         logg.info("send close to the egg child process")   
+         egg.close(force = True)   
+         sleep(0.1)
       except:
-         logg.info("exception is logout")      
+         logg.info("exception on logout")      
 
 
 
