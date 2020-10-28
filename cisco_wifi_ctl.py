@@ -107,7 +107,7 @@ def main():
                        choices=["a", "b", "abgn"])
 
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["config", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
+      choices=["config", "debug_disable_all","no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
