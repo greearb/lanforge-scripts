@@ -1327,9 +1327,16 @@ def main():
          loop_count += 1
          try:
             i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=3)
-            print (egg.before.decode('utf-8', 'ignore'))
-            if i == 0 or i == 1:
-               logg.info("{} or {} prompt received after command sent".format(CCPROMPT, LEGACY_PROMPT))
+            logg.info("before {} after {}".format(egg.before,egg.after))
+            if i == 0: 
+               logg.info("{} prompt received after command sent".format(CCPROMPT))
+               logg.info("before {} after {}".format(egg.before,egg.after))
+               # granted the break will exit the loop
+               command_sent = True
+               break
+            if i == 1:
+               logg.info("{} prompt received after command sent".format(LEGACY_PROMPT))
+               logg.info("before {} after {}".format(egg.before,egg.after))
                # granted the break will exit the loop
                command_sent = True
                break
@@ -1340,13 +1347,17 @@ def main():
             if i == 3:
                egg.sendline(NL)
                logg.info("received --More-- or")
+               logg.info("before {} after {}".format(egg.before,egg.after))
+
             if i == 4:
                egg.sendline(NL)
                logg.info("received config paging disable exiting")
-               command_sent = True
+               logg.info("before {} after {}".format(egg.before,egg.after))
+               #command_sent = True
             if i == 5:
                egg.sendline(NL)
-               logg.info(" TIME OUT check to see if logging to console is disabled")
+               logg.info(" Check to see if logging to console is disabled")
+               logg.info("before {} after {}".format(egg.before,egg.after))
                command_sent = True              
 
          except:
