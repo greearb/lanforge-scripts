@@ -1326,7 +1326,7 @@ def main():
       while command_sent == False and loop_count <= 6:
          loop_count += 1
          try:
-            i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or',pexpect.TIMEOUT],timeout=3)
+            i = egg.expect([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=3)
             print (egg.before.decode('utf-8', 'ignore'))
             if i == 0 or i == 1:
                logg.info("{} or {} prompt received after command sent".format(CCPROMPT, LEGACY_PROMPT))
@@ -1339,8 +1339,15 @@ def main():
                break
             if i == 3:
                egg.sendline(NL)
-               logg.info(" check prompt received exiting")
+               logg.info("received --More-- or")
+            if i == 4:
+               egg.sendline(NL)
+               logg.info("received config paging disable exiting")
                command_sent = True
+            if i == 5:
+               egg.sendline(NL)
+               logg.info(" TIME OUT check to see if logging to console is disabled")
+               command_sent = True              
 
          except:
             logg.info("exception in logout loop")      
