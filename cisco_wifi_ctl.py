@@ -1354,7 +1354,7 @@ def main():
                logg.info("received --More-- or")
             if i == 4:
                egg.sendline(NL)
-               logg.info("received config paging disable exiting")
+               logg.info("received: config paging disable ")
                
             if i == 5:
                egg.sendline(NL)
