@@ -1323,11 +1323,12 @@ def main():
 
       command_sent = False
       loop_count = 0
-      while command_sent == False and loop_count <= 6:
+      while command_sent == False and loop_count <= 3:
          loop_count += 1
          try:
-            i = egg.expect_exact([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=3)
+            i = egg.expect_exact([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=2)
             logg.info("before {} after {}".format(egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
+            print(egg.before.decode('utf-8', 'ignore'))
             if i == 0: 
                logg.info("{} prompt received after command sent".format(CCPROMPT))
                # granted the break will exit the loop
@@ -1336,7 +1337,8 @@ def main():
             if i == 1:
                logg.info("{} prompt received after command sent".format(LEGACY_PROMPT))
                # granted the break will exit the loop
-               command_sent = True
+               if loop_count > 2:
+                  command_sent = True
                break
             if i == 2:
                egg.sendline("y")
@@ -1348,7 +1350,7 @@ def main():
             if i == 4:
                egg.sendline(NL)
                logg.info("received config paging disable exiting")
-               #command_sent = True
+               
             if i == 5:
                egg.sendline(NL)
                logg.info(" Check to see if logging to console is disabled")
