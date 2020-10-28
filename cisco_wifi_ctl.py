@@ -1117,7 +1117,7 @@ def main():
          if i == 1:
             logg.info("did not get the (config)# prompt")  
       else:
-         command = "config logging console debugging disable" 
+         command = "config logging debug console disable" 
 
    if (args.action == "line_console_0"):
       logg.info("send: line console 0")
