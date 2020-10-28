@@ -1330,9 +1330,11 @@ class GenCXProfile(LFCliBase):
                 #print(self.cmd)
             else:
                 raise ValueError("Please ensure dest and interval have been set correctly")
-        if self.type == "generic":
+        elif self.type == "generic":
             if self.cmd == "":
                 raise ValueError("Please ensure cmd has been set correctly")
+        elif self.type == "speedtest":
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
         else:
             raise ValueError("Unknown command type")
 
