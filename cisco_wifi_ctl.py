@@ -880,8 +880,8 @@ def main():
    CCPROMPT = args.prompt  #'\(Voice-Talwar\) >'
    LEGACY_PROMPT = "(cisco) >"
    LOGOUTPROMPT = 'User:'
-   EXITPROMPT = "Would you like to save them now\? \(y/N\)"
-   AREYOUSURE = "Are you sure you want to continue\? \(y/n\)"
+   EXITPROMPT = "Would you like to save them now? (y/N)"
+   AREYOUSURE = "Are you sure you want to continue? (y/n)"
    CLOSEDBYREMOTE = "closed by remote host."
    CLOSEDCX = "Connection to .* closed."
 
