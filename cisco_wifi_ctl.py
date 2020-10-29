@@ -1362,7 +1362,7 @@ def main():
                command_sent = True              
 
          except:
-            logg.info("exception in logout loop")      
+            logg.info("closing connection logout loop")      
       try:  
          egg.sendline("logout")
          logg.info("logout")
@@ -1370,7 +1370,7 @@ def main():
          egg.close(force = True)   
          sleep(0.1)
       except:
-         logg.info("exception on logout")      
+         logg.info("closing connection on logout")      
 
 
 
