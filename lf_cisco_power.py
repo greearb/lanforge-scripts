@@ -442,6 +442,8 @@ def main():
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
+   worksheet.set_column(col, col, 12) # Set width
+   worksheet.write(row, col, 'Time\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
    row += 1
@@ -1203,26 +1205,28 @@ def main():
                        
                    print("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
+
+
                    if (pf == 0):
                        pfs = "FAIL"
-                       
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                   time_stamp = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())    
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
                        myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                        cc_mac, cc_ch, cc_power, cc_dbm,
                        calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                       diff_a1, diff_a2, diff_a3, diff_a4, pfs
+                       diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp
                      )
 
                    #print("RESULT: %s"%(ln))
                    csv.write(ln)
                    csv.write("\t")
 
-                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
+                   ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
                        myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
                        antstr,
                        calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                       diff_a1, diff_a2, diff_a3, diff_a4, pfs
+                       diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp
                        )
                    csvs.write(ln)
                    csvs.write("\t")
@@ -1274,7 +1278,7 @@ def main():
                        worksheet.write(row, col, pfs, red); col += 1
                    else:
                        worksheet.write(row, col, pfs, green); col += 1
-
+                   worksheet.write(row, col, time_stamp, center_pink); col += 1
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
                        e_tot += err
