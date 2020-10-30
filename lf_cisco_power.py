@@ -446,7 +446,7 @@ def main():
    worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
    worksheet.set_column(col, col, 24) # Set width
-   worksheet.write(row, col, 'Time\n4', dyel_bold); col += 1
+   worksheet.write(row, col, 'Time Stamp\n', dgreen_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
    row += 1
@@ -1282,7 +1282,7 @@ def main():
                        worksheet.write(row, col, pfs, red); col += 1
                    else:
                        worksheet.write(row, col, pfs, green); col += 1
-                   worksheet.write(row, col, time_stamp, center_pink); col += 1
+                   worksheet.write(row, col, time_stamp, green); col += 1
                    if (_bw != bw):
                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  "%(bw, _bw)
                        e_tot += err
