@@ -99,7 +99,7 @@ def main():
                                         end_id_=num_sta-1,
                                         padding_number_=10000,
                                         radio=args.radio)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio
+    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
                        security=args.security, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
