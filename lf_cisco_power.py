@@ -161,6 +161,12 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
+def test_exit(workbook):
+   workbook.close()
+   sleep(0.5)
+   exit(1)
+
+
 def main():
    global lfmgr
    global lfstation
@@ -217,6 +223,8 @@ def main():
    parser.add_argument("--cleanup", help="--cleanup , Clean up stations after test completes ", action='store_true')
    parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
    parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
+   parser.add_argument("--exit_on_fail",    help="--exit_on_fail,  exit on test failure", action='store_true')
+   parser.add_argument("--exit_on_error",   help="--exit_on_error, exit on test error, test mechanics failed", action='store_true')
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -278,9 +286,9 @@ def main():
 
       filehandler = None
    except Exception as e:
-      logging.exception(e);
+      logging.exception(e)
       usage()
-      exit(2);
+      exit(2)
 
    console_handler = logging.StreamHandler()
    formatter = logging.Formatter(FORMAT)
@@ -1208,10 +1216,9 @@ def main():
                        
                    print("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
-
-
                    if (pf == 0):
                        pfs = "FAIL"
+                       
 
                    time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
@@ -1307,6 +1314,20 @@ def main():
 
                    csvs.write("\n");
                    csvs.flush()
+
+                   # write out the data and exit on failure
+                   if (pf == 0):
+                       if(args.exit_on_fail):
+                           print("EXITING ON FAILURE, exit_on_fail set ")
+                           workbook.close()
+                           sleep(0.5)
+                           exit(1)
+                   if (e_tot != ""):
+                       if(args.exit_on_error):
+                           print("EXITING ON ERROR, exit_on_error set ")
+                           workbook.close()
+                           sleep(0.5)
+                           exit(1)
 
    workbook.close()
 
