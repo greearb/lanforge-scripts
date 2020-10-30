@@ -1189,7 +1189,7 @@ def main():
                            failed_low += 1
                            least = min(least, diff_a4)
 
-                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low > 1)):
+                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= 1)):
                            pf = 0
 
                        if (diff_a1 > pfrange):
