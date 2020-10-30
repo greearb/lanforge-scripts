@@ -31,7 +31,9 @@ python3 scenario.py --quiesce test_group1
 python3 scenario.py --stop test_group1
 ''')
 
-parser.add_argument('--load', help='name of database to load', default="DFLT")
+group = parser.add_mutually_exclusive_group()
+
+parser.add_argument('--load', help='name of database to load', default=None)
 
 parser.add_argument('--action', help='action to take with database {overwrite | append}', default="overwrite")
 
@@ -43,7 +45,6 @@ parser.add_argument('--clean_chambers',
                     help='use to cleanup Chambers will be when overwrite is selected, otherwise they will be kept',
                     action="store_true")
 
-group = parser.add_mutually_exclusive_group()
 group.add_argument('--start', help='name of test group to start', default=None)
 group.add_argument('--quiesce', help='name of test group to quiesce', default=None)
 group.add_argument('--stop', help='name of test group to stop', default=None)
@@ -62,11 +63,15 @@ if args.load is not None:
         data['clean_dut'] = "yes"
     if args.clean_chambers:
         data['clean_chambers'] = "yes"
+    print("Loading database %s" % args.load)
     local_realm.json_post("/cli-json/load", data)
 
 elif args.start is not None:
+    print("Starting test group %s..." % args.start)
     local_realm.json_post("/cli-json/start_group", {"name": args.start})
 elif args.stop is not None:
+    print("Stopping test group %s..." % args.stop)
     local_realm.json_post("/cli-json/stop_group", {"name": args.stop})
 elif args.quiesce is not None:
+    print("Quiescing test group %s..." % args.quiesce)
     local_realm.json_post("/cli-json/quiesce_group", {"name": args.quiesce})
