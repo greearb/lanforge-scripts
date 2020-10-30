@@ -445,11 +445,7 @@ def main():
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
-<<<<<<< HEAD
-   worksheet.set_column(col, col, 12) # Set width
-=======
    worksheet.set_column(col, col, 24) # Set width
->>>>>>> a41a41e... lf_cisco_power.py: add timestamp to results
    worksheet.write(row, col, 'Time\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
@@ -1216,12 +1212,8 @@ def main():
 
                    if (pf == 0):
                        pfs = "FAIL"
-<<<<<<< HEAD
-                   time_stamp = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())    
-=======
 
                    time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
->>>>>>> a41a41e... lf_cisco_power.py: add timestamp to results
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
                        myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
