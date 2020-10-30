@@ -75,6 +75,7 @@ import pprint
 import argparse
 import subprocess
 import xlsxwriter
+import math
 
 NL = "\n"
 CR = "\r\n"
@@ -217,6 +218,8 @@ def main():
    parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
    parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
 
+   #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
+   #print(current_time)
 
    args = None
    try:
@@ -329,13 +332,13 @@ def main():
         
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
+   csv.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tTimeStamp\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
    csv.write("\n");
    csv.flush()
 
    # Summary spread-sheet data
    csvs = open(outfile, "w")
-   csvs.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tWarnings-and-Errors"%(pf_dbm))
+   csvs.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tAP Channel\tNSS\tAP BW\tTx Power\tAllowed Per-Path\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tTimeStamp\tWarnings-and-Errors"%(pf_dbm))
    csvs.write("\n");
    csvs.flush()
 
@@ -442,7 +445,11 @@ def main():
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
+<<<<<<< HEAD
    worksheet.set_column(col, col, 12) # Set width
+=======
+   worksheet.set_column(col, col, 24) # Set width
+>>>>>>> a41a41e... lf_cisco_power.py: add timestamp to results
    worksheet.write(row, col, 'Time\n4', dyel_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
    worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
@@ -1209,7 +1216,12 @@ def main():
 
                    if (pf == 0):
                        pfs = "FAIL"
+<<<<<<< HEAD
                    time_stamp = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())    
+=======
+
+                   time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
+>>>>>>> a41a41e... lf_cisco_power.py: add timestamp to results
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
                        myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                        antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
