@@ -18,7 +18,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", radio = "wiphy0", _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", radio ="wiphy0", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -98,14 +98,15 @@ def main():
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = int(args.num_stations)
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
 
     station_list = LFUtils.portNameSeries(prefix_="sta", 
                                         start_id_=0, 
                                         end_id_=num_sta-1, 
                                         padding_number_=10000,
                                         radio=args.radio)
-                                        
+
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
                        security=args.security, sta_list=station_list)
    # ip_test = IPv4Test(lfjson_host, lfjson_port, ssid="jedway-wpa-1", password="jedway-wpa-1",
