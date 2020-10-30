@@ -208,6 +208,7 @@ TBD
     parser.add_argument('--vr_name', help='--vr_name sets the name to be used by the virtual router', default="vr_test")
 
     args = parser.parse_args()
+    num_sta=2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted

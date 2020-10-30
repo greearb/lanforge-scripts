@@ -192,6 +192,7 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
     args = parser.parse_args()
+    num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
