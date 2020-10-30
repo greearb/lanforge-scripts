@@ -192,8 +192,11 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
     args = parser.parse_args()
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
     ip_var_test = IPV6VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
