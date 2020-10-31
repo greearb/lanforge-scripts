@@ -71,7 +71,6 @@ import re
 import logging
 import time
 from time import sleep
-import pprint
 import argparse
 import subprocess
 import xlsxwriter
@@ -183,48 +182,50 @@ def main():
 
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script",epilog=EPILOG,
       formatter_class=argparse.RawTextHelpFormatter)
-   parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",    type=str, help="control port on the controller", default=23)
-   parser.add_argument("-u", "--user",    type=str, help="credential login/username")
-   parser.add_argument("-p", "--passwd",  type=str, help="credential password")
-   parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
-   parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
-   parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
-   parser.add_argument("-a", "--ap",       type=str, help="select AP")
+   parser.add_argument("-d", "--dest",       type=str, help="address of the cisco controller")
+   parser.add_argument("-o", "--port",       type=str, help="control port on the controller", default=23)
+   parser.add_argument("-u", "--user",       type=str, help="credential login/username")
+   parser.add_argument("-p", "--passwd",     type=str, help="credential password")
+   parser.add_argument("-s", "--scheme",     type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
+   parser.add_argument("-t", "--tty",        type=str, help="tty serial device")
+   parser.add_argument("-l", "--log",        type=str, help="logfile for messages, stdout means output to console",default="stdout")
+   parser.add_argument("-a", "--ap",         type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
    parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",    type=str, help="List of txpowers to test.  NA means no change")
-   parser.add_argument("-k","--keep_state", help="keep the state, no configuration change at the end of the test",action="store_true")
-   parser.add_argument("--station",        type=str, help="LANforge station to use (sta0000, etc)")
-   parser.add_argument("--upstream_port",  type=str, help="LANforge upsteram-port to use (eth1, etc)")
-   parser.add_argument("--lfmgr",        type=str, help="LANforge Manager IP address")
-   parser.add_argument("--lfresource",        type=str, help="LANforge resource ID for the station")
-   parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
-   parser.add_argument("--outfile",     type=str, help="Output file for csv data",default="cisco_power_results")
-   parser.add_argument("--pathloss",     type=str, help="Calculated pathloss between LANforge Station and AP")
+   parser.add_argument("-k","--keep_state",  action="store_true",help="keep the state, no configuration change at the end of the test")
+   parser.add_argument('-D','--duration',    type=str, help='--traffic <how long to run in seconds>  example -t 10 (seconds) default: 10 ',default='10')
+   parser.add_argument("--station",          type=str, help="LANforge station to use (sta0000, etc)")
+   parser.add_argument("--upstream_port",    type=str, help="LANforge upsteram-port to use (eth1, etc)")
+   parser.add_argument("--lfmgr",            type=str, help="LANforge Manager IP address")
+   parser.add_argument("--lfresource",       type=str, help="LANforge resource ID for the station")
+   parser.add_argument("--lfresource2",      type=str, help="LANforge resource ID for the upstream port system")
+   parser.add_argument("--outfile",          type=str, help="Output file for csv data",default="cisco_power_results")
+   parser.add_argument("--pathloss",         type=str, help="Calculated pathloss between LANforge Station and AP")
    parser.add_argument("--antenna_gain",     type=str, help="Antenna gain,  take into account the gain due to the antenna")
-   parser.add_argument("--band",    type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
+   parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
-   parser.add_argument("--pf_dbm",        type=str, help="Pass/Fail threshold.  Default is 6")
-   parser.add_argument("--pf_a4_dropoff", type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
-   parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-   parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",        type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
-   parser.add_argument("--wlanID",      type=str, help="--wlanID  9800 , defaults to 1",default="1")
-   parser.add_argument("--series",        type=str, help="--series  9800 , defaults to 3504",default="3504")
-   parser.add_argument("--slot",        type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
-   parser.add_argument("--rssi",    type=str, help="Select rssi to use for calculation (combined | beacon) Default is combined",choices=["beacon","combined"])
-   parser.add_argument("--create_station",       type=str, help="create LANforge station at the beginning of the test")
-   parser.add_argument("--radio",       type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",       type=str, help="ssid default open-wlan",default="open-wlan")
-   parser.add_argument("--ssidpw",       type=str, help="ssidpw default [BLANK]",default="[BLANK]")
-   parser.add_argument("--security",       type=str, help="security default open",default="open")
-   parser.add_argument("--cleanup", help="--cleanup , Clean up stations after test completes ", action='store_true')
-   parser.add_argument("--vht160", help="--vht160 , Enable VHT160 in lanforge ", action='store_true')
-   parser.add_argument("--verbose",    help="--verbose , switch present will have verbose logging", action='store_true')
-   parser.add_argument("--exit_on_fail",    help="--exit_on_fail,  exit on test failure", action='store_true')
-   parser.add_argument("--exit_on_error",   help="--exit_on_error, exit on test error, test mechanics failed", action='store_true')
+   parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6")
+   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
+   parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+   parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
+   parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1")
+   parser.add_argument("--series",           type=str, help="--series  9800 , defaults to 3504",default="3504")
+   parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
+   parser.add_argument("--rssi",             type=str, help="Select rssi to use for calculation (combined | beacon) Default is combined",choices=["beacon","combined"])
+   parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
+   parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
+   parser.add_argument("--ssid",             type=str, help="ssid default open-wlan",default="open-wlan")
+   parser.add_argument("--ssidpw",           type=str, help="ssidpw default [BLANK]",default="[BLANK]")
+   parser.add_argument("--security",         type=str, help="security default open",default="open")
+   parser.add_argument("--cleanup",          action='store_true',help="--cleanup , Clean up stations after test completes ")
+   parser.add_argument("--vht160",           action='store_true',help="--vht160 , Enable VHT160 in lanforge ")
+   parser.add_argument("--verbose",          action='store_true',help="--verbose , switch present will have verbose logging")
+   parser.add_argument("--exit_on_fail",     action='store_true',help="--exit_on_fail,  exit on test failure")
+   parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
+
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -232,13 +233,9 @@ def main():
    args = None
    try:
       args = parser.parse_args()
-      host = args.dest
       if (args.scheme != None):
          scheme = args.scheme
-      user = args.user
-      passwd = args.passwd
       logfile = args.log
-      port = args.port
       if (args.station != None):
           lfstation = args.station
       if (args.create_station != None):
@@ -284,7 +281,6 @@ def main():
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
 
-      filehandler = None
    except Exception as e:
       logging.exception(e)
       usage()
@@ -356,7 +352,7 @@ def main():
    workbook = xlsxwriter.Workbook(outfile_xlsx)
    worksheet = workbook.add_worksheet()
 
-   bold = workbook.add_format({'bold': True, 'align': 'center'})
+   #bold = workbook.add_format({'bold': True, 'align': 'center'})
    dblue_bold = workbook.add_format({'bold': True, 'align': 'center'})
    dblue_bold.set_bg_color("#b8cbe4")
    dblue_bold.set_border(1)
@@ -378,7 +374,7 @@ def main():
    dgreen_bold_left = workbook.add_format({'bold': True, 'align': 'left'})
    dgreen_bold_left.set_bg_color("#c6e0b4")
    dgreen_bold_left.set_border(1)
-   center = workbook.add_format({'align': 'center'})
+   #center = workbook.add_format({'align': 'center'})
    center_blue = workbook.add_format({'align': 'center'})
    center_blue.set_bg_color("#dbe5f1")
    center_blue.set_border(1)
@@ -972,8 +968,8 @@ def main():
                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
 
                    # Wait 10 more seconds
-                   logg.info("Waiting 10 seconds to let traffic run for a bit, Channel %s NSS %s BW %s TX-Power %s"%(ch, n, bw, tx))
-                   time.sleep(10)
+                   logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration,ch, n, bw, tx))
+                   time.sleep(int(args.duration))
 
                    # Gather probe results and record data, verify NSS, BW, Channel
                    i = 0;
