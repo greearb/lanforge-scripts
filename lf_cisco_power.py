@@ -975,6 +975,7 @@ def main():
                    i = 0;
                    beacon_sig = None
                    sig = None
+                   pf = 1
                    ants = []
                    while True:                       
                        time.sleep(1)
@@ -1101,10 +1102,12 @@ def main():
                    if (sig == None):
                        e_tot += "ERROR:  Could not detect signal level.  "
                        sig = -100
+                       pf = 0
 
                    if (beacon_sig == None):   
                        e_tot += "ERROR:  Could not detect beacon signal level.  "
                        beacon_sig = -100
+                       pf = 0
 
                    pi = int(pathloss)
                    ag = int(antenna_gain)   
@@ -1144,7 +1147,6 @@ def main():
                    else:
                       cc_dbmi = int(cc_dbm)
                    diff_dbm = calc_dbm - cc_dbmi
-                   pf = 1
                    pfs = "PASS"
                    pfrange = pf_dbm;
 
