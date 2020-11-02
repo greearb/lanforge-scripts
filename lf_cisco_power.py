@@ -22,8 +22,9 @@ The user also has the option of setting up the station oustide of this script, h
 # Examples:
 # See cisco_power_results.txt when complete.
 # See cisco_power_results.xlsx when complete.
+NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
-./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 2043 --scheme telnet --ap "APA453.0E7B.CF60" \ 
+./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
     --wlan open-wlan --wlanID 1 --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
@@ -39,13 +40,13 @@ The user also has the option of setting up the station oustide of this script, h
   --band a --upstream_port eth2 --lfresource2 2 --verbose
 
 # To create a station run test against station create open-wlan 
-./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open --verbose
 
 # station already present
-./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 2043 --scheme telnet --ap AP6C71.0DE6.45D0 \
+./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --verbose
 
