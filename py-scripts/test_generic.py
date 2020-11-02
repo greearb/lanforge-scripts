@@ -37,9 +37,12 @@ class GenTest(LFCliBase):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.speedtest_min_up = float(speedtest_min_up)
-        self.speedtest_min_dl = float(speedtest_min_dl)
-        self.speedtest_max_ping = float(speedtest_max_ping)
+        if (speedtest_min_up is not None):
+            self.speedtest_min_up = float(speedtest_min_up)
+        if (speedtest_min_dl is not None):
+            self.speedtest_min_dl = float(speedtest_min_dl)
+        if (speedtest_max_ping is not None):
+            self.speedtest_max_ping = float(speedtest_max_ping)
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
@@ -126,6 +129,8 @@ class GenTest(LFCliBase):
                 result = self.choose_lfcurl_command()
             elif self.generic_endps_profile.type == "speedtest":
                 result = self.choose_speedtest_command()
+            elif self.generic_endps_profile.type == "iperf3":
+                continue
             else:
                 continue
 
@@ -178,16 +183,16 @@ def main():
         description='''test_generic.py
 --------------------
 Generic command example:
-python3 ./test_generic.py --upstream_port eth1 \\
-    --radio wiphy0 \\
-    --num_stations 3 \\
-    --security {open|wep|wpa|wpa2|wpa3} \\
-    --ssid netgear \\
-    --passwd admin123 \\
-    --type lfping # {generic|lfping|iperf3|lf_curl} \\
-    --dest 10.40.0.1 \\
-    --test_duration 2m \\
-    --interval 1s \\
+python3 ./test_generic.py --upstream_port eth1 
+    --radio wiphy0 
+    --num_stations 3 
+    --security {open|wep|wpa|wpa2|wpa3} 
+    --ssid netgear 
+    --passwd admin123 
+    --type lfping  {generic|lfping|iperf3|lf_curl} 
+    --dest 10.40.0.1
+    --test_duration 2m 
+    --interval 1s 
     --debug 
 ''')
 
