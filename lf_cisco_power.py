@@ -1096,6 +1096,7 @@ def main():
                        if (_noise_i == 0):
                            # Guess we could not detect noise properly?
                            e_tot += "WARNING:  Invalid noise-floor, calculations may be inaccurate.  "
+                           pf = 0
                        else:
                            rssi_adj = (_noise_i - nf_at_calibration)
 
