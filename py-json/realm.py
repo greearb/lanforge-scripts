@@ -1335,6 +1335,9 @@ class GenCXProfile(LFCliBase):
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+        elif self.type == "iperf3" and self.dest is not None:
+            self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
+                       "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
         else:
             raise ValueError("Unknown command type")
 
