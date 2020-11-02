@@ -23,8 +23,8 @@ def usage():
     print("-t  | --to      email send to   --to <reciever>@gmail.com required = True")
     print("-su | --subject email subject   --subject <title>  default Lanforge Report default = Lanforge Report")
     print("-b  | --body    email body      --body <body text> required = True")
-    print("-s  | --stmp    stmp server     --stmp <stmp server>  default  stmp.gmail.com  default=smtp.gmail.com")
-    print("-p  |--port     stmp port       --port <port>  default 465 (SSL)  default=465")
+    print("-s  | --smtp    smtp server     --smtp <smtp server>  default  smtp.gmail.com  default=smtp.gmail.com")
+    print("-p  | --port    smtp port       --port <port>  default 465 (SSL)  default=465")
 
 
 def main():
@@ -36,8 +36,8 @@ def main():
     parser.add_argument("-t", "--to",        type=str, help="email send to   --to <reciever>@gmail.com", required = True)
     parser.add_argument("-su", "--subject",  type=str, help="email subject   --subject <title>  default Lanforge Report", default="Lanforge Report")
     parser.add_argument("-b", "--body",      type=str, help="email body      --body <body text>", required = True)
-    parser.add_argument("-s,", "--stmp",     type=str, help="stmp server     --stmp <stmp server>  default  stmp.gmail.com ", default="smtp.gmail.com")
-    parser.add_argument("-p,", "--port",     type=str, help="stmp port       --port <port>  default 465 (SSL)", default="465")
+    parser.add_argument("-s,", "--smtp",     type=str, help="smtp server     --smtp <smtp server>  default  smtp.gmail.com ", default="smtp.gmail.com")
+    parser.add_argument("-p,", "--port",     type=str, help="smtp port       --port <port>  default 465 (SSL)", default="465")
 
 
     args = None
@@ -50,13 +50,13 @@ def main():
 
     email_text = 'Subject: {}\n\n{}'.format(args.subject, args.body )
     try:
-        server = smtplib.SMTP_SSL(args.stmp, int(args.port))
+        server = smtplib.SMTP_SSL(args.smtp, int(args.port))
         server.ehlo()
         server.login(args.user,args.passwd)
         server.sendmail(args.user, args.to, email_text)
         server.close()
 
-        print('email Sent!')
+        print('email Sent!  smtp server: {} port: {}'.format(args.smtp, args.port))
     except:
         print('email failed')
         print("Is access for less secure apps setting has been turned on for the email account?")
