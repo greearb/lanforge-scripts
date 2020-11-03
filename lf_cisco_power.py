@@ -218,7 +218,6 @@ def main():
    global upstream_port
    global pf_dbm
    global pf_a4_dropoff
-   #global email_dicts = []
 
    scheme = "ssh"
 
@@ -326,11 +325,10 @@ def main():
       if args.email:
         emails = args.email
         for _email in emails:
-           #print("email {}".format(args.email))
-           print("email {}".format(_email))
+           #print("email {}".format(_email))
            email_keys = ['user','passwd','to','smtp','port']
            _email_dict = dict(map(lambda x: x.split('=='), str(_email).replace('[','').replace(']','').replace("'","").split()))
-           print("email_dict {}".format(_email_dict))
+           #print("email_dict {}".format(_email_dict))
            for key in email_keys:
               if key not in _email_dict:
                 print("missing config, for the {}, all of the following need to be present {} ".format(key,email_keys))
