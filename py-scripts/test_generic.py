@@ -41,6 +41,7 @@ class GenTest(LFCliBase):
             self.speedtest_min_dl = float(speedtest_min_dl)
         if (speedtest_max_ping is not None):
             self.speedtest_max_ping = float(speedtest_max_ping)
+        self.debug = _debug_on
 
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
@@ -60,6 +61,7 @@ class GenTest(LFCliBase):
 
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        print(gen_results)
         if gen_results['endpoints'] is not None:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
@@ -187,8 +189,8 @@ python3 ./test_generic.py --upstream_port eth1
     --security {open|wep|wpa|wpa2|wpa3} (required)
     --ssid netgear (required)
     --passwd admin123 (required)
-    --type lfping  {generic|lfping|iperf3-client | iperf3-server |lf_curl} (required)
-    --dest 10.40.0.1 (required)
+    --type lfping  {generic|lfping|iperf3-client | speedtest | iperf3-server |lf_curl} (required)
+    --dest 10.40.0.1 (required - also target for iperf3)
     --test_duration 2m 
     --interval 1s 
     --debug 
