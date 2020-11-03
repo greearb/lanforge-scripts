@@ -1390,8 +1390,8 @@ def main():
                                for email_dict in email_dicts: 
                                    try:
                                       logg.info("Sending Email ")
-                                      subject = "Lanforge Failure"
-                                      body    = "Lanforeg Failure: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}".format(args.ap,ch, n, bw, tx, pfs, time_stamp)
+                                      subject = "Lanforge: Failure Found {}".format(outfile_xlsx)
+                                      body    = "Lanforge: Failure Found:  AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {} {}".format(args.ap,ch, n, bw, tx, pfs, time_stamp,outfile_xlsx)
                                       email_out =subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                          "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                                       pss = email_out.stdout.decode('utf-8','ignore')
@@ -1407,8 +1407,8 @@ def main():
                                for email_dict in email_dicts:
                                   try:
                                      logg.info("Sending Email ")
-                                     subject = "Lanforge Error"
-                                     body    = "Lanforeg Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}".format(args.ap, ch, n, bw, tx, pfs, time_stamp)
+                                     subject = "Lanforge: Error {}".format(outfile_xlsx)
+                                     body    = "Lanforeg: Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}  {}".format(args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
                                      email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                        "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                                      pss = email_out.stdout.decode('utf-8','ignore')
@@ -1422,8 +1422,8 @@ def main():
        for email_dict in email_dicts:
            try:
                logg.info("Sending Email ")
-               subject = "Lanforge Test Compete"
-               body    = "Lanforeg Test Complete : AP: {} time_stamp: {}".format(args.ap, time_stamp)
+               subject = "Lanforge Test Compete {}".format(outfile_xlsx)
+               body    = "Lanforeg Test Complete : AP: {} time_stamp: {}  {}".format(args.ap, time_stamp, outfile_xlsx)
                email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                pss = email_out.stdout.decode('utf-8','ignore')
