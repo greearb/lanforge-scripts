@@ -53,7 +53,7 @@ def main():
     parser.add_argument("-b", "--body",      type=str, help="email body      --body <body text>", required = True)
     parser.add_argument("-s,", "--smtp",     type=str, help="smtp server     --smtp <smtp server>  default  smtp.gmail.com ", default="smtp.gmail.com")
     parser.add_argument("-p,", "--port",     type=str, help="smtp port       --port <port>  default 465 (SSL)", default="465")
-    parser.add_argument("-l", "--log",      type=str, help="logfile for messages, stdout means output to console",default="stdout")
+    parser.add_argument("-l", "--log",       type=str, help="logfile for messages, stdout means output to console",default="stdout")
 
 
     args = None

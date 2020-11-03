@@ -1414,10 +1414,25 @@ def main():
                                      email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                        "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                                      pss = email_out.stdout.decode('utf-8','ignore')
+                                     logg.info(pss)
                                   except subprocess.CalledProcessError as process_error:
                                     logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
                            exit_test(workbook)
                             
+
+   if bool(email_dicts):
+       for email_dict in email_dicts:
+           try:
+               logg.info("Sending Email ")
+               subject = "Lanforge Test Compete"
+               body    = "Lanforeg Test Complete : AP: {} time_stamp: {}".format(args.ap, time_stamp)
+               email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+               "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+               pss = email_out.stdout.decode('utf-8','ignore')
+               logg.info(pss)
+           except subprocess.CalledProcessError as process_error:
+               logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
+
 
    workbook.close()
 
