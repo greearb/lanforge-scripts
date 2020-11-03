@@ -140,13 +140,18 @@ def usage():
    print("--slot: 9800 AP slot defaults to 1")
    print("--rssi: Select rssi to use for calculation (combined | beacon) Default is combined")
    print("--create_station", "create LANforge station at the beginning of the test")
-   print("--radio", "radio to create LANforge station on at the beginning of the test")
+   print("--radio" ,"radio to create LANforge station on at the beginning of the test")
    print("--ssid", "ssid default open-wlan")
    print("--ssidpw", "ssidpw default [BLANK]")
    print("--security", "security default open")
    print("--cleanup", "Clean up all stations after test completes, only need switch for True, Defaults False")
    print("--vht160", "Enables VHT160 in lanforge, only need switch for True, Defaults False")
    print("--verbose","switch present will have verbose logging, only need switch for True, Defaults False")
+   print("--exit_on_fail","--exit_on_fail,  exit on test failure")
+   print("--exit_on_error","--exit_on_error, exit on test error, test mechanics failed")
+   print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+
+
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -231,8 +236,7 @@ def main():
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
-   #
-
+   #usage()
    args = None
    try:
       args = parser.parse_args()
