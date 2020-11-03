@@ -1355,8 +1355,10 @@ def main():
                                     logg.info("Sending Email ")
                                     subject = "Lanforge Failure"
                                     body    = "Lanforeg Failure: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
-                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    email_out =subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                     "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                    pss = email_out.stdout.decode('utf-8','ignore')
+                                    logg.info(pss)
                                 except subprocess.CalledProcessError as process_error:
                                     logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
@@ -1369,8 +1371,9 @@ def main():
                                     logg.info("Sending Email ")
                                     subject = "Lanforge Error"
                                     body    = "Lanforeg Error: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
-                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                     "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                    pss = email_out.stdout.decode('utf-8','ignore')
                                 except subprocess.CalledProcessError as process_error:
                                     logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
