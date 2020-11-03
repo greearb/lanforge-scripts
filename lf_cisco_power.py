@@ -24,39 +24,74 @@ The user also has the option of setting up the station oustide of this script, h
 # See cisco_power_results.xlsx when complete.
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
+##########################################
+# send email and or text on --exit_on_fail
+##########################################
+./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178  
+    --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a 
+    --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] --security open  
+    -l out_file2  -D 14 --exit_on_fail 
+    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465" 
+    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"
+
+####################
+# Long duration test
+####################
 ./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
     --wlan open-wlan --wlanID 1 --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
     --verbose  --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1 --verbose
 
-./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
-  --station sta00000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 \
-  --band a --upstream_port eth2 --lfresource2 2 --verbose \
 
+###############################################
 # Per-channel path-loss example station present
+###############################################
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
   --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --antenna_gain 5 --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2 --verbose
 
-# To create a station run test against station create open-wlan 
+###############################################################
+# To create a station run test against station create open-wlan
+# ############################################################# 
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open --verbose
 
+#########################
 # station already present
+#########################
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --verbose
 
+
+######################
 # to create a station 
+######################
 ./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1 \
 --first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
 
 
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
+
+####################################################################################
+If wish to send Text after test completion follow the email format based on carrier
+####################################################################################
+Text message via email:
+
+T-Mobile – number@tmomail.net
+Virgin Mobile – number@vmobl.com
+AT&T – number@txt.att.net
+Sprint – number@messaging.sprintpcs.com
+Verizon – number@vtext.com
+Tracfone – number@mmst5.tracfone.com
+Ting – number@message.ting.com
+Boost Mobile – number@myboostmobile.com
+U.S. Cellular – number@email.uscc.net
+Metro PCS – number@mymetropcs.com
 
 '''
 
