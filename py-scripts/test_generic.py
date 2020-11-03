@@ -20,14 +20,12 @@ import json
 
 class GenTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream,
-                 number_template="000", test_duration="5m", type="lfping", dest="127.0.0.1", cmd ="",
-                 interval=1, radio="wiphy0", speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
+                 number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
+                 interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
+        super().__init__(host, port, _local_realm=realm.Realm(host,port), _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -43,7 +41,7 @@ class GenTest(LFCliBase):
             self.speedtest_min_dl = float(speedtest_min_dl)
         if (speedtest_max_ping is not None):
             self.speedtest_max_ping = float(speedtest_max_ping)
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
 
@@ -90,7 +88,7 @@ class GenTest(LFCliBase):
 
     def choose_generic_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
+        if (gen_results['endpoints'] is not None):
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
@@ -130,7 +128,7 @@ class GenTest(LFCliBase):
             elif self.generic_endps_profile.type == "speedtest":
                 result = self.choose_speedtest_command()
             elif self.generic_endps_profile.type == "iperf3":
-                continue
+                result = self.choose_iperf3_command()
             else:
                 continue
 
@@ -184,19 +182,19 @@ def main():
 --------------------
 Generic command example:
 python3 ./test_generic.py --upstream_port eth1 
-    --radio wiphy0 
+    --radio wiphy0 (required)
     --num_stations 3 
-    --security {open|wep|wpa|wpa2|wpa3} 
-    --ssid netgear 
-    --passwd admin123 
-    --type lfping  {generic|lfping|iperf3|lf_curl} 
-    --dest 10.40.0.1
+    --security {open|wep|wpa|wpa2|wpa3} (required)
+    --ssid netgear (required)
+    --passwd admin123 (required)
+    --type lfping  {generic|lfping|iperf3-client | iperf3-server |lf_curl} (required)
+    --dest 10.40.0.1 (required)
     --test_duration 2m 
     --interval 1s 
     --debug 
 ''')
 
-    parser.add_argument('--type', help='type of command to run: generic, lfping, ifperf3, lfcurl', default="lfping")
+    parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
     parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")

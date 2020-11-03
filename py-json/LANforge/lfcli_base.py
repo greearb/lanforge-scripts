@@ -26,7 +26,7 @@ class LFCliBase:
         self.lfclient_port = _lfjson_port
         self.debug = _debug
         if (_local_realm is not False):
-            self.local_realm = _local_realm;
+            self.local_realm = _local_realm
 
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
@@ -246,10 +246,10 @@ class LFCliBase:
         parser.add_argument('-u', '--upstream_port',
                             help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                             default='1.eth1')
-        parser.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', default='wiphy2')
-        parser.add_argument('--security',       help='WiFi Security protocol: <open | wep | wpa | wpa2 | wpa3 >', default='wpa2')
-        parser.add_argument('--ssid',           help='SSID for stations to associate to', default='jedway-wpa2-160')
-        parser.add_argument('--passwd',         help='WiFi passphrase', default='jedway-wpa2-160')
+        parser.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', default=None)
+        parser.add_argument('--security',       help='WiFi Security protocol: <open | wep | wpa | wpa2 | wpa3 >', default=None)
+        parser.add_argument('--ssid',           help='SSID for stations to associate to', default=None)
+        parser.add_argument('--passwd', '--passphrase', '--password', '--pwd',        help='WiFi passphrase', default=None)
         parser.add_argument('--num_stations',   help='Number of stations to create', default=2)
         parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
 
