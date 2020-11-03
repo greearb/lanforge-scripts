@@ -1349,12 +1349,11 @@ def main():
                    if (pf == 0):
                        if(args.exit_on_fail):
                            logg.info("EXITING ON FAILURE, exit_on_fail set ")
-                           exit_test(workbook)
                            if args.email != None:
                                 try:
                                     logg.info("Sending Email ")
                                     subject = "Lanforge Failure"
-                                    body    = "Lanforeg Failure: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    body    = "Lanforeg Failure: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}".format(args.ap,ch, n, bw, tx, pfs, time_stamp)
                                     email_out =subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                     "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                                     pss = email_out.stdout.decode('utf-8','ignore')
@@ -1362,20 +1361,22 @@ def main():
                                 except subprocess.CalledProcessError as process_error:
                                     logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
+                                exit_test(workbook)
                    if (e_tot != ""):
                        if(args.exit_on_error):
                            logg.info("EXITING ON ERROR, exit_on_error set ")
-                           exit_test(workbook)
                            if args.email != None:
                                 try:
                                     logg.info("Sending Email ")
                                     subject = "Lanforge Error"
-                                    body    = "Lanforeg Error: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    body    = "Lanforeg Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}".format(args.ap, ch, n, bw, tx, pfs, time_stamp)
                                     email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
                                     "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
                                     pss = email_out.stdout.decode('utf-8','ignore')
                                 except subprocess.CalledProcessError as process_error:
                                     logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
+                                exit_test(workbook)
+                            
 
    workbook.close()
 
