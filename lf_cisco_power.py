@@ -140,13 +140,18 @@ def usage():
    print("--slot: 9800 AP slot defaults to 1")
    print("--rssi: Select rssi to use for calculation (combined | beacon) Default is combined")
    print("--create_station", "create LANforge station at the beginning of the test")
-   print("--radio", "radio to create LANforge station on at the beginning of the test")
+   print("--radio" ,"radio to create LANforge station on at the beginning of the test")
    print("--ssid", "ssid default open-wlan")
    print("--ssidpw", "ssidpw default [BLANK]")
    print("--security", "security default open")
    print("--cleanup", "Clean up all stations after test completes, only need switch for True, Defaults False")
    print("--vht160", "Enables VHT160 in lanforge, only need switch for True, Defaults False")
    print("--verbose","switch present will have verbose logging, only need switch for True, Defaults False")
+   print("--exit_on_fail","--exit_on_fail,  exit on test failure")
+   print("--exit_on_error","--exit_on_error, exit on test error, test mechanics failed")
+   print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+
+
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -178,6 +183,7 @@ def main():
    global upstream_port
    global pf_dbm
    global pf_a4_dropoff
+   global email_info_dict
 
    scheme = "ssh"
 
@@ -226,11 +232,11 @@ def main():
    parser.add_argument("--verbose",          action='store_true',help="--verbose , switch present will have verbose logging")
    parser.add_argument("--exit_on_fail",     action='store_true',help="--exit_on_fail,  exit on test failure")
    parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
-
+   parser.add_argument('-e','--email',       type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
-
+   #usage()
    args = None
    try:
       args = parser.parse_args()
@@ -282,6 +288,17 @@ def main():
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
 
+      if args.email != None:
+        print("email {}".format(args.email))
+        email_keys = ['user','passwd','to','smtp','port']
+        email_dict = dict(map(lambda x: x.split('=='), str(args.email).replace('[','').replace(']','').replace("'","").split()))
+        print("email_dict {}".format(email_dict))
+
+        for key in email_keys:
+            if key not in email_dict:
+                print("missing config, for the {}, all of the following need to be present {} ".format(key,email_keys))
+                exit(1)
+        
    except Exception as e:
       logging.exception(e)
       usage()
@@ -295,6 +312,7 @@ def main():
    if (logfile is not None):
        if (logfile != "stdout"):
            file_handler = logging.FileHandler(logfile, "w")
+
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
            logg.addHandler(file_handler)
@@ -305,28 +323,31 @@ def main():
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
+   if args.email != None:
+       logg.info("email_dict {}".format(email_dict))
+
    if (args.bandwidth == None):
-       print("ERROR:  Must specify bandwidths")
+       logg.info("ERROR:  Must specify bandwidths")
        exit(1)
 
    if (args.channel == None):
-       print("ERROR:  Must specify channels")
+       logg.info("ERROR:  Must specify channels")
        exit(1)
 
    if (args.nss == None):
-       print("ERROR:  Must specify NSS")
+       logg.info("ERROR:  Must specify NSS")
        exit(1)
 
    if (args.txpower == None):
-       print("ERROR:  Must specify txpower")
+       logg.info("ERROR:  Must specify txpower")
        exit(1)
 
    if (args.pathloss == None):
-       print("ERROR:  Pathloss must be specified.")
+       logg.info("ERROR:  Pathloss must be specified.")
        exit(1)
 
    if (args.antenna_gain == None):
-       print("ERROR: Antenna gain must be specified.")
+       logg.info("ERROR: Antenna gain must be specified.")
        exit(1)
 
    if (rssi_to_use == "beacon"):
@@ -1243,6 +1264,7 @@ def main():
                        )
                    csvs.write(ln)
                    csvs.write("\t")
+                   
 
                    col = 0
                    worksheet.write(row, col, myrd, center_blue); col += 1
@@ -1322,10 +1344,29 @@ def main():
                        if(args.exit_on_fail):
                            logg.info("EXITING ON FAILURE, exit_on_fail set ")
                            exit_test(workbook)
+                           if args.email != None:
+                                try:
+                                    logg.info("Sending Email ")
+                                    subject = "Lanforge Failure"
+                                    body    = "Lanforeg Failure: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                except subprocess.CalledProcessError as process_error:
+                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
+
                    if (e_tot != ""):
                        if(args.exit_on_error):
                            logg.info("EXITING ON ERROR, exit_on_error set ")
                            exit_test(workbook)
+                           if args.email != None:
+                                try:
+                                    logg.info("Sending Email ")
+                                    subject = "Lanforge Error"
+                                    body    = "Lanforeg Error: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                except subprocess.CalledProcessError as process_error:
+                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
    workbook.close()
 
