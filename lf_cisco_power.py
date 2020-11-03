@@ -178,6 +178,7 @@ def main():
    global upstream_port
    global pf_dbm
    global pf_a4_dropoff
+   global email_info_dict
 
    scheme = "ssh"
 
@@ -226,10 +227,11 @@ def main():
    parser.add_argument("--verbose",          action='store_true',help="--verbose , switch present will have verbose logging")
    parser.add_argument("--exit_on_fail",     action='store_true',help="--exit_on_fail,  exit on test failure")
    parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
-
+   parser.add_argument('-e','--email',       type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
+   #
 
    args = None
    try:
@@ -282,6 +284,17 @@ def main():
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
 
+      if args.email != None:
+        print("email {}".format(args.email))
+        email_keys = ['user','passwd','to','smtp','port']
+        email_info_dict = dict(map(lambda x: x.split('=='), str(args.email).replace('[','').replace(']','').replace("'","").split()))
+        print("email_dict {}".format(email_info_dict))
+
+        for key in email_keys:
+            if key not in email_info_dict:
+                print("missing config, for the {}, all of the following need to be present {} ".format(key,email_keys))
+                exit(1)
+        
    except Exception as e:
       logging.exception(e)
       usage()
