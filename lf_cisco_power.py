@@ -327,7 +327,7 @@ def main():
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
-   if boo(email_dicts):
+   if bool(email_dicts):
        logg.info("email_dicts {}".format(email_dicts))
 
    if args.outfile != None:
