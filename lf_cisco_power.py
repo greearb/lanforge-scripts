@@ -287,11 +287,11 @@ def main():
       if args.email != None:
         print("email {}".format(args.email))
         email_keys = ['user','passwd','to','smtp','port']
-        email_info_dict = dict(map(lambda x: x.split('=='), str(args.email).replace('[','').replace(']','').replace("'","").split()))
-        print("email_dict {}".format(email_info_dict))
+        email_dict = dict(map(lambda x: x.split('=='), str(args.email).replace('[','').replace(']','').replace("'","").split()))
+        print("email_dict {}".format(email_dict))
 
         for key in email_keys:
-            if key not in email_info_dict:
+            if key not in email_dict:
                 print("missing config, for the {}, all of the following need to be present {} ".format(key,email_keys))
                 exit(1)
         
@@ -308,6 +308,7 @@ def main():
    if (logfile is not None):
        if (logfile != "stdout"):
            file_handler = logging.FileHandler(logfile, "w")
+
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
            logg.addHandler(file_handler)
@@ -1256,6 +1257,7 @@ def main():
                        )
                    csvs.write(ln)
                    csvs.write("\t")
+                   
 
                    col = 0
                    worksheet.write(row, col, myrd, center_blue); col += 1
@@ -1335,10 +1337,29 @@ def main():
                        if(args.exit_on_fail):
                            logg.info("EXITING ON FAILURE, exit_on_fail set ")
                            exit_test(workbook)
+                           if args.email != None:
+                                try:
+                                    logg.info("Sending Email ")
+                                    subject = "Lanforge Failure"
+                                    body    = "Lanforeg Failure: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                except subprocess.CalledProcessError as process_error:
+                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
+
                    if (e_tot != ""):
                        if(args.exit_on_error):
                            logg.info("EXITING ON ERROR, exit_on_error set ")
                            exit_test(workbook)
+                           if args.email != None:
+                                try:
+                                    logg.info("Sending Email ")
+                                    subject = "Lanforge Error"
+                                    body    = "Lanforeg Error: AP: {} ch: {} bw: {} tx: {} pfs: {} time_stamp: {}".format(_ap, _ch, _bw, tx, pfs, time_stamp)
+                                    subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                    "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                except subprocess.CalledProcessError as process_error:
+                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
    workbook.close()
 
