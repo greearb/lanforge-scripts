@@ -326,6 +326,12 @@ def main():
    if args.email != None:
        logg.info("email_dict {}".format(email_dict))
 
+   if args.outfile != None:
+       logg.info("output file: {}".format(outfile))
+       logg.info("output file full: {}".format(full_outfile))
+       logg.info("output file xlsx: {}".format(outfile_xlsx))
+
+
    if (args.bandwidth == None):
        logg.info("ERROR:  Must specify bandwidths")
        exit(1)
