@@ -323,28 +323,31 @@ def main():
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
+   if args.email != None:
+       logg.info("email_dict {}".format(email_dict))
+
    if (args.bandwidth == None):
-       print("ERROR:  Must specify bandwidths")
+       logg.info("ERROR:  Must specify bandwidths")
        exit(1)
 
    if (args.channel == None):
-       print("ERROR:  Must specify channels")
+       logg.info("ERROR:  Must specify channels")
        exit(1)
 
    if (args.nss == None):
-       print("ERROR:  Must specify NSS")
+       logg.info("ERROR:  Must specify NSS")
        exit(1)
 
    if (args.txpower == None):
-       print("ERROR:  Must specify txpower")
+       logg.info("ERROR:  Must specify txpower")
        exit(1)
 
    if (args.pathloss == None):
-       print("ERROR:  Pathloss must be specified.")
+       logg.info("ERROR:  Pathloss must be specified.")
        exit(1)
 
    if (args.antenna_gain == None):
-       print("ERROR: Antenna gain must be specified.")
+       logg.info("ERROR: Antenna gain must be specified.")
        exit(1)
 
    if (rssi_to_use == "beacon"):
