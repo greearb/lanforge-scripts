@@ -37,6 +37,7 @@ class FileIOTest(LFCliBase):
                  directory="AUTO",
                  test_duration="5m",
                  upstream_port="eth1",
+                 num_macvlans=1,
                  server_mount="10.40.0.1:/var/tmp/test",
                  _debug_on=False,
                  _exit_on_error=False,
@@ -64,6 +65,7 @@ class FileIOTest(LFCliBase):
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.endp_profile = self.local_realm.new_fio_endp_profile()
+        self.mvlan_profile = self.local_realm.new_mvlan_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -86,6 +88,8 @@ class FileIOTest(LFCliBase):
 
         self.ro_profile = self.endp_profile.create_ro_profile()
 
+        self.mvlan_profile.num_macvlans = int(num_macvlans)
+        self.mvlan_profile.upstream_port = upstream_port
 
     def __compare_vals(self, val_list):
         passes = 0
@@ -136,6 +140,7 @@ class FileIOTest(LFCliBase):
     def build(self):
         # Build stations
         # print(self.min_tx_bps, self.min_rx_bps)
+        self.mvlan_profile.create(admin_down=True)
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
@@ -153,8 +158,9 @@ class FileIOTest(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
-        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         self.station_profile.admin_up()
+        self.mvlan_profile.admin_up()
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -191,16 +197,19 @@ class FileIOTest(LFCliBase):
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
+
     def stop(self):
         self.endp_profile.stop_cx()
         self.ro_profile.stop_cx()
         self.station_profile.admin_down()
+        self.mvlan_profile.admin_down()
 
     def cleanup(self, sta_list):
         self.endp_profile.cleanup()
         self.ro_profile.cleanup()
         self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
+        self.mvlan_profile.cleanup()
 
 
 def main():
@@ -238,6 +247,7 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     parser.add_argument('--directory', help='--directory directory to read/write in. Absolute path suggested', default="AUTO")
     parser.add_argument('--server_mount', help='--server_mount The server to mount, ex: 192.168.100.5/exports/test1',
                         default="10.40.0.1:/var/tmp/test")
+    parser.add_argument('--num_macvlans', help='Number of MACVLANs to create', default=1)
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -269,6 +279,7 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
                          max_write_rate_bps=args.max_write_rate_bps,
                          directory=args.directory,
                          server_mount=args.server_mount,
+                         num_macvlans=args.num_macvlans
                          # want a mount options param
                          )
 
@@ -283,7 +294,6 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
         print(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    exit(1)
     ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all endpoints had increased bytes-rd throughout test duration")
