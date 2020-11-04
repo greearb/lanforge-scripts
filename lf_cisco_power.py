@@ -229,7 +229,7 @@ def main():
    parser.add_argument("-p", "--passwd",     type=str, help="credential password")
    parser.add_argument("-s", "--scheme",     type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",        type=str, help="tty serial device")
-   parser.add_argument("-l", "--log",        type=str, help="logfile for messages, stdout means output to console",default="stdout")
+   parser.add_argument("-l", "--log",        action='store_true',type=str, help="create logfile for messages, default stdout")
    parser.add_argument("-a", "--ap",         type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
    parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
@@ -312,7 +312,7 @@ def main():
           cap_ctl_out = False
       else:
           cap_ctl_out = True        
-
+      # note: there would always be an args.outfile due to the default
       if args.outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         outfile = "{}_{}.txt".format(args.outfile,current_time)
@@ -321,6 +321,9 @@ def main():
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
+      if args.log:
+        outfile_log = "{}_{}_ouput_log.log".format(args.outfile,current_time)
+        print("output file log: {}".format(outfile_log))
       email_dicts = []
       if args.email:
         emails = args.email
@@ -348,7 +351,7 @@ def main():
    file_handler = None
    if (logfile is not None):
        if (logfile != "stdout"):
-           file_handler = logging.FileHandler(logfile, "w")
+           file_handler = logging.FileHandler(outfile_log, "w")
 
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
@@ -367,6 +370,9 @@ def main():
        logg.info("output file: {}".format(outfile))
        logg.info("output file full: {}".format(full_outfile))
        logg.info("output file xlsx: {}".format(outfile_xlsx))
+
+   if args.log:
+       logg.info("output file log: {}".format(outfile_log))
 
 
    if (args.bandwidth == None):
