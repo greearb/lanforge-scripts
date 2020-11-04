@@ -729,6 +729,9 @@ class Realm(LFCliBase):
     def new_dut_profile(self):
         return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+    def new_mvlan_profile(self):
+        return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
@@ -2329,6 +2332,57 @@ class FIOEndpProfile(LFCliBase):
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
+
+
+class MACVLANProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port,
+                 local_realm,
+                 upstream_port="eth1",
+                 num_macvlans=1,
+                 admin_down=False,
+                 debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.local_realm = local_realm
+        self.num_macvlans = num_macvlans
+        self.upstream_port = upstream_port
+        self.resource = 1
+        self.shelf = 1
+        self.created_macvlans = []
+
+    def create(self, admin_down=False):
+        print("Creating MACVLANs...")
+        req_url = "/cli-json/add_mvlan"
+        for i in range(self.num_macvlans):
+            data = {
+                "shelf": self.shelf,
+                "resource": self.resource,
+                "mac": "xx:xx:xx:*:*:xx",
+                "port": self.local_realm.name_to_eid(self.upstream_port)[2],
+                "index": i,
+                "flags": None
+            }
+            if self.admin_down:
+                data["flags"] = 1
+            else:
+                data["flags"] = 0
+            self.created_macvlans.append("%s.%s.%s#%s" % (self.shelf, self.resource,
+                                                          self.local_realm.name_to_eid(self.upstream_port)[2], i))
+            self.local_realm.json_post(req_url, data)
+
+    def cleanup(self):
+        print("Cleaning up MACVLANs...")
+        for port_eid in self.created_macvlans:
+            self.local_realm.rm_port(port_eid, check_exists=True)
+        # And now see if they are gone
+        # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+
+    def admin_up(self):
+        for macvlan in self.created_macvlans:
+            self.local_realm.admin_up(macvlan)
+
+    def admin_down(self):
+        for macvlan in self.created_macvlans:
+            self.local_realm.admin_down(macvlan)
 
 class PacketFilter():
 
