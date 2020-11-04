@@ -236,7 +236,7 @@ def main():
    parser.add_argument("-n", "--nss",        type=str, help="List of spatial streams to test.  NA means no change")
    parser.add_argument("-T", "--txpower",    type=str, help="List of txpowers to test.  NA means no change")
    parser.add_argument("-k","--keep_state",  action="store_true",help="keep the state, no configuration change at the end of the test")
-   parser.add_argument('-D','--duration',    type=str, help='--traffic <how long to run in seconds>  example -t 10 (seconds) default: 10 ',default='10')
+   parser.add_argument('-D','--duration',    type=str, help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ',default='20')
    parser.add_argument("--station",          type=str, help="LANforge station to use (sta0000, etc)")
    parser.add_argument("--upstream_port",    type=str, help="LANforge upsteram-port to use (eth1, etc)")
    parser.add_argument("--lfmgr",            type=str, help="LANforge Manager IP address")
