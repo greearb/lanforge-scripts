@@ -316,7 +316,7 @@ def main():
       if args.outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         outfile = "{}_{}.txt".format(args.outfile,current_time)
-        full_outfile = "{}_full_{}.txt".format(args.outfile,current_time)
+        full_outfile = "{}_{}_full.txt".format(args.outfile,current_time)
         outfile_xlsx = "{}_{}.xlsx".format(args.outfile,current_time)
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
