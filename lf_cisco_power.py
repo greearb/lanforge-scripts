@@ -229,7 +229,7 @@ def main():
    parser.add_argument("-p", "--passwd",     type=str, help="credential password")
    parser.add_argument("-s", "--scheme",     type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",        type=str, help="tty serial device")
-   parser.add_argument("-l", "--log",        action='store_true',type=str, help="create logfile for messages, default stdout")
+   parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
    parser.add_argument("-a", "--ap",         type=str, help="select AP")
    parser.add_argument("-b", "--bandwidth",  type=str, help="List of bandwidths to test. NA means no change")
    parser.add_argument("-c", "--channel",    type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
