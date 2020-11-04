@@ -316,13 +316,13 @@ def main():
       if args.outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         outfile = "{}_{}.txt".format(args.outfile,current_time)
-        full_outfile = "{}_{}_full.txt".format(args.outfile,current_time)
+        full_outfile = "{}_full_{}.txt".format(args.outfile,current_time)
         outfile_xlsx = "{}_{}.xlsx".format(args.outfile,current_time)
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
       if args.log:
-        outfile_log = "{}_{}_ouput_log.log".format(args.outfile,current_time)
+        outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
         print("output file log: {}".format(outfile_log))
       email_dicts = []
       if args.email:
