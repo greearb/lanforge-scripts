@@ -2480,7 +2480,7 @@ class MACVLANProfile(LFCliBase):
             self.local_realm.rm_port(port_eid, check_exists=True)
             time.sleep(.2)
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+        # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
 
     def admin_up(self):
         for macvlan in self.created_macvlans:
