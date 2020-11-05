@@ -2340,6 +2340,7 @@ class MACVLANProfile(LFCliBase):
                  upstream_port="eth1",
                  num_macvlans=1,
                  admin_down=False,
+                 dhcp=True,
                  debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.local_realm = local_realm
@@ -2348,10 +2349,102 @@ class MACVLANProfile(LFCliBase):
         self.resource = 1
         self.shelf = 1
         self.created_macvlans = []
+        self.dhcp = dhcp
+        self.COMMANDS = ["set_port"]
+        self.desired_set_port_cmd_flags = []
+        self.desired_set_port_current_flags = ["if_down"]
+        self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
+        self.set_port_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "current_flags": 0,
+            "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
+        }
+        if self.dhcp:
+            self.desired_set_port_current_flags.append("use_dhcp")
+            self.desired_set_port_interest_flags.append("dhcp")
 
-    def create(self, admin_down=False):
+    def add_named_flags(self, desired_list, command_ref):
+        if desired_list is None:
+            raise ValueError("addNamedFlags wants a list of desired flag names")
+        if len(desired_list) < 1:
+            print("addNamedFlags: empty desired list")
+            return 0
+        if (command_ref is None) or (len(command_ref) < 1):
+            raise ValueError("addNamedFlags wants a maps of flag values")
+
+        result = 0
+        for name in desired_list:
+            if (name is None) or (name == ""):
+                continue
+            if name not in command_ref:
+                if self.debug:
+                    pprint(command_ref)
+                raise ValueError("flag %s not in map" % name)
+            result += command_ref[name]
+
+        return result
+
+    def set_command_param(self, command_name, param_name, param_value):
+        # we have to check what the param name is
+        if (command_name is None) or (command_name == ""):
+            return
+        if (param_name is None) or (param_name == ""):
+            return
+        if command_name not in self.COMMANDS:
+            raise ValueError("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
+            # return
+        if command_name == "set_port":
+            self.set_port_data[param_name] = param_value
+
+    def set_command_flag(self, command_name, param_name, value):
+        # we have to check what the param name is
+        if (command_name is None) or (command_name == ""):
+            return
+        if (param_name is None) or (param_name == ""):
+            return
+        if command_name not in self.COMMANDS:
+            print("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
+            return
+
+        elif command_name == "set_port":
+            if (param_name not in set_port.set_port_current_flags) and (
+                    param_name not in set_port.set_port_cmd_flags) and (
+                    param_name not in set_port.set_port_interest_flags):
+                print("Parameter name [%s] not defined in set_port.py" % param_name)
+                if self.debug:
+                    pprint(set_port.set_port_cmd_flags)
+                    pprint(set_port.set_port_current_flags)
+                    pprint(set_port.set_port_interest_flags)
+                return
+            if (param_name in set_port.set_port_cmd_flags):
+                if (value == 1) and (param_name not in self.desired_set_port_cmd_flags):
+                    self.desired_set_port_cmd_flags.append(param_name)
+                elif value == 0:
+                    self.desired_set_port_cmd_flags.remove(param_name)
+            elif (param_name in set_port.set_port_current_flags):
+                if (value == 1) and (param_name not in self.desired_set_port_current_flags):
+                    self.desired_set_port_current_flags.append(param_name)
+                elif value == 0:
+                    self.desired_set_port_current_flags.remove(param_name)
+            elif (param_name in set_port.set_port_interest_flags):
+                if (value == 1) and (param_name not in self.desired_set_port_interest_flags):
+                    self.desired_set_port_interest_flags.append(param_name)
+                elif value == 0:
+                    self.desired_set_port_interest_flags.remove(param_name)
+            else:
+                raise ValueError("Unknown param name: " + param_name)
+
+    def create(self, admin_down=False, debug=False, sleep_time=1):
         print("Creating MACVLANs...")
         req_url = "/cli-json/add_mvlan"
+
+        self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
+                                                                   set_port.set_port_current_flags)
+        self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
+                                                              set_port.set_port_interest_flags)
+        set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
         for i in range(self.num_macvlans):
             data = {
                 "shelf": self.shelf,
@@ -2369,12 +2462,25 @@ class MACVLANProfile(LFCliBase):
                                                           self.local_realm.name_to_eid(self.upstream_port)[2], i))
             self.local_realm.json_post(req_url, data)
 
+        for eidn in self.created_macvlans:
+            eid = self.local_realm.name_to_eid(eidn)
+            name = eid[2]
+            self.set_port_data["port"] = name  # for set_port calls.
+
+            # time.sleep(0.03)
+            time.sleep(sleep_time)
+            set_port_r.addPostData(self.set_port_data)
+            json_response = set_port_r.jsonPost(debug)
+            time.sleep(0.03)
+
     def cleanup(self):
         print("Cleaning up MACVLANs...")
+        print(self.created_macvlans)
         for port_eid in self.created_macvlans:
             self.local_realm.rm_port(port_eid, check_exists=True)
+            time.sleep(.2)
         # And now see if they are gone
-        # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
 
     def admin_up(self):
         for macvlan in self.created_macvlans:
