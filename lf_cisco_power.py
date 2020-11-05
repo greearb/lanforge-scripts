@@ -1288,9 +1288,8 @@ def main():
                        
                    logg.info("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
-                   if (pf == 0):
+                   if (pf == 0 or e_tot != ""):
                        pfs = "FAIL"
-                       
 
                    time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"%(
@@ -1388,10 +1387,32 @@ def main():
                    csvs.write("\n");
                    csvs.flush()
 
+                   # write out the data and exit on error : error takes presidence over failure
+                   if (e_tot != ""):
+                       if(args.exit_on_error):
+                           logg.info("EXITING ON ERROR, exit_on_error err: {} ".format(e_tot))
+                           if bool(email_dicts):
+                               for email_dict in email_dicts:
+                                  try:
+                                     logg.info("Sending Email ")
+                                     subject = "Lanforge: Error {}".format(outfile_xlsx)
+                                     body    = "Lanforeg: Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}  {}".format(args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
+                                     email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
+                                       "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
+                                     pss = email_out.stdout.decode('utf-8','ignore')
+                                     logg.info(pss)
+                                  except subprocess.CalledProcessError as process_error:
+                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
+                           exit_test(workbook)
+
+
                    # write out the data and exit on failure
                    if (pf == 0):
                        if(args.exit_on_fail):
-                           logg.info("EXITING ON FAILURE, exit_on_fail set ")
+                           if(e_tot != ""):
+                               logg.info("EXITING ON FAILURE as a result of  err {}".format(e_tot))
+                           else:
+                               logg.info("EXITING ON FAILURE, exit_on_fail set there was no err ")
                            if bool(email_dicts):
                                for email_dict in email_dicts: 
                                    try:
@@ -1405,22 +1426,6 @@ def main():
                                    except subprocess.CalledProcessError as process_error:
                                        logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
 
-                           exit_test(workbook)
-                   if (e_tot != ""):
-                       if(args.exit_on_error):
-                           logg.info("EXITING ON ERROR, exit_on_error set ")
-                           if bool(email_dicts):
-                               for email_dict in email_dicts:
-                                  try:
-                                     logg.info("Sending Email ")
-                                     subject = "Lanforge: Error {}".format(outfile_xlsx)
-                                     body    = "Lanforeg: Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}  {}".format(args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
-                                     email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'] , "--passwd", email_dict['passwd'], "--to",email_dict['to'] , 
-                                       "--subject", subject, "--body", body , "--smtp", email_dict['smtp'], "--port", email_dict['port'] ], capture_output=cap_ctl_out, check=True)
-                                     pss = email_out.stdout.decode('utf-8','ignore')
-                                     logg.info(pss)
-                                  except subprocess.CalledProcessError as process_error:
-                                    logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'],email_dict['port'],process_error.returncode, process_error.output))
                            exit_test(workbook)
                             
 
