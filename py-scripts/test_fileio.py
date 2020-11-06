@@ -140,7 +140,7 @@ class FileIOTest(LFCliBase):
     def build(self):
         # Build stations
         # print(self.min_tx_bps, self.min_rx_bps)
-        self.mvlan_profile.create(admin_down=True)
+        self.mvlan_profile.create(admin_down=True, sleep_time=.5, debug=self.debug)
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
