@@ -1377,7 +1377,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
     parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities defaults 1 10 20 50 100 200 ',
                             default="1 10 20 50 100 200" )
-
+    parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
 
     parser.add_argument('-cs','--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-cc','--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
@@ -1398,11 +1398,11 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-prs','--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='2m')
+    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='30s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
-                        default='lf_udp', type=valid_endp_types)
+    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+                        default='lf_udp lf_tcp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
@@ -1521,154 +1521,161 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     print(cisco_packet_types)
     cisco_packet_sizes       = args.cisco_packet_size.split()
     print(cisco_packet_sizes)
+    cisco_client_densities   = args.cisco_client_density.split()
+    print(cisco_client_densities)
+    cisco_data_encryptions   = args.cisco_data_encryption.split()
+    print(cisco_data_encryptions)
 
     for cisco_ap in cisco_aps:
-        for cisco_band in cisco_bands:  # change to frequency
+        for cisco_band in cisco_bands:  # frequency
             for cisco_wifimode in cisco_wifimodes:
-                for cisco_chan_width in cisco_chan_widths: #change to band width
-                    for cisco_ap_mode in cisco_ap_modes:
-                        for cisco_packet_size in cisco_packet_sizes:
-                            print("Cisco run: AP {} band: {}  wifimode {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
-                            cisco_band, cisco_wifimode, cisco_chan_width, cisco_ap_mode, cisco_packet_size))
-                            # over write the configurations of args for controller
-                            '''cisco_args.cisco_ap          = cisco_ap
-                            cisco_args.cisco_band        = cisco_band
-                            cisco_args.cisco_chan_width  = cisco_chan_width
-                            cisco_args.cisco_ap_mode     = cisco_ap_mode
-                            print(cisco_args)
-                            
-                            cisco = cisco_(cisco_args)
-                            #Disable AP
-                            cisco.controller_disable_ap()
-                            if cisco_args.cisco_series == "9800":
-                                cisco.controller_disable_wlan()
-                                cisco.controller_disable_network_5ghz()
-                                cisco.controller_disable_network_24ghz()
-                                cisco.controller_role_manual()
-                            else:
-                                cisco.controller_disable_network_5ghz()
-                                cisco.controller_disable_network_24ghz()
+                for cisco_chan_width in cisco_chan_widths: #bandwidth
+                    for cisco_data_encryption in cisco_data_encryptions:
+                        for cisco_ap_mode in cisco_ap_modes:
+                            for cisco_client_density in cisco_client_densities:
+                                for endp_type in endp_types:
+                                    for cisco_packet_size in cisco_packet_sizes:
+                                        print("Cisco run: AP {} band: {}  wifimode {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
+                                        cisco_band, cisco_wifimode, cisco_chan_width, cisco_ap_mode, cisco_packet_size))
+                                        # over write the configurations of args for controller
+                                        '''cisco_args.cisco_ap          = cisco_ap
+                                        cisco_args.cisco_band        = cisco_band
+                                        cisco_args.cisco_chan_width  = cisco_chan_width
+                                        cisco_args.cisco_ap_mode     = cisco_ap_mode
+                                        print(cisco_args)
 
-                            cisco.controller_set_bandwidth()
+                                        cisco = cisco_(cisco_args)
+                                        #Disable AP
+                                        cisco.controller_disable_ap()
+                                        if cisco_args.cisco_series == "9800":
+                                            cisco.controller_disable_wlan()
+                                            cisco.controller_disable_network_5ghz()
+                                            cisco.controller_disable_network_24ghz()
+                                            cisco.controller_role_manual()
+                                        else:
+                                            cisco.controller_disable_network_5ghz()
+                                            cisco.controller_disable_network_24ghz()
 
-                            if cisco_args.cisco_series == "9800":
-                                cisco.controller_create_wlan()
-                                cisco.controller_set_wireless_tag_policy()
-                                cisco.controller_enable_wlan()
+                                        cisco.controller_set_bandwidth()
 
-                            cisco.controller_enable_network_5ghz()
-                            cisco.controller_enable_network_24ghz()
-                            cisco.controller_enable_ap()
+                                        if cisco_args.cisco_series == "9800":
+                                            cisco.controller_create_wlan()
+                                            cisco.controller_set_wireless_tag_policy()
+                                            cisco.controller_enable_wlan()
 
-                            # need to actually check the CAC timer
-                            time.sleep(30)'''
+                                        cisco.controller_enable_network_5ghz()
+                                        cisco.controller_enable_network_24ghz()
+                                        cisco.controller_enable_ap()
 
-                            # TODO may need a static list of radios read for scaling and performance
-                            print("cisco_wifi_mode {}".format(cisco_wifimode))
-                            if args.radio:
-                                radios = args.radio
-                            elif cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
-                                radios = radio_AX200_abgn_ax_dict
-                            elif cisco_wifimode == "an" or cisco_wifimode == "anAC":
-                                radios = radio_ath10K_9984_an_AC_dict
-                            
-                            print("radios {}".format(radios))
-                            for radio_ in radios:
-                                radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
-                                radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
-                                print("radio_dict {}".format(radio_info_dict))
+                                        # need to actually check the CAC timer
+                                        time.sleep(30)'''
 
-                                for key in radio_keys:
-                                    if key not in radio_info_dict:
-                                        print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
-                                        exit(1)
+                                        # TODO may need a static list of radios read for scaling and performance
+                                        print("cisco_wifi_mode {}".format(cisco_wifimode))
+                                        if args.radio:
+                                            radios = args.radio
+                                        elif cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
+                                            radios = radio_AX200_abgn_ax_dict
+                                        elif cisco_wifimode == "an" or cisco_wifimode == "anAC":
+                                            radios = radio_ath10K_9984_an_AC_dict
 
-                                radio_name_list.append(radio_info_dict['radio'])
-                                ssid_list.append(radio_info_dict['ssid'])
-                                ssid_password_list.append(radio_info_dict['ssid_pw'])
-                                ssid_security_list.append(radio_info_dict['security'])
-                                if args.radio:
-                                    number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-                                    wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-                                else: 
-                                    number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-                                    wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-                                
-                                #####################
-                                # temp removal of loop
-                                ######################
-                                '''optional_radio_reset_keys = ['reset_port_enable']
-                                radio_reset_found = True
-                                for key in optional_radio_reset_keys:
-                                    if key not in radio_info_dict:
-                                        #print("port reset test not enabled")
-                                        radio_reset_found = False
-                                        break
-                                    
-                                if radio_reset_found:
-                                    reset_port_enable_list.append(True)
-                                    reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
-                                    reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
-                                else:
-                                    reset_port_enable_list.append(False)
-                                    reset_port_time_min_list.append('0s')
-                                    reset_port_time_max_list.append('0s')
-                            index = 0
-                            station_lists = []
-                            for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
-                                number_of_stations = int(number_of_stations_per_radio_)
-                                if number_of_stations > MAX_NUMBER_OF_STATIONS:
-                                    print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
-                                    quit(1)
-                                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                                                      padding_number_=10000, radio=radio_name_)
-                                station_lists.append(station_list)
-                                index += 1
+                                        print("radios {}".format(radios))
+                                        for radio_ in radios:
+                                            radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
+                                            radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
+                                            print("radio_dict {}".format(radio_info_dict))
 
-                            #print("endp-types: %s"%(endp_types))
+                                            for key in radio_keys:
+                                                if key not in radio_info_dict:
+                                                    print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                                                    exit(1)
 
-                            #enstanciate the 
+                                            radio_name_list.append(radio_info_dict['radio'])
+                                            ssid_list.append(radio_info_dict['ssid'])
+                                            ssid_password_list.append(radio_info_dict['ssid_pw'])
+                                            ssid_security_list.append(radio_info_dict['security'])
+                                            if args.radio:
+                                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                            else: 
+                                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
 
+                                            #####################
+                                            # temp removal of loop
+                                            ######################
+                                            '''optional_radio_reset_keys = ['reset_port_enable']
+                                            radio_reset_found = True
+                                            for key in optional_radio_reset_keys:
+                                                if key not in radio_info_dict:
+                                                    #print("port reset test not enabled")
+                                                    radio_reset_found = False
+                                                    break
+                                                
+                                            if radio_reset_found:
+                                                reset_port_enable_list.append(True)
+                                                reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
+                                                reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+                                            else:
+                                                reset_port_enable_list.append(False)
+                                                reset_port_time_min_list.append('0s')
+                                                reset_port_time_max_list.append('0s')
+                                        index = 0
+                                        station_lists = []
+                                        for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+                                            number_of_stations = int(number_of_stations_per_radio_)
+                                            if number_of_stations > MAX_NUMBER_OF_STATIONS:
+                                                print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+                                                quit(1)
+                                            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+                                                                                  padding_number_=10000, radio=radio_name_)
+                                            station_lists.append(station_list)
+                                            index += 1
 
+                                        #print("endp-types: %s"%(endp_types))
 
-                            ip_var_test = L3VariableTime(
-                                                            lfjson_host,
-                                                            lfjson_port,
-                                                            args=args,
-                                                            number_template="00", 
-                                                            station_lists= station_lists,
-                                                            name_prefix="LT-",
-                                                            endp_types=endp_types,
-                                                            tos=args.tos,
-                                                            side_b=side_b,
-                                                            radio_name_list=radio_name_list,
-                                                            number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                                            ssid_list=ssid_list,
-                                                            ssid_password_list=ssid_password_list,
-                                                            ssid_security_list=ssid_security_list, 
-                                                            wifimode_list=wifimode_list, 
-                                                            test_duration=test_duration,
-                                                            polling_interval= polling_interval,
-                                                            reset_port_enable_list=reset_port_enable_list,
-                                                            reset_port_time_min_list=reset_port_time_min_list,
-                                                            reset_port_time_max_list=reset_port_time_max_list,
-                                                            side_a_min_rate=args.side_a_min_rate, 
-                                                            side_b_min_rate=args.side_b_min_rate, 
-                                                            debug_on=debug_on, 
-                                                            outfile=csv_outfile)
+                                        #enstanciate the 
 
 
-                            ip_var_test.pre_cleanup()
-                            ip_var_test.build()
-                            if not ip_var_test.passes():
-                                print("build step failed.")
-                                print(ip_var_test.get_fail_message())
-                                exit(1) 
-                            ip_var_test.start(False, False)
-                            ip_var_test.stop()
-                            if not ip_var_test.passes():
-                                print("stop test failed")
-                                print(ip_var_test.get_fail_message())
+
+                                        ip_var_test = L3VariableTime(
+                                                                        lfjson_host,
+                                                                        lfjson_port,
+                                                                        args=args,
+                                                                        number_template="00", 
+                                                                        station_lists= station_lists,
+                                                                        name_prefix="LT-",
+                                                                        endp_types=endp_types,
+                                                                        tos=args.tos,
+                                                                        side_b=side_b,
+                                                                        radio_name_list=radio_name_list,
+                                                                        number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+                                                                        ssid_list=ssid_list,
+                                                                        ssid_password_list=ssid_password_list,
+                                                                        ssid_security_list=ssid_security_list, 
+                                                                        wifimode_list=wifimode_list, 
+                                                                        test_duration=test_duration,
+                                                                        polling_interval= polling_interval,
+                                                                        reset_port_enable_list=reset_port_enable_list,
+                                                                        reset_port_time_min_list=reset_port_time_min_list,
+                                                                        reset_port_time_max_list=reset_port_time_max_list,
+                                                                        side_a_min_rate=args.side_a_min_rate, 
+                                                                        side_b_min_rate=args.side_b_min_rate, 
+                                                                        debug_on=debug_on, 
+                                                                        outfile=csv_outfile)
+
+
+                                        ip_var_test.pre_cleanup()
+                                        ip_var_test.build()
+                                        if not ip_var_test.passes():
+                                            print("build step failed.")
+                                            print(ip_var_test.get_fail_message())
+                                            exit(1) 
+                                        ip_var_test.start(False, False)
+                                        ip_var_test.stop()
+                                        if not ip_var_test.passes():
+                                            print("stop test failed")
+                                            print(ip_var_test.get_fail_message())
 
 
     #print("Pausing 30 seconds after run for manual inspection before we clean up.")
