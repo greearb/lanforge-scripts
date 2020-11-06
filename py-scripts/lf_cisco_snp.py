@@ -1265,7 +1265,7 @@ Script logic loops:
 
 AP {Axel, Vanc} Dynamic
       frequency {24ghz, 5ghz} Common (band)
-            wifimode{11ax, 11ac, 11n, 11bg} Common  
+            wifimode{11ax, 11ac, 11n, 11bg} Common  (an anAX anAC abgn bg)
                   Bandwidth {20, 40, 80, 160}
                         data-encryption {enable/disable} Common
                               AP-mode {local/flexconnect} Common
@@ -1366,6 +1366,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         ''')
 
     # reorder to follow looping
+
+    parser.add_argument('-ca','--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
+    parser.add_argument('-ct','--cisco_all', help='--cisco_test flag present default to subset tests',action="store_true")
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn")
     # cisco wanted 11ax , 11ac, 11n, 11gb
@@ -1398,7 +1401,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-prs','--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='30s')
+    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='2m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
@@ -1497,33 +1500,60 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         "anAX"   : "14"
         }
 
-    
-    cisco_aps             = args.cisco_ap.split()
-    print(cisco_aps)
-    cisco_bands           = args.cisco_band.split()
-    print(cisco_bands)
-    cisco_wifimodes       = args.cisco_wifimode.split()
-    for mode in cisco_wifimodes:
-        if mode in wifi_mode_dict.keys():
-            pass
-        else:
-            print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
-            exit(1)
+    if args.cisco_all:
+        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_bands            = "a b"
+        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_chan_widths      = "20 40 80".split()
+        cisco_ap_modes         = "local flex".split()
+        cisco_data_encryptions = "disable".split()
+        cisco_aps              = "Axel".split()
+        cisco_client_densities = "1 20 50 100 200".split()
+        endp_types             = "lf_udp lf_tcp".split()
+        cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_client_densities = "1 3".split()
+        cisco_data_encryptions = "disable".split()
+    elif args.cisco_test:
+        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_bands            = "a b"
+        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_chan_widths      = "20".split()
+        cisco_ap_modes         = "local flex".split()
+        cisco_data_encryptions = "disable".split()
+        cisco_aps              = "Axel".split()
+        cisco_client_densities = "1 20 50 100 200".split()
+        endp_types             = "lf_udp lf_tcp".split()
+        cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_client_densities = "1 3".split()
+        cisco_data_encryptions = "disable".split()
+    else:    
+        cisco_aps             = args.cisco_ap.split()
+        cisco_bands           = args.cisco_band.split()
+        cisco_wifimodes       = args.cisco_wifimode.split()
+        for mode in cisco_wifimodes:
+            if mode in wifi_mode_dict.keys():
+                pass
+            else:
+                print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
+                exit(1)
 
+        cisco_chan_widths     = args.cisco_chan_width.split()
+        cisco_ap_modes        = args.cisco_ap_mode.split()
+        cisco_client_densitys = args.cisco_client_density.split()
+        cisco_packet_types    = args.endp_type.split()
+        cisco_packet_sizes       = args.cisco_packet_size.split()
+        cisco_client_densities   = args.cisco_client_density.split()
+        cisco_data_encryptions   = args.cisco_data_encryption.split()
+    
+    print(cisco_aps)
+    print(cisco_bands)
     print(cisco_wifimodes)
-    cisco_chan_widths     = args.cisco_chan_width.split()
     print(cisco_chan_widths)
-    cisco_ap_modes        = args.cisco_ap_mode.split()
     print(cisco_ap_modes)
-    cisco_client_densitys = args.cisco_client_density.split()
     print(cisco_client_densitys)
-    cisco_packet_types    = args.endp_type.split()
     print(cisco_packet_types)
-    cisco_packet_sizes       = args.cisco_packet_size.split()
     print(cisco_packet_sizes)
-    cisco_client_densities   = args.cisco_client_density.split()
     print(cisco_client_densities)
-    cisco_data_encryptions   = args.cisco_data_encryption.split()
     print(cisco_data_encryptions)
 
     for cisco_ap in cisco_aps:
