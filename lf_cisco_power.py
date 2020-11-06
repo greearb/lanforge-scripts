@@ -851,63 +851,71 @@ def main():
                       exit_test(workbook)
 
                    # Wait a bit for AP to come back up
-                   time.sleep(2)
+                   time.sleep(3)
+                   loop_count = 0
+                   cc_dbm_rcv = False
                    if args.series == "9800":
-                       try:
-                          logg.info("9800 cisco_wifi_ctl.py: advanced")
-                          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
-                          pss = advanced.stdout.decode('utf-8', 'ignore')
-                          logg.info(pss)
-                       except subprocess.CalledProcessError as process_error:
-                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                          exit_test(workbook)
-
-                       searchap = False
-                       cc_mac = ""
-                       cc_ch = ""
-                       cc_bw = ""
-                       cc_power = ""
-                       cc_dbm = ""
-                       for line in pss.splitlines():
-                           if (line.startswith("---------")):
-                               searchap = True
-                               continue
-
-                           if (searchap):
-                               pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
-                               m = re.search(pat, line)
-                               if (m != None):
-                                   if(m.group(2) == args.slot):
-                                       cc_mac = m.group(1)
-                                       cc_slot = m.group(2)
-                                       cc_ch = m.group(6);  # (132,136,140,144)
-                                       cc_power = m.group(4)
-                                       cc_power = cc_power.replace("/", " of ") # spread-sheets turn 1/8 into a date
-                                       cc_dbm = m.group(5)
-                                       cc_dbm = cc_dbm.replace("(","")
-
-                                       cc_ch_count = cc_ch.count(",") + 1
-                                       cc_bw = m.group(3)
-                                       logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
-                                       logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
-
-                                       logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
-                                       logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
-                                       logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
-                                       logg.info("9800 test_parameters cc_bw: read : {}".format(cc_bw))
-                                       logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
-                                       logg.info("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
-                                       logg.info("9800 test_parameters cc_ch: read : {}".format(cc_ch))
-                                       break
-
-                       if (cc_dbm == ""):
-                          # Could not talk to controller?
-                          err = "ERROR:  Could not query dBm from controller, maybe controller died?"
-                          logg.info(err)
-                          logg.info("Check controller and AP , Command on AP to erase the config: capwap ap erase all")
-                          e_tot += err
-                          e_tot += "  "
+                       while cc_dbm_rcv == False and loop_count <=3:
+                          loop_count +=1
+                          time.sleep(1)
+                          try:
+                             logg.info("9800 cisco_wifi_ctl.py: advanced")
+                             advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                                 "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                             pss = advanced.stdout.decode('utf-8', 'ignore')
+                             logg.info(pss)
+                          except subprocess.CalledProcessError as process_error:
+                             logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                             exit_test(workbook)
+   
+                          searchap = False
+                          cc_mac = ""
+                          cc_ch = ""
+                          cc_bw = ""
+                          cc_power = ""
+                          cc_dbm = ""
+                          for line in pss.splitlines():
+                              if (line.startswith("---------")):
+                                  searchap = True
+                                  continue
+   
+                              if (searchap):
+                                  pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
+                                  m = re.search(pat, line)
+                                  if (m != None):
+                                      if(m.group(2) == args.slot):
+                                          cc_mac = m.group(1)
+                                          cc_slot = m.group(2)
+                                          cc_ch = m.group(6);  # (132,136,140,144)
+                                          cc_power = m.group(4)
+                                          cc_power = cc_power.replace("/", " of ") # spread-sheets turn 1/8 into a date
+                                          cc_dbm = m.group(5)
+                                          cc_dbm = cc_dbm.replace("(","")
+   
+                                          cc_ch_count = cc_ch.count(",") + 1
+                                          cc_bw = m.group(3)
+                                          logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
+                                          logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx,ch,bw))
+   
+                                          logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                                          logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                          logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                                          logg.info("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                          logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
+                                          logg.info("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                          logg.info("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                          break
+   
+                          if (cc_dbm == ""):
+                             if cc_dbm_rcv > 3: 
+                                # Could not talk to controller?
+                                err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                                logg.info(err)
+                                logg.info("Check controller and AP , Command on AP to erase the config: capwap ap erase all")
+                                e_tot += err
+                                e_tot += "  "
+                          else:
+                             cc_dbm_rcv = True    
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: show_wlan_summary")
                           wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
