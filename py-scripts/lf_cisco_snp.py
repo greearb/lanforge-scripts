@@ -361,7 +361,7 @@ class cisco_():
     def controller_create_wlan(self):
         if self.args.cisco_series == "9800":
             try:
-                print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                print("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID ))
                 ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
@@ -387,7 +387,7 @@ class cisco_():
     def controller_set_wireless_tag_policy(self):
         if self.args.cisco_series == "9800":
             try:
-                print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action".format(self.args.cisco_scheme,self.args.cisco_ctlr,
+                print("scheme {} ctlr {} user {} passwd {} AP {} series {} band {} action {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,
                     self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"wireless_tag_policy" ))
                 ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
@@ -1276,11 +1276,18 @@ AP {Axel, Vanc} Dynamic
                                                             Time (4 iterations of 30 sec and get the best average TP out of it) 
 
 Notes:
-so if AP is /n, then ax200 will connect at /n.  But if AP is /AX, we have no way to force ax200 to act like /n
 
-ax200 is dual band, supporting at least /b/g/n/AX on 2.4Ghz, and /a/n/ac/AX on 5Ghz.  2.4Ghz doesn't officially support /AC, but often chips will do /AC there anyway
 
-if they want /AC or /n or /abg stations, then our ath10k radios can support that need (and ath9k if they have any, can do /n and /abg)
+
+Radio descriptions:
+ax200: so if AP is /n, then ax200 will connect at /n.  But if AP is /AX, we have no way to force ax200 to act like /n
+ax200: is dual band, supporting at least /b/g/n/AX on 2.4Ghz, and /a/n/ac/AX on 5Ghz.  2.4Ghz doesn't officially support /AC, but often chips will do /AC there anyway
+
+ath10K: if they want /AC or /n or /abg stations, then our ath10k radios can support that need (and ath9k if they have any, can do /n and /abg)
+ath10K(998x)  - wave -1 , dual band card it can be ac, n , a/b/g modes, up to 3x3 spacial streams
+ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , an)
+
+Note: wave-2 radios can act as ac, an, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
 
 wifimode:
@@ -1318,14 +1325,7 @@ Wifi mode: 11bg
 
 
 
- ax200 is dual band, supporting at least /b/g/n/AX on 2.4Ghz, and /a/n/ac/AX on 5Ghz.  2.4Ghz doesn't officially support /AC, but often chips will do /AC there anyway
 
-Radio descriptions:
-ax200 radio can only be ax - forcing it to lesser capabilities may not work
-ath10K(998x)  - wave -1 , dual band card it can be ac, n , a/b/g modes, up to 3x3 spacial streams
-ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , an)
-
-Note: wave-2 radios can act as ac, an, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
 TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corresponds to the shelf
 
@@ -1367,9 +1367,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     # reorder to follow looping
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccb','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn",choices=["a", "b", "abgn"])
+    parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn")
     # cisco wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="a anAX anAC abgn bg",
+    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80 160")
@@ -1443,9 +1443,21 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     if args.radio:
         radios = args.radio
-    else:
-        radios = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
-        ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
+
+
+    # static dictionaries for radios on 191.168.100.178
+
+    # radios on 192.168.100.178 
+    #--ssid test_candela --ssidpw [BLANK] --security open 
+    #iwlwifi(AX200) 521
+    radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    #ath10k(9984) 523
+    radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==64 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radios1 = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
+    ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
@@ -1511,11 +1523,13 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     print(cisco_packet_sizes)
 
     for cisco_ap in cisco_aps:
-        for cisco_band in cisco_bands:  #TODO may
+        for cisco_band in cisco_bands:  # change to frequency
             for cisco_wifimode in cisco_wifimodes:
-                for cisco_chan_width in cisco_chan_widths:
+                for cisco_chan_width in cisco_chan_widths: #change to band width
                     for cisco_ap_mode in cisco_ap_modes:
                         for cisco_packet_size in cisco_packet_sizes:
+                            print("Cisco run: AP {} band: {}  wifimode {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
+                            cisco_band, cisco_wifimode, cisco_chan_width, cisco_ap_mode, cisco_packet_size))
                             # over write the configurations of args for controller
                             '''cisco_args.cisco_ap          = cisco_ap
                             cisco_args.cisco_band        = cisco_band
@@ -1550,6 +1564,14 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             time.sleep(30)'''
 
                             # TODO may need a static list of radios read for scaling and performance
+                            print("cisco_wifi_mode {}".format(cisco_wifimode))
+                            if args.radio:
+                                radios = args.radio
+                            elif cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
+                                radios = radio_AX200_abgn_ax_dict
+                            elif cisco_wifimode == "an" or cisco_wifimode == "anAC":
+                                radios = radio_ath10K_9984_an_AC_dict
+                            
                             print("radios {}".format(radios))
                             for radio_ in radios:
                                 radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
@@ -1562,13 +1584,20 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         exit(1)
 
                                 radio_name_list.append(radio_info_dict['radio'])
-                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
                                 ssid_list.append(radio_info_dict['ssid'])
                                 ssid_password_list.append(radio_info_dict['ssid_pw'])
                                 ssid_security_list.append(radio_info_dict['security'])
-                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-
-                                optional_radio_reset_keys = ['reset_port_enable']
+                                if args.radio:
+                                    number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                    wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                else: 
+                                    number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                    wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                
+                                #####################
+                                # temp removal of loop
+                                ######################
+                                '''optional_radio_reset_keys = ['reset_port_enable']
                                 radio_reset_found = True
                                 for key in optional_radio_reset_keys:
                                     if key not in radio_info_dict:
@@ -1584,9 +1613,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                     reset_port_enable_list.append(False)
                                     reset_port_time_min_list.append('0s')
                                     reset_port_time_max_list.append('0s')
-
-
-
                             index = 0
                             station_lists = []
                             for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
@@ -1650,6 +1676,10 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             ip_var_test.cleanup()
                             if ip_var_test.passes():
                                 print("Full test passed, all connections increased rx bytes")
+                            '''    
+                            ################################
+                            # end of commented out loop
+                            ################################
 
 if __name__ == "__main__":
     main()
