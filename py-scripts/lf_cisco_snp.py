@@ -1453,12 +1453,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     # radios on 192.168.100.178 
     #--ssid test_candela --ssidpw [BLANK] --security open 
     #iwlwifi(AX200) 521
-    radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    '''radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
     ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
     ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
-    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]'''
+    radio_AX200_abgn_ax_dict = [['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     #ath10k(9984) 523
-    radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==64 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    #radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==64 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_dict  = [['radio==6.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
     radios1 = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
     ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
 
