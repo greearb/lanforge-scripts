@@ -1368,7 +1368,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     # reorder to follow looping
 
     parser.add_argument('-ca','--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct','--cisco_all', help='--cisco_test flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct','--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b abgn")
     # cisco wanted 11ax , 11ac, 11n, 11gb
@@ -1502,7 +1502,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     if args.cisco_all:
         cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b"
+        cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
         cisco_chan_widths      = "20 40 80".split()
         cisco_ap_modes         = "local flex".split()
@@ -1515,7 +1515,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_data_encryptions = "disable".split()
     elif args.cisco_test:
         cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b"
+        cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local flex".split()
@@ -1537,10 +1537,11 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                 print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
 
-        cisco_chan_widths     = args.cisco_chan_width.split()
-        cisco_ap_modes        = args.cisco_ap_mode.split()
-        cisco_client_densitys = args.cisco_client_density.split()
-        cisco_packet_types    = args.endp_type.split()
+        cisco_chan_widths        = args.cisco_chan_width.split()
+        cisco_ap_modes           = args.cisco_ap_mode.split()
+        cisco_client_densities   = args.cisco_client_density.split()
+        endp_types               = "lf_udp lf_tcp".split()
+        cisco_packet_types       = args.endp_type.split()
         cisco_packet_sizes       = args.cisco_packet_size.split()
         cisco_client_densities   = args.cisco_client_density.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()
@@ -1550,8 +1551,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     print(cisco_wifimodes)
     print(cisco_chan_widths)
     print(cisco_ap_modes)
-    print(cisco_client_densitys)
-    print(cisco_packet_types)
+    print(cisco_client_densities)
+    print(endp_types)
     print(cisco_packet_sizes)
     print(cisco_client_densities)
     print(cisco_data_encryptions)
