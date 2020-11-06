@@ -856,6 +856,7 @@ def main():
                    cc_dbm_rcv = False
                    if args.series == "9800":
                        while cc_dbm_rcv == False and loop_count <=3:
+                          logg.info("9800 read controller dbm") 
                           loop_count +=1
                           time.sleep(1)
                           try:
@@ -914,6 +915,8 @@ def main():
                                 logg.info("Check controller and AP , Command on AP to erase the config: capwap ap erase all")
                                 e_tot += err
                                 e_tot += "  "
+                             else:
+                                logg.info("9800 read controller dbm loop_count {}".format(loop_count)) 
                           else:
                              cc_dbm_rcv = True    
                        try:
