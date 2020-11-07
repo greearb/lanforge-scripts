@@ -8,7 +8,7 @@ from pprint import pprint
 import LANforge.LFUtils
 from LANforge.LFUtils import *
 import argparse
-
+import LANforge.LFRequest
 
 class LFCliBase:
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
@@ -255,5 +255,15 @@ class LFCliBase:
 
 
         return parser
+
+    # use this function to add an event You can see these events when watching websocket_client at 8081 port
+    def add_event(self, message=None, event_id="new", name="custom", priority=1, debug_=False):
+        data = {
+            "event_id": event_id,
+            "details": message,
+            "priority": priority,
+            "name": name
+        }
+        self.json_post("/cli-json/add_event", data, debug_=debug_)
 
 # ~class
