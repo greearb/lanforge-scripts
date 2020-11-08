@@ -1508,7 +1508,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
-        cisco_tx_power         = "3".split()
+        cisco_tx_power         = "3"
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
@@ -1522,7 +1522,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
-        cisco_tx_power         = "3".split()
+        cisco_tx_power         = "3"
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
@@ -1542,7 +1542,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
             else:
                 print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
-        cisco_tx_power           = "3".split()
+        cisco_tx_power           = "3"
         cisco_chan_5ghz          = "36".split()
         cisco_chan_24ghz         = "1".split()
         cisco_chan_widths        = args.cisco_chan_width.split()
@@ -1578,15 +1578,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         print("Cisco run: AP {} band: {}  wifimode {} tx_power {} chan_5ghz {} chan_24ghz {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
                                         cisco_band, cisco_wifimode, cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz,  cisco_chan_width, cisco_ap_mode, cisco_packet_size))
                                         # over write the configurations of args for controller
-                                        cisco_args.cisco_ap                 = cisco_ap
-                                        cisco_args.cisco_band               = cisco_band
+                                        cisco_args.cisco_ap            = cisco_ap
+                                        cisco_args.cisco_band          = cisco_band
                                         if cisco_band == "a":
-                                            cisco_args.cisco_chan           = cisco_chan_5ghz
+                                            cisco_args.cisco_chan      = cisco_chan_5ghz
                                         else:
-                                            cisco_args.cisco_chan           = cisco_chan_24ghz    
-                                        cisco_args.cisco_chan_width         = cisco_chan_width
-                                        cisco_args.cisco_ap_mode            = cisco_ap_mode
-                                        cisco_args.controller_set_tx_power  = cisco_tx_power 
+                                            cisco_args.cisco_chan      = cisco_chan_24ghz    
+                                        cisco_args.cisco_chan_width    = cisco_chan_width
+                                        cisco_args.cisco_ap_mode       = cisco_ap_mode
+                                        cisco_args.cisco_tx_power      = cisco_tx_power 
                                         print(cisco_args)
 
                                         cisco = cisco_(cisco_args)
@@ -1600,7 +1600,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         else:
                                             cisco.controller_disable_network_5ghz()
                                             cisco.controller_disable_network_24ghz()
-                                        cisco.set_tx_power()
+                                        cisco.controller_set_tx_power()
                                         cisco.controller_set_channel()
                                         cisco.controller_set_bandwidth()
 
