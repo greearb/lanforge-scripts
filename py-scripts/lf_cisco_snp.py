@@ -1031,6 +1031,7 @@ class L3VariableTime(LFCliBase):
             print("ip's acquired")
         else:
             print("print failed to get IP's")
+            exit(1) #why continue
         time.sleep(30)
         self.verify_controller()
         print("Starting multicast traffic (if any configured)")
@@ -1453,14 +1454,14 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     # radios on 192.168.100.178 
     #--ssid test_candela --ssidpw [BLANK] --security open 
     #iwlwifi(AX200) 521
-    '''radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
     ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
     ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
-    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]'''
-    radio_AX200_abgn_ax_dict = [['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    #radio_AX200_abgn_ax_dict = [['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     #ath10k(9984) 523
-    #radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==64 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_dict  = [['radio==6.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    #radio_ath10K_9984_an_AC_dict  = [['radio==6.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radios1 = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
     ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
@@ -1507,29 +1508,29 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
-        cisco_chan_5ghz        = "36".split()
-        cisco_chan_24ghz       = "1".split()
-        cisco_chan_widths      = "20 40 80".split()
-        cisco_ap_modes         = "local flex".split()
-        cisco_data_encryptions = "disable".split()
-        cisco_client_densities = "1 20 50 100 200".split()
-        endp_types             = "lf_udp lf_tcp"
-        cisco_packet_sizes     = "88 512 1370 1518".split()
-        cisco_client_densities = "1 3".split()
-        cisco_data_encryptions = "disable".split()
-    elif args.cisco_test:
-        cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b".split()
-        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_tx_power         = "3".split()
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local flex".split()
         cisco_data_encryptions = "disable".split()
-        cisco_client_densities = "1 20 50 100 200".split()
         endp_types             = "lf_udp lf_tcp"
-        cisco_packet_sizes     = "88 512 1370 1518".split()
-        cisco_client_densities = "1 3".split()
+        cisco_packet_sizes     = "1518".split()
+        cisco_client_densities = "1".split()
+        cisco_data_encryptions = "disable".split()
+    elif args.cisco_test:
+        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_bands            = "a b".split()
+        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_tx_power         = "3".split()
+        cisco_chan_5ghz        = "36".split()
+        cisco_chan_24ghz       = "1".split()
+        cisco_chan_widths      = "20".split()
+        cisco_ap_modes         = "local flex".split()
+        cisco_data_encryptions = "disable".split()
+        endp_types             = "lf_udp lf_tcp"
+        cisco_packet_sizes     = "1518".split()
+        cisco_client_densities = "1 ".split()
         cisco_data_encryptions = "disable".split()
     else:    
         cisco_aps             = args.cisco_ap.split()
@@ -1541,7 +1542,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
             else:
                 print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
-
+        cisco_tx_power           = "3".split()
         cisco_chan_5ghz          = "36".split()
         cisco_chan_24ghz         = "1".split()
         cisco_chan_widths        = args.cisco_chan_width.split()
@@ -1574,8 +1575,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             for cisco_client_density in cisco_client_densities:
                                 for endp_type in endp_types:
                                     for cisco_packet_size in cisco_packet_sizes:
-                                        print("Cisco run: AP {} band: {}  wifimode {} chan_5ghz {} chan_24ghz {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
-                                        cisco_band, cisco_wifimode, cisco_chan_5ghz, cisco_chan_24ghz,  cisco_chan_width, cisco_ap_mode, cisco_packet_size))
+                                        print("Cisco run: AP {} band: {}  wifimode {} tx_power {} chan_5ghz {} chan_24ghz {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
+                                        cisco_band, cisco_wifimode, cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz,  cisco_chan_width, cisco_ap_mode, cisco_packet_size))
                                         # over write the configurations of args for controller
                                         cisco_args.cisco_ap          = cisco_ap
                                         cisco_args.cisco_band        = cisco_band
@@ -1585,6 +1586,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             cisco_args.cisco_chan    = cisco_chan_24ghz    
                                         cisco_args.cisco_chan_width  = cisco_chan_width
                                         cisco_args.cisco_ap_mode     = cisco_ap_mode
+                                        cisco_args.cisco_tx_power    = cisco_tx_power
                                         print(cisco_args)
 
                                         cisco = cisco_(cisco_args)
@@ -1598,6 +1600,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         else:
                                             cisco.controller_disable_network_5ghz()
                                             cisco.controller_disable_network_24ghz()
+                                        cisco.set_tx_power()
                                         cisco.controller_set_channel()
                                         cisco.controller_set_bandwidth()
 
