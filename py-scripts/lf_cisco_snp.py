@@ -1507,6 +1507,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_chan_5ghz        = "36".split()
+        cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20 40 80".split()
         cisco_ap_modes         = "local flex".split()
         cisco_data_encryptions = "disable".split()
@@ -1519,6 +1521,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a b".split()
         cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_chan_5ghz        = "36".split()
+        cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local flex".split()
         cisco_data_encryptions = "disable".split()
@@ -1538,6 +1542,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                 print("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
 
+        cisco_chan_5ghz          = "36".split()
+        cisco_chan_24ghz         = "1".split()
         cisco_chan_widths        = args.cisco_chan_width.split()
         cisco_ap_modes           = args.cisco_ap_mode.split()
         cisco_client_densities   = args.cisco_client_density.split()
@@ -1550,6 +1556,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     print(cisco_aps)
     print(cisco_bands)
     print(cisco_wifimodes)
+    print(cisco_chan_widths)
     print(cisco_chan_widths)
     print(cisco_ap_modes)
     print(cisco_client_densities)
@@ -1567,11 +1574,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             for cisco_client_density in cisco_client_densities:
                                 for endp_type in endp_types:
                                     for cisco_packet_size in cisco_packet_sizes:
-                                        print("Cisco run: AP {} band: {}  wifimode {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
-                                        cisco_band, cisco_wifimode, cisco_chan_width, cisco_ap_mode, cisco_packet_size))
+                                        print("Cisco run: AP {} band: {}  wifimode {} chan_5ghz {} chan_24ghz {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
+                                        cisco_band, cisco_wifimode, cisco_chan_5ghz, cisco_chan_24ghz,  cisco_chan_width, cisco_ap_mode, cisco_packet_size))
                                         # over write the configurations of args for controller
                                         cisco_args.cisco_ap          = cisco_ap
                                         cisco_args.cisco_band        = cisco_band
+                                        if cisco_band == "a":
+                                            cisco_args.cisco_chan    = cisco_chan_5ghz
+                                        else:
+                                            cisco_args.cisco_chan    = cisco_chan_24ghz    
                                         cisco_args.cisco_chan_width  = cisco_chan_width
                                         cisco_args.cisco_ap_mode     = cisco_ap_mode
                                         print(cisco_args)
@@ -1587,7 +1598,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         else:
                                             cisco.controller_disable_network_5ghz()
                                             cisco.controller_disable_network_24ghz()
-
+                                        cisco.controller_set_channel()
                                         cisco.controller_set_bandwidth()
 
                                         if cisco_args.cisco_series == "9800":
