@@ -1510,9 +1510,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_chan_widths      = "20 40 80".split()
         cisco_ap_modes         = "local flex".split()
         cisco_data_encryptions = "disable".split()
-        cisco_aps              = "Axel".split()
         cisco_client_densities = "1 20 50 100 200".split()
-        endp_types             = "lf_udp lf_tcp".split()
+        endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "88 512 1370 1518".split()
         cisco_client_densities = "1 3".split()
         cisco_data_encryptions = "disable".split()
@@ -1523,9 +1522,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local flex".split()
         cisco_data_encryptions = "disable".split()
-        cisco_aps              = "Axel".split()
         cisco_client_densities = "1 20 50 100 200".split()
-        endp_types             = "lf_udp lf_tcp".split()
+        endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "88 512 1370 1518".split()
         cisco_client_densities = "1 3".split()
         cisco_data_encryptions = "disable".split()
@@ -1572,7 +1570,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         print("Cisco run: AP {} band: {}  wifimode {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
                                         cisco_band, cisco_wifimode, cisco_chan_width, cisco_ap_mode, cisco_packet_size))
                                         # over write the configurations of args for controller
-                                        '''cisco_args.cisco_ap          = cisco_ap
+                                        cisco_args.cisco_ap          = cisco_ap
                                         cisco_args.cisco_band        = cisco_band
                                         cisco_args.cisco_chan_width  = cisco_chan_width
                                         cisco_args.cisco_ap_mode     = cisco_ap_mode
@@ -1602,7 +1600,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         cisco.controller_enable_ap()
 
                                         # need to actually check the CAC timer
-                                        time.sleep(30)'''
+                                        time.sleep(30)
 
                                         # TODO may need a static list of radios read for scaling and performance
                                         print("cisco_wifi_mode {}".format(cisco_wifimode))
@@ -1638,7 +1636,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             #####################
                                             # temp removal of loop
                                             ######################
-                                            '''optional_radio_reset_keys = ['reset_port_enable']
+                                            optional_radio_reset_keys = ['reset_port_enable']
                                             radio_reset_found = True
                                             for key in optional_radio_reset_keys:
                                                 if key not in radio_info_dict:
@@ -1717,7 +1715,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                             ip_var_test.cleanup()
                             if ip_var_test.passes():
                                 print("Full test passed, all connections increased rx bytes")
-                            '''    
+                                
                             ################################
                             # end of commented out loop
                             ################################
