@@ -1722,11 +1722,16 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         if not ip_var_test.passes():
                                             print("stop test failed")
                                             print(ip_var_test.get_fail_message())
+                                        # clean up 
+                                        radio_name_list = []
+                                        number_of_stations_per_radio_list = []
+                                        ssid_list = []
+                                        ssid_password_list = []
+                                        ssid_security_list = []
+                                        wifimode_list = []
 
+                                        ip_var_test.cleanup()
 
-    #print("Pausing 30 seconds after run for manual inspection before we clean up.")
-    #time.sleep(30)
-                            ip_var_test.cleanup()
                             if ip_var_test.passes():
                                 print("Full test passed, all connections increased rx bytes")
                                 
