@@ -1459,18 +1459,134 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         radios = args.radio
 
 
-    # static dictionaries for radios on 191.168.100.178
 
-    # radios on 192.168.100.178 
-    #--ssid test_candela --ssidpw [BLANK] --security open 
+    ####################################################
+    #
+    #  Static Configuration Cisco Realm
+    #
+    ####################################################
+    radio_AX200_abgn_ax_list_001        = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_AX200_abgn_ax_list_010        = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+    radio_AX200_abgn_ax_list_020        =  [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==3.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==3.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==4.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==4.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==5.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==5.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ]
+
+    radio_AX200_abgn_ax_list_024        =  [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==3.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==3.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==4.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==4.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==5.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==5.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==6.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ]
+
+
+    radio_AX200_abgn_ax_dict = {'1'   : radio_AX200_abgn_ax_list_001, 
+                                '10'  : radio_AX200_abgn_ax_list_010, 
+                                '20'  : radio_AX200_abgn_ax_list_020,
+                                '50'  : radio_AX200_abgn_ax_list_024,
+                                '100' : radio_AX200_abgn_ax_list_024,
+                                '200' : radio_AX200_abgn_ax_list_024}
+
+    
+    radio_ath10K_9984_an_AC_list_001     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050     = [['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_100     = [['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                            ['radio==1.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_200     = [['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                            ['radio==1.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                            ['radio==6.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                            ['radio==6.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_ath10K_9984_an_AC_dict = {'1'  : radio_ath10K_9984_an_AC_list_001,
+                                    '10' : radio_ath10K_9984_an_AC_list_010,
+                                    '20' : radio_ath10K_9984_an_AC_list_020,
+                                    '50' : radio_ath10K_9984_an_AC_list_050,
+                                    '100': radio_ath10K_9984_an_AC_list_100,
+                                    '200': radio_ath10K_9984_an_AC_list_200}
+
+    ####################################################
+    #
+    #  Static dictionaries for radios on 191.168.100.178
+    #  Static Configuration Candela Tech Realm ()
+    #
+    ####################################################
     #iwlwifi(AX200) 521
-    radio_AX200_abgn_ax_dict = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
-    ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
-    ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
-    ['radio==1.wiphy6 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    #radio_AX200_abgn_ax_dict = [['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-    #ath10k(9984) 523
-    radio_ath10K_9984_an_AC_dict  = [['radio==1.wiphy0 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+                                        ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+                                        ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001, 
+                                    '10' : radio_AX200_abgn_ax_list_004,
+                                    '20' : radio_AX200_abgn_ax_list_004,
+                                    '50' : radio_AX200_abgn_ax_list_004,
+                                    '100': radio_AX200_abgn_ax_list_004,
+                                    '200': radio_AX200_abgn_ax_list_004}
+
+    radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020  = [['radio==1.wiphy1 stations==20 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050  = [['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_ath10K_9984_an_AC_dict_test = {'1'  : radio_ath10K_9984_an_AC_list_001,
+                                        '10'  : radio_ath10K_9984_an_AC_list_010,
+                                        '20'  : radio_ath10K_9984_an_AC_list_020,
+                                        '50'  : radio_ath10K_9984_an_AC_list_050,
+                                        '100' : radio_ath10K_9984_an_AC_list_050,
+                                        '200' : radio_ath10K_9984_an_AC_list_050}
+
+
+
     #radio_ath10K_9984_an_AC_dict  = [['radio==6.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radios1 = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
@@ -1542,6 +1658,10 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1 ".split()
         cisco_data_encryptions = "disable".split()
+
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
+
     else:    
         cisco_aps             = args.cisco_ap.split()
         cisco_bands           = args.cisco_band.split()
@@ -1625,15 +1745,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
                                         # need to actually check the CAC timer
                                         time.sleep(30)
-
+                                    
                                         # TODO may need a static list of radios read for scaling and performance
                                         print("cisco_wifi_mode {}".format(cisco_wifimode))
                                         if args.radio:
                                             radios = args.radio
                                         elif cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
-                                            radios = radio_AX200_abgn_ax_dict
+                                            radios = radio_AX200_abgn_ax_dict[cisco_client_density]
                                         elif cisco_wifimode == "an" or cisco_wifimode == "anAC":
-                                            radios = radio_ath10K_9984_an_AC_dict
+                                            radios = radio_ath10K_9984_an_AC_dict[cisco_client_density]
 
                                         print("radios {}".format(radios))
                                         for radio_ in radios:
@@ -1656,10 +1776,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             else: 
                                                 number_of_stations_per_radio_list.append(radio_info_dict['stations'])
                                                 wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                                
 
-                                            #####################
-                                            # temp removal of loop
-                                            ######################
                                             optional_radio_reset_keys = ['reset_port_enable']
                                             radio_reset_found = True
                                             for key in optional_radio_reset_keys:
@@ -1676,6 +1794,11 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                 reset_port_enable_list.append(False)
                                                 reset_port_time_min_list.append('0s')
                                                 reset_port_time_max_list.append('0s')
+                                        
+                                        #####################
+                                        # temp removal of loop
+                                        ######################
+        
                                         index = 0
                                         station_lists = []
                                         for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
@@ -1691,6 +1814,13 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         #print("endp-types: %s"%(endp_types))
 
                                         #enstanciate the 
+                                        # current default is to have a values
+                                        if args.csv_outfile != None:
+                                            current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+                                            csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+                                        else:
+                                            csv_outfile = temp.csv  # this will get overwritten    
+                                        print("csv output file : {}".format(csv_outfile))
 
 
 
