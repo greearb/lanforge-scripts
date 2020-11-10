@@ -502,6 +502,7 @@ class Realm(LFCliBase):
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60, debug=False):
         print("Waiting for ips, timeout: %i..."%(timeout_sec))
         #print(station_list)
+        waiting_states = ["0.0.0.0", "NA", ""]
 
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("wait_for_ip: expects non-empty list of ports")
@@ -527,7 +528,7 @@ class Realm(LFCliBase):
 
                 if ipv4:
                     v = response['interface']
-                    if v['ip'] == '0.0.0.0':
+                    if (v['ip'] in waiting_states):
                         wait_more = True
                         if debug:
                             print("Waiting for port %s to get IPv4 Address."%(sta_eid))
