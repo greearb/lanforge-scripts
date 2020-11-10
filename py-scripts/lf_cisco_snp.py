@@ -1429,6 +1429,10 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-amr','--side_a_min_rate',  help='--side_a_min_rate, station transfer rate default 256000', default=256000)
     parser.add_argument('-bmr','--side_b_min_rate',  help='--side_b_min_rate , upstream min tx rate default 256000', default=256000)
 
+    # Parameters that allow for testing
+    parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
+    parser.add_argument('-nos','--no_stations',    help='--no_stations , no stations', action='store_true')
+
     args = parser.parse_args()
 
     cisco_args = args
@@ -1530,10 +1534,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     radio_AX200_abgn_ax_dict = {'1'   : radio_AX200_abgn_ax_list_001, 
                                 '10'  : radio_AX200_abgn_ax_list_010, 
-                                '20'  : radio_AX200_abgn_ax_list_020,
-                                '50'  : radio_AX200_abgn_ax_list_024,
-                                '100' : radio_AX200_abgn_ax_list_024,
-                                '200' : radio_AX200_abgn_ax_list_024}
+                                '24'  : radio_AX200_abgn_ax_list_024}
 
     
     radio_ath10K_9984_an_AC_list_001     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1548,10 +1549,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             ['radio==6.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_dict = {'1'  : radio_ath10K_9984_an_AC_list_001,
-                                    '10' : radio_ath10K_9984_an_AC_list_010,
-                                    '20' : radio_ath10K_9984_an_AC_list_020,
                                     '50' : radio_ath10K_9984_an_AC_list_050,
-                                    '100': radio_ath10K_9984_an_AC_list_100,
                                     '200': radio_ath10K_9984_an_AC_list_200}
 
     ####################################################
@@ -1566,12 +1564,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001, 
-                                    '10' : radio_AX200_abgn_ax_list_004,
-                                    '20' : radio_AX200_abgn_ax_list_004,
-                                    '50' : radio_AX200_abgn_ax_list_004,
-                                    '100': radio_AX200_abgn_ax_list_004,
-                                    '200': radio_AX200_abgn_ax_list_004}
+    radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001,
+                                     '4': radio_AX200_abgn_ax_list_004}
 
     radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1580,10 +1574,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     radio_ath10K_9984_an_AC_dict_test = {'1'  : radio_ath10K_9984_an_AC_list_001,
                                         '10'  : radio_ath10K_9984_an_AC_list_010,
-                                        '20'  : radio_ath10K_9984_an_AC_list_020,
-                                        '50'  : radio_ath10K_9984_an_AC_list_050,
-                                        '100' : radio_ath10K_9984_an_AC_list_050,
-                                        '200' : radio_ath10K_9984_an_AC_list_050}
+                                        '50'  : radio_ath10K_9984_an_AC_list_050}
 
 
 
@@ -1646,13 +1637,14 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_data_encryptions = "disable".split()
     elif args.cisco_test:
         cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b".split()
-        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_bands            = "a".split()
+        #cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
-        cisco_ap_modes         = "local flex".split()
+        cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
         endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "1518".split()
@@ -1703,11 +1695,21 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                     for cisco_data_encryption in cisco_data_encryptions:
                         for cisco_ap_mode in cisco_ap_modes:
                             for cisco_client_density in cisco_client_densities:
-                                for endp_type in endp_types:
-                                    for cisco_packet_size in cisco_packet_sizes:
-                                        print("Cisco run: AP {} band: {}  wifimode {} tx_power {} chan_5ghz {} chan_24ghz {} chan_width {} cisco_ap_mode {}  cisco_packet_size {}".format(cisco_ap, 
-                                        cisco_band, cisco_wifimode, cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz,  cisco_chan_width, cisco_ap_mode, cisco_packet_size))
-                                        # over write the configurations of args for controller
+                                for cisco_packet_size in cisco_packet_sizes:
+                                    print("###########################################################################################################################################")
+                                    print("# TEST RUNNING ,  TEST RUNNING ############################################################################################################")
+                                    print("###########################################################################################################################################")
+                                    print("# Cisco static settings: tx_power {} chan_5ghz {} chan_24ghz {} ".format(cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
+                                    print("# Cisco run Dynamic settings: AP {} band: {}  wifimode {} cisco_chan_width {} cisco_data_encryption {}  cisco_ap_mode {} cisco_client_density {} cisco_packet_size {}".format(
+                                        cisco_ap, cisco_band, cisco_wifimode, cisco_chan_width, cisco_data_encryption, cisco_ap_mode, cisco_client_density, cisco_packet_size))
+                                    print("###########################################################################################################################################")
+                                    print("###########################################################################################################################################")
+                                    # over write the configurations of args for controller
+                                    if(args.no_controller):
+                                        print("#########################################################################################################################################")
+                                        print("# NO CONTROLLER SET")
+                                        print("#########################################################################################################################################")
+                                    else:
                                         cisco_args.cisco_ap            = cisco_ap
                                         cisco_args.cisco_band          = cisco_band
                                         if cisco_band == "a":
@@ -1718,7 +1720,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         cisco_args.cisco_ap_mode       = cisco_ap_mode
                                         cisco_args.cisco_tx_power      = cisco_tx_power 
                                         print(cisco_args)
-
                                         cisco = cisco_(cisco_args)
                                         #Disable AP
                                         cisco.controller_disable_ap()
@@ -1733,19 +1734,16 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         cisco.controller_set_tx_power()
                                         cisco.controller_set_channel()
                                         cisco.controller_set_bandwidth()
-
                                         if cisco_args.cisco_series == "9800":
                                             cisco.controller_create_wlan()
                                             cisco.controller_set_wireless_tag_policy()
                                             cisco.controller_enable_wlan()
-
                                         cisco.controller_enable_network_5ghz()
                                         cisco.controller_enable_network_24ghz()
                                         cisco.controller_enable_ap()
-
                                         # need to actually check the CAC timer
                                         time.sleep(30)
-                                    
+
                                         # TODO may need a static list of radios read for scaling and performance
                                         print("cisco_wifi_mode {}".format(cisco_wifimode))
                                         if args.radio:
@@ -1754,18 +1752,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             radios = radio_AX200_abgn_ax_dict[cisco_client_density]
                                         elif cisco_wifimode == "an" or cisco_wifimode == "anAC":
                                             radios = radio_ath10K_9984_an_AC_dict[cisco_client_density]
-
                                         print("radios {}".format(radios))
                                         for radio_ in radios:
                                             radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
                                             radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
                                             print("radio_dict {}".format(radio_info_dict))
-
                                             for key in radio_keys:
                                                 if key not in radio_info_dict:
                                                     print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
                                                     exit(1)
-
                                             radio_name_list.append(radio_info_dict['radio'])
                                             ssid_list.append(radio_info_dict['ssid'])
                                             ssid_password_list.append(radio_info_dict['ssid_pw'])
@@ -1776,7 +1771,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             else: 
                                                 number_of_stations_per_radio_list.append(radio_info_dict['stations'])
                                                 wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-                                                
 
                                             optional_radio_reset_keys = ['reset_port_enable']
                                             radio_reset_found = True
@@ -1785,7 +1779,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                     #print("port reset test not enabled")
                                                     radio_reset_found = False
                                                     break
-                                                
+                                                 
                                             if radio_reset_found:
                                                 reset_port_enable_list.append(True)
                                                 reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
@@ -1794,11 +1788,16 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                 reset_port_enable_list.append(False)
                                                 reset_port_time_min_list.append('0s')
                                                 reset_port_time_max_list.append('0s')
-                                        
+
+                                    if(args.no_stations):
+                                        print("###########################################################################################################################################")
+                                        print("# NO STATIONS")
+                                        print("###########################################################################################################################################")
+                                    else:
                                         #####################
                                         # temp removal of loop
                                         ######################
-        
+
                                         index = 0
                                         station_lists = []
                                         for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
@@ -1810,9 +1809,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                                                   padding_number_=10000, radio=radio_name_)
                                             station_lists.append(station_list)
                                             index += 1
-
                                         #print("endp-types: %s"%(endp_types))
-
                                         #enstanciate the 
                                         # current default is to have a values
                                         if args.csv_outfile != None:
@@ -1821,9 +1818,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         else:
                                             csv_outfile = temp.csv  # this will get overwritten    
                                         print("csv output file : {}".format(csv_outfile))
-
-
-
                                         ip_var_test = L3VariableTime(
                                                                         lfjson_host,
                                                                         lfjson_port,
@@ -1849,8 +1843,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                                         side_b_min_rate=args.side_b_min_rate, 
                                                                         debug_on=debug_on, 
                                                                         outfile=csv_outfile)
-
-
                                         ip_var_test.pre_cleanup()
                                         ip_var_test.build()
                                         if not ip_var_test.passes():
@@ -1869,10 +1861,12 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         ssid_password_list = []
                                         ssid_security_list = []
                                         wifimode_list = []
-
                                         ip_var_test.cleanup()
 
-                            if ip_var_test.passes():
+                            if ( args.no_stations):
+                                pass
+                            else:
+                                ip_var_test.passes()
                                 print("Full test passed, all connections increased rx bytes")
                                 
                             ################################
