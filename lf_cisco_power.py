@@ -1496,13 +1496,12 @@ def main():
    if args.series == "9800":
 
        try:
-          logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
+          logg.info("9800 cisco_wifi_ctl.py: no_wlan_wireless_tag_policy")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                          "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
+                          "--action", "no_wlan_wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
        except subprocess.CalledProcessError as process_error:
           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
           exit_test(workbook)
-
 
        try:
           logg.info("9800 cisco_wifi_ctl.py: delete_wlan")

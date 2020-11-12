@@ -111,7 +111,7 @@ def main():
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
-      "wireless_tag_policy"])
+      "wireless_tag_policy","no_wlan_wireless_tag_policy"])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -1082,6 +1082,24 @@ def main():
             command = "show ap dot11 24ghz summary"
       else:
          command = "show ap channel %s"%(args.ap)
+
+   if (args.action == "no_wlan_wireless_tag_policy"):
+      logg.info("send wireless tag policy no wlan")
+      egg.sendline("config t")
+      sleep(0.1)
+      i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      if i == 0:
+         for command in ["wireless tag policy default-policy-tag","no wlan open-wlan policy default-policy-profile"]:
+            egg.sendline(command)
+            sleep(1)
+            j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
+            if j == 0:
+               logg.info("command sent: {}".format(command))
+            if j == 1:
+               logg.info("timed out on command prompt (config-policy-tag)# for command {}".format(command))   
+      if i == 1:
+         logg.info("did not get the (config)# prompt")
+
 
    if (args.action == "wireless_tag_policy"):
       logg.info("send wireless tag policy")
