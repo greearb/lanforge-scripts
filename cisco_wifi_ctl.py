@@ -1167,7 +1167,7 @@ def main():
              sleep(0.4)
              j = egg.expect_exact(["WLC(config-wlan)#",pexpect.TIMEOUT],timeout=2)
              if j == 0:
-                 for command in ["shutdown","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                 for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown"]:
                     egg.sendline(command)
                     sleep(1)
