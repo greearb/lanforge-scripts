@@ -1506,7 +1506,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: delete_wlan")
           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                      "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port], capture_output=True, check=True)    
+                      "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port], capture_output=cap_ctl_out, check=True)    
        except subprocess.CalledProcessError as process_error:
           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
           #exit_test(workbook) 
