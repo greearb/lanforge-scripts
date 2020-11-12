@@ -1154,7 +1154,7 @@ def main():
 
    if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
       raise Exception("wlan  and wlanID is required an")
-   if (args.action == "wlan"):
+   if (args.action == "create_wlan"):
       if args.series == "9800":
           egg.sendline("config t")
           sleep(0.4)
