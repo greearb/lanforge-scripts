@@ -111,7 +111,7 @@ def main():
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
       "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
-      "wireless_tag_policy","no_wlan_wireless_tag_policy"])
+      "wireless_tag_policy","no_wlan_wireless_tag_policy","delete_wlan"])
    parser.add_argument("--value",       type=str, help="set value")
 
    args = None
@@ -1207,13 +1207,13 @@ def main():
             raise Exception("9800 series wlan is required")
          else:
             egg.sendline("config t")
-            sleep(0.1)
+            sleep(0.4)
             i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
             if i == 0:
                logg.info("elevated to (config)#")
                cmd = "no wlan %s"%(args.wlan)
                egg.sendline(cmd)
-               sleep(0.1)
+               sleep(0.4)
             if i == 1:
                logg.info("did not get the (config)# prompt")                            
       else:
