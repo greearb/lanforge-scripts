@@ -631,6 +631,7 @@ def main():
                myrd = m.group(1)
 
    # Loop through all iterations and run txpower tests.
+   wlan_created = False
    for ch in channels:
        pathloss = args.pathloss
        antenna_gain = args.antenna_gain
@@ -695,7 +696,6 @@ def main():
                    if args.series == "9800": 
                        # 9800 series need to  "Configure radio for manual channel assignment"
                        logg.info("9800 Configure radio for manual channel assignment")
-                       
 
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_wlan")
@@ -780,23 +780,28 @@ def main():
                           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                           exit_test(workbook) 
 
+
+                   # only create the wlan the first time  
                    if args.series == "9800":
-
-                       try:
-                           logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
-                           subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port], capture_output=cap_ctl_out, check=True)    
-                       except subprocess.CalledProcessError as process_error:
-                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                          exit_test(workbook)
-
-                       try:
-                          logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
-                          subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
-                       except subprocess.CalledProcessError as process_error:
-                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                          exit_test(workbook)
+                       if wlan_created:
+                          pass
+                       else: 
+                          wlan_created = True 
+                          try:
+                              logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
+                              subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                      "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port], capture_output=cap_ctl_out, check=True)    
+                          except subprocess.CalledProcessError as process_error:
+                             logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                             exit_test(workbook)
+   
+                          try:
+                             logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
+                             subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
+                          except subprocess.CalledProcessError as process_error:
+                             logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                             exit_test(workbook)
 
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_wlan")
