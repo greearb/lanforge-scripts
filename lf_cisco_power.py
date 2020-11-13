@@ -309,9 +309,12 @@ def main():
           pf_a4_dropoff = args.pf_p4_dropoff
       if (args.verbose):
           # capture the controller output , thus won't got to stdout some output always present
-          cap_ctl_out = False
+          cap_ctl_out        = True
+          suppress_output    = "False"
       else:
-          cap_ctl_out = True        
+          cap_ctl_out     = False 
+          suppress_output = "True"
+
       print("cap_ctl_out {}".format(cap_ctl_out))    
       # note: there would always be an args.outfile due to the default
       current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
@@ -614,12 +617,13 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: summary")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                 "--action", "summary","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
+                                 "--action", "summary","--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
       logg.info(pss)
    except subprocess.CalledProcessError as process_error:
       logg.info("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
       exit_test(workbook)
+   
    # Find our current regulatory domain so we can report it properly
    searchap = False
    for line in pss.splitlines():
