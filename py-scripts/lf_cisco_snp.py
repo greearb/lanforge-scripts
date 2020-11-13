@@ -1480,6 +1480,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     if args.log:
         outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
         print("output file log: {}".format(outfile_log))
+    else:
+        outfile_log = "stdout"
+        print("output file log: {}".format(outfile_log))    
 
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)

@@ -324,6 +324,10 @@ def main():
       if args.log:
         outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
         print("output file log: {}".format(outfile_log))
+      else:
+        outfile_log = "stdout"
+        print("output file log: {}".format(outfile_log))    
+
       email_dicts = []
       if args.email:
         emails = args.email
@@ -589,7 +593,7 @@ def main():
       try:
          logg.info("9800 cisco_wifi_ctl.py: no_logging_console")
          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                    "--action", "no_logging_console","--series",args.series,"--port",args.port], capture_output=True, check=True)
+                                    "--action", "no_logging_console","--series",args.series,"--port", args.port], capture_output=True, check=True)
          pss = advanced.stdout.decode('utf-8', 'ignore');
          logg.info(pss)
       except subprocess.CalledProcessError as process_error:
@@ -599,7 +603,7 @@ def main():
       try:
          logg.info("9800 cisco_wifi_ctl.py: line_console_0")
          advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                    "--action", "line_console_0","--series",args.series,"--port",args.port], capture_output=True, check=True)
+                                    "--action", "line_console_0","--series",args.series,"--port", args.port], capture_output=True, check=True)
          pss = advanced.stdout.decode('utf-8', 'ignore');
          logg.info(pss)
       except subprocess.CalledProcessError as process_error:
@@ -610,13 +614,12 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: summary")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                 "--action", "summary","--series",args.series,"--port",args.port], capture_output=True, check=True)
+                                 "--action", "summary","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
       logg.info(pss)
    except subprocess.CalledProcessError as process_error:
       logg.info("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
       exit_test(workbook)
-         
    # Find our current regulatory domain so we can report it properly
    searchap = False
    for line in pss.splitlines():
@@ -695,7 +698,7 @@ def main():
                    try:
                        logg.info("3504/9800 cisco_wifi_ctl.py: disable AP {}".format(args.ap))
                        ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "disable","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                       "--action", "disable","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                        if cap_ctl_out:   
                           pss = ctl_output.stdout.decode('utf-8', 'ignore')
                           logg.info(pss) 
@@ -710,7 +713,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_wlan","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "disable_wlan","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -721,7 +724,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_network_5ghz")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -733,7 +736,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_network_24ghz")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -745,7 +748,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: manual")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "manual","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "manual","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -757,7 +760,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11a disable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11a disable network","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -769,7 +772,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11b disable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                          
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
@@ -801,7 +804,7 @@ def main():
                        try:
                           logg.info("9800/3504 cisco_wifi_ctl.py: channel {}".format(ch))
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                       "--action", "channel", "--value", ch, "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -815,7 +818,7 @@ def main():
                        try:
                           logg.info("9800/3504 cisco_wifi_ctl.py: bandwidth {}".format(bw))
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                       "--action", "bandwidth", "--value", bw, "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -834,7 +837,7 @@ def main():
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
                               ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port], capture_output=cap_ctl_out, check=True)    
+                                      "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)    
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
@@ -846,7 +849,7 @@ def main():
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
                               ctl_output =subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
+                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True) 
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
@@ -857,7 +860,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "enable_wlan","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)                 
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -871,7 +874,7 @@ def main():
                        try:  
                           logg.info("9800 cisco_wifi_ctl.py: enable_network_5ghz")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)   
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)   
                           if cap_ctl_out:   
                             pss = ctl_output.stdout.decode('utf-8', 'ignore')
                             logg.info(pss) 
@@ -883,7 +886,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_network_24ghz")
                           ctl_output =subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)                 
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -895,7 +898,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -907,7 +910,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -919,7 +922,7 @@ def main():
                    try: 
                       logg.info("9800/3504 cisco_wifi_ctl.py: enable")
                       ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable", "--series" , args.series,"--port", args.port], capture_output=cap_ctl_out, check=True)
+                                   "--action", "enable", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)
                       if cap_ctl_out:   
                          pss = ctl_output.stdout.decode('utf-8', 'ignore')
                          logg.info(pss) 
@@ -940,7 +943,7 @@ def main():
                           try:
                              logg.info("9800 cisco_wifi_ctl.py: advanced")
                              advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                                 "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                                                 "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                              pss = advanced.stdout.decode('utf-8', 'ignore')
                              logg.info(pss)
                           except subprocess.CalledProcessError as process_error:
@@ -1000,7 +1003,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: show_wlan_summary")
                           wlan_summary = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                                              "--action", "show_wlan_summary","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                           pss = wlan_summary.stdout.decode('utf-8', 'ignore')
                           logg.info(pss)
                        except subprocess.CalledProcessError as process_error:
@@ -1009,7 +1012,7 @@ def main():
                        try:
                            logg.info("3504 cisco_wifi_ctl.py: advanced")
                            advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--port", args.port], capture_output=True, check=True)
+                                              "--action", "advanced","--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                            pss = advanced.stdout.decode('utf-8', 'ignore')
                            logg.info(pss)
                        except subprocess.CalledProcessError as process_error:
@@ -1108,7 +1111,7 @@ def main():
                                try:
                                   logg.info("9800 cisco_wifi_ctl.py: advanced")
                                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                                              "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                                   pss = advanced.stdout.decode('utf-8', 'ignore')
                                   logg.info(pss)
                                except subprocess.CalledProcessError as process_error:
@@ -1544,7 +1547,7 @@ def main():
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: advanced")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-             "--action", "advanced","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+             "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
           logg.info(pss)
        except subprocess.CalledProcessError as process_error:
@@ -1553,7 +1556,7 @@ def main():
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: summary")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-             "--action", "summary","--series" , args.series,"--port", args.port], capture_output=True, check=True)
+             "--action", "summary","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
           logg.info(pss)
        except subprocess.CalledProcessError as process_error:
@@ -1572,7 +1575,7 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: disable AP {}".format(args.ap))
       ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "disable", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "disable", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
       if cap_ctl_out:
           pss = ctl_output.stdout.decode('utf-8', 'ignore')
           logg.info(pss)
@@ -1586,7 +1589,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: no_wlan_wireless_tag_policy")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                          "--action", "no_wlan_wireless_tag_policy","--series",args.series,"--port", args.port], capture_output=cap_ctl_out, check=True) 
+                          "--action", "no_wlan_wireless_tag_policy","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True) 
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1598,7 +1601,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: delete_wlan")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                      "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port], capture_output=cap_ctl_out, check=True)    
+                      "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port,"--log", outfile_log, "--append"], capture_output=cap_ctl_out, check=True)    
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1610,7 +1613,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: disable_network_5ghz")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)      
+                                   "--action", "disable_network_5ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)      
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1622,7 +1625,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: disable_network_24ghz")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "disable_network_24ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)                 
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1635,7 +1638,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11a disable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1647,7 +1650,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11b disable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1660,7 +1663,7 @@ def main():
        try: 
           logg.info("9800/3504 cisco_wifi_ctl.py: txPower tx 1")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+                       "--action", "txPower", "--value", "1", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1673,8 +1676,8 @@ def main():
    if (ch != "NA"):
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: channel 36")
-          ctl_out = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                       "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1687,7 +1690,7 @@ def main():
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: bandwidth 20")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1700,7 +1703,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: enable_network_5ghz")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)         
+                                   "--action", "enable_network_5ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)         
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1712,7 +1715,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: enable_network_24ghz")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True) 
+                                   "--action", "enable_network_24ghz","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True) 
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1724,7 +1727,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: auto")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "auto","--series",args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+                                   "--action", "auto","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1737,7 +1740,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1749,7 +1752,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11b enable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1761,7 +1764,7 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: enable")
       ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "enable", "--series" , args.series,"--port", args.port],capture_output=cap_ctl_out, check=True)
+                   "--action", "enable", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"],capture_output=cap_ctl_out, check=True)
       if cap_ctl_out:
          pss = ctl_output.stdout.decode('utf-8', 'ignore')
          logg.info(pss)
@@ -1782,7 +1785,7 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: advanced")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "advanced", "--series" , args.series,"--port", args.port], capture_output=True, check=True)
+                              "--action", "advanced", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
       logg.info(pss)
    except subprocess.CalledProcessError as process_error:
