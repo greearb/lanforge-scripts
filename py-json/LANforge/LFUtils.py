@@ -12,6 +12,7 @@ import time
 from time import sleep
 from random import seed
 import re
+import ipaddress
 
 seed(int(round(time.time() * 1000)))
 from random import randint
@@ -293,6 +294,15 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     return name_list
 
 
+def gen_ip_series(ip_addr, netmask, num_ips=None):
+    ip_list = [str(ip) for ip in ipaddress.IPv4Network(ip_addr + '/' + netmask, strict=False)]
+    chosen_ips = []
+    if num_ips is None:
+        return ip_list
+    else:
+        for i in range(ip_list.index(ip_addr), num_ips + ip_list.index(ip_addr)):
+            chosen_ips.append(ip_list[i])
+        return chosen_ips
 
 def generateRandomHex():
     return generate_random_hex()
