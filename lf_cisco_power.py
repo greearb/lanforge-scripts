@@ -853,7 +853,7 @@ def main():
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
                               ctl_output =subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
+                                      "--action", "wireless_tag_policy", "--wlan", args.wlan, "--series", "--wlanID", args.wlanID, "--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
@@ -864,7 +864,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "enable_wlan", "--wlan", args.wlan, "--wlanID", args.wlanID, "--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True)                 
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -1593,7 +1593,7 @@ def main():
        try:
           logg.info("9800 cisco_wifi_ctl.py: no_wlan_wireless_tag_policy")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                          "--action", "no_wlan_wireless_tag_policy","--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
+                          "--action", "no_wlan_wireless_tag_policy", "--wlan", args.wlan, "--series", "--wlanID", args.wlanID, args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
