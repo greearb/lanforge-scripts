@@ -2338,19 +2338,24 @@ class FIOEndpProfile(LFCliBase):
 class MACVLANProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port,
                  local_realm,
-                 upstream_port="eth1",
+                 macvlan_parent="eth1",
                  num_macvlans=1,
                  admin_down=False,
-                 dhcp=True,
+                 dhcp=False,
                  debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.local_realm = local_realm
         self.num_macvlans = num_macvlans
-        self.upstream_port = upstream_port
+        self.macvlan_parent = macvlan_parent
         self.resource = 1
         self.shelf = 1
+        self.desired_macvlans = []
         self.created_macvlans = []
         self.dhcp = dhcp
+        self.netmask = None
+        self.first_ip_addr = None
+        self.gateway = None
+        self.ip_list = []
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -2362,9 +2367,6 @@ class MACVLANProfile(LFCliBase):
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
-        if self.dhcp:
-            self.desired_set_port_current_flags.append("use_dhcp")
-            self.desired_set_port_interest_flags.append("dhcp")
 
     def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
@@ -2441,38 +2443,58 @@ class MACVLANProfile(LFCliBase):
         print("Creating MACVLANs...")
         req_url = "/cli-json/add_mvlan"
 
+        if not self.dhcp and self.first_ip_addr is not None and self.netmask is not None and self.gateway is not None:
+            self.desired_set_port_interest_flags.append("ip_address")
+            self.desired_set_port_interest_flags.append("ip_Mask")
+            self.desired_set_port_interest_flags.append("ip_gateway")
+            self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr, netmask=self.netmask, num_ips=self.num_macvlans)
+
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-        for i in range(self.num_macvlans):
+
+        if self.dhcp:
+            print("Using DHCP")
+            self.desired_set_port_current_flags.append("use_dhcp")
+            self.desired_set_port_interest_flags.append("dhcp")
+
+        for i in range(len(self.desired_macvlans)):
             data = {
                 "shelf": self.shelf,
                 "resource": self.resource,
                 "mac": "xx:xx:xx:*:*:xx",
-                "port": self.local_realm.name_to_eid(self.upstream_port)[2],
-                "index": i,
+                "port": self.local_realm.name_to_eid(self.macvlan_parent)[2],
+                "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#')+1:]),
                 "flags": None
             }
-            if self.admin_down:
+            if admin_down:
                 data["flags"] = 1
             else:
                 data["flags"] = 0
-            self.created_macvlans.append("%s.%s.%s#%s" % (self.shelf, self.resource,
-                                                          self.local_realm.name_to_eid(self.upstream_port)[2], i))
+            self.created_macvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
+                                                          self.macvlan_parent, int(self.desired_macvlans[i][self.desired_macvlans[i].index('#')+1:])))
             self.local_realm.json_post(req_url, data)
+            time.sleep(sleep_time)
 
-        for eidn in self.created_macvlans:
-            eid = self.local_realm.name_to_eid(eidn)
+        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+        print(self.created_macvlans)
+
+        # time.sleep(sleep_time)
+
+        for i in range(len(self.created_macvlans)):
+            eid = self.local_realm.name_to_eid(self.created_macvlans[i])
             name = eid[2]
             self.set_port_data["port"] = name  # for set_port calls.
-
-            # time.sleep(0.03)
-            time.sleep(sleep_time)
+            if not self.dhcp and self.first_ip_addr is not None and self.netmask is not None \
+                    and self.gateway is not None:
+                self.set_port_data["ip_addr"] = self.ip_list[i]
+                self.set_port_data["netmask"] = self.netmask
+                self.set_port_data["gateway"] = self.gateway
             set_port_r.addPostData(self.set_port_data)
             json_response = set_port_r.jsonPost(debug)
-            time.sleep(0.03)
+            time.sleep(sleep_time)
 
     def cleanup(self):
         print("Cleaning up MACVLANs...")
@@ -2481,7 +2503,7 @@ class MACVLANProfile(LFCliBase):
             self.local_realm.rm_port(port_eid, check_exists=True)
             time.sleep(.2)
         # And now see if they are gone
-        # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
 
     def admin_up(self):
         for macvlan in self.created_macvlans:
