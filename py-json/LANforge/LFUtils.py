@@ -539,9 +539,9 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]
 
-    while len(found_stations) < len(port_list):
+    while len(found_stations) < len(endp_list):
         found_stations = []
-        for port_eid in port_list:
+        for port_eid in endp_list:
 
             eid = name_to_eid(port_eid)
             shelf = eid[0]
@@ -557,7 +557,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
-        if (len(found_stations) < len(port_list)):
+        if (len(found_stations) < len(endp_list)):
             sleep(2)
 
     if debug:
