@@ -476,13 +476,11 @@ def name_to_eid(input):
         return rv
 
     if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name
-        print("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
         rv[1] = int(info[0])
         rv[2] = info[1]
         return rv
 
     elif (len(info) == 2) and not info[0].isnumeric(): # port-name.qvlan
-        print("YYYYYYYYYYYYYYYYYYYYYYYYYYYY")
         rv[2] = info[0]+"."+info[1]
         return rv
 
