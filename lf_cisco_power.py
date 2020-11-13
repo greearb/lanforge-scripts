@@ -617,7 +617,7 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: summary")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                 "--action", "summary","--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+                                 "--action", "summary","--series",args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
       logg.info(pss)
    except subprocess.CalledProcessError as process_error:
@@ -947,7 +947,7 @@ def main():
                           try:
                              logg.info("9800 cisco_wifi_ctl.py: advanced")
                              advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                                 "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+                                                 "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                              pss = advanced.stdout.decode('utf-8', 'ignore')
                              logg.info(pss)
                           except subprocess.CalledProcessError as process_error:
@@ -1016,7 +1016,7 @@ def main():
                        try:
                            logg.info("3504 cisco_wifi_ctl.py: advanced")
                            advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+                                              "--action", "advanced","--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                            pss = advanced.stdout.decode('utf-8', 'ignore')
                            logg.info(pss)
                        except subprocess.CalledProcessError as process_error:
@@ -1115,7 +1115,7 @@ def main():
                                try:
                                   logg.info("9800 cisco_wifi_ctl.py: advanced")
                                   advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+                                              "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
                                   pss = advanced.stdout.decode('utf-8', 'ignore')
                                   logg.info(pss)
                                except subprocess.CalledProcessError as process_error:
@@ -1551,7 +1551,7 @@ def main():
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: advanced")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-             "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+             "--action", "advanced","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
           logg.info(pss)
        except subprocess.CalledProcessError as process_error:
@@ -1560,7 +1560,7 @@ def main():
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: summary")
           advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-             "--action", "summary","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+             "--action", "summary","--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
           pss = advanced.stdout.decode('utf-8', 'ignore')
           logg.info(pss)
        except subprocess.CalledProcessError as process_error:
@@ -1789,7 +1789,7 @@ def main():
    try:
       logg.info("9800/3504 cisco_wifi_ctl.py: advanced")
       advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                              "--action", "advanced", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=True, check=True)
+                              "--action", "advanced", "--series" , args.series,"--port", args.port,"--log", outfile_log, "--append"], capture_output=True, check=True)
       pss = advanced.stdout.decode('utf-8', 'ignore');
       logg.info(pss)
    except subprocess.CalledProcessError as process_error:
