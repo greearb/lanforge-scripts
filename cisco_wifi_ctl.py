@@ -1093,12 +1093,14 @@ def main():
          command = "show ap channel %s"%(args.ap)
 
    if (args.action == "no_wlan_wireless_tag_policy"):
+      
       logg.info("send wireless tag policy no wlan")
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      policy = "no wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","no wlan open-wlan policy default-policy-profile"]:
+         for command in ["wireless tag policy default-policy-tag", policy]: #"no wlan open-wlan policy default-policy-profile"
             egg.sendline(command)
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
@@ -1115,9 +1117,9 @@ def main():
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+      policy = "wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
-            egg.sendline(command)
+         for command in ["wireless tag policy default-policy-tag", policy]: #"wlan open-wlan policy default-policy-profile"
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
