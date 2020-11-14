@@ -95,7 +95,7 @@ class IPV4VariableTime(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
-        temp_stas.append(self.upstream)
+        # temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:

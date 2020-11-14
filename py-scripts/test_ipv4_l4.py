@@ -99,7 +99,7 @@ class IPV4L4(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
-        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
