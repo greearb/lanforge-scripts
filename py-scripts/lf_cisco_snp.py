@@ -619,7 +619,7 @@ class cisco_():
 
 class L3VariableTime(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile, csv_started,
+                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,test_keys,test_config,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
@@ -656,10 +656,13 @@ class L3VariableTime(LFCliBase):
         self.station_profiles = []
         self.args = args
         self.outfile = outfile
-        self.csv_started = csv_started
+        self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug_on
-        
+        self.test_keys = test_keys
+        self.test_config = test_config
+
+        self.test_config_dict = dict(map(lambda x: x.split('=='), str(self.test_config).replace('[','').replace(']','').replace("'","").split()))
 
         # Some checking on the duration
         #self.local_realm.parse_time(self.test_duration)
@@ -728,8 +731,13 @@ class L3VariableTime(LFCliBase):
         return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
 
     def __record_rx_dropped_percent(self,rx_drop_percent):
+        csv_rx_drop_percent_data = []
+        print("test_keys {}".format(self.test_keys))
+        print("self.test_config_dict {}".format(self.test_config_dict))
+        for key in self.test_keys:
+            csv_rx_drop_percent_data.append(self.test_config_dict[key])
 
-        csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent']
+        csv_rx_drop_percent_data.extend([self.epoch_time, self.time_stamp(),'rx_drop_percent'])
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
@@ -755,11 +763,17 @@ class L3VariableTime(LFCliBase):
         expected_passes = 0
         csv_performance_values = []
         csv_rx_headers = []
+        csv_rx_row_data = []
+        csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
 
         # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = [self.epoch_time, self.time_stamp(),'rx']
-        csv_rx_delta_row_data = [self.epoch_time, self.time_stamp(),'rx_delta']
+        for key in self.test_keys:
+            csv_rx_row_data.append(self.test_config_dict[key])
+            csv_rx_delta_row_data.append(self.test_config_dict[key])
+
+        csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx'])
+        csv_rx_delta_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
@@ -1041,8 +1055,8 @@ class L3VariableTime(LFCliBase):
         temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
-
-        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
+        # need algorithm for setting time default 
+        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=600, debug=self.debug):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
@@ -1107,7 +1121,8 @@ class L3VariableTime(LFCliBase):
         
                                         
     def csv_generate_column_headers(self):
-        csv_rx_headers = ['Time epoch','Time','Monitor']
+        csv_rx_headers = self.test_keys.copy() 
+        csv_rx_headers.extend(['Time epoch','Time','Monitor'])
         for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -1607,14 +1622,16 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001,
                                      '4': radio_AX200_abgn_ax_list_004}
 
-    radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_020  = [['radio==1.wiphy1 stations==20 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_050  = [['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020  = [['radio==1.wiphy1 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050  = [['radio==1.wiphy1 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_an_AC_list_200   = [['radio==1.wiphy0 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_dict_test = {'1'  : radio_ath10K_9984_an_AC_list_001,
                                         '10'  : radio_ath10K_9984_an_AC_list_010,
-                                        '50'  : radio_ath10K_9984_an_AC_list_050}
+                                        '50'  : radio_ath10K_9984_an_AC_list_050,
+                                        '200' : radio_ath9K_9984_an_AC_list_200}
 
 
 
@@ -1625,7 +1642,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
         
 
-    MAX_NUMBER_OF_STATIONS = 64
+    MAX_NUMBER_OF_STATIONS = 200
     
     radio_name_list = []
     number_of_stations_per_radio_list = []
@@ -1684,7 +1701,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_data_encryptions = "disable".split()
         endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "1518".split()
-        cisco_client_densities = "1 ".split()
+        cisco_client_densities = "1 10 50".split()
         cisco_data_encryptions = "disable".split()
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
@@ -1724,7 +1741,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     logg.info(cisco_client_densities)
     logg.info(cisco_data_encryptions)
 
-    csv_started = False    
 
     for cisco_ap in cisco_aps:
         for cisco_band in cisco_bands:  # frequency
@@ -1734,12 +1750,16 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                         for cisco_ap_mode in cisco_ap_modes:
                             for cisco_client_density in cisco_client_densities:
                                 for cisco_packet_size in cisco_packet_sizes:
+
                                     logg.info("###########################################################################################################################################")
                                     logg.info("# TEST RUNNING ,  TEST RUNNING ############################################################################################################")
                                     logg.info("###########################################################################################################################################")
+                                    test_config = "AP=={} Band=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_size=={}".format(cisco_ap,
+                                        cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,cisco_packet_size)
+                                    print(test_config)
+                                    test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_size'] 
                                     logg.info("# Cisco static settings: tx_power {} chan_5ghz {} chan_24ghz {} ".format(cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
-                                    logg.info("# Cisco run Dynamic settings: AP {} band: {}  wifimode {} cisco_chan_width {} cisco_data_encryption {}  cisco_ap_mode {} cisco_client_density {} cisco_packet_size {}".format(
-                                        cisco_ap, cisco_band, cisco_wifimode, cisco_chan_width, cisco_data_encryption, cisco_ap_mode, cisco_client_density, cisco_packet_size))
+                                    logg.info("# Cisco run Dynamic settings: {}".format(test_config))
                                     logg.info("###########################################################################################################################################")
                                     logg.info("###########################################################################################################################################")
                                     # over write the configurations of args for controller
@@ -1875,8 +1895,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                                         side_b_min_rate=args.side_b_min_rate, 
                                                                         debug_on=debug_on, 
                                                                         outfile=csv_outfile,
-                                                                        csv_started=csv_started)
-                                        csv_started # need to find a better way to append teh cvs_file like check for existance                                                                        
+                                                                        test_keys=test_keys,
+                                                                        test_config=test_config)
                                         ip_var_test.pre_cleanup()
                                         ip_var_test.build()
                                         if not ip_var_test.passes():
