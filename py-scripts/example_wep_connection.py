@@ -90,7 +90,9 @@ def main():
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = int(args.num_stations)
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
 
     station_list = LFUtils.portNameSeries(prefix_="sta",
                                         start_id_=0,

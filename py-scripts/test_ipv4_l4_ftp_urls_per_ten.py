@@ -85,7 +85,7 @@ class IPV4L4(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         temp_stas = self.sta_list.copy()
-        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         cur_time = datetime.datetime.now()
         interval_time = cur_time + datetime.timedelta(minutes=10)
         passes = 0
@@ -168,10 +168,16 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
                         default=600)
     args = parser.parse_args()
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd, upstream_port=args.upstream_port,
+    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd, upstream_port=args.upstream_port,radio= args.radio,
                      security=args.security, station_list=station_list, url=args.url, num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
                      requests_per_ten=args.requests_per_ten)

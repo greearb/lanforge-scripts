@@ -22,7 +22,7 @@ import datetime
 
 
 class FileIOTest(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, station_list,
+    def __init__(self, host, port, ssid, security, password,
                  number_template="00000",
                  radio="wiphy0",
                  fs_type=fe_fstype.EP_FE_NFS4.name,
@@ -37,7 +37,15 @@ class FileIOTest(LFCliBase):
                  directory="AUTO",
                  test_duration="5m",
                  upstream_port="eth1",
+                 num_ports=1,
                  server_mount="10.40.0.1:/var/tmp/test",
+                 macvlan_parent=None,
+                 first_mvlan_ip=None,
+                 netmask=None,
+                 gateway=None,
+                 dhcp=True,
+                 use_macvlans=False,
+                 port_list=[],
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -50,8 +58,15 @@ class FileIOTest(LFCliBase):
         self.security = security
         self.password = password
         self.number_template = number_template
-        self.sta_list = station_list
         self.test_duration = test_duration
+        self.sta_list = []
+        self.use_macvlans = use_macvlans
+        if self.use_macvlans:
+            if macvlan_parent != None:
+                self.macvlan_parent = macvlan_parent
+                self.port_list = port_list
+        else:
+            self.sta_list = port_list
         #self.min_rw_size = self.parse_size(min_rw_size)
         #self.max_rw_size = self.parse_size(max_rw_size)
         #self.min_file_size = self.parse_size(min_file_size)
@@ -62,15 +77,17 @@ class FileIOTest(LFCliBase):
         #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
         self.endp_profile = self.local_realm.new_fio_endp_profile()
+        self.mvlan_profile = self.local_realm.new_mvlan_profile()
 
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password
-        self.station_profile.security = self.security
-        self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        if len(self.sta_list) > 0:
+            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile.lfclient_url = self.lfclient_url
+            self.station_profile.ssid = self.ssid
+            self.station_profile.ssid_pass = self.password
+            self.station_profile.security = self.security
+            self.station_profile.number_template_ = self.number_template
+            self.station_profile.mode = 0
 
         self.endp_profile.fs_type = fs_type
         self.endp_profile.min_rw_size = LFUtils.parse_size(min_rw_size)
@@ -86,27 +103,35 @@ class FileIOTest(LFCliBase):
 
         self.ro_profile = self.endp_profile.create_ro_profile()
 
+        self.mvlan_profile.num_macvlans = int(num_ports)
+        self.mvlan_profile.desired_macvlans = self.port_list
+        self.mvlan_profile.macvlan_parent = self.macvlan_parent
+        self.mvlan_profile.dhcp = dhcp
+        self.mvlan_profile.netmask = netmask
+        self.mvlan_profile.first_ip_addr = first_mvlan_ip
+        self.mvlan_profile.gateway = gateway
 
+        self.created_ports = []
     def __compare_vals(self, val_list):
         passes = 0
         expected_passes = 0
-        print(val_list)
+        # print(val_list)
         for item in val_list:
             expected_passes += 1
-            print(item)
+            # print(item)
             if item[0] == 'r':
-                print("TEST", item,
-                      val_list[item]['read-bps'],
-                      self.endp_profile.min_read_rate_bps,
-                      val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps)
+                # print("TEST", item,
+                #       val_list[item]['read-bps'],
+                #       self.endp_profile.min_read_rate_bps,
+                #       val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps)
 
                 if val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps:
                     passes += 1
             else:
-                print("TEST", item,
-                      val_list[item]['write-bps'],
-                      self.endp_profile.min_write_rate_bps,
-                      val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps)
+                # print("TEST", item,
+                #       val_list[item]['write-bps'],
+                #       self.endp_profile.min_write_rate_bps,
+                #       val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps)
 
                 if val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps:
                     passes += 1
@@ -136,29 +161,38 @@ class FileIOTest(LFCliBase):
     def build(self):
         # Build stations
         # print(self.min_tx_bps, self.min_rx_bps)
-        self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
+        # TODO: Check for upstream port as child to bridge before macvlan create
+        if self.use_macvlans:
+            self.mvlan_profile.create(admin_down=True, sleep_time=.5, debug=self.debug)
+            self.created_ports += self.mvlan_profile.created_macvlans
 
-        self.endp_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
+        if len(self.sta_list) > 0:
+            self.station_profile.use_security(self.security, self.ssid, self.password)
+            self.station_profile.set_number_template(self.number_template)
+            print("Creating stations")
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param("set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+            self._pass("PASS: Station build finished")
+            self.created_ports += self.station_profile.station_names
+
+
+        self.endp_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
                                  suppress_related_commands_=None)
-        self.ro_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
+        self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
                                suppress_related_commands_=None)
 
-
     def start(self, print_pass=False, print_fail=False):
-        temp_stas = self.sta_list.copy()
-        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        temp_ports = self.port_list.copy()
+        #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         self.station_profile.admin_up()
-        if self.local_realm.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs", print_pass)
+        self.mvlan_profile.admin_up()
+        exit(1)
+        if self.local_realm.wait_for_ip(temp_ports):
+            self._pass("All ports got IPs", print_pass)
         else:
-            self._fail("Stations failed to get IPs", print_fail)
+            self._fail("Ports failed to get IPs", print_fail)
         cur_time = datetime.datetime.now()
         # print("Got Values")
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
@@ -195,12 +229,15 @@ class FileIOTest(LFCliBase):
         self.endp_profile.stop_cx()
         self.ro_profile.stop_cx()
         self.station_profile.admin_down()
+        self.mvlan_profile.admin_down()
 
-    def cleanup(self, sta_list):
+    def cleanup(self, sta_list=None):
         self.endp_profile.cleanup()
         self.ro_profile.cleanup()
-        self.station_profile.cleanup(sta_list)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
+        if len(self.sta_list) > 0:
+            self.station_profile.cleanup(sta_list)
+            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
+        self.mvlan_profile.cleanup()
 
 
 def main():
@@ -219,9 +256,6 @@ test_fileio.py:
 Generic command layout:
 python ./test_fileio.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
-Note:   multiple --radio switches may be entered up to the number of radios available:
-                --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
 python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbps --min_write 1Gbps --server_mount 192.168.93.195:/tmp/test
 ''')
 
@@ -238,21 +272,68 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     parser.add_argument('--directory', help='--directory directory to read/write in. Absolute path suggested', default="AUTO")
     parser.add_argument('--server_mount', help='--server_mount The server to mount, ex: 192.168.100.5/exports/test1',
                         default="10.40.0.1:/var/tmp/test")
+    parser.add_argument('--macvlan_parent', help='specifies parent port for macvlan creation', default=None)
+    parser.add_argument('--first_port', help='specifies name of first port to be used', default=None)
+    parser.add_argument('--num_ports', help='number of ports to create', default=1)
+    parser.add_argument('--use_macvlans', help='will create macvlans', action='store_true', default=False)
+    parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
+    parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
+    parser.add_argument('--gateway', help='specifies default gateway to be used with static addressing', default=None)
     args = parser.parse_args()
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
-                                          radio=args.radio)
+    port_list = []
+    if args.first_port is not None:
+        if args.first_port.startswith("sta"):
+            if (args.num_ports is not None) and (int(args.num_ports) > 0):
+                start_num = int(args.first_port[4:])
+                num_ports = int(args.num_ports)
+                port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num+num_ports-1,
+                                                   padding_number=10000,
+                                                   radio=args.radio)
+        else:
+            if (args.num_ports is not None) and args.macvlan_parent is not None and (int(args.num_ports) > 0) \
+                                            and args.macvlan_parent in args.first_port:
+                start_num = int(args.first_port[args.first_port.index('#')+1:])
+                num_ports = int(args.num_ports)
+                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent+"#", start_id=start_num,
+                                                   end_id=start_num+num_ports-1, padding_number=100000,
+                                                   radio=args.radio)
+            else:
+                raise ValueError("Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
+                                 "first_port must contain parent port and num_ports must be greater than 0"
+                                 % (args.num_ports, args.macvlan_parent, args.first_port))
+    else:
+        num_ports = int(args.num_ports)
+        if not args.use_macvlans:
+            port_list = LFUtils.port_name_series(prefix="sta", start_id=0, end_id=num_ports - 1,
+                                               padding_number=10000,
+                                               radio=args.radio)
+        else:
+            port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=0,
+                                               end_id=num_ports - 1, padding_number=100000,
+                                               radio=args.radio)
+    if args.first_mvlan_ip.lower() == "dhcp":
+        dhcp = True
+    else:
+        dhcp = False
+    print(port_list)
 
     ip_test = FileIOTest(args.mgr,
                          args.mgr_port,
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,
-                         station_list=station_list,
+                         port_list=port_list,
                          test_duration=args.test_duration,
                          upstream_port=args.upstream_port,
                          _debug_on=args.debug,
 
+                         macvlan_parent=args.macvlan_parent,
+                         use_macvlans=args.use_macvlans,
+                         first_mvlan_ip=args.first_mvlan_ip,
+                         netmask=args.netmask,
+                         gateway=args.gateway,
+                         dhcp=dhcp,
                          fs_type=args.fs_type,
                          min_rw_size=args.min_rw_size,
                          max_rw_size=args.max_rw_size,
@@ -264,10 +345,11 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
                          max_write_rate_bps=args.max_write_rate_bps,
                          directory=args.directory,
                          server_mount=args.server_mount,
+                         num_ports=args.num_ports
                          # want a mount options param
                          )
 
-    ip_test.cleanup(station_list)
+    ip_test.cleanup(port_list)
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
@@ -276,10 +358,9 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
+        # exit(1)
     time.sleep(30)
-    exit(1)
-    ip_test.cleanup(station_list)
+    ip_test.cleanup(port_list)
     if ip_test.passes():
         print("Full test passed, all endpoints had increased bytes-rd throughout test duration")
 

@@ -194,7 +194,12 @@ python3 ./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 \\
     parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default="lanforge")
 
     args = parser.parse_args()
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000,
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+        
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
     ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,

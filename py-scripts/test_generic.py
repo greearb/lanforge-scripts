@@ -16,18 +16,16 @@ from LANforge import LFUtils
 import realm
 import time
 import datetime
-
+import json
 
 class GenTest(LFCliBase):
     def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream,
-                 number_template="000", test_duration="5m", type="lfping", dest="127.0.0.1",
-                 interval=1, radio="wiphy0",
+                 number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
+                 interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  _debug_on=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
+                 _exit_on_fail=False,):
+        super().__init__(host, port, _local_realm=realm.Realm(host,port), _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -37,7 +35,14 @@ class GenTest(LFCliBase):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        if (speedtest_min_up is not None):
+            self.speedtest_min_up = float(speedtest_min_up)
+        if (speedtest_min_dl is not None):
+            self.speedtest_min_dl = float(speedtest_min_dl)
+        if (speedtest_max_ping is not None):
+            self.speedtest_max_ping = float(speedtest_max_ping)
+        self.debug = _debug_on
+
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
 
@@ -51,14 +56,56 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.name = name_prefix
         self.generic_endps_profile.type = type
         self.generic_endps_profile.dest = dest
+        self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
+
+    def choose_ping_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        print(gen_results)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
+                        if v['last results'] != "" and "Unreachable" not in v['last results']:
+                            return True, v['name']
+                        else:
+                            return False, v['name']
+
+    def choose_lfcurl_command(self):
+        return False, ''
+
+    def choose_speedtest_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['last results'] is not None and v['name'] in self.generic_endps_profile.created_endp and v['last results'] != '':
+                        last_results = json.loads(v['last results'])
+                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
+                            return False, v['name']
+                        elif last_results['download'] >= self.speedtest_min_dl and \
+                                last_results['upload'] >= self.speedtest_min_up and \
+                                last_results['ping'] <= self.speedtest_max_ping:
+                            return True, v['name']
+
+    def choose_generic_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if (gen_results['endpoints'] is not None):
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
+                        if v['last results'] != "" and "not known" not in v['last results']:
+                            return True, v['name']
+                        else:
+                            return False, v['name']
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
+        temp_stas = []
+        for station in self.sta_list.copy():
+            temp_stas.append(self.local_realm.name_to_eid(station)[2])
         pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
-        temp_stas = self.sta_list.copy()
-        temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -71,19 +118,31 @@ class GenTest(LFCliBase):
         time.sleep(15)
         end_time = self.local_realm.parse_time("30s") + cur_time
         print("Starting Test...")
+        result = False
         while cur_time < end_time:
             cur_time = datetime.datetime.now()
-            gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-            if gen_results['endpoints'] is not None:
-                for name in gen_results['endpoints']:
-                    for k, v in name.items():
-                        if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
-                            expected_passes += 1
-                            if v['last results'] != "" and "Unreachable" not in v['last results']:
-                                passes += 1
-                            else:
-                                self._fail("%s Failed to ping %s " % (v['name'], self.generic_endps_profile.dest), print_fail)
-                                break
+            if self.generic_endps_profile.type == "lfping":
+                result = self.choose_ping_command()
+            elif self.generic_endps_profile.type == "generic":
+                result = self.choose_generic_command()
+            elif self.generic_endps_profile.type == "lfcurl":
+                result = self.choose_lfcurl_command()
+            elif self.generic_endps_profile.type == "speedtest":
+                result = self.choose_speedtest_command()
+            elif self.generic_endps_profile.type == "iperf3":
+                result = self.choose_iperf3_command()
+            else:
+                continue
+
+            expected_passes += 1
+            # pprint.pprint(result)
+            if result is not None:
+                if result[0]:
+                    passes += 1
+                else:
+                    self._fail("%s Failed to ping %s " % (result[1], self.generic_endps_profile.dest),
+                               print_fail)
+                    break
             # print(cur_time)
             # print(end_time)
             time.sleep(1)
@@ -124,28 +183,34 @@ def main():
         description='''test_generic.py
 --------------------
 Generic command example:
-python3 ./test_generic.py --upstream_port eth1 \\
-    --radio wiphy0 \\
-    --num_stations 3 \\
-    --security {open|wep|wpa|wpa2|wpa3} \\
-    --ssid netgear \\
-    --passwd admin123 \\
-    --type lfping # {generic|lfping|iperf3|lf_curl} \\
-    --dest 10.40.0.1 \\
-    --test_duration 2m \\
-    --interval 1s \\
+python3 ./test_generic.py --upstream_port eth1 
+    --radio wiphy0 (required)
+    --num_stations 3 
+    --security {open|wep|wpa|wpa2|wpa3} (required)
+    --ssid netgear (required)
+    --passwd admin123 (required)
+    --type lfping  {generic|lfping|iperf3-client | speedtest | iperf3-server |lf_curl} (required)
+    --dest 10.40.0.1 (required - also target for iperf3)
+    --test_duration 2m 
+    --interval 1s 
     --debug 
 ''')
 
-    parser.add_argument('--type', help='type of command to run: generic, lfping, ifperf3, lfcurl', default="lfping")
+    parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
+    parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
     parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
     parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
+    parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
+    parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
+    parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
 
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = int(args.num_stations)
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
     station_list = LFUtils.portNameSeries(radio=args.radio,
                                           prefix_="sta",
                                           start_id_=0,
@@ -159,12 +224,16 @@ python3 ./test_generic.py --upstream_port eth1 \\
                            name_prefix="GT",
                            type=args.type,
                            dest=args.dest,
+                           cmd=args.cmd,
                            interval=1,
                            ssid=args.ssid,
                            upstream=args.upstream_port,
                            password=args.passwd,
                            security=args.security,
                            test_duration=args.test_duration,
+                           speedtest_min_up=args.speedtest_min_up,
+                           speedtest_min_dl=args.speedtest_min_dl,
+                           speedtest_max_ping=args.speedtest_max_ping,
                            _debug_on=args.debug)
 
     generic_test.cleanup(station_list)
@@ -180,7 +249,7 @@ python3 ./test_generic.py --upstream_port eth1 \\
     time.sleep(30)
     generic_test.cleanup(station_list)
     if generic_test.passes():
-        print("Full test passed, all connections increased rx bytes")
+        print("Full test passed")
 
 
 

@@ -99,7 +99,7 @@ class IPV4L4(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_stas = self.sta_list.copy()
-        temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
@@ -188,8 +188,10 @@ def main():
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = args.num_stations
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
 
+        
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_= num_sta-1, padding_number_=10000, radio=args.radio)
 
     ip_test = IPV4L4(args.mgr, 

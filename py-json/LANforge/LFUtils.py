@@ -12,6 +12,7 @@ import time
 from time import sleep
 from random import seed
 import re
+import ipaddress
 
 seed(int(round(time.time() * 1000)))
 from random import randint
@@ -293,6 +294,15 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     return name_list
 
 
+def gen_ip_series(ip_addr, netmask, num_ips=None):
+    ip_list = [str(ip) for ip in ipaddress.IPv4Network(ip_addr + '/' + netmask, strict=False)]
+    chosen_ips = []
+    if num_ips is None:
+        return ip_list
+    else:
+        for i in range(ip_list.index(ip_addr), num_ips + ip_list.index(ip_addr)):
+            chosen_ips.append(ip_list[i])
+        return chosen_ips
 
 def generateRandomHex():
     return generate_random_hex()
@@ -464,22 +474,41 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def name_to_eid(eid):
+def name_to_eid(input):
     rv = [1, 1, ""];
     info = []
-    if (eid is None) or (eid == ""):
-        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid)
+    if (input is None) or (input == ""):
+        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
     
-    info = eid.split('.')
-    if (len(info) == 1):
+    info = input.split('.')
+    if len(info) == 1:
         rv[2] = info[0]; # just port name
-    if len(info) == 2: # resource.port-name
+        return rv
+
+    if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name
         rv[1] = int(info[0])
         rv[2] = info[1]
-    if len(info) == 3: # shelf.resource.port-name
+        return rv
+
+    elif (len(info) == 2) and not info[0].isnumeric(): # port-name.qvlan
+        rv[2] = info[0]+"."+info[1]
+        return rv
+
+    if (len(info) == 3) and info[0].isnumeric() and info[1].isnumeric(): # shelf.resource.port-name
         rv[0] = int(info[0])
         rv[1] = int(info[1])
         rv[2] = info[2]
+        return rv
+
+    elif (len(info) == 3) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name.qvlan
+        rv[1] = int(info[0])
+        rv[2] = info[1]+"."+info[2]
+        return rv
+
+    if len(info) == 4: # shelf.resource.port-name.qvlan
+        rv[0] = int(info[0])
+        rv[1] = int(info[1])
+        rv[2] = info[2]+"."+info[3]
 
     return rv;
 
@@ -539,9 +568,9 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]
 
-    while len(found_stations) < len(port_list):
+    while len(found_stations) < len(endp_list):
         found_stations = []
-        for port_eid in port_list:
+        for port_eid in endp_list:
 
             eid = name_to_eid(port_eid)
             shelf = eid[0]
@@ -557,7 +586,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
-        if (len(found_stations) < len(port_list)):
+        if (len(found_stations) < len(endp_list)):
             sleep(2)
 
     if debug:

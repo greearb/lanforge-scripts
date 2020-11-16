@@ -137,7 +137,12 @@ python3 ./test_ipv4_connection.py --upstream_port eth1 \\
 
 
     args = parser.parse_args()
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
                        security=args.security, sta_list=station_list, radio=args.radio)
     ip_test.cleanup(station_list)

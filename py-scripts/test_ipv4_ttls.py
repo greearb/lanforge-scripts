@@ -240,9 +240,9 @@ test_ipv4_ttls.py:
  Generic command layout:
  python ./test_ipv4_ttls.py --upstream_port <port> 
     --radio <radio 0> 
-    --num_stations <stations> 
-    --ssid <ssid> 
-    --keyphrase <ssid password> 
+    --num_stations 3
+    --ssid ssid-wpa-1
+    --keyphrase ssid-wpa-1
     --security <security type: wpa2, open, wpa3> 
     --debug
 
@@ -263,7 +263,12 @@ test_ipv4_ttls.py:
     parser.add_argument('--use_hs20', help='use HotSpot 2.0', default=False)
     parser.add_argument('--enable_pkc', help='enable opportunistic PMKSA WPA2 key caching', default=False)
     args = parser.parse_args()
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000)
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
     ttls_test = TTLSTest(lfjson_host, lfjson_port,
                          ssid=args.ssid,
                          password=args.passwd,

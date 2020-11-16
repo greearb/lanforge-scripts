@@ -140,8 +140,12 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     parser.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=120)
 
     args = parser.parse_args()
+    num_sta=2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
     ipv6_test = IPv6Test(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,

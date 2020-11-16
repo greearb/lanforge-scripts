@@ -95,7 +95,7 @@ class IPV4VariableTime(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
-        temp_stas.append(self.upstream)
+        # temp_stas.append(self.upstream)
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
@@ -174,9 +174,6 @@ test_ipv4_variable_time.py:
 --------------------
 Generic command layout:
 
-Note:   multiple --radio switches may be entered up to the number of radios available:
-                 --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
  python3 ./test_ipv4_variable_time.py 
             --upstream_port eth1 
             --radio wiphy0 
@@ -197,11 +194,10 @@ Note:   multiple --radio switches may be entered up to the number of radios avai
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = args.num_stations
-
+        num_sta = int(args.num_stations)
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
-
+    print(station_list)
     ip_var_test = IPV4VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
                                    name_prefix="VT",
                                    upstream=args.upstream_port,
