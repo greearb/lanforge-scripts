@@ -13,7 +13,7 @@ from ws_generic_monitor import WS_Listener
 
 reference = "test_ipv4_connection.py"
 def main():
-    WS_Listener(lfclient_host="192.168.200.15", _scriptname=reference, _callback=TestRun)
+    WS_Listener(lfclient_host="localhost", _scriptname=reference, _callback=TestRun)
 
 
 def TestRun(ws, message):
