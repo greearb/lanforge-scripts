@@ -1527,6 +1527,36 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
 
+    ####################################################
+    #
+    #  Static Configuration Cisco Realm one lanforge
+    #
+    ####################################################
+    radio_AX200_abgn_ax_list_001_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_AX200_abgn_ax_list_010_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+
+    radio_AX200_abgn_ax_dict = {'1'   : radio_AX200_abgn_ax_list_001_one, 
+                                '8'   : radio_AX200_abgn_ax_list_010_one} 
+
+    
+    radio_ath10K_9984_an_AC_list_001_one     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010_one     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020_one     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_ath10K_9984_an_AC_dict_one = {'1'  : radio_ath10K_9984_an_AC_list_001_one,
+                                        '10' : radio_ath10K_9984_an_AC_list_010_one,
+                                        '20' : radio_ath10K_9984_an_AC_list_020_one}
+
 
     ####################################################
     #
@@ -1685,18 +1715,25 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     if args.cisco_all:
         cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b".split()
-        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+#        cisco_bands            = "a b".split()
+        cisco_bands            = "a ".split()
+#        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
-        cisco_ap_modes         = "local flex".split()
+#        cisco_ap_modes         = "local flex".split()
+        cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
         endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
+
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
+
     elif args.cisco_test:
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a".split()
