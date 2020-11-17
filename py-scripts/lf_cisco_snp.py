@@ -1545,7 +1545,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
 
 
-    radio_AX200_abgn_ax_dict = {'1'   : radio_AX200_abgn_ax_list_001_one, 
+    radio_AX200_abgn_ax_dict_one = {'1'   : radio_AX200_abgn_ax_list_001_one, 
                                 '8'   : radio_AX200_abgn_ax_list_010_one} 
 
     
