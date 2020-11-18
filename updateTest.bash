@@ -20,7 +20,7 @@ DM_FLAG="${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 output=/tmp/gui_update_test
 
 trap do_sigint ABRT
-trap do_sigint INT 
+trap do_sigint INT
 trap do_sigint KILL
 trap do_sigint PIPE
 trap do_sigint QUIT
@@ -65,13 +65,15 @@ function wait_8080() {
    if [[ $connected = 0 ]]; then
       echo "Unable to connect, bye"
       return 1
+   else
+      echo "Connection established"
    fi
    [ ! -z "$DEBUG" ] && set -x
 }
 
 touch $LOCKFILE
 
-if [ -f ${GUIDIR}/down-check ]; then 
+if [ -f ${GUIDIR}/down-check ]; then
    numFound=`find ${GUIDIR} -name down-check -mmin +59 | grep -c down-check`
 
    if (( numFound >= 1 )); then
