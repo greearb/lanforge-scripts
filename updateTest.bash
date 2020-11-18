@@ -33,6 +33,7 @@ function do_sigint() {
       rm -f "$f"
    done
 }
+
 function start_gui() {
    daemon_mode=""
    [ -f $GUIDIR/DAEMON_MODE ] && daemon_mode="-daemon"
@@ -40,19 +41,25 @@ function start_gui() {
    connect_fail=0
    wait_8080 || connect_fail=1
 
-   if [[ $connect_fail = 1 ]]; then
+   if (( $connect_fail == 1 )); then
+     set -x
      echo "" > $output
      [ -s $GUIUpdate ] && cat $GUIUpdate >> $output
-     cat $GUILog >> $output
-     mail -s 'GUI connect failure' "test.notice@candelatech.com" -q $output
+     # cat $GUILog >> $output
+     echo "------------------------------------------" >> $output
+     mail  -q $output -s 'GUI connect failure' "test.notice@candelatech.com" < $GUILog
+     rm -f $LOCKFILE
      exit 1
+   else
+     echo "start_gui: connection found"
    fi
+   return 0
 }
 
 function wait_8080() {
    set +x
    local connected=0
-   local limit_sec=30
+   local limit_sec=90
    echo "Testing for 8080 connection "
    while (( connected == 0 )); do
       (( limit_sec <= 0)) && break
@@ -69,6 +76,7 @@ function wait_8080() {
       echo "Connection established"
    fi
    [ ! -z "$DEBUG" ] && set -x
+   return 0
 }
 
 touch $LOCKFILE
@@ -103,7 +111,7 @@ pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
 touch $ST
 if [ ! -z "SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
-   echo "skipping installation"
+   echo "skipping installation" | tee -a $GUIUpdate
    sleep 4
 else
    echo "doing installation"
@@ -112,7 +120,8 @@ else
    [ -s $GUIUpdate ] && grep -q "Current GUI version up to date" $GUIUpdate && exit
    [ -s $GUIUpdate ] && head $GUIUpdate >> $ST
    if grep -q -i "fail" $GUIUpdate; then
-     cat $ST | mail -s 'GUI Update Test Failure' -a $GUILog -a $GUIUpdate "test.notice@candelatech.com"
+     mail -s 'GUI Update Test Failure' -q $GUILog -a $GUIUpdate "test.notice@candelatech.com" < $ST
+     rm -f $LOCKFILE
      exit 1
    fi
 fi
@@ -120,6 +129,7 @@ sleep 1
 rm -f "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
 
 start_gui
+echo "Doing connectTest.py > $CTLGUI"
 python3 ${scripts}/connectTest.py &> $CTLGUI
 echo "== GUI =============================================" >> $ST
 head $CTLGUI >> $ST
@@ -153,7 +163,8 @@ echo "===============================================" >> $output
 echo "===============================================" >> $output
 echo -e "--\n.\n" >> $output
 
-mail -s 'GUI Update Test' "test.notice@candelatech.com" -q $output
-
+mail -s 'GUI Update Test' "test.notice@candelatech.com" < $output
 #cat $ST | mail -s 'GUI Update Test' -a $GUILog -a $GUIUpdate -a $CTLGUI -a $CTLH  "test.notice@candelatech.com"
+
+rm -f $LOCKFILE
 #eof
