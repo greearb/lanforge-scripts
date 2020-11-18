@@ -1,4 +1,8 @@
 #!/bin/bash
+# check for log file
+LOCKFILE="/tmp/update-test.lock"
+[ -f $LOCKFILE ] && echo "lockfile $LOCKFILE found, bye" && exit 0
+
 export DISPLAY=:1
 [ ! -z "$DEBUG" ] && set -x
 IP="192.168.95.239"
@@ -15,6 +19,20 @@ ST="/tmp/summary.txt"
 DM_FLAG="${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 output=/tmp/gui_update_test
 
+trap do_sigint ABRT
+trap do_sigint INT 
+trap do_sigint KILL
+trap do_sigint PIPE
+trap do_sigint QUIT
+trap do_sigint SEGV
+trap do_sigint TERM
+
+function do_sigint() {
+   [ -f $LOCKFILE ] && echo "removing lockfile" && rm -f $LOCKFILE
+   for f in $GUILog $GUIUpdate $CTLGUI $CTLH /tmp/\+.*; do
+      rm -f "$f"
+   done
+}
 function start_gui() {
    daemon_mode=""
    [ -f $GUIDIR/DAEMON_MODE ] && daemon_mode="-daemon"
@@ -26,7 +44,7 @@ function start_gui() {
      echo "" > $output
      [ -s $GUIUpdate ] && cat $GUIUpdate >> $output
      cat $GUILog >> $output
-     mail -s 'GUI connect failure' "test.notice@candelatech.com" < $output
+     mail -s 'GUI connect failure' "test.notice@candelatech.com" -q $output
      exit 1
    fi
 }
@@ -50,6 +68,8 @@ function wait_8080() {
    fi
    [ ! -z "$DEBUG" ] && set -x
 }
+
+touch $LOCKFILE
 
 if [ -f ${GUIDIR}/down-check ]; then 
    numFound=`find ${GUIDIR} -name down-check -mmin +59 | grep -c down-check`
@@ -79,6 +99,7 @@ sudo rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
 touch "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
 pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
+touch $ST
 if [ ! -z "SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
    echo "skipping installation"
    sleep 4
@@ -87,9 +108,6 @@ else
    sleep 4
    python3 ${scripts}/auto-install-gui.py --versionNumber $verNum &> $GUIUpdate
    [ -s $GUIUpdate ] && grep -q "Current GUI version up to date" $GUIUpdate && exit
-   echo "===============================================" > $ST
-   head $GUILog >> $ST
-   echo "===============================================" >> $ST
    [ -s $GUIUpdate ] && head $GUIUpdate >> $ST
    if grep -q -i "fail" $GUIUpdate; then
      cat $ST | mail -s 'GUI Update Test Failure' -a $GUILog -a $GUIUpdate "test.notice@candelatech.com"
@@ -101,6 +119,9 @@ rm -f "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
 
 start_gui
 python3 ${scripts}/connectTest.py &> $CTLGUI
+echo "== GUI =============================================" >> $ST
+head $CTLGUI >> $ST
+echo "===============================================" >> $ST
 pgrep java &>/dev/null && killall -9 java
 sleep 1
 
@@ -109,9 +130,7 @@ touch "${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 start_gui
 python3 ${scripts}/connectTest.py &> $CTLH
 
-echo "===============================================" >> $ST
-head $CTLGUI >> $ST
-echo "===============================================" >> $ST
+echo "== HEADLESS =============================================" >> $ST
 head $CTLH >> $ST
 echo "===============================================" >> $ST
 rm -f "${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
@@ -121,7 +140,7 @@ connect_fail=0
 wait_8080 || connect_fail=1
 
 cat $ST > $output
-echo "===============================================" >> $output
+echo "=== FULL LOGS ============================================" >> $output
 [ -s $GUILog ] && cat $GUILog >> $output
 echo "===============================================" >> $output
 [ -s $GUIUpdate ] && cat $GUIUpdate >> $output
@@ -132,7 +151,7 @@ echo "===============================================" >> $output
 echo "===============================================" >> $output
 echo -e "--\n.\n" >> $output
 
-mail -s 'GUI Update Test' "test.notice@candelatech.com" < $output
+mail -s 'GUI Update Test' "test.notice@candelatech.com" -q $output
 
 #cat $ST | mail -s 'GUI Update Test' -a $GUILog -a $GUIUpdate -a $CTLGUI -a $CTLH  "test.notice@candelatech.com"
 #eof
