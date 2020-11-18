@@ -251,8 +251,9 @@ class LFCliBase:
         parser.add_argument('--ssid',           help='SSID for stations to associate to', default=None)
         parser.add_argument('--passwd', '--passphrase', '--password', '--pwd',        help='WiFi passphrase', default=None)
         parser.add_argument('--num_stations',   help='Number of stations to create', default=0)
-        parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
-
+        parser.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
+	parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+	
 
         return parser
 
