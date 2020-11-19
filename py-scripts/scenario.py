@@ -22,13 +22,13 @@ parser = LFCliBase.create_bare_argparse(
     description='''scenario.py
 --------------------
 Generic command example:
-python3 scenario.py --load db1 --action overwrite --clean_dut --clean_chambers
+scenario.py --load db1 --action overwrite --clean_dut --clean_chambers
 
-python3 scenario.py --start test_group1
+scenario.py --start test_group1
 
-python3 scenario.py --quiesce test_group1
+scenario.py --quiesce test_group1
 
-python3 scenario.py --stop test_group1
+scenario.py --stop test_group1
 ''')
 
 group = parser.add_mutually_exclusive_group()

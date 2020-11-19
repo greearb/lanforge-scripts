@@ -123,7 +123,7 @@ def main():
         test_ipv4_connection.py
 --------------------
 Generic command example:
-python3 ./test_ipv4_connection.py --upstream_port eth1 \\
+./test_ipv4_connection.py --upstream_port eth1 \\
     --radio wiphy0 \\
     --num_stations 3 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
