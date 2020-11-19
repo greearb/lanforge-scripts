@@ -853,7 +853,7 @@ def main():
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: wireless_tag_policy")
                               ctl_output =subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "wireless_tag_policy", "--wlan", args.wlan, "--series", "--wlanID", args.wlanID, "--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
+                                      "--action", "wireless_tag_policy", "--wlan", args.wlan, "--series", args.series, "--wlanID", args.wlanID, "--series",args.series,"--port", args.port,"--log", outfile_log, "--append", "--suppress", suppress_output], capture_output=cap_ctl_out, check=True) 
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
