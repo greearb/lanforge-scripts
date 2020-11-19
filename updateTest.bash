@@ -3,7 +3,7 @@
 LOCKFILE="/tmp/update-test.lock"
 [ -f $LOCKFILE ] && echo "lockfile $LOCKFILE found, bye" && exit 0
 
-export DISPLAY=:1
+export DISPLAY=":1"
 [ ! -z "$DEBUG" ] && set -x
 IP="192.168.95.239"
 HL="/home/lanforge"
@@ -18,7 +18,10 @@ GUIDIR="${HL}/LANforgeGUI_${verNum}"
 ST="/tmp/summary.txt"
 DM_FLAG="${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 output=/tmp/gui_update_test
+NO_AUTO="${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
+D_MODE="${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 
+trap do_sigint HUP
 trap do_sigint ABRT
 trap do_sigint INT
 trap do_sigint KILL
@@ -29,14 +32,14 @@ trap do_sigint TERM
 
 function do_sigint() {
    [ -f $LOCKFILE ] && echo "removing lockfile" && rm -f $LOCKFILE
-   for f in $GUILog $GUIUpdate $CTLGUI $CTLH /tmp/\+.*; do
+   for f in $GUILog $GUIUpdate $CTLGUI $CTLH $LOCKFILE $NO_AUTO /tmp/\+.*; do
       rm -f "$f"
    done
 }
 
 function start_gui() {
    daemon_mode=""
-   [ -f $GUIDIR/DAEMON_MODE ] && daemon_mode="-daemon"
+   [ -f "$D_MODE" ] && daemon_mode="-daemon"
    ( cd $GUIDIR; nohup env RESTARTS=999999 ./lfclient.bash $daemon_mode -s localhost &> $GUILog & )
    connect_fail=0
    wait_8080 || connect_fail=1
@@ -48,7 +51,8 @@ function start_gui() {
      # cat $GUILog >> $output
      echo "------------------------------------------" >> $output
      mail  -q $output -s 'GUI connect failure' "test.notice@candelatech.com" < $GUILog
-     rm -f $LOCKFILE
+     [ ! -z "$DEBUG" ] && cat $GUILog
+     do_sigint
      exit 1
    else
      echo "start_gui: connection found"
@@ -61,12 +65,25 @@ function wait_8080() {
    local connected=0
    local limit_sec=90
    echo "Testing for 8080 connection "
+   lastpid=''
+   zpid=''
    while (( connected == 0 )); do
       (( limit_sec <= 0)) && break
       curl -so /dev/null http://localhost:8080/ && connected=1
       (( connected >= 1 )) && break;
       limit_sec=$(( limit_sec - 1 ))
-      echo -n "."
+      lastpid=$zpid
+      zpid=`pgrep java`
+      if [ -z "$zpid" ]; then
+          if [[ x"$zpid" = x ]] && [[ "$lastpid" != "" ]]; then
+              echo "GUI crashed while starting, bye."
+              return 1
+          fi
+          [ ! -z "$DEBUG" ] && echo -n "-$zpid/$lastpid "
+      else
+          [ ! -z "$DEBUG" ] && echo -n "+$zpid/$lastpid "
+      fi
+
       sleep 1
    done
    if [[ $connected = 0 ]]; then
@@ -91,6 +108,7 @@ if [ -f ${GUIDIR}/down-check ]; then
      else
        touch "${GUIDIR}/down-check"
        echo "Could not connect to ${IP}"
+       do_sigint
        exit 1
      fi
    else
@@ -98,6 +116,7 @@ if [ -f ${GUIDIR}/down-check ]; then
      if (( 0 != $? )); then
        touch "${GUIDIR}/down-check"
        echo "Could not connect to ${IP}"
+       do_sigint
        exit 1
      fi
    fi
@@ -106,28 +125,31 @@ fi
 sudo rm -f /tmp/*.txt
 sudo rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
 
-touch "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
+touch "$NO_AUTO"
 pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
 touch $ST
 if [ ! -z "SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
    echo "skipping installation" | tee -a $GUIUpdate
-   sleep 4
 else
    echo "doing installation"
-   sleep 4
+   set -x
    python3 ${scripts}/auto-install-gui.py --versionNumber $verNum &> $GUIUpdate
-   [ -s $GUIUpdate ] && grep -q "Current GUI version up to date" $GUIUpdate && exit
+   if [ -s $GUIUpdate ]; then
+       grep -q "Current GUI version up to date, not testing" $GUIUpdate
+       do_sigint
+       exit 0
+   fi
    [ -s $GUIUpdate ] && head $GUIUpdate >> $ST
    if grep -q -i "fail" $GUIUpdate; then
      mail -s 'GUI Update Test Failure' -q $GUILog -a $GUIUpdate "test.notice@candelatech.com" < $ST
-     rm -f $LOCKFILE
+     do_sigint
      exit 1
    fi
+   set +x
 fi
 sleep 1
-rm -f "${HL}/LANforgeGUI_${verNum}/NO_AUTOSTART"
-
+rm -f "$NO_AUTO"
 start_gui
 echo "Doing connectTest.py > $CTLGUI"
 python3 ${scripts}/connectTest.py &> $CTLGUI
@@ -138,14 +160,14 @@ pgrep java &>/dev/null && killall -9 java
 sleep 1
 
 #-daemon
-touch "${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
+touch "$D_MODE"
 start_gui
 python3 ${scripts}/connectTest.py &> $CTLH
 
 echo "== HEADLESS =============================================" >> $ST
 head $CTLH >> $ST
 echo "===============================================" >> $ST
-rm -f "${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
+rm -f "$D_MODE"
 pgrep java &>/dev/null && killall -9 java
 start_gui
 connect_fail=0
@@ -166,5 +188,5 @@ echo -e "--\n.\n" >> $output
 mail -s 'GUI Update Test' "test.notice@candelatech.com" < $output
 #cat $ST | mail -s 'GUI Update Test' -a $GUILog -a $GUIUpdate -a $CTLGUI -a $CTLH  "test.notice@candelatech.com"
 
-rm -f $LOCKFILE
+do_sigint
 #eof
