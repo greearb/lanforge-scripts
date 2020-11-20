@@ -619,12 +619,15 @@ class cisco_():
 
 class L3VariableTime(LFCliBase):
     def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,test_keys,test_config,
+                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,
+                 test_keys,test_config,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
                  side_a_min_rate=560000, side_a_max_rate=0,
+                 side_a_min_pdu=1518,side_a_max_pdu=0,
                  side_b_min_rate=560000, side_b_max_rate=0,
+                 side_b_min_pdu=1518,side_b_max_pdu=0,
                  number_template="00", test_duration="256s",
                  polling_interval="60s",
                  _exit_on_error=False,
@@ -652,7 +655,7 @@ class L3VariableTime(LFCliBase):
         self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.multicast_profile = self.local_realm.new_multicast_profile()
-        self.multicast_profile.name_prefix = "MLT-";
+        self.multicast_profile.name_prefix = "MLT-"
         self.station_profiles = []
         self.args = args
         self.outfile = outfile
@@ -702,8 +705,12 @@ class L3VariableTime(LFCliBase):
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_a_min_pdu = side_a_min_pdu
+        self.cx_profile.side_a_max_pdu = side_a_max_pdu
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.side_b_min_pdu = side_b_min_pdu
+        self.cx_profile.side_b_max_pdu = side_b_max_pdu
 
     def __get_rx_values(self):
         endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=False)
@@ -711,9 +718,9 @@ class L3VariableTime(LFCliBase):
         endp_rx_map = {}
         our_endps = {}
         for e in self.multicast_profile.get_mc_names():
-            our_endps[e] = e;
+            our_endps[e] = e
         for e in self.cx_profile.created_endp.keys():
-            our_endps[e] = e;
+            our_endps[e] = e
         for endp_name in endp_list['endpoint']:
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, value in endp_name.items():
@@ -1056,7 +1063,7 @@ class L3VariableTime(LFCliBase):
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
         # need algorithm for setting time default 
-        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=600, debug=self.debug):
+        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
@@ -1451,8 +1458,10 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-amr','--side_a_min_rate',  help='--side_a_min_rate, station transfer rate default 256000', default=256000)
+    parser.add_argument('-amr','--side_a_min_rate',  help='--side_a_min_rate, station min tx rate default 256000', default=256000)
+    #parser.add_argument('-bmr','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
     parser.add_argument('-bmr','--side_b_min_rate',  help='--side_b_min_rate , upstream min tx rate default 256000', default=256000)
+    #parser.add_argument('-bmr','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     # Parameters that allow for testing
     parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
@@ -1517,6 +1526,36 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         # stdout logging
         logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
+
+    ####################################################
+    #
+    #  Static Configuration Cisco Realm one lanforge
+    #
+    ####################################################
+    radio_AX200_abgn_ax_list_001_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_AX200_abgn_ax_list_010_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+                                           ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+
+    radio_AX200_abgn_ax_dict_one = {'1'   : radio_AX200_abgn_ax_list_001_one, 
+                                '8'   : radio_AX200_abgn_ax_list_010_one} 
+
+    
+    radio_ath10K_9984_an_AC_list_001_one     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010_one     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020_one     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_ath10K_9984_an_AC_dict_one = {'1'  : radio_ath10K_9984_an_AC_list_001_one,
+                                        '10' : radio_ath10K_9984_an_AC_list_010_one,
+                                        '20' : radio_ath10K_9984_an_AC_list_020_one}
 
 
     ####################################################
@@ -1676,18 +1715,25 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
 
     if args.cisco_all:
         cisco_aps              = "APA453.0E7B.CF9C".split()
-        cisco_bands            = "a b".split()
-        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+#        cisco_bands            = "a b".split()
+        cisco_bands            = "a ".split()
+#        cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
         cisco_chan_5ghz        = "36".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
-        cisco_ap_modes         = "local flex".split()
+#        cisco_ap_modes         = "local flex".split()
+        cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
         endp_types             = "lf_udp lf_tcp"
         cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
+
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
+
     elif args.cisco_test:
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a".split()
@@ -1700,8 +1746,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
         endp_types             = "lf_udp lf_tcp"
-        cisco_packet_sizes     = "1518".split()
-        cisco_client_densities = "1 10 50".split()
+        cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
@@ -1892,7 +1938,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                                         reset_port_time_min_list=reset_port_time_min_list,
                                                                         reset_port_time_max_list=reset_port_time_max_list,
                                                                         side_a_min_rate=args.side_a_min_rate, 
+                                                                        side_a_min_pdu =args.cisco_packet_size, 
                                                                         side_b_min_rate=args.side_b_min_rate, 
+                                                                        side_b_min_pdu =args.cisco_packet_size, 
                                                                         debug_on=debug_on, 
                                                                         outfile=csv_outfile,
                                                                         test_keys=test_keys,

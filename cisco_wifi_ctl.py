@@ -99,8 +99,6 @@ def main():
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
-   parser.add_argument("--append",        action='store_true', help="--append  append to logfile file")
-   parser.add_argument("--suppress",      type=str, help="--suppress output when logging to a file",default="False")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
    parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
@@ -126,8 +124,6 @@ def main():
       user = args.user
       passwd = args.passwd
       logfile = args.log
-      append  = args.append
-      suppress = args.suppress
       if (args.band != None):
           band = args.band
           if (band == "abgn"):
@@ -145,22 +141,17 @@ def main():
    file_handler = None
    if (logfile is not None):
        if (logfile != "stdout"):
-           if append:
-              file_handler = logging.FileHandler(logfile, "a")
-           else:   
-              file_handler = logging.FileHandler(logfile, "w")
+           file_handler = logging.FileHandler(logfile, "w")
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
            logg.addHandler(file_handler)
-           if suppress == "False":
-               print("suppress {}".format(suppress))
-               logg.addHandler(logging.StreamHandler(sys.stdout))
+           logging.basicConfig(format=FORMAT, handlers=[file_handler])
        else:
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
-   logg.info("cisco series {}".format(args.series))
-   logg.info("scheme {}".format(args.scheme))
+   print("cisco series {}".format(args.series))
+   print("scheme {}".format(args.scheme))
 
    try:
       if (scheme == "serial"):
@@ -170,7 +161,7 @@ def main():
          with serial.Serial('/dev/ttyUSB0', 115200, timeout=5) as ser:
             egg = SerialSpawn(ser);
             egg.logfile = FileAdapter(logg)
-            logg.info("logg {}".format(logg))
+            print("logg {}".format(logg))
             egg.sendline(NL)
             time.sleep(0.1)
             egg.expect('login:', timeout=3)
@@ -187,7 +178,7 @@ def main():
          egg = pexpect.spawn(cmd)
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
-         logg.info("logg {}".format(logg))
+         print("logg {}".format(logg))
          time.sleep(0.1)
          logged_in_9800 = False
          loop_count = 0
@@ -903,7 +894,7 @@ def main():
       egg.expect(">", timeout=3)
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
-   #print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
+   print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
    if ((args.action == "show") and (args.value is None)):
       raise Exception("show requires value, like 'country' or 'ap summary'")
@@ -1093,14 +1084,12 @@ def main():
          command = "show ap channel %s"%(args.ap)
 
    if (args.action == "no_wlan_wireless_tag_policy"):
-      
       logg.info("send wireless tag policy no wlan")
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      policy = "no wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag", policy]: #"no wlan open-wlan policy default-policy-profile"
+         for command in ["wireless tag policy default-policy-tag","no wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
@@ -1117,9 +1106,9 @@ def main():
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      policy = "wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag", policy]: #"wlan open-wlan policy default-policy-profile"
+         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
+            egg.sendline(command)
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
@@ -1285,7 +1274,7 @@ def main():
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
          i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#","(config-line)#",pexpect.TIMEOUT],timeout=5)
-         logg.info(egg.before.decode('utf-8', 'ignore'))
+         print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("WLC> prompt received can send logout")
             egg.sendline("logout")
@@ -1365,7 +1354,7 @@ def main():
          try:
             i = egg.expect_exact([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=2)
             logg.info("before {} after {}".format(egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
-            logg.info(egg.before.decode('utf-8', 'ignore'))
+            print(egg.before.decode('utf-8', 'ignore'))
             if i == 0: 
                logg.info("{} prompt received after command sent".format(CCPROMPT))
                # granted the break will exit the loop

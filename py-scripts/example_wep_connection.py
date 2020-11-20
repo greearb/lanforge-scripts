@@ -18,12 +18,13 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", _debug_on=False,
+    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", radio = "wiphy0",_debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
+        self.radio = radio
         self.ssid = ssid
         self.security = security
         self.password = password
@@ -49,7 +50,7 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
     def cleanup(self, sta_list):
@@ -70,17 +71,17 @@ def main():
                 ''',
 
         description='''\
-        example_wpa_connection.py
+        example_wep_connection.py
         --------------------
 
         Generic command example:
-    python3 ./example_wpa_connection.py  \\
+    python3 ./example_wep_connection.py  \\
         --host localhost (optional) \\
         --port 8080  (optional) \\
         --num_stations 3 \\
         --security {open|wep|wpa|wpa2|wpa3} \\
-        --ssid netgear-wep \\
-        --passwd admin123-wep \\
+        --ssid jedway-wep-48 \\
+        --passwd jedway-wep-48 \\
         --debug 
 
     Note:   multiple --radio switches may be entered up to the number of radios available:
@@ -99,7 +100,7 @@ def main():
                                         end_id_=num_sta-1,
                                         padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
-                       security=args.security, sta_list=station_list)
+                       security=args.security, radio=args.radio, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()

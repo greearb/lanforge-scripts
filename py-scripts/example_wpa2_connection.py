@@ -75,7 +75,7 @@ def main():
         --------------------
 
         Generic command example:
-    python3 ./example_wpa_connection.py  \\
+    python3 ./example_wpa2_connection.py  \\
         --host localhost (optional) \\
         --port 8080  (optional) \\
         --num_stations 3 \\

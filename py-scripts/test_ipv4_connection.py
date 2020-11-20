@@ -123,7 +123,7 @@ def main():
         test_ipv4_connection.py
 --------------------
 Generic command example:
-python3 ./test_ipv4_connection.py --upstream_port eth1 \\
+./test_ipv4_connection.py --upstream_port eth1 \\
     --radio wiphy0 \\
     --num_stations 3 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
@@ -142,6 +142,8 @@ python3 ./test_ipv4_connection.py --upstream_port eth1 \\
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
+    ws_event = LFCliBase("192.168.200.15", 8080)
+    
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
                        security=args.security, sta_list=station_list, radio=args.radio)
@@ -150,17 +152,19 @@ python3 ./test_ipv4_connection.py --upstream_port eth1 \\
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
+        ws_event.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
         exit(1)
     ip_test.start(station_list, False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
+        ws_event.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
     ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all stations associated and got IP")
-
+        ws_event.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
 
 if __name__ == "__main__":
     main()
