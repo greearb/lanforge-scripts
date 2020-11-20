@@ -361,8 +361,8 @@ def main():
        file_handler.setLevel(logging.DEBUG)
        file_handler.setFormatter(formatter)
        logg.addHandler(file_handler)
-       logg.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stderr
-       #logging.basicConfig(format=FORMAT, handlers=[console_handler])
+       #logg.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stderr
+       logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
    else:
        #pass

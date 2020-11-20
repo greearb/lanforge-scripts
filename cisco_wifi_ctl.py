@@ -150,7 +150,7 @@ def main():
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
            logg.addHandler(file_handler)
-           logg.addHandler(logging.StreamHandler(sys.stdout))
+           logging.basicConfig(format=FORMAT, handlers=[console_handler])
        else:
            # stdout logging
            logging.basicConfig(format=FORMAT, handlers=[console_handler])
