@@ -99,7 +99,6 @@ def main():
    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
-   parser.add_argument("--append",        action='store_true', help="--append  append to logfile file")
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
    parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
@@ -125,7 +124,6 @@ def main():
       user = args.user
       passwd = args.passwd
       logfile = args.log
-      append  = args.append
       if (args.band != None):
           band = args.band
           if (band == "abgn"):
@@ -143,10 +141,7 @@ def main():
    file_handler = None
    if (logfile is not None):
        if (logfile != "stdout"):
-           if append:
-              file_handler = logging.FileHandler(logfile, "a")
-           else:   
-              file_handler = logging.FileHandler(logfile, "w")
+           file_handler = logging.FileHandler(logfile, "w")
            file_handler.setLevel(logging.DEBUG)
            file_handler.setFormatter(formatter)
            logg.addHandler(file_handler)
