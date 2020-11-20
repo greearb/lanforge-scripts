@@ -35,7 +35,8 @@ class StaConnect2(LFCliBase):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
-                 _sta_name=None, debug_=False, _dut_security=OPEN, _exit_on_error=False,
+                 _sta_name=None, _sta_prefix='sta', _bringup_time_sec=300,
+                 debug_=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
@@ -60,6 +61,8 @@ class StaConnect2(LFCliBase):
         self.station_names = []
         if _sta_name is not None:
             self.station_names = [ _sta_name ]
+        self.sta_prefix = _sta_prefix
+        self.bringup_time_sec = _bringup_time_sec
         # self.localrealm :Realm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
         self.localrealm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
         self.resulting_stations = {}
@@ -102,7 +105,7 @@ class StaConnect2(LFCliBase):
         counter = 0
         # print("there are %d results" % len(self.station_results))
         fields = "_links,port,alias,ip,ap,port+type"
-        self.station_results = self.localrealm.find_ports_like("sta*", fields, debug_=False)
+        self.station_results = self.localrealm.find_ports_like("%s*"%self.sta_prefix, fields, debug_=False)
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid,record in self.station_results.items():
@@ -170,8 +173,11 @@ class StaConnect2(LFCliBase):
         self.l3_udp_profile.side_b_min_pdu = 1500
         self.l3_udp_profile.report_timer = 1000
         self.l3_udp_profile.name_prefix = "udp"
+        port_list = list(self.localrealm.find_ports_like("%s+"%self.sta_prefix))
+        if (port_list is None) or (len(port_list) < 1):
+            raise ValueError("Unable to find ports named '%s'+"%self.sta_prefix)
         self.l3_udp_profile.create(endp_type="lf_udp",
-                                    side_a=list(self.localrealm.find_ports_like("sta+")),
+                                    side_a=port_list,
                                     side_b="%d.%s" % (self.resource, self.upstream_port),
                                     suppress_related_commands=True)
 
@@ -182,7 +188,7 @@ class StaConnect2(LFCliBase):
         self.l3_tcp_profile.name_prefix = "tcp"
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
-                                    side_a=list(self.localrealm.find_ports_like("sta+")),
+                                    side_a=list(self.localrealm.find_ports_like("%s+"%self.sta_prefix)),
                                     side_b="%d.%s" % (self.resource, self.upstream_port),
                                     suppress_related_commands=True)
 
@@ -204,7 +210,7 @@ class StaConnect2(LFCliBase):
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
-        maxTime = 300
+        maxTime = self.bringup_time_sec
         ip = "0.0.0.0"
         ap = ""
         print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
@@ -375,7 +381,8 @@ Example:
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
     parser.add_argument("--debug", type=str, help="enable debugging")
-
+    parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
+    parser.add_argument("--bringup_time", type=int, help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
     args = parser.parse_args()
     if args.dest is not None:
         lfjson_host = args.dest
@@ -392,7 +399,6 @@ Example:
                              debug_=True,
                              _exit_on_fail=True,
                              _exit_on_error=False)
-    staConnect.station_names = [ "sta0000" ]
     if args.user is not None:
         staConnect.user = args.user
     if args.passwd is not None:
@@ -415,6 +421,10 @@ Example:
         staConnect.dut_bssid = args.dut_bssid
     if args.dut_security is not None:
         staConnect.dut_security = args.dut_security
+    if (args.prefix is not None) or (args.prefix != "sta"):
+        staConnect.sta_prefix = args.prefix
+    staConnect.station_names = [ "%s0000"%args.prefix ]
+    staConnect.bringup_time_sec = args.bringup_time
 
    # staConnect.cleanup()
     staConnect.setup()
