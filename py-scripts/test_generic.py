@@ -19,7 +19,7 @@ import datetime
 import json
 
 class GenTest(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream,
+    def __init__(self, host, port, ssid, security, passwd, sta_list, name_prefix, upstream,
                  number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  _debug_on=False,
@@ -31,7 +31,7 @@ class GenTest(LFCliBase):
         self.upstream = upstream
         self.sta_list = sta_list
         self.security = security
-        self.password = password
+        self.passwd = passwd
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
@@ -48,7 +48,7 @@ class GenTest(LFCliBase):
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
+        self.station_profile.ssid_pass = self.passwd,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
@@ -84,8 +84,8 @@ class GenTest(LFCliBase):
                         if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
                             return False, v['name']
                         elif last_results['download'] >= self.speedtest_min_dl and \
-                                last_results['upload'] >= self.speedtest_min_up and \
-                                last_results['ping'] <= self.speedtest_max_ping:
+                             last_results['upload'] >= self.speedtest_min_up and \
+                             last_results['ping'] <= self.speedtest_max_ping:
                             return True, v['name']
 
     def choose_generic_command(self):
@@ -155,7 +155,7 @@ class GenTest(LFCliBase):
         self.station_profile.admin_down()
 
     def build(self):
-        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.use_security(self.security, self.ssid, self.passwd)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
@@ -194,6 +194,20 @@ python3 ./test_generic.py --upstream_port eth1
     --test_duration 2m 
     --interval 1s 
     --debug 
+
+
+    Example commands: 
+    LFPING:
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
+    LFCURL (under construction):
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
+    GENERIC: 
+    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+    SPEEDTEST:
+    ./test_generic.py -./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
+    --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+    IPERF3 (under construction):
+   ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
 ''')
 
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
@@ -228,7 +242,7 @@ python3 ./test_generic.py --upstream_port eth1
                            interval=1,
                            ssid=args.ssid,
                            upstream=args.upstream_port,
-                           password=args.passwd,
+                           passwd=args.passwd,
                            security=args.security,
                            test_duration=args.test_duration,
                            speedtest_min_up=args.speedtest_min_up,
