@@ -139,16 +139,15 @@ def main():
    logg = logging.getLogger(__name__)
    logg.setLevel(logging.DEBUG)
    file_handler = None
-   if (logfile is not None):
-       if (logfile != "stdout"):
-           file_handler = logging.FileHandler(logfile, "w")
-           file_handler.setLevel(logging.DEBUG)
-           file_handler.setFormatter(formatter)
-           logg.addHandler(file_handler)
-           logging.basicConfig(format=FORMAT, handlers=[console_handler])
-       else:
-           # stdout logging
-           logging.basicConfig(format=FORMAT, handlers=[console_handler])
+   if (logfile != "stdout"):
+      file_handler = logging.FileHandler(logfile, "w")
+      file_handler.setLevel(logging.DEBUG)
+      file_handler.setFormatter(formatter)
+      logg.addHandler(file_handler)
+      logging.basicConfig(format=FORMAT, handlers=[console_handler])
+   else:
+      # stdout logging
+      logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
    logg.info("cisco series {}".format(args.series))
    logg.info("scheme {}".format(args.scheme))
