@@ -139,18 +139,19 @@ def main():
    logg = logging.getLogger(__name__)
    logg.setLevel(logging.DEBUG)
    file_handler = None
-   if (logfile != "stdout"):
-      file_handler = logging.FileHandler(logfile, "w")
-      file_handler.setLevel(logging.DEBUG)
-      file_handler.setFormatter(formatter)
-      logg.addHandler(file_handler)
-      logging.basicConfig(format=FORMAT, handlers=[console_handler])
-   else:
-      # stdout logging
-      logging.basicConfig(format=FORMAT, handlers=[console_handler])
+   if (logfile is not None):
+       if (logfile != "stdout"):
+           file_handler = logging.FileHandler(logfile, "w")
+           file_handler.setLevel(logging.DEBUG)
+           file_handler.setFormatter(formatter)
+           logg.addHandler(file_handler)
+           logging.basicConfig(format=FORMAT, handlers=[file_handler])
+       else:
+           # stdout logging
+           logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
-   logg.info("cisco series {}".format(args.series))
-   logg.info("scheme {}".format(args.scheme))
+   print("cisco series {}".format(args.series))
+   print("scheme {}".format(args.scheme))
 
    try:
       if (scheme == "serial"):
@@ -160,7 +161,7 @@ def main():
          with serial.Serial('/dev/ttyUSB0', 115200, timeout=5) as ser:
             egg = SerialSpawn(ser);
             egg.logfile = FileAdapter(logg)
-            logg.info("logg {}".format(logg))
+            print("logg {}".format(logg))
             egg.sendline(NL)
             time.sleep(0.1)
             egg.expect('login:', timeout=3)
@@ -177,7 +178,7 @@ def main():
          egg = pexpect.spawn(cmd)
          #egg.logfile_read = sys.stdout.buffer
          egg.logfile = FileAdapter(logg)
-         logg.info("logg {}".format(logg))
+         print("logg {}".format(logg))
          time.sleep(0.1)
          logged_in_9800 = False
          loop_count = 0
@@ -893,7 +894,7 @@ def main():
       egg.expect(">", timeout=3)
 
    logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
-   #print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
+   print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
    if ((args.action == "show") and (args.value is None)):
       raise Exception("show requires value, like 'country' or 'ap summary'")
@@ -1083,14 +1084,12 @@ def main():
          command = "show ap channel %s"%(args.ap)
 
    if (args.action == "no_wlan_wireless_tag_policy"):
-      
       logg.info("send wireless tag policy no wlan")
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      policy = "no wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag", policy]: #"no wlan open-wlan policy default-policy-profile"
+         for command in ["wireless tag policy default-policy-tag","no wlan open-wlan policy default-policy-profile"]:
             egg.sendline(command)
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
@@ -1107,9 +1106,9 @@ def main():
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
-      policy = "wlan {} policy default-policy-profile".format(args.wlan)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag", policy]: #"wlan open-wlan policy default-policy-profile"
+         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
+            egg.sendline(command)
             sleep(1)
             j = egg.expect_exact(["(config-policy-tag)#",pexpect.TIMEOUT],timeout=2)
             if j == 0:
@@ -1275,7 +1274,7 @@ def main():
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
          i = egg.expect_exact(["WLC>","WLC#", "WLC(config)#","(config-wlan)#","(config-policy-tag)#","(config-line)#",pexpect.TIMEOUT],timeout=5)
-         logg.info(egg.before.decode('utf-8', 'ignore'))
+         print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("WLC> prompt received can send logout")
             egg.sendline("logout")
@@ -1355,7 +1354,7 @@ def main():
          try:
             i = egg.expect_exact([CCPROMPT,LEGACY_PROMPT,AREYOUSURE,'--More-- or','config paging disable',pexpect.TIMEOUT],timeout=2)
             logg.info("before {} after {}".format(egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
-            logg.info(egg.before.decode('utf-8', 'ignore'))
+            print(egg.before.decode('utf-8', 'ignore'))
             if i == 0: 
                logg.info("{} prompt received after command sent".format(CCPROMPT))
                # granted the break will exit the loop
