@@ -43,8 +43,11 @@ if 'py-json' not in sys.path:
 from LANforge.LFUtils import *
 # if you lack __init__.py in this directory you will not find sta_connect module#
 
-import test_connect2
-from test_connect2 import TestConnect2
+if 'py-json' not in sys.path:
+       sys.path.append('../../py-scripts')
+
+import sta_connect2
+from sta_connect2 import StaConnect2
 import testrail_api
 from testrail_api import APIClient
 import eap_connect
@@ -56,8 +59,6 @@ import ap_ssh
 from ap_ssh import ssh_cli_active_fw
 from ap_ssh import iwinfo_status
 import cluster_version
-
-print(os.environ)
 
 ### Set CloudSDK URL ###
 cloudSDK_url=os.getenv('CLOUD_SDK_URL')
@@ -127,31 +128,32 @@ class GetBuild:
 class RunTest:
     def Single_Client_Connectivity(self, port, radio, ssid_name, ssid_psk, security, station, test_case, rid):
         '''SINGLE CLIENT CONNECTIVITY using test_connect2.py'''
-        testConnect = TestConnect2("10.10.10.201", 8080, debug_=False)
-        testConnect.sta_mode = 0
-        testConnect.upstream_resource = 1
-        testConnect.upstream_port = port
-        testConnect.radio = radio
-        testConnect.resource = 1
-        testConnect.dut_ssid = ssid_name
-        testConnect.dut_passwd = ssid_psk
-        testConnect.dut_security = security
-        testConnect.station_names = station
-        testConnect.runtime_secs = 10
-        testConnect.cleanup_on_exit = True
-        # testConnect.cleanup()
-        testConnect.setup()
-        testConnect.start()
-        print("napping %f sec" % testConnect.runtime_secs)
-        time.sleep(testConnect.runtime_secs)
-        testConnect.stop()
-        testConnect.cleanup()
-        run_results = testConnect.get_result_list()
+        staConnect = StaConnect2("10.10.10.201", 8080, debug_=False)
+        staConnect.sta_mode = 0
+        staConnect.upstream_resource = 1
+        staConnect.upstream_port = port
+        staConnect.radio = radio
+        staConnect.resource = 1
+        staConnect.dut_ssid = ssid_name
+        staConnect.dut_passwd = ssid_psk
+        staConnect.dut_security = security
+        staConnect.station_names = station
+        staConnect.sta_prefix = 'test'
+        staConnect.runtime_secs = 10
+        staConnect.cleanup_on_exit = True
+        # staConnect.cleanup()
+        staConnect.setup()
+        staConnect.start()
+        print("napping %f sec" % staConnect.runtime_secs)
+        time.sleep(staConnect.runtime_secs)
+        staConnect.stop()
+        staConnect.cleanup()
+        run_results = staConnect.get_result_list()
         for result in run_results:
             print("test result: " + result)
         # result = 'pass'
-        print("Single Client Connectivity :", testConnect.passes)
-        if testConnect.passes() == True:
+        print("Single Client Connectivity :", staConnect.passes)
+        if staConnect.passes() == True:
             print("Single client connection to", ssid_name, "successful. Test Passed")
             client.update_testrail(case_id=test_case, run_id=rid, status_id=1, msg='Client connectivity passed')
             logger.info("Client connectivity to " + ssid_name + " Passed")
@@ -274,7 +276,7 @@ ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
 print("Getting CloudSDK version information...")
 try:
     cluster_ver = cluster_version.main()
-    #print(cluster_ver)
+    print(cluster_ver)
 
     print("CloudSDK Version Information:")
     print("-------------------------------------------")
@@ -294,6 +296,48 @@ except:
         "commitId" : "unknown",
         "projectVersion" : "unknown"
     }
+
+############################################################################
+#################### Create Report #########################################
+############################################################################
+
+# Create Report Folder for Today
+today = str(date.today())
+try:
+    os.mkdir(report_path+today)
+except OSError:
+    print ("Creation of the directory %s failed" % report_path)
+else:
+    print ("Successfully created the directory %s " % report_path)
+
+#Copy report template to folder
+try:
+    copyfile(report_template,report_path+today+'/report.php')
+except:
+    print("No report template created. Report data will still be saved. Continuing with tests...")
+
+##Create report_data dictionary
+tc_results = dict.fromkeys(test_cases, "not run")
+
+report_data = dict()
+report_data['cloud_sdk'] = cloudsdk_cluster_info
+report_data["fw_available"] = dict.fromkeys(ap_models,"Unknown")
+report_data["fw_under_test"] = dict.fromkeys(ap_models,"N/A")
+report_data['pass_percent'] = dict.fromkeys(ap_models,"")
+report_data['tests'] = {
+               "ea8300" : "",
+               "ecw5211": "",
+               "ecw5410": "",
+               "ec420": ""
+              }
+for key in ap_models:
+       report_data['tests'][key] = dict.fromkeys(test_cases,"not run")
+
+print(report_data)
+
+#write to report_data contents to json file so it has something in case of unexpected fail
+with open(report_path+today+'/report_data.json', 'w') as report_json_file:
+    json.dump(report_data, report_json_file)
 
 ###Get Cloud Bearer Token
 bearer = CloudSDK.get_bearer(cloudSDK_url)
@@ -348,45 +392,6 @@ else:
     logger.info("New loads have been created on CloudSDK")
 #print("Latest FW List:",ap_latest_dict)
 
-############################################################################
-#################### Create Report #########################################
-############################################################################
-
-# Create Report Folder for Today
-today = str(date.today())
-try:
-    os.mkdir(report_path+today)
-except OSError:
-    print ("Creation of the directory %s failed" % report_path)
-else:
-    print ("Successfully created the directory %s " % report_path)
-
-#Copy report template to folder
-copyfile(report_template,report_path+today+'/report.php')
-
-##Create report_data dictionary
-tc_results = dict.fromkeys(test_cases, "not run")
-
-report_data = dict()
-report_data['cloud_sdk'] = cloudsdk_cluster_info
-report_data["fw_available"] = dict.fromkeys(ap_models,"Unknown")
-report_data["fw_under_test"] = dict.fromkeys(ap_models,"N/A")
-report_data['pass_percent'] = dict.fromkeys(ap_models,"")
-report_data['tests'] = {
-               "ea8300" : "",
-               "ecw5211": "",
-               "ecw5410": "",
-               "ec420": ""
-              }
-for key in ap_models:
-       report_data['tests'][key] = dict.fromkeys(test_cases,"not run")
-
-
-#write to report_data contents to json file so it has something in case of unexpected fail
-with open(report_path+today+'/report_data.json', 'w') as report_json_file:
-    json.dump(report_data, report_json_file)
-
-####################################################################################
 ####################################################################################
 ############ Update FW and Run Test Cases on Each AP Variant #######################
 ####################################################################################

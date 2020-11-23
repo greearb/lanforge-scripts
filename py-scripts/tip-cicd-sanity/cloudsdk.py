@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+##################################################################################
+# Module contains functions to interact with CloudSDK using APIs
+# Start by calling get_bearer to obtain bearer token, then other APIs can be used
+#
+# Used by Nightly_Sanity and Throughput_Test #####################################
+##################################################################################
+
 import base64
 import urllib.request
 from bs4 import BeautifulSoup

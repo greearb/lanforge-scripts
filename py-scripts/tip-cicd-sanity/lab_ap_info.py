@@ -33,10 +33,10 @@ sanity_status = {
 
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
-    "ea8300": "13",
-    "ecw5410": "12",
-    "ecw5211": "6",
-    "ec420": "11"
+    "ea8300": "19",
+    "ecw5410": "20",
+    "ecw5211": "21",
+    "ec420": "27"
 }
 
 equipment_ip_dict = {

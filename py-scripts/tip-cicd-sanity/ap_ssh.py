@@ -1,3 +1,9 @@
+##################################################################################
+# Module contains functions to get specific data from AP CLI using SSH
+#
+# Used by Nightly_Sanity and Throughput_Test #####################################
+##################################################################################
+
 import paramiko
 from paramiko import SSHClient
 import socket

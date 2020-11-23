@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+####################################################################################
+# Script is based off of LANForge sta_connect2.py
+# Script built for max throughput testing on a single client
+#  The main function of the script creates a station, then tests:
+#   1. UDP Downstream (AP to STA)
+#   2. UDP Upstream (STA to AP)
+#   3. TCP Downstream (AP to STA)
+#   4. TCP Upstream (STA to AP)
+#  The script will clean up the station and connections at the end of the test.
+#
+# Used by Throughput_Test ###########################################################
+####################################################################################
+
 # Script is based off of sta_connect2.py
 # Script built for max throughput testing on a single client
 #  The main function of the script creates a station, then tests:

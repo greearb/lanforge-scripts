@@ -1,3 +1,10 @@
+##################################################################################
+# Used to login to AWS and determine current CloudSDK version
+# Requires user to install chromedriver and specify path
+#
+# Used by Nightly_Sanity #########################################################
+##################################################################################
+
 import time
 from threading import Thread
 
@@ -10,11 +17,13 @@ import subprocess
 
 user=os.getenv('AWS_USER')
 password=os.getenv('AWS_PWD')
+chromedriver_dir=os.getenv('CHROMEDRIVER_PATH')
+print(chromedriver_dir)
 
 def main():
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(executable_path='/home/netex/chromedriver', options=chrome_options)
+    driver = webdriver.Chrome(executable_path=chromedriver_dir, options=chrome_options)
     driver.get("https://telecominfraproject.awsapps.com/start#")
     time.sleep(10);
     elem = driver.find_element_by_xpath('//*[@id="awsui-input-0"]')
