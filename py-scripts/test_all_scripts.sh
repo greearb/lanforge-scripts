@@ -1,79 +1,54 @@
 #!/bin/bash
-#Security connection examples#########################################
-echo "Beginning example_wpa_connection.py test..."
-chmod +x example_wpa2_connection.py
-./example_wpa2_connection.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-chmod +x scenario.py
-./scenario.py --load BLANK
-chmod +x example_wep_connection.py
-./example_wep_connection.py --ssid jedway-wep-48 --passwd jedway-wep-48 --radio wiphy1 
-./scenario.py --load BLANK
-chmod +x example_wpa3_connection.py
-./example_wpa3_connection.py 
-./scenario.py --load BLANK
-chmod +x example_wpa_connection.py
-./example_wpa_connection.py --radio wiphy1
-./scenario.py --load BLANK
-#test generic and test fileio######################################################
-#chmod +x test_fileio.py
-#./test_fileio.py
-chmod +x test_generic.py
-#lfping
-./test_generic.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-#lfcurl
-./test_generic.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-#generic
-./test_generic.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-#speedtest
-./test_generic.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-#iperf3
-./test_generic.py --num_stations 3 --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio wiphy0
-#Ipv4 connection tests##########################################
-chmod +x test_ipv4_connection.py
-./test_ipv4_connection.py  
-chmod +x test_ipv4_l4_ftp_upload.py
-./test_ipv4_l4_ftp_upload.py
-chmod +x test_ipv4_l4_ftp_urls_per_ten.py
-./test_ipv4_l4_ftp_urls_per_ten.py
-chmod +x test_ipv4_l4_ftp_wifi.py
-./test_ipv4_l4_ftp_wifi.py
-chmod +x test_ipv4_l4_urls_per_ten.py
-./test_ipv4_l4_urls_per_ten.py  
-chmod +x test_ipv4_l4_wifi.py
-./test_ipv4_l4_wifi.py 
-chmod +x test_ipv4_l4
-./test_ipv4_l4.py
-chmod +x test_ipv4_ps.py
-./test_ipv4_l4_ps.py  
-chmod +x test_ipv4_ttls.py
-./test_ipv4_l4_ttls.py 
-chmod +x test_ipv4_variable_time.py
-./test_ipv4_variable_time.py
-#Layer 3 tests################################################
-chmod +x test_l3_longevity.py
-./test_l3_longevity.py 
-chmod +x test_l3_powersave_traffic
-./test_l3_powersave_traffic.py
-chmod +x test_l3_scenario_traffic.py
-./test_l3_scenario_traffic.py  
-chmod +x test_l3_unicast_traffic_gen.py
-./test_l3_unicast_traffic_gen.py
-chmod +x test_l3_WAN_LAN.py
-./test_l3_WAN_LAN.py
-#WANlink######################################################
-chmod +x test_wanlink.py
-./test_wanlink.py
-#IPv6 connection tests########################################
-chmod +x test_ipv6_connection.py
-./test_ipv6_variable_connection.py
-chmod +x test_ipv6_variable_time.py
-./test_ipv6_variable_time.py
-#STA Connect examples#########################################
-chmod +x sta_connect_example.py
-./sta_connect_example.py  
-chmod +x sta_connect_multi_example.py
-./sta_connect_multi_example.py 
-chmod +x sta_connect.py
-./sta_connect.py
-chmod +x sta_connect2.py
-./sta_connect2.py 
+declare -i NUM_STA="5"
+SSID_USED="jedway-open-1"
+PASSWD_USED=None
+RADIO_USED="wiphy0"
+DEF_SECURITY=""
+#declare -i CURR_TEST_NUM=0
+CURR_TEST_NAME=""
+declare -a testCommands=("./example_wpa_connection.py --num_stations NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio RADIO_USED --security wpa" 
+"./example_wpa_connection.py --num_stations NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio RADIO_USED --security wpa" 
+"./example_wpa2_connection.py --num_stations NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio RADIO_USED --security wpa2"
+"./example_wep_connection.py --num_stations NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio RADIO_USED --security wep"
+"./example_wpa3_connection.py --num_stations NUM_STA --ssid jedway-wpa3-1 jedway-wpa3-1 --radio RADIO_USED --security wpa3")
+
+function blank_db() {
+	echo "Loading blank scenario..."
+   	./scenario.py --load BLANK
+   	#check_blank.py
+}
+function stop_script() {
+	echo "Stopping bash script here."
+	exit 1
+}
+function start_script{
+	echo "Starting bash script at test...insert test name here"
+
+}
+function echoPrint{
+     echo "Beginning $CURR_TEST ..."
+}
+function runTest{
+	#get first test
+	for i in "${testCommands[@]}"
+	do
+		$CURR_TEST= "${i%%.py*}"
+		echoPrint()
+    		eval "$i"   
+    		sleep 15
+    		if ! [[ "$CURR_TEST_NAME" =~ ^(example_wpa_connection|example_wpa2_connection|example_wpa3_connection|example_wep_connection)$ ]]; then blank_db() ; fi
+
+}
+
+#TODO
+#check_blank.py
+#edit scenario.py
+#add stop and start 
+
+
+
+
+
+
+
+

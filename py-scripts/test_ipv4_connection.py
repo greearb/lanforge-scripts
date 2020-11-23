@@ -126,12 +126,9 @@ Generic command example:
 ./test_ipv4_connection.py --upstream_port eth1 \\
     --radio wiphy0 \\
     --num_stations 3 \\
-    --security {open|wep|wpa|wpa2|wpa3} \\
+    --security open {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
-    --passwd admin123 \\
-    --dest 10.40.0.1 \\
-    --test_duration 2m \\
-    --interval 1s \\
+    --passwd BLANK \\
     --debug
             ''')
 
@@ -164,7 +161,8 @@ Generic command example:
     ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all stations associated and got IP")
-        ws_event.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
+        #ws_event.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
+        #exit(1)
 
 if __name__ == "__main__":
     main()
