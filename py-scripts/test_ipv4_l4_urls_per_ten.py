@@ -33,11 +33,11 @@ class IPV4L4(LFCliBase):
         self.security = security
         self.password = password
         self.url = url
-        self.requests_per_ten = requests_per_ten
+        self.requests_per_ten = int(requests_per_ten)
         self.number_template = number_template
         self.sta_list = station_list
-        self.num_tests = num_tests
-        self.target_requests_per_ten = target_requests_per_ten
+        self.num_tests = int(num_tests)
+        self.target_requests_per_ten = int(target_requests_per_ten)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
@@ -63,7 +63,7 @@ class IPV4L4(LFCliBase):
                     if name in self.cx_profile.created_cx.keys():
                         expected_passes += 1
                         if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
-                            # print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                            print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
                             passes += 1
 
         return passes == expected_passes
@@ -84,7 +84,7 @@ class IPV4L4(LFCliBase):
         temp_stas = self.sta_list.copy()
         # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         cur_time = datetime.datetime.now()
-        interval_time = cur_time + datetime.timedelta(minutes=10)
+        interval_time = cur_time + datetime.timedelta(minutes=2)
         passes = 0
         expected_passes = 0
         self.station_profile.admin_up()
@@ -99,6 +99,7 @@ class IPV4L4(LFCliBase):
             expected_passes += 1
             while cur_time < interval_time:
                 time.sleep(1)
+                print(".",end="")
                 cur_time = datetime.datetime.now()
 
             if self.cx_profile.check_errors(self.debug):
@@ -110,7 +111,7 @@ class IPV4L4(LFCliBase):
             else:
                 self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
                 break
-            interval_time = cur_time + datetime.timedelta(minutes=10)
+            interval_time = cur_time + datetime.timedelta(minutes=2)
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
@@ -146,9 +147,6 @@ python3 ./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
     --passwd admin123 \\
-    --dest 10.40.0.1 \\
-    --test_duration 2m \\
-    --interval 1s \\
     --requests_per_ten 600 \\
     --num_tests 1 \\
     --url "dl http://10.40.0.1 /dev/null" \\

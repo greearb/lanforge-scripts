@@ -198,16 +198,16 @@ python3 ./test_generic.py --upstream_port eth1
 
     Example commands: 
     LFPING:
-    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
     LFCURL (under construction):
-    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
     GENERIC: 
-    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
     SPEEDTEST:
-    ./test_generic.py -./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
+  ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
     --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
-   ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
+   ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
 ''')
 
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
