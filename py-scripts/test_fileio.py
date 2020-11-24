@@ -276,9 +276,11 @@ def main():
 test_fileio.py:
 --------------------
 Generic command layout:
-python ./test_fileio.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+./test_fileio.py --security <security type: wpa2, open, wpa3> --macvlan_parent <port> --num_ports <num ports> --use_macvlans
+                 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbps --min_write 1Gbps --server_mount 192.168.93.195:/tmp/test
+./test_fileio.py --security wpa2 --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+                 --netmask 255.255.255.0 --gateway 192.168.92.1
 ''')
 
     parser.add_argument('--test_duration', help='sets the duration of the test', default="5m")
