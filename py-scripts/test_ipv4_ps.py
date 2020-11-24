@@ -183,11 +183,6 @@ def main():
         prog='test_ipv4_variable_time.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-        Useful Information:
-            1. TBD
-            ''',
-
         description='''\
 test_ipv4_variable_time.py:
 --------------------
