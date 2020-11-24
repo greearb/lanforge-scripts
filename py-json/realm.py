@@ -733,6 +733,9 @@ class Realm(LFCliBase):
     def new_mvlan_profile(self):
         return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+    def new_test_group_profile(self):
+        return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
@@ -2169,6 +2172,51 @@ class DUTProfile(LFCliBase):
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
 
+class TestGroupProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.local_realm = local_realm
+        self.test_group_name = test_group_name
+        self.cx_list = []
+
+    def start_group(self, group_name):
+        if group_name is not None:
+            if group_name == self.test_group_name:
+                self.local_realm.json_post("/cli-json/start_group", {"name": group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def quiesce_group(self, group_name=None):
+        if group_name is not None:
+            if group_name == self.test_group_name:
+                self.local_realm.json_post("/cli-json/quiesce_group", {"name": group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def stop_group(self, group_name=None):
+        if group_name is not None:
+            if group_name == self.test_group_name:
+                self.local_realm.json_post("/cli-json/stop_group", {"name": group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def create_group(self, group_name=None):
+        if group_name is not None:
+            self.test_group_name = group_name
+            self.local_realm.json_post("/cli-json/add_group", {"name": self.test_group_name})
+            for i in self.cx_list:
+                self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": i})
+                time.sleep(1)
+        else:
+            raise ValueError("group_name must be specified.")
+
+    def remove_group(self, group_name=None):
+        if group_name is not None:
+            if group_name == self.test_group_name:
+                self.local_realm.json_post("/cli-json/rm_group", {"name": group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
 
 class FIOEndpProfile(LFCliBase):
     """
@@ -2211,7 +2259,6 @@ class FIOEndpProfile(LFCliBase):
 
         self.created_cx = {}
         self.created_endp = []
-
 
     def start_cx(self):
         print("Starting CXs...")
@@ -2304,12 +2351,13 @@ class FIOEndpProfile(LFCliBase):
                 "payload_pattern": self.pattern,
 
             }
+            # Read direction is copy of write only directory
             if self.io_direction == "read":
                 endp_data["prefix"] = "wo_" + name + "_fio"
                 endp_data["directory"] = "/mnt/lf/wo_" + name + "_fio"
 
             url = "cli-json/add_file_endp"
-            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, endp_data, debug_=True, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
             data = {
@@ -2320,6 +2368,13 @@ class FIOEndpProfile(LFCliBase):
             self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
 
+        self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        for port_name in ports:
+            if len(self.local_realm.name_to_eid(port_name)) == 3:
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
+
             endp_data = {
                 "alias": "CX_" + self.cx_prefix + name + "_fio",
                 "test_mgr": "default_tm",
@@ -2329,6 +2384,7 @@ class FIOEndpProfile(LFCliBase):
             cx_post_data.append(endp_data)
             self.created_cx[self.cx_prefix + name + "_fio"] = "CX_" + self.cx_prefix + name + "_fio"
 
+            # time.sleep(3)
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
@@ -2481,7 +2537,7 @@ class MACVLANProfile(LFCliBase):
         LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
         print(self.created_macvlans)
 
-        # time.sleep(sleep_time)
+        time.sleep(5)
 
         for i in range(len(self.created_macvlans)):
             eid = self.local_realm.name_to_eid(self.created_macvlans[i])
@@ -2503,7 +2559,7 @@ class MACVLANProfile(LFCliBase):
             self.local_realm.rm_port(port_eid, check_exists=True)
             time.sleep(.2)
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+
 
     def admin_up(self):
         for macvlan in self.created_macvlans:

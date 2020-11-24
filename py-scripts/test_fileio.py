@@ -18,6 +18,7 @@ import argparse
 import realm
 import time
 import datetime
+import pprint
 
 
 class FileIOTest(LFCliBase):
@@ -76,7 +77,7 @@ class FileIOTest(LFCliBase):
         #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.endp_profile = self.local_realm.new_fio_endp_profile()
+        self.wo_profile = self.local_realm.new_fio_endp_profile()
         self.mvlan_profile = self.local_realm.new_mvlan_profile()
 
         if len(self.sta_list) > 0:
@@ -88,19 +89,19 @@ class FileIOTest(LFCliBase):
             self.station_profile.number_template_ = self.number_template
             self.station_profile.mode = 0
 
-        self.endp_profile.fs_type = fs_type
-        self.endp_profile.min_rw_size = LFUtils.parse_size(min_rw_size)
-        self.endp_profile.max_rw_size = LFUtils.parse_size(max_rw_size)
-        self.endp_profile.min_file_size = LFUtils.parse_size(min_file_size)
-        self.endp_profile.min_file_size = LFUtils.parse_size(min_file_size)
-        self.endp_profile.min_read_rate_bps = LFUtils.parse_size(min_read_rate_bps)
-        self.endp_profile.max_read_rate_bps = LFUtils.parse_size(max_read_rate_bps)
-        self.endp_profile.min_write_rate_bps = LFUtils.parse_size(min_write_rate_bps)
-        self.endp_profile.max_write_rate_bps = LFUtils.parse_size(max_write_rate_bps)
-        self.endp_profile.directory = directory
-        self.endp_profile.server_mount = server_mount
+        self.wo_profile.fs_type = fs_type
+        self.wo_profile.min_rw_size = LFUtils.parse_size(min_rw_size)
+        self.wo_profile.max_rw_size = LFUtils.parse_size(max_rw_size)
+        self.wo_profile.min_file_size = LFUtils.parse_size(min_file_size)
+        self.wo_profile.min_file_size = LFUtils.parse_size(min_file_size)
+        self.wo_profile.min_read_rate_bps = LFUtils.parse_size(min_read_rate_bps)
+        self.wo_profile.max_read_rate_bps = LFUtils.parse_size(max_read_rate_bps)
+        self.wo_profile.min_write_rate_bps = LFUtils.parse_size(min_write_rate_bps)
+        self.wo_profile.max_write_rate_bps = LFUtils.parse_size(max_write_rate_bps)
+        self.wo_profile.directory = directory
+        self.wo_profile.server_mount = server_mount
 
-        self.ro_profile = self.endp_profile.create_ro_profile()
+        self.ro_profile = self.wo_profile.create_ro_profile()
 
         self.mvlan_profile.num_macvlans = int(num_ports)
         self.mvlan_profile.desired_macvlans = self.port_list
@@ -111,6 +112,11 @@ class FileIOTest(LFCliBase):
         self.mvlan_profile.gateway = gateway
 
         self.created_ports = []
+        self.ro_tg_profile = self.local_realm.new_test_group_profile()
+        self.ro_tg_profile.test_group_name = "ro_profile"
+        self.wo_tg_profile = self.local_realm.new_test_group_profile()
+        self.wo_tg_profile.test_group_name = "wo_profile"
+
     def __compare_vals(self, val_list):
         passes = 0
         expected_passes = 0
@@ -124,7 +130,7 @@ class FileIOTest(LFCliBase):
                 #       self.endp_profile.min_read_rate_bps,
                 #       val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps)
 
-                if val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps:
+                if val_list[item]['read-bps'] > self.wo_profile.min_read_rate_bps:
                     passes += 1
             else:
                 # print("TEST", item,
@@ -132,7 +138,7 @@ class FileIOTest(LFCliBase):
                 #       self.endp_profile.min_write_rate_bps,
                 #       val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps)
 
-                if val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps:
+                if val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps:
                     passes += 1
             if passes == expected_passes:
                 return True
@@ -143,11 +149,12 @@ class FileIOTest(LFCliBase):
 
     def __get_values(self):
         time.sleep(3)
-        cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (','.join(self.endp_profile.created_cx.keys()), ','.join(self.ro_profile.created_cx.keys())),
+        cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (','.join(self.wo_profile.created_cx.keys()), ','.join(self.ro_profile.created_cx.keys())),
                                 debug_=self.debug)
         # print(cx_list)
         # print("==============\n", cx_list, "\n==============")
         cx_map = {}
+        # pprint.pprint(cx_list)
         if cx_list is not None:
             cx_list = cx_list['endpoint']
             for i in cx_list:
@@ -165,7 +172,7 @@ class FileIOTest(LFCliBase):
             self.mvlan_profile.create(admin_down=True, sleep_time=.5, debug=self.debug)
             self.created_ports += self.mvlan_profile.created_macvlans
 
-        if len(self.sta_list) > 0:
+        if not self.use_macvlans:
             self.station_profile.use_security(self.security, self.ssid, self.password)
             self.station_profile.set_number_template(self.number_template)
             print("Creating stations")
@@ -177,17 +184,23 @@ class FileIOTest(LFCliBase):
             self.created_ports += self.station_profile.station_names
 
 
-        self.endp_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
-                                 suppress_related_commands_=None)
+        self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                               suppress_related_commands_=None)
         self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
                                suppress_related_commands_=None)
 
-    def start(self, print_pass=False, print_fail=False):
+        self.ro_tg_profile.cx_list = self.ro_profile.created_cx.values()
+        self.wo_tg_profile.cx_list = self.wo_profile.created_cx.values()
+        self.ro_tg_profile.create_group(group_name="ro_group")
+        self.wo_tg_profile.create_group(group_name="wo_group")
+
+    def start(self, print_pass=True, print_fail=True):
         temp_ports = self.port_list.copy()
         #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
-        self.station_profile.admin_up()
-        self.mvlan_profile.admin_up()
-        exit(1)
+        if not self.use_macvlans:
+            self.station_profile.admin_up()
+        else:
+            self.mvlan_profile.admin_up()
         if self.local_realm.wait_for_ip(temp_ports):
             self._pass("All ports got IPs", print_pass)
         else:
@@ -195,9 +208,9 @@ class FileIOTest(LFCliBase):
         cur_time = datetime.datetime.now()
         # print("Got Values")
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.endp_profile.start_cx()
+        self.ro_tg_profile.start_group(group_name="ro_group")
         time.sleep(2)
-        self.ro_profile.start_cx()
+        self.wo_tg_profile.start_group(group_name="wo_group")
         passes = 0
         expected_passes = 0
         print("Starting Test...")
@@ -225,18 +238,28 @@ class FileIOTest(LFCliBase):
             self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
-        self.endp_profile.stop_cx()
-        self.ro_profile.stop_cx()
-        self.station_profile.admin_down()
-        self.mvlan_profile.admin_down()
+        self.wo_tg_profile.stop_group(group_name="wo_group")
+        self.ro_tg_profile.stop_group(group_name="ro_group")
+        if not self.use_macvlans:
+            self.station_profile.admin_down()
+        else:
+            self.mvlan_profile.admin_down()
 
-    def cleanup(self, sta_list=None):
-        self.endp_profile.cleanup()
+    def cleanup(self, port_list=None):
+        self.ro_tg_profile.remove_group(group_name="wo_group")
+        time.sleep(1)
+        self.wo_profile.cleanup()
+
+        self.ro_tg_profile.remove_group(group_name="ro_group")
+        time.sleep(1)
         self.ro_profile.cleanup()
-        if len(self.sta_list) > 0:
-            self.station_profile.cleanup(sta_list)
-            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
-        self.mvlan_profile.cleanup()
+
+        if not self.use_macvlans:
+            self.station_profile.cleanup(port_list)
+        else:
+            self.mvlan_profile.cleanup()
+
+        # LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=port_list, debug=self.debug)
 
 
 def main():
@@ -253,9 +276,11 @@ def main():
 test_fileio.py:
 --------------------
 Generic command layout:
-python ./test_fileio.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
+./test_fileio.py --security <security type: wpa2, open, wpa3> --macvlan_parent <port> --num_ports <num ports> --use_macvlans
+                 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbps --min_write 1Gbps --server_mount 192.168.93.195:/tmp/test
+./test_fileio.py --security wpa2 --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+                 --netmask 255.255.255.0 --gateway 192.168.92.1
 ''')
 
     parser.add_argument('--test_duration', help='sets the duration of the test', default="5m")
@@ -315,7 +340,7 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
         dhcp = True
     else:
         dhcp = False
-    print(port_list)
+    # print(port_list)
 
     ip_test = FileIOTest(args.mgr,
                          args.mgr_port,
@@ -352,7 +377,6 @@ python3 ./test_fileio.py --upstream_port eth1 --fio_type fe_nfs4 --min_read 1Mbp
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
     ip_test.start(False, False)
     ip_test.stop()
     if not ip_test.passes():
