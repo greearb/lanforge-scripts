@@ -19,12 +19,13 @@ from pprint import pprint
 
 class TestStatusMessage(LFCliBase):
     def __init__(self, host, port,
+                 _deep_clean=False,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.deep_clean = _deep_clean
         self.check_connect()
-
 
     def build(self):
         """create a new session"""
@@ -52,7 +53,7 @@ class TestStatusMessage(LFCliBase):
         except ValueError as ve:
             print("----- ----- ----- ----- ----- what??? ----- ----- ----- ----- ----- ----- ")
             self._fail(ve)
-
+        return
 
     def start(self, print_pass=False, print_fail=False):
         """
@@ -70,10 +71,10 @@ class TestStatusMessage(LFCliBase):
             if len(messages_a) > 0:
                 self._fail("we should have zero messages")
 
-
         for msg_num in ( 1, 2, 3, 4, 5 ):
             #print("----- ----- ----- ----- ----- ----- %s ----- ----- ----- ----- ----- " % msg_num)
             #print("session url: "+self.session_url)
+            self.msg_count = msg_num
             self.json_post(self.session_url, {
                 "key": "test_status_message.py",
                 "content-type":"application/json",
@@ -91,17 +92,148 @@ class TestStatusMessage(LFCliBase):
         make sure we read those messages
         :return: None
         """
-        message_response = self.json_get(self.session_url)
-        if "empty" in message_response:
+
+        message_list_response = self.json_get(self.session_url)
+        if "empty" in message_list_response:
             self._fail("empty response, we expect 1 or more messages")
-        for message_o in message_response["messages"]:
+        msg_num = 0
+        for message_o in message_list_response["messages"]:
             msg_url = message_o["_links"]
             print("Message url: "+msg_url)
+            message_response = self.json_get(msg_url)
+            if self.debug:
+                pprint(message_response)
+            for message_o in message_response["messages"]:
+                msg_num += 1
+                content_o = message_o
+                print("id %s" % content_o["message_id"])
+                print("key %s" % content_o["message"]["key"])
+                print("content-type %s" % content_o["message"]["content-type"])
+                print("message %s" % content_o["message"]["message"])
+
+        if msg_num != self.msg_count:
+            self._fail("(stop) expected %s messages, saw %s" % (self.msg_count, msg_num))
+        else:
+            self._pass("saw correct number of messages")
 
     def cleanup(self):
         """delete messages and delete the session"""
-        self._fail("TODO")
-        pass
+
+        message_list_response = self.json_get(self.session_url)
+        if "empty" in message_list_response:
+            self._fail("empty response, we expect 1 or more messages")
+        last_link = ""
+        msg_num = 0
+        for message_o in message_list_response["messages"]:
+            msg_url = message_o["_links"]
+            # print("Delete Message url: "+msg_url)
+            last_link = message_o["_links"]
+            msg_num += 1
+
+        if msg_num != self.msg_count:
+            self._fail("(cleanup) expected %s messages, saw %s" % (self.msg_count, msg_num))
+        message_response = self.json_delete(last_link)
+        if self.debug:
+            pprint(message_response)
+
+        # check message removal
+        message_list_response = self.json_get(self.session_url)
+        msg_num = len(message_list_response["messages"])
+        if msg_num != (self.msg_count - 1):
+            self._fail("(cleanup) expected %s messages, saw %s" % ((self.msg_count - 1), msg_num))
+        else:
+            self._pass("(cleanup) messages decreased by one")
+
+        all_url = self.session_url + "/all"
+        message_response = self.json_delete(all_url)
+        if self.debug:
+            pprint(message_response)
+
+        message_list_response = self.json_get(self.session_url)
+        if self.debug:
+            pprint(message_list_response)
+        if "messages" in message_list_response:
+            msg_num = len(message_list_response["messages"])
+        elif "empty" in message_list_response:
+            msg_num = 0
+
+        if (msg_num == 0):
+            self._pass("deleted all messages in session")
+        else:
+            self._fail("failed to delete all messages in session")
+
+        # make sure we fail on removing session incorrectly
+        try:
+            if self.debug:
+                print("--- del -------------------- -------------------- --------------------")
+            self.exit_on_error=False
+            self.halt_on_error=False
+            message_response = self.json_delete(self.session_url, debug_=False)
+            if self.debug:
+                print("--- ~del -------------------- -------------------- --------------------")
+        except ValueError as ve:
+            print("- - - - - - - - - - - - - - - - - - - - - - -")
+            print(ve)
+            print("- - - - - - - - - - - - - - - - - - - - - - -")
+
+        sessions_list_response = self.json_get("/status-msg")
+        if self.debug:
+            pprint(sessions_list_response)
+        session_list = sessions_list_response["sessions"]
+        counter = 0
+        for session_o in session_list:
+            if self.debug:
+                print("session %s link %s " % (self.session_url, session_o["_links"]))
+            if session_o["_links"] == self.session_url:
+                counter += 1
+                self._pass("session not deleted")
+                break
+        if counter == 0:
+            self._fail("session incorrectly deleted")
+
+        try:
+            if self.debug:
+                print("--- del -------------------- -------------------- --------------------")
+            self.exit_on_error=False
+            self.halt_on_error=False
+            message_response = self.json_delete(self.session_url+"/this", debug_=False)
+            if self.debug:
+                print("--- ~del -------------------- -------------------- --------------------")
+        except ValueError as ve:
+            print(ve)
+
+        sessions_list_response = self.json_get("/status-msg")
+        if self.debug:
+            pprint(sessions_list_response)
+        session_list = sessions_list_response["sessions"]
+        counter = 0
+        for session_o in session_list:
+            if session_o["_links"] == self.session_url:
+                counter += 1
+                self._fail("session not deleted: "+session_o["_links"])
+                break
+        if counter == 0:
+            self._pass("session correctly deleted")
+
+        # make sure we fail on removing session zero
+
+        if not self.deep_clean:
+            return True
+
+        print("Deleting all sessions...")
+        counter = 0
+        for session_o in session_list:
+            counter += 1
+            self.json_delete(session_o["_links"]+"/all")
+        print("cleaned %s sessions" % counter)
+        counter = 0
+        for session_o in session_list:
+            if session_o["session-id"] == "0":
+                continue
+            counter += 1
+            self.json_delete(session_o["_links"]+"/this")
+        print("deleted %s sessions" % counter)
+
 
 def main():
     lfjson_port = 8080
@@ -120,31 +252,94 @@ Test the status message passing functions of /status-msg:
 - delete session: DELETE /status-msg/<new-session-id>/this
 - delete all messages in session: DELETE /status-msg/<new-session-id>/all
 """)
-    parser.add_argument('--new', help='create new session')
-    parser.add_argument('--update', help='add message to session')
-    parser.add_argument('--read', help='read message(s) from session')
-    parser.add_argument('--list', help='list messages from session')
-    parser.add_argument('--delete', help='delete message')
+    parser.add_argument('--action', default="run_test", help="""
+Actions can be:
+    run_test    : run a messaging test
+    new         : create new session
+    update      : add message to session, requires --session, --key, --message
+    read        : read message(s) from session, requires --session
+    list        : list messages from session
+    delete      : delete message, all messages using session/all or session using session/this
+""")
+    parser.add_argument('--session',    type=str, help='explicit session or session/message-id')
+    parser.add_argument('--deep_clean', type=bool, help='remove all messages and all sessions')
+    parser.add_argument('--key',        type=str, help='how to key the message')
+    parser.add_argument('--message',    type=str, help='message to include')
     args = parser.parse_args()
 
     status_messages = TestStatusMessage(args.mgr,
                                         lfjson_port,
-                                        _debug_on=True,
-                                        _exit_on_error=True,
-                                        _exit_on_fail=True)
-    status_messages.build()
-    if not status_messages.passes():
-        print(status_messages.get_fail_message())
-        exit(1)
-    status_messages.start(False, False)
-    status_messages.stop()
-    if not status_messages.passes():
-        print(status_messages.get_fail_message())
-        exit(1)
-    status_messages.cleanup()
-    if status_messages.passes():
-        print("Full test passed, all messages read and cleaned up")
+                                        _debug_on=False,
+                                        _exit_on_error=False,
+                                        _exit_on_fail=False)
+    if args.action == "new":
+        if args.session is not None:
+            status_messages.json_put("/status-msg/"+args.session, {})
+        else:
+            u = uuid1()
+            status_messages.json_put("/status-msg/"+u, {})
+            print("created session /status-msg/"+u)
+        return
 
+    if args.action == "update":
+        if args.session is None:
+            print("requires --session")
+            return
+        if args.key is None:
+            print("requires --key")
+            return
+        if args.message is None:
+            print("requires --message")
+            return
+        status_messages.json_post("/status-msg/"+args.session, {
+            "key": args.key,
+            "content-type": "text/plain",
+            "message": args.message
+        })
+        return
+
+    if args.action == "list":
+        if args.session is None:
+            response_o = status_messages.json_get("/status-msg/")
+            pprint(response_o["sessions"])
+        else:
+            response_o = status_messages.json_get("/status-msg/"+args.session)
+            pprint(response_o["messages"])
+        return
+
+    if args.action == "read":
+        if args.session is None:
+            print("requires --session")
+            return
+        response_o = status_messages.json_get("/status-msg/"+args.session)
+        pprint(response_o)
+        return
+
+    if args.action == "delete":
+        if args.session is None:
+            print("requires --session")
+            return
+        response_o = status_messages.json_delete("/status-msg/"+args.session)
+        pprint(response_o)
+        return
+
+
+    if args.action == "run_test":
+        if args.deep_clean:
+            status_messages.deep_clean = True
+        status_messages.build()
+        if not status_messages.passes():
+            print(status_messages.get_fail_message())
+            exit(1)
+        status_messages.start(False, False)
+        status_messages.stop()
+        if not status_messages.passes():
+            print(status_messages.get_fail_message())
+            exit(1)
+        status_messages.cleanup()
+        if status_messages.passes():
+            print("Full test passed, all messages read and cleaned up")
+        exit(0)
 
 if __name__ == "__main__":
     main()
