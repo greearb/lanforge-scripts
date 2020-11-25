@@ -183,7 +183,7 @@ class LFRequest:
                              method_='PUT')
 
     def json_delete(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
-       return self.get_as_json(debug=debug,
+       return self.get_as_json(debug_=debug,
                              die_on_error_=die_on_error_,
                              method_='DELETE')
 
