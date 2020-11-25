@@ -140,6 +140,7 @@ class RunTest:
         staConnect.station_names = station
         staConnect.sta_prefix = 'test'
         staConnect.runtime_secs = 10
+        staConnect.bringup_time_sec = 60
         staConnect.cleanup_on_exit = True
         # staConnect.cleanup()
         staConnect.setup()
