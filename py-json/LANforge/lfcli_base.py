@@ -4,10 +4,11 @@ import sys
 import traceback
 # Extend this class to use common set of debug and request features for your script
 from pprint import pprint
-
+import time
 import LANforge.LFUtils
 from LANforge.LFUtils import *
 import argparse
+from LANforge import LFRequest
 import LANforge.LFRequest
 
 class LFCliBase:
@@ -87,22 +88,53 @@ class LFCliBase:
                 pprint.pprint(response_json_list_)
         except Exception as x:
             if self.debug or self.halt_on_error or self.exit_on_error:
-                print("jsonPost posted to %s" % _req_url)
+                print("json_post posted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             if self.halt_on_error or self.exit_on_error:
                 exit(1)
-
         return json_response
 
+    def json_put(self, _req_url, _data, debug_=False, response_json_list_=None):
+        """
+        Send a PUT request. This is presently used for data sent to /status-msg for
+        creating a new messaging session. It is not presently used for CLI scripting
+        so lacks suppress_x features.
+        :param _req_url: url to put
+        :param _data: data to place at URL
+        :param debug_: enable debug output
+        :param response_json_list_: array for json results in the response object, (alternative return method)
+        :return: http response object
+        """
+        json_response = None
+        try:
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
+            lf_r.addPostData(_data)
+            if debug_ or self.debug:
+                LANforge.LFUtils.debug_printer.pprint(_data)
+            json_response = lf_r.json_put(show_error=self.debug,
+                                          debug=(self.debug or debug_),
+                                          response_json_list_=response_json_list_,
+                                          die_on_error_=self.exit_on_error)
+            if debug_ and (response_json_list_ is not None):
+                pprint.pprint(response_json_list_)
+        except Exception as x:
+            if self.debug or self.halt_on_error or self.exit_on_error:
+                print("json_put submitted to %s" % _req_url)
+                pprint.pprint(_data)
+                print("Exception %s:" % x)
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            if self.halt_on_error or self.exit_on_error:
+                exit(1)
+        return json_response
     def json_get(self, _req_url, debug_=False):
         if self.debug or debug_:
-            print("URL: "+_req_url)
+            print("GET: "+_req_url)
         json_response = None
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
-            json_response = lf_r.getAsJson(debug_=self.debug, die_on_error_=self.halt_on_error)
+            json_response = lf_r.get_as_json(debug_=self.debug, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
             if (json_response is None) and (self.debug or debug_):
                 print("LFCliBase.json_get: no entity/response, probabily status 404")
@@ -110,6 +142,31 @@ class LFCliBase:
         except ValueError as ve:
             if self.debug or self.halt_on_error or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
+                print("Exception %s:" % ve)
+                traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
+            if self.halt_on_error or self.exit_on_error:
+                sys.exit(1)
+
+        return json_response
+
+    def json_delete(self, _req_url, debug_=False):
+        if self.debug or debug_:
+            print("DELETE: "+_req_url)
+        json_response = None
+        try:
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url,
+                                       debug_=(self.debug or debug_),
+                                       die_on_error_=self.exit_on_error)
+            json_response = lf_r.json_delete(debug_=self.debug,
+                                             die_on_error_=self.halt_on_error)
+
+            #debug_printer.pprint(json_response)
+            if (json_response is None) and (self.debug or debug_):
+                print("LFCliBase.json_delete: no entity/response, probabily status 404")
+                return None
+        except ValueError as ve:
+            if self.debug or self.halt_on_error or self.exit_on_error:
+                print("json_delete asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
             if self.halt_on_error or self.exit_on_error:
