@@ -105,7 +105,7 @@ class LFRequest:
     def jsonPost(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
         return self.json_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_, response_json_list_=response_json_list_)
 
-    def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
+    def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None, method_='POST'):
         if (debug == False) and (self.debug == True):
             debug = True
         if self.die_on_error:
@@ -113,6 +113,7 @@ class LFRequest:
         responses = []
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             request = urllib.request.Request(url=self.requested_url,
+                                             method=method_,
                                              data=json.dumps(self.post_data).encode("utf-8"),
                                              headers=self.default_headers)
         else:
@@ -124,7 +125,7 @@ class LFRequest:
             resp = urllib.request.urlopen(request)
             resp_data = resp.read().decode('utf-8')
             if (debug):
-                print("----- LFRequest::jsonPost:118 debug: --------------------------------------------")
+                print("----- LFRequest::json_post:128 debug: --------------------------------------------")
                 print("URL: %s :%d "% (self.requested_url, resp.status))
                 LFUtils.debug_printer.pprint(resp.getheaders())
                 print("----- resp_data -------------------------------------------------")
@@ -136,15 +137,15 @@ class LFRequest:
                     raise ValueError("reponse_json_list_ needs to be type list")
                 j = json.loads(resp_data)
                 if debug:
-                    print("----- LFRequest::jsonPost:129 debug: --------------------------------------------")
+                    print("----- LFRequest::json_post:140 debug: --------------------------------------------")
                     LFUtils.debug_printer.pprint(j)
                     print("-------------------------------------------------")
                 response_json_list_.append(j)
             return responses[0]
         except urllib.error.HTTPError as error:
             if show_error or die_on_error_ or (error.code != 404):
-                print("----- LFRequest::jsonPost:138 HTTPError: --------------------------------------------")
-                print("<%s> HTTP %s: %s"%(request.get_full_url(), error.code, error.reason, ))
+                print("----- LFRequest::json_post:147 HTTPError: --------------------------------------------")
+                print("<%s> HTTP %s: %s" % (request.get_full_url(), error.code, error.reason ))
 
                 print("Error: ", sys.exc_info()[0])
                 print("Request URL:", request.get_full_url())
@@ -167,21 +168,35 @@ class LFRequest:
                 exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
-                print("----- LFRequest::jsonPost:162 URLError: ---------------------------------------------")
+                print("----- LFRequest::json_post:171 URLError: ---------------------------------------------")
                 print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
                     exit(1)
         return None
 
-    def get(self, debug=False, die_on_error_=False):
+    def json_put(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
+       return self.json_post(show_error=show_error,
+                             debug=debug,
+                             die_on_error_=die_on_error_,
+                             response_json_list_=response_json_list_,
+                             method_='PUT')
+
+    def json_delete(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
+       return self.get_as_json(debug=debug,
+                             die_on_error_=die_on_error_,
+                             method_='DELETE')
+
+    def get(self, debug=False, die_on_error_=False, method_='GET'):
         if self.debug == True:
             debug = True
         if self.die_on_error == True:
             die_on_error_ = True
         if debug:
             print("LFUtils.get: url: "+self.requested_url)
-        myrequest = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
+        myrequest = urllib.request.Request(url=self.requested_url,
+                                           headers=self.default_headers,
+                                           method=method_)
         myresponses = []
         try:
             myresponses.append(urllib.request.urlopen(myrequest))
@@ -223,9 +238,9 @@ class LFRequest:
     def getAsJson(self, die_on_error_=False, debug_=False):
         return self.get_as_json(die_on_error_=die_on_error_, debug_=debug_)
 
-    def get_as_json(self, die_on_error_=False, debug_=False):
+    def get_as_json(self, die_on_error_=False, debug_=False, method_='GET'):
         responses = []
-        j = self.get(debug=debug_, die_on_error_=die_on_error_)
+        j = self.get(debug=debug_, die_on_error_=die_on_error_, method_=method_)
         responses.append(j)
         if len(responses) < 1:
             return None
