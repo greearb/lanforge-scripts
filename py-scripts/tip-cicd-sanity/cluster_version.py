@@ -18,7 +18,6 @@ import subprocess
 user=os.getenv('AWS_USER')
 password=os.getenv('AWS_PWD')
 chromedriver_dir=os.getenv('CHROMEDRIVER_PATH')
-print(chromedriver_dir)
 
 def main():
     chrome_options = webdriver.ChromeOptions()
@@ -56,9 +55,6 @@ def main():
     #print(AWS_SESSION_TOKEN)
     # //*[@id="env-var-linux"]/div[2]/text()
     # //*[@id="env-var-linux"]/div[3]/text()
-
-
-    #os.chdir('/Users/bealla/.kube')
 
     os.environ['AWS_ACCESS_KEY_ID'] = AWS_ACCESS_KEY_ID
     os.environ['AWS_SECRET_ACCESS_KEY'] = AWS_SECRET_ACCESS_KEY

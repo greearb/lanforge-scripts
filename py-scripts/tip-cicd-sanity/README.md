@@ -27,35 +27,35 @@ For each AP model:
 ## Environment Variables
 Environment variables required to run scripts and modules in this directory
 #### Nightly_Sanity.py		
-CLOUD_SDK_URL: CloudSDK URL for API calls
-SANITY_LOG_DIR: Logger file directory
-SANITY_REPORT_DIR: Report file directory
-REPORT_TEMPLATE: Report template path
-TR_USER: TestRail Username
-TR_PWD: TestRail Password
-MILESTONE: TestRail Milestone ID
-PROJECT_ID: TestRail Project ID
-EAP_IDENTITY: EAP identity for testing
-EAP_PWD: EAP password for testing
-AP_USER: Username for AP
-JFROG_USER: Jfrog username
-JFROG_PWD: Jfrog password
+CLOUD_SDK_URL: CloudSDK URL for API calls  
+SANITY_LOG_DIR: Logger file directory  
+SANITY_REPORT_DIR: Report file directory 
+REPORT_TEMPLATE: Report template path  
+TR_USER: TestRail Username  
+TR_PWD: TestRail Password  
+MILESTONE: TestRail Milestone ID  
+PROJECT_ID: TestRail Project ID  
+EAP_IDENTITY: EAP identity for testing  
+EAP_PWD: EAP password for testing  
+AP_USER: Username for AP  
+JFROG_USER: Jfrog username  
+JFROG_PWD: Jfrog password  
 		
 #### cloudsdk.py		
-CLOUDSDK_USER: CloudSDK username
-CLOUDSDK_PWD: CloudSDK password
+CLOUDSDK_USER: CloudSDK username  
+CLOUDSDK_PWD: CloudSDK password  
 		
 #### cluster_version.py		
-AWS_USER: CloudSDK username
-AWS_PWD: CloudSDK password
+AWS_USER: CloudSDK username  
+AWS_PWD: CloudSDK password  
 		
 #### testrail_api.py		
-TR_USER	tr_user	TestRail Username
-TR_PWD	tr_pw	TestRail Password
+TR_USER	tr_user	TestRail Username  
+TR_PWD	tr_pw	TestRail Password  
 		
 #### Throughput_Test.py		
-CLOUD_SDK_URL: CloudSDK URL for API calls
-CSV_PATH: Path for CSV file
-EAP_IDENTITY: EAP identity for testing
-EAP_PWD: EAP password for testing
-TPUT_LOG_DIR: Logger file directory
+CLOUD_SDK_URL: CloudSDK URL for API calls  
+CSV_PATH: Path for CSV file  
+EAP_IDENTITY: EAP identity for testing  
+EAP_PWD: EAP password for testing  
+TPUT_LOG_DIR: Logger file directory  

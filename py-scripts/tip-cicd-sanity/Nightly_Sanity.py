@@ -66,7 +66,7 @@ cloudSDK_url=os.getenv('CLOUD_SDK_URL')
 local_dir=os.getenv('SANITY_LOG_DIR')
 report_path=os.getenv('SANITY_REPORT_DIR')
 report_template=os.getenv('REPORT_TEMPLATE')
-print(report_path)
+
 ## TestRail Information
 tr_user=os.getenv('TR_USER')
 tr_pw=os.getenv('TR_PWD')
@@ -283,6 +283,7 @@ try:
     print(cluster_ver)
     print("-------------------------------------------")
 
+    logger.info('CloudSDK version info:'+cluster_ver)
     cloudsdk_cluster_info = {}
     for line in cluster_ver.splitlines():
         (key, val) = line.split("=")
@@ -291,6 +292,7 @@ try:
 except:
     cluster_ver = 'error'
     print("ERROR: CloudSDK Version Unavailable")
+    logger.info('CloudSDK version Unavailable')
     cloudsdk_cluster_info = {
         "date" : "unknown",
         "commitId" : "unknown",
