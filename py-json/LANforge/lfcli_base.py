@@ -128,10 +128,12 @@ class LFCliBase:
             if self.halt_on_error or self.exit_on_error:
                 exit(1)
         return json_response
+
     def json_get(self, _req_url, debug_=False):
         if self.debug or debug_:
             print("GET: "+_req_url)
         json_response = None
+        # print("----- GET ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
             json_response = lf_r.get_as_json(debug_=self.debug, die_on_error_=self.halt_on_error)
@@ -154,12 +156,12 @@ class LFCliBase:
             print("DELETE: "+_req_url)
         json_response = None
         try:
+            # print("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url,
                                        debug_=(self.debug or debug_),
                                        die_on_error_=self.exit_on_error)
-            json_response = lf_r.json_delete(debug_=self.debug,
+            json_response = lf_r.json_delete(debug=self.debug,
                                              die_on_error_=self.halt_on_error)
-
             #debug_printer.pprint(json_response)
             if (json_response is None) and (self.debug or debug_):
                 print("LFCliBase.json_delete: no entity/response, probabily status 404")
@@ -171,7 +173,7 @@ class LFCliBase:
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
             if self.halt_on_error or self.exit_on_error:
                 sys.exit(1)
-
+        # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         return json_response
 
     @staticmethod
