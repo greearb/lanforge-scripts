@@ -127,16 +127,16 @@ class FileIOTest(LFCliBase):
             if item[0] == 'r':
                 # print("TEST", item,
                 #       val_list[item]['read-bps'],
-                #       self.endp_profile.min_read_rate_bps,
-                #       val_list[item]['read-bps'] > self.endp_profile.min_read_rate_bps)
+                #       self.ro_profile.min_read_rate_bps,
+                #       val_list[item]['read-bps'] > self.ro_profile.min_read_rate_bps)
 
                 if val_list[item]['read-bps'] > self.wo_profile.min_read_rate_bps:
                     passes += 1
             else:
                 # print("TEST", item,
                 #       val_list[item]['write-bps'],
-                #       self.endp_profile.min_write_rate_bps,
-                #       val_list[item]['write-bps'] > self.endp_profile.min_write_rate_bps)
+                #       self.wo_profile.min_write_rate_bps,
+                #       val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps)
 
                 if val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps:
                     passes += 1
@@ -194,7 +194,7 @@ class FileIOTest(LFCliBase):
         self.ro_tg_profile.create_group(group_name="ro_group")
         self.wo_tg_profile.create_group(group_name="wo_group")
 
-    def start(self, print_pass=True, print_fail=True):
+    def start(self, print_pass=False, print_fail=False):
         temp_ports = self.port_list.copy()
         #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if not self.use_macvlans:
@@ -276,10 +276,10 @@ def main():
 test_fileio.py:
 --------------------
 Generic command layout:
-./test_fileio.py --security <security type: wpa2, open, wpa3> --macvlan_parent <port> --num_ports <num ports> --use_macvlans
+./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-./test_fileio.py --security wpa2 --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
                  --netmask 255.255.255.0 --gateway 192.168.92.1
 ''')
 
