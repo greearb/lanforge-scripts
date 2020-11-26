@@ -277,7 +277,6 @@ ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
 print("Getting CloudSDK version information...")
 try:
     cluster_ver = cluster_version.main()
-    print(cluster_ver)
 
     print("CloudSDK Version Information:")
     print("-------------------------------------------")
@@ -313,9 +312,12 @@ except OSError:
 else:
     print ("Successfully created the directory %s " % report_path)
 
-#Copy report template to folder
+logger.info('Report data can be found here: '+report_path+today)
+
+#Copy report template to folder. If template doesn't exist, continue anyway with log
 try:
     copyfile(report_template,report_path+today+'/report.php')
+
 except:
     print("No report template created. Report data will still be saved. Continuing with tests...")
 
@@ -445,7 +447,7 @@ for key in equipment_id_dict:
         ###Create Test Run
         today = str(date.today())
         test_run_name = "Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image
-        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId)
+        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId, description='CloudSDK version info:\n'+cluster_ver)
         rid = client.get_run_id(test_run_name="Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image)
         print("TIP run ID is:", rid)
 
@@ -456,12 +458,13 @@ for key in equipment_id_dict:
         if upgrade_fw["success"] == True:
             print("CloudSDK Upgrade Request Success")
             report_data['tests'][key][2233] = "running"
-            #print(report_data)
+            logger.info('Firmware upgrade API successfully sent')
         else:
             print("Cloud SDK Upgrade Request Error!")
             # mark upgrade test case as failed with CloudSDK error
             client.update_testrail(case_id="2233", run_id=rid, status_id=5, msg='Error calling CloudSDK firmware upgrade API')
             report_data['tests'][key][2233] = "failed"
+            logger.warning('Firmware upgrade API failed to send')
             continue
 
         print("Wait for AP Upgrade")
@@ -470,6 +473,7 @@ for key in equipment_id_dict:
         # Check if upgrade success is displayed on CloudSDK
         cloud_ap_fw = CloudSDK.ap_firmware(customer_id, equipment_id, cloudSDK_url, bearer)
         print('Current AP Firmware from CloudSDK:', cloud_ap_fw)
+        logger.info('AP Firmware from CloudSDK: '+cloud_ap_fw)
         if cloud_ap_fw == "ERROR":
             print("AP FW Could not be read from CloudSDK")
 
@@ -484,9 +488,11 @@ for key in equipment_id_dict:
             ap_cli_info = ssh_cli_active_fw(ap_ip, ap_username, ap_password)
             ap_cli_fw = ap_cli_info['active_fw']
             print("CLI reporting AP Active FW as:", ap_cli_fw)
+            logger.info('Firmware from CLI: ' + ap_cli_fw)
         except:
             ap_cli_info = "ERROR"
             print("Cannot Reach AP CLI to confirm upgrade!")
+            logger.warning('Cannot Reach AP CLI to confirm upgrade!')
             client.update_testrail(case_id="2233", run_id=rid, status_id=4, msg='Cannot reach AP after upgrade to check CLI - re-test required')
             continue
 

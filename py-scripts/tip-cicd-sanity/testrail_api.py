@@ -172,42 +172,13 @@ class APIClient:
 
         return update_flag
 
-    def create_testrun(self, name, case_ids, project_id, milestone_id):
+    def create_testrun(self, name, case_ids, project_id, milestone_id, description):
         result = client.send_post(
             'add_run/%s' % (project_id),
-            {'name': name, 'case_ids': case_ids, 'milestone_id': milestone_id, 'include_all': False})
+            {'name': name, 'case_ids': case_ids, 'milestone_id': milestone_id, 'description': description, 'include_all': False})
         print("result in post", result)
+
 client: APIClient = APIClient('https://telecominfraproject.testrail.com')
-client.user = 'syama.devi@connectus.ai'
-client.password = 'Connectus123$'
-
-
-###Old Demo Code
-#case = client.send_get('get_case/936')
-#print("---------TEST CASE 1---------")
-#pprint(case)
-#case = client.send_get('get_case/937')
-#print("---------TEST CASE 2---------")
-#pprint(case)
-#print ("----------TEST Project ID----------")
-#proj_id = client.get_project_id(project_name= "WLAN")
-#pprint(proj_id)
-
-#REST API POSTMAN PROJECT
-#projId = client.get_project_id(project_name= "REST-API-POSTMAN")
-#pprint("REST API POSTMAN PROJECT ID IS :", projId)
-
-#print("---------TEST RUN ID-----------")
-#rid = client.get_run_id(test_run_name='Master',project_name='WLAN')
-#rid=client.get_run_id(test_run_name= 'Master-Run3')
-#pprint(rid)
-
-#result: bool= client.update_testrail(case_id = 1, run_id=rid, status_id = 5, msg ='Test Failed')
-
-#result = client.send_get('get_attachment/:1', '/Users/syamadevi/Desktop/syama/python-test/TestRail/testreport.pdf')
-#print(result)
-#project_report= client.send_get("get_reports/:%s" %proj_id)
-#print(project_report)
 
 class APIError(Exception):
     pass
