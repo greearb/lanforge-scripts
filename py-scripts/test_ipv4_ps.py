@@ -66,8 +66,6 @@ class IPV4VariableTime(LFCliBase):
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        # print(self.cx_profile.created_cx.values())
-        # print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -85,8 +83,6 @@ class IPV4VariableTime(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                # print(item, new_list[item], old_list[item], passes, expected_passes)
-
             if passes == expected_passes:
                 return True
             else:
@@ -142,10 +138,6 @@ class IPV4VariableTime(LFCliBase):
                 time.sleep(1)
 
             new_cx_rx_values = self.__get_rx_values()
-            # print(old_cx_rx_values, new_cx_rx_values)
-            # print("\n-----------------------------------")
-            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            # print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
@@ -185,17 +177,20 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
 test_ipv4_variable_time.py:
---------------------
-TBD
+---------------------
 
 Generic command layout:
-python ./test_ipv4_variable_time.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
-
-Note:   multiple --radio switches may be entered up to the number of radios available:
-                 --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
-
- python3 ./test_ipv4_variable_time.py --upstream_port eth1 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 wpa2 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 wpa2
-
+./test_ipv4_variable_time.py
+--upstream_port eth1 
+--radio wiphy3
+--num_stations 4
+-ssid jedway-wpa2-x2048-4-1  
+-passwd jedway-wpa2-x2048-4-1 
+--security  {wpa2|open|wpa|wpa3} 
+--a_min 250000
+--b_min 260000
+--test_duration 2m
+--debug
         ''')
 
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)

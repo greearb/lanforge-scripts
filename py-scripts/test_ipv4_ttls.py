@@ -288,7 +288,6 @@ test_ipv4_ttls.py:
                          enable_pkc=args.enable_pkc,
                          )
     ttls_test.cleanup(station_list)
-    #ttls_test.timeout = 60
     ttls_test.build()
     if not ttls_test.passes():
         print(ttls_test.get_fail_message())
