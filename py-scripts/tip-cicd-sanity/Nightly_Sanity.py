@@ -58,7 +58,7 @@ from cloudsdk import CloudSDK
 import ap_ssh
 from ap_ssh import ssh_cli_active_fw
 from ap_ssh import iwinfo_status
-import cluster_version
+
 
 ### Set CloudSDK URL ###
 cloudSDK_url=os.getenv('CLOUD_SDK_URL')
@@ -265,39 +265,13 @@ test_cases = [
        5250,
        5251,
        5252,
-       5253
+       5253,
+       5540
 ]
 
 ##AP models for jfrog
 ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
 #ap_models = ["ecw5410"]
-
-#############################################################################
-##################### CloudSDK Version ###############################
-print("Getting CloudSDK version information...")
-try:
-    cluster_ver = cluster_version.main()
-
-    print("CloudSDK Version Information:")
-    print("-------------------------------------------")
-    print(cluster_ver)
-    print("-------------------------------------------")
-
-    logger.info('CloudSDK version info:'+cluster_ver)
-    cloudsdk_cluster_info = {}
-    for line in cluster_ver.splitlines():
-        (key, val) = line.split("=")
-        cloudsdk_cluster_info[key] = val
-
-except:
-    cluster_ver = 'error'
-    print("ERROR: CloudSDK Version Unavailable")
-    logger.info('CloudSDK version Unavailable')
-    cloudsdk_cluster_info = {
-        "date" : "unknown",
-        "commitId" : "unknown",
-        "projectVersion" : "unknown"
-    }
 
 ############################################################################
 #################### Create Report #########################################
@@ -325,7 +299,12 @@ except:
 tc_results = dict.fromkeys(test_cases, "not run")
 
 report_data = dict()
-report_data['cloud_sdk'] = cloudsdk_cluster_info
+report_data['cloud_sdk'] = {
+               "ea8300" : "",
+               "ecw5211": "",
+               "ecw5410": "",
+               "ec420": ""
+              }
 report_data["fw_available"] = dict.fromkeys(ap_models,"Unknown")
 report_data["fw_under_test"] = dict.fromkeys(ap_models,"N/A")
 report_data['pass_percent'] = dict.fromkeys(ap_models,"")
@@ -406,10 +385,6 @@ for key in equipment_id_dict:
     ##Get Bearer Token to make sure its valid (long tests can require re-auth)
     bearer = CloudSDK.get_bearer(cloudSDK_url)
 
-    # create dictionary to track test case pass/fail
-    #tc_results = dict.fromkeys(test_cases, "Not Run")
-    #print(tc_results)
-
     ###Get Current AP Firmware and upgrade
     customer_id = "2"
     equipment_id = equipment_id_dict[key]
@@ -439,6 +414,13 @@ for key in equipment_id_dict:
         print('FW does not require updating')
         report_data['fw_available'][key] = "No"
         logger.info(fw_model + " does not require upgrade. Not performing sanity tests for this AP variant")
+        cloudsdk_cluster_info = {
+            "date": "N/A",
+            "commitId": "N/A",
+            "projectVersion": "N/A"
+        }
+        report_data['cloud_sdk'][key] = cloudsdk_cluster_info
+
     else:
         print('FW needs updating')
         report_data['fw_available'][key] = "Yes"
@@ -447,9 +429,45 @@ for key in equipment_id_dict:
         ###Create Test Run
         today = str(date.today())
         test_run_name = "Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image
-        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId, description='CloudSDK version info:\n'+cluster_ver)
+        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId, description="Automated Nightly Sanity test run for new firmware build")
         rid = client.get_run_id(test_run_name="Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image)
         print("TIP run ID is:", rid)
+
+        ###GetCloudSDK Version
+        print("Getting CloudSDK version information...")
+        try:
+            cluster_ver = CloudSDK.get_cloudsdk_version(cloudSDK_url, bearer)
+            print("CloudSDK Version Information:")
+            print("-------------------------------------------")
+            print(cluster_ver)
+            print("-------------------------------------------")
+
+            cloudsdk_cluster_info = {}
+            cloudsdk_cluster_info['date'] = cluster_ver['commitDate']
+            cloudsdk_cluster_info['commitId'] = cluster_ver['commitID']
+            cloudsdk_cluster_info['projectVersion'] = cluster_ver['projectVersion']
+            report_data['cloud_sdk'][key] = cloudsdk_cluster_info
+            logger.info('CloudSDK version info: ',cluster_ver)
+            client.update_testrail(case_id="5540", run_id=rid, status_id=1, msg='Read CloudSDK version from API successfully')
+            report_data['tests'][key][5540] = "passed"
+
+        except:
+            cluster_ver = 'error'
+            print("ERROR: CloudSDK Version Unavailable")
+            logger.info('CloudSDK version Unavailable')
+            cloudsdk_cluster_info = {
+                "date": "unknown",
+                "commitId": "unknown",
+                "projectVersion": "unknown"
+            }
+            client.update_testrail(case_id="5540", run_id=rid, status_id=5, msg='Could not read CloudSDK version from API')
+            report_data['cloud_sdk'][key] = cloudsdk_cluster_info
+            report_data['tests'][key][5540] = "failed"
+
+        with open(report_path + today + '/report_data.json', 'w') as report_json_file:
+            json.dump(report_data, report_json_file)
+
+        time.sleep(60)
 
         # Upgrade AP firmware
         upgrade_fw = CloudSDK.update_firmware(equipment_id, latest_firmware_id, cloudSDK_url, bearer)
@@ -466,9 +484,6 @@ for key in equipment_id_dict:
             report_data['tests'][key][2233] = "failed"
             logger.warning('Firmware upgrade API failed to send')
             continue
-
-        print("Wait for AP Upgrade")
-        time.sleep(300)
 
         # Check if upgrade success is displayed on CloudSDK
         cloud_ap_fw = CloudSDK.ap_firmware(customer_id, equipment_id, cloudSDK_url, bearer)

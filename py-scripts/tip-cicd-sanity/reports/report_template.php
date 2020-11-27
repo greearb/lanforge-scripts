@@ -6,8 +6,8 @@
 <head>
     
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+//error_reporting(E_ALL);
+//ini_set('display_errors', '1');
 $results = file_get_contents('report_data.json');
 $json = json_decode($results, true);
 ?>
@@ -75,16 +75,52 @@ $json = json_decode($results, true);
         <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['ecw5410'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['ec420'],true) ?></TD>
    </TR>
+
+        <TR ALIGN="CENTER" style="font-weight:bold">
+        <TD></TD>
+        <TD ALIGN="LEFT" >CloudSDK Commit Date</TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ea8300']['date'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5211']['date'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5410']['date'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ec420']['date'],true) ?></TD>
+   </TR>
+
+        <TR ALIGN="CENTER" style="font-weight:bold">
+        <TD></TD>
+        <TD ALIGN="LEFT" >CloudSDK Commit ID</TD>
+        <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ea8300']['commitId'],true) ?></TD>
+        <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ecw5211']['commitId'],true) ?></TD>
+        <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ecw5410']['commitId'],true) ?></TD>
+        <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ec420']['commitId'],true) ?></TD>
+   </TR>
+
+        <TR ALIGN="CENTER" style="font-weight:bold">
+        <TD></TD>
+        <TD ALIGN="LEFT" >CloudSDK Project Version</TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ea8300']['projectVersion'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5211']['projectVersion'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5410']['projectVersion'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ec420']['projectVersion'],true) ?></TD>
+   </TR>
        
        <TR ALIGN="CENTER" style="font-weight:bold">
         <TD></TD>
         <TD ALIGN="LEFT">Test Pass Rate</TD>
-        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ea8300'],true) ?>%</TD>
-        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5211'],true) ?>%</TD>
-        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5410'],true) ?>%</TD>
-        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ec420'],true) ?>%</TD>
+        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ea8300'],true) ?></TD>
+        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5211'],true) ?></TD>
+        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5410'],true) ?></TD>
+        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ec420'],true) ?></TD>
    </TR>
-       
+
+      <TR ALIGN="CENTER">
+      <TD>5540</TD>
+      <TD ALIGN="LEFT">Get CloudSDK Version with API</TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5540'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ecw5211']['5540'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ecw5410']['5540'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ec420']['5540'],true) ?></TD>
+   </TR>
+
     <TR ALIGN="CENTER">
       <TD>2233</TD>
       <TD ALIGN="LEFT">AP Upgrade Successful</TD>

@@ -157,3 +157,16 @@ class CloudSDK:
 
         response = requests.request("PUT", url, headers=headers, data=json.dumps(equipment_info))
         #print(response)
+
+    def get_cloudsdk_version(cloudSDK_url, bearer):
+        #print(latest_ap_image)
+        fw_id_url = cloudSDK_url+"/ping"
+
+        payload = {}
+        headers = {
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("GET", fw_id_url, headers=headers, data=payload)
+        cloud_sdk_version = response.json()
+        return cloud_sdk_version
+
