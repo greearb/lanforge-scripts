@@ -6,7 +6,7 @@ PASSWD_USED="jedway-wpa2-x2048-4-1"
 RADIO_USED="wiphy1"
 SECURITY="wpa2"
 CURR_TEST_NAME="BLANK"
-CURR_TEST_NUMBER=0
+CURR_TEST_NUM=0
 STOP_NUM=0
 START_NUM=0
 #Test array
@@ -22,24 +22,23 @@ testCommands=("./example_wpa_connection.py --num_stations $NUM_STA --ssid jedway
 "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security wpa2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m --debug"
 )
 function ret_case_num(){
-    echo "The script name that was successful passed in is $1"
-    case "$1" in
-        "example_wpa_connection")
-            return 1
+    case $1 in
+        "example_wpa_connection") 
+            echo 1 ;;
         "example_wpa2_connection")
-            return 2
+            echo 2 ;;
         "example_wpa3_connection")
-            return 4
+            echo 4 ;;
         "example_wep_connection")
-            return 3
+            echo 3 ;;
         "test_generic")
-            return 5
+            echo 5 ;; 
         "test_ipv4_l4_urls_per_ten")
-            return 6
+            echo 6 ;;
         "test_ipv4_l4_wifi")
-            return 7
+            echo 7 ;;
         "test_ipv4_l4")
-            return 8
+            echo 8 ;;
     esac
 }
 function blank_db() {
@@ -54,19 +53,20 @@ function run_test(){
 	for i in "${testCommands[@]}"; do
 		CURR_TEST_NAME=${i%%.py*}
 		CURR_TEST_NAME=${CURR_TEST_NAME#./*}
-		#works til here
-		CURR_TEST_NUM= ret_case_num $CURR_TEST_NAME
-		if ($STOP_NUM > $CURR_TEST_NUM &&  ); then
+		CURR_TEST_NUM=$(ret_case_num $CURR_TEST_NAME)
+		if [[ $STOP_NUM > $CURR_TEST_NUM ] && [ $STOP_NUM != 0 ]]; then
 		    exit 1
 		fi
-		echoPrint
-        eval $i &>/home/Documents/txtfile 
-        if [ $? -ne 0 ]; then 
-            echo $CURR_TEST_NAME fail 
-        fi
-        #tail -f /tmp/testx
-    	if  [[ "${CURR_TEST_NAME}" = @(example_wpa_connection|example_wpa2_connection|example_wpa3_connection|example_wep_connection) ]]; then 
-    	    blank_db 
+		if [ ! $START_NUM > $CURR_TEST_NUM ]; then
+		    echo_print
+            eval $i > /home/Documents/txtfile 
+            #if [ $? -ne 0 ]; then 
+               # echo $CURR_TEST_NAME fail 
+            #fi
+            tail -10 /home/Documents/txtfile
+    	    if  [[ "${CURR_TEST_NAME}" = @(example_wpa_connection|example_wpa2_connection|example_wpa3_connection|example_wep_connection) ]]; then 
+    	        blank_db
+    	    fi
     	fi
     done
 }
@@ -82,4 +82,3 @@ check_args $1 $2
 run_test
 #test generic and fileio are for macvlans 
 #all tests should return 0 for success and !0 for fail --almost complete
-#case switch for tests to be run --almost complete
