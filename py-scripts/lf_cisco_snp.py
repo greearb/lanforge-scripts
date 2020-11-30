@@ -624,9 +624,9 @@ class L3VariableTime(LFCliBase):
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
-                 side_a_min_rate=560000, side_a_max_rate=0,
+                 side_a_min_bps=560000, side_a_max_bps=0,
                  side_a_min_pdu=1518,side_a_max_pdu=0,
-                 side_b_min_rate=560000, side_b_max_rate=0,
+                 side_b_min_bps=560000, side_b_max_bps=0,
                  side_b_min_pdu=1518,side_b_max_pdu=0,
                  number_template="00", test_duration="256s",
                  polling_interval="60s",
@@ -703,12 +703,12 @@ class L3VariableTime(LFCliBase):
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_rate = side_a_min_rate
-        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_a_min_bps = side_a_min_bps
+        self.cx_profile.side_a_max_bps = side_a_min_bps
         self.cx_profile.side_a_min_pdu = side_a_min_pdu
         self.cx_profile.side_a_max_pdu = side_a_max_pdu
-        self.cx_profile.side_b_min_rate = side_b_min_rate
-        self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_bps
+        self.cx_profile.side_b_max_bps = side_b_min_bps
         self.cx_profile.side_b_min_pdu = side_b_min_pdu
         self.cx_profile.side_b_max_pdu = side_b_max_pdu
 
@@ -1458,9 +1458,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-amr','--side_a_min_rate',  help='--side_a_min_rate, station min tx bits per second default 256000', default=256000)
+    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 256000', default=256000)
     parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
-    parser.add_argument('-bmr','--side_b_min_rate',  help='--side_b_min_rate , upstream min tx rate default 256000', default=256000)
+    parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     # Parameters that allow for testing
@@ -1732,8 +1732,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_rate  = 500000000
-        cisco_side_b_min_rate  = 500000000
+        cisco_side_a_min_bps  = 500000000
+        cisco_side_b_min_bps  = 500000000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -1755,8 +1755,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_rate  = 500000000
-        cisco_side_b_min_rate  = 500000000
+        cisco_side_a_min_bps  = 500000000
+        cisco_side_b_min_bps  = 500000000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -1783,8 +1783,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_client_densities   = args.cisco_client_density.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()
 
-        cisco_side_a_min_rate    = args.side_a_min_rate
-        cisco_side_a_min_rate    = args.side_b_min_rate
+        cisco_side_a_min_bps    = args.side_a_min_bps
+        cisco_side_a_min_bps    = args.side_b_min_bps
 
     
     logg.info(cisco_aps)
@@ -1928,12 +1928,12 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                     index += 1
                                                 # Run Traffic Upstream (STA to AP)
                                                 if(cisco_direction == "upstream"):
-                                                    side_a_min_rate = cisco_side_a_min_rate 
-                                                    side_b_min_rate = 0  
+                                                    side_a_min_bps = cisco_side_a_min_bps 
+                                                    side_b_min_bps = 0  
                                                 # Run Traffic Downstream (AP to STA)    
                                                 else:
-                                                    side_a_min_rate = 0 
-                                                    side_b_min_rate = cisco_side_b_min_rate  
+                                                    side_a_min_bps = 0 
+                                                    side_b_min_bps = cisco_side_b_min_bps  
 
                                                 
                                                 # current default is to have a values
@@ -1958,9 +1958,9 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                                                 reset_port_enable_list=reset_port_enable_list,
                                                                                 reset_port_time_min_list=reset_port_time_min_list,
                                                                                 reset_port_time_max_list=reset_port_time_max_list,
-                                                                                side_a_min_rate=side_a_min_rate, 
+                                                                                side_a_min_bps=side_a_min_bps, 
                                                                                 side_a_min_pdu =cisco_packet_size, 
-                                                                                side_b_min_rate=side_b_min_rate, 
+                                                                                side_b_min_bps=side_b_min_bps, 
                                                                                 side_b_min_pdu =cisco_packet_size, 
                                                                                 debug_on=debug_on, 
                                                                                 outfile=csv_outfile,
