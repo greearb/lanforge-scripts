@@ -1,4 +1,7 @@
 #!/bin/bash
+#This bash script aims to automate the test process of all Candela Technologies's test_* scripts in the lanforge-scripts directory. The script can be run 2 ways and may include (via user input) the "start_num" and "stop_num" variables to select which tests should be run.
+# OPTION ONE: ./test_all_scripts.sh : this command runs all the scripts in the array "testCommands"
+# OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.  
 #Variables
 NUM_STA=4
 SSID_USED="jedway-wpa2-x2048-4-1"
@@ -31,14 +34,16 @@ function ret_case_num(){
             echo 4 ;;
         "example_wep_connection")
             echo 3 ;;
-        "test_generic")
+        "test_ipv4_connection")
             echo 5 ;; 
+        "test_generic")
+            echo 6 ;; 
         "test_ipv4_l4_urls_per_ten")
-            echo 6 ;;
-        "test_ipv4_l4_wifi")
             echo 7 ;;
-        "test_ipv4_l4")
+        "test_ipv4_l4_wifi")
             echo 8 ;;
+        "test_ipv4_l4")
+            echo 9 ;;
     esac
 }
 function blank_db() {
@@ -47,23 +52,24 @@ function blank_db() {
 	#check_blank.py
 }
 function echo_print(){
-	echo "Beginning $CURR_TEST_NAME ..."
+	echo "Beginning $CURR_TEST_NAME test..."
 }
 function run_test(){
 	for i in "${testCommands[@]}"; do
 		CURR_TEST_NAME=${i%%.py*}
 		CURR_TEST_NAME=${CURR_TEST_NAME#./*}
 		CURR_TEST_NUM=$(ret_case_num $CURR_TEST_NAME)
-		if [[ $STOP_NUM > $CURR_TEST_NUM ] && [ $STOP_NUM != 0 ]]; then
+		if [[ $CURR_TEST_NUM  -gt $STOP_NUM ]] || [[ $STOP_NUM -eq $CURR_NUM && $STOP_NUM -ne 0 ]]; then
 		    exit 1
 		fi
-		if [ ! $START_NUM > $CURR_TEST_NUM ]; then
+		if [[ $CURR_TEST_NUM -gt $START_NUM ]] || [[ $CURR_TEST_NUM -eq $START_NUM ]]; then
 		    echo_print
-            eval $i > /home/Documents/txtfile 
-            #if [ $? -ne 0 ]; then 
-               # echo $CURR_TEST_NAME fail 
-            #fi
-            tail -10 /home/Documents/txtfile
+           # eval $i > /home/Documents/txtfile 
+           # if [ $? -ne 0 ]; then 
+             #   echo $CURR_TEST_NAME fail 
+           # fi
+            #tail -10 /home/Documents/txtfile
+            #eval $i
     	    if  [[ "${CURR_TEST_NAME}" = @(example_wpa_connection|example_wpa2_connection|example_wpa3_connection|example_wep_connection) ]]; then 
     	        blank_db
     	    fi
