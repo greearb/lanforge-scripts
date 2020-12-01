@@ -107,7 +107,7 @@ def main():
    #
    #
    #
-    lfjson_host = "192.168.200.15"
+    lfjson_host = "localhost"
     lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
