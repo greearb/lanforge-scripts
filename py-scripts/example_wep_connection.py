@@ -52,6 +52,8 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
+        print("Test passed.")
+        exit(0)
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)

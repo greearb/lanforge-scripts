@@ -4,8 +4,8 @@
 # OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.  
 #Variables
 NUM_STA=4
-SSID_USED="jedway-wpa2-x2048-4-1"
-PASSWD_USED="jedway-wpa2-x2048-4-1"
+SSID_USED="jedway-wpa2-x2048-5-3"
+PASSWD_USED="jedway-wpa2-x2048-5-3"
 RADIO_USED="wiphy1"
 SECURITY="wpa2"
 CURR_TEST_NAME="BLANK"
@@ -17,7 +17,7 @@ testCommands=("./example_wpa_connection.py --num_stations $NUM_STA --ssid jedway
 "./example_wpa2_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa2"
 "./example_wep_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio $RADIO_USED --security wep"
 "./example_wpa3_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
-"./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --upstream_port eth1"
+"./test_ipv4_connection.py --radio wiphy2 --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --upstream_port eth1"
 "./test_generic.py --mgr localhost --mgr_port 4122 --radio $RADIO_USED --ssid SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
 "./test_generic.py --mgr localhost --mgr_port 4122 --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
 "./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
@@ -47,12 +47,12 @@ function ret_case_num(){
     esac
 }
 function blank_db() {
-	echo "Loading blank scenario..."
-	./scenario.py --load BLANK
+	echo "Loading blank scenario..." |& tee -a ~/test_all_output_file.txt
+	./scenario.py --load BLANK |& tee -a ~/test_all_output_file.txt
 	#check_blank.py
 }
 function echo_print(){
-	echo "Beginning $CURR_TEST_NAME test..."
+	echo "Beginning $CURR_TEST_NAME test..." |& tee -a ~/test_all_output_file.txt
 }
 function run_test(){
 	for i in "${testCommands[@]}"; do
@@ -64,12 +64,12 @@ function run_test(){
 		fi
 		if [[ $CURR_TEST_NUM -gt $START_NUM ]] || [[ $CURR_TEST_NUM -eq $START_NUM ]]; then
 		    echo_print
-           # eval $i > /home/Documents/txtfile 
-           # if [ $? -ne 0 ]; then 
-             #   echo $CURR_TEST_NAME fail 
-           # fi
-            #tail -10 /home/Documents/txtfile
-            #eval $i
+            eval $i | tee -a ~/test_all_output_file.txt
+            if [ $? -ne 0 ]; then 
+                echo $CURR_TEST_NAME failure
+            else 
+                echo $CURR_TEST_NAME success 
+            fi
     	    if  [[ "${CURR_TEST_NAME}" = @(example_wpa_connection|example_wpa2_connection|example_wpa3_connection|example_wep_connection) ]]; then 
     	        blank_db
     	    fi
@@ -84,7 +84,7 @@ function check_args(){
         STOP_NUM=$2
     fi    
 }
+true > ~/test_all_output_file.txt
 check_args $1 $2 
 run_test
 #test generic and fileio are for macvlans 
-#all tests should return 0 for success and !0 for fail --almost complete

@@ -54,6 +54,7 @@ class IPv4Test(LFCliBase):
         self.station_profile.admin_up()
     
         self._pass("PASS: Station build finished")
+        exit(0)
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
