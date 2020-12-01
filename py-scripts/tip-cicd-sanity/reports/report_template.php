@@ -147,7 +147,25 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['5222'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5222'],true) ?></TD>
    </TR>
-       
+
+       <TR ALIGN="CENTER">
+      <TD>5541</TD>
+      <TD ALIGN="LEFT">CloudSDK Pushes Correct AP Profile - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5541'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5541'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5541'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5541'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5544</TD>
+      <TD ALIGN="LEFT">AP Applies Correct AP Profile - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5544'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5544'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5544'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5544'],true) ?></TD>
+   </TR>
+
     <TR ALIGN="CENTER">
       <TD>5214</TD>
       <TD ALIGN="LEFT">Client connectivity to 2.4 GHz WPA2-EAP - Bridge Mode</TD>
@@ -195,7 +213,24 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD> 
-        
+
+        <TR ALIGN="CENTER">
+      <TD>5542</TD>
+      <TD ALIGN="LEFT">CloudSDK Pushes Correct AP Profile - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5542'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5542'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5542'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5542'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5545</TD>
+      <TD ALIGN="LEFT">AP Applies Correct AP Profile - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5545'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5545'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5545'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5545'],true) ?></TD>
+   </TR>
         <TR ALIGN="CENTER">
       <TD>5216</TD>
       <TD ALIGN="LEFT">Client connectivity to 2.4 GHz WPA2-EAP - NAT Mode</TD>
@@ -244,7 +279,24 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['4324'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4324'],true) ?></TD>    
    </TR>
-        
+        <TR ALIGN="CENTER">
+      <TD>5543</TD>
+      <TD ALIGN="LEFT">CloudSDK Pushes Correct AP Profile - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5543'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5543'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5543'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5543'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5546</TD>
+      <TD ALIGN="LEFT">AP Applies Correct AP Profile - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5546'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5546'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5546'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5546'],true) ?></TD>
+   </TR>
+
         <TR ALIGN="CENTER">
       <TD>5253</TD>
       <TD ALIGN="LEFT">Client connectivity to 2.4 GHz WPA2-EAP - Custom VLAN</TD>
