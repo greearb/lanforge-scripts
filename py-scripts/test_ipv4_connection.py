@@ -107,7 +107,7 @@ def main():
    #
    #
    #
-    lfjson_host = "localhost"
+    lfjson_host = "192.168.200.15"
     lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
@@ -139,7 +139,6 @@ Generic command example:
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-    ws_event = LFCliBase("192.168.200.15", 8080)
     
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
@@ -149,19 +148,19 @@ Generic command example:
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        ws_event.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
+        ip_test.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
         exit(1)
     ip_test.start(station_list, False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        ws_event.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
+        ip_test.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
     ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all stations associated and got IP")
-        #ws_event.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
+        ip_test.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
         #exit(1)
 
 if __name__ == "__main__":
