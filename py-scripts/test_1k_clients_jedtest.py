@@ -11,20 +11,20 @@ if 'py-json' not in sys.path:
 from realm import Realm
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-
+import argparse
 
 class Test1KClients(LFCliBase):
     def __init__(self,
                  host,
                  port,
-                 num_sta=200,
+                 num_sta_=200,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host,
                          port,
                          _debug=_debug_on,
-                         _local_realm=Realm(self, lfclient_host=host, lfclient_port=port, debug_=_debug_on, halt_on_error_=_exit_on_error),
+                         _local_realm=Realm(lfclient_host=host, lfclient_port=port),
                          _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.ssid_radio_map = {
@@ -36,15 +36,19 @@ class Test1KClients(LFCliBase):
             '1.2.wiphy1' : ("wpa2", "jedway-wpa2-x2048-4-4", "jedway-wpa2-x2048-4-4"),
             '1.2.wiphy2' : ("wpa2", "jedway-wpa2-x2048-4-1", "jedway-wpa2-x2048-4-1"),
         }
+        if num_sta_ is None:
+            raise ValueError("need a number of stations per radio")
+        self.num_sta = int(num_sta_)
 
         self.station_radio_map = {
-            '1.1.wiphy0' : LFUtils.portNameSeries(prefix_="sta", start_id_=0,    end_id_=num_sta-1,      padding_number_=10000),
-            '1.1.wiphy1' : LFUtils.portNameSeries(prefix_="sta", start_id_=1000, end_id_=1000+num_sta-1, padding_number_=10000),
-            '1.1.wiphy2' : LFUtils.portNameSeries(prefix_="sta", start_id_=2000, end_id_=2000+num_sta-1, padding_number_=10000),
+            # port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_, radio=radio)
+            "1.1.wiphy0" : LFUtils.port_name_series(start_id=0,    end_id=self.num_sta-1,      padding_number=10000, radio="1.1.wiphy0"),
+            "1.1.wiphy1" : LFUtils.port_name_series(start_id=1000, end_id=1000+self.num_sta-1, padding_number=10000, radio="1.1.wiphy1"),
+            "1.1.wiphy2" : LFUtils.port_name_series(start_id=2000, end_id=2000+self.num_sta-1, padding_number=10000, radio="1.1.wiphy2"),
 
-            '1.2.wiphy0' : LFUtils.portNameSeries(prefix_="sta", start_id_=3000, end_id_=3000+num_sta-1, padding_number_=10000),
-            '1.2.wiphy1' : LFUtils.portNameSeries(prefix_="sta", start_id_=4000, end_id_=4000+num_sta-1, padding_number_=10000),
-            '1.2.wiphy2' : LFUtils.portNameSeries(prefix_="sta", start_id_=5000, end_id_=5000+num_sta-1, padding_number_=10000)
+            "1.2.wiphy0" : LFUtils.port_name_series(start_id=3000, end_id=3000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy0"),
+            "1.2.wiphy1" : LFUtils.port_name_series(start_id=4000, end_id=4000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy1"),
+            "1.2.wiphy2" : LFUtils.port_name_series(start_id=5000, end_id=5000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy2")
         }
         self.station_profile_map = {}
 
@@ -89,7 +93,9 @@ class Test1KClients(LFCliBase):
         pass
 
     def cleanup(self):
-        pass
+        #for (radio, station_list) in self.station_radio_map.items():
+        self.local_realm.remove_all_stations(1)
+        self.local_realm.remove_all_stations(2)
 
 
 def main():
@@ -97,14 +103,18 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
 
-    argparser = LFCliBase.create_basic_argparse(prog=__file__)
-    argparser.add_argument("--sta_per_radio", type=int, description="number of stations per radio")
+    argparser = LFCliBase.create_basic_argparse(prog=__file__,
+                                                description="creates lots of stations across multiple radios",
+                                                formatter_class=argparse.RawTextHelpFormatter)
+    argparser.add_argument("--sta_per_radio",
+                           type=int,
+                           help="number of stations per radio")
 
     args = argparser.parse_args()
 
     kilo_test = Test1KClients(lfjson_host,
                               lfjson_port,
-                              num_sta=args.sta_per_radio)
+                              num_sta_=args.sta_per_radio)
     kilo_test.cleanup()
     kilo_test.build()
     if not kilo_test.passes():
