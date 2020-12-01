@@ -266,7 +266,13 @@ test_cases = [
        5251,
        5252,
        5253,
-       5540
+       5540,
+       5541,
+       5542,
+       5543,
+       5544,
+       5545,
+       5546
 ]
 
 ##AP models for jfrog
@@ -467,7 +473,6 @@ for key in equipment_id_dict:
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
-        time.sleep(60)
 
         # Upgrade AP firmware
         upgrade_fw = CloudSDK.update_firmware(equipment_id, latest_firmware_id, cloudSDK_url, bearer)
@@ -484,6 +489,8 @@ for key in equipment_id_dict:
             report_data['tests'][key][2233] = "failed"
             logger.warning('Firmware upgrade API failed to send')
             continue
+
+        time.sleep(300)
 
         # Check if upgrade success is displayed on CloudSDK
         cloud_ap_fw = CloudSDK.ap_firmware(customer_id, equipment_id, cloudSDK_url, bearer)
@@ -603,6 +610,48 @@ for key in equipment_id_dict:
         ### Wait for Profile Push
         time.sleep(180)
 
+        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+        ## VIF Config
+        try:
+            ssid_config = profile_info_dict[key]["ssid_list"]
+            print("SSIDs in AP Profile:", ssid_config)
+
+            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF Config:", ssid_list)
+
+            if set(ssid_list) == set(ssid_config):
+                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                client.update_testrail(case_id="5541", run_id=rid, status_id=1, msg='SSIDs in VIF Config matches AP Profile Config')
+                report_data['tests'][key][5541] = "passed"
+            else:
+                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                client.update_testrail(case_id="5541", run_id=rid, status_id=5, msg='SSIDs in VIF Config do not match AP Profile Config')
+                report_data['tests'][key][5541] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5541", run_id=rid, status_id=4, msg='Cannot determine VIF Config - re-test required')
+            report_data['tests'][key][5541] = "error"
+        # VIF State
+        try:
+            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF State:", ssid_state)
+
+            if set(ssid_state) == set(ssid_config):
+                print("SSIDs properly applied on AP")
+                client.update_testrail(case_id="5544", run_id=rid, status_id=1, msg='SSIDs in VIF Config applied to VIF State')
+                report_data['tests'][key][5544] = "passed"
+            else:
+                print("SSIDs not applied on AP")
+                client.update_testrail(case_id="5544", run_id=rid, status_id=5, msg='SSIDs in VIF Config not applied to VIF State')
+                report_data['tests'][key][5544] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF State from AP CLI")
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5544", run_id=rid, status_id=4, msg='Cannot determine VIF State - re-test required')
+            report_data['tests'][key][5544] = "error"
+
         ### Set LANForge port for tests
         port = "eth2"
 
@@ -611,7 +660,7 @@ for key in equipment_id_dict:
         print(iwinfo)
 
         ###Run Client Single Connectivity Test Cases for Bridge SSIDs
-        # TC5215 - 2.4 GHz WPA2-Enterprise
+        # TC5214 - 2.4 GHz WPA2-Enterprise
         test_case = "5214"
         radio = "wiphy0"
         sta_list = ["eap5214"]
@@ -761,6 +810,54 @@ for key in equipment_id_dict:
 
         ### Wait for Profile Push
         time.sleep(180)
+
+        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+        ## VIF Config
+        try:
+            ssid_config = profile_info_dict[fw_model + '_nat']["ssid_list"]
+            print("SSIDs in AP Profile:", ssid_config)
+
+            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF Config:", ssid_list)
+
+            if set(ssid_list) == set(ssid_config):
+                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                client.update_testrail(case_id="5542", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config matches AP Profile Config')
+                report_data['tests'][key][5542] = "passed"
+            else:
+                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                client.update_testrail(case_id="5542", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config do not match AP Profile Config')
+                report_data['tests'][key][5542] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5542", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF Config - re-test required')
+            report_data['tests'][key][5542] = "error"
+        # VIF State
+        try:
+            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF State:", ssid_state)
+
+            if set(ssid_state) == set(ssid_config):
+                print("SSIDs properly applied on AP")
+                client.update_testrail(case_id="5545", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config applied to VIF State')
+                report_data['tests'][key][5545] = "passed"
+            else:
+                print("SSIDs not applied on AP")
+                client.update_testrail(case_id="5545", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config not applied to VIF State')
+                report_data['tests'][key][5545] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF State from AP CLI")
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5545", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF State - re-test required')
+            report_data['tests'][key][5545] = "error"
 
         ### Set LANForge port for tests
         port = "eth2"
@@ -919,6 +1016,51 @@ for key in equipment_id_dict:
 
         ### Wait for Profile Push
         time.sleep(180)
+
+        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+        ## VIF Config
+        try:
+            ssid_config = profile_info_dict[fw_model + '_vlan']["ssid_list"]
+            print("SSIDs in AP Profile:", ssid_config)
+
+            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF Config:", ssid_list)
+
+            if set(ssid_list) == set(ssid_config):
+                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                client.update_testrail(case_id="5543", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config matches AP Profile Config')
+                report_data['tests'][key][5543] = "passed"
+            else:
+                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                client.update_testrail(case_id="5543", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config do not match AP Profile Config')
+                report_data['tests'][key][5543] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5543", run_id=rid, status_id=4, msg='Cannot determine VIF Config - re-test required')
+            report_data['tests'][key][5543] = "error"
+        # VIF State
+        try:
+            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+            print("SSIDs in AP VIF State:", ssid_state)
+
+            if set(ssid_state) == set(ssid_config):
+                print("SSIDs properly applied on AP")
+                client.update_testrail(case_id="5546", run_id=rid, status_id=1, msg='SSIDs in VIF Config applied to VIF State')
+                report_data['tests'][key][5546] = "passed"
+            else:
+                print("SSIDs not applied on AP")
+                client.update_testrail(case_id="5546", run_id=rid, status_id=5, msg='SSIDs in VIF Config not applied to VIF State')
+                report_data['tests'][key][5546] = "failed"
+        except:
+            ssid_list = "ERROR"
+            print("Error accessing VIF State from AP CLI")
+            print("Error accessing VIF Config from AP CLI")
+            client.update_testrail(case_id="5546", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF State - re-test required')
+            report_data['tests'][key][5546] = "error"
 
         ### Set port for LANForge
         port = "vlan100"
