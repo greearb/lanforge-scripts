@@ -745,7 +745,14 @@ class L3VariableTime(LFCliBase):
             csv_rx_drop_percent_data.append(self.test_config_dict[key])
 
         csv_rx_drop_percent_data.extend([self.epoch_time, self.time_stamp(),'rx_drop_percent'])
+        # remove multi cast since downstream only if selected
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
+
+        if "upstream" in self.test_config_dict:
+            for key in [key for key in rx_drop_percent if "-A" in key]: del rx_drop_percent[key]
+        elif "downstream" in self.text_config_dict:
+            for key in [key for key in rx_drop_percent if "-B" in key]: del rx_drop_percent[key]
+
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
         average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
@@ -788,6 +795,12 @@ class L3VariableTime(LFCliBase):
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
+        # only evaluate upstream or downstream 
+        evaluate_list = new_list.copy()
+        if "upstream" in self.test_config_dict:
+            for key in [key for key in evaluate_list if "-A" in key]: del evaluate_list[key]
+        elif "downstream" in self.test_config_dict:   
+            for key in [key for key in evaluate_list if "-B" in key]: del evaluate_list[key]
         csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
         for i in range(5):
@@ -1751,7 +1764,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
         cisco_data_encryptions = "disable".split()
         cisco_packet_types     = "lf_udp lf_tcp".split()
         cisco_directions       = "upstream downstream".split()
-        cisco_packet_sizes     = "88 512 1370 1518".split()
+        #cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
