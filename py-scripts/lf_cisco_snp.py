@@ -1814,10 +1814,11 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                             logg.info("###########################################################################################################################################")
                                             logg.info("# TEST RUNNING ,  TEST RUNNING ############################################################################################################")
                                             logg.info("###########################################################################################################################################")
-                                            test_config = "AP=={} Band=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_size=={}".format(cisco_ap,
-                                                cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,cisco_packet_size)
+                                            test_config = "AP=={} Band=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(cisco_ap,
+                                                cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
+                                                cisco_packet_type,cisco_direction,cisco_packet_size)
                                             print(test_config)
-                                            test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_size'] 
+                                            test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
                                             logg.info("# Cisco static settings: tx_power {} chan_5ghz {} chan_24ghz {} ".format(cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
                                             logg.info("# Cisco run Dynamic settings: {}".format(test_config))
                                             logg.info("###########################################################################################################################################")
