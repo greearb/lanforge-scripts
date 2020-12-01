@@ -45,6 +45,9 @@ class FileIOTest(LFCliBase):
                  gateway=None,
                  dhcp=True,
                  use_macvlans=False,
+                 use_test_groups=False,
+                 write_only_test_group=None,
+                 read_only_test_group=None,
                  port_list=[],
                  _debug_on=False,
                  _exit_on_error=False,
@@ -59,14 +62,23 @@ class FileIOTest(LFCliBase):
         self.password = password
         self.number_template = number_template
         self.test_duration = test_duration
-        self.sta_list = []
+        self.port_list = []
         self.use_macvlans = use_macvlans
         if self.use_macvlans:
-            if macvlan_parent != None:
+            if macvlan_parent is not None:
                 self.macvlan_parent = macvlan_parent
                 self.port_list = port_list
         else:
-            self.sta_list = port_list
+            self.port_list = port_list
+
+        self.use_test_groups = use_test_groups
+        if self.use_test_groups:
+            if write_only_test_group is not None and read_only_test_group is not None:
+                self.write_only_test_group = write_only_test_group
+                self.read_only_test_group = read_only_test_group
+            else:
+                raise ValueError("--write_only_test_group and --read_only_test_group must both be set if using test groups")
+
         #self.min_rw_size = self.parse_size(min_rw_size)
         #self.max_rw_size = self.parse_size(max_rw_size)
         #self.min_file_size = self.parse_size(min_file_size)
@@ -80,7 +92,7 @@ class FileIOTest(LFCliBase):
         self.wo_profile = self.local_realm.new_fio_endp_profile()
         self.mvlan_profile = self.local_realm.new_mvlan_profile()
 
-        if len(self.sta_list) > 0:
+        if not self.use_macvlans and len(self.port_list) > 0:
             self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = self.ssid
@@ -103,19 +115,21 @@ class FileIOTest(LFCliBase):
 
         self.ro_profile = self.wo_profile.create_ro_profile()
 
-        self.mvlan_profile.num_macvlans = int(num_ports)
-        self.mvlan_profile.desired_macvlans = self.port_list
-        self.mvlan_profile.macvlan_parent = self.macvlan_parent
-        self.mvlan_profile.dhcp = dhcp
-        self.mvlan_profile.netmask = netmask
-        self.mvlan_profile.first_ip_addr = first_mvlan_ip
-        self.mvlan_profile.gateway = gateway
+        if self.use_macvlans:
+            self.mvlan_profile.num_macvlans = int(num_ports)
+            self.mvlan_profile.desired_macvlans = self.port_list
+            self.mvlan_profile.macvlan_parent = self.macvlan_parent
+            self.mvlan_profile.dhcp = dhcp
+            self.mvlan_profile.netmask = netmask
+            self.mvlan_profile.first_ip_addr = first_mvlan_ip
+            self.mvlan_profile.gateway = gateway
 
         self.created_ports = []
-        self.ro_tg_profile = self.local_realm.new_test_group_profile()
-        self.ro_tg_profile.test_group_name = "ro_profile"
-        self.wo_tg_profile = self.local_realm.new_test_group_profile()
-        self.wo_tg_profile.test_group_name = "wo_profile"
+        if self.use_test_groups:
+            self.ro_tg_profile = self.local_realm.new_test_group_profile()
+            # self.ro_tg_profile.test_group_name = self.read_only_test_group
+            self.wo_tg_profile = self.local_realm.new_test_group_profile()
+            # self.wo_tg_profile.test_group_name = self.write_only_test_group
 
     def __compare_vals(self, val_list):
         passes = 0
@@ -179,7 +193,7 @@ class FileIOTest(LFCliBase):
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+            self.station_profile.create(radio=self.radio, sta_names_=self.port_list, debug=self.debug)
             self._pass("PASS: Station build finished")
             self.created_ports += self.station_profile.station_names
 
@@ -189,28 +203,38 @@ class FileIOTest(LFCliBase):
         self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
                                suppress_related_commands_=None)
 
-        self.ro_tg_profile.cx_list = self.ro_profile.created_cx.values()
-        self.wo_tg_profile.cx_list = self.wo_profile.created_cx.values()
-        self.ro_tg_profile.create_group(group_name="ro_group")
-        self.wo_tg_profile.create_group(group_name="wo_group")
+        if self.use_test_groups:
+            print("Creating test groups...")
+            self.ro_tg_profile.cx_list = self.ro_profile.created_cx.values()
+            self.wo_tg_profile.cx_list = self.wo_profile.created_cx.values()
+            self.ro_tg_profile.create_group(group_name=self.read_only_test_group)
+            self.wo_tg_profile.create_group(group_name=self.write_only_test_group)
 
     def start(self, print_pass=False, print_fail=False):
-        temp_ports = self.port_list.copy()
+        temp_ports = self.created_ports.copy()
         #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if not self.use_macvlans:
             self.station_profile.admin_up()
         else:
             self.mvlan_profile.admin_up()
-        if self.local_realm.wait_for_ip(temp_ports):
+        if self.local_realm.wait_for_ip(temp_ports, debug=self.debug):
             self._pass("All ports got IPs", print_pass)
         else:
             self._fail("Ports failed to get IPs", print_fail)
         cur_time = datetime.datetime.now()
         # print("Got Values")
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        self.ro_tg_profile.start_group(group_name="ro_group")
-        time.sleep(2)
-        self.wo_tg_profile.start_group(group_name="wo_group")
+        if self.use_test_groups:
+            self.wo_tg_profile.start_group(group_name=self.write_only_test_group)
+            time.sleep(2)
+            self.ro_tg_profile.start_group(group_name=self.read_only_test_group)
+
+
+        else:
+            self.wo_profile.start_cx()
+            time.sleep(2)
+            self.ro_profile.start_cx()
+
         passes = 0
         expected_passes = 0
         print("Starting Test...")
@@ -238,20 +262,25 @@ class FileIOTest(LFCliBase):
             self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
-        self.wo_tg_profile.stop_group(group_name="wo_group")
-        self.ro_tg_profile.stop_group(group_name="ro_group")
+        if self.use_test_groups:
+            self.ro_tg_profile.stop_group(group_name=self.read_only_test_group)
+            self.wo_tg_profile.stop_group(group_name=self.write_only_test_group)
+        else:
+            self.ro_profile.stop_cx()
+            self.wo_profile.stop_cx()
+
         if not self.use_macvlans:
             self.station_profile.admin_down()
         else:
             self.mvlan_profile.admin_down()
 
     def cleanup(self, port_list=None):
-        self.ro_tg_profile.remove_group(group_name="wo_group")
-        time.sleep(1)
-        self.wo_profile.cleanup()
+        if self.use_test_groups:
+            self.wo_tg_profile.remove_group(group_name=self.write_only_test_group)
+            self.ro_tg_profile.remove_group(group_name=self.read_only_test_group)
+            time.sleep(1)
 
-        self.ro_tg_profile.remove_group(group_name="ro_group")
-        time.sleep(1)
+        self.wo_profile.cleanup()
         self.ro_profile.cleanup()
 
         if not self.use_macvlans:
@@ -303,13 +332,16 @@ Generic command layout:
     parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
     parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
     parser.add_argument('--gateway', help='specifies default gateway to be used with static addressing', default=None)
+    parser.add_argument('--use_test_groups', help='will use test groups to start/stop instead of single endps/cxs', action='store_true', default=False)
+    parser.add_argument('--read_only_test_group', help='specifies name to use for read only test group', default=None)
+    parser.add_argument('--write_only_test_group', help='specifies name to use for write only test group', default=None)
     args = parser.parse_args()
 
     port_list = []
     if args.first_port is not None:
         if args.first_port.startswith("sta"):
             if (args.num_ports is not None) and (int(args.num_ports) > 0):
-                start_num = int(args.first_port[4:])
+                start_num = int(args.first_port[3:])
                 num_ports = int(args.num_ports)
                 port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num+num_ports-1,
                                                    padding_number=10000,
@@ -336,10 +368,13 @@ Generic command layout:
             port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=0,
                                                end_id=num_ports - 1, padding_number=100000,
                                                radio=args.radio)
-    if args.first_mvlan_ip.lower() == "dhcp":
-        dhcp = True
+    if args.first_mvlan_ip is not None:
+        if args.first_mvlan_ip.lower() == "dhcp":
+            dhcp = True
+        else:
+            dhcp = False
     else:
-        dhcp = False
+        dhcp = True
     # print(port_list)
 
     ip_test = FileIOTest(args.mgr,
@@ -369,7 +404,10 @@ Generic command layout:
                          max_write_rate_bps=args.max_write_rate_bps,
                          directory=args.directory,
                          server_mount=args.server_mount,
-                         num_ports=args.num_ports
+                         num_ports=args.num_ports,
+                         use_test_groups=args.use_test_groups,
+                         write_only_test_group=args.write_only_test_group,
+                         read_only_test_group=args.read_only_test_group
                          # want a mount options param
                          )
 
