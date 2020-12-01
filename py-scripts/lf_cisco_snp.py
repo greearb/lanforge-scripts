@@ -750,7 +750,7 @@ class L3VariableTime(LFCliBase):
 
         if "upstream" in self.test_config_dict:
             for key in [key for key in rx_drop_percent if "-A" in key]: del rx_drop_percent[key]
-        elif "downstream" in self.text_config_dict:
+        elif "downstream" in self.test_config_dict:
             for key in [key for key in rx_drop_percent if "-B" in key]: del rx_drop_percent[key]
 
 
