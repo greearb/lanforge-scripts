@@ -10,11 +10,11 @@ RADIO_USED="wiphy1"
 SECURITY="wpa2"
 CURR_TEST_NAME="BLANK"
 CURR_TEST_NUM=0
-STOP_NUM=0
+STOP_NUM=9
 START_NUM=0
 #Test array
 testCommands=("./example_wpa_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa" 
-"./example_wpa2_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa2"
+"./example_wpa2_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
 "./example_wep_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio $RADIO_USED --security wep"
 "./example_wpa3_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
 "./test_ipv4_connection.py --radio wiphy2 --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --upstream_port eth1"
@@ -47,12 +47,12 @@ function ret_case_num(){
     esac
 }
 function blank_db() {
-	echo "Loading blank scenario..." |& tee -a ~/test_all_output_file.txt
-	./scenario.py --load BLANK |& tee -a ~/test_all_output_file.txt
+	echo "Loading blank scenario..." >> ~/test_all_output_file.txt
+	./scenario.py --load BLANK >> ~/test_all_output_file.txt
 	#check_blank.py
 }
 function echo_print(){
-	echo "Beginning $CURR_TEST_NAME test..." |& tee -a ~/test_all_output_file.txt
+	echo "Beginning $CURR_TEST_NAME test..." >> ~/test_all_output_file.txt
 }
 function run_test(){
 	for i in "${testCommands[@]}"; do
@@ -64,7 +64,7 @@ function run_test(){
 		fi
 		if [[ $CURR_TEST_NUM -gt $START_NUM ]] || [[ $CURR_TEST_NUM -eq $START_NUM ]]; then
 		    echo_print
-            eval $i | tee -a ~/test_all_output_file.txt
+            eval $i >> ~/test_all_output_file.txt
             if [ $? -ne 0 ]; then 
                 echo $CURR_TEST_NAME failure
             else 
