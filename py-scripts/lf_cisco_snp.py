@@ -37,9 +37,9 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
-#########################################################
-# This class in the future will be moved to its own file
-#########################################################
+################################################################################
+# cisco controller class :This class in the future will be moved to its own file
+################################################################################
 
 class cisco_():
     def __init__(self, args):
@@ -616,7 +616,8 @@ class cisco_():
         
         logg.info("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
         # Verify channel and channel width. 
-
+##########################################        
+# End of cisco controller class
 ##########################################
 
 class L3VariableTime(LFCliBase):
@@ -668,14 +669,6 @@ class L3VariableTime(LFCliBase):
         self.test_config = test_config
 
         self.test_config_dict = dict(map(lambda x: x.split('=='), str(self.test_config).replace('[','').replace(']','').replace("'","").split()))
-
-        # Some checking on the duration
-        #self.local_realm.parse_time(self.test_duration)
-        #if (    (radio_info_dict['reset_port_time_min'] >= args.test_duration)  
-        #    or  (radio_info_dict['reset_port_time_max'] >= args.test_duration)):
-        #    logg.info("port reset times min {} max {} mismatched with test duration {}"\
-        #        .format(radio_info_dict['reset_port_time_min'],radio_info_dict['reset_port_time_max'],args.test_duration)))
-        #    exit(1)
 
 
         # Full spread-sheet data
@@ -1007,10 +1000,10 @@ class L3VariableTime(LFCliBase):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
-            exit(1) #why continue
+            exit(1) # why continue
         time.sleep(30)
         self.verify_controller()
-        # Multi cast may not be needed.
+        # Multi cast may not be needed for scaling and performance
         logg.info("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
         self.multicast_profile.refresh_mc(debug_=self.debug)
@@ -1114,16 +1107,37 @@ def main():
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        Useful Information:
-            1. Polling interval for checking traffic is fixed at 1 minute
-            2. The test will generate csv file 
-            3. The tx/rx rates are fixed at 256000 bits per second
-            4. Maximum stations per radio is 64
+            Scaling and Performance
             ''',
         
         description='''\
 lf_cisco_snp.py:
 --------------------
+
+##################################################################################
+Task Description:
+##################################################################################
+-----------------
+As we discussed, we need help in Candela SNP automation which involves cisco WLC controller and Candela automation. The framework we will build now will be used for years with all our new APs being added to this testbed.
+
+Our ultimate aim is to achieve the following things:
+
+1. 1 to 200 client SNP on 11ac (1, 50 and 200 client count tests)
+      1. 5 Ghz with different channel widths
+      2. Data encryption enabled/disabled
+      3. Local/central switching and authentication combinations
+2. 1 to 37 client SNP on 11ax (1, 10 and 37 client count tests) eventually 200 clients
+      1. Different channel widths
+      2. Data encryption enabled/disabled
+      3. Local/central switching and authentication combinations
+      4. MU-MIMO and OFDMA enabled/disabled combination
+3. CI/CD implementation
+      1. Download latest WLC images and upload them to the controller
+      2. Start the test suite
+      3. Generate a report per release
+      4. Display and graph all result data according to each release along with each testcase historical graph
+      5. Review overall AP performance across multiple AP platforms
+
 
 Summary : 
 ----------
@@ -1138,7 +1152,7 @@ python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types>
 
 Multiple radios may be entered with individual --radio switches
 
-generiic command with controller setting channel and channel width test duration 5 min
+generiic command with controller setting channel and channel width test duration 30 sec
 python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
@@ -1224,21 +1238,6 @@ python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
     --test_duration 5m
 
-
-
-
-TODO:
-11a     5ghz
-11b     24ghz
-11g     24ghz
-11bg    24ghz
-
-11n     5ghz/24ghz
-
-11ac    5ghz
-
-
-TODO:
 ##############################################################################
 Detailed test loop description 10/9/2020 - Karthik Recommendation
 ##############################################################################
@@ -1738,7 +1737,12 @@ Eventual Realm at Cisco
     logg.info(cisco_client_densities)
     logg.info(cisco_data_encryptions)
 
-
+    ap_set          = None
+    band_set        = None
+    chan_width_set  = None
+    ap_mode_set     = None
+    tx_power_set    = None
+    
     for cisco_ap in cisco_aps:
         for cisco_band in cisco_bands:  # frequency
             for cisco_wifimode in cisco_wifimodes:
@@ -1749,53 +1753,70 @@ Eventual Realm at Cisco
                                 for cisco_packet_type in cisco_packet_types:
                                     for cisco_direction in cisco_directions:
                                         for cisco_packet_size in cisco_packet_sizes:
-                                            logg.info("###########################################################################################################################################")
-                                            logg.info("# TEST RUNNING ,  TEST RUNNING ############################################################################################################")
-                                            logg.info("###########################################################################################################################################")
+                                            logg.info("#####################################################")
+                                            logg.info("# TEST RUNNING ,  TEST RUNNING ######################")
+                                            logg.info("#####################################################")
                                             test_config = "AP=={} Band=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(cisco_ap,
                                                 cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                 cisco_packet_type,cisco_direction,cisco_packet_size)
                                             test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
                                             logg.info("# Cisco run settings: {}".format(test_config))
-                                            # Having no controller configuration for testing purposes only
                                             if(args.no_controller):
-                                                logg.info("#########################################################################################################################################")
-                                                logg.info("# NO CONTROLLER SET")
-                                                logg.info("#########################################################################################################################################")
+                                                logg.info("################################################")
+                                                logg.info("# NO CONTROLLER SET , TEST MODE")
+                                                logg.info("################################################")
                                             else:
-                                                cisco_args.cisco_ap            = cisco_ap
-                                                cisco_args.cisco_band          = cisco_band
-                                                if cisco_band == "a":
-                                                    cisco_args.cisco_chan      = cisco_chan_5ghz
-                                                else:
-                                                    cisco_args.cisco_chan      = cisco_chan_24ghz    
-                                                cisco_args.cisco_chan_width    = cisco_chan_width
-                                                cisco_args.cisco_ap_mode       = cisco_ap_mode
-                                                cisco_args.cisco_tx_power      = cisco_tx_power 
-                                                logg.info(cisco_args)
-                                                cisco = cisco_(cisco_args)
-                                                #Disable AP
-                                                cisco.controller_disable_ap()
-                                                if cisco_args.cisco_series == "9800":
-                                                    cisco.controller_disable_wlan()
-                                                    cisco.controller_disable_network_5ghz()
-                                                    cisco.controller_disable_network_24ghz()
-                                                    cisco.controller_role_manual()
-                                                else:
-                                                    cisco.controller_disable_network_5ghz()
-                                                    cisco.controller_disable_network_24ghz()
-                                                cisco.controller_set_tx_power()
-                                                cisco.controller_set_channel()
-                                                cisco.controller_set_bandwidth()
-                                                if cisco_args.cisco_series == "9800":
-                                                    cisco.controller_create_wlan()
-                                                    cisco.controller_set_wireless_tag_policy()
-                                                    cisco.controller_enable_wlan()
-                                                cisco.controller_enable_network_5ghz()
-                                                cisco.controller_enable_network_24ghz()
-                                                cisco.controller_enable_ap()
-                                                # need to actually check the CAC timer
-                                                time.sleep(30)
+                                                if( cisco_ap != ap_set or 
+                                                    cisco_band != band_set or
+                                                    cisco_chan_width != chan_width_set or
+                                                    cisco_ap_mode != ap_mode_set or
+                                                    cisco_tx_power != tx_power_set 
+                                                    ):
+                                                    ap_set          = cisco_ap
+                                                    band_set        = cisco_band
+                                                    chan_width_set  = cisco_chan_width
+                                                    ap_mode_set     = cisco_ap_mode
+                                                    tx_power_set    = cisco_tx_power
+                                                    #############################################
+                                                    # configure cisco controller
+                                                    #############################################
+                                                    cisco_args.cisco_ap            = cisco_ap
+                                                    cisco_args.cisco_band          = cisco_band
+                                                    if cisco_band == "a":
+                                                        cisco_args.cisco_chan      = cisco_chan_5ghz
+                                                    else:
+                                                        cisco_args.cisco_chan      = cisco_chan_24ghz    
+                                                    cisco_args.cisco_chan_width    = cisco_chan_width
+                                                    cisco_args.cisco_ap_mode       = cisco_ap_mode
+                                                    cisco_args.cisco_tx_power      = cisco_tx_power 
+                                                    logg.info(cisco_args)
+                                                    cisco = cisco_(cisco_args)
+                                                    #Disable AP
+                                                    cisco.controller_disable_ap()
+                                                    if cisco_args.cisco_series == "9800":
+                                                        cisco.controller_disable_wlan()
+                                                        cisco.controller_disable_network_5ghz()
+                                                        cisco.controller_disable_network_24ghz()
+                                                        cisco.controller_role_manual()
+                                                    else:
+                                                        cisco.controller_disable_network_5ghz()
+                                                        cisco.controller_disable_network_24ghz()
+                                                    cisco.controller_set_tx_power()
+                                                    cisco.controller_set_channel()
+                                                    cisco.controller_set_bandwidth()
+                                                    if cisco_args.cisco_series == "9800":
+                                                        cisco.controller_create_wlan()
+                                                        cisco.controller_set_wireless_tag_policy()
+                                                        cisco.controller_enable_wlan()
+                                                    cisco.controller_enable_network_5ghz()
+                                                    cisco.controller_enable_network_24ghz()
+                                                    cisco.controller_enable_ap()
+                                                    # need to actually check the CAC timer
+                                                    time.sleep(30)
+
+                                                    ####################################
+                                                    # end of cisco controller code
+                                                    ####################################
 
                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                 if args.radio:
@@ -1843,9 +1864,9 @@ Eventual Realm at Cisco
 
                                             # no stations for testing reconfiguration of the controller - 
                                             if(args.no_stations):
-                                                logg.info("###########################################################################################################################################")
+                                                logg.info("##################################")
                                                 logg.info("# NO STATIONS")
-                                                logg.info("###########################################################################################################################################")
+                                                logg.info("##################################")
                                             else:
                                                 index = 0
                                                 station_lists = []
