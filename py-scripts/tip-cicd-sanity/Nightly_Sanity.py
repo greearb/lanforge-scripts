@@ -272,7 +272,8 @@ test_cases = [
        5543,
        5544,
        5545,
-       5546
+       5546,
+       5547
 ]
 
 ##AP models for jfrog
@@ -480,13 +481,14 @@ for key in equipment_id_dict:
         print(upgrade_fw)
         if upgrade_fw["success"] == True:
             print("CloudSDK Upgrade Request Success")
-            report_data['tests'][key][2233] = "running"
+            report_data['tests'][key][5547] = "passed"
+            client.update_testrail(case_id="5547", run_id=rid, status_id=1, msg='Upgrade request using API successful')
             logger.info('Firmware upgrade API successfully sent')
         else:
             print("Cloud SDK Upgrade Request Error!")
             # mark upgrade test case as failed with CloudSDK error
-            client.update_testrail(case_id="2233", run_id=rid, status_id=5, msg='Error calling CloudSDK firmware upgrade API')
-            report_data['tests'][key][2233] = "failed"
+            client.update_testrail(case_id="5547", run_id=rid, status_id=5, msg='Error requesting upgrade via API')
+            report_data['tests'][key][5547] = "failed"
             logger.warning('Firmware upgrade API failed to send')
             continue
 
