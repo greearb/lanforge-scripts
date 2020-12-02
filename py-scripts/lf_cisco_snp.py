@@ -621,7 +621,7 @@ class cisco_():
 ##########################################
 
 class L3VariableTime(LFCliBase):
-    def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
+    def __init__(self, host, port, endp_type, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
                  ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,
                  test_keys,test_config,
                  reset_port_enable_list,
@@ -639,7 +639,7 @@ class L3VariableTime(LFCliBase):
         self.host = host
         self.port = port
         self.tos = tos.split()
-        self.endp_types = endp_types.split()
+        self.endp_type = endp_type
         self.side_b = side_b
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
@@ -972,15 +972,15 @@ class L3VariableTime(LFCliBase):
             station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
             index += 1
 
-            for etype in self.endp_types:
-                if etype == "mc_udp" or etype == "mc_udp6":
-                    logg.info("Creating Multicast connections for endpoint type: %s"%(etype))
-                    self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
-                else:
-                    for _tos in self.tos:
-                        logg.info("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
-                        self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
+            #for etype in self.endp_types:
+            #    if etype == "mc_udp" or etype == "mc_udp6":
+            #        logg.info("Creating Multicast connections for endpoint type: %s"%(etype))
+            #        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+            #        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
+            
+            for _tos in self.tos:
+                logg.info("Creating connections for endpoint type: {} TOS: {} stations_names {}".format(self.endp_type, _tos, station_profile.station_names))
+                self.cx_profile.create(endp_type=self.endp_type, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
         self._pass("PASS: Stations build finished")        
         
     def start(self, print_pass=False, print_fail=False):
@@ -1772,6 +1772,9 @@ Eventual Realm at Cisco
                                                     cisco_ap_mode != ap_mode_set or
                                                     cisco_tx_power != tx_power_set 
                                                     ):
+                                                    logg.info("###############################################")
+                                                    logg.info("# NEW CONTROLLER CONFIG")
+                                                    logg.info("###############################################")
                                                     ap_set          = cisco_ap
                                                     band_set        = cisco_band
                                                     chan_width_set  = cisco_chan_width
@@ -1817,6 +1820,11 @@ Eventual Realm at Cisco
                                                     ####################################
                                                     # end of cisco controller code
                                                     ####################################
+                                                else:
+                                                    logg.info("###############################################")
+                                                    logg.info("# NO CHANGE TO CONTROLLER CONFIG")
+                                                    logg.info("###############################################")
+
 
                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                 if args.radio:
@@ -1896,7 +1904,7 @@ Eventual Realm at Cisco
                                                                                 number_template="00", 
                                                                                 station_lists= station_lists,
                                                                                 name_prefix="LT-",
-                                                                                endp_types=endp_types,
+                                                                                endp_type=cisco_packet_type,
                                                                                 tos=args.tos,
                                                                                 side_b=side_b,
                                                                                 radio_name_list=radio_name_list,
