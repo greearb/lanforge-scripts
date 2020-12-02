@@ -37,7 +37,9 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
-######################################
+#########################################################
+# This class in the future will be moved to its own file
+#########################################################
 
 class cisco_():
     def __init__(self, args):
@@ -924,94 +926,6 @@ class L3VariableTime(LFCliBase):
                     if (int(sta_count) != int(self.total_stas)):
                         logg.info("WARNING: Cisco Controller reported %s stations, should be %s"%(sta_count, self.total_stas))
 
-
-    def verify_cac_on_ap(self):
-        pass
-        # Do this after you get the configuration Verify CAC
-        # use pySerial to check if the AP is configured:
-        # 1. You can grep for "DFS CAC timer enabled time 60" 
-        # 2. and "changed to DFS channel 52, running CAC for 60 seconds
-        # Wait for 60 sec and check for this log "CAC_EXPIRY_EVT: CAC finished on DFS channel 52"
-        #"make a note of the time and check the CAC timer expired in 60-61 seconds."
-
-        # After CAC expires Verify Traffic. (the loop should start up may want some special detection)
-
-    def lf_hackrf_enable(self):
-        # hard coded for now
-        # need json and update to realm
-        #if os.path.isfile(self.args.hackrf):
-        #    logg.info("hack rf file found {}".format(self.args.hackrf))
-        #else:
-        #    logg.info("WARNING: hack rf file not found at {}".format(self.args.hackrf))
-
-        # look for lf_hackrf.py in local directory the look for in 
-        pass
-
-    def verify_radar_detected_on_ap(self):
-        pass
-        #You will see logs as below in the AP:(show logging will help you getting this info)
-
-        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: radar detected
-        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: sending packet out to capwapd, slotId=1, msgLen=386, chanCnt=1 -100
-        #[*07/07/2020 23:44:27.7900] DOT11_DRV[1]: DFS CAC timer disabled time 0
-        #[*07/07/2020 23:44:27.7960] Enabling Channel and channel width Switch Announcement on current channel 
-        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
-        #[*07/07/2020 23:44:27.8620] DOT11_DRV[1]: DFS CAC timer enabled time 60
-
-    def verify_black_list_time_ap(self):
-        pass
-
-    def lf_hackrf_disable(self):
-        pass
-        #need to save the process id
-
-    # dfs dynamic frequency selection
-    def dfs(self):
-        if self.args == None:
-            return
-        if self.args.cisco_ctlr == None:
-            return
-        if self.args.cisco_dfs == False:
-            return
-        if self.args.cisco_channel == None:
-            return
-        if self.args.cisco_chan_width == None:
-            return
-        logg.info("testing dfs")
-        self.controller_show_ap_channel()
-        self.controller_disable_ap()
-        self.controller_set_channel_ap()
-        self.controller_set_chan_width_ap()
-        self.controller_enable_ap()
-        self.verify_cac_on_ap()                 
-        self.lf_hackrf_enable()
-        self.verify_radar_detected_on_ap()
-        self.verify_black_list_time_ap()
-        self.lf_hackrf_disable()
-
-        # For Testing  only - since hackrf not causing channel changes
-        self.controller_disable_ap()
-        self.controller_set_channel_ap_36()
-        #self.dfs_set_chan_width_ap()
-        self.controller_enable_ap()
-        #check the AP for 52 is configured or not ,  check the CAC timer 
-        # verify the clien can connect back to the AP once the CAC expires (check all connections)
-
-    def controller_channel_chan_width_config(self):
-        if self.args == None:
-            return
-        if self.args.cisco_ctlr == None:
-            return
-        if self.args.cisco_channel == None:
-            return
-        self.controller_disable_ap()
-        self.controller_set_channel_ap()
-        self.controller_set_chan_width_ap()
-        self.controller_enable_ap()
-        self.controller_show_ap_channel()
-        # need to actually check the CAC timer
-        time.sleep(60)
-
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
@@ -1096,6 +1010,7 @@ class L3VariableTime(LFCliBase):
             exit(1) #why continue
         time.sleep(30)
         self.verify_controller()
+        # Multi cast may not be needed.
         logg.info("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
         self.multicast_profile.refresh_mc(debug_=self.debug)
@@ -1113,10 +1028,10 @@ class L3VariableTime(LFCliBase):
 
         passes = 0
         expected_passes = 0
+        logg.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
+
         while cur_time < end_time:
-            #interval_time = cur_time + datetime.timedelta(seconds=5)
             interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-            #logg.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
@@ -1330,7 +1245,7 @@ Detailed test loop description 10/9/2020 - Karthik Recommendation
 Script logic loops:
 
 AP {Axel, Vanc} Dynamic
-      frequency {24ghz, 5ghz} Common (band)
+      frequency {24ghz, 5ghz} Common (band)  : 24ghz == b , 5ghz == a
             wifimode{11ax, 11ac, 11n, 11bg} Common  (an anAX anAC abgn bg)
                   Bandwidth {20, 40, 80, 160}
                         data-encryption {enable/disable} Common
@@ -1342,8 +1257,9 @@ AP {Axel, Vanc} Dynamic
                                                             Time (4 iterations of 30 sec and get the best average TP out of it) 
 
 Notes:
-
-
+#############################################
+CandelaTech Radios and what supports
+#############################################
 
 Radio descriptions:
 ax200: so if AP is /n, then ax200 will connect at /n.  But if AP is /AX, we have no way to force ax200 to act like /n
@@ -1355,14 +1271,15 @@ ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , an)
 
 Note: wave-2 radios can act as ac, an, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
-
-wifimode:
-11ax, 11ac, 11n, 11bg
+#############################################
+wifimodes needed to support
+#############################################
+11ax, 11ac, 11n, 11bg  (Cisco)
 
 #############################################
 5 Ghz
 #############################################
-Wifi mode: ax  - 5ghz
+Wifi mode: 11ax  - 5ghz
 Radios   :  ax200  :        802.11 /a/n/ac/AX
 
 Wifi mode: 11ac - 5ghz
@@ -1374,7 +1291,6 @@ Radios   :  ath10K(9984)    802.11an-AC
 #############################################
 24 Ghz
 #############################################
-
 Wifi mode: 11ax - 24ghz
 Radios   :  ax200 -         802.11 /b/g/n/AX     
 
@@ -1387,13 +1303,19 @@ Radios   :  ax200           802.11 /b/g/n/AX
 Wifi mode: 11bg - 24ghz
 Radios   :  ax200           802.11 /b/g/n/AX
 
-Wifi mode: 11bg
+############################################
+Radio support for specific Modes
+############################################
+cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
+        radios = radio_AX200_abgn_ax_dict[cisco_client_density]
+                                                
+cisco_wifimode == "an" or cisco_wifimode == "anAC":
+        radios = radio_ath10K_9984_an_AC_dict[cisco_client_density]
 
 
-
-
-
-TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corresponds to the shelf
+############################################
+Eventual Realm at Cisco
+############################################
 
 1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
 1.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
@@ -1570,9 +1492,8 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                            ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
 
-
     radio_AX200_abgn_ax_dict_one = {'1'   : radio_AX200_abgn_ax_list_001_one, 
-                                '8'   : radio_AX200_abgn_ax_list_010_one} 
+                                    '8'   : radio_AX200_abgn_ax_list_010_one} 
 
     
     radio_ath10K_9984_an_AC_list_001_one     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1697,15 +1618,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                         '10'  : radio_ath10K_9984_an_AC_list_010,
                                         '50'  : radio_ath10K_9984_an_AC_list_050,
                                         '200' : radio_ath9K_9984_an_AC_list_200}
-
-
-
-    #radio_ath10K_9984_an_AC_dict  = [['radio==6.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-
-    radios1 = [['radio==1.wiphy1 stations==1 ssid==jedway-wpa2-x2048-4-1 ssid_pw==jedway-wpa2-x2048-4-1 security==wpa2 wifimode==abgn'], 
-    ['radio==1.wiphy2 stations==1 ssid==jedway-wpa2-x2048-5-1 ssid_pw==jedway-wpa2-x2048-5-1 security==wpa2 wifimode==an']]
-
-        
 
     MAX_NUMBER_OF_STATIONS = 200
     
@@ -1837,20 +1749,15 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                 for cisco_packet_type in cisco_packet_types:
                                     for cisco_direction in cisco_directions:
                                         for cisco_packet_size in cisco_packet_sizes:
-                                        
                                             logg.info("###########################################################################################################################################")
                                             logg.info("# TEST RUNNING ,  TEST RUNNING ############################################################################################################")
                                             logg.info("###########################################################################################################################################")
                                             test_config = "AP=={} Band=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(cisco_ap,
                                                 cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                 cisco_packet_type,cisco_direction,cisco_packet_size)
-                                            print(test_config)
                                             test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
-                                            logg.info("# Cisco static settings: tx_power {} chan_5ghz {} chan_24ghz {} ".format(cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
-                                            logg.info("# Cisco run Dynamic settings: {}".format(test_config))
-                                            logg.info("###########################################################################################################################################")
-                                            logg.info("###########################################################################################################################################")
-                                            # over write the configurations of args for controller
+                                            logg.info("# Cisco run settings: {}".format(test_config))
+                                            # Having no controller configuration for testing purposes only
                                             if(args.no_controller):
                                                 logg.info("#########################################################################################################################################")
                                                 logg.info("# NO CONTROLLER SET")
@@ -1890,7 +1797,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                 # need to actually check the CAC timer
                                                 time.sleep(30)
 
-                                                # TODO may need a static list of radios read for scaling and performance
                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                 if args.radio:
                                                     radios = args.radio
@@ -1926,8 +1832,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                             radio_reset_found = False
                                                             break
                                                         
-
-
                                                     if radio_reset_found:
                                                         reset_port_enable_list.append(True)
                                                         reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
@@ -1937,7 +1841,7 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                         reset_port_time_min_list.append('0s')
                                                         reset_port_time_max_list.append('0s')
 
-                                            # no stations for testing only
+                                            # no stations for testing reconfiguration of the controller - 
                                             if(args.no_stations):
                                                 logg.info("###########################################################################################################################################")
                                                 logg.info("# NO STATIONS")
@@ -1963,7 +1867,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                     side_a_min_bps = 0 
                                                     side_b_min_bps = cisco_side_b_min_bps  
 
-                                                
                                                 # current default is to have a values
                                                 ip_var_test = L3VariableTime(
                                                                                 lfjson_host,
@@ -2021,9 +1924,6 @@ TODO: Radio descriptions in realm , the 1. refers to the chassi hopefully corres
                                                     ip_var_test.passes()
                                                     logg.info("Full test passed, all connections increased rx bytes")
 
-                            ################################
-                            # end of commented out loop
-                            ################################
 
 if __name__ == "__main__":
     main()
