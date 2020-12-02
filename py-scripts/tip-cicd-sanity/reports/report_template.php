@@ -121,6 +121,15 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ec420']['5540'],true) ?></TD>
    </TR>
 
+    <TR ALIGN="CENTER">
+      <TD>5548</TD>
+      <TD ALIGN="LEFT">Create FW version on CloudSDK using API</TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5548'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ecw5211']['5548'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ecw5410']['5548'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['ec420']['5548'],true) ?></TD>
+   </TR>
+
        <TR ALIGN="CENTER">
       <TD>5547</TD>
       <TD ALIGN="LEFT">Request AP Upgrade using API</TD>

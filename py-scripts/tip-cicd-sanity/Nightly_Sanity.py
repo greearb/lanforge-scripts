@@ -273,7 +273,8 @@ test_cases = [
        5544,
        5545,
        5546,
-       5547
+       5547,
+       5548
 ]
 
 ##AP models for jfrog
@@ -351,37 +352,7 @@ for model in ap_models:
     Build: GetBuild = GetBuild()
     latest_image = Build.get_latest_image(url)
     print(model,"Latest FW on jFrog:",latest_image)
-    ###Check images already on CloudSDK
-    firmware_list_by_model = CloudSDK.CloudSDK_images(cloudModel,cloudSDK_url, bearer)
-    print("Available",cloudModel,"Firmware on CloudSDK:",firmware_list_by_model)
-
-    if latest_image in firmware_list_by_model:
-        print("Latest Firmware",latest_image,"is on CloudSDK!")
-        ap_latest_dict[model] = latest_image
-        ap_updated_dict[model] = "Up to Date"
-
-    else:
-        print("Latest Firmware is not on CloudSDK! Uploading...")
-        fw_url = "https://"+jfrog_user+":"+jfrog_pwd+"@tip.jfrog.io/artifactory/tip-wlan-ap-firmware/" + apModel + "/dev/" + latest_image + ".tar.gz"
-        #print(fw_url)
-        commit = latest_image.split("-")[-1]
-        fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel,latest_image,fw_url,cloudSDK_url, bearer)
-        #print(fw_upload_status)
-        fw_id = fw_upload_status['id']
-        print("Upload Complete.",latest_image,"FW ID is",fw_id)
-        ap_latest_dict[model] = latest_image
-        ap_updated_dict[model] = "Outdated"
-
-
-sleep(1)
-#print(ap_updated_dict)
-if (ap_updated_dict["ec420"] == "Up to Date") and (ap_updated_dict["ea8300"] == "Up to Date") and (ap_updated_dict["ecw5211"] == "Up to Date") and (ap_updated_dict["ecw5410"] == "Up to Date"):
-    print("All AP FW loads up to date on CloudSDK")
-    logger.info("Newest builds on jfrog already loaded to CloudSDK")
-else:
-    print("All new FW loads created on CloudSDK")
-    logger.info("New loads have been created on CloudSDK")
-#print("Latest FW List:",ap_latest_dict)
+    ap_latest_dict[model] = latest_image
 
 ####################################################################################
 ############ Update FW and Run Test Cases on Each AP Variant #######################
@@ -411,12 +382,9 @@ for key in equipment_id_dict:
     fw_model = ap_cli_fw.partition("-")[0]
     print('Current Active AP FW from CLI:', ap_cli_fw)
     ###Find Latest FW for Current AP Model and Get FW ID
-    latest_ap_image = ap_latest_dict[fw_model]
-    model_firmware_id = CloudSDK.get_firmware_id(latest_ap_image, cloudSDK_url, bearer)
-    latest_firmware_id = str(model_firmware_id)
-    print("Latest FW ID is:", latest_firmware_id)
 
     ##Compare Latest and Current AP FW and Upgrade
+    latest_ap_image = ap_latest_dict[fw_model]
     if ap_cli_fw == latest_ap_image:
         print('FW does not require updating')
         report_data['fw_available'][key] = "No"
@@ -474,9 +442,51 @@ for key in equipment_id_dict:
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
+        ###Test Create Firmware Version
+        latest_image = ap_latest_dict[key]
+        cloudModel = cloud_sdk_models[key]
+        print(cloudModel)
+        firmware_list_by_model = CloudSDK.CloudSDK_images(cloudModel, cloudSDK_url, bearer)
+        print("Available", cloudModel, "Firmware on CloudSDK:", firmware_list_by_model)
+
+        if latest_image in firmware_list_by_model:
+            print("Latest Firmware", latest_image, "is already on CloudSDK, need to delete to test create FW API")
+            old_fw_id = CloudSDK.get_firmware_id(latest_image, cloudSDK_url, bearer)
+            delete_fw = CloudSDK.delete_firmware(str(old_fw_id), cloudSDK_url, bearer)
+            fw_url = "https://" + jfrog_user + ":" + jfrog_pwd + "@tip.jfrog.io/artifactory/tip-wlan-ap-firmware/" + key + "/dev/" + latest_image + ".tar.gz"
+            commit = latest_image.split("-")[-1]
+            try:
+                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url, bearer)
+                fw_id = fw_upload_status['id']
+                print("Upload Complete.", latest_image, "FW ID is", fw_id)
+                client.update_testrail(case_id="5548", run_id=rid, status_id=1, msg='Create new FW version by API successful')
+                report_data['tests'][key][5548] = "passed"
+            except:
+                fw_upload_status = 'error'
+                print("Unable to upload new FW version. Skipping Sanity on AP Model")
+                client.update_testrail(case_id="5548", run_id=rid, status_id=5, msg='Error creating new FW version by API')
+                report_data['tests'][key][5548] = "failed"
+                continue
+        else:
+            print("Latest Firmware is not on CloudSDK! Uploading...")
+            fw_url = "https://" + jfrog_user + ":" + jfrog_pwd + "@tip.jfrog.io/artifactory/tip-wlan-ap-firmware/" + key + "/dev/" + latest_image + ".tar.gz"
+            commit = latest_image.split("-")[-1]
+            try:
+                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url, bearer)
+                fw_id = fw_upload_status['id']
+                print("Upload Complete.", latest_image, "FW ID is", fw_id)
+                client.update_testrail(case_id="5548", run_id=rid, status_id=1, msg='Create new FW version by API successful')
+                report_data['tests'][key][5548] = "passed"
+            except:
+                fw_upload_status = 'error'
+                print("Unable to upload new FW version. Skipping Sanity on AP Model")
+                client.update_testrail(case_id="5548", run_id=rid, status_id=5, msg='Error creating new FW version by API')
+                report_data['tests'][key][5548] = "failed"
+                continue
 
         # Upgrade AP firmware
-        upgrade_fw = CloudSDK.update_firmware(equipment_id, latest_firmware_id, cloudSDK_url, bearer)
+        print("Upgrading...firmware ID is: ",fw_id)
+        upgrade_fw = CloudSDK.update_firmware(equipment_id, str(fw_id), cloudSDK_url, bearer)
         logger.info("Lab "+fw_model+" Requires FW update")
         print(upgrade_fw)
         if upgrade_fw["success"] == True:
