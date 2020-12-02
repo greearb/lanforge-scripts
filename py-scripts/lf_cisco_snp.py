@@ -748,9 +748,9 @@ class L3VariableTime(LFCliBase):
         # remove multi cast since downstream only if selected
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
 
-        if "upstream" in self.test_config_dict:
+        if "upstream" in self.test_config_dict.values():
             for key in [key for key in rx_drop_percent if "-A" in key]: del rx_drop_percent[key]
-        elif "downstream" in self.test_config_dict:
+        elif "downstream" in self.test_config_dict.values():
             for key in [key for key in rx_drop_percent if "-B" in key]: del rx_drop_percent[key]
 
 
@@ -796,12 +796,16 @@ class L3VariableTime(LFCliBase):
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
         # only evaluate upstream or downstream 
-        evaluate_list = new_list.copy()
-        if "upstream" in self.test_config_dict:
-            for key in [key for key in evaluate_list if "-A" in key]: del evaluate_list[key]
-        elif "downstream" in self.test_config_dict:   
-            for key in [key for key in evaluate_list if "-B" in key]: del evaluate_list[key]
-        csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
+        new_evaluate_list = new_list.copy()
+        print("new_evaluate_list before",new_evaluate_list) 
+        if "upstream" in self.test_config_dict.values():
+            for key in [key for key in new_evaluate_list if "-A" in key]: del new_evaluate_list[key]
+            print("upstream in dictionary values")
+        elif "downstream" in self.test_config_dict.values():   
+            for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
+            print("downstream in dictionary values")
+        print("new_evaluate_list after",new_evaluate_list)
+        csv_performance_values=sorted(new_evaluate_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
         for i in range(5):
             csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
@@ -810,18 +814,26 @@ class L3VariableTime(LFCliBase):
 
         csv_rx_row_data.append(average_rx)
 
-        if len(old_list) == len(new_list):
-            for item, value in old_list.items():
+        old_evaluate_list = old_list.copy()
+        if "upstream" in self.test_config_dict.values():
+            for key in [key for key in old_evaluate_list if "-A" in key]: del old_evaluate_list[key]
+            print("upstream in dictionary values")
+        elif "downstream" in self.test_config_dict.values():   
+            for key in [key for key in old_evaluate_list if "-B" in key]: del old_evaluate_list[key]
+            print("downstream in dictionary values")
+
+        if len(old_evaluate_list) == len(new_evaluate_list):
+            for item, value in old_evaluate_list.items():
                 expected_passes +=1
-                if new_list[item] > old_list[item]:
+                if new_evaluate_list[item] > old_evaluate_list[item]:
                     passes += 1
-                    #if self.debug: logg.info(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
+                    print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                    print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
                     csv_rx_headers.append(item)
-                csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
+                csv_rx_delta_dict.update({item:(new_evaluate_list[item] - old_evaluate_list[item])})
                 
 
             if not self.csv_started:
@@ -844,16 +856,17 @@ class L3VariableTime(LFCliBase):
 
             csv_rx_delta_row_data.append(average_rx_delta)
             
-            for item, value in old_list.items():
+            for item, value in old_evaluate_list.items():
                 expected_passes +=1
-                if new_list[item] > old_list[item]:
+                if new_evaluate_list[item] > old_evaluate_list[item]:
                     passes += 1
-                    #if self.debug: logg.info(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
+                    #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
+                    print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                    print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
                     csv_rx_headers.append(item)
+                # note need to have all upstream and downstream in the csv table thus new_list and old_list
                 csv_rx_row_data.append(new_list[item])
                 csv_rx_delta_row_data.append(new_list[item] - old_list[item])
 
