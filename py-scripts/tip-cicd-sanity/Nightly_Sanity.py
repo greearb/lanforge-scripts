@@ -1213,7 +1213,7 @@ for key in equipment_id_dict:
 
 
         #Add indication of complete TC pass/fail to sanity_status for pass to external json used by Throughput Test
-        x = all(status == "not run" for status in report_data["tests"][key].values())
+        x = all(status == "passed" for status in report_data["tests"][key].values())
         print(x)
 
         if x == True:
