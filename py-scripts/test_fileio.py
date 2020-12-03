@@ -335,6 +335,7 @@ Generic command layout:
     parser.add_argument('--use_test_groups', help='will use test groups to start/stop instead of single endps/cxs', action='store_true', default=False)
     parser.add_argument('--read_only_test_group', help='specifies name to use for read only test group', default=None)
     parser.add_argument('--write_only_test_group', help='specifies name to use for write only test group', default=None)
+    parser.add_argument('--mode', help='write,read,both', default='both' type=str)
     args = parser.parse_args()
 
     port_list = []
