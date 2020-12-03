@@ -2414,8 +2414,8 @@ class MACVLANProfile(LFCliBase):
         self.ip_list = []
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
-        self.desired_set_port_current_flags = ["if_down"]
-        self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
+        self.desired_set_port_current_flags = [] # do not default down, "if_down"
+        self.desired_set_port_interest_flags = ["current_flags"] # do not default down, "ifdown"
         self.set_port_data = {
             "shelf": 1,
             "resource": 1,
