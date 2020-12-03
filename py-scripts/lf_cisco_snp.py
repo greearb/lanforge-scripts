@@ -1834,7 +1834,6 @@ Eventual Realm at Cisco
                                                         if args.radio:
                                                             radios = args.radio
                                                         elif cisco_band == "a":
-                                                            #elif cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg":
                                                             if cisco_wifimode == "anAX" or cisco_wifimode == "abgn":
                                                                 #AX200 dual band
                                                                 radios = radio_AX200_abgn_ax_dict[cisco_client_density]
@@ -1849,7 +1848,7 @@ Eventual Realm at Cisco
                                                                 exit(1)
 
                                                         else: # cisco_band == "b"
-                                                            if cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or cisco_wifimode == "bg" or cisco_wifimode == "auto":
+                                                            if cisco_wifimode == "an" or cisco_wifimode == "anAX" or cisco_wifimode == "abgn" or  cisco_wifimode == "bg" or cisco_wifimode == "auto":
                                                                 #AX200 dual band
                                                                 radios = radio_AX200_abgn_ax_dict[cisco_client_density]
                                                             else:
