@@ -1732,7 +1732,7 @@ Eventual Realm at Cisco
     logg.info(cisco_chan_widths)
     logg.info(cisco_ap_modes)
     logg.info(cisco_client_densities)
-    logg.info(endp_types)
+    logg.info(cisco_packet_types)
     logg.info(cisco_packet_sizes)
     logg.info(cisco_client_densities)
     logg.info(cisco_data_encryptions)
