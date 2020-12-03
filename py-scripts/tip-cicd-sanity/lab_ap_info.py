@@ -82,7 +82,7 @@ profile_info_dict = {
         "profile_id": "153",
         "fiveG_WPA2_SSID": "EA8300_5G_WPA2",
         "fiveG_WPA2_PSK": "Connectus123$",
-        "fiveG_WPA_SSID": "EA8300_5G_WPA2",
+        "fiveG_WPA_SSID": "EA8300_5G_WPA",
         "fiveG_WPA_PSK": "Connectus123$",
         "fiveG_OPEN_SSID": "EA8300_5G_OPEN",
         "fiveG_WPA2-EAP_SSID": "EA8300_5G_WPA2-EAP",
