@@ -12,6 +12,8 @@ from realm import Realm
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 import argparse
+import time
+import datetime
 
 class Test1KClients(LFCliBase):
     def __init__(self,
@@ -66,7 +68,7 @@ class Test1KClients(LFCliBase):
 
         self._pass("defined %s station profiles" % len(self.station_radio_map))
         for (radio, station_profile) in self.station_profile_map.items():
-            station_profile.create(self, radio,
+            station_profile.create(radio=radio,
                                    sta_names_=self.station_radio_map[radio],
                                    dry_run=False,
                                    up_=False,
@@ -88,6 +90,36 @@ class Test1KClients(LFCliBase):
             else:
                 self._fail("stations on radio %s are still down" % radio)
                 exit(1)
+            
+            cur_time = datetime.datetime.now()
+            old_cx_rx_values = self.__get_rx_values() #
+            end_time = self.local_realm.parse_time("3m") + cur_time
+            self.cx_profile.start_cx() #
+            passes = 0
+            expected_passes = 0
+            while cur_time < end_time:
+                interval_time = cur_time + datetime.timedelta(minutes=1)
+                while cur_time < interval_time:
+                    cur_time = datetime.datetime.now()
+                    time.sleep(1)
+
+                new_cx_rx_values = self.__get_rx_values() #
+                # print(old_cx_rx_values, new_cx_rx_values)
+                # print("\n-----------------------------------")
+                # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
+                # print("-----------------------------------\n")
+                expected_passes += 1
+                if self.__compare_vals(old_cx_rx_values, new_cx_rx_values): #
+                    passes += 1
+                else:
+                    self._fail("FAIL: Not all stations increased traffic", print_fail)
+                    break
+                old_cx_rx_values = new_cx_rx_values #
+                cur_time = datetime.datetime.now()
+
+            if passes == expected_passes:
+                self._pass("PASS: All tests passed", print_pass)
+
 
     def stop(self):
         pass
