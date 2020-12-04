@@ -776,19 +776,18 @@ class L3VariableTime(LFCliBase):
         csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
 
-        # this may need to be a list as more monitoring takes place.
         for key in self.test_keys:
             csv_rx_row_data.append(self.test_config_dict[key])
             csv_rx_delta_row_data.append(self.test_config_dict[key])
 
-        csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx'])
-        csv_rx_delta_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+
 
         # only evaluate upstream or downstream 
         new_evaluate_list = new_list.copy()
@@ -799,7 +798,7 @@ class L3VariableTime(LFCliBase):
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
             print("downstream in dictionary values")
-        print("new_evaluate_list after",new_evaluate_list)
+        '''print("new_evaluate_list after",new_evaluate_list)
         csv_performance_values=sorted(new_evaluate_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
         for i in range(5):
@@ -807,7 +806,7 @@ class L3VariableTime(LFCliBase):
         for i in range(-1,-6,-1):
             csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
-        csv_rx_row_data.append(average_rx)
+        csv_rx_row_data.append(average_rx)'''
 
         old_evaluate_list = old_list.copy()
         if "upstream" in self.test_config_dict.values():
@@ -840,7 +839,25 @@ class L3VariableTime(LFCliBase):
 
             # need to generate list first to determine worst and best
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
-            average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+            #average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+            max_tp_mbps      = sum(filtered_values)
+            csv_rx_row_data.append(max_tp_mbps)
+
+            #To do  needs to be read or passed in based on test type
+            expected_tp_mbps = max_tp_mbps
+            csv_rx_row_data.append(expected_tp_mbps)
+
+            # Todo pass or fail
+            if max_tp_mbps == expected_tp_mbps:
+                csv_rx_row_data.append("pass")
+            else:
+                csv_rx_row_data.append("fail")
+
+            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
+            '''
+            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx'])
+            csv_rx_delta_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
 
             csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
             csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
@@ -849,7 +866,7 @@ class L3VariableTime(LFCliBase):
             for i in range(-1,-6,-1):
                 csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
-            csv_rx_delta_row_data.append(average_rx_delta)
+            csv_rx_delta_row_data.append(average_rx_delta)'''
             
             for item, value in old_evaluate_list.items():
                 expected_passes +=1
@@ -862,11 +879,11 @@ class L3VariableTime(LFCliBase):
                 if not self.csv_started:
                     csv_rx_headers.append(item)
                 # note need to have all upstream and downstream in the csv table thus new_list and old_list
-                csv_rx_row_data.append(new_list[item])
-                csv_rx_delta_row_data.append(new_list[item] - old_list[item])
+                #csv_rx_row_data.append(new_list[item])
+                csv_rx_row_data.append(new_list[item] - old_list[item])
 
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
-            self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
+            #self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
                 return True
@@ -972,6 +989,7 @@ class L3VariableTime(LFCliBase):
             station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
             index += 1
 
+            # 12/4/2020 put back in multi cast
             #for etype in self.endp_types:
             #    if etype == "mc_udp" or etype == "mc_udp6":
             #        logg.info("Creating Multicast connections for endpoint type: %s"%(etype))
@@ -1040,7 +1058,8 @@ class L3VariableTime(LFCliBase):
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
             old_rx_values = new_rx_values
 
-            self.__record_rx_dropped_percent(rx_drop_percent)
+            #percentage dropped not needed for scaling and performance , needed for longevity
+            #self.__record_rx_dropped_percent(rx_drop_percent)
 
             cur_time = datetime.datetime.now()
 
@@ -1063,12 +1082,13 @@ class L3VariableTime(LFCliBase):
                                         
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
-        csv_rx_headers.extend(['Time epoch','Time','Monitor'])
-        for i in range(1,6):
+        csv_rx_headers.extend 
+        csv_rx_headers.extend(['Max TP Mbps','Expected TP','Pass Fail','Time epoch','Time','Monitor'])
+        '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
             csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")
+        csv_rx_headers.append("average_rx_data")'''
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
@@ -1676,6 +1696,7 @@ Eventual Realm at Cisco
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
 
     elif args.cisco_test:
+        # Note the local system only supports 802.11-abgn , 802.11a
         cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_bands            = "a".split()
         #cisco_wifimodes        = "an anAX anAC abgn bg".split()
@@ -1687,9 +1708,11 @@ Eventual Realm at Cisco
         cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
         cisco_packet_types     = "lf_udp lf_tcp".split()
+        #cisco_packet_types     = "lf_udp".split()
+        #cisco_directions       = "upstream downstream".split()
         cisco_directions       = "upstream downstream".split()
-        #cisco_packet_sizes     = "88 512 1370 1518".split()
-        cisco_packet_sizes     = "1518".split()
+        cisco_packet_sizes     = "88 512 1370 1518".split()
+        #cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
