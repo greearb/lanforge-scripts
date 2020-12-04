@@ -36,13 +36,22 @@ class LFRequest:
         else:
             self.requested_url = url
 
+        if self.requested_url is None:
+            raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % url, uri)
+
         if self.requested_url.find('//'):
             protopos = self.requested_url.find("://")
             self.requested_url = self.requested_url[:protopos + 2] + self.requested_url[protopos + 2:].replace("//", "/")
+
+        # finding '#' prolly indicates a macvlan (eth1#0)
+        # finding ' ' prolly indicates a field name that should imply %20
+        if (self.requested_url.find('#') >= 1) or (self.requested_url.find(' ')):
+            self.requested_url = urllib.parse.quote_plus(self.requested_url)
+
         if self.debug:
             print("new LFRequest[%s]" % self.requested_url )
-        if self.requested_url is None:
-            raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % url, uri)
+
+
 
     # request first url on stack
     def formPost(self, show_error=True, debug=False, die_on_error_=False):
