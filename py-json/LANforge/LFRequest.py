@@ -45,10 +45,11 @@ class LFRequest:
 
         # finding '#' prolly indicates a macvlan (eth1#0)
         # finding ' ' prolly indicates a field name that should imply %20
-        if (self.requested_url.find('#') >= 1) or (self.requested_url.find(' ') >= 1):
-            self.requested_url = urllib.parse.quote_plus(self.requested_url)
-
-        if True:
+        if (self.requested_url.find('#') >= 1):
+            self.requested_url = self.requested_url.replace('#', '%23')
+        if (self.requested_url.find(' ') >= 1):
+            self.requested_url = self.requested_url.replace(' ', '+')
+        if self.debug:
             print("new LFRequest[%s]" % self.requested_url )
 
 
