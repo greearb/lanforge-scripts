@@ -370,7 +370,7 @@ class Realm(LFCliBase):
 
     # Returns map of all stations with port+type == WIFI-STATION
     def station_map(self):
-        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
+        response = super().json_get("/port/list?fields=port,_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):
             pprint(response)
             print("station_list: incomplete response, halting")
