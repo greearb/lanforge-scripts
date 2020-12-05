@@ -554,6 +554,55 @@ class Realm(LFCliBase):
 
         return not wait_more
 
+    def check_for_num_curr_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
+        print("checking number of stations with ips...")
+        waiting_states = ["0.0.0.0", "NA", ""]
+        print("here")
+        if (station_list is None) or (len(station_list) < 1):
+            raise ValueError("check for num curr ips expects non-empty list of ports")
+        print("here2")
+        for sta_eid in station_list:
+            if debug:
+                print("checking sta-eid: %s"%(sta_eid))
+            eid = self.name_to_eid(sta_eid)
+            response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
+                 (eid[0], eid[1], eid[2]))
+            if debug:
+                pprint(response)
+            if (response is None) or ("interface" not in response):
+                print("station_list: incomplete response:")
+                pprint(response)
+                #wait_more = True
+                break
+            if ipv4:
+                v = response['interface']
+                if (v['ip'] in waiting_states):
+                    if debug:
+                        print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                    
+                else:
+                    if debug:
+                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Incrementing stations with IP addresses found")
+                        num_sta_with_ips+=1
+                    else:
+                        num_sta_with_ips+-1 
+            if ipv6:
+                v = response['interface']
+                if (v['ip'] in waiting_states):
+                    if debug:
+                        print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                    
+                else:
+                    if debug:
+                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Incrementing stations with IP addresses found")
+                        num_sta_with_ips+=1
+                    else:
+                        num_sta_with_ips+-1   
+        return num_sta_with_ips
+
+
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
