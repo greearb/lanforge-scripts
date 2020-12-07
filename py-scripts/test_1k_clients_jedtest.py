@@ -20,6 +20,9 @@ class Test1KClients(LFCliBase):
     def __init__(self,
                  host,
                  port,
+                 upstream,
+                 side_a_min_rate=0, side_a_max_rate=56000,
+                 side_b_min_rate=0, side_b_max_rate=56000,
                  num_sta_=200,
                  _debug_on=True,
                  _exit_on_error=False,
@@ -52,13 +55,8 @@ class Test1KClients(LFCliBase):
             "1.2.wiphy1" : LFUtils.port_name_series(start_id=4000, end_id=4000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy1"),
             "1.2.wiphy2" : LFUtils.port_name_series(start_id=5000, end_id=5000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy2")
         }
-
-        self.name_prefix = "ONEA"
-
-        side_a_max_rate = 56000
-        side_a_min_rate = side_a_max_rate
-        side_b_max_rate = 56000
-        side_b_min_rate = side_b_max_rate
+        self.upstream=upstream
+        self.name_prefix = "1k"
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
@@ -79,7 +77,6 @@ class Test1KClients(LFCliBase):
                                          self.ssid_radio_map[radio][2])
             self.station_profile_map[radio] = station_profile
         
-        #creating phantom stations here
         self._pass("defined %s station profiles" % len(self.station_radio_map))
         for (radio, station_profile) in self.station_profile_map.items():
             station_profile.create(radio=radio,
@@ -90,25 +87,55 @@ class Test1KClients(LFCliBase):
                                    suppress_related_commands_=True,
                                    use_radius=False,
                                    hs20_enable=False,
-                                   sleep_time=2)
-            self.local_realm.wait_until_ports_appear(self.station_radio_map[radio])
+                                   sleep_time=.02)
+            station_profile.set_command_param("set_port", "report_timer", 1500)
+            station_profile.set_command_flag("set_port", "rpt_timer", 1)
+            self.cx_profile.create(endp_type="lf_udp", side_a=station_profile.station_names, side_b=self.upstream, sleep_time=0)
+
         self._pass("built stations on %s radios" % len(self.station_radio_map))
 
+    def __get_rx_values(self):
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
+        # print(self.cx_profile.created_cx.values())
+        #print("==============\n", cx_list, "\n==============")
+        cx_rx_map = {}
+        for cx_name in cx_list['endpoint']:
+            if cx_name != 'uri' and cx_name != 'handler':
+                for item, value in cx_name.items():
+                    for value_name, value_rx in value.items():
+                      if value_name == 'rx bytes' and item in self.cx_profile.created_cx.values():
+                        cx_rx_map[item] = value_rx
+        return cx_rx_map
+
+    def __compare_vals(self, old_list, new_list):
+        passes = 0
+        expected_passes = 0
+        if len(old_list) == len(new_list):
+            for item, value in old_list.items():
+                expected_passes += 1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+                # print(item, new_list[item], old_list[item], passes, expected_passes)
+
+            if passes == expected_passes:
+                return True
+            else:
+                return False
+        else:
+            return False        
+
     def start(self):
-        print("bringing stations up")
-        prev_ip_num=0      
+        print("Bringing stations up...")
+        prev_ip_num=0
+        total_num_sta=6*self.num_sta      
         for (radio, station_profile) in self.station_profile_map.items():
             station_profile.admin_up()
-            total_num_sta=6*self.num_sta
             self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=30)
-            curr_ip_num = self.local_realm.check_for_num_curr_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
-            print(curr_ip_num)
-            print(prev_ip_num)
-            print(total_num_sta)
+            curr_ip_num = self.local_realm.get_curr_num_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
             while ((prev_ip_num < curr_ip_num) and (curr_ip_num < total_num_sta)):
                 self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=60)
                 prev_ip_num = curr_ip_num
-                curr_ip_num = self.local_realm.check_for_num_curr_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
+                curr_ip_num = self.local_realm.get_curr_num_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
         if curr_ip_num == total_num_sta:
             self._pass("stations on radio %s up" % radio)
         else: 
@@ -161,6 +188,7 @@ def main():
 
     kilo_test = Test1KClients(lfjson_host,
                               lfjson_port,
+                              upstream=args.upstream_port,
                               num_sta_=args.sta_per_radio,
                               _debug_on=args.debug)
 
