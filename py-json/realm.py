@@ -557,10 +557,8 @@ class Realm(LFCliBase):
     def check_for_num_curr_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
         print("checking number of stations with ips...")
         waiting_states = ["0.0.0.0", "NA", ""]
-        print("here")
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("check for num curr ips expects non-empty list of ports")
-        print("here2")
         for sta_eid in station_list:
             if debug:
                 print("checking sta-eid: %s"%(sta_eid))
@@ -2857,6 +2855,8 @@ class StationProfile:
                  number_template_="00000",
                  mode=0,
                  up=True,
+                 resource=1,
+                 shelf=1,
                  dhcp=True,
                  debug_=False,
                  use_ht160=False):
@@ -2866,6 +2866,8 @@ class StationProfile:
         self.ssid_pass = ssid_pass
         self.mode = mode
         self.up = up
+        self.resource=resource
+        self.shelf=shelf
         self.dhcp = dhcp
         self.security = security
         self.local_realm = local_realm
@@ -2902,8 +2904,8 @@ class StationProfile:
         }
         self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
-            "shelf":1,
-            "resource":1,
+            "shelf": 1,
+            "resource": 1,
             "port": None,
             "key_mgmt": None,
             "eap": None,
@@ -2915,8 +2917,8 @@ class StationProfile:
         }
 
         self.reset_port_extra_data = {
-            "shelf":1,
-            "resource":1,
+            "shelf": 1,
+            "resource": 1,
             "port": None,
             "test_duration": 0,
             "reset_port_enable": False,
@@ -3124,9 +3126,7 @@ class StationProfile:
         if len(desired_stations) < 1:
             print("ERROR:  StationProfile cleanup, list is empty")
             return
-
-        del_count = len(desired_stations)
-
+            
         # First, request remove on the list.
         for port_eid in desired_stations:
             self.local_realm.rm_port(port_eid, check_exists=True)
@@ -3178,16 +3178,25 @@ class StationProfile:
         self.add_sta_data["radio"] = radio_port
 
         self.add_sta_data["resource"] = radio_resource
+        self.add_sta_data["shelf"] = radio_shelf
+        self.set_port_data["resource"] = radio_resource
+        self.set_port_data["shelf"] = radio_shelf
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
+        self.wifi_extra_data["resource"]=radio_resource
+        self.wifi_extra_data["shelf"]=radio_shelf
+        self.reset_port_extra_data["resource"]=radio_resource
+        self.reset_port_extra_data["shelf"]=radio_shelf
+
         # these are unactivated LFRequest objects that we can modify and
         # re-use inside a loop, reducing the number of object creations
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
         my_sta_names = []
+        #add radio here
         if num_stations > 0:
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
         else:
@@ -3211,6 +3220,8 @@ class StationProfile:
             self.add_sta_data["radio"] = radio_port
             self.add_sta_data["sta_name"] = name # for create station calls
             self.set_port_data["port"] = name  # for set_port calls.
+            self.set_port_data["shelf"] = radio_shelf
+            self.set_port_data["resource"] = radio_resource
 
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)
