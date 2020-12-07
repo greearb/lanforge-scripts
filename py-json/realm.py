@@ -554,7 +554,7 @@ class Realm(LFCliBase):
 
         return not wait_more
 
-    def check_for_num_curr_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
+    def get_curr_num_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
         print("checking number of stations with ips...")
         waiting_states = ["0.0.0.0", "NA", ""]
         if (station_list is None) or (len(station_list) < 1):
@@ -577,14 +577,13 @@ class Realm(LFCliBase):
                 if (v['ip'] in waiting_states):
                     if debug:
                         print("Waiting for port %s to get IPv4 Address."%(sta_eid))
-                    
                 else:
                     if debug:
                         print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
                         print("Incrementing stations with IP addresses found")
                         num_sta_with_ips+=1
                     else:
-                        num_sta_with_ips+-1 
+                        num_sta_with_ips+=1 
             if ipv6:
                 v = response['interface']
                 if (v['ip'] in waiting_states):
@@ -597,7 +596,7 @@ class Realm(LFCliBase):
                         print("Incrementing stations with IP addresses found")
                         num_sta_with_ips+=1
                     else:
-                        num_sta_with_ips+-1   
+                        num_sta_with_ips+=1   
         return num_sta_with_ips
 
 
@@ -3126,7 +3125,7 @@ class StationProfile:
         if len(desired_stations) < 1:
             print("ERROR:  StationProfile cleanup, list is empty")
             return
-            
+
         # First, request remove on the list.
         for port_eid in desired_stations:
             self.local_realm.rm_port(port_eid, check_exists=True)
