@@ -50,8 +50,10 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
         self.station_profile.admin_up()
+        print("    ",flush=True)
+        time.sleep(15)
+        self._pass("Station build finished",print_=True)
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)

@@ -51,7 +51,9 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
+        self.station_profile.admin_up()
+        self._pass("Station build finished",print_=True)
+        time.sleep(15)
         exit(0)
 
     def cleanup(self, sta_list):
