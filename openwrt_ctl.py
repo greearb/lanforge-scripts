@@ -134,6 +134,9 @@ def main():
          egg.sendline(NL)
          try:
              i = egg.expect([prompt, "Please press Enter to activate", "login:"], timeout=3)
+             if (i == 1):
+                 egg.setdline(NL)
+                 i = egg.expect([prompt, "Please press Enter to activate", "login:"], timeout=3)
              if (i == 2):
                  egg.sendline(user)
                  egg.expect("Password:")
