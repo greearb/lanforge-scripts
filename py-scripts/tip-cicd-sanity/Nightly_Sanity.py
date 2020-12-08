@@ -32,19 +32,21 @@ from shutil import copyfile
 # For finding files
 # https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
 import glob
-#external_results_dir=/var/tmp/lanforge
+
+# external_results_dir=/var/tmp/lanforge
 
 if sys.version_info[0] != 3:
-       print("This script requires Python 3")
-       exit(1)
+    print("This script requires Python 3")
+    exit(1)
 if 'py-json' not in sys.path:
-       sys.path.append('../../py-json')
+    sys.path.append('../../py-json')
 
 from LANforge.LFUtils import *
+
 # if you lack __init__.py in this directory you will not find sta_connect module#
 
 if 'py-json' not in sys.path:
-       sys.path.append('../../py-scripts')
+    sys.path.append('../../py-scripts')
 
 import sta_connect2
 from sta_connect2 import StaConnect2
@@ -59,32 +61,31 @@ import ap_ssh
 from ap_ssh import ssh_cli_active_fw
 from ap_ssh import iwinfo_status
 
-
 ### Set CloudSDK URL ###
-cloudSDK_url=os.getenv('CLOUD_SDK_URL')
+cloudSDK_url = os.getenv('CLOUD_SDK_URL')
 ### Directories
-local_dir=os.getenv('SANITY_LOG_DIR')
-report_path=os.getenv('SANITY_REPORT_DIR')
-report_template=os.getenv('REPORT_TEMPLATE')
+local_dir = os.getenv('SANITY_LOG_DIR')
+report_path = os.getenv('SANITY_REPORT_DIR')
+report_template = os.getenv('REPORT_TEMPLATE')
 
 ## TestRail Information
-tr_user=os.getenv('TR_USER')
-tr_pw=os.getenv('TR_PWD')
-milestoneId=os.getenv('MILESTONE')
-projectId=os.getenv('PROJECT_ID')
+tr_user = os.getenv('TR_USER')
+tr_pw = os.getenv('TR_PWD')
+milestoneId = os.getenv('MILESTONE')
+projectId = os.getenv('PROJECT_ID')
 
 ##Jfrog credentials
-jfrog_user=os.getenv('JFROG_USER')
-jfrog_pwd=os.getenv('JFROG_PWD')
+jfrog_user = os.getenv('JFROG_USER')
+jfrog_pwd = os.getenv('JFROG_PWD')
 ##EAP Credentials
-identity=os.getenv('EAP_IDENTITY')
-ttls_password=os.getenv('EAP_PWD')
+identity = os.getenv('EAP_IDENTITY')
+ttls_password = os.getenv('EAP_PWD')
 
 ## AP Credentials
-ap_username=os.getenv('AP_USER')
+ap_username = os.getenv('AP_USER')
 
 logger = logging.getLogger('Nightly_Sanity')
-hdlr = logging.FileHandler(local_dir+"/Nightly_Sanity.log")
+hdlr = logging.FileHandler(local_dir + "/Nightly_Sanity.log")
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
@@ -102,8 +103,7 @@ class GetBuild:
         self.password = jfrog_pwd
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    def get_latest_image(self,url):
-
+    def get_latest_image(self, url):
         auth = str(
             base64.b64encode(
                 bytes('%s:%s' % (self.user, self.password), 'utf-8')
@@ -113,16 +113,17 @@ class GetBuild:
         headers = {'Authorization': 'Basic ' + auth}
 
         ''' FIND THE LATEST FILE NAME'''
-        #print(url)
+        # print(url)
         req = urllib.request.Request(url, headers=headers)
         response = urllib.request.urlopen(req)
         html = response.read()
         soup = BeautifulSoup(html, features="html.parser")
         ##find the last pending link on dev
         last_link = soup.find_all('a', href=re.compile("pending"))[-1]
-        latest_file=last_link['href']
-        latest_fw = latest_file.replace('.tar.gz','')
+        latest_file = last_link['href']
+        latest_fw = latest_file.replace('.tar.gz', '')
         return latest_fw
+
 
 ###Class for Tests
 class RunTest:
@@ -202,38 +203,31 @@ class RunTest:
             return ("failed")
 
     def testrail_retest(self, test_case, rid, ssid_name):
-        client.update_testrail(case_id=test_case, run_id=rid, status_id=4, msg='Error in Client Connectivity Test. Needs to be Re-run')
+        client.update_testrail(case_id=test_case, run_id=rid, status_id=4,
+                               msg='Error in Client Connectivity Test. Needs to be Re-run')
         print("Error in test for single client connection to", ssid_name)
         logger.warning("ERROR testing Client connectivity to " + ssid_name)
+
 
 ######Testrail Project and Run ID Information ##############################
 
 Test: RunTest = RunTest()
 
-projId = client.get_project_id(project_name= projectId)
+projId = client.get_project_id(project_name=projectId)
 print("TIP WLAN Project ID is:", projId)
 
 logger.info('Start of Nightly Sanity')
 
 ###Dictionaries
 ap_latest_dict = {
-  "ec420": "Unknown",
-  "ea8300": "Unknown",
-  "ecw5211": "unknown",
-  "ecw5410": "unknown"
+    "ec420": "Unknown",
+    "ea8300": "Unknown",
+    "ecw5211": "unknown",
+    "ecw5410": "unknown"
 }
 
-#All values start empty
-ap_updated_dict = {
-  "ec420": "",
-  "ea8300": "",
-  "ecw5211": "",
-  "ecw5410": ""
-}
-
-#import json file used by throughput test
+# import json file used by throughput test
 sanity_status = json.load(open("sanity_status.json"))
-
 
 ##Equipment IDs for Lab APs under test
 from lab_ap_info import equipment_id_dict
@@ -242,44 +236,43 @@ from lab_ap_info import cloud_sdk_models
 from lab_ap_info import equipment_ip_dict
 from lab_ap_info import eqiupment_credentials_dict
 
-
 ##Test Cases to be included in Test Runs
 test_cases = [
-       2233,
-       2236,
-       2237,
-       2419,
-       2420,
-       4323,
-       4324,
-       4325,
-       4326,
-       5214,
-       5215,
-       5216,
-       5217,
-       5222,
-       5247,
-       5248,
-       5249,
-       5250,
-       5251,
-       5252,
-       5253,
-       5540,
-       5541,
-       5542,
-       5543,
-       5544,
-       5545,
-       5546,
-       5547,
-       5548
+    2233,
+    2236,
+    2237,
+    2419,
+    2420,
+    4323,
+    4324,
+    4325,
+    4326,
+    5214,
+    5215,
+    5216,
+    5217,
+    5222,
+    5247,
+    5248,
+    5249,
+    5250,
+    5251,
+    5252,
+    5253,
+    5540,
+    5541,
+    5542,
+    5543,
+    5544,
+    5545,
+    5546,
+    5547,
+    5548
 ]
 
 ##AP models for jfrog
-ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
-#ap_models = ["ecw5410"]
+ap_models = ["ec420", "ea8300", "ecw5211", "ecw5410"]
+# ap_models = ["ecw5410"]
 
 ############################################################################
 #################### Create Report #########################################
@@ -288,17 +281,17 @@ ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
 # Create Report Folder for Today
 today = str(date.today())
 try:
-    os.mkdir(report_path+today)
+    os.mkdir(report_path + today)
 except OSError:
-    print ("Creation of the directory %s failed" % report_path)
+    print("Creation of the directory %s failed" % report_path)
 else:
-    print ("Successfully created the directory %s " % report_path)
+    print("Successfully created the directory %s " % report_path)
 
-logger.info('Report data can be found here: '+report_path+today)
+logger.info('Report data can be found here: ' + report_path + today)
 
-#Copy report template to folder. If template doesn't exist, continue anyway with log
+# Copy report template to folder. If template doesn't exist, continue anyway with log
 try:
-    copyfile(report_template,report_path+today+'/report.php')
+    copyfile(report_template, report_path + today + '/report.php')
 
 except:
     print("No report template created. Report data will still be saved. Continuing with tests...")
@@ -308,27 +301,43 @@ tc_results = dict.fromkeys(test_cases, "not run")
 
 report_data = dict()
 report_data['cloud_sdk'] = {
-               "ea8300" : "",
-               "ecw5211": "",
-               "ecw5410": "",
-               "ec420": ""
-              }
-report_data["fw_available"] = dict.fromkeys(ap_models,"Unknown")
-report_data["fw_under_test"] = dict.fromkeys(ap_models,"N/A")
-report_data['pass_percent'] = dict.fromkeys(ap_models,"")
+    "ea8300": {
+        "date": "unknown",
+        "commitId": "unknown",
+        "projectVersion": "unknown"
+    },
+    "ecw5211": {
+        "date": "unknown",
+        "commitId": "unknown",
+        "projectVersion": "unknown"
+    },
+    "ecw5410": {
+        "date": "unknown",
+        "commitId": "unknown",
+        "projectVersion": "unknown"
+    },
+    "ec420": {
+        "date": "unknown",
+        "commitId": "unknown",
+        "projectVersion": "unknown"
+    }
+}
+report_data["fw_available"] = dict.fromkeys(ap_models, "Unknown")
+report_data["fw_under_test"] = dict.fromkeys(ap_models, "N/A")
+report_data['pass_percent'] = dict.fromkeys(ap_models, "")
 report_data['tests'] = {
-               "ea8300" : "",
-               "ecw5211": "",
-               "ecw5410": "",
-               "ec420": ""
-              }
+    "ea8300": "",
+    "ecw5211": "",
+    "ecw5410": "",
+    "ec420": ""
+}
 for key in ap_models:
-       report_data['tests'][key] = dict.fromkeys(test_cases,"not run")
+    report_data['tests'][key] = dict.fromkeys(test_cases, "not run")
 
 print(report_data)
 
-#write to report_data contents to json file so it has something in case of unexpected fail
-with open(report_path+today+'/report_data.json', 'w') as report_json_file:
+# write to report_data contents to json file so it has something in case of unexpected fail
+with open(report_path + today + '/report_data.json', 'w') as report_json_file:
     json.dump(report_data, report_json_file)
 
 ###Get Cloud Bearer Token
@@ -345,13 +354,13 @@ bearer = CloudSDK.get_bearer(cloudSDK_url)
 for model in ap_models:
     apModel = model
     cloudModel = cloud_sdk_models[apModel]
-    #print(cloudModel)
+    # print(cloudModel)
     ###Check Latest FW on jFrog
     jfrog_url = 'https://tip.jfrog.io/artifactory/tip-wlan-ap-firmware/'
     url = jfrog_url + apModel + "/dev/"
     Build: GetBuild = GetBuild()
     latest_image = Build.get_latest_image(url)
-    print(model,"Latest FW on jFrog:",latest_image)
+    print(model, "Latest FW on jFrog:", latest_image)
     ap_latest_dict[model] = latest_image
 
 ####################################################################################
@@ -404,7 +413,8 @@ for key in equipment_id_dict:
         ###Create Test Run
         today = str(date.today())
         test_run_name = "Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image
-        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId, description="Automated Nightly Sanity test run for new firmware build")
+        client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId,
+                              description="Automated Nightly Sanity test run for new firmware build")
         rid = client.get_run_id(test_run_name="Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image)
         print("TIP run ID is:", rid)
 
@@ -422,8 +432,8 @@ for key in equipment_id_dict:
             cloudsdk_cluster_info['commitId'] = cluster_ver['commitID']
             cloudsdk_cluster_info['projectVersion'] = cluster_ver['projectVersion']
             report_data['cloud_sdk'][key] = cloudsdk_cluster_info
-            logger.info('CloudSDK version info: ',cluster_ver)
-            client.update_testrail(case_id="5540", run_id=rid, status_id=1, msg='Read CloudSDK version from API successfully')
+            client.update_testrail(case_id="5540", run_id=rid, status_id=1,
+                                   msg='Read CloudSDK version from API successfully')
             report_data['tests'][key][5540] = "passed"
 
         except:
@@ -435,7 +445,8 @@ for key in equipment_id_dict:
                 "commitId": "unknown",
                 "projectVersion": "unknown"
             }
-            client.update_testrail(case_id="5540", run_id=rid, status_id=5, msg='Could not read CloudSDK version from API')
+            client.update_testrail(case_id="5540", run_id=rid, status_id=5,
+                                   msg='Could not read CloudSDK version from API')
             report_data['cloud_sdk'][key] = cloudsdk_cluster_info
             report_data['tests'][key][5540] = "failed"
 
@@ -456,15 +467,18 @@ for key in equipment_id_dict:
             fw_url = "https://" + jfrog_user + ":" + jfrog_pwd + "@tip.jfrog.io/artifactory/tip-wlan-ap-firmware/" + key + "/dev/" + latest_image + ".tar.gz"
             commit = latest_image.split("-")[-1]
             try:
-                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url, bearer)
+                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url,
+                                                            bearer)
                 fw_id = fw_upload_status['id']
                 print("Upload Complete.", latest_image, "FW ID is", fw_id)
-                client.update_testrail(case_id="5548", run_id=rid, status_id=1, msg='Create new FW version by API successful')
+                client.update_testrail(case_id="5548", run_id=rid, status_id=1,
+                                       msg='Create new FW version by API successful')
                 report_data['tests'][key][5548] = "passed"
             except:
                 fw_upload_status = 'error'
                 print("Unable to upload new FW version. Skipping Sanity on AP Model")
-                client.update_testrail(case_id="5548", run_id=rid, status_id=5, msg='Error creating new FW version by API')
+                client.update_testrail(case_id="5548", run_id=rid, status_id=5,
+                                       msg='Error creating new FW version by API')
                 report_data['tests'][key][5548] = "failed"
                 continue
         else:
@@ -472,22 +486,25 @@ for key in equipment_id_dict:
             fw_url = "https://" + jfrog_user + ":" + jfrog_pwd + "@tip.jfrog.io/artifactory/tip-wlan-ap-firmware/" + key + "/dev/" + latest_image + ".tar.gz"
             commit = latest_image.split("-")[-1]
             try:
-                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url, bearer)
+                fw_upload_status = CloudSDK.firwmare_upload(commit, cloudModel, latest_image, fw_url, cloudSDK_url,
+                                                            bearer)
                 fw_id = fw_upload_status['id']
                 print("Upload Complete.", latest_image, "FW ID is", fw_id)
-                client.update_testrail(case_id="5548", run_id=rid, status_id=1, msg='Create new FW version by API successful')
+                client.update_testrail(case_id="5548", run_id=rid, status_id=1,
+                                       msg='Create new FW version by API successful')
                 report_data['tests'][key][5548] = "passed"
             except:
                 fw_upload_status = 'error'
                 print("Unable to upload new FW version. Skipping Sanity on AP Model")
-                client.update_testrail(case_id="5548", run_id=rid, status_id=5, msg='Error creating new FW version by API')
+                client.update_testrail(case_id="5548", run_id=rid, status_id=5,
+                                       msg='Error creating new FW version by API')
                 report_data['tests'][key][5548] = "failed"
                 continue
 
         # Upgrade AP firmware
-        print("Upgrading...firmware ID is: ",fw_id)
+        print("Upgrading...firmware ID is: ", fw_id)
         upgrade_fw = CloudSDK.update_firmware(equipment_id, str(fw_id), cloudSDK_url, bearer)
-        logger.info("Lab "+fw_model+" Requires FW update")
+        logger.info("Lab " + fw_model + " Requires FW update")
         print(upgrade_fw)
         if upgrade_fw["success"] == True:
             print("CloudSDK Upgrade Request Success")
@@ -507,7 +524,7 @@ for key in equipment_id_dict:
         # Check if upgrade success is displayed on CloudSDK
         cloud_ap_fw = CloudSDK.ap_firmware(customer_id, equipment_id, cloudSDK_url, bearer)
         print('Current AP Firmware from CloudSDK:', cloud_ap_fw)
-        logger.info('AP Firmware from CloudSDK: '+cloud_ap_fw)
+        logger.info('AP Firmware from CloudSDK: ' + cloud_ap_fw)
         if cloud_ap_fw == "ERROR":
             print("AP FW Could not be read from CloudSDK")
 
@@ -527,13 +544,16 @@ for key in equipment_id_dict:
             ap_cli_info = "ERROR"
             print("Cannot Reach AP CLI to confirm upgrade!")
             logger.warning('Cannot Reach AP CLI to confirm upgrade!')
-            client.update_testrail(case_id="2233", run_id=rid, status_id=4, msg='Cannot reach AP after upgrade to check CLI - re-test required')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=4,
+                                   msg='Cannot reach AP after upgrade to check CLI - re-test required')
             continue
 
         if cloud_ap_fw == latest_ap_image and ap_cli_fw == latest_ap_image:
             print("CloudSDK and AP CLI both show upgrade success, passing upgrade test case")
-            client.update_testrail(case_id="2233", run_id=rid, status_id=1, msg='Upgrade to ' + latest_ap_image + ' successful')
-            client.update_testrail(case_id="5247", run_id=rid, status_id=1, msg='CLOUDSDK reporting correct firmware version.')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=1,
+                                   msg='Upgrade to ' + latest_ap_image + ' successful')
+            client.update_testrail(case_id="5247", run_id=rid, status_id=1,
+                                   msg='CLOUDSDK reporting correct firmware version.')
             report_data['tests'][key][2233] = "passed"
             report_data['tests'][key][5247] = "passed"
             print(report_data['tests'][key])
@@ -541,8 +561,10 @@ for key in equipment_id_dict:
         elif cloud_ap_fw != latest_ap_image and ap_cli_fw == latest_ap_image:
             print("AP CLI shows upgrade success - CloudSDK reporting error!")
             ##Raise CloudSDK error but continue testing
-            client.update_testrail(case_id="2233", run_id=rid, status_id=1, msg='Upgrade to ' + latest_ap_image + ' successful.')
-            client.update_testrail(case_id="5247", run_id=rid, status_id=5,msg='CLOUDSDK reporting incorrect firmware version.')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=1,
+                                   msg='Upgrade to ' + latest_ap_image + ' successful.')
+            client.update_testrail(case_id="5247", run_id=rid, status_id=5,
+                                   msg='CLOUDSDK reporting incorrect firmware version.')
             report_data['tests'][key][2233] = "passed"
             report_data['tests'][key][5247] = "failed"
             print(report_data['tests'][key])
@@ -550,8 +572,10 @@ for key in equipment_id_dict:
         elif cloud_ap_fw == latest_ap_image and ap_cli_fw != latest_ap_image:
             print("AP CLI shows upgrade failed - CloudSDK reporting error!")
             # Testrail TC fail
-            client.update_testrail(case_id="2233", run_id=rid, status_id=5, msg='AP failed to download or apply new FW. Upgrade to ' + latest_ap_image + ' Failed')
-            client.update_testrail(case_id="5247", run_id=rid, status_id=5,msg='CLOUDSDK reporting incorrect firmware version.')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=5,
+                                   msg='AP failed to download or apply new FW. Upgrade to ' + latest_ap_image + ' Failed')
+            client.update_testrail(case_id="5247", run_id=rid, status_id=5,
+                                   msg='CLOUDSDK reporting incorrect firmware version.')
             report_data['tests'][key][2233] = "failed"
             report_data['tests'][key][5247] = "failed"
             print(report_data['tests'][key])
@@ -560,7 +584,8 @@ for key in equipment_id_dict:
         elif cloud_ap_fw != latest_ap_image and ap_cli_fw != latest_ap_image:
             print("Upgrade Failed! Confirmed on CloudSDK and AP CLI. Upgrade test case failed.")
             ##fail TR testcase and exit
-            client.update_testrail(case_id="2233", run_id=rid, status_id=5, msg='AP failed to download or apply new FW. Upgrade to ' + latest_ap_image + ' Failed')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=5,
+                                   msg='AP failed to download or apply new FW. Upgrade to ' + latest_ap_image + ' Failed')
             report_data['tests'][key][2233] = "failed"
             print(report_data['tests'][key])
             continue
@@ -568,7 +593,8 @@ for key in equipment_id_dict:
         else:
             print("Unable to determine upgrade status. Skipping AP variant")
             # update TR testcase as error
-            client.update_testrail(case_id="2233", run_id=rid, status_id=4, msg='Cannot determine upgrade status - re-test required')
+            client.update_testrail(case_id="2233", run_id=rid, status_id=4,
+                                   msg='Cannot determine upgrade status - re-test required')
             report_data['tests'][key][2233] = "error"
             print(report_data['tests'][key])
             continue
@@ -633,16 +659,19 @@ for key in equipment_id_dict:
 
             if set(ssid_list) == set(ssid_config):
                 print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
-                client.update_testrail(case_id="5541", run_id=rid, status_id=1, msg='SSIDs in VIF Config matches AP Profile Config')
+                client.update_testrail(case_id="5541", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config matches AP Profile Config')
                 report_data['tests'][key][5541] = "passed"
             else:
                 print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
-                client.update_testrail(case_id="5541", run_id=rid, status_id=5, msg='SSIDs in VIF Config do not match AP Profile Config')
+                client.update_testrail(case_id="5541", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config do not match AP Profile Config')
                 report_data['tests'][key][5541] = "failed"
         except:
             ssid_list = "ERROR"
             print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id="5541", run_id=rid, status_id=4, msg='Cannot determine VIF Config - re-test required')
+            client.update_testrail(case_id="5541", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF Config - re-test required')
             report_data['tests'][key][5541] = "error"
         # VIF State
         try:
@@ -651,23 +680,26 @@ for key in equipment_id_dict:
 
             if set(ssid_state) == set(ssid_config):
                 print("SSIDs properly applied on AP")
-                client.update_testrail(case_id="5544", run_id=rid, status_id=1, msg='SSIDs in VIF Config applied to VIF State')
+                client.update_testrail(case_id="5544", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config applied to VIF State')
                 report_data['tests'][key][5544] = "passed"
             else:
                 print("SSIDs not applied on AP")
-                client.update_testrail(case_id="5544", run_id=rid, status_id=5, msg='SSIDs in VIF Config not applied to VIF State')
+                client.update_testrail(case_id="5544", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config not applied to VIF State')
                 report_data['tests'][key][5544] = "failed"
         except:
             ssid_list = "ERROR"
             print("Error accessing VIF State from AP CLI")
             print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id="5544", run_id=rid, status_id=4, msg='Cannot determine VIF State - re-test required')
+            client.update_testrail(case_id="5544", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF State - re-test required')
             report_data['tests'][key][5544] = "error"
 
         ### Set LANForge port for tests
         port = "eth2"
 
-        #print iwinfo for information
+        # print iwinfo for information
         iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
         print(iwinfo)
 
@@ -680,7 +712,8 @@ for key in equipment_id_dict:
         security = "wpa2"
         eap_type = "TTLS"
         try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, test_case, rid)
+            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                    ttls_password, test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -699,7 +732,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -718,7 +752,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -749,7 +784,8 @@ for key in equipment_id_dict:
         security = "wpa2"
         eap_type = "TTLS"
         try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, test_case, rid)
+            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                    ttls_password, test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -767,7 +803,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -786,7 +823,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -874,7 +912,7 @@ for key in equipment_id_dict:
         ### Set LANForge port for tests
         port = "eth2"
 
-        #Print iwinfo for logs
+        # Print iwinfo for logs
         iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
         print(iwinfo)
 
@@ -887,7 +925,8 @@ for key in equipment_id_dict:
         security = "wpa2"
         eap_type = "TTLS"
         try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, test_case, rid)
+            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                    ttls_password, test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -897,7 +936,6 @@ for key in equipment_id_dict:
 
         time.sleep(10)
 
-
         # TC 4325 - 2.4 GHz WPA2 NAT
         test_case = "4325"
         radio = "wiphy0"
@@ -906,7 +944,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -925,7 +964,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -955,7 +995,8 @@ for key in equipment_id_dict:
         security = "wpa2"
         eap_type = "TTLS"
         try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, test_case, rid)
+            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                    ttls_password, test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -973,7 +1014,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -992,7 +1034,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -1051,7 +1094,8 @@ for key in equipment_id_dict:
         except:
             ssid_list = "ERROR"
             print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id="5543", run_id=rid, status_id=4, msg='Cannot determine VIF Config - re-test required')
+            client.update_testrail(case_id="5543", run_id=rid, status_id=4,
+                                   msg='Cannot determine VIF Config - re-test required')
             report_data['tests'][key][5543] = "error"
         # VIF State
         try:
@@ -1060,11 +1104,13 @@ for key in equipment_id_dict:
 
             if set(ssid_state) == set(ssid_config):
                 print("SSIDs properly applied on AP")
-                client.update_testrail(case_id="5546", run_id=rid, status_id=1, msg='SSIDs in VIF Config applied to VIF State')
+                client.update_testrail(case_id="5546", run_id=rid, status_id=1,
+                                       msg='SSIDs in VIF Config applied to VIF State')
                 report_data['tests'][key][5546] = "passed"
             else:
                 print("SSIDs not applied on AP")
-                client.update_testrail(case_id="5546", run_id=rid, status_id=5, msg='SSIDs in VIF Config not applied to VIF State')
+                client.update_testrail(case_id="5546", run_id=rid, status_id=5,
+                                       msg='SSIDs in VIF Config not applied to VIF State')
                 report_data['tests'][key][5546] = "failed"
         except:
             ssid_list = "ERROR"
@@ -1109,7 +1155,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -1128,7 +1175,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case, rid)
         except:
             test_result = "error"
             Test.testrail_retest(test_case, rid, ssid_name)
@@ -1177,7 +1225,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
         security = "wpa2"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -1196,7 +1245,8 @@ for key in equipment_id_dict:
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
         security = "wpa"
         try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case,
+            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                          test_case,
                                                           rid)
         except:
             test_result = "error"
@@ -1209,10 +1259,9 @@ for key in equipment_id_dict:
 
         logger.info("Testing for " + fw_model + "Custom VLAN SSIDs Complete")
 
-        logger.info("Testing for " +fw_model+ "Complete")
+        logger.info("Testing for " + fw_model + "Complete")
 
-
-        #Add indication of complete TC pass/fail to sanity_status for pass to external json used by Throughput Test
+        # Add indication of complete TC pass/fail to sanity_status for pass to external json used by Throughput Test
         x = all(status == "passed" for status in report_data["tests"][key].values())
         print(x)
 
@@ -1227,21 +1276,20 @@ for key in equipment_id_dict:
 
         print(sanity_status)
 
-        #write to json file
+        # write to json file
         with open('sanity_status.json', 'w') as json_file:
             json.dump(sanity_status, json_file)
-
 
         # write to report_data contents to json file so it has something in case of unexpected fail
         print(report_data)
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
-#Dump all sanity test results to external json file again just to be sure
+# Dump all sanity test results to external json file again just to be sure
 with open('sanity_status.json', 'w') as json_file:
-  json.dump(sanity_status, json_file)
+    json.dump(sanity_status, json_file)
 
-#Calculate percent of tests passed for report
+# Calculate percent of tests passed for report
 for key in ap_models:
     if report_data['fw_available'][key] is "No":
         report_data["pass_percent"][key] = "Not Run"
@@ -1252,12 +1300,11 @@ for key in ap_models:
         percent = float(passed_tests / no_of_tests) * 100
         percent_pass = round(percent, 2)
         print(key, "pass rate is", str(percent_pass) + "%")
-        report_data["pass_percent"][key] = str(percent_pass)+'%'
+        report_data["pass_percent"][key] = str(percent_pass) + '%'
 
-
-#write to report_data contents to json file
+# write to report_data contents to json file
 print(report_data)
-with open(report_path+today+'/report_data.json', 'w') as report_json_file:
+with open(report_path + today + '/report_data.json', 'w') as report_json_file:
     json.dump(report_data, report_json_file)
 
 print(".....End of Sanity Test.....")
