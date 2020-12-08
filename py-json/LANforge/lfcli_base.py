@@ -365,8 +365,10 @@ class LFCliBase:
         if (fail_counter == 0) and (pass_counter > 0):
             return True
         return False
-    #use this function to 
+
+    
     def failed(self):
+        print(self.get_failed_result_list())
         print("Test failed. Exiting now.")
         sys.exit(1)
 

@@ -57,7 +57,6 @@ class IPv4Test(LFCliBase):
             self.passed()
         else:
             self._fail("Stations not able to acquire IP. Please check network input.")
-            print(self.get_failed_result_list())
             self.failed()
 
 
