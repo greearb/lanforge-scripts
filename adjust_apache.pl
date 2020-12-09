@@ -57,7 +57,11 @@ if (-f "$fname") {
   open(FILE, ">$fname") or die "Couldn't open file: $fname for writing: $!\n\n";
   my $foundit = 0;
   my $i;
-  chomp(@lines);
+  # chomp is way to simplistic if we need to weed out \r\n characters as well
+  #chomp(@lines);
+  for( my $i=0; $i < @lines; $i++) {
+     ($lines[$i]) = $lines[$i] =~ /^([^\r\n]+)\r?\n$/;
+  }
   # we want to consolidate the $ip $hostname entry for MgrHostname
   my @newlines = ();
   my %more_hostnames = ();
@@ -65,7 +69,10 @@ if (-f "$fname") {
   #my $blank = 0;
   #my $was_blank = 0;
   my $counter = 0;
-  my $debug = 1;
+  my $debug = 0;
+  if ((exists $ENV{"DEBUG"}) && ($ENV{"DEBUG"} eq "1")) {
+     $debug = 1;
+  }
   my %host_map = (
     "localhost.localdomain"     => "127.0.0.1",
     "localhost"                 => "127.0.0.1",
@@ -79,6 +86,8 @@ if (-f "$fname") {
     "lanforge.localnet"         => "192.168.1.101",
     "lanforge.localdomain"      => "192.168.1.101",
   );
+  my %comment_map = ();
+  my %address_marker_map = ();
   my %address_map = (
      "127.0.0.1" => "localhost.localdomain localhost localhost4.localdomain4 localhost4",
      "::1" => "localhost.localdomain localhost localhost6.loaldomain6 localhost6",
@@ -94,17 +103,27 @@ if (-f "$fname") {
   my $previp = "";
 
   for my $ln (@lines) {
+    next if (!(defined $ln));
     print "\nLN[$ln]\n" if ($debug);
     next if ($ln =~ /^\s*$/);
+    next if ($ln =~ /^\s*#/);
     next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/); # old typo
     next if ($ln =~ /^###-LF-HOSTNAME-NEXT-###/);
-
+    my $comment = undef;
     print "PARSING IPv4 ln[$ln]\n" if ($debug);
+    if ($ln =~ /#/) {
+       ($comment) = $ln =~ /^[^#]+(#.*)$/;
+       ($ln) = $ln =~ /^([^#]+)\s*#/;
+       print "line with comment becomes [$ln]\n" if ($debug);
+    }
     @hunks = split(/\s+/, $ln);
     my $middleip = 0;
     my $counter2 = -1;
     my $linehasip = 0;
     my $lfhostname = 0;
+    if ((defined $comment) && ($comment ne "")) {
+       $comment_map{$hunks[0]} = $comment;
+    }
     for my $hunk (@hunks) {
       print "\n   HUNK",$counter2,"-:$hunk:- " if ($debug);
       $counter2++;
@@ -207,6 +226,7 @@ if (-f "$fname") {
      print "NEWSTUFF $ip $address_map{$ip}\n" if ($debug);
   }
 
+  # this might be premature
   unshift(@newlines, "192.168.1.101 ".$address_map{"192.168.1.101"});
   unshift(@newlines, "127.0.0.1  ".$address_map{"127.0.0.1"});
   unshift(@newlines, "::1  ".$address_map{"::1"});
@@ -215,29 +235,74 @@ if (-f "$fname") {
   delete($address_map{"127.0.0.1"});
   delete($address_map{"::1"});
 
-  print Dumper(\%address_map) if ($debug);
-  print Dumper(\%host_map) if ($debug);
-
-  for my $key (sort keys %address_map){
-     next if ($key eq $ip);
-     if ($address_map{$key} =~ /\s*$MgrHostname\s*/) {
-         print("SKIPPING $key / $address_map{$key}\n")
-           if ($debug);
-         next;
-     }
-     push(@newlines, $key."    ".$address_map{$key});
+  if ($debug) {
+     print "# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
+     print "\nAddress map\n";
+     print Dumper(\%address_map);
+     print "\nHost map\n";
+     print Dumper(\%host_map);
+     print "# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
+     sleep 2;
   }
+  # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  # we want to maintain the original line ordering as faithfully as possible
+  # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  for my $ln (@lines) {
+    $ln = "" if (!(defined $ln));
+    print "OLD[$ln]\n" if ($debug);
+    # if we are comments or blank lines, preserve them
+    if (($ln =~ /^\s*$/) || ($ln =~ /^\s*#/)) {
+       push(@newlines, $ln);
+       next;
+    }
+    @hunks = split(/\s+/, $ln);
+
+    if (exists $address_map{$hunks[0]}) {
+       if (exists $address_marker_map{$hunks[0]}) {
+          print "already printed $hunks[0]\n" if ($debug);
+          next;
+       }
+       my $comment = "";
+       if (exists $comment_map{$hunks[0]}) {
+          $comment = " $comment_map{$hunks[0]}";
+       }
+       push(@newlines, "$hunks[0] $address_map{$hunks[0]}$comment");
+       $address_marker_map{$hunks[0]} = 1;
+       next;
+    }
+    else {
+       die("unknown IP $hunks[0]");
+    }
+  }
+  if ($debug) {
+     print "# ----- NEW ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
+     for my $ln (@newlines) {
+        print "$ln\n";
+     }
+  }
+
+  #for my $key (sort keys %address_map){
+  #   next if ($key eq $ip);
+  #   if ($address_map{$key} =~ /\s*$MgrHostname\s*/) {
+  #       print("SKIPPING $key / $address_map{$key}\n")
+  #         if ($debug);
+  #       next;
+  #   }
+  #   push(@newlines, $key."    ".$address_map{$key});
+  #}
   push(@newlines, "###-LF-HOSTNAME-NEXT-###");
   push(@newlines, $ip."    ".$address_map{$ip});
-  print Dumper(\@newlines) if ($debug);
-  sleep 5 if ($debug);
+  if ($debug) {
+     print Dumper(\@newlines);
+     sleep 5;
+  }
   for my $ln (@newlines) {
     print FILE "$ln\n";
   }
 
   print FILE "\n";
   close FILE;
-}
+} # ~if found file
 
 my $local_crt ="";
 my $local_key ="";
