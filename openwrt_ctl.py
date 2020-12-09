@@ -78,7 +78,7 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["logread", "journalctl", "lurk", "sysupgrade", "download", "upload", "reboot", "cmd" ])
+      choices=["logread", "journalctl", "lurk", "sysupgrade", "sysupgrade-n", "download", "upload", "reboot", "cmd" ])
    parser.add_argument("--value",         type=str, help="set value")
    parser.add_argument("--value2",        type=str, help="set value2")
    tty = None
@@ -231,7 +231,7 @@ def main():
       TO=1
       wait_forever = True
 
-   if (args.action == "sysupgrade"):
+   if ((args.action == "sysupgrade") or (args.action == "sysupgrade-n")):
        command = "scp %s /tmp/new_img.bin"%(args.value)
        logg.info("Command[%s]"%command)
        egg.sendline(command);
@@ -242,7 +242,10 @@ def main():
            egg.expect("password:", timeout=5)
        egg.sendline("lanforge")
        egg.expect(CCPROMPT, timeout=20)
-       egg.sendline("sysupgrade /tmp/new_img.bin")
+       if (args.action == "sysupgrade-n"):
+           egg.sendline("sysupgrade -n /tmp/new_img.bin")
+       else:
+           egg.sendline("sysupgrade /tmp/new_img.bin")
        egg.expect("link becomes ready", timeout=100)
        return
 
