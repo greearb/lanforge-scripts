@@ -343,14 +343,10 @@ with open(report_path + today + '/report_data.json', 'w') as report_json_file:
 ###Get Cloud Bearer Token
 bearer = CloudSDK.get_bearer(cloudSDK_url)
 
-#############################################################################
-##################### CloudSDK Firmware Check ###############################
-### 1) Get Token for CloudSDK ###############################################
-### 2) Find Latest FW on jfrog for each AP Model ############################
-### 3) Find Available FW on CloudSDK --> if Latest FW not present, upload ###
-#############################################################################
+############################################################################
+#################### Jfrog Firmware Check ##################################
+############################################################################
 
-###Check Latest FW Version on jfrog and CloudSDK for each model
 for model in ap_models:
     apModel = model
     cloudModel = cloud_sdk_models[apModel]
@@ -764,18 +760,6 @@ for key in equipment_id_dict:
 
         time.sleep(10)
 
-        # TC 2234 - 2.4 GHz Open
-        # test_case = "2234"
-        # radio = "wiphy0"
-        # station = ["test2234"]
-        # ssid_name = profile_info_dict[fw_model]["twoFourG_OPEN_SSID"]
-        # ssid_psk = "BLANK"
-        # security = "open"
-        # test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
-        # report_data['tests'][key][int(test_case)] = test_result
-
-        # time.sleep(10)
-
         # TC5215 - 5 GHz WPA2-Enterprise
         test_case = "5215"
         radio = "wiphy3"
@@ -834,16 +818,6 @@ for key in equipment_id_dict:
         print(report_data['tests'][key])
 
         time.sleep(10)
-
-        # TC 2235 - 5 GHz Open
-        # test_case = "2235"
-        # radio = "wiphy3"
-        # station = ["test2235"]
-        # ssid_name = profile_info_dict[fw_model]["fiveG_OPEN_SSID"]
-        # ssid_psk = "BLANK"
-        # security = "open"
-        # test_result = Test.Single_Client_Connectivity(radio, ssid_name, ssid_psk, security, station, test_case, rid)
-        # report_data['tests'][key][int(test_case)] = test_result
 
         logger.info("Testing for " + fw_model + "Bridge Mode SSIDs Complete")
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
@@ -975,18 +949,6 @@ for key in equipment_id_dict:
 
         time.sleep(10)
 
-        # TC 4321 - 2.4 GHz Open NAT
-        # test_case = "4321"
-        # radio = "wiphy0"
-        # station = ["test4321"]
-        # ssid_name = profile_info_dict[fw_model+'_nat']["twoFourG_OPEN_SSID"]
-        # ssid_psk = "BLANK"
-        # security = "open"
-        # test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
-        # report_data['tests'][key][int(test_case)] = test_result
-
-        # time.sleep(10)
-
         # TC5108 - 5 GHz WPA2-Enterprise NAT
         test_case = "5217"
         radio = "wiphy3"
@@ -1045,16 +1007,6 @@ for key in equipment_id_dict:
         print(report_data['tests'][key])
 
         time.sleep(10)
-
-        # TC 4322 - 5 GHz Open NAT
-        # test_case = "4322"
-        # radio = "wiphy3"
-        # station = ["test4322"]
-        # ssid_name = profile_info_dict[fw_model+'_nat']["fiveG_OPEN_SSID"]
-        # ssid_psk = "BLANK"
-        # security = "open"
-        # test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
-        # report_data['tests'][key][int(test_case)] = test_result
 
         logger.info("Testing for " + fw_model + "NAT Mode SSIDs Complete")
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
@@ -1185,18 +1137,6 @@ for key in equipment_id_dict:
         print(report_data['tests'][key])
 
         time.sleep(10)
-
-        # TC 4321 - 2.4 GHz Open VLAN
-        # test_case = "4321"
-        # radio = "wiphy0"
-        # station = ["test4321"]
-        # ssid_name = profile_info_dict[fw_model+'_vlan']["twoFourG_OPEN_SSID"]
-        # ssid_psk = "BLANK"
-        # security = "open"
-        # test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station, test_case, rid)
-        # report_data['tests'][key][int(test_case)] = test_result
-
-        # time.sleep(10)
 
         # TC5108 - 5 GHz WPA2-Enterprise VLAN
         test_case = "5250"
