@@ -173,12 +173,10 @@ python3 ./test_ipv4_l4_wifi.py --upstream_port eth1 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
     --passwd admin123 \\
-    --dest 10.40.0.1 \\
     --test_duration 2m \\
-    --interval 1s \\
     --requests_per_ten 600 \\
     --direction {ul | dl} \\
-    --dest /dev/null \\
+    --dest /dev/null (or 10.40.0.1)\\
     --debug
             ''')
 
@@ -197,7 +195,7 @@ python3 ./test_ipv4_l4_wifi.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
+    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
                      security=args.security, station_list=station_list, direction=args.direction,dest=args.dest,
                      test_duration=args.test_duration, upstream_port=args.upstream_port,
                      requests_per_ten=args.requests_per_ten, _debug_on=args.debug)

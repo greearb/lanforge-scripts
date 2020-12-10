@@ -370,7 +370,7 @@ class Realm(LFCliBase):
 
     # Returns map of all stations with port+type == WIFI-STATION
     def station_map(self):
-        response = super().json_get("/port/list?fields=_links,alias,device,port+type")
+        response = super().json_get("/port/list?fields=port,_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):
             pprint(response)
             print("station_list: incomplete response, halting")
@@ -554,6 +554,52 @@ class Realm(LFCliBase):
 
         return not wait_more
 
+    def get_curr_num_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
+        print("checking number of stations with ips...")
+        waiting_states = ["0.0.0.0", "NA", ""]
+        if (station_list is None) or (len(station_list) < 1):
+            raise ValueError("check for num curr ips expects non-empty list of ports")
+        for sta_eid in station_list:
+            if debug:
+                print("checking sta-eid: %s"%(sta_eid))
+            eid = self.name_to_eid(sta_eid)
+            response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
+                 (eid[0], eid[1], eid[2]))
+            if debug:
+                pprint(response)
+            if (response is None) or ("interface" not in response):
+                print("station_list: incomplete response:")
+                pprint(response)
+                #wait_more = True
+                break
+            if ipv4:
+                v = response['interface']
+                if (v['ip'] in waiting_states):
+                    if debug:
+                        print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                else:
+                    if debug:
+                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Incrementing stations with IP addresses found")
+                        num_sta_with_ips+=1
+                    else:
+                        num_sta_with_ips+=1 
+            if ipv6:
+                v = response['interface']
+                if (v['ip'] in waiting_states):
+                    if debug:
+                        print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                    
+                else:
+                    if debug:
+                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Incrementing stations with IP addresses found")
+                        num_sta_with_ips+=1
+                    else:
+                        num_sta_with_ips+=1   
+        return num_sta_with_ips
+
+
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
@@ -732,6 +778,9 @@ class Realm(LFCliBase):
 
     def new_mvlan_profile(self):
         return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+
+    def new_test_group_profile(self):
+        return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -2169,6 +2218,74 @@ class DUTProfile(LFCliBase):
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
 
+class TestGroupProfile(LFCliBase):
+    def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        self.local_realm = local_realm
+        self.group_name = test_group_name
+        self.cx_list = []
+
+    def start_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/start_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def quiesce_group(self):
+        if self.group_name is not None:
+                self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def stop_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/stop_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def create_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/add_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def remove_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/rm_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def add_cx(self, cx_name):
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+
+    def rm_cx_from_list(self, cx_name):
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+
+    def check_group_exists(self):
+        test_groups = self.local_realm.json_get("/testgroups")
+        if test_groups is not None:
+            test_groups = test_groups["groups"]
+            for group in test_groups:
+                for k,v in group.items():
+                    if v['name'] == self.group_name:
+                        return True
+        else:
+            return False
+
+    def list_groups(self):
+        test_groups = self.local_realm.json_get("/testgroups")
+        tg_list = []
+        if test_groups is not None:
+            test_groups = test_groups["groups"]
+            for group in test_groups:
+                for k, v in group.items():
+                    tg_list.append(v['name'])
+        return tg_list
+
+    def list_cxs(self):
+        # TODO: List cxs in profile, use cx_list or query?
+        pass
+
 
 class FIOEndpProfile(LFCliBase):
     """
@@ -2211,7 +2328,6 @@ class FIOEndpProfile(LFCliBase):
 
         self.created_cx = {}
         self.created_endp = []
-
 
     def start_cx(self):
         print("Starting CXs...")
@@ -2304,12 +2420,13 @@ class FIOEndpProfile(LFCliBase):
                 "payload_pattern": self.pattern,
 
             }
+            # Read direction is copy of write only directory
             if self.io_direction == "read":
                 endp_data["prefix"] = "wo_" + name + "_fio"
                 endp_data["directory"] = "/mnt/lf/wo_" + name + "_fio"
 
             url = "cli-json/add_file_endp"
-            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, endp_data, debug_=True, suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
             data = {
@@ -2320,6 +2437,13 @@ class FIOEndpProfile(LFCliBase):
             self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
 
+        self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        for port_name in ports:
+            if len(self.local_realm.name_to_eid(port_name)) == 3:
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
+
             endp_data = {
                 "alias": "CX_" + self.cx_prefix + name + "_fio",
                 "test_mgr": "default_tm",
@@ -2329,6 +2453,7 @@ class FIOEndpProfile(LFCliBase):
             cx_post_data.append(endp_data)
             self.created_cx[self.cx_prefix + name + "_fio"] = "CX_" + self.cx_prefix + name + "_fio"
 
+            # time.sleep(3)
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
@@ -2358,8 +2483,8 @@ class MACVLANProfile(LFCliBase):
         self.ip_list = []
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
-        self.desired_set_port_current_flags = ["if_down"]
-        self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
+        self.desired_set_port_current_flags = [] # do not default down, "if_down"
+        self.desired_set_port_interest_flags = ["current_flags"] # do not default down, "ifdown"
         self.set_port_data = {
             "shelf": 1,
             "resource": 1,
@@ -2481,7 +2606,7 @@ class MACVLANProfile(LFCliBase):
         LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
         print(self.created_macvlans)
 
-        # time.sleep(sleep_time)
+        time.sleep(5)
 
         for i in range(len(self.created_macvlans)):
             eid = self.local_realm.name_to_eid(self.created_macvlans[i])
@@ -2503,7 +2628,7 @@ class MACVLANProfile(LFCliBase):
             self.local_realm.rm_port(port_eid, check_exists=True)
             time.sleep(.2)
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+
 
     def admin_up(self):
         for macvlan in self.created_macvlans:
@@ -2752,6 +2877,8 @@ class StationProfile:
                  number_template_="00000",
                  mode=0,
                  up=True,
+                 resource=1,
+                 shelf=1,
                  dhcp=True,
                  debug_=False,
                  use_ht160=False):
@@ -2761,6 +2888,8 @@ class StationProfile:
         self.ssid_pass = ssid_pass
         self.mode = mode
         self.up = up
+        self.resource=resource
+        self.shelf=shelf
         self.dhcp = dhcp
         self.security = security
         self.local_realm = local_realm
@@ -2797,8 +2926,8 @@ class StationProfile:
         }
         self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
-            "shelf":1,
-            "resource":1,
+            "shelf": 1,
+            "resource": 1,
             "port": None,
             "key_mgmt": None,
             "eap": None,
@@ -2810,8 +2939,8 @@ class StationProfile:
         }
 
         self.reset_port_extra_data = {
-            "shelf":1,
-            "resource":1,
+            "shelf": 1,
+            "resource": 1,
             "port": None,
             "test_duration": 0,
             "reset_port_enable": False,
@@ -3020,8 +3149,6 @@ class StationProfile:
             print("ERROR:  StationProfile cleanup, list is empty")
             return
 
-        del_count = len(desired_stations)
-
         # First, request remove on the list.
         for port_eid in desired_stations:
             self.local_realm.rm_port(port_eid, check_exists=True)
@@ -3073,16 +3200,25 @@ class StationProfile:
         self.add_sta_data["radio"] = radio_port
 
         self.add_sta_data["resource"] = radio_resource
+        self.add_sta_data["shelf"] = radio_shelf
+        self.set_port_data["resource"] = radio_resource
+        self.set_port_data["shelf"] = radio_shelf
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
+        self.wifi_extra_data["resource"]=radio_resource
+        self.wifi_extra_data["shelf"]=radio_shelf
+        self.reset_port_extra_data["resource"]=radio_resource
+        self.reset_port_extra_data["shelf"]=radio_shelf
+
         # these are unactivated LFRequest objects that we can modify and
         # re-use inside a loop, reducing the number of object creations
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
         my_sta_names = []
+        #add radio here
         if num_stations > 0:
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
         else:
@@ -3106,6 +3242,8 @@ class StationProfile:
             self.add_sta_data["radio"] = radio_port
             self.add_sta_data["sta_name"] = name # for create station calls
             self.set_port_data["port"] = name  # for set_port calls.
+            self.set_port_data["shelf"] = radio_shelf
+            self.set_port_data["resource"] = radio_resource
 
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)

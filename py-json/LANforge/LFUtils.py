@@ -281,16 +281,16 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     """
 
     eid = None
-    if radio != None:
+    if radio is not None:
         eid = name_to_eid(radio)
     
     name_list = []
     for i in range((padding_number + start_id), (padding_number + end_id + 1)):
-        sta_name = prefix + str(i)[1:]
-        if eid != None:
-            name_list.append("%i.%i.%s"%(eid[0], eid[1], sta_name))
-        else:
+        sta_name = "%s%s" % (prefix, str(i)[1:])
+        if eid is None:
             name_list.append(sta_name)
+        else:
+            name_list.append("%i.%i.%s" % (eid[0], eid[1], sta_name))
     return name_list
 
 
@@ -543,7 +543,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
                 found_stations.append(port_name)
             else:
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url)
-                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": "1"})
+                lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": 5})
                 lf_r.jsonPost()
         if (len(found_stations) < len(port_list)):
             sleep(2)

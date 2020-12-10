@@ -173,7 +173,7 @@ def main():
         --num_stations 3 \\
         --security {open|wep|wpa|wpa2|wpa3} \\
         --ssid netgear \\
-        --url dl http://10.40.0.1 /dev/null \\
+        --url "dl http://10.40.0.1 /dev/null" \\
         --password admin123 \\
         --test_duration 2m \\
         --debug 
