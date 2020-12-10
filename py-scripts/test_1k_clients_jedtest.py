@@ -24,6 +24,7 @@ class Test1KClients(LFCliBase):
                  side_a_min_rate=0, side_a_max_rate=56000,
                  side_b_min_rate=0, side_b_max_rate=56000,
                  num_sta_=200,
+                 test_duration="30s",
                  _debug_on=True,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -55,6 +56,7 @@ class Test1KClients(LFCliBase):
             "1.2.wiphy1" : LFUtils.port_name_series(start_id=4000, end_id=4000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy1"),
             "1.2.wiphy2" : LFUtils.port_name_series(start_id=5000, end_id=5000+self.num_sta-1, padding_number=10000, radio="1.2.wiphy2")
         }
+        self.test_duration=test_duration
         self.upstream=upstream
         self.name_prefix = "1k"
         self.cx_profile = self.local_realm.new_l3_cx_profile()
@@ -97,7 +99,7 @@ class Test1KClients(LFCliBase):
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
         # print(self.cx_profile.created_cx.values())
-        #print("==============\n", cx_list, "\n==============")
+        print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -140,27 +142,47 @@ class Test1KClients(LFCliBase):
             self._pass("stations on radio %s up" % radio)
         else: 
             self._fail("FAIL: Not all stations on radio %s up" % radio)
-            exit(1)
+            self.exit_fail()
             
-        cur_time = datetime.datetime.now()
-       # old_cx_rx_values = self.__get_rx_values() #
-        end_time = self.local_realm.parse_time("3m") + cur_time
-        self.cx_profile.start_cx() #
+        
+        old_cx_rx_values = self.__get_rx_values() 
+        print("Test duration is %s", self.test_duration)
+        #for loop through all and start all cross-connects
+        for (radio, station_profile) in self.station_profile_map.items():
+            self.cx_profile.start_cx()
+
         passes = 0
         expected_passes = 0
+        cur_time = datetime.datetime.now()
+        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        sleep_interval = self.local_realm.parse_time(self.test_duration) // 3
+
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(minutes=1)
-            while cur_time < interval_time:
-                cur_time = datetime.datetime.now()
-                time.sleep(1)
+
+            time.sleep(sleep_interval.total_seconds())
+
+            new_cx_rx_values = self.__get_rx_values()
+            print(old_cx_rx_values, new_cx_rx_values)
+            print("\n-----------------------------------")
+            print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
+            print("-----------------------------------\n")
+            expected_passes += 1
+            if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
+                passes += 1
+            else:
+                self._fail("FAIL: Not all stations increased traffic")
+                self.exit_fail()
+
+            old_cx_rx_values = new_cx_rx_values
             cur_time = datetime.datetime.now()
 
         if passes == expected_passes:
-            self._pass("PASS: All tests passed", print_pass)
+            self._pass("PASS: All tests passed")
 
 
     def stop(self):
-        pass
+        for (radio, station_profile) in self.station_profile_map.items():
+            self.cx_profile.stop_cx()
 
     def cleanup(self):
         #self.cx_profile.cleanup_prefix()
@@ -173,10 +195,23 @@ def main():
     num_sta=200
     lfjson_host = "localhost"
     lfjson_port = 8080
-
+    
     argparser = LFCliBase.create_basic_argparse(prog=__file__,
-                                                description="creates lots of stations across multiple radios",
-                                                formatter_class=argparse.RawTextHelpFormatter)
+                                                formatter_class=argparse.RawTextHelpFormatter,
+                                                      epilog='''\
+           creates lots of stations across multiple radios.
+            ''',
+        description='''\
+        test_1k_clients_jedtest.py:
+        --------------------
+        Generic command layout:
+        python3 ./test_1k_clients_jedtest.py 
+            --sta_per_radio 300
+            --test_duration 3m
+            --a_min 1000
+            --b_min 1000
+            --debug        '''          
+        )
     argparser.add_argument("--sta_per_radio",
                            type=int,
                            help="number of stations per radio")
@@ -195,18 +230,13 @@ def main():
     kilo_test.cleanup()
     kilo_test.build()
     if not kilo_test.passes():
-        print("test fails")
-        exit(1)
-
+        kilo_test.exit_failed()
     kilo_test.start()
     if not kilo_test.passes():
-        print("test fails")
-        exit(1)
-
+        kilo_test.exit_failed()
     kilo_test.stop()
     if not kilo_test.passes():
-        print("test fails")
-        exit(1)
+         kilo_test.exit_failed()
     kilo_test.cleanup()
 
 if __name__ == "__main__":
