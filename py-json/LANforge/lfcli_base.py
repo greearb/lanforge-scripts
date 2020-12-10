@@ -336,10 +336,11 @@ class LFCliBase:
         if duration >= 300:
             print("Could not connect to LANforge GUI")
             sys.exit(1)
-
+    #return ALL messages in list form
     def get_result_list(self):
         return self.test_results
 
+    #return ALL fail messages in list form
     def get_failed_result_list(self):
         fail_list = []
         for result in self.test_results:
@@ -347,13 +348,29 @@ class LFCliBase:
                 fail_list.append(result)
         return fail_list
 
+    #return ALL pass messages in list form
+    def get_passed_result_list(self):
+        pass_list = []
+        for result in self.test_results:
+            if result.startswith("PASS"):
+                pass_list.append(result)
+        return pass_list
+
+    
+    def get_pass_message(self):
+        pass_messages = self.get_passed_result_list()
+        return "\n".join(pass_messages) 
+
+   
     def get_fail_message(self):
         fail_messages = self.get_failed_result_list()
-        return "\n".join(fail_messages)
+        return "\n".join(fail_messages) 
 
+    
     def get_all_message(self):
         return "\n".join(self.test_results)
 
+    #determines if overall test passes via comparing passes vs. fails
     def passes(self):
         pass_counter = 0
         fail_counter = 0
@@ -366,13 +383,15 @@ class LFCliBase:
             return True
         return False
 
-    
-    def failed(self):
-        print(self.get_failed_result_list())
-        print("Test failed. Exiting now.")
+    #EXIT script with a fail
+    def exit_fail(self,message="%d out of %d tests failed. Exiting script."):
+        total_len=len(self.get_result_list())
+        fail_len=len(self.get_failed_result_list())
+        print(message %(fail_len,total_len))
         sys.exit(1)
 
-    # use this inside the class to log a failure result
+
+    # use this inside the class to log a failure result and print it if wished
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
         if print_ or self.exit_on_fail:
@@ -380,12 +399,15 @@ class LFCliBase:
         if self.exit_on_fail:
             sys.exit(1)
 
-    def passed(self):
-        print("Test passed conclusively.")
+    #EXIT script with a success 
+    def exit_success(self,message="%d out of %d tests passed successfully. Exiting script."):
+        num_total=len(self.get_result_list())
+        num_passing=len(self.get_passed_result_list())
+        print(message %(num_passing,num_total))
         sys.exit(0)
 
 
-    # use this inside the class to log a pass result
+    # use this inside the class to log a pass result and print if wished.
     def _pass(self, message, print_=False):
         self.test_results.append(self.pass_pref + message)
         if print_:
