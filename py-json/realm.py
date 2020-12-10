@@ -2222,46 +2222,69 @@ class TestGroupProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.local_realm = local_realm
-        self.test_group_name = test_group_name
+        self.group_name = test_group_name
         self.cx_list = []
 
-    def start_group(self, group_name):
-        if group_name is not None:
-            if group_name == self.test_group_name:
-                self.local_realm.json_post("/cli-json/start_group", {"name": group_name})
+    def start_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/start_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
 
-    def quiesce_group(self, group_name=None):
-        if group_name is not None:
-            if group_name == self.test_group_name:
-                self.local_realm.json_post("/cli-json/quiesce_group", {"name": group_name})
+    def quiesce_group(self):
+        if self.group_name is not None:
+                self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
 
-    def stop_group(self, group_name=None):
-        if group_name is not None:
-            if group_name == self.test_group_name:
-                self.local_realm.json_post("/cli-json/stop_group", {"name": group_name})
+    def stop_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/stop_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
 
-    def create_group(self, group_name=None):
-        if group_name is not None:
-            self.test_group_name = group_name
-            self.local_realm.json_post("/cli-json/add_group", {"name": self.test_group_name})
-            for i in self.cx_list:
-                self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": i})
-                time.sleep(1)
-        else:
-            raise ValueError("group_name must be specified.")
-
-    def remove_group(self, group_name=None):
-        if group_name is not None:
-            if group_name == self.test_group_name:
-                self.local_realm.json_post("/cli-json/rm_group", {"name": group_name})
+    def create_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/add_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
+
+    def remove_group(self):
+        if self.group_name is not None:
+            self.local_realm.json_post("/cli-json/rm_group", {"name": self.group_name})
+        else:
+            raise ValueError("test_group name must be set.")
+
+    def add_cx(self, cx_name):
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+
+    def rm_cx_from_list(self, cx_name):
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+
+    def check_group_exists(self):
+        test_groups = self.local_realm.json_get("/testgroups")
+        if test_groups is not None:
+            test_groups = test_groups["groups"]
+            for group in test_groups:
+                for k,v in group.items():
+                    if v['name'] == self.group_name:
+                        return True
+        else:
+            return False
+
+    def list_groups(self):
+        test_groups = self.local_realm.json_get("/testgroups")
+        tg_list = []
+        if test_groups is not None:
+            test_groups = test_groups["groups"]
+            for group in test_groups:
+                for k, v in group.items():
+                    tg_list.append(v['name'])
+        return tg_list
+
+    def list_cxs(self):
+        # TODO: List cxs in profile, use cx_list or query?
+        pass
 
 
 class FIOEndpProfile(LFCliBase):
