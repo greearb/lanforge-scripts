@@ -267,7 +267,10 @@ test_cases = [
     5545,
     5546,
     5547,
-    5548
+    5548,
+    5641,
+    5642,
+    5643
 ]
 
 ##AP models for jfrog
@@ -636,15 +639,32 @@ for key in equipment_id_dict:
         ############## Bridge Mode Client Connectivity ############################
         ###########################################################################
 
-        ###Set Proper AP Profile for Bridge SSID Tests
-        test_profile_id = profile_info_dict[fw_model]["profile_id"]
-        print(test_profile_id)
+        ### Create AP Bridge Profile
+        template = "templates/ap_profile_template.json"
+        name = "Nightly_Sanity_" + fw_model + "_" + today + "_bridge"
+        child_profiles = profile_info_dict[fw_model]["childProfileIds"]
+        try:
+            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles)
+            test_profile_id = create_ap_profile
+            print("Test Profile ID for Test is:",test_profile_id)
+            client.update_testrail(case_id="5641", run_id=rid, status_id=1,
+                                   msg='AP profile for bridge tests created successfully')
+            report_data['tests'][key][5641] = "passed"
+        except:
+            create_ap_profile = "error"
+            test_profile_id = profile_info_dict[fw_model]["profile_id"]
+            print("Error creating AP profile for bridge tests. Will use existing AP profile")
+            client.update_testrail(case_id="5641", run_id=rid, status_id=5,
+                                   msg='AP profile for bridge tests could not be created using API')
+            report_data['tests'][key][5641] = "failed"
+
+        ### Set Proper AP Profile for Bridge SSID Tests
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
         ### Wait for Profile Push
         time.sleep(180)
 
-        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+        ### Check if VIF Config and VIF State reflect AP Profile from CloudSDK
         ## VIF Config
         try:
             ssid_config = profile_info_dict[key]["ssid_list"]
@@ -827,9 +847,26 @@ for key in equipment_id_dict:
         ################# NAT Mode Client Connectivity ############################
         ###########################################################################
 
+        ### Create AP NAT Profile
+        template = "templates/ap_profile_template.json"
+        name = "Nightly_Sanity_" + fw_model + "_" + today + "_nat"
+        child_profiles = profile_info_dict[fw_model + '_nat']["childProfileIds"]
+        try:
+            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles)
+            test_profile_id = create_ap_profile
+            print("Test Profile ID for Test is:", test_profile_id)
+            client.update_testrail(case_id="5642", run_id=rid, status_id=1,
+                                       msg='AP profile for NAT tests created successfully')
+            report_data['tests'][key][5642] = "passed"
+        except:
+            create_ap_profile = "error"
+            test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
+            print("Error creating AP profile for NAT tests. Will use existing AP profile")
+            client.update_testrail(case_id="5642", run_id=rid, status_id=5,
+                                       msg='AP profile for NAT tests could not be created using API')
+            report_data['tests'][key][5642] = "failed"
+
         ###Set Proper AP Profile for NAT SSID Tests
-        test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
-        print(test_profile_id)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
         ### Wait for Profile Push
@@ -1016,9 +1053,26 @@ for key in equipment_id_dict:
         ################# Customer VLAN Client Connectivity #######################
         ###########################################################################
 
-        ###Set Proper AP Profile for VLAN SSID Tests
-        test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
-        print(test_profile_id)
+        ### Create AP VLAN Profile
+        template = "templates/ap_profile_template.json"
+        name = "Nightly_Sanity_" + fw_model + "_" + today + "_vlan"
+        child_profiles = profile_info_dict[fw_model + '_vlan']["childProfileIds"]
+        try:
+            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles)
+            test_profile_id = create_ap_profile
+            print("Test Profile ID for Test is:", test_profile_id)
+            client.update_testrail(case_id="5643", run_id=rid, status_id=1,
+                                       msg='AP profile for VLAN tests created successfully')
+            report_data['tests'][key][5643] = "passed"
+        except:
+            create_ap_profile = "error"
+            test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
+            print("Error creating AP profile for bridge tests. Will use existing AP profile")
+            client.update_testrail(case_id="5643", run_id=rid, status_id=5,
+                                       msg='AP profile for VLAN tests could not be created using API')
+            report_data['tests'][key][5643] = "failed"
+
+        ### Set Proper AP Profile for VLAN SSID Tests
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
         ### Wait for Profile Push

@@ -175,6 +175,16 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ec420']['5222'],true) ?></TD>
    </TR>
 
+   <TR ALIGN="CENTER">
+      <TD>5641</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5641'],true) ?></TD>
+   </TR>
+
        <TR ALIGN="CENTER">
       <TD>5541</TD>
       <TD>CloudSDK</TD>
@@ -249,6 +259,16 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD> 
 
+    <TR ALIGN="CENTER">
+      <TD>5642</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5642'],true) ?></TD>
+   </TR>
+
         <TR ALIGN="CENTER">
       <TD>5542</TD>
       <TD>CloudSDK</TD>
@@ -322,6 +342,17 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['4324'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4324'],true) ?></TD>    
    </TR>
+
+    <TR ALIGN="CENTER">
+      <TD>5643</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - Custom VLAN Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5643'],true) ?></TD>
+   </TR>
+
         <TR ALIGN="CENTER">
       <TD>5543</TD>
       <TD>CloudSDK</TD>

@@ -179,3 +179,23 @@ class CloudSDK:
         cloud_sdk_version = response.json()
         return cloud_sdk_version
 
+    def create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles):
+        with open(template, 'r+') as ap_profile:
+            profile = json.load(ap_profile)
+            profile["name"] = name
+            profile["childProfileIds"] = child_profiles
+            print(profile["childProfileIds"])
+
+        with open(template, 'w') as ap_profile:
+            json.dump(profile, ap_profile)
+
+        url = cloudSDK_url+"/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        ap_profile = response.json()
+        print(ap_profile)
+        ap_profile_id = ap_profile['id']
+        return ap_profile_id
