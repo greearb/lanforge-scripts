@@ -1,16 +1,23 @@
 #!env /usr/bin/python
 
 import sys
+import signal
 import traceback
 # Extend this class to use common set of debug and request features for your script
 from pprint import pprint
-
+import time
 import LANforge.LFUtils
 from LANforge.LFUtils import *
 import argparse
+from LANforge import LFRequest
 import LANforge.LFRequest
 
 class LFCliBase:
+
+    SHOULD_RUN  = 0     # indicates normal operation
+    SHOULD_QUIT = 1     # indicates to quit loops, close files, send SIGQUIT to threads and return
+    SHOULD_HALT = 2     # indicates to quit loops, send SIGABRT to threads and exit 
+
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
     # very confused.
@@ -19,7 +26,8 @@ class LFCliBase:
                  _halt_on_error=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 _local_realm=False):
+                 _local_realm=False,
+                 _capture_signal_list=[]):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
@@ -33,12 +41,110 @@ class LFCliBase:
         self.halt_on_error = _halt_on_error
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
+        self.capture_signals = _capture_signal_list
         # toggle using preexec_cli, preexec_method; the preexec_X parameters are useful
         # when you desire the lfclient to check for existance of entities to run commands on,
         # like when developing; you might toggle this with use_preexec = _debug
         # Otherwise, preexec methods use more processing time because they add an extra CLI call
         # into the queue, and inspect it -- typically nc_show_port
         self.suppress_related_commands = None
+        self.finish = self.SHOULD_RUN
+        self.thread_map = {}
+
+        if len(_capture_signal_list) > 0:
+            for zignal in _capture_signal_list:
+                captured_signal(zignal, my_captured_signal)
+        #
+
+    def _finish(self):
+        """
+        call this to indicate SIGQUIT
+        """
+        self.finish = self.SHOULD_QUIT
+
+    def _halt(self):
+        """
+        call this to indicate SIGABRT
+        """
+        self.finish = self.SHOULD_HALT
+
+    def _should_finish(self):
+        """
+        check this when in a run loop if SIGQUIT has been indicated
+        """
+        if self.finish == self.SHOULD_RUN:
+            return False
+        if self.finish == self.SHOULD_QUIT:
+            return True
+        if self.finish == self.SHOULD_HALT:
+            return False
+
+    def _should_halt(self):
+        """
+        check this when in a run loop if SIGABRT has been indicated
+        """
+        if self.finish == self.SHOULD_RUN:
+            return False
+        if self.finish == self.SHOULD_QUIT:
+            return False
+        if self.finish == self.SHOULD_HALT:
+            return True
+
+    def track_thread(self, name, thread):
+        if self.thread_map is None:
+            self.thread_map = {}
+        self.thread_map[name] = thread
+
+    def get_thread(self, name):
+        if self.thread_map is None:
+            return None
+        if name in self.thread_map.keys():
+            return self.thread_map[name]
+        return None
+
+    def remove_thread(self, name):
+        if self.thread_map is None:
+            return None
+        if name not in self.thread_map.keys():
+            return None
+        thrud = self.thread_map[name]
+        del self.thread_map[name]
+        return thrud
+
+    def send_thread_signals(signum, fname):
+        if len(self.thread_map) < 1:
+            print("no threads to signal")
+            return
+        for (name, thread) in self.thread_map.items():
+            if self.debug:
+                print("sending signal %s to thread %s" % (signum, name))
+            # do a thing
+
+    def my_captured_signal(signum, frame):
+        """
+        Override me to process signals, otherwise superclass signal handler is called.
+        You may use _finish() or _halt() to indicate finishing soon or halting immediately.
+
+        :return: True if we processed this signal
+        """
+        print("my_captured_signal should be overridden")
+        return False
+
+    def caputured_signal(signum):
+        """
+        Here is your opportunity to decide what to do on things like KeyboardInterrupt or other UNIX signals
+        Check that your subclass handled the signal or not. You may use _finish() or _halt() to indicate
+        finishing soon or halting immediately. Use signal.signal(signal.STOP) to enable this.
+        """
+        if self.debug:
+            print("Captured signal %s" % signum)
+        if my_captured_signal(signum):
+            if self.debug:
+                print("subclass processed signal")
+        else:
+            if self.debug:
+                print("subclass ignored signal")
+        
 
     def clear_test_results(self):
         self.test_results.clear()
@@ -87,22 +193,55 @@ class LFCliBase:
                 pprint.pprint(response_json_list_)
         except Exception as x:
             if self.debug or self.halt_on_error or self.exit_on_error:
-                print("jsonPost posted to %s" % _req_url)
+                print("json_post posted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             if self.halt_on_error or self.exit_on_error:
                 exit(1)
+        return json_response
 
+    def json_put(self, _req_url, _data, debug_=False, response_json_list_=None):
+        """
+        Send a PUT request. This is presently used for data sent to /status-msg for
+        creating a new messaging session. It is not presently used for CLI scripting
+        so lacks suppress_x features.
+        :param _req_url: url to put
+        :param _data: data to place at URL
+        :param debug_: enable debug output
+        :param response_json_list_: array for json results in the response object, (alternative return method)
+        :return: http response object
+        """
+        json_response = None
+        try:
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
+            lf_r.addPostData(_data)
+            if debug_ or self.debug:
+                LANforge.LFUtils.debug_printer.pprint(_data)
+            json_response = lf_r.json_put(show_error=self.debug,
+                                          debug=(self.debug or debug_),
+                                          response_json_list_=response_json_list_,
+                                          die_on_error_=self.exit_on_error)
+            if debug_ and (response_json_list_ is not None):
+                pprint.pprint(response_json_list_)
+        except Exception as x:
+            if self.debug or self.halt_on_error or self.exit_on_error:
+                print("json_put submitted to %s" % _req_url)
+                pprint.pprint(_data)
+                print("Exception %s:" % x)
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            if self.halt_on_error or self.exit_on_error:
+                exit(1)
         return json_response
 
     def json_get(self, _req_url, debug_=False):
         if self.debug or debug_:
-            print("URL: "+_req_url)
+            print("GET: "+_req_url)
         json_response = None
+        # print("----- GET ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         try:
             lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
-            json_response = lf_r.getAsJson(debug_=self.debug, die_on_error_=self.halt_on_error)
+            json_response = lf_r.get_as_json(debug_=self.debug, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
             if (json_response is None) and (self.debug or debug_):
                 print("LFCliBase.json_get: no entity/response, probabily status 404")
@@ -115,6 +254,31 @@ class LFCliBase:
             if self.halt_on_error or self.exit_on_error:
                 sys.exit(1)
 
+        return json_response
+
+    def json_delete(self, _req_url, debug_=False):
+        if self.debug or debug_:
+            print("DELETE: "+_req_url)
+        json_response = None
+        try:
+            # print("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
+            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url,
+                                       debug_=(self.debug or debug_),
+                                       die_on_error_=self.exit_on_error)
+            json_response = lf_r.json_delete(debug=self.debug,
+                                             die_on_error_=self.halt_on_error)
+            #debug_printer.pprint(json_response)
+            if (json_response is None) and (self.debug or debug_):
+                print("LFCliBase.json_delete: no entity/response, probabily status 404")
+                return None
+        except ValueError as ve:
+            if self.debug or self.halt_on_error or self.exit_on_error:
+                print("json_delete asked for " + _req_url)
+                print("Exception %s:" % ve)
+                traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
+            if self.halt_on_error or self.exit_on_error:
+                sys.exit(1)
+        # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         return json_response
 
     @staticmethod
@@ -172,10 +336,11 @@ class LFCliBase:
         if duration >= 300:
             print("Could not connect to LANforge GUI")
             sys.exit(1)
-
+    #return ALL messages in list form
     def get_result_list(self):
         return self.test_results
 
+    #return ALL fail messages in list form
     def get_failed_result_list(self):
         fail_list = []
         for result in self.test_results:
@@ -183,13 +348,29 @@ class LFCliBase:
                 fail_list.append(result)
         return fail_list
 
+    #return ALL pass messages in list form
+    def get_passed_result_list(self):
+        pass_list = []
+        for result in self.test_results:
+            if result.startswith("PASS"):
+                pass_list.append(result)
+        return pass_list
+
+    
+    def get_pass_message(self):
+        pass_messages = self.get_passed_result_list()
+        return "\n".join(pass_messages) 
+
+   
     def get_fail_message(self):
         fail_messages = self.get_failed_result_list()
-        return "\n".join(fail_messages)
+        return "\n".join(fail_messages) 
 
+    
     def get_all_message(self):
         return "\n".join(self.test_results)
 
+    #determines if overall test passes via comparing passes vs. fails
     def passes(self):
         pass_counter = 0
         fail_counter = 0
@@ -202,7 +383,15 @@ class LFCliBase:
             return True
         return False
 
-    # use this inside the class to log a failure result
+    #EXIT script with a fail
+    def exit_fail(self,message="%d out of %d tests failed. Exiting script."):
+        total_len=len(self.get_result_list())
+        fail_len=len(self.get_failed_result_list())
+        print(message %(fail_len,total_len))
+        sys.exit(1)
+
+
+    # use this inside the class to log a failure result and print it if wished
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
         if print_ or self.exit_on_fail:
@@ -210,7 +399,15 @@ class LFCliBase:
         if self.exit_on_fail:
             sys.exit(1)
 
-    # use this inside the class to log a pass result
+    #EXIT script with a success 
+    def exit_success(self,message="%d out of %d tests passed successfully. Exiting script."):
+        num_total=len(self.get_result_list())
+        num_passing=len(self.get_passed_result_list())
+        print(message %(num_passing,num_total))
+        sys.exit(0)
+
+
+    # use this inside the class to log a pass result and print if wished.
     def _pass(self, message, print_=False):
         self.test_results.append(self.pass_pref + message)
         if print_:
@@ -249,7 +446,7 @@ class LFCliBase:
         parser.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', default=None)
         parser.add_argument('--security',       help='WiFi Security protocol: <open | wep | wpa | wpa2 | wpa3 >', default=None)
         parser.add_argument('--ssid',           help='SSID for stations to associate to', default=None)
-        parser.add_argument('--passwd', '--passphrase', '--password', '--pwd',        help='WiFi passphrase', default=None)
+        parser.add_argument('--passwd',         help='WiFi passphrase', default=None)
         parser.add_argument('--num_stations',   help='Number of stations to create', default=0)
         parser.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
         parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
