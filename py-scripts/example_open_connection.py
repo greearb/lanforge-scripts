@@ -50,8 +50,14 @@ class IPv4Test(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio="wiphy0", sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
         self.station_profile.admin_up()
+        if self.local_realm.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
+            self._pass("Station build finished")
+            self.passed()
+        else:
+            self._fail("Stations not able to acquire IP. Please check network input.")
+            self.failed()
+
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)

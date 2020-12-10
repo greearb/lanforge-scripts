@@ -165,15 +165,13 @@ def main():
         test_ipv4_l4_ftp_upload.py
 --------------------
 Generic command example:
-python3 ./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 \\
+./test_ipv4_l4_ftp_upload.py --upstream_port eth1 \\
     --radio wiphy0 \\
     --num_stations 3 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
     --passwd admin123 \\
-    --dest 10.40.0.1 \\
     --test_duration 2m \\
-    --interval 1s \\
     --url "ul ftp://10.40.0.1 /dev/null" \\
     --requests_per_ten 600 \\
     --debug

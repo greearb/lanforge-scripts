@@ -5,7 +5,6 @@ import os
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 import LANforge
@@ -24,8 +23,8 @@ class IPv4Test(LFCliBase):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
-        self.radio = radio
         self.ssid = ssid
+        self.radio = radio
         self.security = security
         self.password = password
         self.sta_list = sta_list
@@ -44,6 +43,7 @@ class IPv4Test(LFCliBase):
 
     def build(self):
         # Build stations
+        #print("We've gotten into the build stations function")
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
@@ -54,10 +54,11 @@ class IPv4Test(LFCliBase):
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
             self._pass("Station build finished")
-            self.passed()
+            self.exit_success()
         else:
             self._fail("Stations not able to acquire IP. Please check network input.")
-            self.failed()
+            self.exit_fail()
+
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
@@ -69,29 +70,30 @@ def main():
     lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
-        prog='example_wep_connection.py',
+        prog='example_security_connection.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-                Example code that creates a specified amount of stations on a specified SSID using WEP security.
+                Example flags and command line input to run the script.
                 ''',
 
         description='''\
-        example_wep_connection.py
+        example_security_connection.py
+        --------------------
+        This python script creates an inputted number of stations using user-inputted security. This verifies that the most basic form of security works with the LANforge device.
         --------------------
 
         Generic command example:
-    python3 ./example_wep_connection.py  \\
+    python3 ./example_security_connection.py  \\
         --host localhost (optional) \\
         --port 8080  (optional) \\
-        --num_stations 3 \\
+        --num_stations 6 \\
+        --radio wiphy2
         --security {open|wep|wpa|wpa2|wpa3} \\
-        --ssid jedway-wep-48 \\
-        --passwd jedway-wep-48 \\
+        --ssid netgear-wpa3 \\
+        --passwd admin123-wpa3 \\
         --debug 
 
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio wiphy0 <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
             ''')
 
     args = parser.parse_args()
@@ -100,13 +102,13 @@ def main():
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-
     station_list = LFUtils.portNameSeries(prefix_="sta",
                                         start_id_=0,
                                         end_id_=num_sta-1,
-                                        padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
-                       security=args.security, radio=args.radio, sta_list=station_list)
+                                        padding_number_=10000,
+                                        radio=args.radio)
+    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
+                       security=args.security, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()

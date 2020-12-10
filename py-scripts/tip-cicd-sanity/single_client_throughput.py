@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+####################################################################################
+# Script is based off of LANForge sta_connect2.py
+# Script built for max throughput testing on a single client
+#  The main function of the script creates a station, then tests:
+#   1. UDP Downstream (AP to STA)
+#   2. UDP Upstream (STA to AP)
+#   3. TCP Downstream (AP to STA)
+#   4. TCP Upstream (STA to AP)
+#  The script will clean up the station and connections at the end of the test.
+#
+# Used by Throughput_Test ###########################################################
+####################################################################################
+
 # Script is based off of sta_connect2.py
 # Script built for max throughput testing on a single client
 #  The main function of the script creates a station, then tests:
@@ -489,7 +502,7 @@ class SingleClientEAP(LFCliBase):
         self.upstream_url = None  # defer construction
         self.sta_url_map = None
         self.upstream_resource = None
-        self.upstream_port = "eth2"
+        self.upstream_port = None
         self.station_names = []
         if _sta_name is not None:
             self.station_names = [_sta_name]
@@ -614,7 +627,7 @@ class SingleClientEAP(LFCliBase):
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
-        maxTime = 100
+        maxTime = 30
         ip = "0.0.0.0"
         ap = ""
         print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
@@ -863,12 +876,12 @@ class SingleClientEAP(LFCliBase):
 
 ##Main will perform 4 throughput tests on SSID provided by input and return a list with the values
 
-def main(ap_model, firmware, radio, ssid_name, ssid_psk, security, station, runtime):
+def main(ap_model, firmware, radio, ssid_name, ssid_psk, security, station, runtime, upstream_port):
     ######## Establish Client Connection #########################
     singleClient = SingleClient("10.10.10.201", 8080, debug_=False)
     singleClient.sta_mode = 0
     singleClient.upstream_resource = 1
-    singleClient.upstream_port = "eth2"
+    singleClient.upstream_port = upstream_port
     singleClient.radio = radio
     singleClient.resource = 1
     singleClient.dut_ssid = ssid_name
@@ -957,10 +970,10 @@ def main(ap_model, firmware, radio, ssid_name, ssid_psk, security, station, runt
 
     return(tput_data)
 
-def eap_tput(sta_list, ssid_name, radio, security, eap_type, identity, ttls_password):
-    eap_connect = SingleClientEAP("10.10.10.201", 8080, _debug_on=True)
+def eap_tput(sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, upstream_port):
+    eap_connect = SingleClientEAP("10.10.10.201", 8080, _debug_on=False)
     eap_connect.upstream_resource = 1
-    eap_connect.upstream_port = "eth2"
+    eap_connect.upstream_port = upstream_port
     eap_connect.security = security
     eap_connect.sta_list = sta_list
     eap_connect.station_names = sta_list

@@ -1,3 +1,9 @@
+##################################################################################
+# Module contains functions to get specific data from AP CLI using SSH
+#
+# Used by Nightly_Sanity and Throughput_Test #####################################
+##################################################################################
+
 import paramiko
 from paramiko import SSHClient
 import socket
@@ -53,6 +59,52 @@ def iwinfo_status(ap_ip, username, password):
 
         for line in stdout.read().splitlines():
             print(line)
+
+    except paramiko.ssh_exception.AuthenticationException:
+        print("Authentication Error, Check Credentials")
+        return "ERROR"
+    except paramiko.SSHException:
+        print("Cannot SSH to the AP")
+        return "ERROR"
+    except socket.timeout:
+        print("AP Unreachable")
+        return "ERROR"
+
+def get_vif_config(ap_ip, username, password):
+    try:
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(ap_ip, username=username, password=password, timeout=5)
+        stdin, stdout, stderr = client.exec_command(
+        "/usr/opensync/bin/ovsh s Wifi_VIF_Config -c | grep 'ssid               :'")
+
+        output = str(stdout.read(), 'utf-8')
+        ssid_output = output.splitlines()
+        ssid_list = [s.strip('ssid               : ') for s in ssid_output]
+        return ssid_list
+
+    except paramiko.ssh_exception.AuthenticationException:
+        print("Authentication Error, Check Credentials")
+        return "ERROR"
+    except paramiko.SSHException:
+        print("Cannot SSH to the AP")
+        return "ERROR"
+    except socket.timeout:
+        print("AP Unreachable")
+        return "ERROR"
+
+def get_vif_state(ap_ip, username, password):
+    try:
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(ap_ip, username=username, password=password, timeout=5)
+        stdin, stdout, stderr = client.exec_command(
+        "/usr/opensync/bin/ovsh s Wifi_VIF_Config -c | grep 'ssid               :'")
+
+        output = str(stdout.read(), 'utf-8')
+        ssid_output = output.splitlines()
+        ssid_list = [s.strip('ssid               : ') for s in ssid_output]
+        return ssid_list
 
     except paramiko.ssh_exception.AuthenticationException:
         print("Authentication Error, Check Credentials")

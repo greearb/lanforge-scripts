@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+#########################################################################################################
+# Built to allow connection and test of clients using EAP-TTLS.
+# Functions can be called to create a station, create TCP and UDP traffic, run it a short amount of time.
+#
+# Used by Nightly_Sanity and Throughput_Test ############################################################
+#########################################################################################################
+
 #  This will create a station, create TCP and UDP traffic, run it a short amount of time,
 #  and verify whether traffic was sent and received.  It also verifies the station connected
 #  to the requested BSSID if bssid is specified as an argument.

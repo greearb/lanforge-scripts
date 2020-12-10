@@ -33,10 +33,10 @@ sanity_status = {
 
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
-    "ea8300": "13",
-    "ecw5410": "12",
-    "ecw5211": "6",
-    "ec420": "11"
+    "ea8300": "19",
+    "ecw5410": "20",
+    "ecw5211": "21",
+    "ec420": "27"
 }
 
 equipment_ip_dict = {
@@ -65,9 +65,17 @@ profile_info_dict = {
         "twoFourG_OPEN_SSID": "ECW5410_2dot4G_OPEN",
         "twoFourG_WPA2_SSID": "ECW5410_2dot4G_WPA2",
         "twoFourG_WPA2_PSK": "Connectus123$",
-        "twoFourG_WPA_SSID":"ECW5410_2dot4G_WPA",
+        "twoFourG_WPA_SSID": "ECW5410_2dot4G_WPA",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP"
+        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP",
+        "ssid_list": [
+            "ECW5410_5G_WPA2",
+            "ECW5410_5G_WPA",
+            "ECW5410_5G_WPA2-EAP",
+            "ECW5410_2dot4G_WPA2",
+            "ECW5410_2dot4G_WPA",
+            "ECW5410_2dot4G_WPA2-EAP"
+            ]
         },
 
     "ea8300": {
@@ -83,7 +91,19 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EA8300_2dot4G_WPA",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP"
+        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP",
+        #EA8300 has 2x 5GHz SSIDs because it is a tri-radio AP!
+        "ssid_list": [
+            "EA8300_5G_WPA2",
+            "EA8300_5G_WPA2",
+            "EA8300_5G_WPA",
+            "EA8300_5G_WPA",
+            "EA8300_5G_WPA2-EAP",
+            "EA8300_5G_WPA2-EAP",
+            "EA8300_2dot4G_WPA2",
+            "EA8300_2dot4G_WPA",
+            "EA8300_2dot4G_WPA2-EAP"
+            ]
         },
 
     "ec420": {
@@ -99,7 +119,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EC420_2dot4G_WPA",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP"
+        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP",
+        "ssid_list": [
+            "EC420_5G_WPA2",
+            "EC420_5G_WPA",
+            "EC420_5G_WPA2-EAP",
+            "EC420_2dot4G_WPA2",
+            "EC420_2dot4G_WPA",
+            "EC420_2dot4G_WPA2-EAP"
+            ]
         },
 
     "ecw5211": {
@@ -115,7 +143,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"ECW5211_2dot4G_WPA",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP"
+        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP",
+        "ssid_list": [
+            "ECW5211_5G_WPA2",
+            "ECW5211_5G_WPA",
+            "ECW5211_5G_WPA2-EAP",
+            "ECW5211_2dot4G_WPA2",
+            "ECW5211_2dot4G_WPA",
+            "ECW5211_2dot4G_WPA2-EAP"
+            ]
         },
     
     "ecw5410_nat": {
@@ -131,7 +167,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"ECW5410_2dot4G_WPA_NAT",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP_NAT"
+        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP_NAT",
+        "ssid_list": [
+            "ECW5410_5G_WPA2_NAT",
+            "ECW5410_5G_WPA_NAT",
+            "ECW5410_5G_WPA2-EAP_NAT",
+            "ECW5410_2dot4G_WPA2_NAT",
+            "ECW5410_2dot4G_WPA_NAT",
+            "ECW5410_2dot4G_WPA2-EAP_NAT"
+            ]
         },
 
     "ea8300_nat": {
@@ -147,7 +191,19 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EA8300_2dot4G_WPA_NAT",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP_NAT"
+        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP_NAT",
+        #EA8300 has 2x 5GHz SSIDs because it is a tri-radio AP!
+        "ssid_list": [
+            "EA8300_5G_WPA2_NAT",
+            "EA8300_5G_WPA2_NAT",
+            "EA8300_5G_WPA_NAT",
+            "EA8300_5G_WPA_NAT",
+            "EA8300_5G_WPA2-EAP_NAT",
+            "EA8300_5G_WPA2-EAP_NAT",
+            "EA8300_2dot4G_WPA2_NAT",
+            "EA8300_2dot4G_WPA_NAT",
+            "EA8300_2dot4G_WPA2-EAP_NAT"
+            ]
         },
 
     "ec420_nat": {
@@ -163,7 +219,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EC420_2dot4G_WPA_NAT",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP_NAT"
+        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP_NAT",
+        "ssid_list": [
+            "EC420_5G_WPA2_NAT",
+            "EC420_5G_WPA_NAT",
+            "EC420_5G_WPA2-EAP_NAT",
+            "EC420_2dot4G_WPA2_NAT",
+            "EC420_2dot4G_WPA_NAT",
+            "EC420_2dot4G_WPA2-EAP_NAT"
+            ]
         },
 
     "ecw5211_nat": {
@@ -179,7 +243,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"ECW5211_2dot4G_WPA_NAT",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP_NAT"
+        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP_NAT",
+        "ssid_list": [
+            "ECW5211_5G_WPA2_NAT",
+            "ECW5211_5G_WPA_NAT",
+            "ECW5211_5G_WPA2-EAP_NAT",
+            "ECW5211_2dot4G_WPA2_NAT",
+            "ECW5211_2dot4G_WPA_NAT",
+            "ECW5211_2dot4G_WPA2-EAP_NAT"
+            ]
         },
 
     "ecw5410_vlan": {
@@ -195,7 +267,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"ECW5410_2dot4G_WPA_VLAN",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP_VLAN"
+        "twoFourG_WPA2-EAP_SSID": "ECW5410_2dot4G_WPA2-EAP_VLAN",
+        "ssid_list": [
+            "ECW5410_5G_WPA2_VLAN",
+            "ECW5410_5G_WPA_VLAN",
+            "ECW5410_5G_WPA2-EAP_VLAN",
+            "ECW5410_2dot4G_WPA2_VLAN",
+            "ECW5410_2dot4G_WPA_VLAN",
+            "ECW5410_2dot4G_WPA2-EAP_VLAN"
+            ]
         },
 
     "ea8300_vlan": {
@@ -211,7 +291,19 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EA8300_2dot4G_WPA_VLAN",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP_VLAN"
+        "twoFourG_WPA2-EAP_SSID": "EA8300_2dot4G_WPA2-EAP_VLAN",
+        #EA8300 has 2x 5GHz SSIDs because it is a tri-radio AP!
+        "ssid_list": [
+            "EA8300_5G_WPA2_VLAN",
+            "EA8300_5G_WPA2_VLAN",
+            "EA8300_5G_WPA_VLAN",
+            "EA8300_5G_WPA_VLAN",
+            "EA8300_5G_WPA2-EAP_VLAN",
+            "EA8300_5G_WPA2-EAP_VLAN",
+            "EA8300_2dot4G_WPA2_VLAN",
+            "EA8300_2dot4G_WPA_VLAN",
+            "EA8300_2dot4G_WPA2-EAP_VLAN"
+            ]
         },
 
     "ec420_vlan": {
@@ -227,7 +319,15 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"EC420_2dot4G_WPA_VLAN",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP_VLAN"
+        "twoFourG_WPA2-EAP_SSID": "EC420_2dot4G_WPA2-EAP_VLAN",
+        "ssid_list": [
+            "EC420_5G_WPA2_VLAN",
+            "EC420_5G_WPA_VLAN",
+            "EC420_5G_WPA2-EAP_VLAN",
+            "EC420_2dot4G_WPA2_VLAN",
+            "EC420_2dot4G_WPA_VLAN",
+            "EC420_2dot4G_WPA2-EAP_VLAN"
+            ]
         },
 
     "ecw5211_vlan": {
@@ -243,6 +343,14 @@ profile_info_dict = {
         "twoFourG_WPA2_PSK": "Connectus123$",
         "twoFourG_WPA_SSID":"ECW5211_2dot4G_WPA_VLAN",
         "twoFourG_WPA_PSK": "Connectus123$",
-        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP_VLAN"
+        "twoFourG_WPA2-EAP_SSID": "ECW5211_2dot4G_WPA2-EAP_VLAN",
+        "ssid_list": [
+            "ECW5211_5G_WPA2_VLAN",
+            "ECW5211_5G_WPA_VLAN",
+            "ECW5211_5G_WPA2-EAP_VLAN",
+            "ECW5211_2dot4G_WPA2_VLAN",
+            "ECW5211_2dot4G_WPA_VLAN",
+            "ECW5211_2dot4G_WPA2-EAP_VLAN"
+            ]
         }
 }

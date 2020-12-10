@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+##################################################################################
+# Module contains functions to interact with CloudSDK using APIs
+# Start by calling get_bearer to obtain bearer token, then other APIs can be used
+#
+# Used by Nightly_Sanity and Throughput_Test #####################################
+##################################################################################
+
 import base64
 import urllib.request
 from bs4 import BeautifulSoup
@@ -112,6 +119,15 @@ class CloudSDK:
         latest_fw_id = fw_data['id']
         return latest_fw_id
 
+    def delete_firmware(fw_id, cloudSDK_url, bearer):
+        url = cloudSDK_url + '/portal/firmware/version?firmwareVersionId=' + fw_id
+        payload = {}
+        headers = {
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("DELETE", url, headers=headers, data=payload)
+        return(response)
+
     def update_firmware(equipment_id, latest_firmware_id, cloudSDK_url, bearer):
         url = cloudSDK_url+"/portal/equipmentGateway/requestFirmwareUpdate?equipmentId="+equipment_id+"&firmwareVersionId="+latest_firmware_id
 
@@ -150,3 +166,16 @@ class CloudSDK:
 
         response = requests.request("PUT", url, headers=headers, data=json.dumps(equipment_info))
         #print(response)
+
+    def get_cloudsdk_version(cloudSDK_url, bearer):
+        #print(latest_ap_image)
+        url = cloudSDK_url+"/ping"
+
+        payload = {}
+        headers = {
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("GET", url, headers=headers, data=payload)
+        cloud_sdk_version = response.json()
+        return cloud_sdk_version
+
