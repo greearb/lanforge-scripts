@@ -37,7 +37,7 @@ class StaConnect2(LFCliBase):
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, _sta_prefix='sta', _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
-                 _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
+                 _cleanup_on_exit=True, _clean_all_sta=False, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
@@ -56,6 +56,7 @@ class StaConnect2(LFCliBase):
         self.upstream_port = _upstream_port
         self.runtime_secs = _runtime_sec
         self.cleanup_on_exit = _cleanup_on_exit
+        self.clean_all_sta = _clean_all_sta
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
         self.station_names = []
@@ -139,14 +140,18 @@ class StaConnect2(LFCliBase):
             return False
 
         # remove old stations
-        print("Removing old stations")
-        for sta_name in self.station_names:
-            sta_url = self.get_station_url(sta_name)
-            response = self.json_get(sta_url)
-            if (response is not None) and (response["interface"] is not None):
-                for sta_name in self.station_names:
-                    LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
-        LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
+        if self.clean_all_sta:
+            print("Removing all stations on resource.")
+            self.localrealm.remove_all_stations(self.resource)
+        else:
+            print("Removing old stations to be created by this test.")
+            for sta_name in self.station_names:
+                sta_url = self.get_station_url(sta_name)
+                response = self.json_get(sta_url)
+                if (response is not None) and (response["interface"] is not None):
+                    for sta_name in self.station_names:
+                        LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+            LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
 
         # Create stations and turn dhcp on
         self.station_profile = self.localrealm.new_station_profile()
