@@ -36,8 +36,15 @@ class TestGroup(LFCliBase):
         self.cx_action   = cx_action
         self.list_groups = list_groups
         self.show_group  = show_group
-        self.add_cx_list = add_cx_list
-        self.rm_cx_list  = rm_cx_list
+        if add_cx_list is not None and len(add_cx_list) == 1 and ',' in add_cx_list[0]:
+            self.add_cx_list = add_cx_list[0].split(',')
+        else:
+            self.add_cx_list = add_cx_list
+
+        if rm_cx_list is not None and len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
+            self.rm_cx_list = rm_cx_list[0].split(',')
+        else:
+            self.rm_cx_list = rm_cx_list
 
     def do_cx_action(self):
         if self.cx_action == 'start':
@@ -62,6 +69,7 @@ class TestGroup(LFCliBase):
                 print("%s not found, no action taken" % self.tg_profile.group_name)
 
     def show_info(self):
+        time.sleep(.5)
         if self.list_groups:
             print("Current Test Groups: ")
             for group in self.tg_profile.list_groups():
@@ -71,10 +79,12 @@ class TestGroup(LFCliBase):
 
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
+            print("Adding cxs %s to %s" % (', '.join(self.add_cx_list), self.tg_profile.group_name))
             for cx in self.add_cx_list:
                 self.tg_profile.add_cx(cx)
                 self.tg_profile.cx_list.append(cx)
         if len(self.rm_cx_list) > 0:
+            print("Removing cxs %s from %s" % (', '.join(self.rm_cx_list), self.tg_profile.group_name))
             for cx in self.rm_cx_list:
                 self.tg_profile.rm_cx(cx)
                 if cx in self.tg_profile.cx_list:
@@ -89,7 +99,9 @@ def main():
         description='''testgroup.py
     --------------------
     Generic command example:
-    
+    ./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
+    ./testgroup.py --group_name group1 --add_group --list_groups
+    ./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
     ''')
 
     parser.add_argument('--group_name', help='specify the name of the test group to use', default=None)
