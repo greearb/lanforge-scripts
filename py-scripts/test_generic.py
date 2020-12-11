@@ -61,7 +61,8 @@ class GenTest(LFCliBase):
 
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        print(gen_results)
+        if self.debug:
+            print(gen_results)
         if gen_results['endpoints'] is not None:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
@@ -104,13 +105,14 @@ class GenTest(LFCliBase):
         temp_stas = []
         for station in self.sta_list.copy():
             temp_stas.append(self.local_realm.name_to_eid(station)[2])
-        pprint.pprint(self.station_profile.station_names)
+        if self.debug:
+            pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
         if self.local_realm.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs", print_pass)
+            self._pass("All stations got IPs")
         else:
-            self._fail("Stations failed to get IPs", print_fail)
-            exit(1)
+            self._fail("Stations failed to get IPs")
+            self.exit_fail()
         cur_time = datetime.datetime.now()
         passes = 0
         expected_passes = 0
@@ -140,17 +142,15 @@ class GenTest(LFCliBase):
                 if result[0]:
                     passes += 1
                 else:
-                    self._fail("%s Failed to ping %s " % (result[1], self.generic_endps_profile.dest),
-                               print_fail)
+                    self._fail("%s Failed to ping %s " % (result[1], self.generic_endps_profile.dest))
                     break
-            # print(cur_time)
-            # print(end_time)
             time.sleep(1)
 
         if passes == expected_passes:
-            self._pass("PASS: All tests passed", print_pass)
+            self._pass("PASS: All tests passed")
 
     def stop(self):
+        print("Stopping Test...")
         self.generic_endps_profile.stop_cx()
         self.station_profile.admin_down()
 
@@ -183,9 +183,12 @@ def main():
         description='''test_generic.py
 --------------------
 Generic command example:
-python3 ./test_generic.py --upstream_port eth1 
+python3 ./test_generic.py 
+    --mgr localhost (optional)
+    --mgr_port 4122 (optional)
+    --upstream_port eth1 (optional)
     --radio wiphy0 (required)
-    --num_stations 3 
+    --num_stations 3 (optional)
     --security {open|wep|wpa|wpa2|wpa3} (required)
     --ssid netgear (required)
     --passwd admin123 (required)
@@ -198,13 +201,13 @@ python3 ./test_generic.py --upstream_port eth1
 
     Example commands: 
     LFPING:
-    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --num_stations 7 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
     LFCURL (under construction):
-    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
+    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 26 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
     GENERIC: 
-    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
     SPEEDTEST:
-  ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
+  ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 13 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
     --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
@@ -254,16 +257,16 @@ python3 ./test_generic.py --upstream_port eth1
     generic_test.build()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
-        exit(1)
+        generic_test.exit_fail()        
     generic_test.start()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
-        exit(1)
+        generic_test.exit_fail()
     generic_test.stop()
     time.sleep(30)
     generic_test.cleanup(station_list)
     if generic_test.passes():
-        print("Full test passed")
+        generic_test.exit_success()
 
 
 

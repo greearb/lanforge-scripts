@@ -389,7 +389,7 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
     return wait_until_ports_admin_down(resource_id=resource_id, base_url=base_url, port_list=port_list)
 
 
-def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", port_list=()):
+def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", debug_=False, port_list=()):
     print("Waiting until ports appear admin-down...")
     up_stations = port_list.copy()
     sleep(1)
@@ -401,7 +401,8 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(debug_=False)
             if json_response == None:
-                print("port %s disappeared" % port_name)
+                if debug_:
+                    print("port %s disappeared" % port_name)
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
@@ -414,7 +415,7 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
 def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
     return wait_until_ports_admin_up(resource_id=resource_id, base_url=base_url, port_list=port_list)
 
-def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", port_list=()):
+def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", port_list=(), debug_=False):
     print("Waiting until  ports appear admin-up...")
     down_stations = port_list.copy()
     sleep(1)
@@ -427,7 +428,8 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(debug_=False)
             if json_response == None:
-                print("port %s appeared" % port_name)
+                if debug_:
+                    print("port %s appeared" % port_name)
                 continue
             if "interface" in json_response:
                 json_response = json_response['interface']
@@ -476,7 +478,7 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
 def name_to_eid(input):
-    rv = [1, 1, ""];
+    rv = [1, 1, ""]
     info = []
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
