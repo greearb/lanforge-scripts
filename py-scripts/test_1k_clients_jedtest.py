@@ -65,6 +65,7 @@ class Test1KClients(LFCliBase):
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
+       
 
         self.station_profile_map = {}
     def build(self):
@@ -117,7 +118,6 @@ class Test1KClients(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                # print(item, new_list[item], old_list[item], passes, expected_passes)
 
             if passes == expected_passes:
                 return True
@@ -128,10 +128,10 @@ class Test1KClients(LFCliBase):
 
     def start(self):
         print("Bringing stations up...")
-        prev_ip_num=0
-        total_num_sta=6*self.num_sta      
+        prev_ip_num=0      
         for (radio, station_profile) in self.station_profile_map.items():
             station_profile.admin_up()
+            total_num_sta=6*self.num_sta
             self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=30)
             curr_ip_num = self.local_realm.get_curr_num_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
             while ((prev_ip_num < curr_ip_num) and (curr_ip_num < total_num_sta)):
@@ -146,26 +146,24 @@ class Test1KClients(LFCliBase):
             
         
         old_cx_rx_values = self.__get_rx_values() 
-        print("Test duration is %s", self.test_duration)
-        #for loop through all and start all cross-connects
-        for (radio, station_profile) in self.station_profile_map.items():
-            self.cx_profile.start_cx()
+        self.cx_profile.start_cx()
 
         passes = 0
         expected_passes = 0
-        cur_time = datetime.datetime.now()
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        curr_time = datetime.datetime.now()
+        end_time = self.local_realm.parse_time(self.test_duration) + curr_time
         sleep_interval = self.local_realm.parse_time(self.test_duration) // 3
 
-        while cur_time < end_time:
+        while curr_time < end_time:
 
             time.sleep(sleep_interval.total_seconds())
 
             new_cx_rx_values = self.__get_rx_values()
-            print(old_cx_rx_values, new_cx_rx_values)
-            print("\n-----------------------------------")
-            print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            print("-----------------------------------\n")
+            if self.debug:
+                print(old_cx_rx_values, new_cx_rx_values)
+                print("\n-----------------------------------")
+                print(curr_time, end_time)
+                print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
@@ -174,22 +172,29 @@ class Test1KClients(LFCliBase):
                 self.exit_fail()
 
             old_cx_rx_values = new_cx_rx_values
-            cur_time = datetime.datetime.now()
+            curr_time = datetime.datetime.now()
 
         if passes == expected_passes:
             self._pass("PASS: All tests passed")
 
 
     def stop(self):
-        for (radio, station_profile) in self.station_profile_map.items():
-            self.cx_profile.stop_cx()
+        self.cx_profile.stop_cx()
 
-    def cleanup(self):
-        #self.cx_profile.cleanup_prefix()
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
         for (radio, name_series) in self.station_radio_map.items():
             sta_list= self.station_radio_map[radio]
             for sta in sta_list:
                 self.local_realm.rm_port(sta, check_exists=True)
+
+    def post_cleanup(self):
+        self.cx_profile.cleanup()
+        for (radio, name_series) in self.station_radio_map.items():
+            sta_list= self.station_radio_map[radio]
+            for sta in sta_list:
+                self.local_realm.rm_port(sta, check_exists=True)
+
 
 def main():
     num_sta=200
@@ -227,7 +232,7 @@ def main():
                               num_sta_=args.sta_per_radio,
                               _debug_on=args.debug)
 
-    kilo_test.cleanup()
+    kilo_test.pre_cleanup()
     kilo_test.build()
     if not kilo_test.passes():
         kilo_test.exit_failed()
@@ -237,7 +242,9 @@ def main():
     kilo_test.stop()
     if not kilo_test.passes():
          kilo_test.exit_failed()
-    kilo_test.cleanup()
+    time.sleep(60)
+    kilo_test.post_cleanup()
+    kilo_test.exit_success()
 
 if __name__ == "__main__":
     main()

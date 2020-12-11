@@ -555,7 +555,8 @@ class Realm(LFCliBase):
         return not wait_more
 
     def get_curr_num_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
-        print("checking number of stations with ips...")
+        if debug:
+            print("checking number of stations with ips...")
         waiting_states = ["0.0.0.0", "NA", ""]
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("check for num curr ips expects non-empty list of ports")
@@ -620,8 +621,6 @@ class Realm(LFCliBase):
         else:
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_sec
-
-        pass
 
     def parse_time(self, time_string):
         if isinstance(time_string, str):
@@ -1014,7 +1013,8 @@ class L3CXProfile(LFCliBase):
     def start_cx(self):
         print("Starting CXs...")
         for cx_name in self.created_cx.keys():
-            print("cx-name: %s"%(cx_name))
+            if self.debug:
+                print("cx-name: %s"%(cx_name))
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
@@ -1037,12 +1037,14 @@ class L3CXProfile(LFCliBase):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
-                print("Cleaning cx: %s"%(cx_name))
+                if self.debug:
+                    print("Cleaning cx: %s"%(cx_name))
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
-                    print("Cleaning endpoint: %s"%(ename))
+                    if self.debug:
+                        print("Cleaning endpoint: %s"%(ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False, tos=None):
