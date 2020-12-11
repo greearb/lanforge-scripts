@@ -217,7 +217,7 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  #egg.sendline(CR)
+                  egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:","CCP_CONFIG",pexpect.TIMEOUT],timeout=3)
@@ -561,7 +561,7 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  #egg.sendline(CR)
+                  egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
