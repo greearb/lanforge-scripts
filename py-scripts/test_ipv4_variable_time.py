@@ -19,7 +19,9 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream, radio,
+    def __init__(self,
+                 ssid, security, password, sta_list, name_prefix, upstream, radio,
+                 host="localhost", port=8080,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -164,8 +166,6 @@ class IPV4VariableTime(LFCliBase):
 
 
 def main():
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,

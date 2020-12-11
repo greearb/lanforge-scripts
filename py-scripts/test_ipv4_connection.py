@@ -20,11 +20,12 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host,
-                 port,
+    def __init__(self, 
                  ssid,
                  security,
                  password,
+                 host="localhost",
+                 port=8080,
                  sta_list=None,
                  number_template="00000",
                  radio="wiphy0",
@@ -60,7 +61,6 @@ class IPv4Test(LFCliBase):
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
 
-        # self.station_profile.station_names = self.sta_list
 
     def build(self):
         # Build stations
@@ -88,10 +88,12 @@ class IPv4Test(LFCliBase):
                 if (sta_status is None) or (sta_status['interface'] is None) or (sta_status['interface']['ap'] is None):
                     continue
                 if (len(sta_status['interface']['ap']) == 17) and (sta_status['interface']['ap'][-3] == ':'):
-                    # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                    if self.debug:
+                        print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map[sta_name] = 1
                 if sta_status['interface']['ip'] != '0.0.0.0':
-                    # print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                    if self.debug:
+                        print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     ip_map[sta_name] = 1
             if (len(sta_list) == len(ip_map)) and (len(sta_list) == len(associated_map)):
                 break
@@ -126,7 +128,6 @@ class IPv4Test(LFCliBase):
 def main():
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_connection.py',
-        #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
          Create stations that attempt to authenticate, associate, and receive IP addresses on the 
@@ -171,7 +172,6 @@ Generic command example:
                        radio=args.radio,
                        _debug_on=args.debug)
     ip_test.cleanup(station_list)
-    #ip_test.timeout = 60
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
