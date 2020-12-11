@@ -168,12 +168,12 @@ def main():
    CCP_POLICY_TAG   = args.prompt + "(config-policy-tag)#"  #WLC(config-policy-tag)#
    CCP_CONFIG_LINE  = args.prompt + "(config-line)#"        #WLC(config-line)#
 
-   print("CCP {}".format(CCP))
+   '''print("CCP {}".format(CCP))
    print("CCP_EN {}".format(CCP_EN))
    print("CCP_CONFIG {}".format(CCP_CONFIG))
    print("CCP_CONFIG_WLAN {}".format(CCP_CONFIG_WLAN))
    print("CCP_POLICY_TAG {}".format(CCP_POLICY_TAG))
-   print("CCP_CONFIG_LINE {}".format(CCP_CONFIG_LINE))
+   print("CCP_CONFIG_LINE {}".format(CCP_CONFIG_LINE))'''
 
 
    try:

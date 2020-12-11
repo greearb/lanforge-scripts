@@ -1674,7 +1674,7 @@ def main():
    if (ch != "NA"):
        try:
           logg.info("9800/3504 cisco_wifi_ctl.py: channel 36")
-          cap_ctl_out = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                        "--action", "channel", "--value", "36", "--series" , args.series,"--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
