@@ -699,6 +699,14 @@ def main():
                      sleep(1)
                      egg.close(force = True)
                      sleep(1)
+                     # re establish telnet
+                     cmd = "telnet %s %d"%(host, port)
+                     logg.info("Spawn: "+cmd+NL)
+                     egg = pexpect.spawn(cmd)
+                     egg.logfile = FileAdapter(logg)
+                     time.sleep(2)
+                     logged_in_9800 = False
+                     found_escape = False
 
                
                if i == 1:
