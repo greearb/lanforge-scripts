@@ -54,10 +54,10 @@ class IPv4Test(LFCliBase):
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
             self._pass("Station build finished")
-            self.passed()
+            self.exit_success()
         else:
             self._fail("Stations not able to acquire IP. Please check network input.")
-            self.failed()
+            self.exit_fail()
 
 
     def cleanup(self, sta_list):
@@ -78,21 +78,18 @@ def main():
                 ''',
 
         description='''\
-        example_wpa_connection.py
+        example_wpa3_connection.py
         --------------------
 
         Generic command example:
-    python3 ./example_wpa_connection.py  \\
-        --host localhost (optional) \\
-        --port 8080  (optional) \\
-        --num_stations 3 \\
-        --security {open|wep|wpa|wpa2|wpa3} \\
-        --ssid netgear-wpa3 \\
-        --passwd admin123-wpa3 \\
+    python3 ./example_wpa3_connection.py  
+        --host localhost (optional) 
+        --port 8080  (optional) 
+        --num_stations 3 
+        --ssid netgear-wpa3 
+        --passwd admin123-wpa3 
+        --radio wiphy1
         --debug 
-
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio wiphy0 <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
             ''')
 
     args = parser.parse_args()
@@ -107,7 +104,7 @@ def main():
                                         padding_number_=10000,
                                         radio=args.radio)
     ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
-                       security=args.security, sta_list=station_list)
+                       security="wpa3", sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
