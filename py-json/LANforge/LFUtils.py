@@ -446,8 +446,6 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], d
 
     while len(found_stations) > 0:
         found_stations = []
-        sleep(1)
-
         for port_eid in port_list:
             eid = name_to_eid(port_eid)
             shelf = eid[0]
@@ -461,6 +459,9 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], d
             json_response = lf_r.getAsJson(debug_=debug)
             if (json_response != None):
                 found_stations.append(port_name)
+        if len(found_stations) > 0:
+            sleep(1)
+    sleep(1) # safety
     return
 
 
@@ -514,13 +515,18 @@ def name_to_eid(input):
 
 def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
-
+    Use this method to pause until the LANforge system has caught up and implemented the
+    ports you have requested to create. This determines the presence of interfaces, it
+    does not inspect their state. It is appropriate to use when creating stations in
+    the admin-down state. Remember physical port changes, mac-vlans, and 1Qvlans might
+    not appear if they are created admin-down.
     :param base_url:
     :param port_list:
     :param debug:
     :return:
     """
-    print("Waiting until ports appear...")
+    if debug:
+        print("Waiting until ports appear...")
     found_stations = []
     port_url = "/port/1"
     ncshow_url = "/cli-json/nc_show_ports"
@@ -535,7 +541,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             shelf = eid[0]
             resource_id = eid[1]
             port_name = eid[2]
-            
+            # print("waiting for sta sta "+port_eid)
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri)
             json_response = lf_r.getAsJson(debug_=False)
