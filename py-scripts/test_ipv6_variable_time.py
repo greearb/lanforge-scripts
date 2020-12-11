@@ -200,7 +200,9 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_var_test = IPV6VariableTime(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
+    ip_var_test = IPV6VariableTime(host=args.mgr, port=args.mgr_port,
+                                   number_template="00",
+                                   sta_list=station_list,
                                    name_prefix="VT",
                                    upstream=args.upstream_port,
                                    ssid=args.ssid,

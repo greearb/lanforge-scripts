@@ -163,8 +163,7 @@ Generic command example:
                                           padding_number=10000,
                                           radio=args.radio)
 
-    ip_test = IPv4Test(lfjson_host,
-                       lfjson_port,
+    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port,
                        ssid=args.ssid,
                        password=args.passwd,
                        security=args.security,

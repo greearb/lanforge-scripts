@@ -148,8 +148,11 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ipv6_test = IPv6Test(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                         security=args.security, sta_list=station_list)
+    ipv6_test = IPv6Test(host=args.mgr, port=args.mgr_port,
+                         ssid=args.ssid,
+                         password=args.passwd,
+                         security=args.security,
+                         sta_list=station_list)
     ipv6_test.cleanup(station_list)
     ipv6_test.build()
     if not ipv6_test.passes():

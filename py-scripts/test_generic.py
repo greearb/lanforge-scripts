@@ -234,7 +234,7 @@ python3 ./test_generic.py
                                           end_id_=num_sta-1,
                                           padding_number_=100)
 
-    generic_test = GenTest(args.mgr, lfjson_port,
+    generic_test = GenTest(host=args.mgr, port=args.mgr_port,
                            number_template="00",
                            radio=args.radio,
                            sta_list=station_list,

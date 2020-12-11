@@ -193,8 +193,7 @@ def main():
         
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_= num_sta-1, padding_number_=10000, radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, 
-                    lfjson_port, 
+    ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
                     ssid=args.ssid, 
                     radio=args.radio,
                     password=args.passwd,

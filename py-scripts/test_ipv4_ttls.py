@@ -269,7 +269,7 @@ test_ipv4_ttls.py:
         num_sta = num_stations_converted
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
-    ttls_test = TTLSTest(lfjson_host, lfjson_port,
+    ttls_test = TTLSTest(host=args.mgr, port=args.mgr_port,
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,

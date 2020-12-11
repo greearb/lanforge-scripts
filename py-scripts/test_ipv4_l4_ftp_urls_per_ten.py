@@ -177,8 +177,15 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd, upstream_port=args.upstream_port,radio= args.radio,
-                     security=args.security, station_list=station_list, url=args.url, num_tests=args.num_tests,
+    ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
+                     ssid=args.ssid,
+                     password=args.passwd,
+                     upstream_port=args.upstream_port,
+                     radio= args.radio,
+                     security=args.security,
+                     station_list=station_list,
+                     url=args.url,
+                     num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
                      requests_per_ten=args.requests_per_ten)
     ip_test.cleanup(station_list)

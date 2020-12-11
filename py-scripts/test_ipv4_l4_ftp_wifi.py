@@ -202,10 +202,18 @@ python3 ./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                     security=args.security, station_list=station_list, test_duration=args.test_duration,
-                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug, upstream_port=args.upstream_port,
-                     ftp_user=args.ftp_user, ftp_passwd=args.ftp_passwd, dest=args.dest,
+    ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
+                     ssid=args.ssid,
+                     password=args.passwd,
+                     security=args.security,
+                     station_list=station_list,
+                     test_duration=args.test_duration,
+                     requests_per_ten=args.requests_per_ten,
+                     _debug_on=args.debug,
+                     upstream_port=args.upstream_port,
+                     ftp_user=args.ftp_user,
+                     ftp_passwd=args.ftp_passwd,
+                     dest=args.dest,
                      source=args.source)
     ip_test.cleanup(station_list)
     ip_test.build()

@@ -191,9 +191,16 @@ Generic command example:
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_test = IPV4L4(args.mgr, lfjson_port, ssid=args.ssid, password=args.passwd,
-                     security=args.security, station_list=station_list, url=args.url, test_duration=args.test_duration,
-                     requests_per_ten=args.requests_per_ten, _debug_on=args.debug, upstream_port=args.upstream_port)
+    ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
+                     ssid=args.ssid,
+                     password=args.passwd,
+                     security=args.security,
+                     station_list=station_list,
+                     url=args.url,
+                     test_duration=args.test_duration,
+                     requests_per_ten=args.requests_per_ten,
+                     _debug_on=args.debug,
+                     upstream_port=args.upstream_port)
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():
