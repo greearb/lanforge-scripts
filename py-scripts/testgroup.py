@@ -101,7 +101,6 @@ def main():
     Generic command example:
     ./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
     ./testgroup.py --group_name group1 --add_group --list_groups
-    ./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
     ''')
 
     parser.add_argument('--group_name', help='specify the name of the test group to use', default=None)
