@@ -168,6 +168,12 @@ def main():
    CCP_POLICY_TAG   = args.prompt + "(config-policy-tag)#"  #WLC(config-policy-tag)#
    CCP_CONFIG_LINE  = args.prompt + "(config-line)#"        #WLC(config-line)#
 
+   print("CCP {}".format(CCP))
+   print("CCP_EN {}".format(CCP_EN))
+   print("CCP_CONFIG {}".format(CCP_CONFIG))
+   print("CCP_CONFIG_WLAN {}".format(CCP_CONFIG_WLAN))
+   print("CCP_POLICY_TAG {}".format(CCP_POLICY_TAG))
+   print("CCP_CONFIG_LINE {}".format(CCP_CONFIG_LINE))
 
 
    try:
@@ -217,13 +223,13 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  egg.sendline(CR)
+                  #egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:","CCP_CONFIG",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
-                     logg.info("9800 found CCP  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
+                     logg.info("9800 found {}  will elevate loging i:{} j:{} before {} after {}".format(CCP,i,j,egg.before,egg.after))
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
@@ -271,8 +277,8 @@ def main():
                      if k == 1:
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 received CCP_CONFIG prompt doing some cleanup")
-                     egg.sendline("end")
+                     logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
+                     egg.sendline("exit")
                      sleep(0.1)
                      k = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                      sleep(0.1)
@@ -412,7 +418,7 @@ def main():
 
                if i == 5:
                   logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
-                  egg.sendline("end")
+                  egg.sendline("exit")
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
@@ -561,7 +567,7 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  egg.sendline(CR)
+                  #egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
