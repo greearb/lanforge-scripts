@@ -99,8 +99,8 @@ class Test1KClients(LFCliBase):
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        # print(self.cx_profile.created_cx.values())
-        print("==============\n", cx_list, "\n==============")
+        if self.debug:
+            print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -118,7 +118,6 @@ class Test1KClients(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-
             if passes == expected_passes:
                 return True
             else:
@@ -197,7 +196,6 @@ class Test1KClients(LFCliBase):
 
 
 def main():
-    num_sta=200
     lfjson_host = "localhost"
     lfjson_port = 8080
     
