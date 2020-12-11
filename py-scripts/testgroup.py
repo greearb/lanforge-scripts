@@ -71,11 +71,21 @@ class TestGroup(LFCliBase):
     def show_info(self):
         time.sleep(.5)
         if self.list_groups:
-            print("Current Test Groups: ")
-            for group in self.tg_profile.list_groups():
-                print(group)
+            tg_list = self.tg_profile.list_groups()
+            if len(tg_list) > 0:
+                print("Current Test Groups: ")
+                for group in tg_list:
+                    print(group)
+            else:
+                print("No test groups found")
         if self.show_group:
-            print("show_group not yet implemented")
+            cx_list = self.tg_profile.list_cxs()
+            if len(cx_list) > 0:
+                print("Showing cxs in %s" % self.tg_profile.group_name)
+                for cx in cx_list:
+                    print(cx)
+            else:
+                print("No cxs found in %s" % self.tg_profile.group_name)
 
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
