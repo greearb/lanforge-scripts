@@ -2251,17 +2251,17 @@ class TestGroupProfile(LFCliBase):
         else:
             raise ValueError("test_group name must be set.")
 
-    def remove_group(self):
+    def rm_group(self):
         if self.group_name is not None:
             self.local_realm.json_post("/cli-json/rm_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
 
     def add_cx(self, cx_name):
-        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.group_name, "cxname": cx_name})
 
-    def rm_cx_from_list(self, cx_name):
-        self.local_realm.json_post("/cli-json/add_tgcx", {"tgname": self.test_group_name, "cxname": cx_name})
+    def rm_cx(self, cx_name):
+        self.local_realm.json_post("/cli-json/rm_tgcx", {"tgname": self.group_name, "cxname": cx_name})
 
     def check_group_exists(self):
         test_groups = self.local_realm.json_get("/testgroups")
