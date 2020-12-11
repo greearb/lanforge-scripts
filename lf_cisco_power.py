@@ -244,7 +244,7 @@ def main():
    parser.add_argument("--lfresource2",      type=str, help="LANforge resource ID for the upstream port system")
    parser.add_argument("--outfile",          type=str, help="Output file for csv data",default="cisco_power_results")
    parser.add_argument("--pathloss",         type=str, help="Calculated pathloss between LANforge Station and AP")
-   parser.add_argument("--antenna_gain",     type=str, help="Antenna gain,  take into account the gain due to the antenna")
+   parser.add_argument("--antenna_gain",     type=str, help="Antenna gain,  take into account the gain due to the antenna",default="0")
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6")
