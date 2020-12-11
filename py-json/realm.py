@@ -153,7 +153,8 @@ class Realm(LFCliBase):
                                         port_list=sta_list,
                                         debug=debug_)
 
-    def rm_port(self, port_eid, check_exists=True):
+    def rm_port(self, port_eid, check_exists=True, debug_=False):
+        debug_ |= self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
         do_rm = True
@@ -166,7 +167,7 @@ class Realm(LFCliBase):
                 "resource": eid[1],
                 "port": eid[2]
             }
-            rsp = self.json_post(req_url, data, debug_=self.debug)
+            rsp = self.json_post(req_url, data, debug_=debug_)
             return True
         return False
 
@@ -182,11 +183,14 @@ class Realm(LFCliBase):
         return False
 
     def admin_up(self, port_eid):
+        # print("186 admin_up port_eid: "+port_eid)
         eid = self.name_to_eid(port_eid)
         shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_up_request(resource_id=resource, port_name=port)
+        # print("192.admin_up request: resource: %s port_name %s"%(resource, port))
+        # time.sleep(2)
         self.json_post("/cli-json/set_port", request)
 
     def admin_down(self, port_eid):
@@ -2900,7 +2904,7 @@ class StationProfile:
         self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
-        self.station_names = []  # eids
+        self.station_names = []  # eids, these are created station names
         self.add_sta_data = {
             "shelf": 1,
             "resource": 1,
@@ -3134,14 +3138,17 @@ class StationProfile:
         return result
 
     def admin_up(self):
-        for sta_name in self.station_names:
-            self.local_realm.admin_up(sta_name)
+        for eid in self.station_names:
+            # print("3139: admin_up sta "+eid)
+            # time.sleep(2)
+            self.local_realm.admin_up(eid)
+            time.sleep(0.005)
 
     def admin_down(self):
         for sta_name in self.station_names:
             self.local_realm.admin_down(sta_name)
 
-    def cleanup(self, desired_stations=None, delay=0.03):
+    def cleanup(self, desired_stations=None, delay=0.03, debug_=False):
         print("Cleaning up stations")
 
         if (desired_stations is None):
@@ -3153,14 +3160,15 @@ class StationProfile:
 
         # First, request remove on the list.
         for port_eid in desired_stations:
-            self.local_realm.rm_port(port_eid, check_exists=True)
+            self.local_realm.rm_port(port_eid, check_exists=True, debug_=debug_)
 
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=desired_stations)
 
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
-    def create(self, radio, num_stations=0,
+    def create(self, radio,
+               num_stations=0,
                sta_names_=None,
                dry_run=False,
                up_=None,
@@ -3168,7 +3176,9 @@ class StationProfile:
                suppress_related_commands_=True,
                use_radius=False,
                hs20_enable=False,
-               sleep_time=2):
+               sleep_time=0.02):
+        if (radio is None) or (radio == ""):
+            raise ValueError("station_profile.create: will not create stations without radio")
         radio_eid = self.local_realm.name_to_eid(radio)
         radio_shelf = radio_eid[0]
         radio_resource = radio_eid[1]
@@ -3209,10 +3219,10 @@ class StationProfile:
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
-        self.wifi_extra_data["resource"]=radio_resource
-        self.wifi_extra_data["shelf"]=radio_shelf
-        self.reset_port_extra_data["resource"]=radio_resource
-        self.reset_port_extra_data["shelf"]=radio_shelf
+        self.wifi_extra_data["resource"] = radio_resource
+        self.wifi_extra_data["shelf"] = radio_shelf
+        self.reset_port_extra_data["resource"] = radio_resource
+        self.reset_port_extra_data["shelf"] = radio_shelf
 
         # these are unactivated LFRequest objects that we can modify and
         # re-use inside a loop, reducing the number of object creations
@@ -3221,8 +3231,10 @@ class StationProfile:
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
         my_sta_names = []
         #add radio here
-        if num_stations > 0:
+        if (num_stations > 0) and (len(sta_names_) < 1):
+            #print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
+            #print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
         else:
             my_sta_names = sta_names_
 
@@ -3233,9 +3245,29 @@ class StationProfile:
             self.set_port_data["suppress_preexec_method"] = 1
 
         num = 0
-        #pprint(self.station_names)
-        #exit(1)
+        if debug:
+            print("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
+            pprint(self.station_names)
+            print("== == vs Pending STA names == ==")
+            pprint(my_sta_names)
+            print("== == == == == == == == == == == == == == == == == == == == == == == == == ==")
+
+        # track the names of stations in case we have stations added multiple times
+        finished_sta = []
+
         for eidn in my_sta_names:
+            if eidn in self.station_names:
+                print("Station %s already created, skipping." % eidn)
+                continue
+
+            # print (" EIDN "+eidn);
+            if eidn in finished_sta:
+                # pprint(my_sta_names)
+                # raise ValueError("************ duplicate ****************** "+eidn)
+                if self.debug:
+                    print("Station %s already created" % eidn)
+                continue
+
             eid = self.local_realm.name_to_eid(eidn)
             name = eid[2]
             num += 1
@@ -3247,46 +3279,54 @@ class StationProfile:
             self.set_port_data["shelf"] = radio_shelf
             self.set_port_data["resource"] = radio_resource
 
-            self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             add_sta_r.addPostData(self.add_sta_data)
             if debug:
-                print("- 381 - %s- - - - - - - - - - - - - - - - - - " % name)
+                print("- 3254 - %s- - - - - - - - - - - - - - - - - - " % eidn)
+                pprint(add_sta_r.requested_url)
+                pprint(add_sta_r.proxies)
                 pprint(self.add_sta_data)
                 pprint(self.set_port_data)
-                pprint(add_sta_r)
-                print("- ~381 - - - - - - - - - - - - - - - - - - - ")
+                print("- ~3254 - - - - - - - - - - - - - - - - - - - ")
             if dry_run:
-                print("dry run")
+                print("dry run: not creating "+eidn)
                 continue
 
+            # print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             json_response = add_sta_r.jsonPost(debug)
-            # time.sleep(0.03)
-            time.sleep(sleep_time)
+            finished_sta.append(eidn)
+            # print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
+            #print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             json_response = set_port_r.jsonPost(debug)
-            time.sleep(0.03)
+            #print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            time.sleep(0.01)
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
- 
 
-        LFUtils.waitUntilPortsAppear(self.lfclient_url, self.station_names)
+            # append created stations to self.station_names
+            self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
+            time.sleep(sleep_time)
+
+        #print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - "%eidn)
+        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_names)
 
         # and set ports up
         if dry_run:
             return
         if (self.up):
             self.admin_up()
-            self.admin_up()
+
         # for sta_name in self.station_names:
         #     req = LFUtils.portUpRequest(resource, sta_name, debug_on=False)
         #     set_port_r.addPostData(req)
         #     json_response = set_port_r.jsonPost(debug)
         #     time.sleep(0.03)
-
-        print("created %s stations" % num)
+        if self.debug:
+            print("created %s stations" % num)
 
 #
