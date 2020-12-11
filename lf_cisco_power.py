@@ -267,7 +267,7 @@ def main():
    parser.add_argument("--exit_on_fail",     action='store_true',help="--exit_on_fail,  exit on test failure")
    parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
    parser.add_argument('-e','--email',       action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-   parser.app_argument('-ccp','--prompt',      action=str,help="controller prompt default WLC",default="WLC")
+   parser.add_argument('-ccp','--prompt',      action=str,help="controller prompt default WLC",default="WLC")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
