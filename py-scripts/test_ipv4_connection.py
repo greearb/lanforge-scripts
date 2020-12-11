@@ -20,10 +20,22 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", _debug_on=False,
-                 _exit_on_error=False, radio="wiphy0",
+    def __init__(self, host,
+                 port,
+                 ssid,
+                 security,
+                 password,
+                 sta_list=None,
+                 number_template="00000",
+                 radio="wiphy0",
+                 _debug_on=False,
+                 _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host,
+                         port,
+                         _debug=_debug_on,
+                         _halt_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -35,19 +47,26 @@ class IPv4Test(LFCliBase):
         self.number_template = number_template
         self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
 
+        self.station_profile = self.local_realm.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
+        if self.debug:
+            print("----- Station List ----- ----- ----- ----- ----- ----- \n")
+            pprint.pprint(self.sta_list)
+            print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
+
+        # self.station_profile.station_names = self.sta_list
 
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
+
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -62,11 +81,13 @@ class IPv4Test(LFCliBase):
         print("Starting test...")
         for sec in range(self.timeout):
             for sta_name in sta_list:
-                sta_status = self.json_get("port/1/1/" + sta_name + "?fields=port,alias,ip,ap", debug_=self.debug)
+                eidn = self.local_realm.name_to_eid(sta_name)
+                url = "/port/1/%s/%s" % (eidn[1], eidn[2])
+                sta_status = self.json_get(url + "?fields=port,alias,ip,ap", debug_=self.debug)
                 # print(sta_status)
-                if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
+                if (sta_status is None) or (sta_status['interface'] is None) or (sta_status['interface']['ap'] is None):
                     continue
-                if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
+                if (len(sta_status['interface']['ap']) == 17) and (sta_status['interface']['ap'][-3] == ':'):
                     # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map[sta_name] = 1
                 if sta_status['interface']['ip'] != '0.0.0.0':
@@ -96,17 +117,13 @@ class IPv4Test(LFCliBase):
         self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
-        self.station_profile.cleanup(sta_list)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
+        self.station_profile.cleanup(sta_list, debug_=self.debug)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                           port_list=sta_list,
                                            debug=self.debug)
+        time.sleep(1)
 
 def main():
-   #Params for different tests:
-   #
-   #
-   #
-   #
-   #
     lfjson_host = "localhost"
     lfjson_port = 8080
 
@@ -132,17 +149,29 @@ Generic command example:
     --debug
             ''')
 
-
     args = parser.parse_args()
+    if (args.radio is None):
+       raise ValueError("--radio required")
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-    
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
-                       security=args.security, sta_list=station_list, radio=args.radio)
+    station_list = LFUtils.port_name_series(prefix="sta",
+                                          start_id=0,
+                                          end_id=num_sta-1,
+                                          padding_number=10000,
+                                          radio=args.radio)
+
+    ip_test = IPv4Test(lfjson_host,
+                       lfjson_port,
+                       ssid=args.ssid,
+                       password=args.passwd,
+                       security=args.security,
+                       sta_list=station_list,
+                       radio=args.radio,
+                       _debug_on=args.debug)
     ip_test.cleanup(station_list)
     #ip_test.timeout = 60
     ip_test.build()
