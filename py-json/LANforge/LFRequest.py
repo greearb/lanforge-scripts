@@ -7,7 +7,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-
+import pprint
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -21,10 +21,23 @@ class LFRequest:
     requested_url = ""
     post_data = No_Data
     default_headers = { 'Accept': 'application/json'}
+    proxies = None
 
-    def __init__(self, url, uri=None, debug_=False, die_on_error_=False):
+    def __init__(self, url=None,
+                 uri=None,
+                 proxies_=None,
+                 debug_=False,
+                 die_on_error_=False):
         self.debug = debug_
         self.die_on_error = die_on_error_;
+
+        # please see this discussion on ProxyHandlers:
+        # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
+        if proxies_ is not None:
+            # check to see if proxy has some fields
+            if ("host" not in proxies_) or ("user" not in proxies_):
+                raise ValueError("HTTP proxy requires, host, user, pass values.")
+            self.proxies = proxies_;
 
         if not url.startswith("http://") and not url.startswith("https://"):
             print("No http:// or https:// found, prepending http:// to "+url)
@@ -52,6 +65,12 @@ class LFRequest:
         if self.debug:
             print("new LFRequest[%s]" % self.requested_url )
 
+    def update_proxies(self, request):
+        if (request is None) or (self.proxies is None):
+            return
+
+        for (proto, host) in self.proxies.items():
+            request.set_proxy(host, proto)
 
 
     # request first url on stack
@@ -62,7 +81,7 @@ class LFRequest:
         if self.die_on_error:
             die_on_error_ = True
         if (debug == False) and (self.debug == True):
-            debug = True;
+            debug = True
         responses = []
         urlenc_data = ""
         if (debug):
@@ -78,6 +97,8 @@ class LFRequest:
         else:
             request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
             print("No data for this formPost?")
+
+        self.update_proxies(request)
 
         request.headers['Content-type'] = 'application/x-www-form-urlencoded'
         resp = ''
@@ -207,6 +228,7 @@ class LFRequest:
         myrequest = urllib.request.Request(url=self.requested_url,
                                            headers=self.default_headers,
                                            method=method_)
+        self.update_proxies(myrequest)
         myresponses = []
         try:
             myresponses.append(urllib.request.urlopen(myrequest))
