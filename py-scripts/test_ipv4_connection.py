@@ -124,9 +124,6 @@ class IPv4Test(LFCliBase):
         time.sleep(1)
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_connection.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -152,6 +149,8 @@ Generic command example:
     args = parser.parse_args()
     if (args.radio is None):
        raise ValueError("--radio required")
+    lfjson_host = args.mgr
+    lfjson_port = args.mgr_port
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
