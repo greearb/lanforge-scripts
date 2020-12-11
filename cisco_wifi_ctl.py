@@ -215,7 +215,7 @@ def main():
                egg.sendline(CR)
                sleep(0.4)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.","CCP","CCP_EN","User:","Password:","CCP_CONFIG","Bad secrets",pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",CCP,CCP_EN,"User:","Password:",CCP_CONFIG,"Bad secrets",pexpect.TIMEOUT],timeout=2)
                except Exception as e:
                   logg.info('connection failed. or refused Connection open by other process')
                   logging.exception(e)
@@ -226,7 +226,7 @@ def main():
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
-                  j = egg.expect_exact(["CCP","CCP_EN","User:","Password:","CCP_CONFIG",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",CCP_CONFIG,pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found {}  will elevate loging i:{} j:{} before {} after {}".format(CCP,i,j,egg.before,egg.after))
@@ -237,7 +237,7 @@ def main():
                         logg.info("9800 received password prompt will send password: {} i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -257,7 +257,7 @@ def main():
                         logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -270,7 +270,7 @@ def main():
                      logg.info("9800 received Password prompt will send password {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
@@ -280,7 +280,7 @@ def main():
                      logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
                      egg.sendline("exit")
                      sleep(0.1)
-                     k = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
+                     k = egg.expect_exact([CCP,CCP_EN,"User:","Password:",pexpect.TIMEOUT],timeout=3)
                      sleep(0.1)
                      if k == 0:
                         logg.info("9800 found CCP  will elevate loging i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
@@ -291,7 +291,7 @@ def main():
                            logg.info("9800 received password prompt will send password: {}  i:{} j:{} k:{} l:{} before {} after {}".format(args.passwd,i,j,k,l,egg.before,egg.after))
                            egg.sendline(args.passwd)
                            sleep(0.1)
-                           m = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                           m = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                            if m == 0:
                               logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i,j,k,l,m))
                               logged_in_9800 = True
@@ -311,7 +311,7 @@ def main():
                            logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{} l:{}".format(args.passwd,i,j,k,l))
                            egg.sendline(args.passwd)
                            sleep(0.1)
-                           m = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                           m = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                            if m == 0:
                               logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i,j,k,l,m))
                               logged_in_9800 = True
@@ -324,7 +324,7 @@ def main():
                         logg.info("9800 received Password prompt will send password {} i:{} j:{} k:{}  before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                            logged_in_9800 = True
@@ -374,7 +374,7 @@ def main():
                      logg.info("9800 received password prompt will send password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("9800 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k, egg.before,egg.after))
                         logged_in_9800 = True
@@ -396,7 +396,7 @@ def main():
                      logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} before {} after {}".format(args.passwd,i,k,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{}".format(i,j,k))
                         logged_in_9800 = True
@@ -409,7 +409,7 @@ def main():
                   logg.info("9800 received password prompt will send password: {}  i:{} before {} after {}".format(args.passwd,i,egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(0.1)
-                  j = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                  j = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                   if j == 0:
                      logg.info("9800 Successfully received # prompt i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      logged_in_9800 = True
@@ -420,7 +420,7 @@ def main():
                   logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
                   egg.sendline("exit")
                   sleep(0.1)
-                  j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found {}  will elevate loging i:{} j:{} before {} after {}".format(CCP,i,j,egg.before,egg.after))
@@ -431,7 +431,7 @@ def main():
                         logg.info("9800 received password prompt will send password: {}  i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -451,7 +451,7 @@ def main():
                         logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -464,7 +464,7 @@ def main():
                      logg.info("9800 received Password prompt will send password {} i:{} j:{}  before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
@@ -559,7 +559,7 @@ def main():
                egg.sendline(CR)
                sleep(0.4)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.","CCP","CCP_EN","User:","Password:","CCP_CONFIG","Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",CCP,CCP_EN,"User:","Password:",CCP_CONFIG,"Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
                except Exception as e:
                   logg.info('connection failed. or refused Connection open by other process')
                   logg.exception(e)
@@ -570,7 +570,7 @@ def main():
                   #egg.sendline(CR)
                   found_escape = True
                   sleep(0.1)
-                  j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",CCP_CONFIG,pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found {} will elevate loging i:{} j:{} before {} after {}".format(CCP,i,j,egg.before,egg.after))
@@ -581,7 +581,7 @@ def main():
                         logg.info("9800 received password prompt will send password: {} i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("9800 Successfully received {} prompt i:{} j:{} k:{} l:{}".format(CCP_EN,i,j,k,l))
                            logged_in_9800 = True
@@ -601,7 +601,7 @@ def main():
                         logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -614,17 +614,17 @@ def main():
                      logg.info("9800 received Password prompt will send password {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
                      if k == 1:
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
-                     logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
+                     logg.info("9800 received {} prompt doing some cleanup i = {} j = {}".format(CCP_CONFIG, i, j ))
                      egg.sendline("end")
                      sleep(0.1)
-                     k = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
+                     k = egg.expect_exact([CCP,CCP_EN,"User:","Password:",pexpect.TIMEOUT],timeout=3)
                      sleep(0.1)
                      if k == 0:
                         logg.info("9800 found {} will elevate loging i:{} j:{} k:{} before {} after {}".format(CCP,i,j,k,egg.before,egg.after))
@@ -635,7 +635,7 @@ def main():
                            logg.info("9800 received password prompt will send password: {}  i:{} j:{} k:{} l:{} before {} after {}".format(args.passwd,i,j,k,l,egg.before,egg.after))
                            egg.sendline(args.passwd)
                            sleep(0.1)
-                           m = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                           m = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                            if m == 0:
                               logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i,j,k,l,m))
                               logged_in_9800 = True
@@ -655,7 +655,7 @@ def main():
                            logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{} l:{}".format(args.passwd,i,j,k,l))
                            egg.sendline(args.passwd)
                            sleep(0.1)
-                           m = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                           m = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                            if m == 0:
                               logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i,j,k,l,m))
                               logged_in_9800 = True
@@ -668,7 +668,7 @@ def main():
                         logg.info("9800 received Password prompt will send password {} i:{} j:{} k:{}  before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i,j,k,l,egg.before,egg.after))
                            logged_in_9800 = True
@@ -710,7 +710,7 @@ def main():
                      logg.info("9800 received password prompt will send password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j, egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("9800 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k, egg.before,egg.after))
                         logged_in_9800 = True
@@ -732,7 +732,7 @@ def main():
                      logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{}".format(i,j,k))
                         logged_in_9800 = True
@@ -745,7 +745,7 @@ def main():
                   logg.info("9800 received password prompt will send password: {}   i:{}  before {} after {}".format(args.passwd,i, egg.before,egg.after))
                   egg.sendline(args.passwd)
                   sleep(0.1)
-                  j = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                  j = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                   if j == 0:
                      logg.info("9800 Successfully received # prompt i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
                      logged_in_9800 = True
@@ -756,7 +756,7 @@ def main():
                   logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
                   egg.sendline("end")
                   sleep(0.3)
-                  j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
+                  j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
                      logg.info("9800 found {} will elevate loging i:{} j:{} before {} after {}".format(CCP, i,j,egg.before,egg.after))
@@ -767,7 +767,7 @@ def main():
                         logg.info("9800 received password prompt will send password: {}  i:{} j:{} k:{} before {} after {}".format(args.passwd,i,j,k,egg.before,egg.after))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("9800 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -787,7 +787,7 @@ def main():
                         logg.info("9800 received password prompt after sending User, sending password: {} i:{} j:{} k:{}".format(args.passwd,i,j,k))
                         egg.sendline(args.passwd)
                         sleep(0.1)
-                        l = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                        l = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                         if l == 0:
                            logg.info("8900 Successfully received # prompt i:{} j:{} k:{} l:{}".format(i,j,k,l))
                            logged_in_9800 = True
@@ -800,7 +800,7 @@ def main():
                      logg.info("9800 received Password prompt will send password {} i:{} j:{}  before {} after {}".format(args.passwd,i,j,egg.before,egg.after))
                      egg.sendline(args.passwd)
                      sleep(0.1)
-                     k = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+                     k = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
                      if k == 0:
                         logg.info("8900 Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                         logged_in_9800 = True
@@ -858,7 +858,7 @@ def main():
                   logg.info("9800 will look one more time for {}".format(CCP_EN))
                   egg.sentline(CR)
                   sleep(0.2)
-                  r = egg.expect_exact(["CCP_EN",pexpect.TIMEOUT],timeout=3)
+                  r = egg.expect_exact([CCP_EN,pexpect.TIMEOUT],timeout=3)
                   if r == 0:
                      logg.info("Found {} r {} before {}  after {} can move forward".format(CCP_EN,r,egg.before,egg.after))
                   if r == 1:
@@ -881,7 +881,7 @@ def main():
             egg.sendline(user)
             egg.expect('Password\:',timeout=3)
             egg.sendline(passwd)
-            #if args.prompt in "CCP_EN" or args.prompt in "CCP":
+            #if args.prompt in CCP_EN or args.prompt in CCP:
             #   egg.sendline("enable")
             #   time.sleep(0.1)
             egg.sendline('config paging disable')
@@ -1181,7 +1181,7 @@ def main():
    if (args.action == "show_wlan_summary"):
       egg.sendline("show wlan summary")
       sleep(0.1)
-      i = egg.expect(["CCP_EN",pexpect.TIMEOUT],timeout=2)
+      i = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
       if i == 0:
          logg.info("show wlan summary sent")
       if i == 1:
@@ -1200,13 +1200,13 @@ def main():
              logg.info("open network command {}".format(command))
              egg.sendline(command)
              sleep(0.4)
-             j = egg.expect_exact(["CCP_CONFIG_WLAN",pexpect.TIMEOUT],timeout=2)
+             j = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)
              if j == 0:
                  for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                         "no security wpa akm dot1x","no shutdown"]:
                     egg.sendline(command)
                     sleep(1)
-                    k = egg.expect_exact(["CCP_CONFIG_WLAN",pexpect.TIMEOUT],timeout=2)
+                    k = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)
                     if k == 0:
                        logg.info("command sent: {}".format(command))
                     if k == 1:
@@ -1290,7 +1290,7 @@ def main():
       loop_count = 0
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
-         i = egg.expect_exact(["CCP","CCP_EN", "CCP_CONFIG",CCP_CONFIG_WLAN,CCP_POLICY_TAG,CCP_CONFIG_LINE,pexpect.TIMEOUT],timeout=5)
+         i = egg.expect_exact([CCP,CCP_EN, CCP_CONFIG,CCP_CONFIG_WLAN,CCP_POLICY_TAG,CCP_CONFIG_LINE,pexpect.TIMEOUT],timeout=5)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("{} prompt received can send logout".format(CCP))
