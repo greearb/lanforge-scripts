@@ -384,7 +384,7 @@ class LFCliBase:
         return False
 
     #EXIT script with a fail
-    def exit_fail(self,message="%d out of %d tests failed. Exiting script."):
+    def exit_fail(self,message="%d out of %d tests failed. Exiting script with script failure."):
         total_len=len(self.get_result_list())
         fail_len=len(self.get_failed_result_list())
         print(message %(fail_len,total_len))
@@ -400,7 +400,7 @@ class LFCliBase:
             sys.exit(1)
 
     #EXIT script with a success 
-    def exit_success(self,message="%d out of %d tests passed successfully. Exiting script."):
+    def exit_success(self,message="%d out of %d tests passed successfully. Exiting script with script success."):
         num_total=len(self.get_result_list())
         num_passing=len(self.get_passed_result_list())
         print(message %(num_passing,num_total))
