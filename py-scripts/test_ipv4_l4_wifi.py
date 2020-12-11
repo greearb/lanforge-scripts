@@ -62,7 +62,6 @@ class IPV4L4(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                # print(item, old_list[item], new_list[item], passes, expected_passes)
 
             if passes == expected_passes:
                 return True
@@ -74,7 +73,8 @@ class IPV4L4(LFCliBase):
     def __get_values(self):
         time.sleep(1)
         cx_list = self.json_get("layer4/list?fields=name,bytes-rd", debug_=self.debug)
-        # print("==============\n", cx_list, "\n==============")
+        if self.debug:
+            print("==============\n", cx_list, "\n==============")
         cx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -100,7 +100,6 @@ class IPV4L4(LFCliBase):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
-            exit(1)
         self.cx_profile.direction = self.direction
         self.cx_profile.dest = self.dest
         self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
@@ -121,10 +120,11 @@ class IPV4L4(LFCliBase):
                 time.sleep(1)
 
             new_rx_values = self.__get_values()
-            # print(old_rx_values, new_rx_values)
-            # print("\n-----------------------------------")
-            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            # print("-----------------------------------\n")
+            if self.debug:
+                print(old_rx_values, new_rx_values)
+                print("\n-----------------------------------")
+                print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
+                print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_rx_values, new_rx_values):
                 passes += 1
@@ -203,16 +203,17 @@ python3 ./test_ipv4_l4_wifi.py --upstream_port eth1 \\
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     ip_test.start(False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     time.sleep(30)
     ip_test.cleanup(station_list)
     if ip_test.passes():
-        print("Full test passed, all endpoints had increased bytes-rd throughout test duration")
+        ("Full test passed, all endpoints had increased bytes-rd throughout test duration")
+        ip_test.exit_success()
 
 
 if __name__ == "__main__":

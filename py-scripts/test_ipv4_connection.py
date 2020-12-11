@@ -178,19 +178,19 @@ Generic command example:
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         ip_test.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     ip_test.start(station_list, False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         ip_test.add_event(name="test_ipv4_connection.py", message=ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     time.sleep(30)
     ip_test.cleanup(station_list)
     if ip_test.passes():
-        print("Full test passed, all stations associated and got IP")
         ip_test.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
-        #exit(1)
+        ip_test.exit_success()
+        
 
 if __name__ == "__main__":
     main()

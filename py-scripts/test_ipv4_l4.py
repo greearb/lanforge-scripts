@@ -165,18 +165,17 @@ def main():
     Generic command layout:
     python ./test_ipv4_l4.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio <radio 0> <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
     Command Line Example: 
-     python3 ./test_ipv4_l4.py --upstream_port eth1 \\
-        --radio wiphy0 \\
-        --num_stations 3 \\
-        --security {open|wep|wpa|wpa2|wpa3} \\
-        --ssid netgear \\
-        --url "dl http://10.40.0.1 /dev/null" \\
-        --password admin123 \\
-        --test_duration 2m \\
-        --debug 
+     python3 ./test_ipv4_l4.py 
+        --upstream_port eth1 (optional) 
+        --radio wiphy0  (required) 
+        --num_stations 3 (optional)
+        --security {open|wep|wpa|wpa2|wpa3} (required)
+        --ssid netgear (required)
+        --url "dl http://10.40.0.1 /dev/null" (required)
+        --password admin123 (required)
+        --test_duration 2m (optional)
+        --debug (optional)
 
             ''')
 
@@ -210,16 +209,17 @@ def main():
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     ip_test.start(False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-        exit(1)
+        ip_test.exit_fail()
     time.sleep(30)
     ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed, all endpoints had increased bytes-rd throughout test duration")
+        ip_test.exit_success()
 
 
 if __name__ == "__main__":
