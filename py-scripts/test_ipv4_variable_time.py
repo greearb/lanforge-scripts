@@ -64,8 +64,9 @@ class IPV4VariableTime(LFCliBase):
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        # print(self.cx_profile.created_cx.values())
-        #print("==============\n", cx_list, "\n==============")
+        if self.debug:
+            print(self.cx_profile.created_cx.values())
+            print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -83,7 +84,6 @@ class IPV4VariableTime(LFCliBase):
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
-                # print(item, new_list[item], old_list[item], passes, expected_passes)
 
             if passes == expected_passes:
                 return True
@@ -95,40 +95,45 @@ class IPV4VariableTime(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
-        # temp_stas.append(self.upstream)
+
         if self.local_realm.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs", print_pass)
+            self._pass("All stations got IPs")
         else:
-            self._fail("Stations failed to get IPs", print_fail)
-            exit(1)
-        cur_time = datetime.datetime.now()
+            self._fail("Stations failed to get IPs")
+            self.exit_fail()
         old_cx_rx_values = self.__get_rx_values()
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         self.cx_profile.start_cx()
+
         passes = 0
         expected_passes = 0
+        curr_time = datetime.datetime.now()
+        end_time = self.local_realm.parse_time(self.test_duration) + curr_time
+        sleep_interval = self.local_realm.parse_time(self.test_duration) // 3
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(minutes=1)
+            time.sleep(sleep_interval.total_seconds())
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
 
             new_cx_rx_values = self.__get_rx_values()
-            # print(old_cx_rx_values, new_cx_rx_values)
-            # print("\n-----------------------------------")
-            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            # print("-----------------------------------\n")
+            if self.debug:
+                print(old_cx_rx_values, new_cx_rx_values)
+                print("\n-----------------------------------")
+                print(curr_time, end_time)
+                print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
             else:
-                self._fail("FAIL: Not all stations increased traffic", print_fail)
-                break
+                self._fail("FAIL: Not all stations increased traffic")
+                self.exit_fail()
+
             old_cx_rx_values = new_cx_rx_values
-            cur_time = datetime.datetime.now()
+            curr_time = datetime.datetime.now()
 
         if passes == expected_passes:
-            self._pass("PASS: All tests passed", print_pass)
+            self._pass("PASS: All tests passed")
+
 
     def stop(self):
         self.cx_profile.stop_cx()
@@ -163,7 +168,6 @@ def main():
 
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
-        #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
             Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
@@ -215,16 +219,16 @@ Generic command layout:
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
-        exit(1)
+        ip_var_test.exit_fail()
     ip_var_test.start(False, False)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
-        exit(1)
+        ip_var_test.exit_fail()
     time.sleep(30)
     ip_var_test.cleanup()
     if ip_var_test.passes():
-        print("Full test passed, all connections increased rx bytes")
+        ip_var_test.exit_success()
 
 
 if __name__ == "__main__":
