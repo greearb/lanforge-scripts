@@ -2279,7 +2279,7 @@ class TestGroupProfile(LFCliBase):
             return False
 
     def list_groups(self):
-        test_groups = self.local_realm.json_get("/testgroups")
+        test_groups = self.local_realm.json_get("/testgroups/all")
         tg_list = []
         if test_groups is not None:
             test_groups = test_groups["groups"]
@@ -2289,8 +2289,16 @@ class TestGroupProfile(LFCliBase):
         return tg_list
 
     def list_cxs(self):
-        # TODO: List cxs in profile, use cx_list or query?
-        pass
+        test_groups = self.local_realm.json_get("/testgroups/all")
+        if test_groups is not None:
+            test_groups = test_groups["groups"]
+            for group in test_groups:
+                for k,v in group.items():
+                    if v['name'] == self.group_name:
+                        return v['cross connects']
+
+        else:
+            return []
 
 
 class FIOEndpProfile(LFCliBase):
