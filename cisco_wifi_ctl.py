@@ -272,7 +272,7 @@ def main():
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
                      logg.info("9800 received CCP_CONFIG prompt doing some cleanup")
-                     egg.sendline("exit")
+                     egg.sendline("end")
                      sleep(0.1)
                      k = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                      sleep(0.1)
@@ -412,7 +412,7 @@ def main():
 
                if i == 5:
                   logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
-                  egg.sendline("exit")
+                  egg.sendline("end")
                   sleep(0.1)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
@@ -616,7 +616,7 @@ def main():
                         logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i,j,k,egg.before,egg.after))
                   if j == 4:
                      logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
-                     egg.sendline("exit")
+                     egg.sendline("end")
                      sleep(0.1)
                      k = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                      sleep(0.1)
@@ -748,12 +748,12 @@ def main():
 
                if i == 5:
                   logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
-                  egg.sendline("exit")
+                  egg.sendline("end")
                   sleep(0.3)
                   j = egg.expect_exact(["CCP","CCP_EN","User:","Password:",pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
-                     logg.info("9800 found CCP  will elevate loging i:{} j:{} before {} after {}".format(i,j,egg.before,egg.after))
+                     logg.info("9800 found {} will elevate loging i:{} j:{} before {} after {}".format(CCP, i,j,egg.before,egg.after))
                      egg.sendline("en")
                      sleep(0.1)
                      k = egg.expect_exact(["Password:",pexpect.TIMEOUT], timeout=2)
@@ -1307,36 +1307,37 @@ def main():
             try:
                egg.sendline("exit")
                sleep(0.2)
+               logged_out_9800 = True
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end")
                sleep(0.1)
          if i == 3:
-            logg.info("{} prompt received will send exit".format(CCP_CONFIG_WLAN))
+            logg.info("{} prompt received will send end".format(CCP_CONFIG_WLAN))
             try:
-               egg.sendline("exit")
+               egg.sendline("end")
                sleep(0.2)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end")
                sleep(0.1)
          if i == 4:
-            logg.info("(config-policy-tag)# prompt received will send exit")
+            logg.info("(config-policy-tag)# prompt received will send end")
             try:
-               egg.sendline("exit")
+               egg.sendline("end")
                sleep(0.2)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end")
                sleep(0.1)
          if i == 5:
-            logg.info("{} prompt received will send exit".format(CCP_CONFIG_LINE))
+            logg.info("{} prompt received will send end".format(CCP_CONFIG_LINE))
             try:
-               egg.sendline("exit")
+               egg.sendline("end")
                sleep(0.2)
             except:
-               logg.info("9800 exception on exit")
+               logg.info("9800 exception on end")
                sleep(0.1)
          if i == 6:
-            logg.info("9800 expect timeout send exit")
-            egg.sendline("exit")
+            logg.info("9800 expect timeout send end")
+            egg.sendline("end")
             break
       if( logged_out_9800 == False):
          logg.info("9800 did not send logout at end of command processing this could tie up the connection") 
