@@ -1284,7 +1284,7 @@ def main():
       loop_count = 0
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
-         i = egg.expect_exact(["CCP","CCP_EN", "CCP_CONFIG","(config-wlan)#",CCP_POLICY_TAG,CCP_POLICY_TAG,pexpect.TIMEOUT],timeout=5)
+         i = egg.expect_exact(["CCP","CCP_EN", "CCP_CONFIG",CCP_CONFIG_WLAN,CCP_POLICY_TAG,CCP_CONFIG_LINE,pexpect.TIMEOUT],timeout=5)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
             logg.info("{} prompt received can send logout".format(CCP))
