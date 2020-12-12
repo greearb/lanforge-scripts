@@ -437,19 +437,20 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-
-        parser.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
-        parser.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
-        parser.add_argument('-u', '--upstream_port',
+        optional = parser.add_argument_group('optional arguments')
+        required = parser.add_argument_group('required arguments')
+        optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
+        optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
+        optional.add_argument('-u', '--upstream_port',
                             help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                             default='1.eth1')
-        parser.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', default=None)
-        parser.add_argument('--security',       help='WiFi Security protocol: <open | wep | wpa | wpa2 | wpa3 >', default=None)
-        parser.add_argument('--ssid',           help='SSID for stations to associate to', default=None)
-        parser.add_argument('--passwd',         help='WiFi passphrase', default=None)
-        parser.add_argument('--num_stations',   help='Number of stations to create', default=0)
-        parser.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
-        parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
+        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+        required.add_argument('--ssid',           help='SSID for stations to associate to', required=True)
+        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', required=True)
+        optional.add_argument('--num_stations',   help='Number of stations to create', default=0)
+        optional.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
+        optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
 	
 
         return parser

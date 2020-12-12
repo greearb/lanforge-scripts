@@ -24,8 +24,8 @@ class IPv4Test(LFCliBase):
                  ssid,
                  security,
                  password,
-                 host="localhost",
-                 port=8080,
+                 host,
+                 port,
                  sta_list=None,
                  number_template="00000",
                  radio="wiphy0",
@@ -138,20 +138,19 @@ def main():
         test_ipv4_connection.py
 --------------------
 Generic command example:
-./test_ipv4_connection.py --upstream_port eth1 \\
-    --radio wiphy0 \\
-    --num_stations 3 \\
-    --security open {open|wep|wpa|wpa2|wpa3} \\
-    --ssid netgear \\
-    --passwd BLANK \\
+./test_ipv4_connection.py 
+    --upstream_port eth1 
+    --radio wiphy0 
+    --num_stations 3 
+    --security open 
+    --ssid netgear 
+    --passwd BLANK 
     --debug
             ''')
 
     args = parser.parse_args()
     if (args.radio is None):
        raise ValueError("--radio required")
-    lfjson_host = args.mgr
-    lfjson_port = args.mgr_port
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
