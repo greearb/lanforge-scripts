@@ -99,7 +99,7 @@ def get_vif_state(ap_ip, username, password):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(ap_ip, username=username, password=password, timeout=5)
         stdin, stdout, stderr = client.exec_command(
-        "/usr/opensync/bin/ovsh s Wifi_VIF_Config -c | grep 'ssid               :'")
+        "/usr/opensync/bin/ovsh s Wifi_VIF_State -c | grep 'ssid               :'")
 
         output = str(stdout.read(), 'utf-8')
         ssid_output = output.splitlines()
