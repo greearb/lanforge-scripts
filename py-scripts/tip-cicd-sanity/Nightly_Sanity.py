@@ -73,6 +73,7 @@ tr_user = os.getenv('TR_USER')
 tr_pw = os.getenv('TR_PWD')
 milestoneId = os.getenv('MILESTONE')
 projectId = os.getenv('PROJECT_ID')
+testRunPrefix = os.getenv('TEST_RUN_PREFIX')
 
 ##Jfrog credentials
 jfrog_user = os.getenv('JFROG_USER')
@@ -429,10 +430,10 @@ for key in equipment_id_dict:
 
         ###Create Test Run
         today = str(date.today())
-        test_run_name = "Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image
+        test_run_name = testRunPrefix + fw_model + "_" + today + "_" + latest_ap_image
         client.create_testrun(name=test_run_name, case_ids=test_cases, project_id=projId, milestone_id=milestoneId,
                               description="Automated Nightly Sanity test run for new firmware build")
-        rid = client.get_run_id(test_run_name="Daily_Sanity_" + fw_model + "_" + today + "_" + latest_ap_image)
+        rid = client.get_run_id(test_run_name= testRunPrefix + fw_model + "_" + today + "_" + latest_ap_image)
         print("TIP run ID is:", rid)
 
         ###GetCloudSDK Version

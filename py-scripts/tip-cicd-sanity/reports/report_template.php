@@ -466,7 +466,7 @@ $json = json_decode($results, true);
     <TR ALIGN="CENTER">
       <TD>5656</TD>
       <TD>CloudSDK</TD>
-      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - Custom VLAN Mode </TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - Custom VLAN </TD>
       <TD><?php echo print_r($json['tests']['ea8300']['5656'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5656'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5656'],true) ?></TD>
@@ -476,7 +476,7 @@ $json = json_decode($results, true);
    <TR ALIGN="CENTER">
       <TD>5657</TD>
       <TD>CloudSDK</TD>
-      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2 - Custom VLAN Mode </TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2 - Custom VLAN </TD>
       <TD><?php echo print_r($json['tests']['ea8300']['5657'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5657'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5657'],true) ?></TD>
@@ -486,7 +486,7 @@ $json = json_decode($results, true);
    <TR ALIGN="CENTER">
       <TD>5658</TD>
       <TD>CloudSDK</TD>
-      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA - Custom VLAN Mode </TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA - Custom VLAN </TD>
       <TD><?php echo print_r($json['tests']['ea8300']['5658'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5658'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5658'],true) ?></TD>
@@ -496,7 +496,7 @@ $json = json_decode($results, true);
    <TR ALIGN="CENTER">
       <TD>5659</TD>
       <TD>CloudSDK</TD>
-      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2-EAP - Custom VLAN Mode </TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2-EAP - Custom VLAN </TD>
       <TD><?php echo print_r($json['tests']['ea8300']['5659'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5659'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5659'],true) ?></TD>
