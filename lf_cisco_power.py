@@ -173,7 +173,6 @@ def usage():
    print("--wlanID: wlanID  for 9800 , defaults to 1")
    print("--series: controller series  9800 , defaults to 3504")
    print("--slot: 9800 AP slot defaults to 1")
-   print("--rssi: Select rssi to use for calculation (combined | beacon) Default is combined")
    print("--create_station", "create LANforge station at the beginning of the test")
    print("--radio" ,"radio to create LANforge station on at the beginning of the test")
    print("--ssid", "ssid default open-wlan")
@@ -185,6 +184,7 @@ def usage():
    print("--exit_on_fail","--exit_on_fail,  exit on test failure")
    print("--exit_on_error","--exit_on_error, exit on test error, test mechanics failed")
    print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+   print('--beacon_delta', "--beacon_delta <value>  is the delta that is allowed between the controller tx and the beacon measured")
 
 
    print("-h|--help")
@@ -255,7 +255,6 @@ def main():
    parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1")
    parser.add_argument("--series",           type=str, help="--series  9800 , defaults to 3504",default="3504")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
-   parser.add_argument("--rssi",             type=str, help="Select rssi to use for calculation (combined | beacon) Default is combined",choices=["beacon","combined"])
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
    parser.add_argument("--ssid",             type=str, help="ssid default open-wlan",default="open-wlan")
@@ -268,6 +267,7 @@ def main():
    parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
    parser.add_argument('-e','--email',       action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt default WLC",default="WLC")
+   parser.add_argument('--beacon_dbm_diff',     type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -300,10 +300,6 @@ def main():
           band = args.band
       else:
           band = "a"
-      if(args.rssi != None):
-          rssi_to_use = args.rssi 
-      else:
-          rssi_to_use = "combined"
       if (args.pf_dbm != None):
           pf_dbm = args.pf_dbm
       if (args.pf_a4_dropoff != None):
@@ -403,17 +399,9 @@ def main():
        logg.info("ERROR: Antenna gain must be specified.")
        exit(1)
 
-   if (rssi_to_use == "beacon"):
-       use_beacon   = "-USED"
-       use_combined = ""
-   else:
-       use_beacon   = ""
-       use_combined = "-USED"
-
-        
    # Full spread-sheet data
    csv = open(full_outfile, "w")
-   csv.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal%s\tCombined-Signal%s\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tTimeStamp\tWarnings-and-Errors"%(use_beacon,use_combined,pf_dbm))
+   csv.write("Regulatory Domain\tCabling Pathloss\tAntenna Gain\tCfg-Channel\tCfg-NSS\tCfg-AP-BW\tTx Power\tBeacon-Signal\tCombined-Signal\tRSSI 1\tRSSI 2\tRSSI 3\tRSSI 4\tAP-BSSID\tRpt-BW\tRpt-Channel\tRpt-Mode\tRpt-NSS\tRpt-Noise\tRpt-Rxrate\tCtrl-AP-MAC\tCtrl-Channel\tCtrl-Power\tCtrl-dBm\tCalc-dBm-Combined\tDiff-dBm-Combined\tAnt-1\tAnt-2\tAnt-3\tAnt-4\tOffset-1\tOffset-2\tOffset-3\tOffset-4\tPASS/FAIL(+-%sdB)\tTimeStamp\tWarnings-and-Errors"%(pf_dbm))
    csv.write("\n");
    csv.flush()
 
@@ -480,6 +468,10 @@ def main():
    green_left = workbook.add_format({'color': 'green', 'align': 'left'})
    green_left.set_bg_color("#e0efda")
    green_left.set_border(1)
+   orange_left = workbook.add_format({'color': 'orange', 'align': 'left'})
+   orange_left.set_bg_color("#e0efda")
+   orange_left.set_border(1)
+
 
    worksheet.set_row(0, 45) # Set height
    worksheet.set_column(0, 0, 10) # Set width
@@ -502,16 +494,10 @@ def main():
 
    worksheet.set_column(col, col, 15) # Set width
    worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold); col += 1
-   if(rssi_to_use == "beacon"):
-       worksheet.set_column(col, col, 10) # Set width
-       worksheet.write(row, col, 'Beacon\nRSSI USED\n', dpeach_bold); col += 1
-       worksheet.set_column(col, col, 10) # Set width
-       worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
-   else:
-       worksheet.set_column(col, col, 10) # Set width
-       worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
-       worksheet.set_column(col, col, 10) # Set width
-       worksheet.write(row, col, 'Combined\nRSSI USED\n', dpeach_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n1', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n2', dpeach_bold); col += 1
    worksheet.write(row, col, 'RSSI\n3', dpeach_bold); col += 1
@@ -524,6 +510,16 @@ def main():
    worksheet.write(row, col, 'Offset\n2', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n3', dyel_bold); col += 1
    worksheet.write(row, col, 'Offset\n4', dyel_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Controller\n dBm', dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Calc dBm\n Beacon', dblue_bold); col += 1
+   worksheet.set_column(col, col, 14) # Set width
+   worksheet.write(row, col, 'Diff\n Cntl dBm\n & Beacon dBm\n (+/- {} dBm)'.format(args.beacon_dbm_diff), dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Calc dBm\n Combined', dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Diff dBm\n Combined', dblue_bold); col += 1
    worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)"%(pf_dbm), dgreen_bold); col += 1
    worksheet.set_column(col, col, 24) # Set width
@@ -683,6 +679,7 @@ def main():
                for tx in txpowers:
 
                    e_tot = ""
+                   w_tot = ""
 
                    # Stop traffic
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
@@ -935,7 +932,7 @@ def main():
                    cc_dbm_rcv = False
                    if args.series == "9800":
                        while cc_dbm_rcv == False and loop_count <=3:
-                          logg.info("9800 read controller dbm") 
+                          logg.info("9800 read controller dBm") 
                           loop_count +=1
                           time.sleep(1)
                           try:
@@ -995,7 +992,7 @@ def main():
                                 e_tot += err
                                 e_tot += "  "
                              else:
-                                logg.info("9800 read controller dbm loop_count {}".format(loop_count)) 
+                                logg.info("9800 read controller dBm loop_count {}".format(loop_count)) 
                           else:
                              cc_dbm_rcv = True    
                        try:
@@ -1275,12 +1272,11 @@ def main():
 
                    pi = int(pathloss)
                    ag = int(antenna_gain)   
-                   if(rssi_to_use == "beacon"):
-                       logg.info("rssi_to_use == beacon: beacon_sig: %s "%(beacon_sig))
-                       calc_dbm = int(beacon_sig) + pi + rssi_adj + ag
-                   else:
-                       logg.info("rssi_to_use == combined: sig: %s"%sig)
-                       calc_dbm = int(sig) + pi + rssi_adj + ag
+                   calc_dbm_beacon = int(beacon_sig) + pi + rssi_adj + ag
+                   logg.info("calc_dbm_beacon".format(calc_dbm_beacon))
+
+                   logg.info("sig: %s"%sig)
+                   calc_dbm = int(sig) + pi + rssi_adj + ag
                    logg.info("calc_dbm %s"%(calc_dbm))
 
 
@@ -1310,9 +1306,15 @@ def main():
                       cc_dbmi = 0
                    else:
                       cc_dbmi = int(cc_dbm)
-                   diff_dbm = calc_dbm - cc_dbmi
+                   diff_dbm = calc_dbm - cc_dbmi 
+                   diff_dbm_beacon = calc_dbm_beacon - cc_dbmi
+                   if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
+                      w_tot = "WARNING: Controller and beacon power diff greater then +/- {} dBm".format(args.beacon_dbm_diff) 
+
                    pfs = "PASS"
                    pfrange = pf_dbm;
+
+
 
                    # Allowed per path is what we expect the AP should be transmitting at.
                    # calc_ant1 is what we calculated it actually transmitted at based on rssi
@@ -1448,6 +1450,11 @@ def main():
                        worksheet.write(row, col, diff_a4, center_yel_red); col += 1
                    else:
                        worksheet.write(row, col, diff_a4, center_yel); col += 1
+                   worksheet.write(row, col, cc_dbmi, center_blue); col +=1
+                   worksheet.write(row, col, calc_dbm_beacon, center_blue); col +=1
+                   worksheet.write(row, col, diff_dbm_beacon, center_blue); col +=1
+                   worksheet.write(row, col, calc_dbm, center_blue); col +=1
+                   worksheet.write(row, col, diff_dbm, center_blue); col +=1
                        
                    if (pfs == "FAIL"):
                        worksheet.write(row, col, pfs, red); col += 1
@@ -1468,9 +1475,15 @@ def main():
                        e_tot += err
 
                    if (e_tot == ""):
-                       worksheet.write(row, col, e_tot, green_left); col += 1
+                       e_w_tot = e_tot + w_tot
+                       if(w_tot == ""):
+                           worksheet.write(row, col, e_w_tot, green_left); col += 1
+                       else:
+                           worksheet.write(row, col, e_w_tot, orange_left); col += 1
+
                    else:
-                       worksheet.write(row, col, e_tot, red_left); col += 1
+                       e_w_tot = e_tot + w_tot
+                       worksheet.write(row, col, e_w_tot, red_left); col += 1
                    row += 1
 
                    csv.write("\n");

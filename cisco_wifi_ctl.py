@@ -92,7 +92,7 @@ def main():
    parser = argparse.ArgumentParser(description="Cisco AP Control Script")
    parser.add_argument("-d", "--dest",    type=str, help="address of the cisco controller")
    parser.add_argument("-o", "--port",    type=int, help="control port on the controller")
-   parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="WLC")
+   parser.add_argument("--prompt",        type=str, help="Prompt to expect", default="WLC") # (Cisco Controller)#
    parser.add_argument("--series",        type=str, help="cisco controller series",default="9800")
    parser.add_argument("-u", "--user",    type=str, help="credential login/username")
    parser.add_argument("-p", "--passwd",  type=str, help="credential password")
