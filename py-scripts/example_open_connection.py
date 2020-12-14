@@ -18,7 +18,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", radio ="wiphy0",_debug_on=False,
+    def __init__(self, ssid, security, password, sta_list=None, number_template="00000", host="localhost", port=8080,  radio ="wiphy0",_debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -66,8 +66,6 @@ class IPv4Test(LFCliBase):
                                            debug=self.debug)
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
         prog='example_open_connection.py',
@@ -82,12 +80,12 @@ def main():
         --------------------
 
         Generic command example:
-    python3 ./example_open_connection.py  \\
-        --host localhost (optional) \\
-        --port 8080  (optional) \\
-        --num_stations 3 \\
-        --radio wiphy1 (optional)
-        --ssid netgear-open \\
+    python3 ./example_open_connection.py  
+        --mgr localhost  
+        --mgr_port 8080   
+        --num_stations 3 
+        --radio wiphy1 
+        --ssid netgear-open 
         --passwd [BLANK]
         --debug 
             ''')
@@ -101,7 +99,7 @@ def main():
                                         start_id_=0,
                                         end_id_=num_sta-1,
                                         padding_number_=10000)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd,
+    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port, ssid=args.ssid, password=args.passwd,
                        security="open", radio=args.radio, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60

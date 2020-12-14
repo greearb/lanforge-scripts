@@ -412,7 +412,7 @@ class LFCliBase:
         self.test_results.append(self.pass_pref + message)
         if print_:
             print(self.pass_pref + message)
-
+     #Create argparse with radio, securiy, ssid and passwd required
     @staticmethod
     def create_bare_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
@@ -423,13 +423,15 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-
-        parser.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
-        parser.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
-        parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+        optional = parser.add_argument_group('optional arguments')
+        required = parser.add_argument_group('required arguments')
+        optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
+        optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
+        optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
 
         return parser
 
+    #Create argparse with radio, securiy, ssid and passwd required
     @staticmethod
     def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
@@ -439,19 +441,19 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('optional arguments')
         required = parser.add_argument_group('required arguments')
+        #Optional Args
         optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
         optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
         optional.add_argument('-u', '--upstream_port',
                             help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                             default='1.eth1')
-        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
-        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
-        required.add_argument('--ssid',           help='SSID for stations to associate to', required=True)
-        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', required=True)
         optional.add_argument('--num_stations',   help='Number of stations to create', default=0)
         optional.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
-	
+        #Required Args
+        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
+        required.add_argument('--ssid',           help='SSID for stations to associate to', required=True)
+        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', required=True)
 
         return parser
 

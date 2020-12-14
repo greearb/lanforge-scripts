@@ -18,7 +18,7 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, number_template="00000", radio="wiphy0",_debug_on=False,
+    def __init__(self,  ssid, security, password, sta_list=None,host="localhost", port=8080, number_template="00000", radio="wiphy0",_debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -65,9 +65,6 @@ class IPv4Test(LFCliBase):
                                            debug=self.debug)
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='example_wpa2_connection.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -80,18 +77,15 @@ def main():
         example_wpa2_connection.py
         --------------------
 
-        Generic command example:
-    python3 ./example_wpa2_connection.py  \\
-        --host localhost (optional) \\
-        --port 8080  (optional) \\
-        --num_stations 3 \\
-        --ssid netgear-wpa2 \\
-        --passwd admin123-wpa2 \\
+        Generic command example
+    python3 ./example_wpa2_connection.py 
+        --host localhost 
+        --port 8080  
+        --num_stations 3 
+        --ssid netgear-wpa2 
+        --passwd admin123-wpa2 
         --radio wiphy1
         --debug 
-
-    Note:   multiple --radio switches may be entered up to the number of radios available:
-                     --radio wiphy0 <stations> <ssid> <ssid password>  --radio <radio 01> <number of last station> <ssid> <ssid password>
             ''')
 
     args = parser.parse_args()
@@ -105,8 +99,8 @@ def main():
                                         end_id_=num_sta-1,
                                         padding_number_=10000,
                                         radio=args.radio)
-    ip_test = IPv4Test(lfjson_host, lfjson_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
-                       security="wiphy0", sta_list=station_list)
+    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
+                       security="wpa2", sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
