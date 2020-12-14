@@ -184,7 +184,6 @@ class CloudSDK:
             profile = json.load(ap_profile)
             profile["name"] = name
             profile["childProfileIds"] = child_profiles
-            print(profile["childProfileIds"])
 
         with open(template, 'w') as ap_profile:
             json.dump(profile, ap_profile)
@@ -199,3 +198,28 @@ class CloudSDK:
         print(ap_profile)
         ap_profile_id = ap_profile['id']
         return ap_profile_id
+
+    def create_ssid_profile(cloudSDK_url, bearer, template, name, ssid, passkey, radius, security, mode, vlan, radios):
+        with open(template, 'r+') as ssid_profile:
+            profile = json.load(ssid_profile)
+            profile['name'] = name
+            profile['details']['ssid'] = ssid
+            profile['details']['keyStr'] = passkey
+            profile['details']['radiusServiceName'] = radius
+            profile['details']['secureMode'] = security
+            profile['details']['forwardMode'] = mode
+            profile['details']['vlanId'] = vlan
+            profile['details']['appliedRadios'] = radios
+        with open(template, 'w') as ssid_profile:
+            json.dump(profile, ssid_profile)
+
+        url = cloudSDK_url + "/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        ssid_profile = response.json()
+        #print(ssid_profile)
+        ssid_profile_id = ssid_profile['id']
+        return ssid_profile_id
