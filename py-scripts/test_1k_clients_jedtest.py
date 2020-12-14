@@ -18,16 +18,16 @@ import pprint
 
 class Test1KClients(LFCliBase):
     def __init__(self,
-                 host,
-                 port,
-                 upstream,
-                 side_a_min_rate=0, side_a_max_rate=56000,
-                 side_b_min_rate=0, side_b_max_rate=56000,
-                 num_sta_=200,
-                 test_duration="30s",
-                 _debug_on=True,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+                upstream,
+                host="localhost",
+                port=8080,
+                side_a_min_rate=0, side_a_max_rate=56000,
+                side_b_min_rate=0, side_b_max_rate=56000,
+                num_sta_=200,
+                test_duration="30s",
+                _debug_on=True,
+                _exit_on_error=False,
+                _exit_on_fail=False):
         super().__init__(host,
                          port,
                          _debug=_debug_on,
@@ -61,6 +61,8 @@ class Test1KClients(LFCliBase):
         self.name_prefix = "1k"
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.cx_profile.name_prefix = self.name_prefix
+        print(side_a_max_rate)
+        print(side_b_max_rate)
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
@@ -196,10 +198,9 @@ class Test1KClients(LFCliBase):
 
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
+
     
-    argparser = LFCliBase.create_basic_argparse(prog=__file__,
+    parser = LFCliBase.create_bare_argparse(prog=__file__,
                                                 formatter_class=argparse.RawTextHelpFormatter,
                                                       epilog='''\
            creates lots of stations across multiple radios.
@@ -209,25 +210,36 @@ def main():
         --------------------
         Generic command layout:
         python3 ./test_1k_clients_jedtest.py 
+            --mgr localhost
+            --mgr_port 8080
             --sta_per_radio 300
             --test_duration 3m
-            --a_min 1000
-            --b_min 1000
+            --side_a_min 1000
+            --side_b_min 1000
+            --side_a_max 0
+            --side_b_max 0
             --debug        '''          
         )
-    argparser.add_argument("--sta_per_radio",
-                           type=int,
-                           help="number of stations per radio")
-    argparser.add_argument("--test_duration",
-                           type=int,
-                           help="length of test duration")
+    optional = parser.add_argument_group('optional arguments')
+    required = parser.add_argument_group('required arguments')
+    required.add_argument("--sta_per_radio",type=int,help="number of stations per radio")
+    optional.add_argument("--test_duration",type=int,help="length of test duration")
+    optional.add_argument("--side_a_min",type=int,help="length of test duration")
+    optional.add_argument("--side_b_min",type=int,help="length of test duration")
+    optional.add_argument("--side_b_max",type=int,help="length of test duration")
+    optional.add_argument("--side_a_max",type=int,help="length of test duration")
+    optional.add_argument('-u', '--upstream_port',help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',default='1.eth1')
 
-    args = argparser.parse_args()
+    args = parser.parse_args()
 
-    kilo_test = Test1KClients(lfjson_host,
-                              lfjson_port,
+    kilo_test = Test1KClients(host=args.mgr,
+                              port=args.mgr_port,
                               upstream=args.upstream_port,
                               num_sta_=args.sta_per_radio,
+                              side_a_max_rate=args.side_a_max,
+                              side_a_min_rate=args.side_a_min,
+                              side_b_max_rate=args.side_b_max,
+                              side_b_min_rate=args.side_b_min,
                               _debug_on=args.debug)
 
     kilo_test.pre_cleanup()
