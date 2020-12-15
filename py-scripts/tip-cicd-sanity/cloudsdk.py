@@ -42,8 +42,8 @@ class CloudSDK:
     def __init__(self):
         self.user = user
 
-    def get_bearer(cloudSDK_url):
-        cloud_login_url = cloudSDK_url+"/management/v1/oauth2/token"
+    def get_bearer(cloudSDK_url, cloud_type):
+        cloud_login_url = cloudSDK_url+"/management/"+cloud_type+"/oauth2/token"
         payload = '''
         {
         "userId": "'''+user+'''",

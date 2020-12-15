@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 
+##AP Models Under Test
 ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
+
+##Cloud Type(cloudSDK = v1, CMAP = cmap)
+cloud_type = "v1"
 
 ##AP Models for firmware upload
 cloud_sdk_models = {

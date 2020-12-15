@@ -72,12 +72,9 @@ from lab_ap_info import ap_models
 from lab_ap_info import mimo_2dot4g
 from lab_ap_info import mimo_5g
 from lab_ap_info import customer_id
+from lab_ap_info import cloud_type
 #import json file to determine if throughput should be run for specific AP model
 sanity_status = json.load(open("sanity_status.json"))
-
-
-#bearer = CloudSDK.get_bearer(cloudSDK_url)
-#print(bearer)
 
 #create CSV file for test run
 today = str(date.today())
@@ -101,7 +98,7 @@ for key in equipment_id_dict:
     if sanity_status['sanity_status'][key] == "passed":
         logger.info("Running throughput test on " + key)
         ##Get Bearer Token to make sure its valid (long tests can require re-auth)
-        bearer = CloudSDK.get_bearer(cloudSDK_url)
+        bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
         ###Get Current AP Firmware
         equipment_id = equipment_id_dict[key]
         ap_fw = CloudSDK.ap_firmware(customer_id, equipment_id, cloudSDK_url, bearer)

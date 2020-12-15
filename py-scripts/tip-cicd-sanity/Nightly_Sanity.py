@@ -238,6 +238,7 @@ from lab_ap_info import equipment_ip_dict
 from lab_ap_info import eqiupment_credentials_dict
 from lab_ap_info import ap_models
 from lab_ap_info import customer_id
+from lab_ap_info import cloud_type
 
 ##Test Cases to be included in Test Runs
 test_cases = [
@@ -342,7 +343,7 @@ with open(report_path + today + '/report_data.json', 'w') as report_json_file:
     json.dump(report_data, report_json_file)
 
 ###Get Cloud Bearer Token
-bearer = CloudSDK.get_bearer(cloudSDK_url)
+bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
 
 ############################################################################
 #################### Jfrog Firmware Check ##################################
@@ -367,7 +368,7 @@ for model in ap_models:
 
 for key in equipment_id_dict:
     ##Get Bearer Token to make sure its valid (long tests can require re-auth)
-    bearer = CloudSDK.get_bearer(cloudSDK_url)
+    bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
 
     ###Get Current AP Firmware and upgrade
     equipment_id = equipment_id_dict[key]
@@ -375,7 +376,6 @@ for key in equipment_id_dict:
     ap_username = "root"
     ap_password = eqiupment_credentials_dict[key]
     print("AP MODEL UNDER TEST IS", key)
-    # ap_fw = CloudSDK.ap_firmware(customer_id,equipment_id,cloudSDK_url,bearer)
     try:
         ap_cli_info = ssh_cli_active_fw(ap_ip, ap_username, ap_password)
         ap_cli_fw = ap_cli_info['active_fw']
