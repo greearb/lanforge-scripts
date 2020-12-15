@@ -17,13 +17,14 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, ssid, security, password, sta_list=None, number_template="00000",  host="localhost", port=8080,radio = "wiphy0",_debug_on=False,
+    def __init__(self, ssid, security, password, sta_list=None, mode = 0, number_template="00000",  host="localhost", port=8080,radio = "wiphy0",_debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.mode = mode
         self.radio = radio
         self.security = security
         self.password = password
@@ -36,10 +37,11 @@ class IPv4Test(LFCliBase):
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
+        self.station_profile.ssid_pass = self.password
+        self.station_profile.mode =self.mode
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.station_profile.mode = mode
 
     def build(self):
         # Build stations
@@ -86,6 +88,8 @@ def main():
         --mgr localhost 
         --mgr_port 8080  
         --num_stations 6 
+        --mode { 0 - 802.11bgn 40, 1 - 802.11a  , 2- 802.11b 20,
+                3 - 802.11bg 20 , 5 - 802.11bgn 40}
         --radio wiphy2
         --security {open|wep|wpa|wpa2|wpa3} 
         --ssid netgear-wpa3 
@@ -95,7 +99,8 @@ def main():
             ''')
     optional = parser.add_argument_group('optional arguments')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    optional.add_argument('--mode',help='Used to force mode of stations')
 
     args = parser.parse_args()
     num_sta = 2
@@ -108,7 +113,7 @@ def main():
                                         end_id_=num_sta-1,
                                         padding_number_=10000,
                                         radio=args.radio)
-    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port, ssid=args.ssid, password=args.passwd, radio=args.radio,
+    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port, ssid=args.ssid, password=args.passwd, radio=args.radio, mode= args.mode,
                        security=args.security, sta_list=station_list)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
