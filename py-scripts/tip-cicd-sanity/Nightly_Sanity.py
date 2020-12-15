@@ -236,6 +236,7 @@ from lab_ap_info import profile_info_dict
 from lab_ap_info import cloud_sdk_models
 from lab_ap_info import equipment_ip_dict
 from lab_ap_info import eqiupment_credentials_dict
+from lab_ap_info import ap_models
 
 ##Test Cases to be included in Test Runs
 test_cases = [
@@ -292,10 +293,6 @@ test_cases = [
     5661
 ]
 
-##AP models for jfrog
-ap_models = ["ec420", "ea8300", "ecw5211", "ecw5410"]
-# ap_models = ["ecw5410"]
-
 ############################################################################
 #################### Create Report #########################################
 ############################################################################
@@ -322,37 +319,18 @@ except:
 tc_results = dict.fromkeys(test_cases, "not run")
 
 report_data = dict()
-report_data['cloud_sdk'] = {
-    "ea8300": {
-        "date": "unknown",
-        "commitId": "unknown",
-        "projectVersion": "unknown"
-    },
-    "ecw5211": {
-        "date": "unknown",
-        "commitId": "unknown",
-        "projectVersion": "unknown"
-    },
-    "ecw5410": {
-        "date": "unknown",
-        "commitId": "unknown",
-        "projectVersion": "unknown"
-    },
-    "ec420": {
-        "date": "unknown",
-        "commitId": "unknown",
-        "projectVersion": "unknown"
+report_data["cloud_sdk"] = dict.fromkeys(ap_models, "")
+for key in report_data["cloud_sdk"]:
+    report_data["cloud_sdk"][key] = {
+        "date": "N/A",
+        "commitId": "N/A",
+        "projectVersion": "N/A"
     }
-}
 report_data["fw_available"] = dict.fromkeys(ap_models, "Unknown")
 report_data["fw_under_test"] = dict.fromkeys(ap_models, "N/A")
 report_data['pass_percent'] = dict.fromkeys(ap_models, "")
-report_data['tests'] = {
-    "ea8300": "",
-    "ecw5211": "",
-    "ecw5410": "",
-    "ec420": ""
-}
+
+report_data['tests'] = dict.fromkeys(ap_models, "")
 for key in ap_models:
     report_data['tests'][key] = dict.fromkeys(test_cases, "not run")
 
