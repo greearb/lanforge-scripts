@@ -2268,8 +2268,8 @@ class TestGroupProfile(LFCliBase):
         self.local_realm.json_post("/cli-json/rm_tgcx", {"tgname": self.group_name, "cxname": cx_name})
 
     def check_group_exists(self):
-        test_groups = self.local_realm.json_get("/testgroups")
-        if test_groups is not None:
+        test_groups = self.local_realm.json_get("/testgroups/all")
+        if test_groups is not None and "groups" in test_groups:
             test_groups = test_groups["groups"]
             for group in test_groups:
                 for k,v in group.items():
