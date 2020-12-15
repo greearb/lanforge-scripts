@@ -37,6 +37,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.security = security
         self.number_template = number_template
         self.resource = resource
+        self.debug=_debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.cx_stations_lists = station_lists
@@ -97,14 +98,15 @@ class L3VariableTimeLongevity(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
-        
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.side_b)
         self.local_realm.json_post("/cli-json/set_port", up_request)
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
-            print("Bringing up station {}".format(station_profile))
+            if self.debug:
+                print("Bringing up station {}".format(station_profile))
             station_profile.admin_up(self.resource)
             if self.local_realm.wait_for_ip(self.resource, station_list,timeout_sec=10*len(station_list)):
-                print("ip's aquired {}".format(station_list))
+                if self.debug:
+                    print("ip's aquired {}".format(station_list))
             else:
                 print("print failed to get IP's: {}".format(station_list))
                 if self.local_realm.wait_for_ip(self.resource, station_list,timeout_sec=120):
@@ -168,10 +170,12 @@ class L3VariableTimeLongevity(LFCliBase):
         while timeout > 0 and done == False:
             time.sleep( 1)
             port_r = self.json_get("/port/1/1/list?fields=alias")
-            print("port interfaces {}".format(port_r["interfaces"]))
+            if self.debug:
+                print("port interfaces {}".format(port_r["interfaces"]))
             for interface in port_r["interfaces"]:
                 if "sta" in interface:
-                    print("interface {}".format(interface))
+                    if self.debug:
+                        print("interface {}".format(interface))
                 else:
                     done = True
                     break   
@@ -221,12 +225,13 @@ class L3VariableTimeLongevity(LFCliBase):
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
-            print("radio: {} station_profile: {} Creating stations: {} ".format(self.radio_list[index],station_profile, station_list))
+            if self.debug:
+                print("radio: {} station_profile: {} Creating stations: {} ".format(self.radio_list[index],station_profile, station_list))
         
             temp_station_list = []
             for station in range(len(station_list)):
                 temp_station_list.append(str(self.resource) + "." + station_list[station])
-            station_profile.create(resource=1, radio=self.radio_list[index], sta_names_=station_list, debug=False )
+            station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=False )
             index += 1
         self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.'+self.side_b, sleep_time=.5)
         self._pass("PASS: Stations build finished")
@@ -273,8 +278,11 @@ Scripts are executed from: ./lanforge/py-scripts
 Stations start counting form zero,  thus stations count from zero - number of las 
 
 Generic command layout:
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic type> --upstream_port <port> 
-            --radio <radio 0> <stations> <ssid> <ssid password>
+python ./test_l3_longevity.py 
+        --test_duration <duration> 
+        --endp_type <traffic type> 
+        --upstream_port <port> 
+        --radio <radio_name> <num_stations> <ssid> <ssid_password>
 
 Note:   
 multiple --radio switches may be entered up to the number of radios available:
@@ -301,8 +309,8 @@ Example:
 
 Example: 
 python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 \
-    --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 \
-    --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
+                                --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 \
+                                --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
 
         ''')
 
@@ -311,6 +319,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
     parser.add_argument('-t', '--endp_type', help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
                         default='lf_udp',type=valid_endp_type)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
 
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('-r','--radio', action='append', nargs=4, metavar=('<wiphyX>', '<number last station>','<ssid>','<ssid password>'),
@@ -376,7 +385,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
                                    ssid_password_list=ssid_password_list,
                                    resource=1,
                                    security="wpa2", test_duration=test_duration,
-                                   side_a_min_rate=256000, side_b_min_rate=256000)
+                                   side_a_min_rate=256000, side_b_min_rate=256000,
+                                   _debug_on=args.debug)
 
     ip_var_test.cleanup(station_list)
     ip_var_test.build()
