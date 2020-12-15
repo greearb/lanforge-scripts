@@ -31,6 +31,9 @@ sanity_status = {
     "ec420": 'failed'
 }
 
+##Customer ID for testing
+customer_id = "2"
+
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
     "ea8300": "19",

@@ -237,6 +237,7 @@ from lab_ap_info import cloud_sdk_models
 from lab_ap_info import equipment_ip_dict
 from lab_ap_info import eqiupment_credentials_dict
 from lab_ap_info import ap_models
+from lab_ap_info import customer_id
 
 ##Test Cases to be included in Test Runs
 test_cases = [
@@ -369,7 +370,6 @@ for key in equipment_id_dict:
     bearer = CloudSDK.get_bearer(cloudSDK_url)
 
     ###Get Current AP Firmware and upgrade
-    customer_id = "2"
     equipment_id = equipment_id_dict[key]
     ap_ip = equipment_ip_dict[key]
     ap_username = "root"
