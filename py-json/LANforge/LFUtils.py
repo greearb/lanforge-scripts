@@ -156,7 +156,8 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
-    print("portDhcpUpRequest")
+    if (debug_on):
+        print("portDhcpUpRequest")
     data = {
         "shelf": 1,
         "resource": resource_id,
