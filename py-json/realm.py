@@ -1006,6 +1006,13 @@ class L3CXProfile(LFCliBase):
     def get_cx_names(self):
         return self.created_cx.keys()
 
+    def get_cx_report(self):
+        self.data = {}
+        for cx_name in self.get_cx_names():
+            self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
+        return self.data    
+
+
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/show_cxe", {
