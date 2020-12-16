@@ -119,21 +119,131 @@ some stations using WPA2
 
 * `stations_connected.py`: Contains examples of using realm to query stations and get specific information from them
 
-* `test_ipv4_connection.py`:
+* `test_ipv4_connection.py`: This script will create a variable number of stations that will attempt to connect to a chosen SSID using a provided password and security type. 
+  The test is considered passed if all stations are able to associate and obtain IPV4 addresses 
   * class `IPv4Test`
-        * function `run_test_full`:
-        * function `run test_custom`:
-        * function `_run_test`:
-        * function `cleanup`: 
-        * function `run`:
+    * function `build`: This function will use the given parameters (Number of stations, SSID, password, and security type) to create a series of stations.
+    * function `start`: This function will admin-up the stations created in the build phase. It will then check all stations periodically for association and IP addresses. 
+    This will continue until either the specified timeout has been reached or all stations obtain an IP address. 
+    * function `stop`: This function will admin-down all stations once one of the ending criteria is met. 
+    * function `cleanup`: This function will clean up all stations created during the test.
+  * command line options :
+    * `--mgr`: Specifies the hostname where LANforge is running. Defaults to http://localhost
+    * `--mgr_port`: Specifies the port to use when connecting to LANforge. Defaults to 8080
+    * `--ssid`: Specifies SSID to be used in the test
+    * `--password`: Specifies the password for the SSID to be used in the test 
+    * `--security`: Specifies security type (WEP, WPA, WPA2, WPA3, Open) of SSID to be used in the test
+    * `--num_stations`: Specifies number of stations to create for the test
+    * `--radio`: Specifies the radio to be used in the test. Eg wiphy0
+    * `--debug`: Turns on debug output for the test
+    * `--help`: Displays help output for the script    
 
-* `test_ipv6_connection.py`:
-     * class `IPv6Test`
-        * function `run_test_full`:
-        * function `run test_custom`:
-        * function `_run_test`:
-        * function `cleanup`: 
-        * function `run`:
+* `test_ipv6_connection.py`: This script will create a variable number of stations that will attempt to connect to a chosen SSID using a provided password and security type. 
+  The test is considered passed if all stations are able to associate and obtain IPV6 addresses 
+  * class `IPv6Test`
+    * function `build`: This function will use the given parameters (Number of stations, SSID, password, and security type) to create a series of stations.
+    * function `start`: This function will admin-up the stations created in the build phase. It will then check all stations periodically for association and IP addresses. 
+    This will continue until either the specified timeout has been reached or all stations obtain an IP address. 
+    * function `stop`: This function will admin-down all stations once one of the ending criteria is met. 
+    * function `cleanup`: This function will clean up all stations created during the test.
+  * Command line options :
+    * `--mgr`: Specifies the hostname where LANforge is running. Defaults to http://localhost
+    * `--mgr_port`: Specifies the port to use when connecting to LANforge. Defaults to 8080
+    * `--ssid`: Specifies SSID to be used in the test
+    * `--password`: Specifies the password for the SSID to be used in the test 
+    * `--security`: Specifies security type (WEP, WPA, WPA2, WPA3, Open) of SSID to be used in the test
+    * `--num_stations`: Specifies number of stations to create for the test
+    * `--radio`: Specifies the radio to be used in the test. Eg wiphy0
+    * `--debug`: Turns on debug output for the test
+    * `--help`: Displays help output for the script
+
+* `test_l3_unicast_traffic_gen.py`: This script will create stations, create traffic between upstream port and stations, run traffic. 
+The traffic on the stations will be checked once per minute to verify that traffic is transmitted and received.
+Test will exit on failure of not receiving traffic for one minute on any station.
+  * class `L3VariableTimeLongevity`
+    * function `build`: This function will create a group of stations and cross connects that are used in the test.
+    * function `start`: This function will admin-up all stations and start traffic over the cross-connects. Values in the cross-connects
+      will be checked every minute to verify traffic is transmitted and received.
+    * function `stop`: This function will stop all cross-connects from generating traffic and admin-down all stations.
+    * function `cleanup`: This function will cleanup all cross-connects and stations created during the test.
+  * Command line options:
+    * `-d, --test_duration`: Determines the total length of the test. Consists of number followed by letter indicating length
+      10m would be 10 minutes or 3d would be 3 days. Available options for length are Day (d), Hour (h), Minute (m), or Second (s)
+    * `-t, --endp_type`: Specifies type of endpoint to be used in the test. Options are lf_udp, lf_udp6, lf_tcp, lf_tcp6
+    * `-u, --upstream_port`: This is the upstream port to be used for traffic. An upstream port is some data source on the wired LAN or WAN beyond the AP 
+    * `-r, --radio`: This switch will determine the radio name, number of stations, ssid, and ssid password. Security type is fixed at WPA2.
+    Usage of this switch could look like: `--radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3`
+    
+* `test_ipv4_l4_urls_per_ten.py`: This script measure the number of urls per ten minutes over layer 4 traffic
+  * class `IPV4L4`
+    * function `build`: This function will create all stations and cross-connects to be used in the test
+    * function `start`: This function will admin-up stations and start all traffic over the cross-connects. It will then measure the amount of traffic that passed through
+      the cross-connects every ten minutes. These values are compared to 90% of the chosen target traffic per ten minutes. If this value is exceeded, a pass will occur,
+      otherwise, a fail is recorded.      
+    * function `stop`: This function will admin-down stations and stop all traffic.
+    * function `cleanup`: This function will cleanup any stations or cross-connects associated with the test.
+  * Command line options:
+    * `--mgr`: Specifies the hostname where LANforge is running. Defaults to http://localhost
+    * `--mgr_port`: Specifies the port to use when connecting to LANforge. Defaults to 8080
+    * `--ssid`: Specifies SSID to be used in the test
+    * `--password`: Specifies the password for the SSID to be used in the test 
+    * `--security`: Specifies security type (WEP, WPA, WPA2, WPA3, Open) of SSID to be used in the test
+    * `--num_stations`: Specifies number of stations to create for the test
+    * `--radio`: Specifies the radio to be used in the test. Eg wiphy0
+    * `--requests_per_ten`: Configures the number of request per ten minutes
+    * `--num_tests`: Configures the number of tests to be run. Each test runs for ten minutes
+    * `--url`: Specifies the upload/download, address, and destination. Example: dl http://10.40.0.1 /dev/null
+    * `--target_per_ten`: Rate of target urls per ten minutes. 90% of this value will be considered the threshold for a passed test. 
+    * `--debug`: Turns on debug output for the test
+    * `--help`: Displays help output for the script
+    
+
+* `test_ipv4_l4_ftp_urls_per_ten.py`: This script measure the number of urls per ten minutes over layer 4 ftp traffic
+  * class `IPV4L4`
+    * function `build`: This function will create all stations and cross-connects to be used in the test
+    * function `start`: This function will admin-up stations and start all traffic over the cross-connects. It will then measure the amount of traffic that passed through
+      the cross-connects every ten minutes. These values are compared to 90% of the chosen target traffic per ten minutes. If this value is exceeded, a pass will occur,
+      otherwise, a fail is recorded.      
+    * function `stop`: This function will admin-down stations and stop all traffic.
+    * function `cleanup`: This function will cleanup any stations or cross-connects associated with the test.
+  * Command line options:
+    * `--mgr`: Specifies the hostname where LANforge is running. Defaults to http://localhost
+    * `--mgr_port`: Specifies the port to use when connecting to LANforge. Defaults to 8080
+    * `--ssid`: Specifies SSID to be used in the test
+    * `--password`: Specifies the password for the SSID to be used in the test 
+    * `--security`: Specifies security type (WEP, WPA, WPA2, WPA3, Open) of SSID to be used in the test
+    * `--num_stations`: Specifies number of stations to create for the test
+    * `--radio`: Specifies the radio to be used in the test. Eg wiphy0
+    * `--requests_per_ten`: Configures the number of request per ten minutes
+    * `--num_tests`: Configures the number of tests to be run. Each test runs for ten minutes
+    * `--url`: Specifies the upload/download, address, and destination. Example: dl http://10.40.0.1 /dev/null
+    * `--target_per_ten`: Rate of target urls per ten minutes. 90% of this value will be considered the threshold for a passed test. 
+    * `--debug`: Turns on debug output for the test
+    * `--help`: Displays help output for the script
+
+* `test_generic`:
+    * class `GenTest`: This script will create 
+      * function `build`: This function will create the stations and cross-connects to be used during the test.
+      * function `start`: This function will start traffic and measure different values dependent on the command chosen. 
+        Commands currently available for use: lfping, generic, and speedtest.
+      * function `stop`: This function will admin-down stations, stop traffic on cross-connects and cleanup any stations or cross-connects associated with the test.
+      * function `cleanup`: This function will remove any stations and cross-connects created during the test.
+    * Command line options: 
+      * `--mgr`: Specifies the hostname where LANforge is running. Defaults to http://localhost
+      * `--mgr_port`: Specifies the port to use when connecting to LANforge. Defaults to 8080
+      * `--ssid`: Specifies SSID to be used in the test
+      * `--password`: Specifies the password for the SSID to be used in the test 
+      * `--security`: Specifies security type (WEP, WPA, WPA2, WPA3, Open) of SSID to be used in the test
+      * `--num_stations`: Specifies number of stations to create for the test
+      * `--radio`: Specifies the radio to be used in the test. Eg wiphy0
+      * `--upstream_port`: This is the upstream port to be used for traffic. An upstream port is some data source on the wired LAN or WAN beyond the AP
+      * `--type`: Specifies type of generic connection to make. (generic, lfping, iperf3-client, speedtest, iperf3-server, lf_curl)
+      * `--dest`: Specifies the destination for some commands to use
+      * `--interval`: Specifies the interval between tests in the start function
+      * `--test_duration`: Specifies the full duration of the test. Consists of number followed by letter indicating length
+      10m would be 10 minutes or 3d would be 3 days. Available options for length are Day (d), Hour (h), Minute (m), or Second (s)
+      * `--debug`: Turns on debug output for the test
+      * `--help`: Displays help output for the script
 
 * `test_ipv4_variable_time.py`:
      * class `IPv4VariableTime`
