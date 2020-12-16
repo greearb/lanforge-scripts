@@ -16,6 +16,7 @@ from pprint import pprint
 import os
 tr_user=os.getenv('TR_USER')
 tr_pw=os.getenv('TR_PWD')
+project_id = os.getenv('PROJECT_ID')
 
 class APIClient:
     def __init__(self, base_url):
@@ -124,7 +125,7 @@ class APIClient:
     def get_run_id(self, test_run_name):
         "Get the run ID using test name and project name"
         run_id = None
-        project_id = client.get_project_id(project_name='WLAN')
+        project_id = client.get_project_id(project_name=project_id)
 
         try:
             test_runs = client.send_get('get_runs/%s' % (project_id))
