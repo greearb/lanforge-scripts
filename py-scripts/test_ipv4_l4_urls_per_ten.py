@@ -98,7 +98,8 @@ class IPV4L4(LFCliBase):
             expected_passes += 1
             while cur_time < interval_time:
                 time.sleep(1)
-                print(".",end="")
+                if self.debug:
+                    print(".",end="")
                 cur_time = datetime.datetime.now()
 
             if self.cx_profile.check_errors(self.debug):
