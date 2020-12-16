@@ -184,7 +184,7 @@ def usage():
    print("--exit_on_fail","--exit_on_fail,  exit on test failure")
    print("--exit_on_error","--exit_on_error, exit on test error, test mechanics failed")
    print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-   print('--beacon_delta', "--beacon_delta <value>  is the delta that is allowed between the controller tx and the beacon measured")
+   print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
 
 
    print("-h|--help")
