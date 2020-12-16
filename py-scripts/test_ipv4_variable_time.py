@@ -181,8 +181,8 @@ Generic command layout:
             --radio wiphy0 
             --num_stations 32
             --security {open|wep|wpa|wpa2|wpa3} \\
-            --ssid netgear \\
-            --password admin123 \\
+            --ssid netgear 
+            --password admin123 
             --a_min 1000
             --b_min 1000
             --debug

@@ -3241,9 +3241,9 @@ class StationProfile:
 
         # these are unactivated LFRequest objects that we can modify and
         # re-use inside a loop, reducing the number of object creations
-        add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
-        set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra")
+        add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta", debug_=debug)
+        set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port",debug_=debug)
+        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra",debug_=debug)
         my_sta_names = []
         #add radio here
         if (num_stations > 0) and (len(sta_names_) < 1):
@@ -3307,7 +3307,7 @@ class StationProfile:
                 continue
 
             # print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
-            json_response = add_sta_r.jsonPost(debug)
+            json_response = add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
             # print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)

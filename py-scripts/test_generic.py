@@ -19,7 +19,7 @@ import datetime
 import json
 
 class GenTest(LFCliBase):
-    def __init__(self, host, port, ssid, security, passwd, sta_list, name_prefix, upstream,
+    def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
                  number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  _debug_on=False,
@@ -42,7 +42,8 @@ class GenTest(LFCliBase):
         if (speedtest_max_ping is not None):
             self.speedtest_max_ping = float(speedtest_max_ping)
         self.debug = _debug_on
-
+        if (client is not None):
+            self.client_name = client
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
 
@@ -74,6 +75,16 @@ class GenTest(LFCliBase):
 
     def choose_lfcurl_command(self):
         return False, ''
+
+    def choose_iperf3_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if gen_results['endpoints'] is not None:
+            pprint.pprint(gen_results['endpoints'])
+            #for name in gen_results['endpoints']:
+               # pprint.pprint(name.items)
+                #for k,v in name.items():
+        exit(1)
+
 
     def choose_speedtest_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -135,9 +146,7 @@ class GenTest(LFCliBase):
                 result = self.choose_iperf3_command()
             else:
                 continue
-
             expected_passes += 1
-            # pprint.pprint(result)
             if result is not None:
                 if result[0]:
                     passes += 1
@@ -174,8 +183,6 @@ class GenTest(LFCliBase):
 
 
 def main():
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -212,7 +219,8 @@ python3 ./test_generic.py
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
 ''')
-
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
@@ -221,6 +229,7 @@ python3 ./test_generic.py
     parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
+    parser.add_argument('--client', help='client to the iperf3 server',default=None)
 
     args = parser.parse_args()
     num_sta = 2
@@ -251,6 +260,7 @@ python3 ./test_generic.py
                            speedtest_min_up=args.speedtest_min_up,
                            speedtest_min_dl=args.speedtest_min_dl,
                            speedtest_max_ping=args.speedtest_max_ping,
+                           client=args.client,
                            _debug_on=args.debug)
 
     generic_test.cleanup(station_list)

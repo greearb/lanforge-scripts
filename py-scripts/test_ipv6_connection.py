@@ -18,7 +18,7 @@ import pprint
 
 
 class IPv6Test(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list=None, num_stations=0, prefix="00000",
+    def __init__(self, ssid, security, password, sta_list=None, num_stations=0, prefix="00000", host="localhost", port=8080,
                  _debug_on=False, timeout=120, radio="wiphy0",
                  _exit_on_error=False,
                  _exit_on_fail=False,
@@ -68,16 +68,21 @@ class IPv6Test(LFCliBase):
                 name = self.local_realm.name_to_eid(sta_name)[2]
                 sta_status = self.json_get("port/%s/%s/%s?fields=port,alias,ipv6+address,ap" % (shelf, resource, name),
                                            debug_=self.debug)
-                # print(sta_status)
+                if self.debug:
+                    print(sta_status)
                 if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
                     continue
                 if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
-                    # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                    if self.debug:
+                        pprint.pprint(sta_status['interface'])
+                        #print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     associated_map[sta_name] = 1
                 if sta_status['interface']['ipv6 address'] != 'DELETED' and \
                         not sta_status['interface']['ipv6 address'].startswith('fe80') \
                         and sta_status['interface']['ipv6 address'] != 'AUTO':
-                    # print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                    if self.debug:
+
+                        print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
                     ip_map[sta_name] = 1
             if (len(sta_list) == len(ip_map)) and (len(sta_list) == len(associated_map)):
                 break
@@ -109,8 +114,6 @@ class IPv6Test(LFCliBase):
 
 
 def main():
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv6_connection.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -137,7 +140,11 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     --debug
             ''')
 
-    parser.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=120)
+
+    optional = parser.add_argument_group('optional arguments')
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    parser.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=30)
 
     args = parser.parse_args()
     num_sta=2
@@ -152,7 +159,8 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,
-                         sta_list=station_list)
+                         sta_list=station_list,
+                         _debug_on=args.debug)
     ipv6_test.cleanup(station_list)
     ipv6_test.build()
     if not ipv6_test.passes():
