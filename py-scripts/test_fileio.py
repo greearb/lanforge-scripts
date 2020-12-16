@@ -67,7 +67,7 @@ class FileIOTest(LFCliBase):
         self.test_duration = test_duration
         self.port_list = []
         self.use_macvlans = use_macvlans
-        self.mode = mode
+        self.mode = mode.lower()
         self.ip_list = ip_list
         self.netmask = netmask
         self.gateway = gateway
@@ -103,8 +103,8 @@ class FileIOTest(LFCliBase):
         #self.min_file_size = self.parse_size(min_file_size)
         #self.min_file_size = self.parse_size(min_file_size)
         #self.min_read_rate_bps = self.parse_size_bps(min_read_rate_bps)
-        #self.max_read_rate_bps = self.parse_size_bps(max_read_rate_bps)
-        #self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
+        # self.max_read_rate_bps = self.sisize_bps(max_read_rate_bps)
+        # self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
         #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
@@ -146,13 +146,17 @@ class FileIOTest(LFCliBase):
         self.created_ports = []
         if self.use_test_groups:
             if self.mode is not None:
-                if self.mode.lower() == "write":
+                if self.mode == "write":
                     self.wo_tg_profile = self.local_realm.new_test_group_profile()
-                elif self.mode.lower() == "read":
+                    self.wo_tg_profile.group_name = self.write_only_test_group
+                elif self.mode == "read":
                     self.ro_tg_profile = self.local_realm.new_test_group_profile()
-                elif self.mode.lower() == "both":
+                    self.ro_tg_profile.group_name = self.read_only_test_group
+                elif self.mode == "both":
                     self.wo_tg_profile = self.local_realm.new_test_group_profile()
                     self.ro_tg_profile = self.local_realm.new_test_group_profile()
+                    self.wo_tg_profile.group_name = self.write_only_test_group
+                    self.ro_tg_profile.group_name = self.read_only_test_group
                 else:
                     raise ValueError("Unknown mode given ", self.mode)
             else:
@@ -166,12 +170,41 @@ class FileIOTest(LFCliBase):
                 if not temp_tg.check_group_exists():
                     temp_tg.create_group()
                 for cx in temp_cxs:
+                    if "CX_" not in cx:
+                        cx = "CX_" + cx
                     temp_tg.add_cx(cx)
             if update_group_args['action'] == "del":
                 temp_tg.group_name = update_group_args['name']
                 if temp_tg.check_group_exists():
                     for cx in temp_cxs:
                         temp_tg.rm_cx(cx)
+            time.sleep(5)
+
+        self.wo_tg_exists = False
+        self.ro_tg_exists = False
+        self.wo_tg_cx_exists = False
+        self.ro_tg_cx_exists = False
+        print("Checking for pre-existing test groups and cxs")
+        if self.use_test_groups:
+            if self.mode == "write":
+                if self.wo_tg_profile.check_group_exists():
+                    self.wo_tg_exists = True
+                    if len(self.wo_tg_profile.list_cxs()) > 0:
+                        self.wo_tg_cx_exists = True
+            elif self.mode == "read":
+                if self.ro_tg_profile.check_group_exists():
+                    self.ro_tg_exists = True
+                    if len(self.ro_tg_profile.list_cxs()) > 0:
+                        self.ro_tg_cx_exists = True
+            elif self.mode == "both":
+                if self.wo_tg_profile.check_group_exists():
+                    self.wo_tg_exists = True
+                    if len(self.wo_tg_profile.list_cxs()) > 0:
+                        self.wo_tg_cx_exists = True
+                if self.ro_tg_profile.check_group_exists():
+                    self.ro_tg_exists = True
+                    if len(self.ro_tg_profile.list_cxs()) > 0:
+                        self.ro_tg_cx_exists = True
 
     def __compare_vals(self, val_list):
         passes = 0
@@ -267,56 +300,113 @@ class FileIOTest(LFCliBase):
             else:
                 raise ValueError("Netmask and gateway must be specified")
 
+        # if use test groups and test group does not exist, create cxs, create test group, assign to test group
+        # if use test groups and test group exists and no cxs, create cxs, assign to test group
+        # if use test groups and test group exist and cxs exist, do nothing
+        # if not use test groups, create cxs
         if self.mode is not None:
-            if self.mode.lower() == "write":
-                print("Creating Write Only CXs")
-                self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
-                                       suppress_related_commands_=None)
-            elif self.mode.lower() == "read":
-                print("Creating Read Only CXs")
-                self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
-                                       suppress_related_commands_=None)
-            else:
-                print("Creating Write Only CXs")
-                print("Creating Read Only CXs")
-                self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
-                                       suppress_related_commands_=None)
-                self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
-                                       suppress_related_commands_=None)
-
-        if self.use_test_groups:
-            print("Creating test groups...")
-            if self.mode is not None:
-                if self.mode.lower() == "write":
-                    if not self.wo_tg_profile.check_group_exists():
-                        self.wo_tg_profile.group_name = self.write_only_test_group
+            if self.use_test_groups:
+                if self.mode == "write":
+                    if self.wo_tg_exists:
+                        if not self.wo_tg_cx_exists:
+                            print("Creating Write Only CXs")
+                            self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                                   suppress_related_commands_=None)
+                            time.sleep(1)
+                            print("Adding cxs to %s" % self.wo_tg_profile.group_name)
+                            for cx in self.wo_profile.created_cx.values():
+                                self.wo_tg_profile.add_cx(cx)
+                    else:
+                        print("Creating Write Only CXs")
+                        self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                               suppress_related_commands_=None)
+                        time.sleep(1)
+                        print("Creating Write Only test group")
                         self.wo_tg_profile.create_group()
+                        print("Adding cxs to %s" % self.wo_tg_profile.group_name)
                         for cx in self.wo_profile.created_cx.values():
                             self.wo_tg_profile.add_cx(cx)
-                elif self.mode.lower() == "read":
-                    if not self.ro_tg_profile.check_group_exists():
-                        self.ro_tg_profile.group_name = self.read_only_test_group
+                elif self.mode == "read":
+                    if self.ro_tg_exists:
+                        if not self.ro_tg_cx_exists:
+                            print("Creating Read Only CXs")
+                            self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                                   suppress_related_commands_=None)
+                            time.sleep(1)
+                            print("Adding cxs to %s" % self.ro_tg_profile.group_name)
+                            for cx in self.ro_profile.created_cx.values():
+                                self.ro_tg_profile.add_cx(cx)
+                    else:
+                        print("Creating Read Only CXs")
+                        self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                               suppress_related_commands_=None)
+                        time.sleep(1)
+                        print("Creating Read Only test group")
                         self.ro_tg_profile.create_group()
+                        print("Adding cxs to %s" % self.ro_tg_profile.group_name)
                         for cx in self.ro_profile.created_cx.values():
                             self.ro_tg_profile.add_cx(cx)
-                elif self.mode.lower() == "both":
-                    if not self.wo_tg_profile.check_group_exists():
-                        self.wo_tg_profile.group_name = self.write_only_test_group
+                elif self.mode == "both":
+                    if self.wo_tg_exists:
+                        if not self.wo_tg_cx_exists:
+                            print("Creating Write Only CXs")
+                            self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                                   suppress_related_commands_=None)
+                            time.sleep(1)
+                            print("Adding cxs to %s" % self.wo_tg_profile.group_name)
+                            for cx in self.wo_profile.created_cx.values():
+                                self.wo_tg_profile.add_cx(cx)
+                    else:
+                        print("Creating Write Only CXs")
+                        self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                               suppress_related_commands_=None)
+                        time.sleep(1)
+                        print("Creating Write Only test group")
                         self.wo_tg_profile.create_group()
+                        print("Adding cxs to %s" % self.wo_tg_profile.group_name)
                         for cx in self.wo_profile.created_cx.values():
                             self.wo_tg_profile.add_cx(cx)
-                    if not self.ro_tg_profile.check_group_exists():
-                        self.ro_tg_profile.group_name = self.read_only_test_group
+                    if self.ro_tg_exists:
+                        if not self.ro_tg_cx_exists:
+                            print("Creating Read Only CXs")
+                            self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                                   suppress_related_commands_=None)
+                            time.sleep(1)
+                            print("Adding cxs to %s" % self.ro_tg_profile.group_name)
+                            for cx in self.ro_profile.created_cx.values():
+                                self.ro_tg_profile.add_cx(cx)
+                    else:
+                        print("Creating Read Only CXs")
+                        self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                               suppress_related_commands_=None)
+                        time.sleep(1)
+                        print("Creating Read Only test group")
                         self.ro_tg_profile.create_group()
+                        print("Adding cxs to %s" % self.ro_tg_profile.group_name)
                         for cx in self.ro_profile.created_cx.values():
                             self.ro_tg_profile.add_cx(cx)
                 else:
-                    raise ValueError("Unknown mode given ", self.mode)
+                    raise ValueError("Uknown mode used, must be (read, write, both)")
             else:
-                raise ValueError("Mode (read, write, or both) must be specified")
-
-
-
+                if self.mode == "write":
+                    print("Creating Write Only CXs")
+                    self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                           suppress_related_commands_=None)
+                elif self.mode == "read":
+                    print("Creating Read Only CXs")
+                    self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                           suppress_related_commands_=None)
+                elif self.mode == "both":
+                    print("Creating Write Only CXs")
+                    self.wo_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                           suppress_related_commands_=None)
+                    print("Creating Read Only CXs")
+                    self.ro_profile.create(ports=self.created_ports, sleep_time=.5, debug_=self.debug,
+                                           suppress_related_commands_=None)
+                else:
+                    raise ValueError("Uknown mode used, must be (read, write, both)")
+        else:
+            raise ValueError("Mode must be set (read, write, both)")
 
     def start(self, print_pass=False, print_fail=False):
         temp_ports = self.created_ports.copy()
@@ -403,24 +493,41 @@ class FileIOTest(LFCliBase):
             self.mvlan_profile.admin_down()
 
     def cleanup(self, port_list=None):
-        # TODO Add check for pre-existing test groups
         if self.use_test_groups:
             if self.mode == "read":
-                if self.ro_tg_profile.check_group_exists():
-                    self.ro_tg_profile.rm_group()
+                if not self.ro_tg_exists:
+                    if self.ro_tg_profile.check_group_exists():
+                        self.ro_tg_profile.rm_group()
+                if not self.ro_tg_cx_exists:
+                    self.ro_profile.cleanup()
+
             elif self.mode == "write":
-                if self.wo_tg_profile.check_group_exists():
-                    self.wo_tg_profile.rm_group()
-            else:
-                if self.ro_tg_profile.check_group_exists():
-                    self.ro_tg_profile.rm_group()
-                if self.wo_tg_profile.check_group_exists():
-                    self.wo_tg_profile.rm_group()
+                if not self.wo_tg_exists:
+                    if self.wo_tg_profile.check_group_exists():
+                        self.wo_tg_profile.rm_group()
+                if not self.wo_tg_cx_exists:
+                    self.wo_profile.cleanup()
 
-            time.sleep(1)
+            elif self.mode == "both":
+                if not self.ro_tg_exists:
+                    if self.ro_tg_profile.check_group_exists():
+                        self.ro_tg_profile.rm_group()
+                if not self.ro_tg_cx_exists:
+                    self.ro_profile.cleanup()
 
-        self.wo_profile.cleanup()
-        self.ro_profile.cleanup()
+                if not self.wo_tg_exists:
+                    if self.wo_tg_profile.check_group_exists():
+                        self.wo_tg_profile.rm_group()
+                if not self.wo_tg_cx_exists:
+                    self.wo_profile.cleanup()
+        else:
+            if self.mode == "read":
+                self.ro_profile.cleanup()
+            elif self.mode == "write":
+                self.wo_profile.cleanup()
+            elif self.mode == "both":
+                self.ro_profile.cleanup()
+                self.wo_profile.cleanup()
 
         if not self.use_macvlans and self.ip_list is None:
             self.station_profile.cleanup(port_list)
@@ -431,7 +538,7 @@ class FileIOTest(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = LFCliBase.create_bare_argparse(
         prog='test_fileio.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -447,7 +554,14 @@ Generic command layout:
 ./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
                  --netmask 255.255.255.0 --gateway 192.168.92.1
 ''')
-    # TODO Change to bare argparse, add optional switches for station related things (ssid, security, passwd)
+    parser.add_argument('--num_stations', help='Number of stations to create', default=0)
+    parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
+    parser.add_argument('--ssid', help='SSID for stations to associate to')
+    parser.add_argument('--passwd', '--password', '--key', help='WiFi passphrase/password/key')
+    parser.add_argument('--security', help='security type to use for ssid { wep | wpa | wpa2 | wpa3 | open }')
+    parser.add_argument('-u', '--upstream_port',
+                  help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
+                  default='1.eth1')
     parser.add_argument('--test_duration', help='sets the duration of the test', default="5m")
     parser.add_argument('--fs_type', help='endpoint type', default="fe_nfs4")
     parser.add_argument('--min_rw_size', help='minimum read/write size', default=64*1024)
@@ -587,9 +701,10 @@ Generic command layout:
 
     ip_test.cleanup(port_list)
     ip_test.build()
+    # exit(1)
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-    ip_test.start(False, False)
+    # ip_test.start(False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
