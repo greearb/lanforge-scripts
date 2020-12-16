@@ -53,7 +53,7 @@ class LFCliBase:
 
         if len(_capture_signal_list) > 0:
             for zignal in _capture_signal_list:
-                captured_signal(zignal, my_captured_signal)
+                self.captured_signal(zignal, self.my_captured_signal)
         #
 
     def _finish(self):
@@ -111,7 +111,7 @@ class LFCliBase:
         del self.thread_map[name]
         return thrud
 
-    def send_thread_signals(signum, fname):
+    def send_thread_signals(self, signum, fname):
         if len(self.thread_map) < 1:
             print("no threads to signal")
             return
@@ -120,7 +120,7 @@ class LFCliBase:
                 print("sending signal %s to thread %s" % (signum, name))
             # do a thing
 
-    def my_captured_signal(signum, frame):
+    def my_captured_signal(self, signum):
         """
         Override me to process signals, otherwise superclass signal handler is called.
         You may use _finish() or _halt() to indicate finishing soon or halting immediately.
@@ -130,7 +130,7 @@ class LFCliBase:
         print("my_captured_signal should be overridden")
         return False
 
-    def caputured_signal(signum):
+    def captured_signal(self, signum):
         """
         Here is your opportunity to decide what to do on things like KeyboardInterrupt or other UNIX signals
         Check that your subclass handled the signal or not. You may use _finish() or _halt() to indicate
@@ -138,7 +138,7 @@ class LFCliBase:
         """
         if self.debug:
             print("Captured signal %s" % signum)
-        if my_captured_signal(signum):
+        if self.my_captured_signal(signum):
             if self.debug:
                 print("subclass processed signal")
         else:
