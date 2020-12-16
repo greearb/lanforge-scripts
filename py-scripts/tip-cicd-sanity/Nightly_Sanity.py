@@ -701,9 +701,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
 
         ### Create AP Bridge Profile
-
-        rfProfileId = 10
-        radiusProfileId = 129
+        rfProfileId = lab_ap_info.radius_profile
+        radiusProfileId = lab_ap_info.rf_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
         print(child_profiles)
 
@@ -1034,8 +1033,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
 
         ### Create AP NAT Profile
-        rfProfileId = 10
-        radiusProfileId = 129
+        rfProfileId = lab_ap_info.radius_profile
+        radiusProfileId = lab_ap_info.rf_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
                               radiusProfileId]
         print(child_profiles)
@@ -1362,8 +1361,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
 
         ### Create AP VLAN Profile
-        rfProfileId = 10
-        radiusProfileId = 129
+        rfProfileId = lab_ap_info.radius_profile
+        radiusProfileId = lab_ap_info.rf_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
         print(child_profiles)
         ap_template = "templates/ap_profile_template.json"

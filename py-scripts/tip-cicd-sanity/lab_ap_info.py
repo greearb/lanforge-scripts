@@ -115,6 +115,10 @@ test_cases = {
     "ssid_5g_wpa_vlan": 5661
 }
 
+## Other profiles
+radius_profile = 129
+rf_profile = 10
+
 ###Testing AP Profile Information
 profile_info_dict = {
     "ecw5410": {
