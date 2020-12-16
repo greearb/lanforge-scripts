@@ -3241,7 +3241,8 @@ class StationProfile:
         if self.use_ht160:
             self.desired_add_sta_flags.append("ht160_enable")
             self.desired_add_sta_flags_mask.append("ht160_enable")
-        self.add_sta_data["mode"] = self.mode
+        if self.mode is not None:
+            self.add_sta_data["mode"] = self.mode
         if use_radius:
             self.desired_add_sta_flags.append("8021x_radius")
             self.desired_add_sta_flags_mask.append("8021x_radius")
