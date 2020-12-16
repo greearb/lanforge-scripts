@@ -26,14 +26,14 @@ class LFCliBase:
                  _halt_on_error=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 _local_realm=False,
+                 _local_realm=None,
                  _capture_signal_list=[]):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
-        if (_local_realm is not False):
+        if (_local_realm is not None):
             self.local_realm = _local_realm
 
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
