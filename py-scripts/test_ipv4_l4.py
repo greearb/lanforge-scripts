@@ -20,7 +20,7 @@ import datetime
 
 
 class IPV4L4(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, url, 
+    def __init__(self, host, port, ssid, security, password, url,
                 station_list,
                 number_template="00000", radio="wiphy0",
                 test_duration="5m", upstream_port="eth1",
@@ -165,10 +165,10 @@ def main():
     Generic command layout:
     python ./test_ipv4_l4.py --upstream_port <port> --radio <radio 0> <stations> <ssid> <ssid password> <security type: wpa2, open, wpa3> --debug
 
-    Command Line Example: 
-     python3 ./test_ipv4_l4.py 
-        --upstream_port eth1 (optional) 
-        --radio wiphy0  (required) 
+    Command Line Example:
+     python3 ./test_ipv4_l4.py
+        --upstream_port eth1 (optional)
+        --radio wiphy0  (required)
         --num_stations 3 (optional)
         --security {open|wep|wpa|wpa2|wpa3} (required)
         --ssid netgear (required)
@@ -178,7 +178,8 @@ def main():
         --debug (optional)
 
             ''')
-
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
 
@@ -190,17 +191,17 @@ def main():
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-        
+
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_= num_sta-1, padding_number_=10000, radio=args.radio)
 
     ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
-                    ssid=args.ssid, 
+                    ssid=args.ssid,
                     radio=args.radio,
                     password=args.passwd,
-                    security=args.security, 
-                    station_list=station_list, 
+                    security=args.security,
+                    station_list=station_list,
                     url=args.url,
-                    test_duration=args.test_duration, 
+                    test_duration=args.test_duration,
                     upstream_port=args.upstream_port,
                     _debug_on=args.debug)
 

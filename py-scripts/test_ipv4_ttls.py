@@ -238,16 +238,17 @@ def main():
 test_ipv4_ttls.py:
  --------------------
  Generic command layout:
- python ./test_ipv4_ttls.py --upstream_port <port> 
-    --radio <radio 0> 
+ python ./test_ipv4_ttls.py --upstream_port <port>
+    --radio <radio 0>
     --num_stations 3
     --ssid ssid-wpa-1
     --keyphrase ssid-wpa-1
-    --security <security type: wpa2, open, wpa3> 
+    --security <security type: wpa2, open, wpa3>
     --debug
 
 ''')
-
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")

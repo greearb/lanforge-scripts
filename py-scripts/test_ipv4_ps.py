@@ -181,18 +181,19 @@ test_ipv4_variable_time.py:
 
 Generic command layout:
 ./test_ipv4_variable_time.py
---upstream_port eth1 
+--upstream_port eth1
 --radio wiphy3
 --num_stations 4
--ssid jedway-wpa2-x2048-4-1  
--passwd jedway-wpa2-x2048-4-1 
---security  {wpa2|open|wpa|wpa3} 
+-ssid jedway-wpa2-x2048-4-1
+-passwd jedway-wpa2-x2048-4-1
+--security  {wpa2|open|wpa|wpa3}
 --a_min 250000
 --b_min 260000
 --test_duration 2m
 --debug
         ''')
-
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
