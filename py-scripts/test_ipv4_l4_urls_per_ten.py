@@ -18,7 +18,7 @@ import datetime
 
 
 class IPV4L4(LFCliBase):
-    def __init__(self,  ssid, security, password, url, requests_per_ten, station_list, host="localhost", port=8080,test_duration="2m",
+    def __init__(self,  ssid, security, password, url, requests_per_ten, station_list, host="localhost", port=8080,test_duration="2m",ap=None,mode=0,
                  target_requests_per_ten=60, number_template="00000", num_tests=1, radio="wiphy0",
                  _debug_on=False, upstream_port="eth1",
                  _exit_on_error=False,
@@ -32,6 +32,8 @@ class IPV4L4(LFCliBase):
         self.security = security
         self.password = password
         self.url = url
+        self.mode=mode
+        self.ap=ap
         self.requests_per_ten = int(requests_per_ten)
         self.number_template = number_template
         self.test_duration=test_duration
@@ -48,7 +50,10 @@ class IPV4L4(LFCliBase):
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.station_profile.mode = self.mode
+        if self.ap is not None:
+            self.station_profile.set_command_param("add_sta", "ap",self.ap) 
+
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
@@ -148,20 +153,38 @@ python3 ./test_ipv4_l4_urls_per_ten.py
     --ssid netgear \\
     --passwd admin123 \\
     --requests_per_ten 600 \\
+    --mode   1      
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
     --num_tests 1 \\
     --url "dl http://10.40.0.1 /dev/null" \\
+    --ap "00:0e:8e:78:e1:76"
     --target_per_ten 600 \\
     --test_duration 2m
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
     required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',default="dl http://10.40.0.1 /dev/null")
     parser.add_argument('--test_duration', help='duration of test',default="2m")
     parser.add_argument('--target_per_ten', help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',default=600)
-    
+    optional.add_argument('--mode',help='Used to force mode of stations')
+    optional.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
     num_sta = 2
@@ -181,6 +204,8 @@ python3 ./test_ipv4_l4_urls_per_ten.py
                      security=args.security,
                      station_list=station_list,
                      url=args.url,
+                     mode=args.mode,
+                     ap=args.ap,
                      test_duration=args.test_duration,
                      num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,

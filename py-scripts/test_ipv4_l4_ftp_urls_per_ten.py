@@ -20,7 +20,7 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, ssid, security, password, url, requests_per_ten, station_list,test_duration="2m",host="localhost", port=8080, 
-                 number_template="00000", num_tests=1, radio="wiphy0",
+                 number_template="00000", num_tests=1, radio="wiphy0", mode=0, ap=None,
                  _debug_on=False, upstream_port="eth1",
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -32,6 +32,8 @@ class IPV4L4(LFCliBase):
         self.ssid = ssid
         self.security = security
         self.password = password
+        self.mode = mode
+        self.ap=ap
         self.url = url
         self.requests_per_ten = requests_per_ten
         self.number_template = number_template
@@ -49,7 +51,9 @@ class IPV4L4(LFCliBase):
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.station_profile.mode = self.mode
+        if self.ap is not None:
+            self.station_profile.set_command_param("add_sta", "ap",self.ap) 
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
@@ -115,7 +119,6 @@ class IPV4L4(LFCliBase):
             else:
                 self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
                 break
-            interval_time = cur_time + datetime.timedelta(minutes=10)
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
@@ -152,11 +155,28 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
     --passwd admin123 \\
     --test_duration 2m \\ {2m | 30s | 3h | 1d ...etc}
     --interval 1s \\
+    --mode   1      
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+    --ap "00:0e:8e:78:e1:76"
     --requests_per_ten 600 \\
     --num_tests 1 \\
     --url "dl ftp://10.0.0.105 file_name.bin" {ul\dl ftp://[ftp server IP] [filename]}
     --debug
             ''')
+    optional = parser.add_argument_group('optional arguments')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
@@ -164,6 +184,8 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
                         default="dl http://10.40.0.1 /dev/null")
+    optional.add_argument('--mode',help='Used to force mode of stations')
+    optional.add_argument('--ap',help='Used to force a connection to a particular AP')
     #parser.add_argument('--target_per_ten', help='--target_per_ten target number of request per ten minutes. test will check for 90 percent of this value',
                         #default=600)
     args = parser.parse_args()
@@ -185,6 +207,8 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
                      security=args.security,
                      station_list=station_list,
                      url=args.url,
+                     mode=args.mode,
+                     ap=args.ap,
                      num_tests=args.num_tests,
                      requests_per_ten=args.requests_per_ten,
                      test_duration=args.test_duration)
