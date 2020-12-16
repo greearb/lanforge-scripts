@@ -199,7 +199,7 @@ python3 ./test_generic.py
     --security {open|wep|wpa|wpa2|wpa3} (required)
     --ssid netgear (required)
     --passwd admin123 (required)
-    --type lfping  {generic|lfping|iperf3-client | speedtest | iperf3-server |lf_curl} (required)
+    --type lfping  {generic|lfping|iperf3-client | speedtest | lf_curl} (required)
     --dest 10.40.0.1 (required - also target for iperf3)
     --test_duration 2m 
     --interval 1s 
