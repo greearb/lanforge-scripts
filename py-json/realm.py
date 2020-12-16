@@ -1013,6 +1013,44 @@ class L3CXProfile(LFCliBase):
             self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
         return self.data    
 
+    def monitor(self, duration_sec=60,
+                interval_sec=1,
+                col_names=None,
+                show=True,
+                report_file=None):
+        if (duration_sec is None) or (duration_sec <= 1):
+            raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
+        if (interval_sec is None) or (interval_sec < 1):
+            raise ValueError("L3CXProfile::monitor wants interval_sec >= 1 second")
+        if (duration_sec <= interval_sec ):
+            raise ValueError("L3CXProfile::monitor wants duration_sec > interval_sec")
+        if col_names is None:
+            raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
+        endps = ",".join(self.created_cx.keys())
+        time_results = {}
+        fields=",".join(col_names)
+        report_fh = None
+        if (report_file is not None) and (report_file != ""):
+            report_fh = open(report_file, "w")
+
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+
+        while datetime.datetime.now() < end_time_d:
+            response = self.json_get("/endp/%s?fields=%s" % (endps, fields), debug_=self.debug)
+            if "endpoint" not in response:
+                pprint.pprint(response)
+                raise ValueError("no endpoint?")
+            value_map = {}
+            if show:
+                print("Show stuff here")
+
+            if datetime.datetime.now() > end_time_d:
+                break;
+            time.sleep(interval_sec)
+        if report_fh is not None:
+            report_fh.close()
+
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
