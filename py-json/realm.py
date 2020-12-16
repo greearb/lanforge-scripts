@@ -265,7 +265,8 @@ class Realm(LFCliBase):
                     if endp_name.startswith(prefix):
                         self.rm_endp(endp_name)
             else:
-                print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list) )
+                if self.debug: 
+                    print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list) )
 
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]

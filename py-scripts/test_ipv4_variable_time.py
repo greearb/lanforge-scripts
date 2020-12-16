@@ -21,7 +21,7 @@ import datetime
 class IPV4VariableTime(LFCliBase):
     def __init__(self,
                  ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 host="localhost", port=8080,
+                 host="localhost", port=8080, mode = 0, ap=None,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -37,6 +37,8 @@ class IPV4VariableTime(LFCliBase):
         self.security = security
         self.password = password
         self.radio = radio
+        self.mode= mode
+        self.ap=ap
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
@@ -54,6 +56,10 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
+        self.station_profile.mode = mode
+        if self.ap is not None:
+            self.station_profile.set_command_param("add_sta", "ap",self.ap) 
+
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -181,18 +187,38 @@ Generic command layout:
             --radio wiphy0 
             --num_stations 32
             --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1      
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
             --ssid netgear 
             --password admin123 
+            --test_duration 2m (default)
             --a_min 1000
             --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
             --debug
         ''')
+
+    optional = parser.add_argument_group('optional arguments')
     required = parser.add_argument_group('required arguments')
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
-
+    optional.add_argument('--mode',help='Used to force mode of stations')
+    optional.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
     num_sta = 2
@@ -211,6 +237,8 @@ Generic command layout:
                                    use_ht160=False,
                                    side_a_min_rate=args.a_min, 
                                    side_b_min_rate=args.b_min, 
+                                   mode=args.mode,
+                                   ap=args.ap,
                                    _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
