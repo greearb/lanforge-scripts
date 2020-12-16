@@ -112,7 +112,7 @@ class APIClient:
         "Get the project ID using project name"
         project_id = None
         projects = client.send_get('get_projects')
-        pprint(projects)
+        ##pprint(projects)
         for project in projects:
             if project['name']== project_name:
                 project_id = project['id']
