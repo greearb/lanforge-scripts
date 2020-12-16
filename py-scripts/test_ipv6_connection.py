@@ -163,6 +163,8 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
                          _debug_on=args.debug)
     ipv6_test.cleanup(station_list)
     ipv6_test.build()
+    print('Sleeping for 30 seconds...', flush=True)
+    time.sleep(30)
     if not ipv6_test.passes():
         print(ipv6_test.get_fail_message())
         exit(1)
@@ -171,7 +173,7 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     if not ipv6_test.passes():
         print(ipv6_test.get_fail_message())
         exit(1)
-    time.sleep(10)
+    time.sleep(20)
     ipv6_test.cleanup(station_list)
     if ipv6_test.passes():
         print("Full test passed, all stations associated and got IP")
