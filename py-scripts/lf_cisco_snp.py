@@ -782,6 +782,7 @@ class L3VariableTime(LFCliBase):
         csv_rx_row_data = []
         csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
+        test_id = ""
 
         #for key in self.test_keys:
         #    csv_rx_row_data.append(self.test_config_dict[key])
@@ -803,7 +804,7 @@ class L3VariableTime(LFCliBase):
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
             print("downstream in dictionary values")
-        #follow code left in for now provides the best 5 worst 5
+        #follow code left in for now, provides the best 5 worst 5
         '''print("new_evaluate_list after",new_evaluate_list)
         csv_performance_values=sorted(new_evaluate_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
@@ -850,6 +851,7 @@ class L3VariableTime(LFCliBase):
             for key in self.test_keys:
                 csv_rx_row_data.append(self.test_config_dict[key])
                 csv_rx_delta_row_data.append(self.test_config_dict[key])
+                
 
             max_tp_mbps      = sum(filtered_values)
             csv_rx_row_data.append(max_tp_mbps)
@@ -857,6 +859,13 @@ class L3VariableTime(LFCliBase):
             #To do  needs to be read or passed in based on test type
             expected_tp_mbps = max_tp_mbps
             csv_rx_row_data.append(expected_tp_mbps)
+
+            #Generate TestID
+            for key in self.test_keys:
+                test_id = test_id + "_" + self.test_config_dict[key]
+
+            print("test_id: {}".format(test_id))
+            csv_rx_row_data.append(test_id)
 
             # Todo pass or fail
             if max_tp_mbps == expected_tp_mbps:
@@ -1082,11 +1091,13 @@ class L3VariableTime(LFCliBase):
             else:
                 return False, max_tp_mbps, csv_rx_row_data
             '''
+            # __compare_vals - does the calculations
             Result, max_tp_mbps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
             if max_tp_mbps > best_max_tp_mbps:
                 best_max_tp_mbps = max_tp_mbps
                 best_csv_rx_row_data = csv_rx_row_data
 
+            # need to check the expected max_tp_mbps
             if Result:
                 passes += 1
             else:
@@ -1118,7 +1129,7 @@ class L3VariableTime(LFCliBase):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['Max TP Mbps','Expected TP','Pass Fail','Time epoch','Time','Monitor'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -1828,6 +1839,7 @@ Eventual Realm at Cisco
                                                         cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                         cisco_packet_type,cisco_direction,cisco_packet_size)
                                                     test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
+
                                                     logg.info("# Cisco run settings: {}".format(test_config))
                                                     if(args.no_controller):
                                                         logg.info("################################################")
