@@ -250,7 +250,7 @@ Options: --upstream_port eth1
         optional.add_argument('--monitor', help='print CSV output of connection status', default=False, action='store_true')
         optional.add_argument('--save_to', help='save CSV monitor output to file', default=None)
         optional.add_argument('--monitor_interval_sec', help='seconds between polling endpoints', default=5)
-        optional.add_argument('--mode' help="""Station WiFi modes: use the number value below:
+        optional.add_argument('--mode', help="""Station WiFi modes: use the number value below:
                 auto   : 0,
                 a      : 1,
                 b      : 2,
@@ -266,6 +266,7 @@ Options: --upstream_port eth1
                 abgnAX : 12,
                 bgnAX  : 13,
 """)
+        optional.add_argument("--ap", help="Add BSSID of access point to connect to")
 
     args = parser.parse_args()
 
