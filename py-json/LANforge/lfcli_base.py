@@ -431,14 +431,18 @@ class LFCliBase:
 
         return parser
 
-    #Create argparse with radio, securiy, ssid and passwd required
+    # Create argparse with radio, securiy, ssid and passwd required
+    # TODO: show example of how to add required or optional arguments from calling class
     @staticmethod
     def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
-            parser = argparse.ArgumentParser(prog=prog, formatter_class=formatter_class, epilog=epilog,
+            parser = argparse.ArgumentParser(prog=prog,
+                                             formatter_class=formatter_class,
+                                             epilog=epilog,
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
+
         optional = parser.add_argument_group('optional arguments')
         required = parser.add_argument_group('required arguments')
         #Optional Args
@@ -452,6 +456,7 @@ class LFCliBase:
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
         #Required Args
         required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
+        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
         required.add_argument('--ssid',           help='SSID for stations to associate to', required=True)
         required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', required=True)
 
