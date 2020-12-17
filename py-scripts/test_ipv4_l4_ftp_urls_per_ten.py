@@ -24,7 +24,12 @@ class IPV4L4(LFCliBase):
                  _debug_on=False, upstream_port="eth1",
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, 
+        port, 
+        _debug=_debug_on, 
+        _halt_on_error=_exit_on_error,
+        _local_realm = realm.Realm(lfclient_host=host, lfclient_port=port), 
+        _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.radio = radio
@@ -42,7 +47,6 @@ class IPV4L4(LFCliBase):
         self.target_requests_per_ten = requests_per_ten
         self.test_duration = test_duration
 
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l4_cx_profile()
 
@@ -55,6 +59,7 @@ class IPV4L4(LFCliBase):
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap",self.ap) 
         self.cx_profile.url = self.url
+        print(self.cx_profile.url)
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
         self.port_util = realm.PortUtils(self.local_realm)
@@ -173,7 +178,7 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
     --ap "00:0e:8e:78:e1:76"
     --requests_per_ten 600 \\
     --num_tests 1 \\
-    --url "dl ftp://10.0.0.105 file_name.bin" {ul\dl ftp://[ftp server IP] [filename]}
+    --url "ul ftp://lanforge:lanforge@10.40.0.1/example.txt  /home/lanforge/example.txt"
     --debug
             ''')
     optional = parser.add_argument_group('optional arguments')
@@ -211,7 +216,8 @@ python3 ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 \\
                      ap=args.ap,
                      num_tests=args.num_tests,
                      requests_per_ten=args.requests_per_ten,
-                     test_duration=args.test_duration)
+                     test_duration=args.test_duration,
+                     _debug_on=args.debug)
     ip_test.cleanup(station_list)
     ip_test.build()
     ip_test.start()
