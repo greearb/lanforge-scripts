@@ -1,25 +1,29 @@
 #!/bin/bash
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#  Check for large files and purge many of the most inconsequencial       #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 set -x
 set -e
+HR=" ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+funciton hr() {
+  echo "$HR"
+}
+
 eyedee=`id -u`
 if (( eyedee != 0 )); then
-    echo "Please become root to use this script"
+    echo "$0: Please become root to use this script, bye"
     exit 1
 fi
 
 # Find core files
 core_files=()
 cd /
-while read F; do
-    core_files+=("$F")
-done < <(ls /core* /home/lanforge/core* 2>/dev/null)
+mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null)
 
 
 # Find ath10k crash residue
 ath10_files=()
-while read F; do
-    ath10_files+=("$F")
-done < <(ls /home/lanforge/ath10* 2>/dev/null)
+mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
 
 # Find size of /mnt/lf that is not mounted
 cd /mnt
@@ -31,18 +35,18 @@ usage_libmod=`du -sh *`
 
 # Find how many kernels are installed
 cd /boot
-boot_kernels=(`ls init*`)
+mapfile -t boot_kernels < <(ls init*)
 boot_usage=`du -sh .`
 
-HR="---------------------------------------"
-#                               #
-#       report sizes here       #
-#                               #
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#       report sizes here                                                 #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 if (( ${#core_files[@]} > 0 )); then
     echo "Core Files:"
-    echo "$HR"
-    printf '%s\n' "${core_files[@]}"
-    echo "$HR"
+    hr
+    printf '     %s\n' "${core_files[@]}"
+    hr
 fi
 
 echo "Usage of /mnt: $usage_mnt"
@@ -51,11 +55,16 @@ echo "Boot usage: $boot_usage"
 
 if (( ${#boot_kernels[@]} > 4 )); then
     echo "Boot ramdisks:"
-    echo "$HR"
-    printf '%s\n' "${boot_kernels[@]}"
-    echo "$HR"
+    hr
+    printf '     %s\n' "${boot_kernels[@]}"
+    hr
 fi
 
-# delete extra things now #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#   delete extra things now                                               #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
-# remove
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#   ask to remove if we are interactive                                   #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+
