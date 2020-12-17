@@ -472,4 +472,21 @@ class LFCliBase:
         }
         self.json_post("/cli-json/add_event", data, debug_=debug_)
 
+    Help_Mode = """Station WiFi modes: use the number value below:
+                auto   : 0,
+                a      : 1,
+                b      : 2,
+                g      : 3,
+                abg    : 4,
+                abgn   : 5,
+                bgn    : 6,
+                bg     : 7,
+                abgnAC : 8,
+                anAC   : 9,
+                an     : 10,
+                bgnAC  : 11,
+                abgnAX : 12,
+                bgnAX  : 13
+"""
+
 # ~class
