@@ -780,6 +780,7 @@ class L3VariableTime(LFCliBase):
         csv_performance_values = []
         csv_rx_headers = []
         csv_rx_row_data = []
+        csv_result_row_data = []
         csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
         test_id = ""
@@ -843,6 +844,13 @@ class L3VariableTime(LFCliBase):
                 csv_header += csv_rx_headers
                 logg.info(csv_header)
                 self.csv_add_column_headers(csv_header)
+                csv_results = self.csv_generate_column_results_headers()
+                #csv_results += csv_rx_headers
+                self.csv_add_column_headers_results(csv_results)
+                print("###################################")
+                print(csv_results)
+                print("###################################")
+
                 self.csv_started = True
 
             # need to generate list first to determine worst and best
@@ -850,15 +858,18 @@ class L3VariableTime(LFCliBase):
             #average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
             for key in self.test_keys:
                 csv_rx_row_data.append(self.test_config_dict[key])
+                csv_result_row_data.append(self.test_config_dict[key])
                 csv_rx_delta_row_data.append(self.test_config_dict[key])
                 
-
             max_tp_mbps      = sum(filtered_values)
             csv_rx_row_data.append(max_tp_mbps)
+            csv_result_row_data.append(max_tp_mbps)
 
             #To do  needs to be read or passed in based on test type
             expected_tp_mbps = max_tp_mbps
             csv_rx_row_data.append(expected_tp_mbps)
+            csv_result_row_data.append(expected_tp_mbps)
+
 
             #Generate TestID
             for key in self.test_keys:
@@ -866,14 +877,18 @@ class L3VariableTime(LFCliBase):
 
             print("test_id: {}".format(test_id))
             csv_rx_row_data.append(test_id)
+            csv_result_row_data.append(test_id)
 
             # Todo pass or fail
             if max_tp_mbps == expected_tp_mbps:
                 csv_rx_row_data.append("pass")
+                csv_result_row_data.append("pass")
             else:
                 csv_rx_row_data.append("fail")
+                csv_result_row_data.append("fail")
 
             csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
+            csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
 
             print("csv_rx_row_data {}".format(csv_rx_row_data))
             #TODO:  may want to pass in the information that needs to be in the csv file into the class
@@ -911,9 +926,9 @@ class L3VariableTime(LFCliBase):
             #self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
-                return True, max_tp_mbps, csv_rx_row_data
+                return True, max_tp_mbps, csv_result_row_data
             else:
-                return False, max_tp_mbps, csv_rx_row_data
+                return False, max_tp_mbps, csv_result_row_data
         else:
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
@@ -1137,10 +1152,24 @@ class L3VariableTime(LFCliBase):
         csv_rx_headers.append("average_rx_data")'''
         return csv_rx_headers
 
+    def csv_generate_column_results_headers(self):
+        csv_rx_headers = self.test_keys.copy() 
+        csv_rx_headers.extend 
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time'])
+        '''for i in range(1,6):
+            csv_rx_headers.append("least_rx_data {}".format(i))
+        for i in range(1,6):
+            csv_rx_headers.append("most_rx_data_{}".format(i))
+        csv_rx_headers.append("average_rx_data")'''
+        return csv_rx_headers
+
+
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
             self.csv_file.flush()
+
+    def csv_add_column_headers_results(self,headers):
         if self.csv_results is not None:
             self.csv_results_writer.writerow(headers)
             self.csv_results.flush()    
@@ -1763,7 +1792,7 @@ Eventual Realm at Cisco
         cisco_directions       = "upstream downstream".split()
         #cisco_packet_sizes     = "88 512 1370 1518".split()
         cisco_packet_sizes     = "1518".split()
-        cisco_client_densities = "1".split()
+        cisco_client_densities = "10".split()
         cisco_data_encryptions = "disable".split()
 
         cisco_side_a_min_bps  = 500000000
