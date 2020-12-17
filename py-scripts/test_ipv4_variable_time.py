@@ -247,26 +247,11 @@ Options: --upstream_port eth1
             optional = agroup
     # pprint.pprint(optional)
     if optional is not None:
-        optional.add_argument('--monitor', help='print CSV output of connection status', default=False, action='store_true')
-        optional.add_argument('--save_to', help='save CSV monitor output to file', default=None)
-        optional.add_argument('--monitor_interval_sec', help='seconds between polling endpoints', default=5)
-        optional.add_argument('--mode', help="""Station WiFi modes: use the number value below:
-                auto   : 0,
-                a      : 1,
-                b      : 2,
-                g      : 3,
-                abg    : 4,
-                abgn   : 5,
-                bgn    : 6,
-                bg     : 7,
-                abgnAC : 8,
-                anAC   : 9,
-                an     : 10,
-                bgnAC  : 11,
-                abgnAX : 12,
-                bgnAX  : 13,
-""")
         optional.add_argument("--ap", help="Add BSSID of access point to connect to")
+        optional.add_argument('--mode', help=LFCliBase.Help_Mode)
+        optional.add_argument('--monitor', help='print CSV output of connection status', default=False, action='store_true')
+        optional.add_argument('--monitor_interval_sec', help='seconds between polling endpoints', default=5)
+        optional.add_argument('--save_to', help='save CSV monitor output to file', default=None)
 
     args = parser.parse_args()
 
