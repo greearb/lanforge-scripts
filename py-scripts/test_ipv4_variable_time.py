@@ -202,8 +202,10 @@ Create stations to test connection and traffic on VAPs of varying security types
         description='''\
 test_ipv4_variable_time.py:
 ------------------------------------------------------------
-Options: 
+Options:    --mgr localhost
+            --mgr_port 4122
             --upstream_port eth1 
+            --proxy
             --radio wiphy0 
             --num_stations 32
             --security {open|wep|wpa|wpa2|wpa3} 
@@ -213,6 +215,10 @@ Options:
             --test_duration 2m (default)
             --a_min 1000
             --b_min 1000
+            --monitor
+            --monitor_interval_sec 6
+            --save_to
+            --test_id 
             --ap "00:0e:8e:78:e1:76"
             --debug''')
 
