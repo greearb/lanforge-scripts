@@ -727,7 +727,7 @@ Generic command layout:
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
-    # ip_test.start(False, False)
+    ip_test.start(False, False)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
