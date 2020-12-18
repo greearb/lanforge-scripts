@@ -27,15 +27,23 @@ class LFCliBase:
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _local_realm=None,
+                 _proxy_str=None,
                  _capture_signal_list=[]):
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
+        # if (_debug):
+        #     print("LFCliBase._proxy_str: %s" % _proxy_str)
+        self.proxy = {}
+        self.adjust_proxy(_proxy_str)
+
         if (_local_realm is not None):
             self.local_realm = _local_realm
 
+        # if (_debug):
+        #     print("LFCliBase._proxy_str: %s" % _proxy_str)
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
         self.halt_on_error = _halt_on_error
@@ -144,7 +152,6 @@ class LFCliBase:
         else:
             if self.debug:
                 print("subclass ignored signal")
-        
 
     def clear_test_results(self):
         self.test_results.clear()
@@ -160,8 +167,13 @@ class LFCliBase:
         :return: http response object
         """
         json_response = None
+        debug_ |= self.debug
         try:
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
+            lf_r = LFRequest.LFRequest(url=self.lfclient_url,
+                                       uri=_req_url,
+                                       proxies_=self.proxy,
+                                       debug_=debug_,
+                                       die_on_error_=self.exit_on_error)
             if suppress_related_commands_ is None:
                 if 'suppress_preexec_cli' in _data:
                     del _data['suppress_preexec_cli']
@@ -183,16 +195,16 @@ class LFCliBase:
                 _data['suppress_postexec_method'] = True
 
             lf_r.addPostData(_data)
-            if debug_ or self.debug:
+            if debug_:
                 LANforge.LFUtils.debug_printer.pprint(_data)
-            json_response = lf_r.jsonPost(show_error=self.debug,
-                                          debug=(self.debug or debug_),
+            json_response = lf_r.json_post(show_error=debug_,
+                                          debug=debug_,
                                           response_json_list_=response_json_list_,
                                           die_on_error_=self.exit_on_error)
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
         except Exception as x:
-            if self.debug or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.halt_on_error or self.exit_on_error:
                 print("json_post posted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
@@ -212,20 +224,25 @@ class LFCliBase:
         :param response_json_list_: array for json results in the response object, (alternative return method)
         :return: http response object
         """
+        debug_ |= self.debug
         json_response = None
         try:
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=self.debug, die_on_error_=self.exit_on_error)
+            lf_r = LFRequest.LFRequest(url=self.lfclient_url,
+                                       uri=_req_url,
+                                       proxies_=self.proxy,
+                                       debug_=debug_,
+                                       die_on_error_=self.exit_on_error)
             lf_r.addPostData(_data)
-            if debug_ or self.debug:
+            if debug_:
                 LANforge.LFUtils.debug_printer.pprint(_data)
             json_response = lf_r.json_put(show_error=self.debug,
-                                          debug=(self.debug or debug_),
+                                          debug=debug_,
                                           response_json_list_=response_json_list_,
                                           die_on_error_=self.exit_on_error)
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
         except Exception as x:
-            if self.debug or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.halt_on_error or self.exit_on_error:
                 print("json_put submitted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
@@ -235,19 +252,26 @@ class LFCliBase:
         return json_response
 
     def json_get(self, _req_url, debug_=False):
-        if self.debug or debug_:
-            print("GET: "+_req_url)
+        debug_ |= self.debug
+        # if debug_:
+        #     print("json_get: "+_req_url)
+        #     print("json_get: proxies:")
+        #     pprint.pprint(self.proxy)
         json_response = None
         # print("----- GET ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         try:
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url, debug_=(self.debug or debug_), die_on_error_=self.exit_on_error)
-            json_response = lf_r.get_as_json(debug_=self.debug, die_on_error_=self.halt_on_error)
+            lf_r = LFRequest.LFRequest(url=self.lfclient_url,
+                                       uri=_req_url,
+                                       proxies_=self.proxy,
+                                       debug_=debug_,
+                                       die_on_error_=self.exit_on_error)
+            json_response = lf_r.get_as_json(debug_=debug_, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
-            if (json_response is None) and (self.debug or debug_):
+            if (json_response is None) and debug_:
                 print("LFCliBase.json_get: no entity/response, probabily status 404")
                 return None
         except ValueError as ve:
-            if self.debug or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.halt_on_error or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
@@ -257,22 +281,24 @@ class LFCliBase:
         return json_response
 
     def json_delete(self, _req_url, debug_=False):
-        if self.debug or debug_:
+        debug_ |= self.debug
+        if debug_:
             print("DELETE: "+_req_url)
         json_response = None
         try:
             # print("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
-            lf_r = LFRequest.LFRequest(self.lfclient_url, _req_url,
-                                       debug_=(self.debug or debug_),
+            lf_r = LFRequest.LFRequest(url=self.lfclient_url,
+                                       uri=_req_url,
+                                       proxies_=self.proxy,
+                                       debug_=debug_,
                                        die_on_error_=self.exit_on_error)
-            json_response = lf_r.json_delete(debug=self.debug,
-                                             die_on_error_=self.halt_on_error)
+            json_response = lf_r.json_delete(debug=debug_, die_on_error_=self.halt_on_error)
             #debug_printer.pprint(json_response)
-            if (json_response is None) and (self.debug or debug_):
+            if (json_response is None) and debug_:
                 print("LFCliBase.json_delete: no entity/response, probabily status 404")
                 return None
         except ValueError as ve:
-            if self.debug or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.halt_on_error or self.exit_on_error:
                 print("json_delete asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
@@ -356,17 +382,14 @@ class LFCliBase:
                 pass_list.append(result)
         return pass_list
 
-    
     def get_pass_message(self):
         pass_messages = self.get_passed_result_list()
         return "\n".join(pass_messages) 
 
-   
     def get_fail_message(self):
         fail_messages = self.get_failed_result_list()
         return "\n".join(fail_messages) 
 
-    
     def get_all_message(self):
         return "\n".join(self.test_results)
 
@@ -390,7 +413,6 @@ class LFCliBase:
         print(message %(fail_len,total_len))
         sys.exit(1)
 
-
     # use this inside the class to log a failure result and print it if wished
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
@@ -406,13 +428,38 @@ class LFCliBase:
         print(message %(num_passing,num_total))
         sys.exit(0)
 
-
     # use this inside the class to log a pass result and print if wished.
     def _pass(self, message, print_=False):
         self.test_results.append(self.pass_pref + message)
         if print_:
             print(self.pass_pref + message)
-     #Create argparse with radio, securiy, ssid and passwd required
+
+    def adjust_proxy(self, proxy_str):
+        # if self.debug:
+        #     print("lfclibase.adjust_proxy: %s" % proxy_str)
+        if (proxy_str is None) or (proxy_str == ""):
+            return
+        if self.proxy is None:
+            self.proxy = {}
+
+        if proxy_str.find("http:") > -1:
+            self.proxy["http"] = proxy_str
+        if proxy_str.find("https:") > -1:
+            self.proxy["https"] = proxy_str
+        # if self.debug:
+        #     print("lfclibase::self.proxy: ")
+        #     pprint.pprint(self.proxy)
+
+
+    # This style of Action subclass for argparse can't do much unless we incorporate
+    # our argparse as a member of LFCliBase. Then we can do something like automatically
+    # parse our proxy string without using _init_ arguments
+    # class ProxyAction(argparse.Action, zelf):
+    #     def __init__(self, outter_):
+    #         pass
+    #     def __call__(self, parser, namespace, values, option_string=None):
+    #         zelf.adjust_proxy(values)
+
     @staticmethod
     def create_bare_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
@@ -428,13 +475,18 @@ class LFCliBase:
         optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
         optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+        optional.add_argument('--proxy',          nargs='?', default=None, # action=ProxyAction,
+                              help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
 
         return parser
 
     # Create argparse with radio, securiy, ssid and passwd required
     # TODO: show example of how to add required or optional arguments from calling class
     @staticmethod
-    def create_basic_argparse(prog=None, formatter_class=None, epilog=None, description=None):
+    def create_basic_argparse(prog=None,
+                              formatter_class=None,
+                              epilog=None,
+                              description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog,
                                              formatter_class=formatter_class,
@@ -442,7 +494,6 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-
         optional = parser.add_argument_group('optional arguments')
         required = parser.add_argument_group('required arguments')
         #Optional Args
@@ -454,6 +505,8 @@ class LFCliBase:
         optional.add_argument('--num_stations',   help='Number of stations to create', default=0)
         optional.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+        optional.add_argument('--proxy',          nargs='?', default=None,
+                              help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
         #Required Args
         required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
         required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)

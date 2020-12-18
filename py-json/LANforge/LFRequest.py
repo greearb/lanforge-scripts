@@ -8,9 +8,12 @@ if sys.version_info[0] != 3:
     exit()
 
 import pprint
-import urllib.request
-import urllib.error
-import urllib.parse
+import urllib
+import time
+from urllib import request
+from urllib import error
+from urllib import parse
+
 import json
 from LANforge import LFUtils
 
@@ -33,11 +36,27 @@ class LFRequest:
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
-        if proxies_ is not None:
-            # check to see if proxy has some fields
-            if ("host" not in proxies_) or ("user" not in proxies_):
-                raise ValueError("HTTP proxy requires, host, user, pass values.")
-            self.proxies = proxies_;
+        # but this makes much more sense:
+        # https://gist.github.com/aleiphoenix/4159510
+
+        # if debug_:
+        #     if proxies_ is None:
+        #         print("LFRequest_init_: no proxies_")
+        #     else:
+        #         print("LFRequest: proxies_: ")
+        #         pprint.pprint(proxies_)
+
+        if (proxies_ is not None) and (len(proxies_) > 0):
+            if ("http" not in proxies_) and ("https" not in proxies_):
+                raise ValueError("Neither http or https set in proxy definitions. Expects proxy={'http':, 'https':, }")
+            self.proxies = proxies_
+
+        # if debug_:
+        #     if self.proxies is None:
+        #         print("LFRequest_init_: no proxies")
+        #     else:
+        #         print("LFRequest: proxies: ")
+        #         pprint.pprint(self.proxies)
 
         if not url.startswith("http://") and not url.startswith("https://"):
             print("No http:// or https:// found, prepending http:// to "+url)
@@ -50,7 +69,7 @@ class LFRequest:
             self.requested_url = url
 
         if self.requested_url is None:
-            raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % url, uri)
+            raise Exception("Bad LFRequest of url[%s] uri[%s] -> None" % (url, uri))
 
         if self.requested_url.find('//'):
             protopos = self.requested_url.find("://")
@@ -65,14 +84,6 @@ class LFRequest:
         if self.debug:
             print("new LFRequest[%s]" % self.requested_url )
 
-    def update_proxies(self, request):
-        if (request is None) or (self.proxies is None):
-            return
-
-        for (proto, host) in self.proxies.items():
-            request.set_proxy(host, proto)
-
-
     # request first url on stack
     def formPost(self, show_error=True, debug=False, die_on_error_=False):
         return self.form_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_)
@@ -84,6 +95,13 @@ class LFRequest:
             debug = True
         responses = []
         urlenc_data = ""
+        # https://stackoverflow.com/a/59635684/11014343
+        if (self.proxies is not None) and (len(self.proxies) > 0):
+            # https://stackoverflow.com/a/59635684/11014343
+            opener = request.build_opener(request.ProxyHandler(self.proxies))
+            request.install_opener(opener)
+
+
         if (debug):
             print("formPost: url: "+self.requested_url)
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
@@ -91,32 +109,31 @@ class LFRequest:
             if (debug):
                 print("formPost: data looks like:" + str(urlenc_data))
                 print("formPost: url: "+self.requested_url)
-            request = urllib.request.Request(url=self.requested_url,
-                                             data=urlenc_data,
-                                             headers=self.default_headers)
+            myrequest = request.Request(url=self.requested_url,
+                                                data=urlenc_data,
+                                                headers=self.default_headers)
         else:
-            request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
+            myrequest = request.Request(url=self.requested_url, headers=self.default_headers)
             print("No data for this formPost?")
 
-        self.update_proxies(request)
+        myrequest.headers['Content-type'] = 'application/x-www-form-urlencoded'
 
-        request.headers['Content-type'] = 'application/x-www-form-urlencoded'
         resp = ''
         try:
-            resp = urllib.request.urlopen(request)
+            resp = urllib.request.urlopen(myrequest)
             responses.append(resp)
             return responses[0]
         except urllib.error.HTTPError as error:
             if (show_error):
                 print("----- LFRequest::formPost:76 HTTPError: --------------------------------------------")
-                print("%s: %s; URL: %s"%(error.code, error.reason, request.get_full_url()))
+                print("%s: %s; URL: %s"%(error.code, error.reason, myrequest.get_full_url()))
                 LFUtils.debug_printer.pprint(error.headers)
                 #print("Error: ", sys.exc_info()[0])
                 #print("Request URL:", request.get_full_url())
-                print("Request Content-type:", request.get_header('Content-type'))
-                print("Request Accept:", request.get_header('Accept'))
+                print("Request Content-type:", myrequest.get_header('Content-type'))
+                print("Request Accept:", myrequest.get_header('Accept'))
                 print("Request Data:")
-                LFUtils.debug_printer.pprint(request.data)
+                LFUtils.debug_printer.pprint(myrequest.data)
                 if (len(responses) > 0):
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(responses[0].reason)
@@ -127,7 +144,7 @@ class LFRequest:
         except urllib.error.URLError as uerror:
             if show_error:
                 print("----- LFRequest::formPost:94 URLError: ---------------------------------------------")
-                print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
+                print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
                     exit(1)
@@ -142,18 +159,25 @@ class LFRequest:
         if self.die_on_error:
             die_on_error_ = True
         responses = []
+        if (self.proxies is not None) and (len(self.proxies) > 0):
+            opener = request.build_opener(request.ProxyHandler(self.proxies))
+            request.install_opener(opener)
+
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
-            request = urllib.request.Request(url=self.requested_url,
-                                             method=method_,
-                                             data=json.dumps(self.post_data).encode("utf-8"),
-                                             headers=self.default_headers)
+            myrequest = request.Request(url=self.requested_url,
+                                         method=method_,
+                                         data=json.dumps(self.post_data).encode("utf-8"),
+                                         headers=self.default_headers)
         else:
-            request = urllib.request.Request(url=self.requested_url, headers=self.default_headers)
+            myrequest = request.Request(url=self.requested_url, headers=self.default_headers)
             print("No data for this jsonPost?")
 
-        request.headers['Content-type'] = 'application/json'
+        myrequest.headers['Content-type'] = 'application/json'
+
+        # https://stackoverflow.com/a/59635684/11014343
+
         try:
-            resp = urllib.request.urlopen(request)
+            resp = request.urlopen(myrequest)
             resp_data = resp.read().decode('utf-8')
             if (debug):
                 print("----- LFRequest::json_post:128 debug: --------------------------------------------")
@@ -176,14 +200,14 @@ class LFRequest:
         except urllib.error.HTTPError as error:
             if show_error or die_on_error_ or (error.code != 404):
                 print("----- LFRequest::json_post:147 HTTPError: --------------------------------------------")
-                print("<%s> HTTP %s: %s" % (request.get_full_url(), error.code, error.reason ))
+                print("<%s> HTTP %s: %s" % (myrequest.get_full_url(), error.code, error.reason ))
 
                 print("Error: ", sys.exc_info()[0])
-                print("Request URL:", request.get_full_url())
-                print("Request Content-type:", request.get_header('Content-type'))
-                print("Request Accept:", request.get_header('Accept'))
+                print("Request URL:", myrequest.get_full_url())
+                print("Request Content-type:", myrequest.get_header('Content-type'))
+                print("Request Accept:", myrequest.get_header('Accept'))
                 print("Request Data:")
-                LFUtils.debug_printer.pprint(request.data)
+                LFUtils.debug_printer.pprint(myrequest.data)
 
                 if error.headers:
                     # the HTTPError is of type HTTPMessage a subclass of email.message
@@ -200,7 +224,7 @@ class LFRequest:
         except urllib.error.URLError as uerror:
             if show_error:
                 print("----- LFRequest::json_post:171 URLError: ---------------------------------------------")
-                print("Reason: %s; URL: %s"%(uerror.reason, request.get_full_url()))
+                print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
                     exit(1)
@@ -225,13 +249,21 @@ class LFRequest:
             die_on_error_ = True
         if debug:
             print("LFUtils.get: url: "+self.requested_url)
-        myrequest = urllib.request.Request(url=self.requested_url,
-                                           headers=self.default_headers,
-                                           method=method_)
-        self.update_proxies(myrequest)
+
+        # https://stackoverflow.com/a/59635684/11014343
+        if (self.proxies is not None) and (len(self.proxies) > 0):
+            opener = request.build_opener(request.ProxyHandler(self.proxies))
+            #opener = urllib.request.build_opener(myrequest.ProxyHandler(self.proxies))
+            request.install_opener(opener)
+
+        myrequest = request.Request(url=self.requested_url,
+                                   headers=self.default_headers,
+                                   method=method_)
+
+
         myresponses = []
         try:
-            myresponses.append(urllib.request.urlopen(myrequest))
+            myresponses.append(request.urlopen(myrequest))
             return myresponses[0]
         except urllib.error.HTTPError as error:
             if debug:
@@ -290,12 +322,25 @@ class LFRequest:
         self.post_data = data
 
 
-def plain_get(url_=None, debug_=False, die_on_error_=False):
-    myrequest = urllib.request.Request(url=url_)
+def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
+    """
+    This static method does not respect LFRequest.proxy, it is not set in scope here
+    :param url_:
+    :param debug_:
+    :param die_on_error_:
+    :return:
+    """
+    myrequest = request.Request(url=url_)
     myresponses = []
     try:
-        myresponses.append(urllib.request.urlopen(myrequest))
+        if (proxies_ is not None) and (len(proxies_) > 0):
+            # https://stackoverflow.com/a/59635684/11014343
+            opener = myrequest.build_opener(myrequest.ProxyHandler(proxies_))
+            myrequest.install_opener(opener)
+
+        myresponses.append(request.urlopen(myrequest))
         return myresponses[0]
+
     except urllib.error.HTTPError as error:
         if debug_:
             print("----- LFRequest::get:181 HTTPError: --------------------------------------------")
