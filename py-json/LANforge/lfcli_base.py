@@ -508,10 +508,10 @@ class LFCliBase:
         optional.add_argument('--proxy',          nargs='?', default=None,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
         #Required Args
-        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2', required=True)
-        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
-        required.add_argument('--ssid',           help='SSID for stations to associate to', required=True)
-        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', required=True)
+        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2')
+        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+        required.add_argument('--ssid',           help='WiFi SSID for script objects to associate to')
+        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key')
 
         return parser
 

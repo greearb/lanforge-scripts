@@ -201,26 +201,13 @@ Create stations to test connection and traffic on VAPs of varying security types
 
         description='''\
 test_ipv4_variable_time.py:
---------------------
-Options: --upstream_port eth1 
+------------------------------------------------------------
+Options: 
+            --upstream_port eth1 
             --radio wiphy0 
             --num_stations 32
-            --security {open|wep|wpa|wpa2|wpa3} \\
+            --security {open|wep|wpa|wpa2|wpa3} 
             --mode   1      
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13",
             --ssid netgear 
             --password admin123 
             --test_duration 2m (default)
@@ -229,13 +216,11 @@ Options: --upstream_port eth1
             --ap "00:0e:8e:78:e1:76"
             --debug''')
 
-    #optional = parser.add_argument_group('optional arguments')
-    #required = parser.add_argument_group('required arguments')
     required = None
     for agroup in parser._action_groups:
         if agroup.title == "required arguments":
             required = agroup
-    # pprint.pprint(required)
+
     if required is not None:
         required.add_argument('--a_min', help='bps rate minimum for endpoint A', type=int, default=256000)
         required.add_argument('--b_min', help='bps rate minimum for endpoint B', type=int, default=256000)
@@ -245,7 +230,7 @@ Options: --upstream_port eth1
     for agroup in parser._action_groups:
         if agroup.title == "optional arguments":
             optional = agroup
-    # pprint.pprint(optional)
+
     if optional is not None:
         optional.add_argument("--ap", help="Add BSSID of access point to connect to")
         optional.add_argument('--mode', help=LFCliBase.Help_Mode)
