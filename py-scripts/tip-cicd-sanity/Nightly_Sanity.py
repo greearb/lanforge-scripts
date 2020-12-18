@@ -788,7 +788,7 @@ for key in equipment_id_dict:
         ###Run Client Single Connectivity Test Cases for Bridge SSIDs
         # TC5214 - 2.4 GHz WPA2-Enterprise
         test_case = test_cases["2g_eap_bridge"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         sta_list = ["eap5214"]
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -808,7 +808,7 @@ for key in equipment_id_dict:
         ###Run Client Single Connectivity Test Cases for Bridge SSIDs
         # TC - 2.4 GHz WPA2
         test_case = test_cases["2g_wpa2_bridge"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test2237"]
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
@@ -828,7 +828,7 @@ for key in equipment_id_dict:
 
         # TC - 2.4 GHz WPA
         test_case = test_cases["2g_wpa_bridge"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test2420"]
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
@@ -848,7 +848,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA2-Enterprise
         test_case = test_cases["5g_eap_bridge"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         sta_list = ["eap5215"]
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -867,7 +867,7 @@ for key in equipment_id_dict:
 
         # TC 5 GHz WPA2
         test_case = test_cases["5g_wpa2_bridge"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test2236"]
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
@@ -887,7 +887,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA
         test_case = test_cases["5g_wpa_bridge"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test2419"]
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
@@ -1119,7 +1119,7 @@ for key in equipment_id_dict:
         ###Run Client Single Connectivity Test Cases for NAT SSIDs
         # TC - 2.4 GHz WPA2-Enterprise NAT
         test_case = test_cases["2g_eap_nat"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         sta_list = ["eap5216"]
         ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -1138,7 +1138,7 @@ for key in equipment_id_dict:
 
         # TC - 2.4 GHz WPA2 NAT
         test_case = test_cases["2g_wpa2_nat"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test4325"]
         ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"]
@@ -1158,7 +1158,7 @@ for key in equipment_id_dict:
 
         # TC - 2.4 GHz WPA NAT
         test_case = test_cases["2g_wpa_nat"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test4323"]
         ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"]
@@ -1177,7 +1177,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA2-Enterprise NAT
         test_case = test_cases["5g_eap_nat"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         sta_list = ["eap5217"]
         ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -1196,7 +1196,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA2 NAT
         test_case = test_cases["5g_wpa2_nat"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test4326"]
         ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
@@ -1216,7 +1216,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA NAT
         test_case = test_cases["5g_wpa_nat"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test4324"]
         ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
@@ -1447,7 +1447,7 @@ for key in equipment_id_dict:
         ###Run Client Single Connectivity Test Cases for VLAN SSIDs
         # TC- 2.4 GHz WPA2-Enterprise VLAN
         test_case = test_cases["2g_eap_vlan"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         sta_list = ["eap5253"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -1466,7 +1466,7 @@ for key in equipment_id_dict:
 
         # TC - 2.4 GHz WPA2 VLAN
         test_case = test_cases["2g_wpa2_vlan"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test5251"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
@@ -1486,7 +1486,7 @@ for key in equipment_id_dict:
 
         # TC 4323 - 2.4 GHz WPA VLAN
         test_case = test_cases["2g_wpa_vlan"]
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         station = ["test5252"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
@@ -1505,7 +1505,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA2-Enterprise VLAN
         test_case = test_cases["5g_eap_vlan"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         sta_list = ["eap5250"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
@@ -1524,7 +1524,7 @@ for key in equipment_id_dict:
 
         # TC - 5 GHz WPA2 VLAN
         test_case = test_cases["5g_wpa2_vlan"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test5248"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
@@ -1544,7 +1544,7 @@ for key in equipment_id_dict:
 
         # TC 4324 - 5 GHz WPA VLAN
         test_case = test_cases["5g_wpa_vlan"]
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         station = ["test5249"]
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
