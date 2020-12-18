@@ -114,7 +114,7 @@ usage_mnt=`du -shxc .`
 
 # Find size of /lib/modules
 cd /lib/modules
-usage_libmod=`du -sh *`
+mapfile -t usage_libmod < <(du -sh *)
 
 # Find how many kernels are installed
 cd /boot
