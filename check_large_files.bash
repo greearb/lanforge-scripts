@@ -27,6 +27,19 @@ if (( eyedee != 0 )); then
     exit 1
 fi
 
+function contains () {
+    if [[ x$1 = x ]] || [[ x$2 = x ]]; then
+        echo "contains wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
+        exit 1
+    fi
+    for item in "${$1[@]}"; do
+        echo $item
+        [[ "$2" = "$item" ]] && return 0
+    done
+    return 1
+}
+
+
 # these are default selections
 selections=()
 deletion_targets=()
@@ -71,7 +84,6 @@ while getopts $opts opt; do
     q)
       quiet=1
       verbose=0
-      selections+=($opt)
       ;;
     t)
       selections+=($opt)
@@ -79,7 +91,6 @@ while getopts $opts opt; do
     v)
       quiet=0
       verbose=1
-      selections+=($opt)
       ;;
     *)
       echo "unknown option: $opt"
@@ -99,27 +110,96 @@ function hr() {
   echo "$HR"
 }
 
+declare -A totals=(
+    [b]=0
+    [c]=0
+    [d]=0
+    [k]=0
+    [l]=0
+    [m]=0
+    [r]=0
+    [t]=0
+)
+declare -A surveyors_map=(
+    [b]="survey_kernel_files"
+    [c]="survey_core_files"
+    [d]="survey_lf_downloads"
+    [k]="survey_ath10_files"
+    [l]="survey_var_log"
+    [m]="survey_mnt_lf_files"
+    [r]="survey_report_data"
+    [t]="survey_var_tmp"
+)
+
+declare -A cleaners_map=(
+    [b]="clean_old_kernels"
+    [c]="clean_core_files"
+    [d]="clean_lf_downloads"
+    [k]="clean_ath10_files"
+    [l]="clean_var_log"
+    [m]="clean_mnt_lf_files"
+    [r]="compress_report_data"
+    [t]="clean_var_tmp"
+)
+
+kernel_files=()
+survey_kernel_files() {
+    mapfile -t kernel_files < <(ls /boot/* /lib/modules/* 2>/dev/null)
+    totals[b]=$(du -hc "$kernel_files" | awk '/total/{print $1}')
+}
+
 # Find core files
 core_files=()
-cd /
-mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null)
+survey_core_files() {
+    cd /
+    mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null)
+    totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
+}
+
+# downloads
+downloads=()
+survey_lf_downloads() {
+    cd /home/lanforge/Downloads || return 1
+    mapfile -t downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
+    totals[d]=$(du -hc "${downloads[@]}" | awk '/total/{print $1}')
+}
 
 # Find ath10k crash residue
 ath10_files=()
-mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
+survey_ath10_files() {
+    mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
+    totals[k]=$(du -sh "${ath10_files}" 2>/dev/null)
+}
+
+# stuff in var log
+var_log_files=()
+survey_var_log() {
+    mapfile -t var_log_files < <(ls /var/log/* 2>/dev/null)
+    totals[l]=$(du -sh "${var_log_files}" 2>/dev/null)
+}
 
 # Find size of /mnt/lf that is not mounted
-cd /mnt
-usage_mnt=`du -shxc .`
+mnt_lf_files=()
+survey_mnt_lf_files() {
+    [ ! -d /mnt/lf ] && return 0
+    mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem)
+    totals[m]=$(du -xhc "${mnt_lf_files[@]}")
+}
 
-# Find size of /lib/modules
-cd /lib/modules
-mapfile -t usage_libmod < <(du -sh *)
+## Find size of /lib/modules
+# cd /lib/modules
+# mapfile -t usage_libmod < <(du -sh *)
 
 # Find how many kernels are installed
-cd /boot
-mapfile -t boot_kernels < <(ls init*)
-boot_usage=`du -sh .`
+# cd /boot
+# mapfile -t boot_kernels < <(ls init*)
+# boot_usage=`du -sh .`
+
+report_files=()
+survey_report_data() {
+    cd /home/lanforge
+    totals=that
+}
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
@@ -152,15 +232,64 @@ sleep 1
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   ask to remove if we are interactive                                   #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-if
-item=""
-while [[ $item != q ]]; do
+
+
+choice=""
+while [[ $choice != q ]]; do
   hr
+  #abcdhklmqrtv
   echo "Would you like to delete? "
-  echo "  1) core crash files"
-  echo "  2) ath10k crash files"
-  echo "  3) old var/www downloads"
-  echo "  4) old lanforge downloads"
-  echo "  5) orphaned /mnt/lf files"
-  read -p "[1-5] or q ? " item
+  echo "  b) old kernels"
+  echo "  c) core crash files"
+  echo "  d) old LANforge downloads"
+  echo "  k) ath10k crash files"
+  echo "  l) old /var/log files"
+  echo "  m) orphaned /mnt/lf files"
+  echo "  r) compress .csv report files"
+  echo "  t) clean /var/tmp"
+  read -p "[1-5] or q ? " choice
+
+  case "$choice" in
+    b )
+        printf "%s\n" "${kernels[@]}"
+        clean_old_kernels
+        ;;
+    c )
+        printf "%s\n" "${core_files[@]}"
+        clean_core_files
+        ;;
+    d )
+        printf "%s\n" "${lf_downloads[@]}"
+        clean_lf_downloads
+        ;;
+    k )
+        printf "%s\n" "${ath10_files[@]}"
+        clean_ath10_files
+        ;;
+    l )
+        printf "%s\n" "${var_log_files[@]}"
+        clean_var_log
+        ;;
+    m )
+        printf "%s\n" "${mnt_lf_files[@]}"
+        clean_mnt_lf_files
+        ;;
+    r )
+        printf "%s\n" "${report_data_dirs[@]}"
+        compress_report_data
+        ;;
+    t )
+        printf "%s\n" "${var_tmp_files[@]}"
+        clean_var_tmp
+        ;;
+    q )
+        break
+        ;;
+    * )
+        echo "not an option [$choice]"
+        ;;
+  esac
 done
+
+
+echo bye
