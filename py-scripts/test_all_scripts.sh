@@ -49,8 +49,6 @@ function echo_print() {
 }
 function run_test() {
     for i in "${testCommands[@]}"; do
-        set -x
-        set -e
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
@@ -62,10 +60,11 @@ function run_test() {
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
-            sleep 3
+            [[ x$DEBUG != x ]] && sleep 2
             eval $i >>~/test_all_output_file.txt
             if [ $? -ne 0 ]; then
                 echo $CURR_TEST_NAME failure
+                [[ x$DEBUG != x ]] && exit 1
             else
                 echo $CURR_TEST_NAME success
             fi
