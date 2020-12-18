@@ -2487,7 +2487,7 @@ class FIOEndpProfile(LFCliBase):
                     endp_data["directory"] = "/mnt/lf/wo_" + name + "_" + str(num_connection) + "_fio"
 
                 url = "cli-json/add_file_endp"
-                self.local_realm.json_post(url, endp_data, debug_=True, suppress_related_commands_=suppress_related_commands_)
+                self.local_realm.json_post(url, endp_data, debug_=False, suppress_related_commands_=suppress_related_commands_)
                 time.sleep(sleep_time)
 
                 data = {
