@@ -44,10 +44,39 @@ def wpa_ent_list():
     ]
 
 class Realm(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=False, halt_on_error_=False):
-        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_, _halt_on_error=halt_on_error_)
+    def __init__(self,
+                 lfclient_host="localhost",
+                 lfclient_port=8080,
+                 debug_=False,
+                 halt_on_error_=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False,
+                 _local_realm=None,
+                 _proxy_str=None,
+                 _capture_signal_list=[]):
+        super().__init__(_lfjson_host=lfclient_host,
+                         _lfjson_port=lfclient_port,
+                         _debug=debug_,
+                         _halt_on_error=halt_on_error_,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        super().__init__(lfclient_host,
+                         lfclient_port,
+                 _debug=debug_,
+                 _halt_on_error=halt_on_error_,
+                 _exit_on_error=_exit_on_error,
+                 _exit_on_fail=_exit_on_fail,
+                 #_local_realm=self,
+                 _proxy_str=_proxy_str,
+                 _capture_signal_list=_capture_signal_list)
+
         self.debug = debug_
+        # if debug_:
+        #     print("Realm _proxy_str: %s" % _proxy_str)
+        #     pprint(_proxy_str)
         self.check_connect()
         self.chan_to_freq = {}
         self.freq_to_chan = {}
