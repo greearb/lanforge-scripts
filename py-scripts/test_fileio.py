@@ -564,11 +564,24 @@ def main():
 test_fileio.py:
 --------------------
 Generic command layout:
-./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans
+./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
 ./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
                  --netmask 255.255.255.0 --gateway 192.168.92.1
+                 
+./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans  
+                 --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2 --mode write
+                 
+./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans  
+                 --first_mvlan_ip 10.40.3.100 --netmask 255.255.240.0 --gateway 10.40.0.1  
+                 --use_test_groups --write_only_test_group test_wo --read_only_test_group test_ro 
+                 --add_to_group test_wo --cxs test_wo0000,test_wo0001,test_wo0002
+
+./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans
+                 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2 
+                 --netmask 255.255.240.0 --gateway 10.40.0.1
+
 ''')
     parser.add_argument('--num_stations', help='Number of stations to create', default=0)
     parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
@@ -599,7 +612,8 @@ Generic command layout:
     parser.add_argument('--connections_per_port', help='specifies number of connections to be used per port', default=1,
                         type=int)
     parser.add_argument('--use_ports', help='list of comma separated ports to use with ips, \'=\' separates name and ip'
-                                            '{ port_name1=ip_addr1,port_name1=ip_addr2 }', default=None)
+                                            '{ port_name1=ip_addr1,port_name1=ip_addr2 }. '
+                                            'Ports without ips will be left alone', default=None)
     parser.add_argument('--use_macvlans', help='will create macvlans', action='store_true', default=False)
     parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
     parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
