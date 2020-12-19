@@ -32,13 +32,13 @@ function contains () {
         echo "contains wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
         exit 1
     fi
-    for item in "${$1[@]}"; do
+    local zarray="${1}[@]"
+    for item in "${zarray[@]}"; do
         echo $item
         [[ "$2" = "$item" ]] && return 0
     done
     return 1
 }
-
 
 # these are default selections
 selections=()
@@ -120,6 +120,16 @@ declare -A totals=(
     [r]=0
     [t]=0
 )
+declare -A desc=(
+    [b]="kernel files"
+    [c]="core files"
+    [d]="lf downloads"
+    [k]="lf/ath10 files"
+    [l]="/var/log"
+    [m]="/mnt/lf files"
+    [r]="lf/report_data"
+    [t]="/var/tmp"
+)
 declare -A surveyors_map=(
     [b]="survey_kernel_files"
     [c]="survey_core_files"
@@ -154,6 +164,7 @@ survey_core_files() {
     cd /
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null)
     totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
+    [[ x${totals[c]} = x ]] && totals[c]=0
 }
 
 # downloads
@@ -162,20 +173,31 @@ survey_lf_downloads() {
     cd /home/lanforge/Downloads || return 1
     mapfile -t downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
     totals[d]=$(du -hc "${downloads[@]}" | awk '/total/{print $1}')
+    [[ x${totals[d]} = x ]] && totals[d]=0
 }
 
 # Find ath10k crash residue
 ath10_files=()
 survey_ath10_files() {
     mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
-    totals[k]=$(du -sh "${ath10_files}" 2>/dev/null)
+    totals[k]=$(du -hc "${ath10_files}" 2>/dev/null | awk '/total/{print $1}')
+    [[ x${totals[k]} = x ]] && totals[k]=0
 }
 
 # stuff in var log
 var_log_files=()
 survey_var_log() {
-    mapfile -t var_log_files < <(ls /var/log/* 2>/dev/null)
-    totals[l]=$(du -sh "${var_log_files}" 2>/dev/null)
+    mapfile -t var_log_files < <(find /var/log -type f -size +10M 2>/dev/null)
+    totals[l]=$(du -hc "${var_log_files}" 2>/dev/null | awk '/total/{print $1}' )
+    [[ x${totals[l]} = x ]] && totals[l]=0
+}
+
+# stuff in var tmp
+var_tmp_files=()
+survey_var_tmp() {
+    mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null)
+    totals[t]=$(du -sh "${var_tmp_files}" 2>/dev/null | awk '/total/{print $1}' )
+    [[ x${totals[t]} = x ]] && totals[t]=0
 }
 
 # Find size of /mnt/lf that is not mounted
@@ -183,7 +205,8 @@ mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
     mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem)
-    totals[m]=$(du -xhc "${mnt_lf_files[@]}")
+    totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
+    [[ x${totals[m]} = x ]] && totals[m]=0
 }
 
 ## Find size of /lib/modules
@@ -203,25 +226,46 @@ survey_report_data() {
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#       gather usage areas
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+survey_areas() {
+    local area
+    echo -n "surveying..."
+    for area in "${!surveyors_map[@]}"; do
+        echo -n "#"
+        ${surveyors_map[$area]}
+    done
+    echo ""
+}
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #       report sizes here                                                 #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-if (( ${#core_files[@]} > 0 )); then
-    echo "Core Files:"
-    hr
-    printf '     %s\n' "${core_files[@]}"
-    hr
-fi
+disk_usage_report() {
+    for k in "${!totals[@]}"; do
+        echo -e "\t${desc[$k]}:\t${totals[$k]}"
+    done
+}
+survey_areas
+disk_usage_report
+exit
+#if (( ${#core_files[@]} > 0 )); then
+#    echo "Core Files:"
+#    hr
+#    printf '     %s\n' "${core_files[@]}"
+#    hr
+#fi
 
-echo "Usage of /mnt: $usage_mnt"
-echo "Usage of /lib/modules: $usage_libmod"
-echo "Boot usage: $boot_usage"
+#echo "Usage of /mnt: $usage_mnt"
+#echo "Usage of /lib/modules: $usage_libmod"
+#echo "Boot usage: $boot_usage"
 
-if (( ${#boot_kernels[@]} > 1 )); then
-    echo "Boot ramdisks:"
-    hr
-    printf '     %s\n' "${boot_kernels[@]}"
-    hr
-fi
+#if (( ${#boot_kernels[@]} > 1 )); then
+#    echo "Boot ramdisks:"
+#    hr
+#    printf '     %s\n' "${boot_kernels[@]}"
+#    hr
+#fi
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   delete extra things now                                               #
@@ -233,6 +277,12 @@ sleep 1
 #   ask to remove if we are interactive                                   #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
+if contains "selections" "a" ; then
+    for z in "${selections[@]}"; do
+        echo "will execute $z"
+    done
+    exit 0
+fi
 
 choice=""
 while [[ $choice != q ]]; do
