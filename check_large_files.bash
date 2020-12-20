@@ -27,13 +27,31 @@ if (( eyedee != 0 )); then
     exit 1
 fi
 
+debug() {
+    if [[ x$verbose = x ]] || (( $verbose < 1 )); then return; fi
+
+    echo ": $1"
+}
+
+note() {
+    #set -x
+    if (( $quiet > 0 )); then return; fi
+
+    echo "# $1"
+    #set +x
+}
+
 function contains () {
     if [[ x$1 = x ]] || [[ x$2 = x ]]; then
         echo "contains wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
         exit 1
     fi
-    local zarray="${1}[@]"
-    for item in "${zarray[@]}"; do
+    local tmp=$1[@]
+    local array=( "${!tmp[@]}" )
+    if (( ${#array[@]} < 1 )); then
+        return 1
+    fi
+    for item in "${array[@]}"; do
         echo $item
         [[ "$2" = "$item" ]] && return 0
     done
@@ -100,10 +118,10 @@ while getopts $opts opt; do
   esac
 done
 
-if (( ${#selections} < 1 )); then
-  echo "$USAGE"
-  exit 0
-fi
+#if (( ${#selections} < 1 )); then
+#  echo "$USAGE"
+#  exit 0
+#fi
 
 HR=" ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
 function hr() {
@@ -152,8 +170,84 @@ declare -A cleaners_map=(
     [t]="clean_var_tmp"
 )
 
+clean_old_kernels() {
+    note "Cleaning old kernels WIP"
+    kernels=()
+    # need to avoid most recent fedora kernel
+    if [ -x /usr/sbin/rpm ]; then
+        local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
+        local pkg
+        for pkg in "${kern_pkgs[@]}"; do
+            if [[ $pkg = kernel-tools* ]] \
+                || [[ $pkg = kernel-headers* ]] \
+                || [[ $pkg = kernel-devel* ]] ; then
+                continue
+            fi
+            kernels+=( $pkg )
+            kernel_series=${pkg##kernel*5}
+            echo "K SER: $kernel_series"
+        done
+    fi
+    if (( $verbose > 0 )); then
+        printf "Would remove %s\n" "${kernels[@]}"
+    fi
+}
+
+clean_core_files() {
+    note "Cleaning core files WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${core_files[@]}"
+    fi
+}
+
+clean_lf_downloads() {
+    note "Clean LF downloads WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${lf_downloads[@]}"
+    fi
+}
+
+clean_ath10_files() {
+    note "clean_ath10_files WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${ath10_files[@]}"
+    fi
+}
+
+clean_var_log() {
+    note "Clean var log WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${var_log_files[@]}"
+    fi
+}
+
+clean_mnt_fl_files() {
+    note "clean mnt lf files WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${mnt_lf_files[@]}"
+    fi
+
+}
+
+compress_report_data() {
+    note "compress report data WIP"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${report_data_dirs[@]}"
+    fi
+}
+
+clean_var_tmp() {
+    note "clean var tmp"
+    if (( $verbose > 0 )); then
+        printf "%s\n" "${var_tmp_files[@]}"
+    fi
+    rf -f "${var_tmp_files[@]}"
+}
+
+
 kernel_files=()
 survey_kernel_files() {
+    debug "Surveying Kernel files"
     mapfile -t kernel_files < <(ls /boot/* /lib/modules/* 2>/dev/null)
     totals[b]=$(du -hc "$kernel_files" | awk '/total/{print $1}')
 }
@@ -161,15 +255,24 @@ survey_kernel_files() {
 # Find core files
 core_files=()
 survey_core_files() {
+    debug "Surveying core files"
     cd /
-    mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null)
-    totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
+    #set -x
+    mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
+    if [[ $verbose = 1 ]]; then
+        printf "%s\n" "${core_files[@]}"
+    fi
+    if (( ${#core_files[@]} > 0 )); then
+        totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
+    fi
+    #set +x
     [[ x${totals[c]} = x ]] && totals[c]=0
 }
 
 # downloads
 downloads=()
 survey_lf_downloads() {
+    debug "Surveying /home/lanforge downloads"
     cd /home/lanforge/Downloads || return 1
     mapfile -t downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
     totals[d]=$(du -hc "${downloads[@]}" | awk '/total/{print $1}')
@@ -179,6 +282,7 @@ survey_lf_downloads() {
 # Find ath10k crash residue
 ath10_files=()
 survey_ath10_files() {
+    debug "Sureyinig ath10 crash files"
     mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
     totals[k]=$(du -hc "${ath10_files}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[k]} = x ]] && totals[k]=0
@@ -187,6 +291,7 @@ survey_ath10_files() {
 # stuff in var log
 var_log_files=()
 survey_var_log() {
+    debug "Surveying var log"
     mapfile -t var_log_files < <(find /var/log -type f -size +10M 2>/dev/null)
     totals[l]=$(du -hc "${var_log_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[l]} = x ]] && totals[l]=0
@@ -195,16 +300,20 @@ survey_var_log() {
 # stuff in var tmp
 var_tmp_files=()
 survey_var_tmp() {
+    #set -x
+    debug "Surveying var tmp"
     mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null)
     totals[t]=$(du -sh "${var_tmp_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[t]} = x ]] && totals[t]=0
+    #set +x
 }
 
 # Find size of /mnt/lf that is not mounted
 mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
-    mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem)
+    debug "Surveying mnt lf"
+    mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem 2>/dev/null)
     totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[m]} = x ]] && totals[m]=0
 }
@@ -220,8 +329,15 @@ survey_mnt_lf_files() {
 
 report_files=()
 survey_report_data() {
+    debug "Surveying for lanforge report data"
     cd /home/lanforge
-    totals=that
+    #set -x
+    local fnum=$( find -type f -name '*.csv' 2>/dev/null | wc -l )
+    local fsiz=$( find -type f -name '*.csv' 2>/dev/null | xargs du -hc | awk '/total/{print $1}')
+    totals[r]="$fsiz"
+    [[ x${totals[r]} = x ]] && totals[r]=0
+    report_files=("CSV files: $fnum tt $fsiz")
+    #set +x
 }
 
 
@@ -230,9 +346,13 @@ survey_report_data() {
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 survey_areas() {
     local area
-    echo -n "surveying..."
+    if [[ x$quiet = x ]] || (( $quiet < 1 )); then
+        echo -n "Surveying..."
+    fi
     for area in "${!surveyors_map[@]}"; do
-        echo -n "#"
+        if [[ x$quiet = x ]] || (( $quiet < 1 )); then
+            echo -n "#"
+        fi
         ${surveyors_map[$area]}
     done
     echo ""
@@ -248,13 +368,14 @@ disk_usage_report() {
 }
 survey_areas
 disk_usage_report
-exit
-#if (( ${#core_files[@]} > 0 )); then
-#    echo "Core Files:"
-#    hr
-#    printf '     %s\n' "${core_files[@]}"
-#    hr
-#fi
+
+if (( ${#core_files[@]} > 0 )); then
+    note "Core Files detected, will remove:"
+    hr
+    printf '     %s\n' "${core_files[@]}"
+    hr
+    selections+=("c")
+fi
 
 #echo "Usage of /mnt: $usage_mnt"
 #echo "Usage of /lib/modules: $usage_libmod"
@@ -270,66 +391,78 @@ exit
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   delete extra things now                                               #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-echo "Automatic deletion will include: "
-echo " journalctl space"
-sleep 1
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#   ask to remove if we are interactive                                   #
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-
+#set -x
 if contains "selections" "a" ; then
+    note "Automatic deletion will include: "
+    printf "%s\n" "${selections[@]}"
+    debug "Doing automatic cleanup"
     for z in "${selections[@]}"; do
-        echo "will execute $z"
+        debug "Will perform ${desc[$z]}"
+        ${cleaners_map[$z]}
     done
+   
+    survey_areas
+    disk_usage_report
+
     exit 0
 fi
 
+if (( ${#selections[@]} > 0 )) ; then
+    debug "Doing selected cleanup"
+    for z in "${selections[@]}"; do
+        debug "Will perform ${desc[$z]}"
+        ${cleaners_map[$z]}
+        selections=("${selections[@]/$z}")
+    done
+   
+    survey_areas
+    disk_usage_report
+fi
+set +x
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#   ask for things to remove if we are interactive                        #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+
+
 choice=""
 while [[ $choice != q ]]; do
-  hr
-  #abcdhklmqrtv
-  echo "Would you like to delete? "
-  echo "  b) old kernels"
-  echo "  c) core crash files"
-  echo "  d) old LANforge downloads"
-  echo "  k) ath10k crash files"
-  echo "  l) old /var/log files"
-  echo "  m) orphaned /mnt/lf files"
-  echo "  r) compress .csv report files"
-  echo "  t) clean /var/tmp"
-  read -p "[1-5] or q ? " choice
+    hr
+    #abcdhklmqrtv
+    echo "Would you like to delete? "
+    echo "  b) old kernels                ${totals[b]}"
+    echo "  c) core crash files           ${totals[c]}"
+    echo "  d) old LANforge downloads     ${totals[d]}"
+    echo "  k) ath10k crash files         ${totals[k]}"
+    echo "  l) old /var/log files         ${totals[l]}"
+    echo "  m) orphaned /mnt/lf files     ${totals[m]}"
+    echo "  r) compress .csv report files ${totals[r]}"
+    echo "  t) clean /var/tmp             ${totals[t]}"
+    read -p "[1-5] or q ? " choice
 
-  case "$choice" in
+    case "$choice" in
     b )
-        printf "%s\n" "${kernels[@]}"
         clean_old_kernels
         ;;
     c )
-        printf "%s\n" "${core_files[@]}"
         clean_core_files
         ;;
     d )
-        printf "%s\n" "${lf_downloads[@]}"
         clean_lf_downloads
         ;;
     k )
-        printf "%s\n" "${ath10_files[@]}"
         clean_ath10_files
         ;;
     l )
-        printf "%s\n" "${var_log_files[@]}"
         clean_var_log
         ;;
     m )
-        printf "%s\n" "${mnt_lf_files[@]}"
         clean_mnt_lf_files
         ;;
     r )
-        printf "%s\n" "${report_data_dirs[@]}"
         compress_report_data
         ;;
     t )
-        printf "%s\n" "${var_tmp_files[@]}"
         clean_var_tmp
         ;;
     q )
@@ -338,7 +471,9 @@ while [[ $choice != q ]]; do
     * )
         echo "not an option [$choice]"
         ;;
-  esac
+    esac
+    survey_areas
+    disk_usage_report
 done
 
 
