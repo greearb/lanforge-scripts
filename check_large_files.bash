@@ -4,6 +4,12 @@
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # set -x
 # set -e
+# these are default selections
+selections=()
+deletion_targets=()
+show_menu=1
+verbose=0
+quiet=0
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -a   # automatic: disable menu and clean automatically
@@ -29,16 +35,12 @@ fi
 
 debug() {
     if [[ x$verbose = x ]] || (( $verbose < 1 )); then return; fi
-
     echo ": $1"
 }
 
 note() {
-    #set -x
     if (( $quiet > 0 )); then return; fi
-
     echo "# $1"
-    #set +x
 }
 
 function contains () {
@@ -46,24 +48,24 @@ function contains () {
         echo "contains wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
         exit 1
     fi
-    local tmp=$1[@]
-    local array=( "${!tmp[@]}" )
+    # these two lines below are important to not modify
+    local tmp="${1}[@]"
+    local array=( ${!tmp} )
+
+    # if [[ x$verbose = x1 ]]; then
+    #    printf "contains array %s\n" "${array[@]}"
+    # fi
     if (( ${#array[@]} < 1 )); then
         return 1
     fi
+    local item
     for item in "${array[@]}"; do
-        echo $item
+        # debug "contains testing $2 == $item"
         [[ "$2" = "$item" ]] && return 0
     done
     return 1
 }
 
-# these are default selections
-selections=()
-deletion_targets=()
-show_menu=1
-verbose=0
-quiet=0
 #opts=""
 opts="abcdhklmqrtv"
 while getopts $opts opt; do
@@ -172,24 +174,46 @@ declare -A cleaners_map=(
 
 clean_old_kernels() {
     note "Cleaning old kernels WIP"
-    kernels=()
+    local pkg
+    local k_pkgs=()
+    local selected_k=()
+    local k_series=()
     # need to avoid most recent fedora kernel
-    if [ -x /usr/sbin/rpm ]; then
+
+    if [ -x /usr/bin/rpm ]; then
         local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
         local pkg
         for pkg in "${kern_pkgs[@]}"; do
-            if [[ $pkg = kernel-tools* ]] \
-                || [[ $pkg = kernel-headers* ]] \
-                || [[ $pkg = kernel-devel* ]] ; then
+            if [[ $pkg = kernel-tools-* ]] \
+                || [[ $pkg = kernel-headers-* ]] \
+                || [[ $pkg = kernel-devel-* ]] ; then
                 continue
             fi
-            kernels+=( $pkg )
-            kernel_series=${pkg##kernel*5}
-            echo "K SER: $kernel_series"
+            k_pkgs+=( $pkg )
+        done
+        for pkg in "${k_pkgs[@]}"; do
+            pkg=${pkg##kernel-modules-extra-}
+            pkg=${pkg##kernel-modules-}
+            pkg=${pkg##kernel-core-}
+            kernel_series=${pkg##kernel-}
+            #debug "K SER: $kernel_series"
+            if contains k_series $kernel_series; then
+                continue
+            else
+                k_series+=( $kernel_series )
+            fi
+        done
+        IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
+        for pkg in "${k_series[@]}"; do
+            debug "series $pkg"
         done
     fi
-    if (( $verbose > 0 )); then
-        printf "Would remove %s\n" "${kernels[@]}"
+    set +x
+    if (( ${#selected_k[@]} < 1 )); then
+        note "No kernels selected for removal"
+    fi
+    if (( $quiet < 1 )); then
+        printf "Would remove %s\n" "${selected_k[@]}"
     fi
 }
 
@@ -346,16 +370,16 @@ survey_report_data() {
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 survey_areas() {
     local area
-    if [[ x$quiet = x ]] || (( $quiet < 1 )); then
-        echo -n "Surveying..."
-    fi
+    note "Surveying..."
     for area in "${!surveyors_map[@]}"; do
-        if [[ x$quiet = x ]] || (( $quiet < 1 )); then
-            echo -n "#"
+        if (( $quiet < 1 )) && (( $verbose < 1 )); then
+            note -n "#"
         fi
         ${surveyors_map[$area]}
     done
-    echo ""
+    if (( $quiet < 1 )) && (( $verbose < 1 )); then
+        echo ""
+    fi
 }
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
@@ -370,9 +394,12 @@ survey_areas
 disk_usage_report
 
 if (( ${#core_files[@]} > 0 )); then
-    note "Core Files detected, will remove:"
+    note "Core Files detected:"
     hr
-    printf '     %s\n' "${core_files[@]}"
+    #printf '     %s\n' "${core_files[@]}"
+    for core in "${core_files[@]}"; do
+        file $core
+    done
     hr
     selections+=("c")
 fi
@@ -400,10 +427,8 @@ if contains "selections" "a" ; then
         debug "Will perform ${desc[$z]}"
         ${cleaners_map[$z]}
     done
-   
     survey_areas
     disk_usage_report
-
     exit 0
 fi
 
@@ -414,7 +439,6 @@ if (( ${#selections[@]} > 0 )) ; then
         ${cleaners_map[$z]}
         selections=("${selections[@]/$z}")
     done
-   
     survey_areas
     disk_usage_report
 fi
@@ -423,8 +447,6 @@ set +x
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   ask for things to remove if we are interactive                        #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-
-
 choice=""
 while [[ $choice != q ]]; do
     hr
