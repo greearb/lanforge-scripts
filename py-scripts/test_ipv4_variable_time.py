@@ -179,9 +179,9 @@ def main():
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     optional.add_argument('--mode',help='Used to force mode of stations')
     optional.add_argument('--ap',help='Used to force a connection to a particular AP')
+    optional.add_argument('--report_file',help='where you want to store results')
     args = parser.parse_args()
 
     num_sta = 2
@@ -211,9 +211,15 @@ def main():
         ip_var_test.exit_fail()
     ip_var_test.start(False, False)
 
+    if args.report_file is None:
+        report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
+    else:
+        report_f=args.report_file
+
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
-                                    report_file='/home/lanforge/report-data/'+str(datetime.datetime.now())+'test_ipv4_variable_time.xlsx',
-                                    duration_sec=60)
+                                    report_file=report_f,
+                                    duration_sec=60,
+                                    num_stations=self.num_stations)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
