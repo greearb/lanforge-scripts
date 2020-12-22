@@ -1042,7 +1042,34 @@ class L3CXProfile(LFCliBase):
         for cx_name in self.get_cx_names():
             self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
         return self.data
+    def __get_rx_values(self):
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
+        if self.debug:
+            print(self.created_cx.values())
+            print("==============\n", cx_list, "\n==============")
+        cx_rx_map = {}
+        for cx_name in cx_list['endpoint']:
+            if cx_name != 'uri' and cx_name != 'handler':
+                for item, value in cx_name.items():
+                    for value_name, value_rx in value.items():
+                      if value_name == 'rx bytes' and item in self.created_cx.values():
+                        cx_rx_map[item] = value_rx
+        return cx_rx_map
+    def __compare_vals(self, old_list, new_list):
+        passes = 0
+        expected_passes = 0
+        if len(old_list) == len(new_list):
+            for item, value in old_list.items():
+                expected_passes += 1
+                if new_list[item] > old_list[item]:
+                    passes += 1
 
+            if passes == expected_passes:
+                return True
+            else:
+                return False
+        else:
+            return False
     def monitor(self,duration_sec=60,
                 interval_sec=1,
                 col_names=None,
@@ -1090,6 +1117,9 @@ class L3CXProfile(LFCliBase):
         print('endpoints')
         print(endps)
         value_map = dict()
+        passes = 0
+        expected_passes = 0
+        old_cx_rx_values = self.__get_rx_values()
         while datetime.datetime.now() < end_time:
             response = lfcli.json_get("/endp/%s?fields=%s" % (endps, fields), debug_=self.debug)
             # lfcli.json_get("/endp/VTsta0000-0-B,VTsta0001-1")
@@ -1101,33 +1131,47 @@ class L3CXProfile(LFCliBase):
             value_map[datetime.datetime.now()]=response
             if datetime.datetime.now() > end_time:
                 break;
+            new_cx_rx_values = self.__get_rx_values()
+            if self.debug:
+                print(old_cx_rx_values, new_cx_rx_values)
+                print("\n-----------------------------------")
+                print(curr_time, end_time)
+                print("-----------------------------------\n")
+            expected_passes += 1
+            if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
+                passes += 1
+            else:
+                self._fail("FAIL: Not all stations increased traffic")
+                self.exit_fail()
+            old_cx_rx_values = new_cx_rx_values
             time.sleep(interval_sec)
         #print(value_map)
 
+        if passes == expected_passes:
+            self._pass("PASS: All tests passed")
         #Step 5, close and save
-        endpoints=[x['endpoint'] for x in value_map.values()]
+        endpoints=list()
+        for endpoint in value_map.values():
+            endpoint.append()
         endpoints2=[]
-        for y in range(0,len(endpoints)):
-            for x in range(0,len(endpoints[0])):
-                endpoints2.append([*[*endpoints[y][x].values()][0].values()])
+        for y in range(0, len(endpoints)):
+            for x in range(0, len(endpoints[0])):
+                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
         timestamps=[]
         for timestamp in [*value_map.keys()]:
             timestamps.extend([str(timestamp)]*4)
-        for point in range(0,len(endpoints2)):
-            endpoints2[point].insert(0,timestamps[point])
+        for point in range(0, len(endpoints2)):
+            endpoints2[point].insert(0, timestamps[point])
         workbook = xlsxwriter.Workbook(report_file)
         worksheet = workbook.add_worksheet()
-        print(col_names)
-        print(type(col_names))
         header_row=col_names
         header_row.insert(0,'Timestamp')
-        print(header_row)
         for col_num,data in enumerate(header_row):
-            worksheet.write(0,col_num,data)
+            worksheet.write(0, col_num,data)
         row_num = 1
         for x in endpoints2:
             for col_num, data in enumerate(x):
-                    worksheet.write(row_num,col_num,str(data))
+                    worksheet.write(row_num, col_num, str(data))
             row_num+=1
         workbook.close()
 

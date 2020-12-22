@@ -93,22 +93,6 @@ class IPV4VariableTime(LFCliBase):
                         cx_rx_map[item] = value_rx
         return cx_rx_map
 
-    def __compare_vals(self, old_list, new_list):
-        passes = 0
-        expected_passes = 0
-        if len(old_list) == len(new_list):
-            for item, value in old_list.items():
-                expected_passes += 1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-
-            if passes == expected_passes:
-                return True
-            else:
-                return False
-        else:
-            return False
-
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
@@ -118,36 +102,7 @@ class IPV4VariableTime(LFCliBase):
         else:
             self._fail("Stations failed to get IPs")
             self.exit_fail()
-        old_cx_rx_values = self.__get_rx_values()
         self.cx_profile.start_cx()
-
-        passes = 0
-        expected_passes = 0
-        curr_time = datetime.datetime.now()
-        end_time = self.local_realm.parse_time(self.test_duration) + curr_time
-        sleep_interval = self.local_realm.parse_time(self.test_duration) // 3
-        while curr_time < end_time:
-
-            time.sleep(sleep_interval.total_seconds())
-
-            new_cx_rx_values = self.__get_rx_values()
-            if self.debug:
-                print(old_cx_rx_values, new_cx_rx_values)
-                print("\n-----------------------------------")
-                print(curr_time, end_time)
-                print("-----------------------------------\n")
-            expected_passes += 1
-            if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
-                passes += 1
-            else:
-                self._fail("FAIL: Not all stations increased traffic")
-                self.exit_fail()
-
-            old_cx_rx_values = new_cx_rx_values
-            curr_time = datetime.datetime.now()
-
-        if passes == expected_passes:
-            self._pass("PASS: All tests passed")
 
 
     def stop(self):
@@ -255,12 +210,10 @@ def main():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
     ip_var_test.start(False, False)
-    print('ip_var_cx_names')
-    print(ip_var_test.cx_profile.get_cx_names())
 
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
-                                    report_file='/home/lanforge/report-data/'+str(datetime.datetime.now())+'test_ipv4_variable_time.json',
-                                    duration_sec=10)
+                                    report_file='/home/lanforge/report-data/'+str(datetime.datetime.now())+'test_ipv4_variable_time.xlsx',
+                                    duration_sec=60)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
