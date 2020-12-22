@@ -1073,59 +1073,44 @@ class L3CXProfile(LFCliBase):
         else:
             return False
 
-    def monitor(self,duration_sec=60,
-                interval_sec=1,
+    def monitor(self,
+                duration_sec=60,
+                monitor_interval=1,
                 col_names=None,
                 created_cx=None,
                 show=False,
                 report_file=None,
-                excel=None):
-        if (duration_sec is None) or (duration_sec <= 1):
-            raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
-        if (interval_sec is None) or (interval_sec < 1):
-            raise ValueError("L3CXProfile::monitor wants interval_sec >= 1 second")
-        if (duration_sec <= interval_sec ):
-            raise ValueError("L3CXProfile::monitor wants duration_sec > interval_sec")
+                output_format=None):
+        try:
+            duration_sec=int(duration_sec)
+        except:
+            if (duration_sec is None) or (duration_sec <= 1):
+                raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
+            if (duration_sec <= monitor_interval ):
+                raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
+        if report_file == None:
+            raise ValueError("Monitor requires an output file to be defined")
+        if created_cx == None:
+            raise ValueError("")
+        if (monitor_interval is None) or (monitor_interval < 1):
+            raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if col_names is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
-        #Step 1, get a list of Layer 3 columns
-        lfcli=LFCliBase('localhost',8080)
-        if created_cx == None: #No user defined endpoints
-            try:
-                print('Loading Layer 3 Connections')
-                endps = ','.join([[*x.keys()][0] for x in lfcli.json_get('endp')['endpoint']])
-            except:
-                print('No layer 3 connections found')
-        else: #User defined Layer 3 columns
-            try:
-                print('Loading user defined Layer 3 Connections')
-                endps=created_cx
-            except:
-                print('Please format your col_names variable like the following:')
-        #Step 2, column names
+
+        #Step 1, column names
         fields=",".join(col_names)
-        print('fields')
-        print(fields)
-        #Step 3, create report file
-        if (report_file is not None) and (report_file != ""):
-            report_fh = open(report_file, "w+")
-        else:
-            pass
-            #report_fh = open(report_file, "w")
-        #Step 4, monitor columns
+        #Step 2, create report file
+        report_fh = open(report_file, "w+")
+        #Step 3, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
-
-        print('endpoints')
-        print(endps)
         value_map = dict()
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         while datetime.datetime.now() < end_time:
-            response = lfcli.json_get("/endp/%s?fields=%s" % (endps, fields), debug_=self.debug)
-            # lfcli.json_get("/endp/VTsta0000-0-B,VTsta0001-1")
+            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1147,36 +1132,39 @@ class L3CXProfile(LFCliBase):
                 self._fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
-            time.sleep(interval_sec)
+            time.sleep(monitor_interval)
         #print(value_map)
 
         if passes == expected_passes:
             self._pass("PASS: All tests passed")
-        #Step 5, close and save
-        endpoints=list()
-        for endpoint in value_map.values():
-            endpoints.append(endpoint['endpoint'])
-        endpoints2=[]
-        for y in range(0, len(endpoints)):
-            for x in range(0, len(endpoints[0])):
-                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
-        timestamps=[]
-        for timestamp in [*value_map.keys()]:
-            timestamps.extend([str(timestamp)]*2*len(endps))
-        for point in range(0, len(endpoints2)):
-            endpoints2[point].insert(0, timestamps[point])
-        workbook = xlsxwriter.Workbook(report_file)
-        worksheet = workbook.add_worksheet()
-        header_row=col_names
-        header_row.insert(0,'Timestamp')
-        for col_num,data in enumerate(header_row):
-            worksheet.write(0, col_num,data)
-        row_num = 1
-        for x in endpoints2:
-            for col_num, data in enumerate(x):
-                    worksheet.write(row_num, col_num, str(data))
-            row_num+=1
-        workbook.close()
+        #Step 4, close and save
+        if output_format.lower() == 'excel':
+            endpoints=list()
+            for endpoint in value_map.values():
+                endpoints.append(endpoint['endpoint'])
+            endpoints2=[]
+            for y in range(0, len(endpoints)):
+                for x in range(0, len(endpoints[0])):
+                    endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
+            timestamps=[]
+            for timestamp in [*value_map.keys()]:
+                timestamps.extend([str(timestamp)]*2*len(created_cx))
+            for point in range(0, len(endpoints2)):
+                endpoints2[point].insert(0, timestamps[point])
+            workbook = xlsxwriter.Workbook(report_file)
+            worksheet = workbook.add_worksheet()
+            header_row=col_names
+            header_row.insert(0,'Timestamp')
+            for col_num,data in enumerate(header_row):
+                worksheet.write(0, col_num,data)
+            row_num = 1
+            for x in endpoints2:
+                for col_num, data in enumerate(x):
+                        worksheet.write(row_num, col_num, str(data))
+                row_num+=1
+            workbook.close()
+        else:
+            pass
 
 
 
