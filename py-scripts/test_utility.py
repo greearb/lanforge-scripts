@@ -2,9 +2,9 @@
 """
 Candela Technologies Inc.
 
-Info : Standard Script for Layer 4  Testing
+Info : Standard Script for Webconsole Test Utility
 Date :
-Author : Shivam Thakur
+
 
 """
 
