@@ -1042,6 +1042,7 @@ class L3CXProfile(LFCliBase):
         for cx_name in self.get_cx_names():
             self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
         return self.data
+
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
         if self.debug:
@@ -1055,6 +1056,7 @@ class L3CXProfile(LFCliBase):
                       if value_name == 'rx bytes' and item in self.created_cx.values():
                         cx_rx_map[item] = value_rx
         return cx_rx_map
+
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
@@ -1070,6 +1072,7 @@ class L3CXProfile(LFCliBase):
                 return False
         else:
             return False
+
     def monitor(self,duration_sec=60,
                 interval_sec=1,
                 col_names=None,
@@ -1152,14 +1155,14 @@ class L3CXProfile(LFCliBase):
         #Step 5, close and save
         endpoints=list()
         for endpoint in value_map.values():
-            endpoint.append()
+            endpoints.append(endpoint['endpoint'])
         endpoints2=[]
         for y in range(0, len(endpoints)):
             for x in range(0, len(endpoints[0])):
                 endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
         timestamps=[]
         for timestamp in [*value_map.keys()]:
-            timestamps.extend([str(timestamp)]*4)
+            timestamps.extend([str(timestamp)]*2*len(endps))
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps[point])
         workbook = xlsxwriter.Workbook(report_file)
