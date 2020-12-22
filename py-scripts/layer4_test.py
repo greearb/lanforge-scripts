@@ -244,7 +244,7 @@ def main():
                             "HTTP Port Error": j[k]['http-p'], "result": "FAIL"}
                 test_detail_data.append(temp)
 
-    reports_path = webconsole_dir + "\\reports\\" + args.test_name + "_" + args.session_id + '\\'
+    reports_path = webconsole_dir + "/reports/" + args.test_name + "_" + args.session_id + '/'
 
     if not os.path.exists(reports_path):
         os.makedirs(reports_path)
