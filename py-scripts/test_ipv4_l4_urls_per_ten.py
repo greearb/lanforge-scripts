@@ -177,7 +177,6 @@ python3 ./test_ipv4_l4_urls_per_ten.py
             ''')
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',default="dl http://10.40.0.1 /dev/null")
