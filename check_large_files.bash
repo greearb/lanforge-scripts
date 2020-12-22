@@ -181,7 +181,7 @@ clean_old_kernels() {
     # need to avoid most recent fedora kernel
 
     if [ -x /usr/bin/rpm ]; then
-        local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
+        local kern_pkgs=( $( rpm -qa 'kernel*' | sort -n ) )
         local pkg
         for pkg in "${kern_pkgs[@]}"; do
             if [[ $pkg = kernel-tools-* ]] \
@@ -207,6 +207,13 @@ clean_old_kernels() {
         for pkg in "${k_series[@]}"; do
             debug "series $pkg"
         done
+        if (( "${#k_series[@]}" > 1 )); then
+            local i=0
+            # lets try and avoid the last item assuming that is the most recent
+            for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
+                debug "item $i is ${k_series[$i]}"
+            done
+        fi
     fi
     set +x
     if (( ${#selected_k[@]} < 1 )); then
@@ -273,7 +280,8 @@ kernel_files=()
 survey_kernel_files() {
     debug "Surveying Kernel files"
     mapfile -t kernel_files < <(ls /boot/* /lib/modules/* 2>/dev/null)
-    totals[b]=$(du -hc "$kernel_files" | awk '/total/{print $1}')
+    # totals[b]=$(du -hc "$kernel_files" | awk '/total/{print $1}')
+    local boot_u=
 }
 
 # Find core files
