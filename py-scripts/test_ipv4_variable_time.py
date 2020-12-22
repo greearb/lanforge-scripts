@@ -230,11 +230,11 @@ def main():
         report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
     else:
         report_f=args.report_file
-
+    layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
-                                    duration_sec=60,
-                                    created_cx= ','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']]),
+                                    duration_sec=int(args.test_duration),
+                                    created_cx= layer3connections,
                                     ouput_format='excel')
     ip_var_test.stop()
     if not ip_var_test.passes():
