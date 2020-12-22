@@ -19,27 +19,49 @@ import datetime
 
 
 class IPV6VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 side_a_min_rate=56, side_a_max_rate=0,
-                 side_b_min_rate=56, side_b_max_rate=0,
-                 number_template="00000", test_duration="5m", use_ht160=False,
+    def __init__(self,
+                 _host="localhost",
+                 _port=8080,
+                 _ssid=None,
+                 _security=None,
+                 _password=None,
+                 _sta_list=None,
+                 _name_prefix="sta",
+                 _upstream="1.1.eth1",
+                 _radio="wiphy0",
+                 _side_a_min_rate=256000,
+                 _side_a_max_rate=0, # same
+                 _side_b_min_rate=256000,
+                 _side_b_max_rate=0, # same
+                 _number_template="00000",
+                 _test_duration="5m",
+                 _use_ht160=False,
+                 _cx_type=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.upstream = upstream
-        self.host = host
-        self.port = port
-        self.ssid = ssid
-        self.sta_list = sta_list
-        self.security = security
-        self.password = password
-        self.radio = radio
-        self.number_template = number_template
+        super().__init__(_host,
+                         _port,
+                         _local_realm=realm.Realm(lfclient_host=_host,
+                                                  lfclient_port=_port,
+                                                  debug_=_debug_on,
+                                                  _exit_on_error=_exit_on_error,
+                                                  _exit_on_fail=_exit_on_fail),
+                         _debug=_debug_on,
+                         _halt_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail)
+        self.upstream = _upstream
+        self.ssid = _ssid
+        self.sta_list = _sta_list
+        self.security = _security
+        self.password = _password
+        self.radio = _radio
+        self.number_template = _number_template
         self.debug = _debug_on
-        self.name_prefix = name_prefix
-        self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.name_prefix = _name_prefix
+        self.test_duration = _test_duration
+        self.cx_type = _cx_type
+
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
 
@@ -49,17 +71,17 @@ class IPV6VariableTime(LFCliBase):
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.debug = self.debug
-        self.station_profile.use_ht160 = use_ht160
+        self.station_profile.use_ht160 = _use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
 
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
-        self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = side_a_min_rate
-        self.cx_profile.side_a_max_bps = side_a_max_rate
-        self.cx_profile.side_b_min_bps = side_b_min_rate
-        self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.host = _host
+        self.cx_profile.port = _port
+        self.cx_profile.name_prefix = _name_prefix
+        self.cx_profile.side_a_min_bps = _side_a_min_rate
+        self.cx_profile.side_a_max_bps = _side_a_max_rate
+        self.cx_profile.side_b_min_bps = _side_b_min_rate
+        self.cx_profile.side_b_max_bps = _side_b_max_rate
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
@@ -136,12 +158,16 @@ class IPV6VariableTime(LFCliBase):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.local_realm.rm_port(sta, check_exists=True)
+            self.local_realm.rm_port(sta, check_exists=True, debug_=self.debug)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                           port_list=self.sta_list,
+                                           debug=self.debug)
 
     def cleanup(self):
         self.cx_profile.cleanup()
         self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                           port_list=self.station_profile.station_names,
                                            debug=self.debug)
 
     def build(self):
@@ -153,45 +179,70 @@ class IPV6VariableTime(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
+        self.cx_profile.create(endp_type=self.cx_type, side_a=self.station_profile.station_names, side_b=self.upstream,
                                sleep_time=0)
         self._pass("PASS: Station build finished")
 
 
 def main():
-    lfjson_port = 8080
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv6_variable_time.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        Create stations to test IPV6 connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
-            ''',
-
+Create stations to test IPV6 connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
+''',
         description='''\
 test_ipv6_variable_time.py:
 --------------------
 Generic command example:
-python3 ./test_ipv6_connection.py --upstream_port eth1 \\
+./test_ipv6_connection.py --upstream_port eth1 \\
     --radio wiphy0 \\
     --num_stations 3 \\
     --security {open|wep|wpa|wpa2|wpa3} \\
     --ssid netgear \\
     --passwd admin123 \\
-    --dest 10.40.0.1 \\
+    --upstream 10.40.0.1 \\
     --test_duration 2m \\
     --interval 1s \\
     --a_min 256000 \\
     --b_min 256000 \\
     --debug
-            ''')
+''')
+    required_args=None
+    for group in parser._action_groups:
+        if group.title == "required arguments":
+            required_args=group
+            break;
+    if required_args is not None:
+        required_args.add_argument('--a_min', help='minimum bps rate for side_a', default=256000)
+        required_args.add_argument('--b_min', help='minimum bps rate for side_b', default=256000)
+        required_args.add_argument('--cx_type', help='tcp6 or udp6')
+        required_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
-    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    optional_args=None
+    for group in parser._action_groups:
+        if group.title == "optional arguments":
+            optional_args=group
+            break;
+    if optional_args is not None:
+        optional_args.add_argument('--mode',    help='Used to force mode of stations')
+        optional_args.add_argument('--ap',      help='Used to force a connection to a particular AP')
+        optional_args.add_argument("--a_max",   help="Maximum side_a bps speed", default=0)
+        optional_args.add_argument("--b_max",   help="Maximum side_b bps speed", default=0)
 
     args = parser.parse_args()
+
+    CX_TYPES=("tcp6", "udp6", "lf_tcp6", "lf_udp6")
+
+    if (args.cx_type is None) or (args.cx_type not in CX_TYPES):
+        print("cx_type needs to be lf_tcp6 or lf_udp6, bye")
+        exit(1)
+    if args.cx_type == "tcp6":
+        args.cx_type = "lf_tcp6"
+    if args.cx_type == "udp6":
+        args.cx_type = "lf_udp6"
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
@@ -200,16 +251,24 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
-    ip_var_test = IPV6VariableTime(host=args.mgr, port=args.mgr_port,
-                                   number_template="00",
-                                   sta_list=station_list,
-                                   name_prefix="VT",
-                                   upstream=args.upstream_port,
-                                   ssid=args.ssid,
-                                   password=args.passwd,
-                                   radio=args.radio,
-                                   security=args.security, test_duration=args.test_duration, use_ht160=False,
-                                   side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug)
+    ip_var_test = IPV6VariableTime(_host=args.mgr,
+                                   _port=args.mgr_port,
+                                   _number_template="00",
+                                   _sta_list=station_list,
+                                   _name_prefix="VT",
+                                   _upstream=args.upstream_port,
+                                   _ssid=args.ssid,
+                                   _password=args.passwd,
+                                   _radio=args.radio,
+                                   _security=args.security,
+                                   _test_duration=args.test_duration,
+                                   _use_ht160=False,
+                                   _side_a_min_rate=args.a_min,
+                                   _side_b_min_rate=args.b_min,
+                                   _side_a_max_rate=args.a_max,
+                                   _side_b_max_rate=args.b_max,
+                                   _cx_type=args.cx_type,
+                                   _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
     ip_var_test.build()
