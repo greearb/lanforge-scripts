@@ -17,6 +17,7 @@ from LANforge.add_monitor import *
 import os
 import datetime
 import base64
+import xlsxwriter
 
 def wpa_ent_list():
     return [
@@ -265,7 +266,7 @@ class Realm(LFCliBase):
                     if endp_name.startswith(prefix):
                         self.rm_endp(endp_name)
             else:
-                if self.debug: 
+                if self.debug:
                     print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list) )
 
     def channel_freq(self, channel_=0):
@@ -589,20 +590,20 @@ class Realm(LFCliBase):
                         print("Incrementing stations with IP addresses found")
                         num_sta_with_ips+=1
                     else:
-                        num_sta_with_ips+=1 
+                        num_sta_with_ips+=1
             if ipv6:
                 v = response['interface']
                 if (v['ip'] in waiting_states):
                     if debug:
                         print("Waiting for port %s to get IPv6 Address."%(sta_eid))
-                    
+
                 else:
                     if debug:
                         print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
                         print("Incrementing stations with IP addresses found")
                         num_sta_with_ips+=1
                     else:
-                        num_sta_with_ips+=1   
+                        num_sta_with_ips+=1
         return num_sta_with_ips
 
 
@@ -614,7 +615,7 @@ class Realm(LFCliBase):
                 dur_time = int(td.group(1))
                 dur_measure = str(td.group(2))
                 if dur_measure == "d":
-                    duration_sec = dur_time * 24 * 60 * 60 
+                    duration_sec = dur_time * 24 * 60 * 60
                 elif dur_measure == "h":
                     duration_sec = dur_time * 60 * 60
                 elif dur_measure == "m":
@@ -1011,13 +1012,15 @@ class L3CXProfile(LFCliBase):
         self.data = {}
         for cx_name in self.get_cx_names():
             self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
-        return self.data    
+        return self.data
 
-    def monitor(self, duration_sec=60,
+    def monitor(self,duration_sec=60,
                 interval_sec=1,
                 col_names=None,
-                show=True,
-                report_file=None):
+                created_cx=None,
+                show=False,
+                report_file=None,
+                excel=None):
         if (duration_sec is None) or (duration_sec <= 1):
             raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
         if (interval_sec is None) or (interval_sec < 1):
@@ -1026,30 +1029,79 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants duration_sec > interval_sec")
         if col_names is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
-        endps = ",".join(self.created_cx.keys())
-        time_results = {}
+        #Step 1, get a list of Layer 3 columns
+        lfcli=LFCliBase('localhost',8080)
+        if created_cx == None: #No user defined endpoints
+            try:
+                print('Loading Layer 3 Connections')
+                endps = ','.join([[*x.keys()][0] for x in lfcli.json_get('endp')['endpoint']])
+            except:
+                print('No layer 3 connections found')
+        else: #User defined Layer 3 columns
+            try:
+                print('Loading user defined Layer 3 Connections')
+                endps=created_cx
+            except:
+                print('Please format your col_names variable like the following:')
+        #Step 2, column names
         fields=",".join(col_names)
-        report_fh = None
+        print('fields')
+        print(fields)
+        #Step 3, create report file
         if (report_file is not None) and (report_file != ""):
-            report_fh = open(report_file, "w")
-
+            report_fh = open(report_file, "w+")
+        else:
+            pass
+            #report_fh = open(report_file, "w")
+        #Step 4, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
-        while datetime.datetime.now() < end_time_d:
-            response = self.json_get("/endp/%s?fields=%s" % (endps, fields), debug_=self.debug)
-            if "endpoint" not in response:
-                pprint.pprint(response)
-                raise ValueError("no endpoint?")
-            value_map = {}
-            if show:
-                print("Show stuff here")
 
-            if datetime.datetime.now() > end_time_d:
+        print('endpoints')
+        print(endps)
+        value_map = dict()
+        while datetime.datetime.now() < end_time:
+            response = lfcli.json_get("/endp/%s?fields=%s" % (endps, fields), debug_=self.debug)
+            # lfcli.json_get("/endp/VTsta0000-0-B,VTsta0001-1")
+            if "endpoint" not in response:
+                print(response)
+                raise ValueError("no endpoint?")
+            if show:
+                print(response)
+            value_map[datetime.datetime.now()]=response
+            if datetime.datetime.now() > end_time:
                 break;
             time.sleep(interval_sec)
-        if report_fh is not None:
-            report_fh.close()
+        #print(value_map)
+
+        #Step 5, close and save
+        endpoints=[x['endpoint'] for x in value_map.values()]
+        endpoints2=[]
+        for y in range(0,len(endpoints)):
+            for x in range(0,len(endpoints[0])):
+                endpoints2.append([*[*endpoints[y][x].values()][0].values()])
+        timestamps=[]
+        for timestamp in [*value_map.keys()]:
+            timestamps.extend([str(timestamp)]*4)
+        for point in range(0,len(endpoints2)):
+            endpoints2[point].insert(0,timestamps[point])
+        workbook = xlsxwriter.Workbook(report_file)
+        worksheet = workbook.add_worksheet()
+        print(col_names)
+        print(type(col_names))
+        header_row=col_names
+        header_row.insert(0,'Timestamp')
+        print(header_row)
+        for col_num,data in enumerate(header_row):
+            worksheet.write(0,col_num,data)
+        row_num = 1
+        for x in endpoints2:
+            for col_num, data in enumerate(x):
+                    worksheet.write(row_num,col_num,str(data))
+            row_num+=1
+        workbook.close()
+
 
 
     def refresh_cx(self):
@@ -1523,7 +1575,7 @@ class GenCXProfile(LFCliBase):
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
         time.sleep(sleep_time)
-        
+
         for endp_tpl in endp_tpls:
             gen_name_a  = endp_tpl[2]
             gen_name_b  = endp_tpl[3]
@@ -1990,7 +2042,7 @@ class VAPProfile(LFCliBase):
         if self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
             json_response = wifi_extra_r.jsonPost(debug)
-       
+
 
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:

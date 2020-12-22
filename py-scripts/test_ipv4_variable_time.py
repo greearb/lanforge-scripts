@@ -16,7 +16,7 @@ from LANforge import LFUtils
 import realm
 import time
 import datetime
-
+from realm import TestGroupProfile
 
 class IPV4VariableTime(LFCliBase):
     def __init__(self,
@@ -28,7 +28,17 @@ class IPV4VariableTime(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port,
+                         _local_realm = realm.Realm(lfclient_host=host,
+                                                    lfclient_port=port,
+                                                    debug_=_debug_on,
+                                                    halt_on_error_=_exit_on_error),
+                         _debug=_debug_on,
+                         _halt_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail),
+        self.l3cxprofile = realm.L3CXProfile(lfclient_host=host,
+                                                        lfclient_port=port,
+                                                        local_realm=self.local_realm)
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -43,10 +53,8 @@ class IPV4VariableTime(LFCliBase):
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
-
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
@@ -58,7 +66,8 @@ class IPV4VariableTime(LFCliBase):
             self.station_profile.mode = 9
         self.station_profile.mode = mode
         if self.ap is not None:
-            self.station_profile.set_command_param("add_sta", "ap",self.ap) 
+            self.station_profile.set_command_param("add_sta", "ap",self.ap)
+        #self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
 
 
         self.cx_profile.host = self.host
@@ -120,7 +129,7 @@ class IPV4VariableTime(LFCliBase):
         while curr_time < end_time:
 
             time.sleep(sleep_interval.total_seconds())
-            
+
             new_cx_rx_values = self.__get_rx_values()
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)
@@ -157,7 +166,7 @@ class IPV4VariableTime(LFCliBase):
                                            debug=self.debug)
 
     def build(self):
-        
+
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
@@ -168,7 +177,6 @@ class IPV4VariableTime(LFCliBase):
         self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream, sleep_time=0)
         self._pass("PASS: Station build finished")
 
-
 def main():
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
@@ -178,45 +186,45 @@ def main():
             ''',
 
         description='''\
-test_ipv4_variable_time.py:
---------------------
-Generic command layout:
+            test_ipv4_variable_time.py:
+            --------------------
+            Generic command layout:
 
- python3 ./test_ipv4_variable_time.py 
-            --upstream_port eth1 
-            --radio wiphy0 
-            --num_stations 32
-            --security {open|wep|wpa|wpa2|wpa3} \\
-            --mode   1      
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13",
-            --ssid netgear 
-            --password admin123 
-            --test_duration 2m (default)
-            --a_min 1000
-            --b_min 1000
-            --ap "00:0e:8e:78:e1:76"
-            --debug
-        ''')
+            python3 ./test_ipv4_variable_time.py
+                --upstream_port eth1
+                --radio wiphy0
+                --num_stations 32
+                --security {open|wep|wpa|wpa2|wpa3} \\
+                --mode   1
+                    {"auto"   : "0",
+                    "a"      : "1",
+                    "b"      : "2",
+                    "g"      : "3",
+                    "abg"    : "4",
+                    "abgn"   : "5",
+                    "bgn"    : "6",
+                    "bg"     : "7",
+                    "abgnAC" : "8",
+                    "anAC"   : "9",
+                    "an"     : "10",
+                    "bgnAC"  : "11",
+                    "abgnAX" : "12",
+                    "bgnAX"  : "13",
+                --ssid netgear
+                --password admin123
+                --test_duration 2m (default)
+                --a_min 1000
+                --b_min 1000
+                --ap "00:0e:8e:78:e1:76"
+                --debug
+            ''')
 
     optional = parser.add_argument_group('optional arguments')
     required = parser.add_argument_group('required arguments')
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     optional.add_argument('--mode',help='Used to force mode of stations')
     optional.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
@@ -232,11 +240,11 @@ Generic command layout:
                                    ssid=args.ssid,
                                    password=args.passwd,
                                    radio=args.radio,
-                                   security=args.security, 
-                                   test_duration=args.test_duration, 
+                                   security=args.security,
+                                   test_duration=args.test_duration,
                                    use_ht160=False,
-                                   side_a_min_rate=args.a_min, 
-                                   side_b_min_rate=args.b_min, 
+                                   side_a_min_rate=args.a_min,
+                                   side_b_min_rate=args.b_min,
                                    mode=args.mode,
                                    ap=args.ap,
                                    _debug_on=args.debug)
@@ -247,6 +255,12 @@ Generic command layout:
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
     ip_var_test.start(False, False)
+    print('ip_var_cx_names')
+    print(ip_var_test.cx_profile.get_cx_names())
+
+    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
+                                    report_file='/home/lanforge/report-data/'+str(datetime.datetime.now())+'test_ipv4_variable_time.json',
+                                    duration_sec=10)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
@@ -256,6 +270,7 @@ Generic command layout:
     if ip_var_test.passes():
         ip_var_test.exit_success()
 
+    IPV4VariableTime.cx_profile.stop_cx()
 
 if __name__ == "__main__":
     main()
