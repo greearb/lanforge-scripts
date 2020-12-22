@@ -1082,7 +1082,7 @@ class L3CXProfile(LFCliBase):
                 report_file=None,
                 output_format=None):
         try:
-            duration_sec=local_realm.parse_time(duration_sec)
+            duration_sec=local_realm.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
