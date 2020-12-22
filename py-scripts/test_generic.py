@@ -219,8 +219,7 @@ python3 ./test_generic.py
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
 ''')
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
