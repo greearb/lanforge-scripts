@@ -2,7 +2,7 @@
 """
 Candela Technologies Inc.
 
-Info : Standard Script for Webconsole test utility
+Info : Standard Script for Layer 4  Testing
 Date :
 Author : Shivam Thakur
 
@@ -22,7 +22,12 @@ import datetime
 import time
 import matplotlib.pyplot as plt
 import threading
-runtime_path = "../py-run/runtime.json"
+import re
+import json
+import os
+webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+updates_path = webconsole_dir + "/web_json/updates.js"
+
 
 class ClientVisualization(LFCliBase, threading.Thread):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, num_clients= 64, max_data= 120, thread_id=None, _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
@@ -49,11 +54,12 @@ class ClientVisualization(LFCliBase, threading.Thread):
             self.ip = 0
             self.down = 0
             self.phantom = 0
-            for i in self.json_get("/port/list?fields=port,alias,parent%20dev,down,phantom,ip,port%20type")[
-                'interfaces']:
+            for i in self.json_get("/port/list?fields=port,alias,parent%20dev,down,phantom,ip,port%20type")['interfaces']:
 
                 for j in i:
+                    print(i[j]['port type'])
                     if i[j]['port type'] == "WIFI-STA" and i[j]['parent dev'] == "wiphy1" and i[j]['alias'] != 'wlan1':
+                        #print(j)
                         if i[j]['down'] == False and i[j]['phantom'] == False and i[j]['ip'] == '0.0.0.0':
                             self.scanning += 1
                         elif i[j]['down'] == False and i[j]['phantom'] == True:
@@ -77,9 +83,6 @@ class ClientVisualization(LFCliBase, threading.Thread):
                 if len(self.client_data[i]) >= self.max_data:
                     self.client_data[i].pop(0)
             time.sleep(1)
-
-
-
             if self.stopped():
                 break
 
@@ -89,7 +92,7 @@ class CreateHTML():
         self.head = """
                       <html>
                         <head>
-                            <title>Client Connectivity Test</title>
+                            <title>"""+test_name+"""</title>
                         </head>
                         <body>
                         <div class='Section report_banner-1000x205' style='background-image:url("../../assets/brand/banner.jpg");background-repeat:no-repeat;padding:0;margin:0;min-width:1000px; min-height:205px;width:1000px; height:205px;max-width:1000px; max-height:205px;'>
@@ -200,6 +203,7 @@ class CreateHTML():
 
         for data in test_results['detail']['data']:
             self.detail_result = self.detail_result + "<tr align='center'>"
+            print("shivam")
             print(data)
             for i in data:
                 print(data[i])
@@ -240,10 +244,59 @@ class CreateHTML():
 
 
 
+class RuntimeUpdates():
+    def __init__(self, session_id, init_data):
+        self.session_id = session_id
+        self.init_data = init_data
+        f = open(updates_path, 'r+')
+        data = f.read()
+        f.close()
+        obj = data[data.find('{'): data.rfind('}') + 1]
+        obj = re.sub('[\']', '"', obj)
+        data = json.loads(obj)
+        print(data)
+        data["web_updates"].append({"ID": self.session_id, "data": self.init_data})
+        print(data)
+        f = open(updates_path, 'r+')
+        f.seek(0)
+        f.truncate()
+        f.write("var updates = " + str(data) + ";")
+        f.close()
+
+    def send_update(self, update_data):
+        f = open(updates_path, 'r+')
+        data = f.read()
+        f.close()
+        obj = data[data.find('{'): data.rfind('}') + 1]
+        obj = re.sub('[\']', '"', obj)
+        data = json.loads(obj)
+
+        for update in data["web_updates"]:
+            if update["ID"] == self.session_id:
+                update["data"] = update_data
+                print(data)
+                f = open(updates_path, 'r+')
+                f.seek(0)
+                f.truncate()
+                f.write("var updates = " + str(data) + ";")
+                f.close()
+
+
 if __name__ == "__main__":
     thread1 = ClientVisualization(lfclient_host="192.168.200.15", thread_id=1)
     thread1.start()
-    for i in range(30):
-        print(thread1.client_data)
+    for i in range(0, 100):
+        time.sleep(1)
+        #print(thread1.client_data)
     thread1.stop()
+    # obj = RuntimeUpdates("1", {"test_status": 1, "data": "None"})
+    # for i in range(0, 10):
+    #     time.sleep(3)
+    #     print(i)
+    #     obj.send_update({"test_status": i, "data": "None"})
+    # thread1 = ClientVisualization(lfclient_host="192.168.200.15", thread_id=1)
+    # thread1.start()
+    # for i in range(30):
+    #     print(thread1.client_data)
+    # thread1.stop()
 
