@@ -1091,7 +1091,7 @@ class L3CXProfile(LFCliBase):
         if report_file == None:
             raise ValueError("Monitor requires an output file to be defined")
         if created_cx == None:
-            raise ValueError("")
+            raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if col_names is None:

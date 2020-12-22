@@ -193,7 +193,7 @@ def main():
     if optional_args is not None:
         optional_args.add_argument('--mode',help='Used to force mode of stations')
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
-        optional.add_argument('--report_file',help='where you want to store results')
+        optional_args.add_argument('--report_file',help='where you want to store results')
     args = parser.parse_args()
 
     num_sta = 2
@@ -233,7 +233,9 @@ def main():
 
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
-                                    duration_sec=60)
+                                    duration_sec=60,
+                                    created_cx= ','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']]),
+                                    ouput_format='excel')
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
