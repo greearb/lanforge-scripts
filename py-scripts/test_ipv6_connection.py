@@ -18,7 +18,7 @@ import pprint
 
 
 class IPv6Test(LFCliBase):
-    def __init__(self, ssid, security, password, sta_list=None, num_stations=0, prefix="00000", host="localhost", port=8080,
+    def __init__(self, ssid, security, password,ap=None, mode=0, sta_list=None, num_stations=0, prefix="00000", host="localhost", port=8080,
                  _debug_on=False, timeout=120, radio="wiphy0",
                  _exit_on_error=False,
                  _exit_on_fail=False,
@@ -30,6 +30,8 @@ class IPv6Test(LFCliBase):
         self.radio = radio
         self.security = security
         self.password = password
+        self.ap=ap
+        self.mode=mode
         self.num_stations = num_stations
         self.sta_list = sta_list
         self.timeout = timeout
@@ -41,12 +43,16 @@ class IPv6Test(LFCliBase):
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
+        self.station_profile.ssid_pass = self.password
+        if mode is not None:
+            self.station_profile.mode = mode
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
 
-    def build(self):
+
+    def build(self):        
+        if self.ap is not None:
+            self.station_profile.set_command_param("add_sta", "ap", self.ap)
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.prefix)
         print("Creating stations")
@@ -104,7 +110,6 @@ class IPv6Test(LFCliBase):
         return self.passes()
 
     def stop(self):
-        # Bring stations down
         self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
@@ -125,26 +130,39 @@ def main():
 
         description='''\
     test_ipv6_connection.py:
---------------------
+--------------------------------------------------
 Generic command example:
-python3 ./test_ipv6_connection.py --upstream_port eth1 \\
-    --radio wiphy0 \\
-    --num_stations 3 \\
-    --security {open|wep|wpa|wpa2|wpa3} \\
-    --ssid netgear \\
-    --passwd admin123 \\
-    --dest 10.40.0.1 \\
-    --test_duration 2m \\
-    --interval 1s \\
-    -- timeout 120 \\
-    --debug
+python3 ./test_ipv6_connection.py 
+        --upstream_port eth1 
+        --radio wiphy0 
+        --num_stations 3 
+        --proxy
+        --security {open|wep|wpa|wpa2|wpa3} 
+        --ssid netgear 
+        --passwd admin123
+        --mode   1  
+        --ap "00:0e:8e:78:e1:76"
+        --test_id
+        -- timeout 120 
+        --debug
             ''')
 
 
-    optional = parser.add_argument_group('optional arguments')
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
-    parser.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=30)
+    required = None
+    for agroup in parser._action_groups:
+        if agroup.title == "required arguments":
+            required = agroup
+    #if required is not None:
+
+    optional = None
+    for agroup in parser._action_groups:
+        if agroup.title == "optional arguments":
+            optional = agroup
+    
+    if optional is not None:
+        optional.add_argument("--ap", help="Add BSSID of access point to connect to")
+        optional.add_argument('--mode', help=LFCliBase.Help_Mode)
+        optional.add_argument('--timeout', help='--timeout sets the length of time to wait until a connection is successful', default=30)
 
     args = parser.parse_args()
     num_sta=2
@@ -159,6 +177,8 @@ python3 ./test_ipv6_connection.py --upstream_port eth1 \\
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,
+                         ap=args.ap,
+                         mode=args.mode,
                          sta_list=station_list,
                          _debug_on=args.debug)
     ipv6_test.cleanup(station_list)

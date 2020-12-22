@@ -622,11 +622,12 @@ class cisco_():
 
 class L3VariableTime(LFCliBase):
     def __init__(self, host, port, endp_type, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile,
+                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile, results,
                  test_keys,test_config,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
+                 csv_started=False,
                  side_a_min_bps=560000, side_a_max_bps=0,
                  side_a_min_pdu=1518,side_a_max_pdu=0,
                  side_b_min_bps=560000, side_b_max_bps=0,
@@ -662,7 +663,8 @@ class L3VariableTime(LFCliBase):
         self.station_profiles = []
         self.args = args
         self.outfile = outfile
-        self.csv_started = False
+        self.results = results
+        self.csv_started = csv_started
         self.epoch_time = int(time.time())
         self.debug = debug_on
         self.test_keys = test_keys
@@ -676,6 +678,10 @@ class L3VariableTime(LFCliBase):
             self.csv_file = open(self.outfile, "a+") 
             self.csv_writer = csv.writer(self.csv_file, delimiter=",")
         
+        if self.results is not None:
+            self.csv_results = open(self.results, "a+") 
+            self.csv_results_writer = csv.writer(self.csv_results, delimiter=",")
+
         for (radio_, ssid_, ssid_password_, ssid_security_, wifimode_,\
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
             in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list, wifimode_list,\
@@ -766,6 +772,7 @@ class L3VariableTime(LFCliBase):
             csv_rx_drop_percent_data.append(rx_drop_percent[item])
 
         self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
+        self.csv_add_row(csv_rx_drop_percent_data,self.csv_results_writer,self.csv_results)
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
@@ -773,12 +780,14 @@ class L3VariableTime(LFCliBase):
         csv_performance_values = []
         csv_rx_headers = []
         csv_rx_row_data = []
+        csv_result_row_data = []
         csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
+        test_id = ""
 
-        for key in self.test_keys:
-            csv_rx_row_data.append(self.test_config_dict[key])
-            csv_rx_delta_row_data.append(self.test_config_dict[key])
+        #for key in self.test_keys:
+        #    csv_rx_row_data.append(self.test_config_dict[key])
+        #    csv_rx_delta_row_data.append(self.test_config_dict[key])
 
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
@@ -786,8 +795,6 @@ class L3VariableTime(LFCliBase):
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-
 
         # only evaluate upstream or downstream 
         new_evaluate_list = new_list.copy()
@@ -798,6 +805,7 @@ class L3VariableTime(LFCliBase):
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
             print("downstream in dictionary values")
+        #follow code left in for now, provides the best 5 worst 5
         '''print("new_evaluate_list after",new_evaluate_list)
         csv_performance_values=sorted(new_evaluate_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
         csv_performance_values=self.csv_validate_list(csv_performance_values,5)
@@ -819,6 +827,7 @@ class L3VariableTime(LFCliBase):
         if len(old_evaluate_list) == len(new_evaluate_list):
             for item, value in old_evaluate_list.items():
                 expected_passes +=1
+                print("ITEM: {} VALUE: {}".format(item, value))
                 if new_evaluate_list[item] > old_evaluate_list[item]:
                     passes += 1
                     #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
@@ -835,26 +844,54 @@ class L3VariableTime(LFCliBase):
                 csv_header += csv_rx_headers
                 logg.info(csv_header)
                 self.csv_add_column_headers(csv_header)
+                csv_results = self.csv_generate_column_results_headers()
+                #csv_results += csv_rx_headers
+                self.csv_add_column_headers_results(csv_results)
+                print("###################################")
+                print(csv_results)
+                print("###################################")
+
                 self.csv_started = True
 
             # need to generate list first to determine worst and best
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
             #average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
+            for key in self.test_keys:
+                csv_rx_row_data.append(self.test_config_dict[key])
+                csv_result_row_data.append(self.test_config_dict[key])
+                csv_rx_delta_row_data.append(self.test_config_dict[key])
+                
             max_tp_mbps      = sum(filtered_values)
             csv_rx_row_data.append(max_tp_mbps)
+            csv_result_row_data.append(max_tp_mbps)
 
             #To do  needs to be read or passed in based on test type
             expected_tp_mbps = max_tp_mbps
             csv_rx_row_data.append(expected_tp_mbps)
+            csv_result_row_data.append(expected_tp_mbps)
+
+
+            #Generate TestID
+            for key in self.test_keys:
+                test_id = test_id + "_" + self.test_config_dict[key]
+
+            print("test_id: {}".format(test_id))
+            csv_rx_row_data.append(test_id)
+            csv_result_row_data.append(test_id)
 
             # Todo pass or fail
             if max_tp_mbps == expected_tp_mbps:
                 csv_rx_row_data.append("pass")
+                csv_result_row_data.append("pass")
             else:
                 csv_rx_row_data.append("fail")
+                csv_result_row_data.append("fail")
 
             csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
+            csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
+
+            print("csv_rx_row_data {}".format(csv_rx_row_data))
+            #TODO:  may want to pass in the information that needs to be in the csv file into the class
             '''
             csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx'])
             csv_rx_delta_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
@@ -880,20 +917,23 @@ class L3VariableTime(LFCliBase):
                     csv_rx_headers.append(item)
                 # note need to have all upstream and downstream in the csv table thus new_list and old_list
                 #csv_rx_row_data.append(new_list[item])
+                # provide delta
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            #self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
+
             #self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
-                return True
+                return True, max_tp_mbps, csv_result_row_data
             else:
-                return False
+                return False, max_tp_mbps, csv_result_row_data
         else:
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
             print("new-list:",new_list)
-            return False
+            return False, None, None # check to see if this is valid
 
     def verify_controller(self):
         if self.args == None:
@@ -1002,6 +1042,11 @@ class L3VariableTime(LFCliBase):
         self._pass("PASS: Stations build finished")        
         
     def start(self, print_pass=False, print_fail=False):
+        best_max_tp_mbps = 0
+        best_csv_rx_row_data = " "
+        max_tp_mbps = 0
+        csv_rx_row_data = " "
+        Result = False
         logg.info("Bringing up stations")
         self.local_realm.admin_up(self.side_b) 
         for station_profile in self.station_profiles:
@@ -1052,7 +1097,23 @@ class L3VariableTime(LFCliBase):
             new_rx_values, rx_drop_percent = self.__get_rx_values()
 
             expected_passes += 1
-            if self.__compare_vals(old_rx_values, new_rx_values):
+            '''
+            #self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
+
+
+            if passes == expected_passes:
+                return True, max_tp_mbps, csv_rx_row_data
+            else:
+                return False, max_tp_mbps, csv_rx_row_data
+            '''
+            # __compare_vals - does the calculations
+            Result, max_tp_mbps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
+            if max_tp_mbps > best_max_tp_mbps:
+                best_max_tp_mbps = max_tp_mbps
+                best_csv_rx_row_data = csv_rx_row_data
+
+            # need to check the expected max_tp_mbps
+            if Result:
                 passes += 1
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
@@ -1062,7 +1123,7 @@ class L3VariableTime(LFCliBase):
             #self.__record_rx_dropped_percent(rx_drop_percent)
 
             cur_time = datetime.datetime.now()
-
+        self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
@@ -1083,7 +1144,7 @@ class L3VariableTime(LFCliBase):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['Max TP Mbps','Expected TP','Pass Fail','Time epoch','Time','Monitor'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -1091,18 +1152,35 @@ class L3VariableTime(LFCliBase):
         csv_rx_headers.append("average_rx_data")'''
         return csv_rx_headers
 
+    def csv_generate_column_results_headers(self):
+        csv_rx_headers = self.test_keys.copy() 
+        csv_rx_headers.extend 
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time'])
+        '''for i in range(1,6):
+            csv_rx_headers.append("least_rx_data {}".format(i))
+        for i in range(1,6):
+            csv_rx_headers.append("most_rx_data_{}".format(i))
+        csv_rx_headers.append("average_rx_data")'''
+        return csv_rx_headers
+
+
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
             self.csv_file.flush()
+
+    def csv_add_column_headers_results(self,headers):
+        if self.csv_results is not None:
+            self.csv_results_writer.writerow(headers)
+            self.csv_results.flush()    
 
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
             csv_list = csv_list + [('no data','no data')] * (length - len(csv_list))
         return csv_list
 
-    def csv_add_row(self,row,writer,csv_file):
-        if self.csv_file is not None:
+    def csv_add_row(self,row,writer,csv_file): # can make two calls eventually
+        if csv_file is not None:
             writer.writerow(row)
             csv_file.flush()
 
@@ -1466,6 +1544,7 @@ Eventual Realm at Cisco
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_results = "results_{}_{}.csv".format(args.csv_outfile,current_time)
         print("csv output file : {}".format(csv_outfile))
       
     if args.log:
@@ -1707,13 +1786,13 @@ Eventual Realm at Cisco
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
-        cisco_packet_types     = "lf_udp lf_tcp".split()
-        #cisco_packet_types     = "lf_udp".split()
+        #cisco_packet_types     = "lf_udp lf_tcp".split()
+        cisco_packet_types     = "lf_udp".split()
         #cisco_directions       = "upstream downstream".split()
         cisco_directions       = "upstream downstream".split()
-        cisco_packet_sizes     = "88 512 1370 1518".split()
-        #cisco_packet_sizes     = "1518".split()
-        cisco_client_densities = "1".split()
+        #cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_packet_sizes     = "1518".split()
+        cisco_client_densities = "10".split()
         cisco_data_encryptions = "disable".split()
 
         cisco_side_a_min_bps  = 500000000
@@ -1760,11 +1839,12 @@ Eventual Realm at Cisco
     logg.info(cisco_client_densities)
     logg.info(cisco_data_encryptions)
 
-    ap_set          = None
-    band_set        = None
-    chan_width_set  = None
-    ap_mode_set     = None
-    tx_power_set    = None
+    __ap_set          = None
+    __band_set        = None
+    __chan_width_set  = None
+    __ap_mode_set     = None
+    __tx_power_set    = None
+    __csv_started     = False
     
     for cisco_ap in cisco_aps:
         for cisco_band in cisco_bands:  # frequency
@@ -1788,26 +1868,27 @@ Eventual Realm at Cisco
                                                         cisco_band,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                         cisco_packet_type,cisco_direction,cisco_packet_size)
                                                     test_keys = ['AP','Band','wifi_mode','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
+
                                                     logg.info("# Cisco run settings: {}".format(test_config))
                                                     if(args.no_controller):
                                                         logg.info("################################################")
                                                         logg.info("# NO CONTROLLER SET , TEST MODE")
                                                         logg.info("################################################")
                                                     else:
-                                                        if( cisco_ap != ap_set or 
-                                                            cisco_band != band_set or
-                                                            cisco_chan_width != chan_width_set or
-                                                            cisco_ap_mode != ap_mode_set or
-                                                            cisco_tx_power != tx_power_set 
+                                                        if( cisco_ap            != __ap_set or 
+                                                            cisco_band          != __band_set or
+                                                            cisco_chan_width    != __chan_width_set or
+                                                            cisco_ap_mode       != __ap_mode_set or
+                                                            cisco_tx_power      != __tx_power_set 
                                                             ):
                                                             logg.info("###############################################")
                                                             logg.info("# NEW CONTROLLER CONFIG")
                                                             logg.info("###############################################")
-                                                            ap_set          = cisco_ap
-                                                            band_set        = cisco_band
-                                                            chan_width_set  = cisco_chan_width
-                                                            ap_mode_set     = cisco_ap_mode
-                                                            tx_power_set    = cisco_tx_power
+                                                            __ap_set          = cisco_ap
+                                                            __band_set        = cisco_band
+                                                            __chan_width_set  = cisco_chan_width
+                                                            __ap_mode_set     = cisco_ap_mode
+                                                            __tx_power_set    = cisco_tx_power
                                                             #############################################
                                                             # configure cisco controller
                                                             #############################################
@@ -1969,8 +2050,11 @@ Eventual Realm at Cisco
                                                                                         side_b_min_pdu =cisco_packet_size, 
                                                                                         debug_on=debug_on, 
                                                                                         outfile=csv_outfile,
+                                                                                        results=csv_results,
                                                                                         test_keys=test_keys,
-                                                                                        test_config=test_config)
+                                                                                        test_config=test_config,
+                                                                                        csv_started=__csv_started )
+                                                        __csv_started = True
                                                         ip_var_test.pre_cleanup()
                                                         ip_var_test.build()
                                                         if not ip_var_test.passes():

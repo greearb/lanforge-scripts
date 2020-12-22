@@ -163,18 +163,9 @@ $t->waitfor("/btbits\>\>/");
 my $dt = "";
 
 my $utils = new LANforge::Utils();
-$utils->telnet($t);
-$utils->cli_send_silent(0); # Show input to CLI
-if ($quiet & 0x1) {
-  $utils->cli_rcv_silent(1);
-}
-else {
-  $utils->cli_rcv_silent(0);
-}
+$utils->connect($lfmgr_host, $lfmgr_port);
 
-# $utils->doCmd("log_level 63");
 my $cmd;
-
 
 $speed = "NA" if ($speed eq "");
 $latency = "NA" if ($latency eq "");

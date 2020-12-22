@@ -445,7 +445,10 @@ def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=[], debu
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], debug=False):
     print("Waiting until ports disappear...")
     url = "/port/1"
-    found_stations = port_list.copy()
+    if isinstance(port_list, list):
+        found_stations = port_list.copy()
+    else:
+        found_stations = [port_list]
 
     while len(found_stations) > 0:
         found_stations = []
@@ -459,7 +462,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], d
             if debug:
                 print("checking:" + check_url)
             lf_r = LFRequest.LFRequest(base_url, check_url)
-            json_response = lf_r.getAsJson(debug_=debug)
+            json_response = lf_r.get_as_json(debug_=debug)
             if (json_response != None):
                 found_stations.append(port_name)
         if len(found_stations) > 0:

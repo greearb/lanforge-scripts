@@ -20,35 +20,42 @@ import pprint
 
 
 class IPv4Test(LFCliBase):
-    def __init__(self, 
-                 ssid,
-                 security,
-                 password,
-                 host,
-                 port,
-                 sta_list=None,
-                 number_template="00000",
-                 radio="wiphy0",
+    def __init__(self,
+                 _ssid=None,
+                 _security=None,
+                 _password=None,
+                 _host=None,
+                 _port=None,
+                 _sta_list=None,
+                 _number_template="00000",
+                 _radio="wiphy0",
+                 _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host,
-                         port,
+        super().__init__(_host,
+                         _port,
+                         _proxy_str=_proxy_str,
+                         _local_realm=realm.Realm(lfclient_host=_host,
+                                                  lfclient_port=_port,
+                                                  halt_on_error_=_exit_on_error,
+                                                  _exit_on_error=_exit_on_error,
+                                                  _exit_on_fail=_exit_on_fail,
+                                                  _proxy_str=_proxy_str,
+                                                  debug_=_debug_on),
                          _debug=_debug_on,
                          _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
-        self.ssid = ssid
-        self.security = security
-        self.password = password
-        self.sta_list = sta_list
-        self.radio = radio
+        self.host = _host
+        self.port = _port
+        self.ssid = _ssid
+        self.security = _security
+        self.password = _password
+        self.sta_list = _sta_list
+        self.radio = _radio
         self.timeout = 120
-        self.number_template = number_template
+        self.number_template = _number_template
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-
         self.station_profile = self.local_realm.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -137,7 +144,7 @@ def main():
         description='''\
         test_ipv4_connection.py
 --------------------
-Generic command example:
+Command example:
 ./test_ipv4_connection.py 
     --upstream_port eth1 
     --radio wiphy0 
@@ -151,6 +158,9 @@ Generic command example:
     required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
     args = parser.parse_args()
+    #if args.debug:
+    #    pprint.pprint(args)
+    #    time.sleep(5)
     if (args.radio is None):
        raise ValueError("--radio required")
 
@@ -164,14 +174,18 @@ Generic command example:
                                           end_id=num_sta-1,
                                           padding_number=10000,
                                           radio=args.radio)
-
-    ip_test = IPv4Test(host=args.mgr, port=args.mgr_port,
-                       ssid=args.ssid,
-                       password=args.passwd,
-                       security=args.security,
-                       sta_list=station_list,
-                       radio=args.radio,
+    if args.debug:
+        print("args.proxy: %s" % args.proxy)
+    ip_test = IPv4Test(_host=args.mgr,
+                       _port=args.mgr_port,
+                       _ssid=args.ssid,
+                       _password=args.passwd,
+                       _security=args.security,
+                       _sta_list=station_list,
+                       _radio=args.radio,
+                       _proxy_str=args.proxy,
                        _debug_on=args.debug)
+
     ip_test.cleanup(station_list)
     ip_test.build()
     if not ip_test.passes():

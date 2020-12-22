@@ -45,10 +45,39 @@ def wpa_ent_list():
     ]
 
 class Realm(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, debug_=False, halt_on_error_=False):
-        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_, _halt_on_error=halt_on_error_)
+    def __init__(self,
+                 lfclient_host="localhost",
+                 lfclient_port=8080,
+                 debug_=False,
+                 halt_on_error_=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False,
+                 _local_realm=None,
+                 _proxy_str=None,
+                 _capture_signal_list=[]):
+        super().__init__(_lfjson_host=lfclient_host,
+                         _lfjson_port=lfclient_port,
+                         _debug=debug_,
+                         _halt_on_error=halt_on_error_,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
+        super().__init__(lfclient_host,
+                         lfclient_port,
+                 _debug=debug_,
+                 _halt_on_error=halt_on_error_,
+                 _exit_on_error=_exit_on_error,
+                 _exit_on_fail=_exit_on_fail,
+                 #_local_realm=self,
+                 _proxy_str=_proxy_str,
+                 _capture_signal_list=_capture_signal_list)
+
         self.debug = debug_
+        # if debug_:
+        #     print("Realm _proxy_str: %s" % _proxy_str)
+        #     pprint(_proxy_str)
         self.check_connect()
         self.chan_to_freq = {}
         self.freq_to_chan = {}
@@ -2504,68 +2533,69 @@ class FIOEndpProfile(LFCliBase):
                 self.json_post(req_url, data)
                 #pprint(data)
 
-    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=[], connections_per_port=1, sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
         for port_name in ports:
-            if len(self.local_realm.name_to_eid(port_name)) == 3:
-                shelf = self.local_realm.name_to_eid(port_name)[0]
-                resource = self.local_realm.name_to_eid(port_name)[1]
-                name = self.local_realm.name_to_eid(port_name)[2]
-            else:
-                raise ValueError("Unexpected name for port_name %s" % port_name)
-            if self.directory is None or self.server_mount is None or self.fs_type is None:
-                raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fs_type))
-            endp_data = {
-                "alias": self.cx_prefix + name + "_fio",
-                "shelf": shelf,
-                "resource": resource,
-                "port": name,
-                "type": self.fs_type,
-                "min_read_rate": self.min_read_rate_bps,
-                "max_read_rate": self.max_read_rate_bps,
-                "min_write_rate": self.min_write_rate_bps,
-                "max_write_rate": self.max_write_rate_bps,
-                "directory": self.directory,
-                "server_mount": self.server_mount,
-                "mount_dir": self.mount_dir,
-                "prefix": self.file_prefix,
-                "payload_pattern": self.pattern,
+            for num_connection in range(connections_per_port):
+                if len(self.local_realm.name_to_eid(port_name)) == 3:
+                    shelf = self.local_realm.name_to_eid(port_name)[0]
+                    resource = self.local_realm.name_to_eid(port_name)[1]
+                    name = self.local_realm.name_to_eid(port_name)[2]
+                else:
+                    raise ValueError("Unexpected name for port_name %s" % port_name)
+                if self.directory is None or self.server_mount is None or self.fs_type is None:
+                    raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fs_type))
+                endp_data = {
+                    "alias": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": name,
+                    "type": self.fs_type,
+                    "min_read_rate": self.min_read_rate_bps,
+                    "max_read_rate": self.max_read_rate_bps,
+                    "min_write_rate": self.min_write_rate_bps,
+                    "max_write_rate": self.max_write_rate_bps,
+                    "directory": self.directory,
+                    "server_mount": self.server_mount,
+                    "mount_dir": self.mount_dir,
+                    "prefix": self.file_prefix,
+                    "payload_pattern": self.pattern,
 
-            }
-            # Read direction is copy of write only directory
-            if self.io_direction == "read":
-                endp_data["prefix"] = "wo_" + name + "_fio"
-                endp_data["directory"] = "/mnt/lf/wo_" + name + "_fio"
+                }
+                # Read direction is copy of write only directory
+                if self.io_direction == "read":
+                    endp_data["prefix"] = "wo_" + name + "_" + str(num_connection) + "_fio"
+                    endp_data["directory"] = "/mnt/lf/wo_" + name + "_" + str(num_connection) + "_fio"
 
-            url = "cli-json/add_file_endp"
-            self.local_realm.json_post(url, endp_data, debug_=True, suppress_related_commands_=suppress_related_commands_)
-            time.sleep(sleep_time)
+                url = "cli-json/add_file_endp"
+                self.local_realm.json_post(url, endp_data, debug_=False, suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
 
-            data = {
-                "name": self.cx_prefix + name + "_fio",
-                "io_direction": self.io_direction,
-                "num_files": 5
-            }
-            self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
-                                       suppress_related_commands_=suppress_related_commands_)
+                data = {
+                    "name": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "io_direction": self.io_direction,
+                    "num_files": 5
+                }
+                self.local_realm.json_post("cli-json/set_fe_info", data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
         for port_name in ports:
-            if len(self.local_realm.name_to_eid(port_name)) == 3:
-                shelf = self.local_realm.name_to_eid(port_name)[0]
-                resource = self.local_realm.name_to_eid(port_name)[1]
-                name = self.local_realm.name_to_eid(port_name)[2]
+            for num_connection in range(connections_per_port):
+                if len(self.local_realm.name_to_eid(port_name)) == 3:
+                    shelf = self.local_realm.name_to_eid(port_name)[0]
+                    resource = self.local_realm.name_to_eid(port_name)[1]
+                    name = self.local_realm.name_to_eid(port_name)[2]
 
-            endp_data = {
-                "alias": "CX_" + self.cx_prefix + name + "_fio",
-                "test_mgr": "default_tm",
-                "tx_endp": self.cx_prefix + name + "_fio",
-                "rx_endp": "NA"
-            }
-            cx_post_data.append(endp_data)
-            self.created_cx[self.cx_prefix + name + "_fio"] = "CX_" + self.cx_prefix + name + "_fio"
+                endp_data = {
+                    "alias": "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "test_mgr": "default_tm",
+                    "tx_endp": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "rx_endp": "NA"
+                }
+                cx_post_data.append(endp_data)
+                self.created_cx[self.cx_prefix + name + "_" + str(num_connection) + "_fio" ] = "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio"
 
-            # time.sleep(3)
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
