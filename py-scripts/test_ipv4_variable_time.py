@@ -174,14 +174,26 @@ def main():
                 --debug
             ''')
 
-    optional = parser.add_argument_group('optional arguments')
-    required = parser.add_argument_group('required arguments')
-    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    optional.add_argument('--mode',help='Used to force mode of stations')
-    optional.add_argument('--ap',help='Used to force a connection to a particular AP')
-    optional.add_argument('--report_file',help='where you want to store results')
+    required_args=None
+    for group in parser._action_groups:
+        if group.title == "required arguments":
+            required_args=group
+            break;
+    if required_args is not None:
+        required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+        required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+        required_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+
+    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    optional_args=None
+    for group in parser._action_groups:
+        if group.title == "optional arguments":
+            optional_args=group
+            break;
+    if optional_args is not None:
+        optional_args.add_argument('--mode',help='Used to force mode of stations')
+        optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
+        optional.add_argument('--report_file',help='where you want to store results')
     args = parser.parse_args()
 
     num_sta = 2
@@ -189,7 +201,10 @@ def main():
         num_sta = int(args.num_stations)
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
-    ip_var_test = IPV4VariableTime(host=args.mgr, port=args.mgr_port, number_template="00", sta_list=station_list,
+    ip_var_test = IPV4VariableTime(host=args.mgr,
+                                   port=args.mgr_port,
+                                   number_template="0000",
+                                   sta_list=station_list,
                                    name_prefix="VT",
                                    upstream=args.upstream_port,
                                    ssid=args.ssid,
