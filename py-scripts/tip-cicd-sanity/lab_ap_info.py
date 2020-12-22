@@ -6,9 +6,11 @@ ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
 ##Cloud Type(cloudSDK = v1, CMAP = cmap)
 cloud_type = "v1"
 
-##LANForge radios
+##LANForge Info
+lanforge_ip = "10.10.10.201"
 lanforge_2dot4g = "wiphy0"
 lanforge_5g = "wiphy3"
+lanforge_prefix = "sdk"
 
 ##AP Models for firmware upload
 cloud_sdk_models = {
