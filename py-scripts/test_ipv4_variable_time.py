@@ -218,8 +218,7 @@ def main():
 
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
-                                    duration_sec=60,
-                                    num_stations=self.num_stations)
+                                    duration_sec=60)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
