@@ -235,7 +235,7 @@ def main():
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).seconds,
                                     created_cx= layer3connections,
-                                    ouput_format='excel')
+                                    output_format='excel')
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
