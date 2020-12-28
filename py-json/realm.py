@@ -18,6 +18,7 @@ import os
 import datetime
 import base64
 import xlsxwriter
+import pandas as pd
 
 def wpa_ent_list():
     return [
@@ -1099,9 +1100,7 @@ class L3CXProfile(LFCliBase):
 
         #Step 1, column names
         fields=",".join(col_names)
-        #Step 2, create report file
-        report_fh = open(report_file, "w+")
-        #Step 3, monitor columns
+        #Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
@@ -1137,24 +1136,26 @@ class L3CXProfile(LFCliBase):
 
         if passes == expected_passes:
             self._pass("PASS: All tests passed")
-        #Step 4, close and save
+        #step 3 organize data
+        endpoints=list()
+        for endpoint in value_map.values():
+            endpoints.append(endpoint['endpoint'])
+        endpoints2=[]
+        for y in range(0, len(endpoints)):
+            for x in range(0, len(endpoints[0])):
+                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
+        timestamps=[]
+        for timestamp in [*value_map.keys()]:
+            timestamps.extend([str(timestamp)]*2*len(created_cx))
+        for point in range(0, len(endpoints2)):
+            endpoints2[point].insert(0, timestamps[point])
+        #step 4 save and close
+        header_row=col_names
+        header_row.insert(0,'Timestamp')
         if output_format.lower() == 'excel':
-            endpoints=list()
-            for endpoint in value_map.values():
-                endpoints.append(endpoint['endpoint'])
-            endpoints2=[]
-            for y in range(0, len(endpoints)):
-                for x in range(0, len(endpoints[0])):
-                    endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
-            timestamps=[]
-            for timestamp in [*value_map.keys()]:
-                timestamps.extend([str(timestamp)]*2*len(created_cx))
-            for point in range(0, len(endpoints2)):
-                endpoints2[point].insert(0, timestamps[point])
+            report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
-            header_row=col_names
-            header_row.insert(0,'Timestamp')
             for col_num,data in enumerate(header_row):
                 worksheet.write(0, col_num,data)
             row_num = 1
@@ -1163,6 +1164,10 @@ class L3CXProfile(LFCliBase):
                         worksheet.write(row_num, col_num, str(data))
                 row_num+=1
             workbook.close()
+        elif output_format.lower() == 'csv':
+            df=pd.DataFrame(endpoints2)
+            df.columns=header_row
+            df.to_csv(report_file)
         else:
             pass
 

@@ -194,6 +194,7 @@ def main():
         optional_args.add_argument('--mode',help='Used to force mode of stations')
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
         optional_args.add_argument('--report_file',help='where you want to store results')
+        optional_args.add_argument('--output_format', help='choose either csv or xlsx')
     args = parser.parse_args()
 
     num_sta = 2
@@ -227,15 +228,24 @@ def main():
     ip_var_test.start(False, False)
 
     if args.report_file is None:
-        report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
+        if args.output_format == 'csv':
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.csv'
+            output='csv'
+        else:
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
+            output='excel'
     else:
         report_f=args.report_file
+        if args.output_format == 'csv':
+            output='csv'
+        else:
+            output='excel'
     layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).seconds,
                                     created_cx= layer3connections,
-                                    output_format='excel')
+                                    output_format=output)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
