@@ -232,10 +232,13 @@ clean_core_files() {
 }
 
 clean_lf_downloads() {
-    note "Clean LF downloads WIP"
+    note "Clean LF downloads..."
     if (( $verbose > 0 )); then
-        printf "%s\n" "${lf_downloads[@]}"
+        printf "%s " < <(echo "${lf_downloads[@]}" | sort | uniq)
     fi
+    cd /home/lanforge/Downloads
+    echo "${lf_downloads[@]}" | xargs rm -f
+    cd -
 }
 
 clean_ath10_files() {
@@ -302,12 +305,12 @@ survey_core_files() {
 }
 
 # downloads
-downloads=()
+lf_downloads=()
 survey_lf_downloads() {
     debug "Surveying /home/lanforge downloads"
     cd /home/lanforge/Downloads || return 1
-    mapfile -t downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
-    totals[d]=$(du -hc "${downloads[@]}" | awk '/total/{print $1}')
+    mapfile -t lf_downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
+    totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
     [[ x${totals[d]} = x ]] && totals[d]=0
 }
 
