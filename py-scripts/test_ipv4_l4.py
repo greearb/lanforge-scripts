@@ -178,8 +178,7 @@ def main():
         --debug (optional)
 
             ''')
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
 

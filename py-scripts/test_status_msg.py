@@ -236,7 +236,6 @@ class TestStatusMessage(LFCliBase):
 
 
 def main():
-    lfjson_port = 8080
     parser = LFCliBase.create_bare_argparse(
         prog=__file__,
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -268,7 +267,7 @@ Actions can be:
     args = parser.parse_args()
 
     status_messages = TestStatusMessage(args.mgr,
-                                        lfjson_port,
+                                        args.mgr_port,
                                         _debug_on=False,
                                         _exit_on_error=False,
                                         _exit_on_fail=False)

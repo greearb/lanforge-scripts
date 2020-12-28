@@ -22,7 +22,8 @@ import datetime
 import time
 import os
 from test_utility import CreateHTML
-import matplotlib.pyplot as plt
+from test_utility import RuntimeUpdates
+import pdfkit
 
 webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
@@ -30,7 +31,7 @@ class ConnectionTest(LFCliBase):
 
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio="wiphy1", sta_prefix="sta", start_id=0,
                  num_sta=2,
-                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", name_prefix="L3Test",
+                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", _test_update=None, name_prefix="L3Test",
                  session_id="Layer3Test", test_name="Client/s Connectivity Test", pass_criteria=20, _debug_on=False,
                  _exit_on_error=False, _exit_on_fail=False):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error,
@@ -52,10 +53,10 @@ class ConnectionTest(LFCliBase):
         self.session_id = session_id
         self.test_name = test_name
         self.test_duration = 1
-
+        self.test_update = _test_update
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
-
+        self.pass_fail = ""
 
         station_list = []
         for i in range(0, self.num_sta):
@@ -66,7 +67,7 @@ class ConnectionTest(LFCliBase):
             self.station_data[i] = "None"
         print(self.station_data)
 
-
+        self.test_update.send_update({"test_status": '1', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
         self.reports_path = webconsole_dir+"/reports/" + self.test_name + "_" + self.session_id + '/'
 
@@ -78,16 +79,16 @@ class ConnectionTest(LFCliBase):
         self.station_list = LFUtils.portNameSeries(prefix_=self.sta_prefix, start_id_=self.sta_start_id,
                                                    end_id_=self.num_sta - 1, padding_number_=10000, radio=self.radio)
         print(self.station_profile.station_names)
-
+        self.test_update.send_update({"test_status": '2', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
 
     def precleanup(self):
         print("precleanup started")
         sta_list = []
         for i in self.local_realm.station_list():
-            if list(i.keys())[0] == '1.1.wlan0':
+            if (list(i.keys())[0] == '1.1.wlan0'):
                 pass
-            elif list(i.keys())[0] == '1.1.wlan1':
+            elif (list(i.keys())[0] == '1.1.wlan1'):
                 pass
             else:
                 sta_list.append(list(i.keys())[0])
@@ -99,8 +100,10 @@ class ConnectionTest(LFCliBase):
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
         print("precleanup done")
+        self.test_update.send_update({"test_status": '3', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
     def build(self):
+
         print("Building Test Configuration")
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template("00")
@@ -111,13 +114,14 @@ class ConnectionTest(LFCliBase):
         self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
         self.update(status="build complete")
         print("Test Build done")
+        self.test_update.send_update({"test_status": '4', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
     def update(self, status="None"):
         for i in self.station_list:
             print(self.json_get("port/1/1/" + i + "/?fields=ip,ap,down"))
             self.station_data[i.split(".")[2]] = \
             self.json_get("port/1/1/" + i.split(".")[2] + "/?fields=ip,ap,down,phantom&cx%20time%20(us)")['interface']
-
+        self.test_update.send_update({"test_status": '5', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
     def start(self, print_pass=False, print_fail=False):
         print("Test is starting")
@@ -131,11 +135,11 @@ class ConnectionTest(LFCliBase):
                 sta_status = self.json_get("port/1/1/" + str(sta_name).split(".")[2] + "?fields=port,alias,ip,ap",
                                            debug_=self.debug)
                 print(sta_status)
-                if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
+                if (sta_status is None or sta_status['interface'] is None) or (sta_status['interface']['ap'] is None):
                     continue
-                if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
+                if (len(sta_status['interface']['ap']) == 17) and (sta_status['interface']['ap'][-3] == ':'):
                     associated_map[sta_name] = 1
-                if sta_status['interface']['ip'] != '0.0.0.0':
+                if (sta_status['interface']['ip'] != '0.0.0.0'):
                     self.ip_map[sta_name] = 1
             if (len(self.station_profile.station_names) == len(self.ip_map)) and (
                     len(self.station_profile.station_names) == len(associated_map)):
@@ -186,13 +190,15 @@ class ConnectionTest(LFCliBase):
             sta_status = self.json_get(
                 "port/1/1/" + str(sta_name).split(".")[2] + "?fields=alias,ap,channel,cx%20time%20(us),ip,mac,mode,dhcp%20(ms)",
                 debug_=self.debug)
+            print("ironman")
+            print(sta_status['interface'])
             self.test_result_data.append(sta_status['interface'])
         print(self.test_result_data)
 
         offset = 0
         self.chart_data = {}
         for data in self.test_result_data:
-            if data["cx time (us)"]/1000 <= self.pass_criteria and data["cx time (us)"]/1000 > 0:
+            if (data["cx time (us)"]/1000 <= self.pass_criteria) and (data["cx time (us)"]/1000 > 0):
                 self.chart_data[data['alias']] = data["cx time (us)"]/1000
                 data['Result'] = "PASS"
             else:
@@ -205,22 +211,26 @@ class ConnectionTest(LFCliBase):
 
         if offset == 0:
             summary_result = 'PASS ' + str(len(self.ip_map)) + "/" + str(self.num_sta) + ' Clients are Connected in less than ' + str(self.pass_criteria) + " ms"
+            self.pass_fail = "FAIL"
         else:
             summary_result = 'FAIL ' + str(len(self.ip_map)) + "/" + str(self.num_sta) + ' Clients are Connected, and/or Some might got connected in more than ' + str(self.pass_criteria) + " ms"
-
+            self.pass_fail = "FAIL"
 
 
         self.html = open(self.reports_path + self.test_name + "_" + self.session_id + ".html", 'w')
         self.html_data = CreateHTML(path=self.reports_path, test_name=self.test_name, time_snap=str(datetime.datetime.now()), dut_ssid=self.ssid, test_conf_data={"Number of Clients":str(self.num_sta)},
-                                   objective=objective, test_results={"summary": summary_result, "detail":{"keys": self.keys, "data":self.test_result_data}}, chart_data=self.chart_data,
+                                   objective=objective, test_results={"summary": summary_result, "detail": {"keys": self.keys, "data": self.test_result_data}}, chart_data=self.chart_data,
                                    chart_params={"chart_head": "Client Connection Time", "xlabel": "Clients", "ylabel": "Connection Time"})
         self.html.write(self.html_data.report)
         self.html.close()
+
+        self.test_update.send_update({"test_status": '6', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
     def stop(self):
         print("Stopping Test")
         self.station_profile.admin_down()
         LFUtils.wait_until_ports_admin_down(port_list=self.station_profile.station_names)
+        self.test_update.send_update({"test_status": '7', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
     def postcleanup(self):
         self.station_profile.cleanup()
@@ -228,11 +238,12 @@ class ConnectionTest(LFCliBase):
                                            port_list=self.station_profile.station_names,
                                            debug=self.debug)
         print("Test Completed")
+        self.test_update.send_update({"test_status": '8', "data": 'None', "data": [], "label": "Client Connectivity Time"})
 
 
 def main():
     # This has --mgr, --mgr_port and --debug
-    parser = LFCliBase.create_bare_argparse(prog="layer3_test.py", formatter_class=argparse.RawTextHelpFormatter,
+    parser = LFCliBase.create_bare_argparse(prog="connection_test.py", formatter_class=argparse.RawTextHelpFormatter,
                                             epilog="About This Script")
 
     # Adding More Arguments for custom use
@@ -247,19 +258,20 @@ def main():
     args = parser.parse_args()
     # args.session_id = "local";
     print(args)
-
+    update = RuntimeUpdates(args.session_id, {"test_status": '0', "data": 'None', "data": [], "label": "Client Connectivity Time"})
     # Start Test
-    obj = ConnectionTest(lfclient_host="192.168.200.15", lfclient_port=args.mgr_port,
+    obj = ConnectionTest(lfclient_host="192.168.200.12", lfclient_port=args.mgr_port,
                          session_id=args.session_id, test_name=args.test_name,
                          dut_ssid=args.ssid, dut_passwd=args.passwd, dut_security=args.security,
-                         num_sta=args.num_clients, radio=args.radio, pass_criteria=args.pass_criteria)
+                         num_sta=args.num_clients, radio=args.radio, pass_criteria=args.pass_criteria, _test_update=update)
     obj.precleanup()
     obj.build()
     obj.start()
     obj.stop()
     obj.postcleanup()
 
+    print(obj.chart_data)
+    update.send_update({"test_status": '10', "data": obj.chart_data, "label": ["Client Names","Client Connectivity Time (ms)"], "result": obj.pass_fail})
 
 if __name__ == '__main__':
     main()
-
