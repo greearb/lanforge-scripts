@@ -25,6 +25,7 @@ ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
 REPORT_TIMER_MS_FAST = 1500
 REPORT_TIMER_MS_SLOW = 3000
 
+#Used for Speed
 def parse_size_bps(size_val):
     if isinstance(size_val, str):
         size_val.upper()
@@ -46,6 +47,7 @@ def parse_size_bps(size_val):
     else:
         return size_val
 
+#Used for Size of file
 def parse_size(size_val):
     if isinstance(size_val, str):
         size_val.upper()
@@ -56,11 +58,11 @@ def parse_size(size_val):
             unit = str(td.group(2)).lower()
             # print(1, size, unit)
             if unit == 'g':
-                size *= 10000000
+                size *= 1073741824
             elif unit == 'm':
-                size *= 100000
+                size *= 1048576
             elif unit == 'k':
-                size *= 1000
+                size *= 1024
             # print(2, size, unit)
             return size
     else:
