@@ -3,7 +3,8 @@
 # OPTION ONE: ./test_all_scripts.sh : this command runs all the scripts in the array "testCommands"
 # OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.
 #Variables
-NUM_STA=4
+NUM_STA=5
+#ssid defaults to WPA2 security, ssid, and ssid key
 SSID_USED="jedway-wpa2-x2048-5-3"
 PASSWD_USED="jedway-wpa2-x2048-5-3"
 RADIO_USED="wiphy1"
@@ -26,6 +27,7 @@ testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid j
     "./test_ipv4_l4_wifi.py --upstream_port eth1 --radio wiphy0 --num_stations $NUM_STA --security $SECURITY --ssid jedway-wpa2-x2048-4-4 --passwd jedway-wpa2-x2048-4-4  --test_duration 3m"
     "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security wpa2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m --debug"
     "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s"
+    "./test_ipv4_l4_ftp_urls_per_ten.py --radio wiphy0 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --test_duration 30s  --url \"ul ftp://lanforge:lanforge@10.40.0.1/example.txt  /home/lanforge/example.txt\""
 )
 declare -A name_to_num
 name_to_num=(

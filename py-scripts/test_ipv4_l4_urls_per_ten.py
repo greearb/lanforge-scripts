@@ -175,15 +175,25 @@ python3 ./test_ipv4_l4_urls_per_ten.py
     --test_duration 2m
     --debug
             ''')
-    required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
-    parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
-    parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
-    parser.add_argument('--url', help='--url specifies upload/download, address, and dest',default="dl http://10.40.0.1 /dev/null")
-    parser.add_argument('--test_duration', help='duration of test',default="2m")
-    parser.add_argument('--target_per_ten', help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',default=600)
-    optional.add_argument('--mode',help='Used to force mode of stations')
-    optional.add_argument('--ap',help='Used to force a connection to a particular AP')
+    required = None
+    for agroup in parser._action_groups:
+        if agroup.title == "required arguments":
+            required = agroup
+    #if required is not None:
+
+    optional = None
+    for agroup in parser._action_groups:
+        if agroup.title == "optional arguments":
+            optional = agroup
+
+    if optional is not None:
+        optional.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes', default=600)
+        optional.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes', default=1)
+        optional.add_argument('--url', help='--url specifies upload/download, address, and dest',default="dl http://10.40.0.1 /dev/null")
+        optional.add_argument('--test_duration', help='duration of test',default="2m")
+        optional.add_argument('--target_per_ten', help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',default=600)
+        optional.add_argument('--mode',help='Used to force mode of stations')
+        optional.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
     num_sta = 2

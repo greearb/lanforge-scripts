@@ -19,7 +19,8 @@ import datetime
 
 
 class IPV4VariableTime(LFCliBase):
-    def __init__(self, host, port, ssid, security, password, sta_list, name_prefix, upstream, radio,
+    def __init__(self, ssid, security, password, sta_list, name_prefix, upstream, radio,
+                host="localhost", port=8080,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -169,7 +170,6 @@ class IPV4VariableTime(LFCliBase):
 
 
 def main():
-    lfjson_port = 8080
 
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
@@ -192,11 +192,20 @@ Generic command layout:
 --test_duration 2m
 --debug
         ''')
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
-    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    required = None
+    for agroup in parser._action_groups:
+        if agroup.title == "required arguments":
+            required = agroup
+    #if required is not None:
+
+    optional = None
+    for agroup in parser._action_groups:
+        if agroup.title == "optional arguments":
+            optional = agroup
+    if optional is not None: 
+        optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+        optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+        optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
 
     args = parser.parse_args()
     num_sta = 2
