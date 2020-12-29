@@ -227,11 +227,19 @@ clean_old_kernels() {
 clean_core_files() {
     note "Cleaning core files..."
     if (( ${#core_files[@]} < 1 )); then
+        debug "No core files ?"
         return 0
     fi
-    if (( $verbose > 0 )); then
-        printf "     %s\n" < <( echo "${core_files[@]}" | sort | uniq )
-    fi
+    local counter=0
+    for f in "${core_files[@]}"; do
+        echo -n "-"
+        rm -f "$f"
+        counter=$(( counter + 1 ))
+        if (( ($counter % 100) == 0 )); then
+            sleep 0.2
+        fi
+    done
+    echo ""
 }
 
 clean_lf_downloads() {
@@ -252,10 +260,26 @@ clean_ath10_files() {
 }
 
 clean_var_log() {
-    note "Clean var log WIP"
+    note "Vacuuming journal..."
+    journalctl --vacuum-size 1M
+    if (( ${#var_log_files[@]} < 1 )); then
+        note "No notable files in /var/log to remove"
+        return
+    fi
+    local vee=""
     if (( $verbose > 0 )); then
         printf "%s\n" "${var_log_files[@]}"
+        vee="-v"
     fi
+    cd /var/log
+    while read file; do
+        if [[ $file = /var/log/messages ]]; then
+            echo "" > /var/log/messages
+        else
+            rm -f $vee "$file"
+        fi
+    done <<< "${var_log_files[@]}"
+    cd -
 }
 
 clean_mnt_fl_files() {
@@ -330,7 +354,8 @@ survey_ath10_files() {
 var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
-    mapfile -t var_log_files < <(find /var/log -type f -size +10M 2>/dev/null)
+    mapfile -t var_log_files < <(find /var/log -type f -size +35M \
+        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null)
     totals[l]=$(du -hc "${var_log_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[l]} = x ]] && totals[l]=0
 }
@@ -387,7 +412,7 @@ survey_areas() {
     note "Surveying..."
     for area in "${!surveyors_map[@]}"; do
         if (( $quiet < 1 )) && (( $verbose < 1 )); then
-            note -n "#"
+            echo -n "#"
         fi
         ${surveyors_map[$area]}
     done
@@ -408,29 +433,27 @@ survey_areas
 disk_usage_report
 
 if (( ${#core_files[@]} > 0 )); then
-    note "Core Files detected:"
     hr
+    note "${#core_files[@]} Core Files detected:"
     filestr=""
     declare -A core_groups
-    set -e
+    # set -e
     # note that the long pipe at the bottom of the loop is the best way to get
     # the system to operate with thousands of core files
     while read group7; do
-        (( $verbose > 0 )) && echo -n '.'
+        (( $verbose > 0 )) && echo -n '+'
         group7="${group7%, *}"
-        group7="#${group7//\'/}"
+        group7="${group7//\'/}"
         [[ ${core_groups[$group7]+_} != _ ]] && core_groups[$group7]=0
         core_groups[$group7]=$(( ${core_groups[$group7]} + 1 ))
-
     done < <(echo "${core_files[@]}" | xargs file | awk -F": " '/execfn:/{print $7}')
     echo ""
     echo "These types of core files were found:"
-    while read group; do
-        echo "    $group -> ${core_groups[$group]}"
-    done < <(echo "${!core_groups[@]}" | sort )
+    for group in "${!core_groups[@]}"; do
+        echo "${core_groups[$group]} files of $group"
+    done | sort -n
     hr
-    set +x
-    selections+=("c")
+    (( ${#core_files[@]} > 0 )) && selections+=("c")
 fi
 
 #echo "Usage of /mnt: $usage_mnt"
@@ -462,16 +485,19 @@ if contains "selections" "a" ; then
 fi
 
 if (( ${#selections[@]} > 0 )) ; then
-    debug "Doing selected cleanup"
+    debug "Doing selected cleanup: "
+    printf "    %s\n" "${selections[@]}"
+    sleep 1
     for z in "${selections[@]}"; do
-        debug "Will perform ${desc[$z]}"
+        debug "Performing ${desc[$z]}"
         ${cleaners_map[$z]}
         selections=("${selections[@]/$z}")
     done
     survey_areas
     disk_usage_report
+else
+    debug "No selections present"
 fi
-set +x
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   ask for things to remove if we are interactive                        #
