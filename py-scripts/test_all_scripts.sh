@@ -25,7 +25,8 @@ testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid j
     "./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
     "./test_ipv4_l4_wifi.py --upstream_port eth1 --radio wiphy0 --num_stations $NUM_STA --security $SECURITY --ssid jedway-wpa2-x2048-4-4 --passwd jedway-wpa2-x2048-4-4  --test_duration 3m"
     "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security wpa2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m --debug"
-    "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format excel"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format csv"
 )
 declare -A name_to_num
 name_to_num=(

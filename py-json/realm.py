@@ -1081,7 +1081,9 @@ class L3CXProfile(LFCliBase):
                 created_cx=None,
                 show=False,
                 report_file=None,
-                output_format=None):
+                output_format=None,
+                script_name=None,
+                arguments=None):
         try:
             duration_sec=local_realm.parse_time(duration_sec).seconds
         except:
@@ -1097,6 +1099,12 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if col_names is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
+        if output_format is not None:
+            if output_format.lower() != report_file.split('.')[-1]:
+                if output_format.lower() != 'excel':
+                    raise ValueError('Filename %s does not match output format %s' (report_file, output_format))
+        else:
+            output_format = report_file.split('.')[-1]
 
         #Step 1, column names
         fields=",".join(col_names)
@@ -1152,7 +1160,7 @@ class L3CXProfile(LFCliBase):
         #step 4 save and close
         header_row=col_names
         header_row.insert(0,'Timestamp')
-        if output_format.lower() == 'excel':
+        if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] is 'xlsx':
             report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
@@ -1164,12 +1172,40 @@ class L3CXProfile(LFCliBase):
                         worksheet.write(row_num, col_num, str(data))
                 row_num+=1
             workbook.close()
-        elif output_format.lower() == 'csv':
+        else:
             df=pd.DataFrame(endpoints2)
             df.columns=header_row
-            df.to_csv(report_file)
-        else:
-            pass
+            import requests
+            import ast
+            systeminfo=ast.literal_eval(requests.get('http://localhost:8080').text)
+            df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+            df['Script Name'] = script_name
+            df['Arguments'] = arguments
+            for x in ['LFGUI Release','Script Name','Arguments']:
+                df[x][1:] = ''
+            if output_format == 'pdf':
+                import matplotlib.pyplot as plt
+                from matplotlib.backends.backend_pdf import PdfPages
+                fig, ax = plt.subplots(figsize=(12,4))
+                ax.axis('tight')
+                ax.axis('off')
+                the_table = ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+                pp = PdfPages(report_file)
+                pp.savefig(fig, bbox_inches = 'tight')
+                pp.close()
+            if output_format == 'hdf':
+                df.to_hdf(report_file,'table', append=True)
+            if output_format == 'parquet':
+                df.to_parquet(report_file,engine='pyarrow')
+            if output_format == 'png':
+                fig=df.plot().get_figure()
+                fig.savefig(report_file)
+            supported_formats = ['csv','json','html','stata','pickle']
+            for x in supported_formats:
+                if output_format.lower() == x or report_file.split('.')[-1] == x:
+                    exec('df.to_'+x+'("'+report_file+'")')
+            else:
+                pass
 
 
 
