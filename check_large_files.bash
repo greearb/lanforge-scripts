@@ -10,6 +10,7 @@ deletion_targets=()
 show_menu=1
 verbose=0
 quiet=0
+starting_dir="$PWD"
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -a   # automatic: disable menu and clean automatically
@@ -243,13 +244,22 @@ clean_core_files() {
 }
 
 clean_lf_downloads() {
+    if (( ${#lf_downloads[@]} < 1 )); then
+        note "No /home/lanforge/downloads files to remove"
+        return 0
+    fi
     note "Clean LF downloads..."
     if (( $verbose > 0 )); then
-        printf "%s " < <(echo "${lf_downloads[@]}" | sort | uniq)
+        printf "Delete:[%s]\n" "${lf_downloads[@]}" | sort
     fi
     cd /home/lanforge/Downloads
-    echo "${lf_downloads[@]}" | xargs rm -f
-    cd -
+    for f in "${lf_downloads[@]}"; do
+        [[ "$f" = "/" ]] && echo "Whuuut? this is not good, bye." && exit 1
+        echo "Next:[$f]"
+        sleep 0.2
+        rm -f "$f"
+    done
+    cd "$starting_dir"
 }
 
 clean_ath10_files() {
@@ -279,7 +289,7 @@ clean_var_log() {
             rm -f $vee "$file"
         fi
     done <<< "${var_log_files[@]}"
-    cd -
+    cd "$starting_dir"
 }
 
 clean_mnt_fl_files() {
@@ -319,7 +329,6 @@ core_files=()
 survey_core_files() {
     debug "Surveying core files"
     cd /
-    #set -x
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
         printf "    %s\n" "${core_files[@]}" | head
@@ -329,16 +338,19 @@ survey_core_files() {
     fi
     #set +x
     [[ x${totals[c]} = x ]] && totals[c]=0
+    cd "$starting_dir"
 }
 
 # downloads
 lf_downloads=()
 survey_lf_downloads() {
     debug "Surveying /home/lanforge downloads"
-    cd /home/lanforge/Downloads || return 1
+    [ ! -d "/home/lanforge/Downloads" ] && note "No downloads folder " && return 0
+    cd /home/lanforge/Downloads
     mapfile -t lf_downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
     totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
     [[ x${totals[d]} = x ]] && totals[d]=0
+    cd "$starting_dir"
 }
 
 # Find ath10k crash residue
@@ -363,12 +375,10 @@ survey_var_log() {
 # stuff in var tmp
 var_tmp_files=()
 survey_var_tmp() {
-    #set -x
     debug "Surveying var tmp"
     mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null)
     totals[t]=$(du -sh "${var_tmp_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[t]} = x ]] && totals[t]=0
-    #set +x
 }
 
 # Find size of /mnt/lf that is not mounted
@@ -394,13 +404,12 @@ report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
     cd /home/lanforge
-    #set -x
     local fnum=$( find -type f -name '*.csv' 2>/dev/null | wc -l )
     local fsiz=$( find -type f -name '*.csv' 2>/dev/null | xargs du -hc | awk '/total/{print $1}')
     totals[r]="$fsiz"
     [[ x${totals[r]} = x ]] && totals[r]=0
     report_files=("CSV files: $fnum tt $fsiz")
-    #set +x
+    cd "$starting_dir"
 }
 
 
@@ -470,7 +479,7 @@ fi
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   delete extra things now                                               #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#set -x
+
 if contains "selections" "a" ; then
     note "Automatic deletion will include: "
     printf "%s\n" "${selections[@]}"
@@ -515,6 +524,7 @@ while [[ $choice != q ]]; do
     echo "  m) orphaned /mnt/lf files     ${totals[m]}"
     echo "  r) compress .csv report files ${totals[r]}"
     echo "  t) clean /var/tmp             ${totals[t]}"
+    echo "  q) quit"
     read -p "[1-5] or q ? " choice
 
     case "$choice" in
