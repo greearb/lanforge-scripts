@@ -148,7 +148,8 @@ declare -A desc=(
     [k]="lf/ath10 files"
     [l]="/var/log"
     [m]="/mnt/lf files"
-    [r]="lf/report_data"
+    [n]="DNF cache"
+    [r]="/home/lanforge/report_data"
     [t]="/var/tmp"
 )
 declare -A surveyors_map=(
@@ -158,6 +159,7 @@ declare -A surveyors_map=(
     [k]="survey_ath10_files"
     [l]="survey_var_log"
     [m]="survey_mnt_lf_files"
+    [n]="survey_dnf_cache"
     [r]="survey_report_data"
     [t]="survey_var_tmp"
 )
@@ -169,6 +171,7 @@ declare -A cleaners_map=(
     [k]="clean_ath10_files"
     [l]="clean_var_log"
     [m]="clean_mnt_lf_files"
+    [n]="clean_dnf_cache"
     [r]="compress_report_data"
     [t]="clean_var_tmp"
 )
@@ -292,6 +295,14 @@ clean_var_log() {
     cd "$starting_dir"
 }
 
+clean_dnf_cache() {
+    local yum="dnf"
+    which --skip-alias dnf &> /dev/null
+    (( $? < 0 )) && yum="yum"
+    debug "Purging $yum cache"
+    $yum clean all
+}
+
 clean_mnt_lf_files() {
     note "clean mnt lf files WIP"
     if (( $verbose > 0 )); then
@@ -393,6 +404,14 @@ survey_mnt_lf_files() {
     mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem 2>/dev/null)
     totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[m]} = x ]] && totals[m]=0
+}
+
+survey_dnf_cache() {
+    local yum="dnf"
+    which --skip-alias dnf &> /dev/null
+    (( $? < 0 )) && yum="yum"
+    debug "Surveying $yum cache"
+    totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
 }
 
 ## Find size of /lib/modules
@@ -526,6 +545,7 @@ while [[ $choice != q ]]; do
     echo "  k) ath10k crash files         ${totals[k]}"
     echo "  l) old /var/log files         ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     ${totals[m]}"
+    echo "  n) purge dnf/yum cache        ${totals[n]}"
     echo "  r) compress .csv report files ${totals[r]}"
     echo "  t) clean /var/tmp             ${totals[t]}"
     echo "  q) quit"
