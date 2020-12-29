@@ -176,49 +176,82 @@ declare -A cleaners_map=(
     [t]="clean_var_tmp"
 )
 
+kernel_to_relnum() {
+    local hunks=()
+    #echo "KERNEL RELNUM:[$1]"
+    IFS="." read -ra hunks <<< "$1"
+    IFS=
+    local tmpstr
+    local max_width=8
+    local last_len=0
+    local diff_len=0
+    local expandos=()
+    for i in 0 1 2; do
+        if (( $i < 2 )); then
+            expandos+=( $(( 100 + ${hunks[$i]} )) )
+        else
+            tmpstr="0000000000000${hunks[i]}"
+            last_len=$(( ${#tmpstr} - $max_width ))
+            expandos+=( ${tmpstr:$last_len:${#tmpstr}} )
+            #1>&2 echo "TRIMMED ${tmpstr:$last_len:${#tmpstr}}"
+        fi
+    done
+    #local relnum="${expandos[0]}${expandos[1]}${expandos[2]}"
+    echo "${expandos[0]}${expandos[1]}${expandos[2]}"
+}
+
 clean_old_kernels() {
-    note "Cleaning old kernels WIP"
+    note "Cleaning old kernels..."
     local pkg
     local k_pkgs=()
     local selected_k=()
     local k_series=()
     # need to avoid most recent fedora kernel
-
-    if [ -x /usr/bin/rpm ]; then
-        local kern_pkgs=( $( rpm -qa 'kernel*' | sort -n ) )
-        local pkg
-        for pkg in "${kern_pkgs[@]}"; do
-            if [[ $pkg = kernel-tools-* ]] \
-                || [[ $pkg = kernel-headers-* ]] \
-                || [[ $pkg = kernel-devel-* ]] ; then
-                continue
-            fi
-            k_pkgs+=( $pkg )
-        done
-        for pkg in "${k_pkgs[@]}"; do
-            pkg=${pkg##kernel-modules-extra-}
-            pkg=${pkg##kernel-modules-}
-            pkg=${pkg##kernel-core-}
-            kernel_series=${pkg##kernel-}
-            #debug "K SER: $kernel_series"
-            if contains k_series $kernel_series; then
-                continue
-            else
-                k_series+=( $kernel_series )
-            fi
-        done
-        IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
-        for pkg in "${k_series[@]}"; do
-            debug "series $pkg"
-        done
-        if (( "${#k_series[@]}" > 1 )); then
-            local i=0
-            # lets try and avoid the last item assuming that is the most recent
-            for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
-                debug "item $i is ${k_series[$i]}"
-            done
-        fi
+    if [ ! -x /usr/bin/rpm ]; then
+        note "Does not appear to be an rpm system."
+        return 0
     fi
+    local ur=$( uname -r )
+    local current_relnum=$( kernel_to_relnum $ur )
+    local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
+    local pkg
+    for pkg in "${kern_pkgs[@]}"; do
+        if [[ $pkg = kernel-tools-* ]] \
+            || [[ $pkg = kernel-headers-* ]] \
+            || [[ $pkg = kernel-devel-* ]] ; then
+            continue
+        fi
+        k_pkgs+=( $pkg )
+    done
+    for pkg in "${k_pkgs[@]}"; do
+        pkg=${pkg##kernel-modules-extra-}
+        pkg=${pkg##kernel-modules-}
+        pkg=${pkg##kernel-core-}
+        pkg=${pkg%.fc??.x86_64}
+        kernel_series=$( kernel_to_relnum ${pkg##kernel-} )
+
+        #debug "K SER: $kernel_series"
+        if contains k_series $kernel_series; then
+            continue
+        elif [[ x$current_relnum = x$kernel_series ]]; then
+            debug "avoiding current kernel [$kernel_series]"
+        else
+            k_series+=($kernel_series)
+        fi
+    done
+
+    IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
+    for pkg in "${k_series[@]}"; do
+        debug "series $pkg"
+    done
+    if (( "${#k_series[@]}" > 1 )); then
+        local i=0
+        # lets try and avoid the last item assuming that is the most recent
+        for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
+            debug "item $i is ${k_series[$i]}"
+        done
+    fi
+
     set +x
     if (( ${#selected_k[@]} < 1 )); then
         note "No kernels selected for removal"
