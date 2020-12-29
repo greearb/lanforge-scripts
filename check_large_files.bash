@@ -10,6 +10,7 @@ deletion_targets=()
 show_menu=1
 verbose=0
 quiet=0
+starting_dir="$PWD"
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -a   # automatic: disable menu and clean automatically
@@ -147,7 +148,8 @@ declare -A desc=(
     [k]="lf/ath10 files"
     [l]="/var/log"
     [m]="/mnt/lf files"
-    [r]="lf/report_data"
+    [n]="DNF cache"
+    [r]="/home/lanforge/report_data"
     [t]="/var/tmp"
 )
 declare -A surveyors_map=(
@@ -157,6 +159,7 @@ declare -A surveyors_map=(
     [k]="survey_ath10_files"
     [l]="survey_var_log"
     [m]="survey_mnt_lf_files"
+    [n]="survey_dnf_cache"
     [r]="survey_report_data"
     [t]="survey_var_tmp"
 )
@@ -168,53 +171,87 @@ declare -A cleaners_map=(
     [k]="clean_ath10_files"
     [l]="clean_var_log"
     [m]="clean_mnt_lf_files"
+    [n]="clean_dnf_cache"
     [r]="compress_report_data"
     [t]="clean_var_tmp"
 )
 
+kernel_to_relnum() {
+    local hunks=()
+    #echo "KERNEL RELNUM:[$1]"
+    IFS="." read -ra hunks <<< "$1"
+    IFS=
+    local tmpstr
+    local max_width=8
+    local last_len=0
+    local diff_len=0
+    local expandos=()
+    for i in 0 1 2; do
+        if (( $i < 2 )); then
+            expandos+=( $(( 100 + ${hunks[$i]} )) )
+        else
+            tmpstr="0000000000000${hunks[i]}"
+            last_len=$(( ${#tmpstr} - $max_width ))
+            expandos+=( ${tmpstr:$last_len:${#tmpstr}} )
+            #1>&2 echo "TRIMMED ${tmpstr:$last_len:${#tmpstr}}"
+        fi
+    done
+    #local relnum="${expandos[0]}${expandos[1]}${expandos[2]}"
+    echo "${expandos[0]}${expandos[1]}${expandos[2]}"
+}
+
 clean_old_kernels() {
-    note "Cleaning old kernels WIP"
+    note "Cleaning old kernels..."
     local pkg
     local k_pkgs=()
     local selected_k=()
     local k_series=()
     # need to avoid most recent fedora kernel
-
-    if [ -x /usr/bin/rpm ]; then
-        local kern_pkgs=( $( rpm -qa 'kernel*' | sort -n ) )
-        local pkg
-        for pkg in "${kern_pkgs[@]}"; do
-            if [[ $pkg = kernel-tools-* ]] \
-                || [[ $pkg = kernel-headers-* ]] \
-                || [[ $pkg = kernel-devel-* ]] ; then
-                continue
-            fi
-            k_pkgs+=( $pkg )
-        done
-        for pkg in "${k_pkgs[@]}"; do
-            pkg=${pkg##kernel-modules-extra-}
-            pkg=${pkg##kernel-modules-}
-            pkg=${pkg##kernel-core-}
-            kernel_series=${pkg##kernel-}
-            #debug "K SER: $kernel_series"
-            if contains k_series $kernel_series; then
-                continue
-            else
-                k_series+=( $kernel_series )
-            fi
-        done
-        IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
-        for pkg in "${k_series[@]}"; do
-            debug "series $pkg"
-        done
-        if (( "${#k_series[@]}" > 1 )); then
-            local i=0
-            # lets try and avoid the last item assuming that is the most recent
-            for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
-                debug "item $i is ${k_series[$i]}"
-            done
-        fi
+    if [ ! -x /usr/bin/rpm ]; then
+        note "Does not appear to be an rpm system."
+        return 0
     fi
+    local ur=$( uname -r )
+    local current_relnum=$( kernel_to_relnum $ur )
+    local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
+    local pkg
+    for pkg in "${kern_pkgs[@]}"; do
+        if [[ $pkg = kernel-tools-* ]] \
+            || [[ $pkg = kernel-headers-* ]] \
+            || [[ $pkg = kernel-devel-* ]] ; then
+            continue
+        fi
+        k_pkgs+=( $pkg )
+    done
+    for pkg in "${k_pkgs[@]}"; do
+        pkg=${pkg##kernel-modules-extra-}
+        pkg=${pkg##kernel-modules-}
+        pkg=${pkg##kernel-core-}
+        pkg=${pkg%.fc??.x86_64}
+        kernel_series=$( kernel_to_relnum ${pkg##kernel-} )
+
+        #debug "K SER: $kernel_series"
+        if contains k_series $kernel_series; then
+            continue
+        elif [[ x$current_relnum = x$kernel_series ]]; then
+            debug "avoiding current kernel [$kernel_series]"
+        else
+            k_series+=($kernel_series)
+        fi
+    done
+
+    IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
+    for pkg in "${k_series[@]}"; do
+        debug "series $pkg"
+    done
+    if (( "${#k_series[@]}" > 1 )); then
+        local i=0
+        # lets try and avoid the last item assuming that is the most recent
+        for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
+            debug "item $i is ${k_series[$i]}"
+        done
+    fi
+
     set +x
     if (( ${#selected_k[@]} < 1 )); then
         note "No kernels selected for removal"
@@ -225,17 +262,40 @@ clean_old_kernels() {
 }
 
 clean_core_files() {
-    note "Cleaning core files WIP"
-    if (( $verbose > 0 )); then
-        printf "%s\n" "${core_files[@]}"
+    note "Cleaning core files..."
+    if (( ${#core_files[@]} < 1 )); then
+        debug "No core files ?"
+        return 0
     fi
+    local counter=0
+    for f in "${core_files[@]}"; do
+        echo -n "-"
+        rm -f "$f"
+        counter=$(( counter + 1 ))
+        if (( ($counter % 100) == 0 )); then
+            sleep 0.2
+        fi
+    done
+    echo ""
 }
 
 clean_lf_downloads() {
-    note "Clean LF downloads WIP"
-    if (( $verbose > 0 )); then
-        printf "%s\n" "${lf_downloads[@]}"
+    if (( ${#lf_downloads[@]} < 1 )); then
+        note "No /home/lanforge/downloads files to remove"
+        return 0
     fi
+    note "Clean LF downloads..."
+    if (( $verbose > 0 )); then
+        printf "Delete:[%s]\n" "${lf_downloads[@]}" | sort
+    fi
+    cd /home/lanforge/Downloads
+    for f in "${lf_downloads[@]}"; do
+        [[ "$f" = "/" ]] && echo "Whuuut? this is not good, bye." && exit 1
+        echo "Next:[$f]"
+        sleep 0.2
+        rm -f "$f"
+    done
+    cd "$starting_dir"
 }
 
 clean_ath10_files() {
@@ -246,13 +306,37 @@ clean_ath10_files() {
 }
 
 clean_var_log() {
-    note "Clean var log WIP"
+    note "Vacuuming journal..."
+    journalctl --vacuum-size 1M
+    if (( ${#var_log_files[@]} < 1 )); then
+        note "No notable files in /var/log to remove"
+        return
+    fi
+    local vee=""
     if (( $verbose > 0 )); then
         printf "%s\n" "${var_log_files[@]}"
+        vee="-v"
     fi
+    cd /var/log
+    while read file; do
+        if [[ $file = /var/log/messages ]]; then
+            echo "" > /var/log/messages
+        else
+            rm -f $vee "$file"
+        fi
+    done <<< "${var_log_files[@]}"
+    cd "$starting_dir"
 }
 
-clean_mnt_fl_files() {
+clean_dnf_cache() {
+    local yum="dnf"
+    which --skip-alias dnf &> /dev/null
+    (( $? < 0 )) && yum="yum"
+    debug "Purging $yum cache"
+    $yum clean all
+}
+
+clean_mnt_lf_files() {
     note "clean mnt lf files WIP"
     if (( $verbose > 0 )); then
         printf "%s\n" "${mnt_lf_files[@]}"
@@ -270,9 +354,13 @@ compress_report_data() {
 clean_var_tmp() {
     note "clean var tmp"
     if (( $verbose > 0 )); then
-        printf "%s\n" "${var_tmp_files[@]}"
+        printf "    %s\n" "${var_tmp_files[@]}"
+        sleep 1
     fi
-    rf -f "${var_tmp_files[@]}"
+    for f in "${var_tmp_files[@]}"; do
+        rf -f "$f"
+        sleep 0.2
+    done
 }
 
 
@@ -289,26 +377,28 @@ core_files=()
 survey_core_files() {
     debug "Surveying core files"
     cd /
-    #set -x
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
-    if [[ $verbose = 1 ]]; then
-        printf "%s\n" "${core_files[@]}"
+    if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
+        printf "    %s\n" "${core_files[@]}" | head
     fi
     if (( ${#core_files[@]} > 0 )); then
         totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
     fi
     #set +x
     [[ x${totals[c]} = x ]] && totals[c]=0
+    cd "$starting_dir"
 }
 
 # downloads
-downloads=()
+lf_downloads=()
 survey_lf_downloads() {
     debug "Surveying /home/lanforge downloads"
-    cd /home/lanforge/Downloads || return 1
-    mapfile -t downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
-    totals[d]=$(du -hc "${downloads[@]}" | awk '/total/{print $1}')
+    [ ! -d "/home/lanforge/Downloads" ] && note "No downloads folder " && return 0
+    cd /home/lanforge/Downloads
+    mapfile -t lf_downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
+    totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
     [[ x${totals[d]} = x ]] && totals[d]=0
+    cd "$starting_dir"
 }
 
 # Find ath10k crash residue
@@ -324,7 +414,8 @@ survey_ath10_files() {
 var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
-    mapfile -t var_log_files < <(find /var/log -type f -size +10M 2>/dev/null)
+    mapfile -t var_log_files < <(find /var/log -type f -size +35M \
+        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null)
     totals[l]=$(du -hc "${var_log_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[l]} = x ]] && totals[l]=0
 }
@@ -332,12 +423,10 @@ survey_var_log() {
 # stuff in var tmp
 var_tmp_files=()
 survey_var_tmp() {
-    #set -x
     debug "Surveying var tmp"
     mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null)
     totals[t]=$(du -sh "${var_tmp_files}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[t]} = x ]] && totals[t]=0
-    #set +x
 }
 
 # Find size of /mnt/lf that is not mounted
@@ -348,6 +437,14 @@ survey_mnt_lf_files() {
     mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem 2>/dev/null)
     totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[m]} = x ]] && totals[m]=0
+}
+
+survey_dnf_cache() {
+    local yum="dnf"
+    which --skip-alias dnf &> /dev/null
+    (( $? < 0 )) && yum="yum"
+    debug "Surveying $yum cache"
+    totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
 }
 
 ## Find size of /lib/modules
@@ -363,13 +460,12 @@ report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
     cd /home/lanforge
-    #set -x
     local fnum=$( find -type f -name '*.csv' 2>/dev/null | wc -l )
     local fsiz=$( find -type f -name '*.csv' 2>/dev/null | xargs du -hc | awk '/total/{print $1}')
     totals[r]="$fsiz"
     [[ x${totals[r]} = x ]] && totals[r]=0
     report_files=("CSV files: $fnum tt $fsiz")
-    #set +x
+    cd "$starting_dir"
 }
 
 
@@ -381,7 +477,7 @@ survey_areas() {
     note "Surveying..."
     for area in "${!surveyors_map[@]}"; do
         if (( $quiet < 1 )) && (( $verbose < 1 )); then
-            note -n "#"
+            echo -n "#"
         fi
         ${surveyors_map[$area]}
     done
@@ -402,14 +498,27 @@ survey_areas
 disk_usage_report
 
 if (( ${#core_files[@]} > 0 )); then
-    note "Core Files detected:"
     hr
-    #printf '     %s\n' "${core_files[@]}"
-    for core in "${core_files[@]}"; do
-        file $core
-    done
+    note "${#core_files[@]} Core Files detected:"
+    filestr=""
+    declare -A core_groups
+    # set -e
+    # note that the long pipe at the bottom of the loop is the best way to get
+    # the system to operate with thousands of core files
+    while read group7; do
+        (( $verbose > 0 )) && echo -n '+'
+        group7="${group7%, *}"
+        group7="${group7//\'/}"
+        [[ ${core_groups[$group7]+_} != _ ]] && core_groups[$group7]=0
+        core_groups[$group7]=$(( ${core_groups[$group7]} + 1 ))
+    done < <(echo "${core_files[@]}" | xargs file | awk -F": " '/execfn:/{print $7}')
+    echo ""
+    echo "These types of core files were found:"
+    for group in "${!core_groups[@]}"; do
+        echo "${core_groups[$group]} files of $group"
+    done | sort -n
     hr
-    selections+=("c")
+    (( ${#core_files[@]} > 0 )) && selections+=("c")
 fi
 
 #echo "Usage of /mnt: $usage_mnt"
@@ -426,7 +535,7 @@ fi
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   delete extra things now                                               #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#set -x
+
 if contains "selections" "a" ; then
     note "Automatic deletion will include: "
     printf "%s\n" "${selections[@]}"
@@ -441,16 +550,19 @@ if contains "selections" "a" ; then
 fi
 
 if (( ${#selections[@]} > 0 )) ; then
-    debug "Doing selected cleanup"
+    debug "Doing selected cleanup: "
+    printf "    %s\n" "${selections[@]}"
+    sleep 1
     for z in "${selections[@]}"; do
-        debug "Will perform ${desc[$z]}"
+        debug "Performing ${desc[$z]}"
         ${cleaners_map[$z]}
         selections=("${selections[@]/$z}")
     done
     survey_areas
     disk_usage_report
+else
+    debug "No selections present"
 fi
-set +x
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #   ask for things to remove if we are interactive                        #
@@ -466,8 +578,10 @@ while [[ $choice != q ]]; do
     echo "  k) ath10k crash files         ${totals[k]}"
     echo "  l) old /var/log files         ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     ${totals[m]}"
+    echo "  n) purge dnf/yum cache        ${totals[n]}"
     echo "  r) compress .csv report files ${totals[r]}"
     echo "  t) clean /var/tmp             ${totals[t]}"
+    echo "  q) quit"
     read -p "[1-5] or q ? " choice
 
     case "$choice" in

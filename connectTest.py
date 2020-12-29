@@ -15,7 +15,7 @@ from generic_cx import GenericCx
 mgrURL = "http://localhost:8080/"
 staName = "sta0"
 staNameUri = "port/1/1/" + staName
-
+suppress_related = True
 
 class ConnectTest(LFCliBase):
     def __init__(self, lfhost, lfport):
@@ -47,7 +47,7 @@ class ConnectTest(LFCliBase):
             if response["interface"] is not None:
                 print("removing old station")
                 removePort(1, staName, mgrURL)
-                waitUntilPortsDisappear(1, mgrURL, [staName])
+                waitUntilPortsDisappear(mgrURL, [staName])
                 time.sleep(1)
 
         url = "cli-json/add_sta"
@@ -56,14 +56,15 @@ class ConnectTest(LFCliBase):
             "resource": 1,
             "radio": "wiphy0",
             "sta_name": staName,
-            "ssid": "jedway-wpa2-x2048-5-1",
-            "key": "jedway-wpa2-x2048-5-1",
+            "ssid": "jedway-wpa2-x2048-4-4",
+            "key": "jedway-wpa2-x2048-4-4",
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": (0x400 + 0x20000 + 0x1000000000)  # create admin down
         }
-        super().json_post(url, data)
-        time.sleep(0.05)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
+        wait_until_ports_appear(mgrURL, [staName], True)
+        time.sleep(8)
         reqURL = "cli-json/set_port"
         data = {
             "shelf": 1,
@@ -72,7 +73,7 @@ class ConnectTest(LFCliBase):
             "current_flags": (0x1 + 0x80000000),
             "interest": (0x2 + 0x4000 + 0x800000)  # current, dhcp, down,
         }
-        super().json_post(reqURL, data)
+        super().json_post(reqURL, data, suppress_related_commands_=suppress_related)
         time.sleep(0.5)
         super().json_post("cli-json/set_port", portUpRequest(1, staName))
 
@@ -81,7 +82,7 @@ class ConnectTest(LFCliBase):
                 "resource": 1,
                 "port": staName,
                 "probe_flags": 1}
-        super().json_post(reqURL, data)
+        super().json_post(reqURL, data, suppress_related_commands_=suppress_related)
         time.sleep(0.5)
         waitUntilPortsAdminUp(1, mgrURL, [staName])
 
@@ -121,11 +122,11 @@ class ConnectTest(LFCliBase):
             "url": "dl http://localhost/ /dev/null",
             "proxy_port" : "NA"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         data = {
             "endpoint": "all"
         }
-        super().json_post("/cli-json/nc_show_endpoints", data)
+        super().json_post("/cli-json/nc_show_endpoints", data, suppress_related_commands_=suppress_related)
         time.sleep(5)
 
         # create fileio endpoint
@@ -138,7 +139,7 @@ class ConnectTest(LFCliBase):
             "type": "fe_nfs",
             "directory": "/mnt/fe-test"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(1)
         data = {
             "endpoint": "all"
@@ -158,7 +159,7 @@ class ConnectTest(LFCliBase):
         data = {
             "endpoint": "all"
         }
-        super().json_post("/cli-json/nc_show_endpoints", data)
+        super().json_post("/cli-json/nc_show_endpoints", data, suppress_related_commands_=suppress_related)
 
         # create redirects for wanlink
         url = "/cli-json/add_rdd"
@@ -168,7 +169,7 @@ class ConnectTest(LFCliBase):
             "port": "rdd0",
             "peer_ifname": "rdd1"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
 
         url = "/cli-json/add_rdd"
         data = {
@@ -177,7 +178,7 @@ class ConnectTest(LFCliBase):
             "port": "rdd1",
             "peer_ifname": "rdd0"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
 
         # reset redirect ports
@@ -187,7 +188,7 @@ class ConnectTest(LFCliBase):
             "resource": 1,
             "port": "rdd0"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
 
         url = "/cli-json/reset_port"
         data = {
@@ -195,7 +196,7 @@ class ConnectTest(LFCliBase):
             "resource": 1,
             "port": "rdd1"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
 
         # create wanlink endpoints
@@ -208,7 +209,7 @@ class ConnectTest(LFCliBase):
             "latency": 20,
             "max_rate": 1544000
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
 
         url = "/cli-json/add_wl_endp"
         data = {
@@ -219,12 +220,12 @@ class ConnectTest(LFCliBase):
             "latency": 30,
             "max_rate": 1544000
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
         data = {
             "endpoint": "all"
         }
-        super().json_post("/cli-json/nc_show_endpoints", data)
+        super().json_post("/cli-json/nc_show_endpoints", data, suppress_related_commands_=suppress_related)
 
         time.sleep(10)
 
@@ -246,7 +247,7 @@ class ConnectTest(LFCliBase):
             "tx_endp": "l4Test",
             "rx_endp": "NA"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
 
         # create fileio cx
@@ -257,7 +258,7 @@ class ConnectTest(LFCliBase):
             "tx_endp": "fioTest",
             "rx_endp": "NA"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
 
         # create generic cx
@@ -268,7 +269,7 @@ class ConnectTest(LFCliBase):
             "tx_endp": "genTest1",
             "rx_endp": "genTest2"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.05)
 
         # create wanlink cx
@@ -279,12 +280,12 @@ class ConnectTest(LFCliBase):
             "tx_endp": "wlan0",
             "rx_endp": "wlan1"
         }
-        super().json_post(url, data)
+        super().json_post(url, data, suppress_related_commands_=suppress_related)
         time.sleep(.5)
         data = {
             "endpoint": "all"
         }
-        super().json_post("/cli-json/nc_show_endpoints", data)
+        super().json_post("/cli-json/nc_show_endpoints", data, suppress_related_commands_=suppress_related)
 
         cxNames = ["testTCP", "testUDP", "CX_l4Test", "CX_fioTest", "CX_genTest1", "CX_wlan0"]
 
@@ -451,7 +452,7 @@ class ConnectTest(LFCliBase):
                 "resource": 1,
                 "port": staName
             }
-            super().json_post(reqURL, data)
+            super().json_post(reqURL, data, suppress_related_commands_=suppress_related)
 
             endpNames = ["testTCP-A", "testTCP-B",
                          "testUDP-A", "testUDP-B",
