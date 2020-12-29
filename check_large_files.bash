@@ -225,9 +225,12 @@ clean_old_kernels() {
 }
 
 clean_core_files() {
-    note "Cleaning core files WIP"
+    note "Cleaning core files..."
+    if (( ${#core_files[@]} < 1 )); then
+        return 0
+    fi
     if (( $verbose > 0 )); then
-        printf "%s\n" "${core_files[@]}"
+        printf "     %s\n" < <( echo "${core_files[@]}" | sort | uniq )
     fi
 }
 
@@ -294,8 +297,8 @@ survey_core_files() {
     cd /
     #set -x
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
-    if [[ $verbose = 1 ]]; then
-        printf "%s\n" "${core_files[@]}"
+    if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
+        printf "    %s\n" "${core_files[@]}" | head
     fi
     if (( ${#core_files[@]} > 0 )); then
         totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
@@ -407,11 +410,26 @@ disk_usage_report
 if (( ${#core_files[@]} > 0 )); then
     note "Core Files detected:"
     hr
-    #printf '     %s\n' "${core_files[@]}"
-    for core in "${core_files[@]}"; do
-        file $core
-    done
+    filestr=""
+    declare -A core_groups
+    set -e
+    # note that the long pipe at the bottom of the loop is the best way to get
+    # the system to operate with thousands of core files
+    while read group7; do
+        (( $verbose > 0 )) && echo -n '.'
+        group7="${group7%, *}"
+        group7="#${group7//\'/}"
+        [[ ${core_groups[$group7]+_} != _ ]] && core_groups[$group7]=0
+        core_groups[$group7]=$(( ${core_groups[$group7]} + 1 ))
+
+    done < <(echo "${core_files[@]}" | xargs file | awk -F": " '/execfn:/{print $7}')
+    echo ""
+    echo "These types of core files were found:"
+    while read group; do
+        echo "    $group -> ${core_groups[$group]}"
+    done < <(echo "${!core_groups[@]}" | sort )
     hr
+    set +x
     selections+=("c")
 fi
 
