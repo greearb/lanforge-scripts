@@ -292,7 +292,7 @@ clean_var_log() {
     cd "$starting_dir"
 }
 
-clean_mnt_fl_files() {
+clean_mnt_lf_files() {
     note "clean mnt lf files WIP"
     if (( $verbose > 0 )); then
         printf "%s\n" "${mnt_lf_files[@]}"
@@ -310,9 +310,13 @@ compress_report_data() {
 clean_var_tmp() {
     note "clean var tmp"
     if (( $verbose > 0 )); then
-        printf "%s\n" "${var_tmp_files[@]}"
+        printf "    %s\n" "${var_tmp_files[@]}"
+        sleep 1
     fi
-    rf -f "${var_tmp_files[@]}"
+    for f in "${var_tmp_files[@]}"; do
+        rf -f "$f"
+        sleep 0.2
+    done
 }
 
 
