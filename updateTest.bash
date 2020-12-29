@@ -24,7 +24,7 @@ D_MODE="${HL}/LANforgeGUI_${verNum}/DAEMON_MODE"
 trap do_sigint HUP
 trap do_sigint ABRT
 trap do_sigint INT
-trap do_sigint KILL
+# trap do_sigint KILL # cannot be trapped
 trap do_sigint PIPE
 trap do_sigint QUIT
 trap do_sigint SEGV
@@ -129,7 +129,7 @@ touch "$NO_AUTO"
 pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
 touch $ST
-if [ ! -z "SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
+if [ ! -z "$SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
    echo "skipping installation" | tee -a $GUIUpdate
 else
    echo "doing installation"
