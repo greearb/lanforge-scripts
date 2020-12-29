@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""
+    Script for creating a variable number of stations and attempting to connect them to an SSID.
+    A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
+    pass, otherwise, the test will fail.
+
+    Use `./test_ipv4_connection.py` --help to see command line usage and options
+"""
 
 import sys
 import os
@@ -142,7 +149,7 @@ def main():
             ''',
 
         description='''\
-        test_ipv4_connection.py
+test_ipv4_connection.py
 --------------------
 Command example:
 ./test_ipv4_connection.py 
@@ -154,8 +161,8 @@ Command example:
     --passwd BLANK 
     --debug
             ''')
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    # required = parser.add_argument_group('required arguments')
+    # required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
     args = parser.parse_args()
     #if args.debug:
