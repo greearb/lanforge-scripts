@@ -228,7 +228,7 @@ def main():
     ip_var_test.start(False, False)
 
     if args.report_file is None:
-        if args.output_format.isin(['csv','json','html','hdf','stata','pickle','pdf','parquet']):
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet']:
             report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.' + args.output_format
             output=args.output_format
         else:
