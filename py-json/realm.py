@@ -1102,7 +1102,7 @@ class L3CXProfile(LFCliBase):
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 if output_format.lower() != 'excel':
-                    raise ValueError('Filename %s does not match output format %s' (report_file, output_format))
+                    raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
@@ -1125,7 +1125,7 @@ class L3CXProfile(LFCliBase):
                 print(response)
             value_map[datetime.datetime.now()]=response
             if datetime.datetime.now() > end_time:
-                break;
+                break
             new_cx_rx_values = self.__get_rx_values()
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)

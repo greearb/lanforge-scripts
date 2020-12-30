@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+"""
+    This script will create a variable number of stations that will attempt to use layer 4 endpoints to generate traffic.
+    A test will run a specified number of times with periodic checks for traffic successfully being received every ten minutes.
+    The test will monitor the urls/s column of the endpoints. Being at or above 90% of the chosen url rate at each interval
+    will pass the test, otherwise it will fail
+
+    Use './test_ipv4_l4_urls_per_ten.py --help' to see command line usage and options
+"""
+
 import sys
 import os
 if sys.version_info[0] != 3:

@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+    This script will create a variable number of stations that will attempt to use layer 4 endpoints to generate traffic over ftp.
+    A test will run for a specified amount of time with periodic checks for traffic successfully being received. The test will
+    monitor the bytes-wr column of the endpoints. An increase at every test interval will pass the test, otherwise it will fail
+
+    Use './test_ipv4_l4_ftp_wifi.py --help' to see command line usage and options
+"""
+
 import sys
 
 if sys.version_info[0] != 3:
@@ -160,7 +168,7 @@ def main():
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-                Create layer-4 endpoints and test that the bytes-rd from the chosen URL are increasing over the
+                Create layer-4 endpoints and test that the bytes-wr from the chosen URL are increasing over the
                 duration of the test
                 ''',
 
