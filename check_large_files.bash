@@ -358,7 +358,7 @@ clean_var_tmp() {
         sleep 1
     fi
     for f in "${var_tmp_files[@]}"; do
-        rf -f "$f"
+        rm -f "$f"
         sleep 0.2
     done
 }
