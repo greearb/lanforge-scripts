@@ -137,7 +137,7 @@ def main():
         prog='test_ipv4_connection.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-         Create stations that attempt to authenticate, associate, and receive IP addresses on the 
+         Create stations that attempt to authenticate, associate, and receive IP addresses on the
          chosen SSID
             ''',
 
@@ -145,17 +145,17 @@ def main():
         test_ipv4_connection.py
 --------------------
 Command example:
-./test_ipv4_connection.py 
-    --upstream_port eth1 
-    --radio wiphy0 
-    --num_stations 3 
-    --security open 
-    --ssid netgear 
-    --passwd BLANK 
+./test_ipv4_connection.py
+    --upstream_port eth1
+    --radio wiphy0
+    --num_stations 3
+    --security open
+    --ssid netgear
+    --passwd BLANK
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
     args = parser.parse_args()
     #if args.debug:
@@ -203,7 +203,7 @@ Command example:
     if ip_test.passes():
         ip_test.add_event(name="test_ipv4_connection.py", message="Full test passed, all stations associated and got IP")
         ip_test.exit_success()
-        
+
 
 if __name__ == "__main__":
     main()
