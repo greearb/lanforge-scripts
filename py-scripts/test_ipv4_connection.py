@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""
+    Script for creating a variable number of stations and attempting to connect them to an SSID.
+    A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
+    pass, otherwise, the test will fail.
+
+    Use './test_ipv4_connection.py' --help to see command line usage and options
+"""
 
 import sys
 import os
