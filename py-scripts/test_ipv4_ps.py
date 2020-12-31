@@ -184,8 +184,8 @@ Generic command layout:
 --upstream_port eth1
 --radio wiphy3
 --num_stations 4
--ssid jedway-wpa2-x2048-4-1
--passwd jedway-wpa2-x2048-4-1
+--ssid jedway-wpa2-x2048-4-1
+--passwd jedway-wpa2-x2048-4-1
 --security  {wpa2|open|wpa|wpa3}
 --a_min 250000
 --b_min 260000

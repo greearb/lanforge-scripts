@@ -1208,7 +1208,6 @@ class L3CXProfile(LFCliBase):
                 pass
 
 
-
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/show_cxe", {

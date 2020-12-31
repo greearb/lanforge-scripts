@@ -9,19 +9,19 @@
     In this example, Another Lanforge is used as DUT
     It also have a function : GenerateReport that generates the report in xlsx format as well as it plots the Graph of throughput over time with temperature
     It also have Plot function that generates a html page that contains the plot
-    
-    
-    Prerequisite 
+
+
+    Prerequisite
     Start the Lanforge Manager both Sides
-    
+
     Installation
     pip install paramiko
     pip install bokeh
     pip install XlsxWriter
 
     Example
-    ./test_l3_scenario_throughput.py --manager 192.168.200.18 --scenario Test_Scenario --report_name test_Report --duration 5 --test_detail "Single Station Test"   
-    
+    ./test_l3_scenario_throughput.py --manager 192.168.200.18 --scenario Test_Scenario --report_name test_Report --duration 5 --test_detail "Single Station Test"
+
     This Script is intended to automate the testing of DUT That has stations as well as AP.
     To automate the simultaenous testing and check the DUT Temperature
 '''
@@ -54,6 +54,7 @@ from bokeh.models import LinearAxis, Range1d
 from bokeh.models import HoverTool, Range1d
 from bokeh.layouts import row
 from datetime import datetime
+import socket
 
 # Specifically for Measuring CPU Core Temperatures
 class Login_DUT:
@@ -78,14 +79,14 @@ class Login_DUT:
         print(out_lines[len(out_lines)-3], out_lines[len(out_lines)-2])
         self.data_core1.append(out_lines[len(out_lines)-3])
         self.data_core2.append(out_lines[len(out_lines)-2])
-        
+
 
     def Connect(self):
         self.CLIENT.load_system_host_keys()
         self.CLIENT.set_missing_host_key_policy(pm.AutoAddPolicy())
         try:
             self.CLIENT.connect(self.host, username=self.USERNAME, password=self.PASSWORD,timeout=10)
-            return None    
+            return None
         except exception as error:
             self.CLIENT = 0;
             return None
@@ -105,7 +106,7 @@ class LoadScenario(LFCliBase):
 
 
 
-# Generates XLSX Report        
+# Generates XLSX Report
 def GenerateReport(scenario, detail, throughput_sta, throughput_vap, absolute_time, relative_time, core1_temp, core2_temp, duration, name):
     workbook = xlsxwriter.Workbook(name)
     worksheet = workbook.add_worksheet()
@@ -118,8 +119,8 @@ def GenerateReport(scenario, detail, throughput_sta, throughput_vap, absolute_ti
     worksheet.write('F2', 'CORE 1 TEMP (Degree Celsius)')
     core1=[]
     core2=[]
-   
-    
+
+
     j=3
     for i in absolute_time:
         worksheet.write('A'+str(j),i)
@@ -129,7 +130,7 @@ def GenerateReport(scenario, detail, throughput_sta, throughput_vap, absolute_ti
     for i in relative_time:
         worksheet.write('B'+str(j),i)
         j=j+1
-   
+
     sta_throu=[]
     vap_throu=[]
     j=3
@@ -170,16 +171,16 @@ def plot(throughput_sta, throughput_vap, core1_temp, core2_temp, Time):
     s1.title.text = "WIFI Throughput vs Temperature Plot"
     s1.xaxis.axis_label = "Time "
     s1.yaxis.axis_label = "Throughput in Mbps"
-    
+
     s1.line( Time, throughput_sta, color='black', legend_label ="Throughput Over Station Connections ")
     #s1.circle(Time, throughput_sta, color='red')
 
     s1.line( Time, throughput_vap, color='blue', legend_label ="Throughput Over VAP ")
     #s1.circle(Time, throughput_vap, color='blue')
-    
+
     s1.extra_y_ranges = {"Temperature": Range1d(start=0, end=150)}
     s1.add_layout(LinearAxis(y_range_name="Temperature", axis_label="Temperature in Degree Celsius"), 'right')
-    
+
     s1.line(Time, core1_temp, y_range_name='Temperature', color='red', legend_label ="CPU CORE 0 TEMPERATURE ")
     #s1.circle(Time, core1_temp, y_range_name='Temperature', color='red')
 
@@ -188,7 +189,7 @@ def plot(throughput_sta, throughput_vap, core1_temp, core2_temp, Time):
 
     show(s1)
 
-    
+
 # Creates the Instance for LFCliBase
 class VAP_Measure(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port):
@@ -199,7 +200,7 @@ class VAP_Measure(LFCliBase):
 
 
 
-# Added Standard Function to Fetch L3 CX and VAP Directly 
+# Added Standard Function to Fetch L3 CX and VAP Directly
 class FindPorts(LFCliBase):
      def __init__(self, host, port, security_debug_on=False, _exit_on_error=False,_exit_on_fail=False):
         super().__init__(host, port, _debug=security_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
@@ -217,20 +218,21 @@ class FindPorts(LFCliBase):
      def FindVAP(self):
          return self.local_realm.vap_list()
 
-# Utility to Find the Traffic Running on Existing CX and VAP   
+# Utility to Find the Traffic Running on Existing CX and VAP
 def PortUtility(host, port, duration, report_name, scenario, detail):
 
     lf_utils = FindPorts(host, port)
-    
+
     # cx data will be having all parameters of L3 Connections available in the Realm. It is needed to get the names of all L3 CX, which is stored in cx_names. It is required so as we can extract the real time data running on that CX
     cx_data = lf_utils.FindExistingCX()
     #print(cx_data)
-    
+
     # vap_list will have the List of all the vap ports available, This is required to get the VAP names in order to fetch the throughput over that vap
     vap_list =lf_utils.FindVAP()
     vap_measure_obj=VAP_Measure(host,port)
-
-    dut_temp_obj = Login_DUT(1, "Thread-1", "192.168.200.18")
+    
+    hostname=socket.gethostbyname(socket.gethostname())
+    dut_temp_obj = Login_DUT(1, "Thread-1", hostname)
 
     #print(vap_list)
     vap_names=[]
@@ -243,7 +245,7 @@ def PortUtility(host, port, duration, report_name, scenario, detail):
     cx_names.remove('uri')
     absolute_time=[]
     temp_time =[]
-    
+
     Total_Throughput_CX_Side =[]
     Total_Throughput_VAP_Side =[]
     print(lf_utils.local_realm.json_get("/cx/"+cx_names[0]).get(cx_names[0]).get('state'))
@@ -270,22 +272,22 @@ def PortUtility(host, port, duration, report_name, scenario, detail):
     print(Total_Throughput_CX_Side)
     print(Total_Throughput_VAP_Side)
     GenerateReport(scenario, detail, Total_Throughput_CX_Side, Total_Throughput_VAP_Side, absolute_time, relative_time, dut_temp_obj.data_core1, dut_temp_obj.data_core2, duration, report_name)
-    
+
 # main method
 def main():
 
 
     parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
-    
+
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
 
     parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)")
     parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
     parser.add_argument("-td", "--test_detail", type=str, help="Enter the Test Detail in Quotes ")
-    
+
     args = None
-     
+
     try:
       args = parser.parse_args()
       # Lanforge Manager IP Address
@@ -310,26 +312,25 @@ def main():
     except Exception as e:
       logging.exception(e)
       exit(2)
-    
 
-    
+
+    hostname=socket.gethostbyname(socket.gethostname())
     # Loading DUT Scenario
     Scenario_1 = LoadScenario("192.168.200.18", 8080, "Lexus_Dut")
-    
-    
+
+
     # Loading LF Scenario
     DB_Lanforge_2 = "LF_Device"
     Scenario_2 = LoadScenario(manager, 8080, scenario)
     #Wait for Sometime
     time.sleep(10)
-   
+
     # Port Utility function for reading CX and VAP
     PortUtility(manager,8080, duration, report_name, scenario, test_detail)
-    
-    
-        
 
-    
+
+
+
+
 if __name__ == '__main__':
     main()
-
