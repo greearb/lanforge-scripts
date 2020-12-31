@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+    This script will create a variable number of stations each with their own set of cross-connects and endpoints.
+    It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+    This test will pass if all stations increase traffic over the full test duration.
+
+    Use './test_ipv4_variable_time.py --help' to see command line usage and options
+"""
+
 import sys
 import os
 
@@ -141,37 +149,37 @@ def main():
             ''',
 
         description='''\
-            test_ipv4_variable_time.py:
-            --------------------
-            Generic command layout:
+test_ipv4_variable_time.py:
+--------------------
+Generic command layout:
 
-            python3 ./test_ipv4_variable_time.py
-                --upstream_port eth1
-                --radio wiphy0
-                --num_stations 32
-                --security {open|wep|wpa|wpa2|wpa3} \\
-                --mode   1
-                    {"auto"   : "0",
-                    "a"      : "1",
-                    "b"      : "2",
-                    "g"      : "3",
-                    "abg"    : "4",
-                    "abgn"   : "5",
-                    "bgn"    : "6",
-                    "bg"     : "7",
-                    "abgnAC" : "8",
-                    "anAC"   : "9",
-                    "an"     : "10",
-                    "bgnAC"  : "11",
-                    "abgnAX" : "12",
-                    "bgnAX"  : "13",
-                --ssid netgear
-                --password admin123
-                --test_duration 2m (default)
-                --a_min 1000
-                --b_min 1000
-                --ap "00:0e:8e:78:e1:76"
-                --debug
+python3 ./test_ipv4_variable_time.py
+    --upstream_port eth1
+    --radio wiphy0
+    --num_stations 32
+    --security {open|wep|wpa|wpa2|wpa3} \\
+    --mode   1
+        {"auto"   : "0",
+        "a"      : "1",
+        "b"      : "2",
+        "g"      : "3",
+        "abg"    : "4",
+        "abgn"   : "5",
+        "bgn"    : "6",
+        "bg"     : "7",
+        "abgnAC" : "8",
+        "anAC"   : "9",
+        "an"     : "10",
+        "bgnAC"  : "11",
+        "abgnAX" : "12",
+        "bgnAX"  : "13",
+    --ssid netgear
+    --password admin123
+    --test_duration 2m (default)
+    --a_min 1000
+    --b_min 1000
+    --ap "00:0e:8e:78:e1:76"
+    --debug
             ''')
 
     required_args=None

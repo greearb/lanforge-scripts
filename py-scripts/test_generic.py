@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+"""
+    This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
+    including ping, speedtest, generic types. The test will check the last result column for different things
+    depending on what test is being run. Ping will test for successful pings, speedtest will test for download
+    speed, upload speed, and ping time, generic will test for successful generic commands
+
+    Use './test_generic.py --help' to see command line usage and options
+"""
+
 import pprint
 import sys
 import os
@@ -187,7 +197,8 @@ def main():
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
-        description='''test_generic.py
+        description='''
+test_generic.py
 --------------------
 Generic command example:
 python3 ./test_generic.py 
