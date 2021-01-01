@@ -202,63 +202,7 @@ kernel_to_relnum() {
 
 clean_old_kernels() {
     note "Cleaning old kernels..."
-    local pkg
-    local k_pkgs=()
-    local selected_k=()
-    local k_series=()
-    # need to avoid most recent fedora kernel
-    if [ ! -x /usr/bin/rpm ]; then
-        note "Does not appear to be an rpm system."
-        return 0
-    fi
-    local ur=$( uname -r )
-    local current_relnum=$( kernel_to_relnum $ur )
-    local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
-    local pkg
-    for pkg in "${kern_pkgs[@]}"; do
-        if [[ $pkg = kernel-tools-* ]] \
-            || [[ $pkg = kernel-headers-* ]] \
-            || [[ $pkg = kernel-devel-* ]] ; then
-            continue
-        fi
-        k_pkgs+=( $pkg )
-    done
-    for pkg in "${k_pkgs[@]}"; do
-        pkg=${pkg##kernel-modules-extra-}
-        pkg=${pkg##kernel-modules-}
-        pkg=${pkg##kernel-core-}
-        pkg=${pkg%.fc??.x86_64}
-        kernel_series=$( kernel_to_relnum ${pkg##kernel-} )
 
-        #debug "K SER: $kernel_series"
-        if contains k_series $kernel_series; then
-            continue
-        elif [[ x$current_relnum = x$kernel_series ]]; then
-            debug "avoiding current kernel [$kernel_series]"
-        else
-            k_series+=($kernel_series)
-        fi
-    done
-
-    IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
-    for pkg in "${k_series[@]}"; do
-        debug "series $pkg"
-    done
-    if (( "${#k_series[@]}" > 1 )); then
-        local i=0
-        # lets try and avoid the last item assuming that is the most recent
-        for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
-            debug "item $i is ${k_series[$i]}"
-        done
-    fi
-
-    set +x
-    if (( ${#selected_k[@]} < 1 )); then
-        note "No kernels selected for removal"
-    fi
-    if (( $quiet < 1 )); then
-        printf "Would remove %s\n" "${selected_k[@]}"
-    fi
 }
 
 clean_core_files() {
@@ -286,13 +230,14 @@ clean_lf_downloads() {
     fi
     note "Clean LF downloads..."
     if (( $verbose > 0 )); then
-        printf "Delete:[%s]\n" "${lf_downloads[@]}" | sort
+        echo "Would Delete: "
+        printf "[%s] " "${lf_downloads[@]}" | sort
     fi
     cd /home/lanforge/Downloads
     for f in "${lf_downloads[@]}"; do
         [[ "$f" = "/" ]] && echo "Whuuut? this is not good, bye." && exit 1
-        echo "Next:[$f]"
-        sleep 0.2
+        # echo "Next:[$f]"
+        sleep 0.02
         rm -f "$f"
     done
     cd "$starting_dir"
@@ -363,13 +308,123 @@ clean_var_tmp() {
     done
 }
 
-
-kernel_files=()
+kernel_files=()         # temp
+lib_module_dirs=()      # temp
+removable_kernels=()    # these are for CT kernels
+removable_libmod_dirs=() # these are for CT kernels
+removable_packages=()   # these are for Fedora kernels
 survey_kernel_files() {
-    debug "Surveying Kernel files"
-    mapfile -t kernel_files < <(ls /boot/* /lib/modules/* 2>/dev/null)
-    # totals[b]=$(du -hc "$kernel_files" | awk '/total/{print $1}')
-    local boot_u=
+    removable_kernels=()
+    removable_libmod_dirs=()
+    removable_packages=()
+    note "Surveying Kernel files"
+    mapfile -t kernel_files < <(find /boot -maxdepth 1 -type f -a \( \
+        -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
+        2>/dev/null | grep -v rescue | sort)
+    mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+    local booted=`uname -r`
+    local could_remove=()
+    debug "** You are running kernel $booted **"
+
+    note "CT kernels elegible for removal: "
+    for f in "${kernel_files[@]}"; do
+        [[ $f = /boot/init* ]] || continue
+        [[ $f =~ *.fc*.x86_64 ]] || continue
+        f=${f#/boot/init*-}
+        f=${f%.img}
+        #f=${f%.fc*}
+
+        if [[ $f =~ $booted ]]; then
+            debug "ignoring $f"
+        else
+            removable_kernels+=($f)
+        fi
+    done
+    if (( $verbose > 0 )); then
+        printf "    [%s]\n" "${removable_kernels[@]}"
+    fi
+
+    note "Module directories elegible for removal: "
+    for f in "${lib_module_dirs[@]}"; do
+        echo "[$f]"
+        f=${f#/lib/modules/}
+        #f=${f%.img}
+        #f=${f%.fc*}
+        if [[ $f =~ $booted ]]; then
+            debug "ignoring $f"
+        else
+            removable_libmod_dirs+=($f)
+        fi
+    done
+    if (( $verbose > 0 )); then
+        printf "    [%s]\n" "${removable_libmod_dirs[@]}"
+    fi
+
+    local boot_image_sz=$(du -hc "${kernel_files[@]}" | awk '/total/{print $1}')
+    local lib_dir_sz=$(du -hc "${lib_module_dirs[@]}" | awk '/total/{print $1}')
+    totals[b]="kernels: $boot_image_sz, modules: $lib_dir_sz"
+    local booted=`uname -r`
+    debug "You are running kernel $booted"
+
+
+
+    local pkg
+    local k_pkgs=()
+    local selected_k=()
+    local k_series=()
+    # need to avoid most recent fedora kernel
+    if [ ! -x /usr/bin/rpm ]; then
+        note "Does not appear to be an rpm system."
+        return 0
+    fi
+    local ur=$( uname -r )
+    local current_relnum=$( kernel_to_relnum $ur )
+    local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
+    local pkg
+    for pkg in "${kern_pkgs[@]}"; do
+        if [[ $pkg = kernel-tools-* ]] \
+            || [[ $pkg = kernel-headers-* ]] \
+            || [[ $pkg = kernel-devel-* ]] ; then
+            continue
+        fi
+        k_pkgs+=( $pkg )
+    done
+    for pkg in "${k_pkgs[@]}"; do
+        pkg=${pkg##kernel-modules-extra-}
+        pkg=${pkg##kernel-modules-}
+        pkg=${pkg##kernel-core-}
+        pkg=${pkg%.fc??.x86_64}
+        kernel_series=$( kernel_to_relnum ${pkg##kernel-} )
+
+        #debug "K SER: $kernel_series"
+        if contains k_series $kernel_series; then
+            continue
+        elif [[ x$current_relnum = x$kernel_series ]]; then
+            debug "avoiding current kernel [$kernel_series]"
+        else
+            k_series+=($kernel_series)
+        fi
+    done
+
+    IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
+    for pkg in "${k_series[@]}"; do
+        debug "series $pkg"
+    done
+    if (( "${#k_series[@]}" > 1 )); then
+        local i=0
+        # lets try and avoid the last item assuming that is the most recent
+        for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
+            debug "item $i is ${k_series[$i]}"
+        done
+    fi
+
+    set +x
+    if (( ${#selected_k[@]} < 1 )); then
+        note "No kernels selected for removal"
+    fi
+    if (( $quiet < 1 )); then
+        printf "Would remove %s\n" "${selected_k[@]}"
+    fi
 }
 
 # Find core files
