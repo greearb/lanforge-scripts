@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 """
-    This script will create a variable number of stations that will attempt to use layer 4 endpoints to generate traffic over ftp.
+  - This script will create a variable number of stations that will attempt to use layer 4 endpoints to generate traffic over ftp.
     A test will run a specified number of times with periodic checks for traffic successfully being received every ten minutes.
     The test will monitor the urls/s column of the endpoints. Being at or above 90% of the chosen url rate at each interval
     will pass the test, otherwise it will fail
-
-    Use './test_ipv4_l4_ftp_urls_per_ten.py --help' to see command line usage and options
+  - Use './test_ipv4_l4_ftp_urls_per_ten.py --help' to see command line usage and options
+  - Copyright 2021 Candela Technologies Inc
+  - License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import sys

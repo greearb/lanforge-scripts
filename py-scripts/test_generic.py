@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 """
-    This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
+  - This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
     including ping, speedtest, generic types. The test will check the last result column for different things
     depending on what test is being run. Ping will test for successful pings, speedtest will test for download
     speed, upload speed, and ping time, generic will test for successful generic commands
-
-    Use './test_generic.py --help' to see command line usage and options
+  - Use './test_generic.py --help' to see command line usage and options
+  - Copyright 2021 Candela Technologies Inc
+  - License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import pprint
