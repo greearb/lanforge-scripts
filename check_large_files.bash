@@ -310,6 +310,8 @@ clean_var_tmp() {
 
 kernel_files=()         # temp
 lib_module_dirs=()      # temp
+declare -a kernel_sort_names
+declare -a libmod_sort_names
 removable_kernels=()    # these are for CT kernels
 removable_libmod_dirs=() # these are for CT kernels
 removable_packages=()   # these are for Fedora kernels
@@ -317,6 +319,8 @@ survey_kernel_files() {
     removable_kernels=()
     removable_libmod_dirs=()
     removable_packages=()
+    kernel_sort_names=()
+    libmod_sort_names=()
     note "Surveying Kernel files"
     mapfile -t kernel_files < <(find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
@@ -324,9 +328,9 @@ survey_kernel_files() {
     mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
     local booted=`uname -r`
     local could_remove=()
+    local g
     debug "** You are running kernel $booted **"
 
-    note "CT kernels elegible for removal: "
     for f in "${kernel_files[@]}"; do
         [[ $f = /boot/init* ]] || continue
         [[ $f =~ *.fc*.x86_64 ]] || continue
@@ -335,38 +339,51 @@ survey_kernel_files() {
         #f=${f%.fc*}
 
         if [[ $f =~ $booted ]]; then
-            debug "ignoring $f"
+            debug "ignoring CT kernel $f"
         else
+            g=$( kernel_to_relnum $f )
+            # debug "f[$f] g[$g]"
+            kernel_sort_names[$g]="$f"
             removable_kernels+=($f)
         fi
     done
-    if (( $verbose > 0 )); then
-        printf "    [%s]\n" "${removable_kernels[@]}"
+    if (( $verbose > 0 )) && (( ${#kernel_sort_names[@]} > 0 )); then
+        echo "Removable CT kernels:"
+        while read g; do
+            printf "    [%s]\n" "${kernel_sort_names[$g]}"
+        done < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
     fi
 
     note "Module directories elegible for removal: "
     for f in "${lib_module_dirs[@]}"; do
-        echo "[$f]"
+        # echo "     [$f]"
         f=${f#/lib/modules/}
         #f=${f%.img}
         #f=${f%.fc*}
-        if [[ $f =~ $booted ]]; then
-            debug "ignoring $f"
+        if [[ $f =~ $booted ]] || [[ $f =~ *.fc*.x86_64 ]]; then
+            debug "Ignoring booted or Fedora module directory $f"
         else
-            removable_libmod_dirs+=($f)
+            g=$( kernel_to_relnum $f )
+            # debug "f[$f] g[$g] booted [$booted]"
+            # removable_libmod_dirs+=($f)
+            libmod_sort_names[$g]="$f"
         fi
     done
-    if (( $verbose > 0 )); then
-        printf "    [%s]\n" "${removable_libmod_dirs[@]}"
+    if (( $verbose > 0 )) && (( ${#libmod_sort_names[@]} > 0 )); then
+        echo "Removable libmod dirs: "
+        while read f; do
+            if [[ $f =~ $booted ]]; then
+                debug "Ignoring booted $booted module directory $f"
+                continue
+            fi
+            removable_libmod_dirs+=(${libmod_sort_names[$f]})
+            echo "    [${libmod_sort_names[$f]}]"
+        done < <( printf "%s\n" "${!libmod_sort_names[@]}" | sort | head -n -1)
     fi
 
     local boot_image_sz=$(du -hc "${kernel_files[@]}" | awk '/total/{print $1}')
     local lib_dir_sz=$(du -hc "${lib_module_dirs[@]}" | awk '/total/{print $1}')
     totals[b]="kernels: $boot_image_sz, modules: $lib_dir_sz"
-    local booted=`uname -r`
-    debug "You are running kernel $booted"
-
-
 
     local pkg
     local k_pkgs=()
@@ -403,27 +420,31 @@ survey_kernel_files() {
             debug "avoiding current kernel [$kernel_series]"
         else
             k_series+=($kernel_series)
+            kernel_sort_names[$kernel_series]="$pkg"
         fi
     done
 
     IFS=$'\n' k_series=($(sort <<<"${k_series[*]}" | uniq)); unset IFS
-    for pkg in "${k_series[@]}"; do
-        debug "series $pkg"
-    done
-    if (( "${#k_series[@]}" > 1 )); then
-        local i=0
-        # lets try and avoid the last item assuming that is the most recent
-        for i in $( seq 0 $(( ${#k_series[@]} - 2 )) ); do
-            debug "item $i is ${k_series[$i]}"
-        done
-    fi
+    while read ser; do
+        # debug "series [$ser] pkg [${kernel_sort_names[$ser]}]"
+        removable_pkgs+=("${kernel_sort_names[$ser]}")
+    done < <( printf "%s\n" "${!kernel_sort_names[@]}" | sort | head -n -1)
+
 
     set +x
     if (( ${#selected_k[@]} < 1 )); then
         note "No kernels selected for removal"
     fi
     if (( $quiet < 1 )); then
-        printf "Would remove %s\n" "${selected_k[@]}"
+        if (( ${#removable_pkgs[@]} > 0 )); then
+            printf "Would remove packages %s\n" "${removable_pkgs[@]}"
+        fi
+        if (( ${#removable_kernels[@]} > 0 )); then
+            printf "Would remove CT Kernels %s\n" "${removable_kernels[@]}"
+        fi
+        if (( ${#removable_libmod_dirs[@]} > 0 )); then
+            printf "Would remove CT modules %s\n" "${removable_libmod_dirs[@]}"
+        fi
     fi
 }
 
