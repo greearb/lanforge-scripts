@@ -214,18 +214,23 @@ clean_old_kernels() {
     echo ""
     echo ""
     note "Cleaning old CT kernels..."
-    sleep 2
     local f
-    for f in "${removable_packages[@]}"; do
-        echo "$f\*"
-    done | xargs /usr/bin/rpm -hve
+    if (( ${#removable_packages[@]} > 0 )); then
+        for f in "${removable_packages[@]}"; do
+            echo "$f\*"
+        done | xargs /usr/bin/rpm -hve
+    fi
+    if (( ${#removable_kernels[@]} > 0 )); then
+        for f in "${removable_kernels[@]}"; do
+            echo "$f"
+        done | xargs rm -f
+    fi
 
-    for f in "${removable_kernels[@]}"; do
-        echo "r m $f"
-    done
-    for f in "${removable_libmod_dirs[@]}"; do
-        echo "r m /lib/modules/$f"
-    done
+    if (( ${#removable_libmod_dirs[@]} > 0 )); then
+        for f in "${removable_libmod_dirs[@]}"; do
+            echo "/lib/modules/$f"
+        done | xargs rm -rf
+    fi
     echo ""
     echo ""
 }
@@ -346,9 +351,12 @@ survey_kernel_files() {
     removable_kernels=()
     removable_libmod_dirs=()
     removable_packages=()
-    kernel_sort_names=()
+    declare -A kernel_sort_names=()
+    declare -A kernel_sort_serial=()
     declare -A pkg_sort_names=()
-    libmod_sort_names=()
+    declare -A libmod_sort_names=()
+    local ser
+    local file
     note "Surveying Kernel files"
     mapfile -t kernel_files < <(find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
@@ -356,59 +364,66 @@ survey_kernel_files() {
     mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
     local booted=`uname -r`
 
-    local g
     debug "** You are running kernel $booted **"
+    # set -veux
+    local file
+    local fiile
+    for file in "${kernel_files[@]}"; do
+        # echo "kernel_file [$file]"
+        [[ $file =~ /boot/initramfs* ]] && continue
+        [[ $file =~ *.fc*.x86_64 ]] && continue
+        fiile=$( basename $file )
+        fiile=${fiile%.img}
 
-    for f in "${kernel_files[@]}"; do
-        [[ $f = /boot/init* ]] || continue
-        [[ $f =~ *.fc*.x86_64 ]] || continue
-        f=${f#/boot/init*-}
-        f=${f%.img}
-
-        if [[ $f =~ $booted ]]; then
-            debug "ignoring CT kernel $f"
+        if [[ $fiile =~ $booted ]]; then
+            debug "    ignoring booted CT kernel $file"
+            sleep 2
+            continue
         else
-            g=$( kernel_to_relnum $f )
-            # debug "f[$f] g[$g]"
-            kernel_sort_names[$g]="$f"
-            removable_kernels+=($f)
+            ser=$( kernel_to_relnum ${fiile#*ct} )
+            kernel_sort_serial[$ser]=1
+            # debug "file[$file] ser[$ser]"
+            kernel_sort_names["$file"]="$ser"
+            removable_kernels+=($file)
         fi
     done
-    if (( $verbose > 0 )) && (( ${#kernel_sort_names[@]} > 0 )); then
-        echo "Removable CT kernels:"
-        while read g; do
-            printf "    [%s]\n" "${kernel_sort_names[$g]}"
+    sleep 2
+    local booted_ser=$( kernel_to_relnum $booted )
+    if (( ${#kernel_sort_names[@]} > 0 )); then
+        declare -A ser_files
+        for file in "${!kernel_sort_names[@]}"; do
+            ser="${kernel_sort_names[$file]}"
+        done
+        note "Removable CT kernels:"
+        while read ser; do
+            (( $verbose > 0 )) && printf "    kernel file [%s]\n" "${kernel_sort_names[$ser]}"
+            removable_kernels+=(${kernel_sort_names["$ser"]})
         done < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
     fi
 
-    note "Module directories elegible for removal: "
-    for f in "${lib_module_dirs[@]}"; do
-        # echo "     [$f]"
-        f=${f#/lib/modules/}
-        #f=${f%.img}
-        #f=${f%.fc*}
-        if [[ $f =~ $booted ]]; then
-            debug "Ignoring booted module directory $f"
+    # note "Module directories elegible for removal: "
+    for file in "${lib_module_dirs[@]}"; do
+        file=${file#/lib/modules/}
+        if [[ $file =~ $booted ]]; then
+            debug "Ignoring booted module directory $file"
             continue
-        elif [[ $f = *.fc??.x86_64 ]]; then
-            debug "Ignoring Fedora module directory $f"
+        elif [[ $file = *.fc??.x86_64 ]]; then
+            debug "Ignoring Fedora module directory $file"
             continue
         else
-            g=$( kernel_to_relnum $f )
-            debug "MODULE f[$f] g[$g] booted [$booted]"
-            # removable_libmod_dirs+=($f)
-            libmod_sort_names[$g]="$f"
+            ser=$( kernel_to_relnum $file )
+            libmod_sort_names["$ser"]="$file"
         fi
     done
     if (( $verbose > 0 )) && (( ${#libmod_sort_names[@]} > 0 )); then
-        echo "Removable libmod dirs: "
-        while read f; do
-            if [[ $f =~ $booted ]]; then
-                debug "Ignoring booted $booted module directory $f"
+        # echo "Removable libmod dirs: "
+        while read file; do
+            if [[ $file =~ $booted ]]; then
+                debug "Ignoring booted $booted module directory $file"
                 continue
             fi
-            removable_libmod_dirs+=(${libmod_sort_names[$f]})
-            echo "    [${libmod_sort_names[$f]}]"
+            removable_libmod_dirs+=(${libmod_sort_names["$file"]})
+            echo "    [${libmod_sort_names["$file"]}]"
         done < <( printf "%s\n" "${!libmod_sort_names[@]}" | sort | head -n -1)
     fi
 
@@ -418,7 +433,6 @@ survey_kernel_files() {
 
     local pkg
     local k_pkgs=()
-    #local k_ver=()
     removable_pkg_series=()
 
     # need to avoid most recent fedora kernel
@@ -427,7 +441,6 @@ survey_kernel_files() {
         return 0
     fi
     local ur=$( uname -r )
-    #local current_relnum=$( kernel_to_relnum $ur )
     local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
     local ser
     local zpkg
@@ -453,11 +466,10 @@ survey_kernel_files() {
         zpkg=${pkg%.fc??.x86_64}
 
         if [[ $zpkg =~ $booted ]]; then
-            #echo "ignoring k pkg $zpkg cuz $booted"
             continue
         fi
         kernel_series=$( kernel_to_relnum ${zpkg##kernel-} )
-        #1>&2 echo "....... ....... Kernel series[$kernel_series]"
+
         pkg_to_ser[$pkg]="$kernel_series"
         pkg_sort_names[$kernel_series]=1
     done
@@ -466,22 +478,13 @@ survey_kernel_files() {
         debug "    can remove series [$ser] "
         removable_pkg_series+=($ser)
     done < <( printf "%s\n" "${!pkg_sort_names[@]}" | sort | head -n -1)
-#    for ser in "${!pkg_sort_names[@]}"; do
-#        debug "    can remove series [$ser] "
-#        #removable_pkg_series+=($ser)
-#    done
 
     for pkg in "${k_pkgs[@]}"; do
         pkg=${pkg%.fc??.x86_64}
         ser=$( kernel_to_relnum $pkg )
-        # echo "        $pkg -> $ser"
         for zpkg in "${removable_pkg_series[@]}"; do
-            #debug "     $zser ~~ $ser ~~ $pkg"
             if (( $ser == $zpkg )); then
-                # echo "       removable:    $ser, $zpkg >> $pkg"
                 removable_packages+=($pkg)
-            #else
-            #    echo "      no"
             fi
         done
     done
@@ -489,13 +492,16 @@ survey_kernel_files() {
     set +x
     if (( $quiet < 1 )); then
         if (( ${#removable_packages[@]} > 0 )); then
-            printf "Would remove packages %s\n" "${removable_packages[@]}"
+            echo "Would remove packages "
+            printf "    %s\n" "${removable_packages[@]}"
         fi
         if (( ${#removable_kernels[@]} > 0 )); then
-            printf "Would remove CT Kernels %s\n" "${removable_kernels[@]}"
+            echo "Would remove kernel files "
+            printf "    %s\n" "${removable_kernels[@]}"
         fi
         if (( ${#removable_libmod_dirs[@]} > 0 )); then
-            printf "Would remove CT modules %s\n" "${removable_libmod_dirs[@]}"
+            echo "Would remove lib module directories "
+            printf "    %s\n" "${removable_libmod_dirs[@]}"
         fi
     fi
 } # ~survey_kernel_files
