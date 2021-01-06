@@ -357,14 +357,14 @@ survey_kernel_files() {
     declare -A libmod_sort_names=()
     local ser
     local file
-    note "Surveying Kernel files"
+    debug "Surveying Kernel files"
     mapfile -t kernel_files < <(find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
         2>/dev/null | grep -v rescue | sort)
     mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
     local booted=`uname -r`
 
-    debug "** You are running kernel $booted **"
+    note "** You are running kernel $booted **"
     # set -veux
     local file
     local fiile
@@ -492,15 +492,15 @@ survey_kernel_files() {
     set +x
     if (( $quiet < 1 )); then
         if (( ${#removable_packages[@]} > 0 )); then
-            echo "Would remove packages "
+            echo "Removable packages "
             printf "    %s\n" "${removable_packages[@]}"
         fi
         if (( ${#removable_kernels[@]} > 0 )); then
-            echo "Would remove kernel files "
+            echo "Removable kernel files "
             printf "    %s\n" "${removable_kernels[@]}"
         fi
         if (( ${#removable_libmod_dirs[@]} > 0 )); then
-            echo "Would remove lib module directories "
+            echo "Removable /lib/module directories "
             printf "    %s\n" "${removable_libmod_dirs[@]}"
         fi
     fi
