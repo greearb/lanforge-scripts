@@ -716,7 +716,7 @@ while [[ $choice != q ]]; do
     echo "  r) compress .csv report files ${totals[r]}"
     echo "  t) clean /var/tmp             ${totals[t]}"
     echo "  q) quit"
-    read -p "[1-5] or q ? " choice
+    read -p "> " choice
 
     case "$choice" in
     b )
