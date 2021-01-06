@@ -211,8 +211,6 @@ kernel_to_relnum() {
 }
 
 clean_old_kernels() {
-    echo ""
-    echo ""
     note "Cleaning old CT kernels..."
     local f
     if (( ${#removable_packages[@]} > 0 )); then
@@ -227,12 +225,11 @@ clean_old_kernels() {
     fi
 
     if (( ${#removable_libmod_dirs[@]} > 0 )); then
+        printf "        removable_libmod_dirs[/lib/modules/%s]\n" "${removable_libmod_dirs[@]}"
         for f in "${removable_libmod_dirs[@]}"; do
             echo "/lib/modules/$f"
         done | xargs rm -rf
     fi
-    echo ""
-    echo ""
 }
 
 clean_core_files() {
@@ -275,9 +272,11 @@ clean_lf_downloads() {
 
 clean_ath10_files() {
     note "clean_ath10_files WIP"
-    if (( $verbose > 0 )); then
-        printf "%s\n" "${ath10_files[@]}"
-    fi
+    local f
+    while read f; do
+        echo "removing $f"
+        rm -f "$f"
+    done < <( find /home/lanforge -type f -iname "ath10*")
 }
 
 clean_var_log() {
@@ -316,14 +315,15 @@ clean_mnt_lf_files() {
     if (( $verbose > 0 )); then
         printf "%s\n" "${mnt_lf_files[@]}"
     fi
-
 }
 
 compress_report_data() {
-    note "compress report data WIP"
-    if (( $verbose > 0 )); then
-        printf "%s\n" "${report_data_dirs[@]}"
-    fi
+    note "compress report data..."
+    # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
+    while read f; do
+        (( $verbose > 0 )) && echo "    compressing $f"
+        gzip -9 "$f"
+    done < <(find /home/lanforge -iname "*.csv")
 }
 
 clean_var_tmp() {
@@ -340,19 +340,23 @@ clean_var_tmp() {
 
 kernel_files=()         # temp
 lib_module_dirs=()      # temp
-declare -a kernel_sort_names
-declare -a pkg_sort_names
-declare -a libmod_sort_names
+declare -A kernel_sort_names
+declare -A pkg_sort_names
+declare -A libmod_sort_names
 removable_kernels=()    # these are for CT kernels
 removable_libmod_dirs=() # these are for CT kernels
 removable_packages=()   # these are for Fedora kernels
 removable_pkg_series=()
 survey_kernel_files() {
-    removable_kernels=()
-    removable_libmod_dirs=()
-    removable_packages=()
+    unset removable_kernels
+    unset removable_libmod_dirs
+    unset removable_packages
+    unset lib_module_dirs
+    unset kernel_sort_names
+    unset kernel_sort_serial
+    unset pkg_sort_names
+    unset libmod_sort_names
     declare -A kernel_sort_names=()
-    declare -A kernel_sort_serial=()
     declare -A pkg_sort_names=()
     declare -A libmod_sort_names=()
     local ser
@@ -394,38 +398,48 @@ survey_kernel_files() {
         for file in "${!kernel_sort_names[@]}"; do
             ser="${kernel_sort_names[$file]}"
         done
-        note "Removable CT kernels:"
+        debug "Removable CT kernels:"
         while read ser; do
             (( $verbose > 0 )) && printf "    kernel file [%s]\n" "${kernel_sort_names[$ser]}"
             removable_kernels+=(${kernel_sort_names["$ser"]})
         done < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
     fi
 
-    # note "Module directories elegible for removal: "
+    debug "Module directories elegible for removal: "
     for file in "${lib_module_dirs[@]}"; do
         file=${file#/lib/modules/}
+        # debug "/lib/modules/ ... $file"
         if [[ $file =~ $booted ]]; then
-            debug "Ignoring booted module directory $file"
+            debug "     Ignoring booted module directory $file"
             continue
         elif [[ $file = *.fc??.x86_64 ]]; then
-            debug "Ignoring Fedora module directory $file"
+            debug "     Ignoring Fedora module directory $file"
             continue
         else
             ser=$( kernel_to_relnum $file )
-            libmod_sort_names["$ser"]="$file"
+            # debug "     eligible [$ser] -> $file"
+            libmod_sort_names[$ser]="$file"
         fi
     done
+
     if (( $verbose > 0 )) && (( ${#libmod_sort_names[@]} > 0 )); then
-        # echo "Removable libmod dirs: "
-        while read file; do
+        # debug "Removable libmod dirs: "
+        while read ser; do
+            file="${libmod_sort_names[$ser]}"
+            # debug "     $ser -> $file"
             if [[ $file =~ $booted ]]; then
-                debug "Ignoring booted $booted module directory $file"
+                debug "     Ignoring booted $booted module directory $file"
                 continue
             fi
-            removable_libmod_dirs+=(${libmod_sort_names["$file"]})
-            echo "    [${libmod_sort_names["$file"]}]"
-        done < <( printf "%s\n" "${!libmod_sort_names[@]}" | sort | head -n -1)
+            removable_libmod_dirs+=( "$file" )
+            # echo "    [$ser][${libmod_sort_names[$ser]}] -> $file"
+        done < <( printf "%s\n" "${!libmod_sort_names[@]}" | sort | uniq)
+        # we don't need to sort these ^^^ because they were picked out near line 419
     fi
+    #if (( $verbose > 0 )); then
+    #    printf " removable_libmod_dirs: %s\n" "${removable_libmod_dirs[@]}"
+    #fi
+    # set +veux
 
     local boot_image_sz=$(du -hc "${kernel_files[@]}" | awk '/total/{print $1}')
     local lib_dir_sz=$(du -hc "${lib_module_dirs[@]}" | awk '/total/{print $1}')
@@ -452,7 +466,7 @@ survey_kernel_files() {
             continue
         fi
         if [[ $pkg =~ $booted ]]; then
-            debug "avoiding current kernel [$pkg]"
+            debug "     ignoring current kernel [$pkg]"
             continue
         fi
         k_pkgs+=( $pkg )
@@ -475,7 +489,7 @@ survey_kernel_files() {
     done
 
     while read ser; do
-        debug "    can remove series [$ser] "
+        # debug "    can remove series [$ser] "
         removable_pkg_series+=($ser)
     done < <( printf "%s\n" "${!pkg_sort_names[@]}" | sort | head -n -1)
 
@@ -538,7 +552,7 @@ survey_lf_downloads() {
 # Find ath10k crash residue
 ath10_files=()
 survey_ath10_files() {
-    debug "Sureyinig ath10 crash files"
+    debug "Surveying ath10 crash files"
     mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
     totals[k]=$(du -hc "${ath10_files}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[k]} = x ]] && totals[k]=0
@@ -594,11 +608,28 @@ report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
     cd /home/lanforge
-    local fnum=$( find -type f -name '*.csv' 2>/dev/null | wc -l )
-    local fsiz=$( find -type f -name '*.csv' 2>/dev/null | xargs du -hc | awk '/total/{print $1}')
-    totals[r]="$fsiz"
+    # set -veux
+    local fsiz=0
+    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null ||: | wc -l )
+    # if (( $verbose > 0 )); then
+        # hr
+        # find -type f -a -name '*.csv' 2>/dev/null ||:
+        # hr
+        # sleep 10
+        # if (( $fnum > 0 )); then
+        #     hr
+        #     find -type f -a -name '*.csv' -print0 2>/dev/null ||: | xargs -0 du -hc
+        #     hr
+        #     sleep 10
+        # fi
+    # fi
+    if (( $fnum > 0 )); then
+        fsiz=$( find -type f -name '*.csv' -print0 2>/dev/null | xargs -0 du -hc | awk '/total/{print $1}')
+    fi
+    # set +veux
+    totals[r]="CSV: $fnum files, $fsiz"
     [[ x${totals[r]} = x ]] && totals[r]=0
-    report_files=("CSV files: $fnum tt $fsiz")
+    # report_files=("CSV files: $fnum tt $fsiz")
     cd "$starting_dir"
 }
 
@@ -702,46 +733,55 @@ fi
 #   ask for things to remove if we are interactive                        #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 choice=""
+refresh=0
 while [[ $choice != q ]]; do
     hr
     #abcdhklmqrtv
     echo "Would you like to delete? "
-    echo "  b) old kernels                ${totals[b]}"
-    echo "  c) core crash files           ${totals[c]}"
-    echo "  d) old LANforge downloads     ${totals[d]}"
-    echo "  k) ath10k crash files         ${totals[k]}"
-    echo "  l) old /var/log files         ${totals[l]}"
-    echo "  m) orphaned /mnt/lf files     ${totals[m]}"
-    echo "  n) purge dnf/yum cache        ${totals[n]}"
-    echo "  r) compress .csv report files ${totals[r]}"
-    echo "  t) clean /var/tmp             ${totals[t]}"
+    echo "  b) old kernels                : ${totals[b]}"
+    echo "  c) core crash files           : ${totals[c]}"
+    echo "  d) old LANforge downloads     : ${totals[d]}"
+    echo "  k) ath10k crash files         : ${totals[k]}"
+    echo "  l) old /var/log files         : ${totals[l]}"
+    echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
+    echo "  n) purge dnf/yum cache        : ${totals[n]}"
+    echo "  r) compress .csv files        : ${totals[r]}"
+    echo "  t) clean /var/tmp             : ${totals[t]}"
     echo "  q) quit"
     read -p "> " choice
-
+    refresh=0
     case "$choice" in
     b )
         clean_old_kernels
+        refresh=1
         ;;
     c )
         clean_core_files
+        refresh=1
         ;;
     d )
         clean_lf_downloads
+        refresh=1
         ;;
     k )
         clean_ath10_files
+        refresh=1
         ;;
     l )
         clean_var_log
+        refresh=1
         ;;
     m )
         clean_mnt_lf_files
+        refresh=1
         ;;
     r )
         compress_report_data
+        refresh=1
         ;;
     t )
         clean_var_tmp
+        refresh=1
         ;;
     q )
         break
@@ -750,8 +790,10 @@ while [[ $choice != q ]]; do
         echo "not an option [$choice]"
         ;;
     esac
-    survey_areas
-    disk_usage_report
+    if (( $refresh > 0 )) ; then
+        survey_areas
+        disk_usage_report
+    fi
 done
 
 
