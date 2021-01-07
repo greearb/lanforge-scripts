@@ -174,7 +174,7 @@ python3 ./test_ipv4_variable_time.py
         "an"     : "10",
         "bgnAC"  : "11",
         "abgnAX" : "12",
-        "bgnAX"  : "13",
+        "bgnAX"  : "13"}
     --ssid netgear
     --password admin123
     --test_duration 2m (default)
@@ -188,18 +188,16 @@ python3 ./test_ipv4_variable_time.py
     for group in parser._action_groups:
         if group.title == "required arguments":
             required_args=group
-            break;
+            break
     if required_args is not None:
         required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         required_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-
-    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     optional_args=None
     for group in parser._action_groups:
         if group.title == "optional arguments":
             optional_args=group
-            break;
+            break
     if optional_args is not None:
         optional_args.add_argument('--mode',help='Used to force mode of stations')
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
