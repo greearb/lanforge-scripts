@@ -6,6 +6,9 @@ Controller is 192.1.0.10
 AP is 192.1.0.2'''
 
 EPILOG = '''\
+##############################################################################################
+##############################################################################################
+
 make sure pexpect is installed:
 $ sudo yum install python3-pexpect
 $ sudo yum install python3-xlsxwriter
@@ -24,9 +27,10 @@ The user also has the option of setting up the station oustide of this script, h
 # See cisco_power_results.xlsx when complete.
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
-##########################################
+##############################################################################################
 # send email and or text on --exit_on_fail
-##########################################
+##############################################################################################
+
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178  
     --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a 
     --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] --security open  
@@ -34,9 +38,10 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465" 
     --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"
 
-####################
+##############################################################################################
 # Long duration test
-####################
+##############################################################################################
+
 ./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
@@ -44,42 +49,44 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1 --verbose
 
 
-###############################################
+##############################################################################################
 # Per-channel path-loss example station present
-###############################################
+##############################################################################################
+
 ./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
   --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --antenna_gain 5 --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2 --verbose
 
-###############################################################
+##############################################################################################
 # To create a station run test against station create open-wlan
-# ############################################################# 
+##############################################################################################
+
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open --verbose
 
-#########################
+##############################################################################################
 # station already present
-#########################
+##############################################################################################
+
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
 --upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --verbose
 
 
-######################
+##############################################################################################
 # to create a station 
-######################
+##############################################################################################
+
 ./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1 \
 --first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
 
-
 Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
 
-
-####################################################################################
-If wish to send Text after test completion follow the email format based on carrier
-####################################################################################
+##############################################################################################
+# If wish to send Text after test completion follow the email format based on carrier
+##############################################################################################
 Text message via email:
 
 T-Mobile – number@tmomail.net
@@ -94,39 +101,33 @@ U.S. Cellular – number@email.uscc.net
 Metro PCS – number@mymetropcs.com
 
 ##############################################################################################
-OUTPUT in XLSX file - Spread sheet how values determined
+# OUTPUT in XLSX file - Spread sheet how values determined
 ##############################################################################################
 
-Tx Power                        : Input from command line (1-8)
-Allowed Per Path                : Read from the Controller
-Cabling Pathloss                : Input from command line, best if verified prior to testing
-Antenna Gain                    : Input from command line, if AP cannot detect antenna connection
-Beacon RSSI (beacon_sig)        : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1160)
-Combined RSSI User (sig)        : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1160)
-RSSI 1, RSSI 2, RSSI 3, RSSI 4  : (~line 1160)
+Tx Power                             : Input from command line (1-8)
+Allowed Per Path                     : Read from the Controller
+Cabling Pathloss                     : Input from command line, best if verified prior to testing
+Antenna Gain                         : Input from command line, if AP cannot detect antenna connection
+Beacon RSSI (beacon_sig)             : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1183, ~line 1209)
+Combined RSSI User (sig)             : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1183, ~line 1193)
+RSSI 1, RSSI 2, RSSI 3, RSSI 4       : (~line 1160)
     ants[q] (antX) read from Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1
 
-Ant 1, Ant 2, Ant 3, Ant 4:
-Starting Value for antX read from lanforge probe, using command ./lf_portmod.pl with cli parameter porbe_port 1
+Ant 1, Ant 2, Ant 3, Ant 4 : ()
+    Starting Value for antX read from lanforge probe, using command ./lf_portmod.pl with cli parameter porbe_port 1
 
     _noise_bear (_noise_i) = from Lanforge returning NOISE from command (!line 1070) lf_portmod.pl reading --show_port 
     "AP, IP, Mode, NSS, Bandwith, Channel, Signal, NOISE, Status, RX-Rate
 
-    rssi_adj = (~line 1263)  _noise_i(_Noise_bear) - nf_at_calibration (fixed value of -105 in script)  * check if this is used
+    rssi_adj (only used if --adjust_nf and _noise_bare != None) (~line 1263)  _noise_i(_noise_bear) - nf_at_calibration (fixed value of -105)
 
-    Thus calc_antX = (~line 1286) int(antX read from Lanforge) + pi (path loss from command line) + rssi_adj + ag (antenna gain from command line)
+    Thus calc_antX =  int(antX read from Lanforge) + pi (path loss from command line) + rssi_adj + ag (antenna gain from command line)
 
-    calc_antX is put on the spread sheet.  under Ant X
+    calc_antX is put on the spread sheet under Ant X
 
-Offset 1, Offset 2, Offset 3, Offset 4: (~line 1316) which in the code is diff_aX = calc_antX - allowedPoer_path (adjusted based on number of streams)
+Offset 1, Offset 2, Offset 3, Offset 4: which in the code is diff_aX = calc_antX - allowed_per_path (adjusted based on number of streams)
 
-Pass/Fail : (~line 1286)
-
-If the diff / offset is greater than the pfrange determins the pass or fail
-
-
-
-
+Pass/Fail : (~line 1286) If the diff / offset is greater than the pfrange determins the pass or fail
 
 '''
 
@@ -1231,7 +1232,7 @@ def main():
                    #logg.info(pss)
 
                    for line in pss.splitlines():
-                       #logg.info("probe-line: %s"%(line))
+                       #logg.info("probe-line: %s"%(line))From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (about line 1150)
                        m = re.search('Rx Bytes:\s+(\d+)', line)
                        if (m != None):
                            rx_bytes = int(m.group(1))
