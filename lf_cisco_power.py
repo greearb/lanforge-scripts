@@ -142,33 +142,33 @@ nf_at_calibration = -105
 # rssi_adjust = (current_nf - nf_at_calibration)
 
 def usage():
-   print("$0 used connect to controller:")
-   print("-d|--dest:  destination host")
-   print("-o|--port:  destination port")
-   print("-u|--user:  login name")
+   print("############  USAGE ############")
+   print("-d|--dest:  destination host, address of the controller")
+   print("-o|--port:  destination port, default = 23")
+   print("-u|--user:  login name or username")
    print("-p|--passwd:  password")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-t|--tty tty serial device")
-   print("-l|--log file: log messages here ,stdout means output to console")
+   print("-l|--log <store true> log has same namelog messages here ,stdout means output to console, default stdout")
    print("-a|--ap select AP")
-   print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160")
-   print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60")
-   print("-n|--nss: List of spatial streams to test: 1 2 3 4")
-   print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8")
-   print("-k|--keep_state  keep the state, no configuration change at the end of the test, store true flage present ")
-   print("--station: LANforge station name for test(sta00000), use if station present and --create_station not used")
+   print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams due to radio limitations")
+   print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60 , NA means no change")
+   print("-n|--nss: List of spatial streams to test: 1x1 2x2 3x3 4x4, NA means no change")
+   print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8, NA means no change, 1 is highest power, the power is halved for each subsquent setting")
+   print("-k|--keep_state <store true>  keep the state, no configuration change at the end of the test, store true flage present ")
+   print("--station: LANforge station name for test(sta0000), use if station present and --create_station not used")
    print("--upstream_port: LANforge upstream port name (eth1)")
    print("--lfmgr: LANforge manager IP address")
    print("--lfresource: LANforge resource ID for station")
    print("--lfresource2: LANforge resource ID for upstream port")
-   print("--outfile: Output file for txt and xlsx data")
+   print("--outfile: Output file for txt and xlsx data, default cisco_power_results")
    print("--pathloss:  Calculated path-loss between LANforge station and AP")
-   print("--antenna_gain: Antenna gain for AP , since no Antenna in cabled connection between AP and lanforge , antenna gain needs to be taken into account")
-   print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP")
+   print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
+   print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
    print("--pf_dbm: Pass/Fail range, default is 6")
    print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
-   print("--wait_forever: Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-   print("--adjust_nf: Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+   print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+   print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("--wlan: for 9800, wlan identifier defaults to wlan-open")
    print("--wlanID: wlanID  for 9800 , defaults to 1")
    print("--series: controller series  9800 , defaults to 3504")
@@ -178,12 +178,13 @@ def usage():
    print("--ssid", "ssid default open-wlan")
    print("--ssidpw", "ssidpw default [BLANK]")
    print("--security", "security default open")
-   print("--cleanup", "Clean up all stations after test completes, only need switch for True, Defaults False")
-   print("--vht160", "Enables VHT160 in lanforge, only need switch for True, Defaults False")
-   print("--cap_ctl_out","switch present will have cap_ctl_out logging, only need switch for True, Defaults False")
+   print("--cleanup", "<store true> Clean up all stations after test completes, only need switch for True, Defaults False")
+   print("--vht160", "<store true> Enables VHT160 in lanforge, only need switch for True, Defaults False")
+   print("--verbose","<store ture> switch the cisco controller output will be captured")
    print("--exit_on_fail","--exit_on_fail,  exit on test failure")
    print("--exit_on_error","--exit_on_error, exit on test error, test mechanics failed")
    print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+   print('-ccp','--prompt', "--prompt controller prompt default WLC")
    print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
 
 
@@ -237,7 +238,7 @@ def main():
    parser.add_argument("-T", "--txpower",    type=str, help="List of txpowers to test.  NA means no change")
    parser.add_argument("-k","--keep_state",  action="store_true",help="keep the state, no configuration change at the end of the test")
    parser.add_argument('-D','--duration',    type=str, help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ',default='20')
-   parser.add_argument("--station",          type=str, help="LANforge station to use (sta0000, etc)")
+   parser.add_argument("--station",          type=str, help="LANforge station to use (sta0000, etc) use if station present and --create_station not used")
    parser.add_argument("--upstream_port",    type=str, help="LANforge upsteram-port to use (eth1, etc)")
    parser.add_argument("--lfmgr",            type=str, help="LANforge Manager IP address")
    parser.add_argument("--lfresource",       type=str, help="LANforge resource ID for the station")
@@ -251,9 +252,9 @@ def main():
    parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier defaults to wlan-open",default="wlan-open")
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier default wlan-open",default="wlan-open")
    parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1")
-   parser.add_argument("--series",           type=str, help="--series  9800 , defaults to 3504",default="3504")
+   parser.add_argument("--series",           type=str, help="--series  9800 or 3504, defaults to 9800",default="9800")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
@@ -309,7 +310,6 @@ def main():
           cap_ctl_out = False
       else:
           cap_ctl_out = True        
-      print("cap_ctl_out {}".format(cap_ctl_out))    
       # note: there would always be an args.outfile due to the default
       current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
       outfile = "{}_{}.txt".format(args.outfile,current_time)
@@ -376,18 +376,22 @@ def main():
 
 
    if (args.bandwidth == None):
+       usage()
        logg.info("ERROR:  Must specify bandwidths")
        exit(1)
 
    if (args.channel == None):
+       usage()
        logg.info("ERROR:  Must specify channels")
        exit(1)
 
    if (args.nss == None):
+       usage()
        logg.info("ERROR:  Must specify NSS")
        exit(1)
 
    if (args.txpower == None):
+       usage()
        logg.info("ERROR:  Must specify txpower")
        exit(1)
 
@@ -396,6 +400,7 @@ def main():
        exit(1)
 
    if (args.antenna_gain == None):
+       usage()
        logg.info("ERROR: Antenna gain must be specified.")
        exit(1)
 
