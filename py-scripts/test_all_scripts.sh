@@ -28,6 +28,12 @@ testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid j
     "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security wpa2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m --debug"
     "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format excel"
     "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format csv"
+    "./create_bridge.py --radio wiphy1 --upstream_port eth1"
+    "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_macvlan.py --radio wiphy1"
+    "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
 )
 declare -A name_to_num
 name_to_num=(
@@ -37,7 +43,13 @@ name_to_num=(
     ["test_ipv4_l4_urls_per_ten"]=4
     ["test_ipv4_l4_wifi"]=5
     ["test_ipv4_l4"]=6
-    ["test_variable_time"]=7
+    ["test_ipv4_variable_time"]=7
+    ["create_bridge"]=8
+    ["create_l3"]=9
+    ["create_l4"]=10
+    ["create_macvlan"]=10
+    ["create_station"]=11
+    ["create_vap"]=12
 )
 
 function blank_db() {
