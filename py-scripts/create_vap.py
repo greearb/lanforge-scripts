@@ -128,12 +128,13 @@ Command example:
                            padding_number=10000,
                            radio=args.radio)
 
-    create_vap = CreateVAP(_host=args.mgr,
+    for vap in vap_list:
+        create_vap = CreateVAP(_host=args.mgr,
                        _port=args.mgr_port,
                        _ssid=args.ssid,
                        _password=args.passwd,
                        _security=args.security,
-                       _vap_list=vap_list,
+                       _vap_list=vap,
                        _radio=args.radio,
                        _proxy_str=args.proxy,
                        _debug_on=args.debug)

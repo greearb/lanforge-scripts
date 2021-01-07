@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Script for creating a variable number of stations.
+    Script for creating a variable number of bridges.
 """
 
 import sys
@@ -22,16 +22,16 @@ import time
 import pprint
 
 
-class CreateStation(LFCliBase):
-    def __init__(self,
+class CreateBridge(LFCliBase):
+    def __init__(self,sta_list,resource,target_device,radio,
                  _ssid=None,
                  _security=None,
                  _password=None,
                  _host=None,
                  _port=None,
-                 _sta_list=None,
+                 _bridge_list=None,
                  _number_template="00000",
-                 _radio="wiphy0",
+                 _resource=1,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -54,69 +54,71 @@ class CreateStation(LFCliBase):
         self.ssid = _ssid
         self.security = _security
         self.password = _password
-        self.sta_list = _sta_list
-        self.radio = _radio
+        self.bridge_list = _bridge_list
+        self.radio = radio
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
-        self.station_profile = self.local_realm.new_station_profile()
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_profile.ssid = self.ssid
-        self.station_profile.ssid_pass = self.password,
-        self.station_profile.security = self.security
-        self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.sta_list = sta_list
+        self.resource = resource
+        self.target_device = target_device
         if self.debug:
-            print("----- Station List ----- ----- ----- ----- ----- ----- \n")
+            print("----- bridge List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
-            print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
+            print("---- ~bridge List ----- ----- ----- ----- ----- ----- \n")
 
 
     def build(self):
-        # Build stations
-        self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.station_profile.set_number_template(self.number_template)
+        # Build bridges
 
-        print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
+        data = {
+            "shelf": 1,
+            "resource": self.resource,
+            "port": "br0",
+            "network_devs": "eth1,%s" % self.target_device
+        }
+        self.local_realm.json_post("cli-json/add_br", data)
+
+        bridge_set_port = {
+            "shelf": 1,
+            "resource": self.resource,
+            "port": "br0",
+            "current_flags": 0x80000000,
+            "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+        }
+        self.local_realm.json_post("cli-json/set_port", bridge_set_port)
 
 
-    def cleanup(self, sta_list):
-        self.station_profile.cleanup(sta_list, debug_=self.debug)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                           port_list=sta_list,
-                                           debug=self.debug)
-        time.sleep(1)
 
 
 def main():
     parser = LFCliBase.create_basic_argparse(
-        prog='create_station.py',
+        prog='create_bridge.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-         Create stations
+         Create bridges
             ''',
 
         description='''\
-        create_station.py
+        create_bridge.py
 --------------------
 Command example:
-./create_station.py
+./create_bridge.py
     --upstream_port eth1
     --radio wiphy0
-    --num_stations 3
+    --num_bridges 3
+    --target_device wlan0
     --security open
     --ssid netgear
     --passwd BLANK
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
+    required.add_argument('--target_device', help='Where the bridges should be connecting', required=True)
     #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument('--num_bridges', help='Number of bridges to Create', required=False)
     args = parser.parse_args()
     #if args.debug:
     #    pprint.pprint(args)
@@ -124,29 +126,31 @@ Command example:
     if (args.radio is None):
        raise ValueError("--radio required")
 
-    num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_stations_converted = int(args.num_stations)
-        num_sta = num_stations_converted
+    num_bridge = 2
+    if (args.num_bridges is not None) and (int(args.num_bridges) > 0):
+        num_bridges_converted = int(args.num_bridges)
+        num_bridge = num_bridges_converted
 
-    station_list = LFUtils.port_name_series(prefix="sta",
+    bridge_list = LFUtils.port_name_series(prefix="bridge",
                            start_id=0,
-                           end_id=num_sta-1,
+                           end_id=num_bridge-1,
                            padding_number=10000,
                            radio=args.radio)
 
-    create_station = CreateStation(_host=args.mgr,
+    create_bridge = CreateBridge(_host=args.mgr,
                        _port=args.mgr_port,
                        _ssid=args.ssid,
                        _password=args.passwd,
                        _security=args.security,
-                       _sta_list=station_list,
-                       _radio=args.radio,
+                       _bridge_list=bridge_list,
+                       radio=args.radio,
                        _proxy_str=args.proxy,
-                       _debug_on=args.debug)
+                       _debug_on=args.debug,
+                       sta_list=bridge_list,
+                       resource=1,
+                       target_device=args.target_device)
 
-    create_station.cleanup(station_list)
-    create_station.build()
+    create_bridge.build()
 
 if __name__ == "__main__":
     main()
