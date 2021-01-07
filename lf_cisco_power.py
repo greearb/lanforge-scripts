@@ -93,10 +93,42 @@ Boost Mobile – number@myboostmobile.com
 U.S. Cellular – number@email.uscc.net
 Metro PCS – number@mymetropcs.com
 
-'''
+##############################################################################################
+OUTPUT in XLSX file - Spread sheet how values determined
+##############################################################################################
 
-# TODO:  Maybe HTML output too?
-# TODO:  Allow selecting tabs or commas for output files
+Tx Power                        : Input from command line (1-8)
+Allowed Per Path                : Read from the Controller
+Cabling Pathloss                : Input from command line, best if verified prior to testing
+Antenna Gain                    : Input from command line, if AP cannot detect antenna connection
+Beacon RSSI (beacon_sig)        : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1160)
+Combined RSSI User (sig)        : From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (~line 1160)
+RSSI 1, RSSI 2, RSSI 3, RSSI 4  : (~line 1160)
+    ants[q] (antX) read from Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1
+
+Ant 1, Ant 2, Ant 3, Ant 4:
+Starting Value for antX read from lanforge probe, using command ./lf_portmod.pl with cli parameter porbe_port 1
+
+    _noise_bear (_noise_i) = from Lanforge returning NOISE from command (!line 1070) lf_portmod.pl reading --show_port 
+    "AP, IP, Mode, NSS, Bandwith, Channel, Signal, NOISE, Status, RX-Rate
+
+    rssi_adj = (~line 1263)  _noise_i(_Noise_bear) - nf_at_calibration (fixed value of -105 in script)  * check if this is used
+
+    Thus calc_antX = (~line 1286) int(antX read from Lanforge) + pi (path loss from command line) + rssi_adj + ag (antenna gain from command line)
+
+    calc_antX is put on the spread sheet.  under Ant X
+
+Offset 1, Offset 2, Offset 3, Offset 4: (~line 1316) which in the code is diff_aX = calc_antX - allowedPoer_path (adjusted based on number of streams)
+
+Pass/Fail : (~line 1286)
+
+If the diff / offset is greater than the pfrange determins the pass or fail
+
+
+
+
+
+'''
 
 import sys
 if sys.version_info[0] != 3:
@@ -1143,7 +1175,7 @@ def main():
                    time.sleep(int(args.duration))
 
                    # Gather probe results and record data, verify NSS, BW, Channel
-                   i = 0;
+                   i = 0
                    beacon_sig = None
                    sig = None
                    pf = 1
