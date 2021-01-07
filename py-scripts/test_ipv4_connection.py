@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-"""
-  - Script for creating a variable number of stations and attempting to connect them to an SSID.
-    A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
-    pass, otherwise, the test will fail.
-  - Use './test_ipv4_connection.py' --help to see command line usage and options
-  - Copyright 2021 Candela Technologies Inc
-  - License: Free to distribute and modify. LANforge systems must be licensed.
-  - See cookbook here: https://www.candelatech.com/....?
+"""test_ipv4_connection.py will create stations and attempt to connect to an SSID, WPA, WPA2, WPA3, WEP, and Open connection types are supported
+
+Script for creating a variable number of stations and attempting to connect them to an SSID.
+A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
+pass, otherwise, the test will fail.
+
+Use './test_ipv4_connection.py' --help to see command line usage and options
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import sys

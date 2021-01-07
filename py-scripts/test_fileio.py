@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
-"""
-  - This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
-    macvlans can be used as well. Command line options are available to update cross-connects as well as using a list of
-    existing cross-connects if desired. if none are given, cross-connects and endpoints will be created by the script.
-    Modes such as read-only, write-only, or both can be specified as well as ip addresses and starting numbers for sequential
-    stations or macvlans that are created in case of limited or pre-existing configurations. The test that is run during
-    this script will depend on the mode used, a read-only test will check the read-bps column, write-only will check write-bps
-    and both will check both columns. If the relevant columns increase over the duration of the test it will pass,
-    otherwise it will fail.
-  - Use './test_fileio.py --help' to see command line usage and options
-  - Copyright 2021 Candela Technologies Inc
-  - License: Free to distribute and modify. LANforge systems must be licensed.
+"""test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic.
+
+This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
+macvlans can be used as well. Command line options are available to update cross-connects as well as using a list of
+existing cross-connects if desired. if none are given, cross-connects and endpoints will be created by the script.
+Modes such as read-only, write-only, or both can be specified as well as ip addresses and starting numbers for sequential
+stations or macvlans that are created in case of limited or pre-existing configurations. The test that is run during
+this script will depend on the mode used, a read-only test will check the read-bps column, write-only will check write-bps
+and both will check both columns. If the relevant columns increase over the duration of the test it will pass,
+otherwise it will fail.
+
+Use './test_fileio.py --help' to see command line usage and options
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import sys
