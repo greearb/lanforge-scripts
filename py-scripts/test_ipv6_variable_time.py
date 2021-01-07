@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-"""
-  - This script will create a variable number of stations, using IPv6, each with their own set of cross-connects and endpoints.
-    It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
-    This test will pass if all stations increase traffic over the full test duration.
-  - Use './test_ipv6_variable_time.py --help' to see command line usage and options
-  - Copyright 2021 Candela Technologies Inc
-  - License: Free to distribute and modify. LANforge systems must be licensed.
+"""test_ipv6_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over IPv6.
+
+This script will create a variable number of stations, using IPv6, each with their own set of cross-connects and endpoints.
+It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+This test will pass if all stations increase traffic over the full test duration.
+
+Use './test_ipv6_variable_time.py --help' to see command line usage and options
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import sys
