@@ -17,12 +17,12 @@ if 'py-json' not in sys.path:
 import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import pprint
 
 
-class CreateBridge(LFCliBase):
+class CreateBridge(Realm):
     def __init__(self,sta_list,resource,target_device,radio,
                  _ssid=None,
                  _security=None,
@@ -32,23 +32,9 @@ class CreateBridge(LFCliBase):
                  _bridge_list=None,
                  _number_template="00000",
                  _resource=1,
-                 _proxy_str=None,
-                 _debug_on=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _debug_on=False):
         super().__init__(_host,
-                         _port,
-                         _proxy_str=_proxy_str,
-                         _local_realm=realm.Realm(lfclient_host=_host,
-                                                  lfclient_port=_port,
-                                                  halt_on_error_=_exit_on_error,
-                                                  _exit_on_error=_exit_on_error,
-                                                  _exit_on_fail=_exit_on_fail,
-                                                  _proxy_str=_proxy_str,
-                                                  debug_=_debug_on),
-                         _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
+                         _port)
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -77,7 +63,7 @@ class CreateBridge(LFCliBase):
             "port": "br0",
             "network_devs": "eth1,%s" % self.target_device
         }
-        self.local_realm.json_post("cli-json/add_br", data)
+        self.json_post("cli-json/add_br", data)
 
         bridge_set_port = {
             "shelf": 1,
@@ -86,7 +72,7 @@ class CreateBridge(LFCliBase):
             "current_flags": 0x80000000,
             "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
-        self.local_realm.json_post("cli-json/set_port", bridge_set_port)
+        self.json_post("cli-json/set_port", bridge_set_port)
 
 
 
@@ -144,7 +130,6 @@ Command example:
                        _security=args.security,
                        _bridge_list=bridge_list,
                        radio=args.radio,
-                       _proxy_str=args.proxy,
                        _debug_on=args.debug,
                        sta_list=bridge_list,
                        resource=1,
