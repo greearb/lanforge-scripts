@@ -187,7 +187,6 @@ def usage():
    print('-ccp','--prompt', "--prompt controller prompt default WLC")
    print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
 
-
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -275,6 +274,7 @@ def main():
    #usage()
    args = None
    try:
+      # Parcing the input parameters and assignment
       args = parser.parse_args()
       if (args.scheme != None):
          scheme = args.scheme
@@ -348,6 +348,7 @@ def main():
    logg.setLevel(logging.DEBUG)
 
    file_handler = None
+   # Setting up log file if specified
    if args.log:
        file_handler = logging.FileHandler(outfile_log, "w")
        file_handler.setLevel(logging.DEBUG)
@@ -538,6 +539,7 @@ def main():
    nss = args.nss.split()
    txpowers = args.txpower.split()
        
+   # The script has the ability to create a station if one does not exist     
    if (args.create_station != None):
        if (args.radio == None):
            logg.info("WARNING --create needs a radio")
@@ -585,7 +587,7 @@ def main():
                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True);
 
    myrd = ""
-
+   # The script supports both the 9800 series controller and the 3504 series controller ,  the controllers have different interfaces
    if args.series == "9800": 
 
       try:
@@ -625,7 +627,9 @@ def main():
        if (line.startswith("---------")):
            searchap = True
            continue
-
+       # the summaries are different between the 9800 series controller and the 3504 series
+       # if the output changes then the following pattern/regular expression parcing needs to be changed
+       # this site may help: https://regex101.com/
        if (searchap):
            if args.series == "9800":
                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)"%(args.ap)
@@ -636,6 +640,8 @@ def main():
                myrd = m.group(1)
 
    # Loop through all iterations and run txpower tests.
+   # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
+   # Note: supports 9800 and 3504 controllers
    wlan_created = False
    for ch in channels:
        pathloss = args.pathloss
@@ -680,17 +686,18 @@ def main():
                    logg.info("Setting LANforge radio to %s NSS with command: %s"%(ni, set_cmd))
                    subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", parent,
                                    "--cli_cmd", set_cmd], capture_output=True)
-               
+               # tx power 1 is the highest power ,  2 power is 1/2 of 1 power etc till power 8 the lowest.
                for tx in txpowers:
-
+                   # e_tot is the errors, w_tot is the warning 
                    e_tot = ""
                    w_tot = ""
 
-                   # Stop traffic
+                   # Stop traffic , if traffic was running ,  this is on the lanforge side.  Commands that start with lf_ are directed 
+                   # towards the lanforge
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
                                    "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True);
 
-                   # TODO:  Down station
+                   # Down station
                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                                 "--set_ifstate", "down"]);
                    
@@ -798,7 +805,6 @@ def main():
                           exit_test(workbook)
 
                    # NSS is set on the station earlier...
-                       
                    if (ch != "NA"):
                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
                        try:
@@ -960,7 +966,7 @@ def main():
                               if (line.startswith("---------")):
                                   searchap = True
                                   continue
-   
+                              # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                               if (searchap):
                                   pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
                                   m = re.search(pat, line)
@@ -989,15 +995,17 @@ def main():
                                           break
    
                           if (cc_dbm == ""):
-                             if cc_dbm_rcv > 3: 
-                                # Could not talk to controller?
+                             if loop_count >= 3: 
+                                # Could not talk to controller? Not this may not be a reason to exit
+                                # Some of the tests run for 32 plus hours ,  do not kill the whole test unless trying to 
+                                # debug an issue with the test.  Sometimes the controller is taking time to configure.
                                 err = "ERROR:  Could not query dBm from controller, maybe controller died?"
                                 logg.info(err)
                                 logg.info("Check controller and AP , Command on AP to erase the config: capwap ap erase all")
                                 e_tot += err
                                 e_tot += "  "
                              else:
-                                logg.info("9800 read controller dBm loop_count {}".format(loop_count)) 
+                                logg.info("9800 read controller dBm loop_count {} try again".format(loop_count)) 
                           else:
                              cc_dbm_rcv = True    
                        try:
