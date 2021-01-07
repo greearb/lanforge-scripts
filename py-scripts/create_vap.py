@@ -18,11 +18,12 @@ import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 import realm
+from realm import Realm
 import time
 import pprint
 
 
-class CreateVAP(LFCliBase):
+class CreateVAP(Realm):
     def __init__(self,
                  _ssid=None,
                  _security=None,
@@ -35,20 +36,10 @@ class CreateVAP(LFCliBase):
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,
+                 _dhcp=True):
         super().__init__(_host,
-                         _port,
-                         _proxy_str=_proxy_str,
-                         _local_realm=realm.Realm(lfclient_host=_host,
-                                                  lfclient_port=_port,
-                                                  halt_on_error_=_exit_on_error,
-                                                  _exit_on_error=_exit_on_error,
-                                                  _exit_on_fail=_exit_on_fail,
-                                                  _proxy_str=_proxy_str,
-                                                  debug_=_debug_on),
-                         _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
+                         _port)
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -59,8 +50,13 @@ class CreateVAP(LFCliBase):
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
-        self.vap_profile = self.local_realm.new_vap_profile()
+        self.dhcp = _dhcp
+        self.vap_profile = self.new_vap_profile()
         self.vap_profile.vap_name = self.vap_list
+        self.vap_profile.ssid = self.ssid
+        self.vap_profile.security = self.security
+        self.vap_profile.ssid_pass = self.password
+        self.vap_profile.dhcp = self.dhcp
         if self.debug:
             print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
@@ -69,16 +65,17 @@ class CreateVAP(LFCliBase):
 
     def build(self):
         # Build VAPs
+        self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
 
         print("Creating VAPs")
-        self.vap_profile.create(resource=1,
-                                radio=self.radio,
-                                channel=36,
-                                up_=True,
-                                debug=False,
-                                suppress_related_commands_=True,
-                                use_radius=True,
-                                hs20_enable=False)
+        self.vap_profile.create(resource = 1,
+                                radio = self.radio,
+                                channel = 36,
+                                up_ = True,
+                                debug = False,
+                                suppress_related_commands_ = True,
+                                use_radius = True,
+                                hs20_enable = False)
         self._pass("PASS: VAP build finished")
 
 
@@ -127,6 +124,8 @@ Command example:
                            end_id=num_vap-1,
                            padding_number=10000,
                            radio=args.radio)
+    print(args.passwd)
+    print(args.ssid)
 
     for vap in vap_list:
         create_vap = CreateVAP(_host=args.mgr,
@@ -139,7 +138,7 @@ Command example:
                        _proxy_str=args.proxy,
                        _debug_on=args.debug)
 
-    create_vap.build()
+        create_vap.build()
 
 if __name__ == "__main__":
     main()

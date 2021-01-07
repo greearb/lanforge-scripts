@@ -21,12 +21,12 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import datetime
 from realm import TestGroupProfile
 
-class CreateL3(LFCliBase):
+class CreateL3(Realm):
     def __init__(self,
                  ssid, security, password, sta_list, name_prefix, upstream, radio,
                  host="localhost", port=8080, mode = 0, ap=None,
@@ -36,17 +36,7 @@ class CreateL3(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port,
-                         _local_realm = realm.Realm(lfclient_host=host,
-                                                    lfclient_port=port,
-                                                    debug_=_debug_on,
-                                                    halt_on_error_=_exit_on_error),
-                         _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail),
-        self.l3cxprofile = realm.L3CXProfile(lfclient_host=host,
-                                                        lfclient_port=port,
-                                                        local_realm=self.local_realm)
+        super().__init__(host, port)
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -60,8 +50,8 @@ class CreateL3(LFCliBase):
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
-        self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l3_cx_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
@@ -104,7 +94,7 @@ class CreateL3(LFCliBase):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
 
-        if self.local_realm.wait_for_ip(temp_stas):
+        if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -119,7 +109,7 @@ class CreateL3(LFCliBase):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.local_realm.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()

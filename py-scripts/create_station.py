@@ -14,15 +14,14 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import pprint
 
 
-class CreateStation(LFCliBase):
+class CreateStation(Realm):
     def __init__(self,
                  _ssid=None,
                  _security=None,
@@ -37,18 +36,7 @@ class CreateStation(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(_host,
-                         _port,
-                         _proxy_str=_proxy_str,
-                         _local_realm=realm.Realm(lfclient_host=_host,
-                                                  lfclient_port=_port,
-                                                  halt_on_error_=_exit_on_error,
-                                                  _exit_on_error=_exit_on_error,
-                                                  _exit_on_fail=_exit_on_fail,
-                                                  _proxy_str=_proxy_str,
-                                                  debug_=_debug_on),
-                         _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
+                         _port)
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -59,7 +47,7 @@ class CreateStation(LFCliBase):
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password,
@@ -83,14 +71,6 @@ class CreateStation(LFCliBase):
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
-
-
-    def cleanup(self, sta_list):
-        self.station_profile.cleanup(sta_list, debug_=self.debug)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                           port_list=sta_list,
-                                           debug=self.debug)
-        time.sleep(1)
 
 
 def main():
@@ -145,7 +125,6 @@ Command example:
                        _proxy_str=args.proxy,
                        _debug_on=args.debug)
 
-    create_station.cleanup(station_list)
     create_station.build()
 
 if __name__ == "__main__":
