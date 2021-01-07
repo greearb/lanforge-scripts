@@ -128,7 +128,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -142,7 +142,7 @@ for key in equipment_id_dict:
         #5G WPA2 UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
         security = "wpa2"
@@ -156,7 +156,7 @@ for key in equipment_id_dict:
         # 5G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model]["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
         security = "wpa"
@@ -170,7 +170,7 @@ for key in equipment_id_dict:
         # 5G Open UDP DS/US and TCP DS/US
         # ap_model = fw_model
         # firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model]["fiveG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"
@@ -184,7 +184,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -199,7 +199,7 @@ for key in equipment_id_dict:
         # 2.4G WPA2 UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
         security = "wpa2"
@@ -213,7 +213,7 @@ for key in equipment_id_dict:
         # 2.4G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
         security = "wpa"
@@ -227,7 +227,7 @@ for key in equipment_id_dict:
         # 2.4G Open UDP DS/US and TCP DS/US
         #ap_model = fw_model
         #firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model]["twoFourG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"
@@ -258,7 +258,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model+'_nat']["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -273,7 +273,7 @@ for key in equipment_id_dict:
         # 5G WPA2 NAT UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model+'_nat']["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model+'_nat']["fiveG_WPA2_PSK"]
         security = "wpa2"
@@ -287,7 +287,7 @@ for key in equipment_id_dict:
         # 5G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model+'_nat']["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model+'_nat']["fiveG_WPA_PSK"]
         security = "wpa"
@@ -301,7 +301,7 @@ for key in equipment_id_dict:
         # 5G Open UDP DS/US and TCP DS/US
         # ap_model = fw_model
         # firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model+'_nat']["fiveG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"
@@ -315,7 +315,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model+'_nat']["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -329,7 +329,7 @@ for key in equipment_id_dict:
         # 2.4G WPA2 UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model+'_nat']["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model+'_nat']["twoFourG_WPA2_PSK"]
         security = "wpa2"
@@ -343,7 +343,7 @@ for key in equipment_id_dict:
         # 2.4G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model+'_nat']["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model+'_nat']["twoFourG_WPA_PSK"]
         security = "wpa"
@@ -357,7 +357,7 @@ for key in equipment_id_dict:
         # 2.4G Open NAT UDP DS/US and TCP DS/US
         # ap_model = fw_model
         # firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model+'_nat']["twoFourG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"
@@ -388,7 +388,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -402,7 +402,7 @@ for key in equipment_id_dict:
         # 5G WPA2 VLAN UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_PSK"]
         security = "wpa2"
@@ -416,7 +416,7 @@ for key in equipment_id_dict:
         # 5G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy3"
+        radio = lab_ap_info.lanforge_5g
         ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_PSK"]
         security = "wpa"
@@ -430,7 +430,7 @@ for key in equipment_id_dict:
         # 5G Open UDP DS/US and TCP DS/US
         # ap_model = fw_model
         # firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model+'_vlan']["fiveG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"
@@ -444,7 +444,7 @@ for key in equipment_id_dict:
         ap_model = fw_model
         firmware = ap_fw
         sta_list = station
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
         security = "wpa2"
         eap_type = "TTLS"
@@ -458,7 +458,7 @@ for key in equipment_id_dict:
         # 2.4G WPA2 UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
         security = "wpa2"
@@ -472,7 +472,7 @@ for key in equipment_id_dict:
         # 2.4G WPA UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
-        radio = "wiphy0"
+        radio = lab_ap_info.lanforge_2dot4g
         ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
         ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
         security = "wpa"
@@ -486,7 +486,7 @@ for key in equipment_id_dict:
         # 2.4G Open VLAN UDP DS/US and TCP DS/US
         # ap_model = fw_model
         # firmware = ap_fw
-        # radio = "wiphy3"
+        # radio = lab_ap_info.lanforge_5g
         # ssid_name = profile_info_dict[fw_model+'_vlan']["twoFourG_OPEN_SSID"]
         # ssid_psk = "BLANK"
         # security = "open"

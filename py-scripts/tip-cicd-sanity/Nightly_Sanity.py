@@ -28,6 +28,7 @@ import datetime
 import time
 from datetime import date
 from shutil import copyfile
+import argparse
 
 # For finding files
 # https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
@@ -109,7 +110,7 @@ class GetBuild:
         self.password = jfrog_pwd
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    def get_latest_image(self, url):
+    def get_latest_image(self, url, build):
         auth = str(
             base64.b64encode(
                 bytes('%s:%s' % (self.user, self.password), 'utf-8')
@@ -125,7 +126,7 @@ class GetBuild:
         html = response.read()
         soup = BeautifulSoup(html, features="html.parser")
         ##find the last pending link on dev
-        last_link = soup.find_all('a', href=re.compile("pending"))[-1]
+        last_link = soup.find_all('a', href=re.compile(build))[-1]
         latest_file = last_link['href']
         latest_fw = latest_file.replace('.tar.gz', '')
         return latest_fw
@@ -215,6 +216,28 @@ class RunTest:
         print("Error in test for single client connection to", ssid_name)
         logger.warning("ERROR testing Client connectivity to " + ssid_name)
 
+####Use variables other than defaults for running tests on custom FW etc
+build = "pending"
+ignore = False
+
+parser = argparse.ArgumentParser(description="Sanity Testing on Firmware Build")
+parser.add_argument("-b", "--build", type=str, help="FW commit ID (latest pending build on dev is default)")
+parser.add_argument("-i", "--ignore", type=bool, help="Ignore current running version on AP and run sanity regardless")
+parser.add_argument("-r", "--report", type=str, help="Report directory path other than default - directory must already exist!")
+args = parser.parse_args()
+if args.build is not None:
+    build = args.build
+if args.ignore is not None:
+    ignore = True
+if args.report is not None:
+    report_path = args.report
+
+print("Start of Sanity Testing...")
+print("Testing Latest Build with Tag: "+build)
+if ignore == True:
+    print("Will ignore if AP is already running build under test and run sanity regardless...")
+else:
+    print("Checking for APs requiring upgrade to latest build...")
 
 ######Testrail Project and Run ID Information ##############################
 
@@ -310,7 +333,7 @@ for model in ap_models:
     jfrog_url = 'https://tip.jfrog.io/artifactory/tip-wlan-ap-firmware/'
     url = jfrog_url + apModel + "/dev/"
     Build: GetBuild = GetBuild()
-    latest_image = Build.get_latest_image(url)
+    latest_image = Build.get_latest_image(url, build)
     print(model, "Latest FW on jFrog:", latest_image)
     ap_latest_dict[model] = latest_image
 
@@ -343,7 +366,7 @@ for key in equipment_id_dict:
 
     ##Compare Latest and Current AP FW and Upgrade
     latest_ap_image = ap_latest_dict[fw_model]
-    if ap_cli_fw == latest_ap_image:
+    if ap_cli_fw == latest_ap_image and ignore != True:
         print('FW does not require updating')
         report_data['fw_available'][key] = "No"
         logger.info(fw_model + " does not require upgrade. Not performing sanity tests for this AP variant")
@@ -355,7 +378,10 @@ for key in equipment_id_dict:
         report_data['cloud_sdk'][key] = cloudsdk_cluster_info
 
     else:
-        print('FW needs updating')
+        if ap_cli_fw == latest_ap_image and ignore == True:
+            print('AP is already running FW version under test. Ignored based on ignore flag, updating AP')
+        else:
+            print('FW needs updating')
         report_data['fw_available'][key] = "Yes"
         report_data['fw_under_test'][key] = latest_ap_image
 
@@ -457,15 +483,24 @@ for key in equipment_id_dict:
         upgrade_fw = CloudSDK.update_firmware(equipment_id, str(fw_id), cloudSDK_url, bearer)
         logger.info("Lab " + fw_model + " Requires FW update")
         print(upgrade_fw)
-        if upgrade_fw["success"] == True:
-            print("CloudSDK Upgrade Request Success")
-            report_data['tests'][key][test_cases["upgrade_api"]] = "passed"
-            client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=1, msg='Upgrade request using API successful')
-            logger.info('Firmware upgrade API successfully sent')
+
+        if "success" in upgrade_fw:
+            if upgrade_fw["success"] == True:
+                print("CloudSDK Upgrade Request Success")
+                report_data['tests'][key][test_cases["upgrade_api"]] = "passed"
+                client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=1, msg='Upgrade request using API successful')
+                logger.info('Firmware upgrade API successfully sent')
+            else:
+                print("Cloud SDK Upgrade Request Error!")
+                # mark upgrade test case as failed with CloudSDK error
+                client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5, msg='Error requesting upgrade via API')
+                report_data['tests'][key][test_cases["upgrade_api"]] = "failed"
+                logger.warning('Firmware upgrade API failed to send')
+                continue
         else:
             print("Cloud SDK Upgrade Request Error!")
             # mark upgrade test case as failed with CloudSDK error
-            client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5, msg='Error requesting upgrade via API')
+            client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5,msg='Error requesting upgrade via API')
             report_data['tests'][key][test_cases["upgrade_api"]] = "failed"
             logger.warning('Firmware upgrade API failed to send')
             continue
