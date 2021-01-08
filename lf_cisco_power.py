@@ -554,7 +554,7 @@ def main():
    worksheet.set_column(col, col, 10) # Set width
    worksheet.write(row, col, 'Calculated\n dBm\n Beacon', dblue_bold); col += 1
    worksheet.set_column(col, col, 14) # Set width
-   worksheet.write(row, col, 'Diff\nController dBm\n & Beacon dBm\n (+/- {} dBm)'.format(args.beacon_dbm_diff), dblue_bold); col += 1
+   worksheet.write(row, col, 'Diff\nController dBm\n & Beacon dBm (+/- {} dBm)'.format(args.beacon_dbm_diff), dblue_bold); col += 1
    worksheet.set_column(col, col, 10) # Set width
    worksheet.write(row, col, 'Calculated\n dBm\n Combined', dblue_bold); col += 1
    worksheet.set_column(col, col, 14) # Set width
