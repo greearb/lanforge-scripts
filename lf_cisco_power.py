@@ -937,7 +937,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port,"--series",args.series,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -949,7 +949,7 @@ def main():
                        try:
                           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
+                                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port,"--series",args.series,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -1053,7 +1053,7 @@ def main():
                        try:
                            logg.info("3504 cisco_wifi_ctl.py: advanced")
                            advanced = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                              "--action", "advanced","--port", args.port,"--prompt",args.prompt], capture_output=True, check=True)
+                                              "--action", "advanced","--port", args.port,"--series" , args.series,"--prompt",args.prompt], capture_output=True, check=True)
                            pss = advanced.stdout.decode('utf-8', 'ignore')
                            logg.info(pss)
                        except subprocess.CalledProcessError as process_error:
@@ -1695,7 +1695,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11a disable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a disable network","--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11a disable network","--series" , args.series,"--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1707,7 +1707,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11b disable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11b disable network","--port", args.port,"--series" , args.series,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1797,7 +1797,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11a enable network","--port", "--series" , args.series,args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
@@ -1809,7 +1809,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11b enable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11b enable network","--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11b enable network","--series" , args.series,"--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
