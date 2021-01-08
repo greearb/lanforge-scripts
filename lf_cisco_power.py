@@ -1186,11 +1186,12 @@ def main():
                        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                                     "--cli_cmd", "probe_port 1 %s %s"%(lfresource, lfstation)],capture_output=True, check=True)
                        pss = port_stats.stdout.decode('utf-8', 'ignore')
-                       #logg.info(pss)
+                       logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr, lfresource, lfstation,lfresource,lfstation))
+                       logg.info(pss)
 
                        foundit = False
                        for line in pss.splitlines():
-                           #logg.info("probe-line: %s"%(line))
+                           logg.info("probe-line: %s"%(line))
                            m = re.search('signal avg:\s+(\S+)\s+\[(.*)\]\s+dBm', line)
                            if (m != None):
                                sig = m.group(1)
