@@ -1378,21 +1378,23 @@ def main():
                    # NSS tranmission will mean that each chain should be decreased so that sum total
                    # of all chains is equal to the maximum allowed txpower.
                    allowed_per_path = cc_dbmi
-                   logg.info("allowed_per_path {}  = cc_dbmi {}".format(allowed_per_path,cc_dbmi))
+                   logg.info("allowed_per_path: {}  = cc_dbmi: {}".format(allowed_per_path,cc_dbmi))
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
-                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        if (abs(diff_a1) > pfrange):
                            pf = 0
                    if (int(_nss) == 2):
                        # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
                        allowed_per_path = cc_dbmi - 3
+                       logg.info("allowed_per_path: {}  = cc_dbmi: {} - 3".format(allowed_per_path,cc_dbmi))
+
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange)):
@@ -1400,14 +1402,16 @@ def main():
                    if (int(_nss) == 3):
                        # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
                        allowed_per_path = cc_dbmi - 5
+                       logg.info("allowed_per_path: {}  = cc_dbmi: {} - 5".format(allowed_per_path,cc_dbmi))
+
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        diff_a3 = calc_ant3 - allowed_per_path
-                       logg.info("diff_a3 {} = calc_ant3 {} - allowed_per_path {}".format(diff_a3, calc_ant3, allowed_per_path))
+                       logg.info("diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange) or
@@ -1416,17 +1420,19 @@ def main():
                    if (int(_nss) == 4):
                        # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
                        allowed_per_path = cc_dbmi - 6
+                       logg.info("allowed_per_path: {}  = cc_dbmi: {} - 6".format(allowed_per_path,cc_dbmi))
+
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        diff_a3 = calc_ant3 - allowed_per_path
-                       logg.info("diff_a3 {} = calc_ant3 {} - allowed_per_path {}".format(diff_a3, calc_ant3, allowed_per_path))
+                       logg.info("diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
                        diff_a4 = calc_ant4 - allowed_per_path
-                       logg.info("diff_a4 {} = calc_ant4 {} - allowed_per_path {}".format(diff_a4, calc_ant4, allowed_per_path))
+                       logg.info("diff_a4: {} = calc_ant4: {} - allowed_per_path: {}".format(diff_a4, calc_ant4, allowed_per_path))
 
                        # DUT transmits one chain at lower power when using higher MCS, so allow
                        # for that as passing result.
