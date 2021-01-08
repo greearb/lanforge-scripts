@@ -269,6 +269,7 @@ from lab_ap_info import ap_models
 from lab_ap_info import customer_id
 from lab_ap_info import cloud_type
 from lab_ap_info import test_cases
+from lab_ap_info import radius_info
 
 
 ############################################################################
@@ -624,6 +625,34 @@ for key in equipment_id_dict:
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
+        ### Create RADIUS profile - used for all EAP SSIDs
+        radius_template = "templates/radius_profile_template.json"
+        radius_name = radius_info['name']
+        subnet_name = radius_info['subnet_name']
+        subnet = radius_info['subnet']
+        subnet_mask = radius_info['subnet_mask']
+        region = radius_info['region']
+        server_name = radius_info['server_name']
+        server_ip = radius_info['server_ip']
+        secret = radius_info['secret']
+        auth_port = radius_info['auth_port']
+        try:
+            radius_profile = CloudSDK.create_radius_profile(cloudSDK_url, bearer, radius_template, radius_name, subnet_name, subnet,
+                                                        subnet_mask, region, server_name, server_ip, secret, auth_port)
+            print("radius profile Id is", radius_profile)
+            client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=1,
+                                   msg='RADIUS profile created successfully')
+            report_data['tests'][key][test_cases["radius_profile"]] = "passed"
+        except:
+            radius_profile = 'error'
+            print("RADIUS Profile Create Error, will use existing profile for tests")
+            #Set backup profile ID so test can continue
+            radius_profile = lab_ap_info.radius_profile
+            server_name = "Lab-RADIUS"
+            client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=5,
+                                   msg='Failed to create RADIUS profile')
+            report_data['tests'][key][test_cases["radius_profile"]] = "failed"
+
         ###########################################################################
         ############## Bridge Mode Client Connectivity ############################
         ###########################################################################
@@ -635,7 +664,7 @@ for key in equipment_id_dict:
         try:
             fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_EAP_' + today,
                                                      profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"], None,
-                                                     "Lab-RADIUS",
+                                                     radius_name,
                                                      "wpa2OnlyRadius", "BRIDGE", 1, ["is5GHzU", "is5GHz", "is5GHzL"])
             print("5G EAP SSID created successfully - bridge mode")
             client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=1, msg='5G EAP SSID created successfully - bridge mode')
@@ -689,7 +718,7 @@ for key in equipment_id_dict:
             twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
                                                         fw_model + '_2G_EAP_' + today,
                                                         profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"], None,
-                                                        "Lab-RADIUS", "wpa2OnlyRadius", "BRIDGE", 1, ["is2dot4GHz"])
+                                                        radius_name, "wpa2OnlyRadius", "BRIDGE", 1, ["is2dot4GHz"])
             print("2.4G EAP SSID created successfully - bridge mode")
             client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=1,
                                    msg='2.4G EAP SSID created successfully - bridge mode')
@@ -716,7 +745,7 @@ for key in equipment_id_dict:
         except:
             twoFourG_wpa2 = "error"
             print("2.4G WPA2 SSID create failed - bridge mode")
-            client.update_testrail(case_id="5645", run_id=rid, status_id=5,
+            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=5,
                                    msg='2.4G WPA2 SSID create failed - bridge mode')
             report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "failed"
             twoFourG_wpa2 = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
@@ -741,8 +770,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
 
         ### Create AP Bridge Profile
-        rfProfileId = lab_ap_info.radius_profile
-        radiusProfileId = lab_ap_info.rf_profile
+        rfProfileId = lab_ap_info.rf_profile
+        radiusProfileId = radius_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
         print(child_profiles)
 
@@ -961,7 +990,7 @@ for key in equipment_id_dict:
             fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
                                                      fw_model + '_5G_EAP_NAT_' + today,
                                                      profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"], None,
-                                                     "Lab-RADIUS",
+                                                     radius_name,
                                                      "wpa2OnlyRadius", "NAT", 1,
                                                      ["is5GHzU", "is5GHz", "is5GHzL"])
             print("5G EAP SSID created successfully - NAT mode")
@@ -1021,7 +1050,7 @@ for key in equipment_id_dict:
                                                         fw_model + '_2G_EAP_NAT_' + today,
                                                         profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"],
                                                         None,
-                                                        "Lab-RADIUS", "wpa2OnlyRadius", "NAT", 1, ["is2dot4GHz"])
+                                                        radius_name, "wpa2OnlyRadius", "NAT", 1, ["is2dot4GHz"])
             print("2.4G EAP SSID created successfully - NAT mode")
             client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=1,
                                    msg='2.4G EAP SSID created successfully - NAT mode')
@@ -1073,8 +1102,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
 
         ### Create AP NAT Profile
-        rfProfileId = lab_ap_info.radius_profile
-        radiusProfileId = lab_ap_info.rf_profile
+        rfProfileId = lab_ap_info.rf_profile
+        radiusProfileId = radius_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
                               radiusProfileId]
         print(child_profiles)
@@ -1290,7 +1319,7 @@ for key in equipment_id_dict:
             fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
                                                      fw_model + '_5G_EAP_VLAN' + today,
                                                      profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"], None,
-                                                     "Lab-RADIUS",
+                                                     radius_name,
                                                      "wpa2OnlyRadius", "BRIDGE", 100, ["is5GHzU", "is5GHz", "is5GHzL"])
             print("5G EAP SSID created successfully - custom VLAN mode")
             client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=1,
@@ -1349,7 +1378,7 @@ for key in equipment_id_dict:
                                                         fw_model + '_2G_EAP_VLAN_' + today,
                                                         profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"],
                                                         None,
-                                                        "Lab-RADIUS", "wpa2OnlyRadius", "BRIDGE", 100, ["is2dot4GHz"])
+                                                        radius_name, "wpa2OnlyRadius", "BRIDGE", 100, ["is2dot4GHz"])
             print("2.4G EAP SSID created successfully - custom VLAN mode")
             client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=1,
                                    msg='2.4G EAP SSID created successfully - custom VLAN mode')
@@ -1401,8 +1430,8 @@ for key in equipment_id_dict:
             twoFourG_wpa = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
 
         ### Create AP VLAN Profile
-        rfProfileId = lab_ap_info.radius_profile
-        radiusProfileId = lab_ap_info.rf_profile
+        rfProfileId = lab_ap_info.rf_profile
+        radiusProfileId = radius_profile
         child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
         print(child_profiles)
         ap_template = "templates/ap_profile_template.json"

@@ -176,6 +176,16 @@ $json = json_decode($results, true);
    </TR>
 
    <TR ALIGN="CENTER">
+      <TD>5808</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create RADIUS Profile </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5808'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
       <TD>5644</TD>
       <TD>CloudSDK</TD>
       <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - Bridge Mode </TD>

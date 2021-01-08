@@ -223,3 +223,45 @@ class CloudSDK:
         #print(ssid_profile)
         ssid_profile_id = ssid_profile['id']
         return ssid_profile_id
+
+    def create_radius_profile(cloudSDK_url, bearer, template, name, subnet_name, subnet, subnet_mask, region, server_name, server_ip, secret, auth_port):
+        with open(template, 'r+') as radius_profile:
+            profile = json.load(radius_profile)
+
+            profile['name'] = name
+
+            subnet_config = profile['details']['subnetConfiguration']
+            old_subnet_name = list(subnet_config.keys())[0]
+            subnet_config[subnet_name] = subnet_config.pop(old_subnet_name)
+            profile['details']['subnetConfiguration'][subnet_name]['subnetAddress'] = subnet
+            profile['details']['subnetConfiguration'][subnet_name]['subnetCidrPrefix'] = subnet_mask
+            profile['details']['subnetConfiguration'][subnet_name]['subnetName'] = subnet_name
+
+            region_map = profile['details']['serviceRegionMap']
+            old_region = list(region_map.keys())[0]
+            region_map[region] = region_map.pop(old_region)
+            profile['details']['serviceRegionName'] = region
+            profile['details']['subnetConfiguration'][subnet_name]['serviceRegionName'] = region
+            profile['details']['serviceRegionMap'][region]['regionName'] = region
+
+            server_map = profile['details']['serviceRegionMap'][region]['serverMap']
+            old_server_name = list(server_map.keys())[0]
+            server_map[server_name] = server_map.pop(old_server_name)
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['ipAddress'] = server_ip
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['secret'] = secret
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['authPort'] = auth_port
+
+        with open(template, 'w') as radius_profile:
+            json.dump(profile, radius_profile)
+
+        url = cloudSDK_url + "/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        radius_profile = response.json()
+        #print(radius_profile)
+        #print(ssid_profile)
+        radius_profile_id = radius_profile['id']
+        return radius_profile_id

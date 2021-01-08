@@ -12,6 +12,19 @@ lanforge_2dot4g = "wiphy0"
 lanforge_5g = "wiphy3"
 lanforge_prefix = "sdk"
 
+##RADIUS Info
+radius_info = {
+
+    "name": "Lab-RADIUS",
+    "subnet_name": "Lab",
+    "subnet": "10.10.0.0",
+    "subnet_mask": 16,
+    "region": "Toronto",
+    "server_name": "Lab-RADIUS",
+    "server_ip": "10.10.10.203",
+    "secret": "testing123",
+    "auth_port": 1812
+}
 ##AP Models for firmware upload
 cloud_sdk_models = {
     "ec420": "EC420-G1",
@@ -118,7 +131,8 @@ test_cases = {
     "ssid_2g_wpa_vlan": 5658,
     "ssid_5g_eap_vlan": 5659,
     "ssid_5g_wpa2_vlan": 5660,
-    "ssid_5g_wpa_vlan": 5661
+    "ssid_5g_wpa_vlan": 5661,
+    "radius_profile": 5808
 }
 
 ## Other profiles
