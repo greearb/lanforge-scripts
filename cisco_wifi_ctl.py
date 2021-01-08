@@ -1372,6 +1372,9 @@ def main():
          egg.sendline(command)
          sleep(0.5)
          logg.info("command sent {}".format(command))
+         egg.expect([pexpect.TIMEOUT], timeout=1)
+         print(egg.before.decode('utf-8', 'ignore'))
+        
 
       command_sent = False
       loop_count = 0

@@ -1797,7 +1797,7 @@ def main():
        try:
           logg.info("3504 cisco_wifi_ctl.py: config 802.11a enable network")
           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                   "--action", "cmd", "--value", "config 802.11a enable network","--port", "--series" , args.series,args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                   "--action", "cmd", "--value", "config 802.11a enable network","--port", args.port, "--series" , args.series,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
           if cap_ctl_out:
              pss = ctl_output.stdout.decode('utf-8', 'ignore')
              logg.info(pss)
