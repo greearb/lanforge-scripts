@@ -1903,7 +1903,7 @@ Eventual Realm at Cisco
                                                             cisco_args.cisco_ap_mode       = cisco_ap_mode
                                                             cisco_args.cisco_tx_power      = cisco_tx_power 
                                                             logg.info(cisco_args)
-                                                            cisco = cisco_(cisco_args)
+                                                            cisco = cisco_(cisco_args)  # << is there a way to make a structure as compared to passing all args
                                                             #Disable AP
                                                             cisco.controller_disable_ap()
                                                             if cisco_args.cisco_series == "9800":
