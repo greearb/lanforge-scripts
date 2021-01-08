@@ -1194,6 +1194,7 @@ def main():
                            #logg.info("probe-line: %s"%(line))
                            m = re.search('signal avg:\s+(\S+)\s+\[(.*)\]\s+dBm', line)
                            if (m != None):
+                               logg.info("search: signal ave: resulted in m = {}".format(m))
                                sig = m.group(1)
                                ants = m.group(2).split()
                                q = 0
@@ -1210,6 +1211,7 @@ def main():
 
                            m = re.search('beacon signal avg:\s+(\S+)\s+dBm', line)
                            if (m != None):
+                               logg.info("search: beacon signal avg: resulted in m = {}".format(m))
                                beacon_sig = m.group(1)
                                logg.info("beacon_sig: %s "%(beacon_sig))
                                
@@ -1236,6 +1238,7 @@ def main():
                        #logg.info("probe-line: %s"%(line))From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (about line 1150)
                        m = re.search('Rx Bytes:\s+(\d+)', line)
                        if (m != None):
+                           logg.info("Rx Bytes: result {}".format(m))
                            rx_bytes = int(m.group(1))
                            if (rx_bytes == 0):
                                err = "ERROR:  No bytes received by data connection, test results may not be valid."
@@ -1249,7 +1252,7 @@ def main():
                    antstr = ""
                    for x in range(4):
                        if (x < int(n)):
-                           #logg.info("x: %s n: %s  len(ants): %s"%(x, n, len(ants)))
+                           logg.info("x: %s n: %s  len(ants): %s"%(x, n, len(ants)))
                            antstr += ants[x]
                        else:
                            antstr += " "
@@ -1272,27 +1275,35 @@ def main():
                        m = re.search('AP:\s+(.*)', line)
                        if (m != None):
                            _ap = m.group(1)
+                           logg.info("AP: {}".format(m))
                        m = re.search('Bandwidth:\s+(.*)Mhz', line)
                        if (m != None):
                            _bw = m.group(1)
+                           logg.info("Bandwidth: {}".format(m))
                        m = re.search('Channel:\s+(.*)', line)
                        if (m != None):
                            _ch = m.group(1)
+                           logg.info("Channel: {}".format(m))
                        m = re.search('Mode:\s+(.*)', line)
                        if (m != None):
                            _mode = m.group(1)
+                           logg.info("Mode: {}".format(m))
                        m = re.search('NSS:\s+(.*)', line)
                        if (m != None):
                            _nss = m.group(1)
+                           logg.info("NSS: {}".format(m))
                        m = re.search('Noise:\s+(.*)', line)
                        if (m != None):
                            _noise = m.group(1)
+                           logg.info("Noise: {}".format(m))
                        m = re.search('Noise:\s+(.*)dBm', line)
                        if (m != None):
                            _noise_bare = m.group(1)
+                           logg.info("Noise Bare: {}".format(m))
                        m = re.search('RX-Rate:\s+(.*)', line)
                        if (m != None):
                            _rxrate = m.group(1)
+                           logg.info("RX-Rate: {}".format(m))
 
                    # ath10k radios now take noise-floor into account, so adjust_nf
                    # should remain set to false when using those radios.  Possibly other
