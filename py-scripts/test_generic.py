@@ -3,7 +3,7 @@
 """test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
 
 This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
-including ping, speedtest, generic types. The test will check the last result column for different things
+including ping, speedtest, generic types. The test will check the last-result attribute for different things
 depending on what test is being run. Ping will test for successful pings, speedtest will test for download
 speed, upload speed, and ping time, generic will test for successful generic commands
 
