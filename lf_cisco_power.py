@@ -1381,7 +1381,7 @@ def main():
                    logg.info("allowed_per_path: {}  = cc_dbmi: {}".format(allowed_per_path,cc_dbmi))
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
-                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        if (abs(diff_a1) > pfrange):
                            pf = 0
@@ -1391,10 +1391,10 @@ def main():
                        logg.info("allowed_per_path: {}  = cc_dbmi: {} - 3".format(allowed_per_path,cc_dbmi))
 
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("(Offset 1) diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange)):
@@ -1405,13 +1405,13 @@ def main():
                        logg.info("allowed_per_path: {}  = cc_dbmi: {} - 5".format(allowed_per_path,cc_dbmi))
 
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("(Offset 1) diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        diff_a3 = calc_ant3 - allowed_per_path
-                       logg.info("diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
+                       logg.info("(Offset 3) diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange) or
@@ -1423,16 +1423,16 @@ def main():
                        logg.info("allowed_per_path: {}  = cc_dbmi: {} - 6".format(allowed_per_path,cc_dbmi))
 
                        diff_a1 = calc_ant1 - allowed_per_path
-                       logg.info("diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+                       logg.info("(Offset 1) diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                        diff_a2 = calc_ant2 - allowed_per_path
-                       logg.info("diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
+                       logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
 
                        diff_a3 = calc_ant3 - allowed_per_path
-                       logg.info("diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
+                       logg.info("(Offset 3) diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
                        diff_a4 = calc_ant4 - allowed_per_path
-                       logg.info("diff_a4: {} = calc_ant4: {} - allowed_per_path: {}".format(diff_a4, calc_ant4, allowed_per_path))
+                       logg.info("(Offset 4) diff_a4: {} = calc_ant4: {} - allowed_per_path: {}".format(diff_a4, calc_ant4, allowed_per_path))
 
                        # DUT transmits one chain at lower power when using higher MCS, so allow
                        # for that as passing result.
