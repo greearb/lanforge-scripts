@@ -1333,15 +1333,22 @@ def main():
                    calc_ant1 = 0
                    if (ants[0] != ""):
                        calc_ant1 = int(ants[0]) + pi + rssi_adj + ag
+                       logg.info("calc_ant1 {} ants[0] {}".format(calc_ant1,ants[0]))
                    calc_ant2 = 0
                    calc_ant3 = 0
                    calc_ant4 = 0
                    if (len(ants) > 1 and ants[1] != ""):
                        calc_ant2 = int(ants[1]) + pi + rssi_adj + ag
+                       logg.info("calc_ant2 {} ants[1] {}".format(calc_ant2,ants[1]))
+
                    if (len(ants) > 2 and ants[2] != ""):
                        calc_ant3 = int(ants[2]) + pi + rssi_adj + ag
+                       logg.info("calc_ant3 {} ants[1] {}".format(calc_ant3,ants[2]))
+
                    if (len(ants) > 3 and ants[3] != ""):
                        calc_ant4 = int(ants[3]) + pi + rssi_adj + ag
+                       logg.info("calc_ant4 {} ants[3] {}".format(calc_ant4,ants[3]))
+
 
                    diff_a1 = ""
                    diff_a2 = ""
@@ -1353,7 +1360,10 @@ def main():
                    else:
                       cc_dbmi = int(cc_dbm)
                    diff_dbm = calc_dbm - cc_dbmi 
+                   logg.info("diff_dbm {} calc_dbm {} - cc_dbmi {}".format(diff_dbm, calc_dbm, cc_dbmi))
                    diff_dbm_beacon = calc_dbm_beacon - cc_dbmi
+                   logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
+
                    if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
                       w_tot = "WARNING: Controller and beacon power different by greater than +/- {} dBm".format(args.beacon_dbm_diff) 
 
@@ -1368,15 +1378,22 @@ def main():
                    # NSS tranmission will mean that each chain should be decreased so that sum total
                    # of all chains is equal to the maximum allowed txpower.
                    allowed_per_path = cc_dbmi
+                   logg.info("allowed_per_path {}  = cc_dbmi {}".format(allowed_per_path,cc_dbmi))
                    if (int(_nss) == 1):
                        diff_a1 = calc_ant1 - cc_dbmi
+                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+
                        if (abs(diff_a1) > pfrange):
                            pf = 0
                    if (int(_nss) == 2):
                        # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
                        allowed_per_path = cc_dbmi - 3
                        diff_a1 = calc_ant1 - allowed_per_path
+                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+
                        diff_a2 = calc_ant2 - allowed_per_path
+                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange)):
                            pf = 0
@@ -1384,8 +1401,14 @@ def main():
                        # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
                        allowed_per_path = cc_dbmi - 5
                        diff_a1 = calc_ant1 - allowed_per_path
+                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+
                        diff_a2 = calc_ant2 - allowed_per_path
+                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+
                        diff_a3 = calc_ant3 - allowed_per_path
+                       logg.info("diff_a3 {} = calc_ant3 {} - allowed_per_path {}".format(diff_a3, calc_ant3, allowed_per_path))
+
                        if ((abs(diff_a1) > pfrange) or
                            (abs(diff_a2) > pfrange) or
                            (abs(diff_a3) > pfrange)):
@@ -1394,9 +1417,17 @@ def main():
                        # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
                        allowed_per_path = cc_dbmi - 6
                        diff_a1 = calc_ant1 - allowed_per_path
+                       logg.info("diff_a1 {} = calc_ant1 {} - allowed_per_path {}".format(diff_a1, calc_ant1, allowed_per_path))
+
                        diff_a2 = calc_ant2 - allowed_per_path
+                       logg.info("diff_a2 {} = calc_ant2 {} - allowed_per_path {}".format(diff_a2, calc_ant2, allowed_per_path))
+
                        diff_a3 = calc_ant3 - allowed_per_path
+                       logg.info("diff_a3 {} = calc_ant3 {} - allowed_per_path {}".format(diff_a3, calc_ant3, allowed_per_path))
+
                        diff_a4 = calc_ant4 - allowed_per_path
+                       logg.info("diff_a4 {} = calc_ant4 {} - allowed_per_path {}".format(diff_a4, calc_ant4, allowed_per_path))
+
                        # DUT transmits one chain at lower power when using higher MCS, so allow
                        # for that as passing result.
                        failed_low = 0
