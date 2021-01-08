@@ -1333,21 +1333,21 @@ def main():
                    calc_ant1 = 0
                    if (ants[0] != ""):
                        calc_ant1 = int(ants[0]) + pi + rssi_adj + ag
-                       logg.info("calc_ant1 {} ants[0] {}".format(calc_ant1,ants[0]))
+                       logg.info("calc_ant1: {} = ants[0]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant1,ants[0],pi, rssi_adj,ag))
                    calc_ant2 = 0
                    calc_ant3 = 0
                    calc_ant4 = 0
                    if (len(ants) > 1 and ants[1] != ""):
                        calc_ant2 = int(ants[1]) + pi + rssi_adj + ag
-                       logg.info("calc_ant2 {} ants[1] {}".format(calc_ant2,ants[1]))
+                       logg.info("calc_ant2: {} = ants[1]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant2,ants[1],pi, rssi_adj,ag))
 
                    if (len(ants) > 2 and ants[2] != ""):
                        calc_ant3 = int(ants[2]) + pi + rssi_adj + ag
-                       logg.info("calc_ant3 {} ants[1] {}".format(calc_ant3,ants[2]))
+                       logg.info("calc_ant3: {} = ants[2]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant3,ants[2],pi, rssi_adj,ag))
 
                    if (len(ants) > 3 and ants[3] != ""):
                        calc_ant4 = int(ants[3]) + pi + rssi_adj + ag
-                       logg.info("calc_ant4 {} ants[3] {}".format(calc_ant4,ants[3]))
+                       logg.info("calc_ant4: {} = ants[3]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant4,ants[3],pi, rssi_adj,ag))
 
 
                    diff_a1 = ""
