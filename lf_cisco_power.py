@@ -1191,7 +1191,7 @@ def main():
 
                        foundit = False
                        for line in pss.splitlines():
-                           logg.info("probe-line: %s"%(line))
+                           #logg.info("probe-line: %s"%(line))
                            m = re.search('signal avg:\s+(\S+)\s+\[(.*)\]\s+dBm', line)
                            if (m != None):
                                sig = m.group(1)
