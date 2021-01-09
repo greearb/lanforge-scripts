@@ -2,9 +2,7 @@
 
 """test_ipv4_l4_wifi.py will create stations and endpoints to generate and verify layer-4 upload traffic
 
-This script will create a variable number of stations that will attempt to use layer 4 endpoints to generate traffic.
-A test will run for a specified amount of time with periodic checks for traffic successfully being received. The test will
-monitor the bytes-rd attribute of the endpoints. An increase at every test interval will pass the test, otherwise it will fail
+This script will monitor the bytes-rd attribute of the endpoints. If the the monitored value does not continually increase, this test will not pass.
 
 Use './test_ipv4_l4_wifi.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
