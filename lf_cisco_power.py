@@ -37,6 +37,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     -l out_file2  -D 14 --exit_on_fail 
     --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465" 
     --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"
+    --series "3504" --prompt "(Cisco Controler)"
 
 ##############################################################################################
 # Long duration test
