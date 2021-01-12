@@ -1378,7 +1378,7 @@ def main():
                    logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
 
                    if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
-                      w_tot = "WARNING: Controller and beacon power different by greater than +/- {} dBm".format(args.beacon_dbm_diff) 
+                      w_tot = "WARNING: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(args.beacon_dbm_diff) 
 
                    pfs = "PASS"
                    pfrange = pf_dbm;
