@@ -379,5 +379,12 @@ foreach my $file (@places_to_check) {
       }
    }
 } # ~for places_to_check
+if ( -d "/etc/httpd/conf.d") {
+  die($!) unless open(FILE, ">", "/etc/httpd/conf.d/00-ServerName.conf");
+  print FILE "ServerName $MgrHostname\n";
+  #print FILE "Listen $MgrHostname:80\n";
+  #print FILE "Listen $MgrHostname:443\n";
+  close FILE;
+}
 
 #
