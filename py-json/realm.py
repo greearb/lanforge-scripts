@@ -1116,7 +1116,9 @@ class L3CXProfile(LFCliBase):
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
+        timestamps=[]
         while datetime.datetime.now() < end_time:
+            timepoints.append(datetime.datetime.now())
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
             if "endpoint" not in response:
                 print(response)
@@ -1152,15 +1154,12 @@ class L3CXProfile(LFCliBase):
         for y in range(0, len(endpoints)):
             for x in range(0, len(endpoints[0])):
                 endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
-        timestamps=[]
-        for timestamp in [*value_map.keys()]:
-            timestamps.extend([str(timestamp)]*2*len(created_cx))
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps[point])
         #step 4 save and close
         header_row=col_names
         header_row.insert(0,'Timestamp')
-        if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] is 'xlsx':
+        if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] == 'xlsx':
             report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
@@ -1200,7 +1199,11 @@ class L3CXProfile(LFCliBase):
             if output_format == 'png':
                 fig=df.plot().get_figure()
                 fig.savefig(report_file)
-            supported_formats = ['csv','json','html','stata','pickle']
+            if output_format == 'html':
+                print('Shivams function')
+            if output_format == 'df':
+                return df
+            supported_formats = ['csv','json','stata','pickle']
             for x in supported_formats:
                 if output_format.lower() == x or report_file.split('.')[-1] == x:
                     exec('df.to_'+x+'("'+report_file+'")')
@@ -1848,7 +1851,12 @@ class WifiMonitor:
                # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
 class VAPProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, vap_name="", ssid="NA", ssid_pass="NA", mode=0, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, local_realm,
+                 vap_name="",
+                 ssid="NA",
+                 ssid_pass="NA",
+                 mode=0,
+                 debug_=False):
         super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
         self.debug = debug_
         #self.lfclient_url = lfclient_url # done in super()
@@ -2843,8 +2851,9 @@ class MACVLANProfile(LFCliBase):
         print(self.created_macvlans)
         for port_eid in self.created_macvlans:
             self.local_realm.rm_port(port_eid, check_exists=True)
-            time.sleep(.2)
+            time.sleep(.02)
         # And now see if they are gone
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.created_macvlans)
 
 
     def admin_up(self):

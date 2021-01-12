@@ -33,6 +33,7 @@ class CreateStation(Realm):
                  _radio="wiphy0",
                  _proxy_str=None,
                  _debug_on=False,
+                 _up=True,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(_host,
@@ -47,6 +48,7 @@ class CreateStation(Realm):
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
+        self.up = _up
         self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -70,6 +72,9 @@ class CreateStation(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+        if self.up:
+            self.station_profile.admin_up()
+
         self._pass("PASS: Station build finished")
 
 
