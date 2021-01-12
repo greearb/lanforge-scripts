@@ -1,6 +1,14 @@
 ''' Author: Nikita Yadav
 
 	This script will calculate the cpu and memory utilization by the system during runtime the output of which is a graph on html page also the second tab of html gives the system logs
+
+steps to run script:
+1-	On mate terminal type – python3 (file_name) -t (your duration in minutes for how much time you want to run the script).
+2-	Example – python3 cpu_stat.py  -t 1
+3-	Wait for the time provided to calculate statistics.
+4-	After the script ends check for log.html file.
+5-	Log.html file file show results in tab format selected.
+
 '''
 
 import argparse
