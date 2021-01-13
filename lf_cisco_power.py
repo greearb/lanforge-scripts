@@ -880,6 +880,7 @@ def main():
                           pass
                        else: 
                           wlan_created = True 
+                          logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
                               ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
