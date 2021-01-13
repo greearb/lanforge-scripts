@@ -40,7 +40,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --series "3504" --prompt "(Cisco Controler)"
 
 ##############################################################################################
-# Long duration test
+# Long duration test -- need to create the --wlan open-wlan --wlanID -  need to put in the notes
 ##############################################################################################
 
 ./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
@@ -257,10 +257,10 @@ def main():
 
    parser = argparse.ArgumentParser(description="Cisco TX Power report Script",epilog=EPILOG,
       formatter_class=argparse.RawTextHelpFormatter)
-   parser.add_argument("-d", "--dest",       type=str, help="address of the cisco controller")
-   parser.add_argument("-o", "--port",       type=str, help="control port on the controller", default=23)
-   parser.add_argument("-u", "--user",       type=str, help="credential login/username")
-   parser.add_argument("-p", "--passwd",     type=str, help="credential password")
+   parser.add_argument("-d", "--dest",       type=str, help="address of the cisco controller",required=True)
+   parser.add_argument("-o", "--port",       type=str, help="control port on the controller",required=True)
+   parser.add_argument("-u", "--user",       type=str, help="credential login/username",required=True)
+   parser.add_argument("-p", "--passwd",     type=str, help="credential password",required=True)
    parser.add_argument("-s", "--scheme",     type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
    parser.add_argument("-t", "--tty",        type=str, help="tty serial device")
    parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
@@ -285,22 +285,22 @@ def main():
    parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier default wlan-open",default="wlan-open")
-   parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1")
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier default wlan-open",required=True)
+   parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1",required=True)
    parser.add_argument("--series",           type=str, help="--series  9800 or 3504, defaults to 9800",default="9800")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",             type=str, help="ssid default open-wlan",default="open-wlan")
-   parser.add_argument("--ssidpw",           type=str, help="ssidpw default [BLANK]",default="[BLANK]")
-   parser.add_argument("--security",         type=str, help="security default open",default="open")
+   parser.add_argument("--ssid",             type=str, help="ssid",required=True)
+   parser.add_argument("--ssidpw",           type=str, help="ssidpw",required=True)
+   parser.add_argument("--security",         type=str, help="security",required=True)
    parser.add_argument("--cleanup",          action='store_true',help="--cleanup , Clean up stations after test completes ")
    parser.add_argument("--vht160",           action='store_true',help="--vht160 , Enable VHT160 in lanforge ")
    parser.add_argument('--verbose',          action='store_true',help='--verbose , switch the cisco controller output will be captured')
    parser.add_argument("--exit_on_fail",     action='store_true',help="--exit_on_fail,  exit on test failure")
    parser.add_argument("--exit_on_error",    action='store_true',help="--exit_on_error, exit on test error, test mechanics failed")
    parser.add_argument('-e','--email',       action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-   parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt default WLC",default="WLC")
+   parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
@@ -744,7 +744,13 @@ def main():
                           pss = ctl_output.stdout.decode('utf-8', 'ignore')
                           logg.info(pss) 
                    except subprocess.CalledProcessError as process_error:
+                       logg.info("####################################################################################################") 
                        logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                       logg.info("####################################################################################################") 
+                       logg.info("####################################################################################################") 
+                       logg.info("#CHECK IF CONTROLLER HAS TELNET CONNECTION ALREADY ACTIVE") 
+                       logg.info("####################################################################################################") 
+
                        exit_test(workbook)
 
                    if args.series == "9800": 
@@ -754,7 +760,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_wlan","--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
+                                   "--action", "disable_wlan","--wlan", args.wlan, "--wlanID", args.wlanID,"--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -900,7 +906,7 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "enable_wlan","--wlan", args.wlan, "--wlanID", args.wlanID,"--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)                 
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 

@@ -1272,10 +1272,10 @@ def main():
             if i == 1:
                logg.info("did not get the (config)# prompt")
       else:
-         if (args.action == "enable_wlan" and (args.wlanID is None)):
+         if (args.wlan is None):
             raise Exception("wlan ID is required")
-         logg.info("send: config wlan enable {}".format(args.wlanID))
-         command = "config wlan enable %s"%(args.wlanID)
+         logg.info("send: config wlan enable {}".format(args.wlan))
+         command = "config wlan enable %s"%(args.wlan)
 
    if (args.action == "disable_wlan"):
       if args.series == "9800":
@@ -1302,13 +1302,13 @@ def main():
             if i == 1:
                logg.info("did not get the (config)# prompt")
       else:
-         if (args.action == "disable_wlan" and (args.wlanID is None)):
+         if (args.wlan is None):
             raise Exception("wlan ID is required")
-         logg.info("send: config wlan disable {}".format(args.wlanID))
-         command = "config wlan disable %s"%(args.wlanID)
+         logg.info("send: config wlan disable {}".format(args.wlan))
+         command = "config wlan disable %s"%(args.wlan)
 
 
-   if (args.action == "wlan_qos" and (args.wlanID is None)):
+   if (args.action == "wlan_qos" and (args.wlan is None)):
       raise Exception("wlan ID is required")
    if (args.action == "wlan_qos"):
       command = "config wlan qos %s %s"%(args.wlanID, args.value)
