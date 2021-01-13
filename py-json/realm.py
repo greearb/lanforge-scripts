@@ -1110,29 +1110,28 @@ class L3CXProfile(LFCliBase):
         fields=",".join(col_names)
         #Step 2, monitor columns
         start_time = datetime.datetime.now()
-        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+        iterations=duration_sec/monitor_interval
 
         value_map = dict()
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         timestamps=[]
-        while datetime.datetime.now() < end_time:
-            timepoints.append(datetime.datetime.now())
+        for x in range(0,int(round(iterations,0))):
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
             if show:
                 print(response)
-            value_map[datetime.datetime.now()]=response
-            if datetime.datetime.now() > end_time:
-                break
+            t=datetime.datetime.now()
+            timestamps.append(t)
+            value_map[t]=response
             new_cx_rx_values = self.__get_rx_values()
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)
                 print("\n-----------------------------------")
-                print(curr_time, end_time)
+                print(curr_time)
                 print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
@@ -1154,8 +1153,10 @@ class L3CXProfile(LFCliBase):
         for y in range(0, len(endpoints)):
             for x in range(0, len(endpoints[0])):
                 endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
+        import itertools
+        timestamps2=list(itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
         for point in range(0, len(endpoints2)):
-            endpoints2[point].insert(0, timestamps[point])
+            endpoints2[point].insert(0, timestamps2[point])
         #step 4 save and close
         header_row=col_names
         header_row.insert(0,'Timestamp')
