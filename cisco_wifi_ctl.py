@@ -918,7 +918,7 @@ def main():
       logg.info("waiting for prompt: {}".format(CCPROMPT))
       egg.expect(">", timeout=3)
 
-   logg.info("Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
+   logg.info("Command to Process :: Ap[%s] Action[%s] Value[%s] "%(args.ap, args.action, args.value))
    print("Ap[%s] Action[%s] Value[%s]"%(args.ap, args.action, args.value))
 
    if ((args.action == "show") and (args.value is None)):
@@ -1247,7 +1247,7 @@ def main():
          command = "config wlan delete %s"%(args.wlanID) 
 
    logg.info("action {} series {}".format(args.action,args.series))
-   if (args.action == ["enable_wlan","disble_wlan"]):
+   if (args.action == "enable_wlan"):
       if args.series == "9800":
          if (args.wlan is None):
             raise Exception("9800 series wlan is required")
@@ -1263,10 +1263,8 @@ def main():
                sleep(0.1)
                j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
                if j == 0:
-                  if (args.action == "enable_wlan"):
-                      cmd = "no shutdown"
-                  else:
-                      cmd = "shutdown"
+                  logg.info("enable_wlan send no shutdown")
+                  cmd = "no shutdown"
                   egg.sendline(cmd)
                   sleep(0.1)
                if j == 1:
@@ -1274,12 +1272,41 @@ def main():
             if i == 1:
                logg.info("did not get the (config)# prompt")
       else:
-         if (args.action == ["enable_wlan","disable_wlan"] and (args.wlanID is None)):
+         if (args.action == "enable_wlan" and (args.wlanID is None)):
             raise Exception("wlan ID is required")
-         if (args.action == "enable_wlan"):
-            command = "config wlan enable %s"%(args.wlanID)
-         else:   
-            command = "config wlan disable %s"%(args.wlanID) 
+         logg.info("send: config wlan enable {}".format(args.wlanID))
+         command = "config wlan enable %s"%(args.wlanID)
+
+   if (args.action == "disable_wlan"):
+      if args.series == "9800":
+         if (args.wlan is None):
+            raise Exception("9800 series wlan is required")
+         else:
+            logg.info("sendline config t")
+            egg.sendline("config t")
+            sleep(0.3)
+            i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
+            if i == 0:
+               logg.info("elevated to (config)#")
+               cmd = "wlan %s"%(args.wlan)
+               egg.sendline(cmd)
+               sleep(0.1)
+               j = egg.expect_exact(["(config-wlan)#",pexpect.TIMEOUT],timeout=2)
+               if j == 0:
+                  logg.info("disable_wlan send shutdown")
+                  cmd = "shutdown"
+                  egg.sendline(cmd)
+                  sleep(0.1)
+               if j == 1:
+                  logg.info("did not get the (config-wlan)# prompt")
+            if i == 1:
+               logg.info("did not get the (config)# prompt")
+      else:
+         if (args.action == "disable_wlan" and (args.wlanID is None)):
+            raise Exception("wlan ID is required")
+         logg.info("send: config wlan disable {}".format(args.wlanID))
+         command = "config wlan disable %s"%(args.wlanID)
+
 
    if (args.action == "wlan_qos" and (args.wlanID is None)):
       raise Exception("wlan ID is required")
