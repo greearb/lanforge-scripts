@@ -1301,13 +1301,13 @@ def main():
          i = egg.expect_exact([CCP,CCP_EN, CCP_CONFIG,CCP_CONFIG_WLAN,CCP_POLICY_TAG,CCP_CONFIG_LINE,pexpect.TIMEOUT],timeout=5)
          print (egg.before.decode('utf-8', 'ignore'))
          if i == 0:
-            logg.info("{} prompt received can send logout".format(CCP))
+            logg.info("{} prompt received can send logout, loop_count: {}".format(CCP,loop_count))
             egg.sendline("logout")
             sleep(0.1)
             logged_out_9800 = True
             break
          if i == 1:
-            logg.info("{} prompt received will send logout".format(CCP_EN))
+            logg.info("{} prompt received will send logout, loop_count: {}".format(CCP_EN,loop_count))
             try:
                egg.sendline("logout")
                sleep(0.1)
@@ -1317,7 +1317,7 @@ def main():
                sleep(0.1)
             break
          if i == 2:
-            logg.info("{} prompt received will send exit".format(CCP_CONFIG))
+            logg.info("{} prompt received will send exit, loop_count: {}".format(CCP_CONFIG, loop_count))
             try:
                egg.sendline("exit")
                sleep(0.2)
@@ -1326,7 +1326,7 @@ def main():
                logg.info("9800 exception on end")
                sleep(0.1)
          if i == 3:
-            logg.info("{} prompt received will send end".format(CCP_CONFIG_WLAN))
+            logg.info("{} prompt received will send end, loop_count: {}".format(CCP_CONFIG_WLAN, loop_count))
             try:
                egg.sendline("end")
                sleep(0.2)
@@ -1334,7 +1334,7 @@ def main():
                logg.info("9800 exception on end")
                sleep(0.1)
          if i == 4:
-            logg.info("(config-policy-tag)# prompt received will send end")
+            logg.info("(config-policy-tag)# prompt received will send end, loop_count: {}".format(loop_count))
             try:
                egg.sendline("end")
                sleep(0.2)
@@ -1342,7 +1342,7 @@ def main():
                logg.info("9800 exception on end")
                sleep(0.1)
          if i == 5:
-            logg.info("{} prompt received will send end".format(CCP_CONFIG_LINE))
+            logg.info("{} prompt received will send end, loop_count: {}".format(CCP_CONFIG_LINE,loop_count))
             try:
                egg.sendline("end")
                sleep(0.2)
@@ -1350,11 +1350,14 @@ def main():
                logg.info("9800 exception on end")
                sleep(0.1)
          if i == 6:
-            logg.info("9800 expect timeout send end")
+            logg.info("9800 expect timeout loop_count: {}".format(loop_count))
             egg.sendline("end")
-            break
+            
       if( logged_out_9800 == False):
+         logg.info("######################################################################################") 
          logg.info("9800 did not send logout at end of command processing this could tie up the connection") 
+         logg.info("######################################################################################") 
+
       if( scheme == "telnet"):
          egg.sendline("\x1b\r")
          logg.info("send escape to exit connection")  
