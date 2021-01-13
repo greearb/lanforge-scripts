@@ -175,6 +175,86 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ec420']['5222'],true) ?></TD>
    </TR>
 
+   <TR ALIGN="CENTER">
+      <TD>5808</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create RADIUS Profile </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5808'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5644</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5644'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5645</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2 - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5645'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5645'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5645'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5645'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5646</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5646'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5647</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2-EAP - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5646'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5647</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2 - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5647'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5647'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5647'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5647'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5648</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5648'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5648'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5648'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5648'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5641</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - Bridge Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5641'],true) ?></TD>
+   </TR>
+
        <TR ALIGN="CENTER">
       <TD>5541</TD>
       <TD>CloudSDK</TD>
@@ -249,6 +329,76 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD> 
 
+    <TR ALIGN="CENTER">
+      <TD>5650</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5650'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5650'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5650'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5650'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5651</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2 - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5651'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5651'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5651'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5651'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5652</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5652'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5652'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5652'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5652'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5653</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2-EAP - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5653'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5653'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5653'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5653'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5654</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2 - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5654'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5654'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5654'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5654'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5655</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5655'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5655'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5655'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5655'],true) ?></TD>
+   </TR>
+
+    <TR ALIGN="CENTER">
+      <TD>5642</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - NAT Mode </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5642'],true) ?></TD>
+   </TR>
+
         <TR ALIGN="CENTER">
       <TD>5542</TD>
       <TD>CloudSDK</TD>
@@ -322,6 +472,77 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5410']['4324'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4324'],true) ?></TD>    
    </TR>
+
+    <TR ALIGN="CENTER">
+      <TD>5656</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2-EAP - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5656'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5656'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5656'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5656'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5657</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA2 - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5657'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5657'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5657'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5657'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5658</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 2.4 GHz WPA - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5658'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5658'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5658'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5658'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5659</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2-EAP - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5659'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5659'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5659'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5659'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5660</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA2 - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5660'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5660'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5660'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5660'],true) ?></TD>
+   </TR>
+
+   <TR ALIGN="CENTER">
+      <TD>5661</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create SSID Profile 5 GHz WPA - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5661'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5661'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5661'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5661'],true) ?></TD>
+   </TR>
+
+    <TR ALIGN="CENTER">
+      <TD>5643</TD>
+      <TD>CloudSDK</TD>
+      <TD ALIGN="LEFT">Create AP Profile - Custom VLAN </TD>
+      <TD><?php echo print_r($json['tests']['ea8300']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5211']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ecw5410']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5643'],true) ?></TD>
+   </TR>
+
         <TR ALIGN="CENTER">
       <TD>5543</TD>
       <TD>CloudSDK</TD>

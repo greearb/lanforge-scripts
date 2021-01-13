@@ -41,7 +41,7 @@ MODE_AUTO=0
 class EAPConnect(LFCliBase):
     def __init__(self, host, port, security=None, ssid=None, sta_list=None, number_template="00000", _debug_on=False, _dut_bssid="",
                  _exit_on_error=False, _sta_name=None, _resource=1, radio="wiphy0", key_mgmt="WPA-EAP", eap="", identity="",
-                 ttls_passwd="", hessid=None, ttls_realm="", domain="", _exit_on_fail=False, _cleanup_on_exit=True):
+                 ttls_passwd="", hessid=None, ttls_realm="", domain="", _sta_prefix='eap', _exit_on_fail=False, _cleanup_on_exit=True):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
@@ -52,6 +52,7 @@ class EAPConnect(LFCliBase):
         self.sta_list = sta_list
         self.key_mgmt = key_mgmt
         self.eap = eap
+        self.sta_prefix = _sta_prefix
         self.identity = identity
         self.ttls_passwd = ttls_passwd
         self.ttls_realm = ttls_realm
@@ -119,7 +120,7 @@ class EAPConnect(LFCliBase):
         counter = 0
         # print("there are %d results" % len(self.station_results))
         fields = "_links,port,alias,ip,ap,port+type"
-        self.station_results = self.localrealm.find_ports_like("eap*", fields, debug_=False)
+        self.station_results = self.localrealm.find_ports_like("%s*"%self.sta_prefix, fields, debug_=False)
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid,record in self.station_results.items():
@@ -188,7 +189,7 @@ class EAPConnect(LFCliBase):
         self.l3_udp_profile.report_timer = 1000
         self.l3_udp_profile.name_prefix = "udp"
         self.l3_udp_profile.create(endp_type="lf_udp",
-                                   side_a=list(self.localrealm.find_ports_like("eap+")),
+                                   side_a=list(self.localrealm.find_ports_like("%s*"%self.sta_prefix)),
                                    side_b="%d.%s" % (self.resource, self.upstream_port),
                                    suppress_related_commands=True)
 
@@ -199,7 +200,7 @@ class EAPConnect(LFCliBase):
         self.l3_tcp_profile.name_prefix = "tcp"
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
-                                   side_a=list(self.localrealm.find_ports_like("eap+")),
+                                   side_a=list(self.localrealm.find_ports_like("%s*"%self.sta_prefix)),
                                    side_b="%d.%s" % (self.resource, self.upstream_port),
                                    suppress_related_commands=True)
 

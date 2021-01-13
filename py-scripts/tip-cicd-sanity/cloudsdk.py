@@ -42,8 +42,8 @@ class CloudSDK:
     def __init__(self):
         self.user = user
 
-    def get_bearer(cloudSDK_url):
-        cloud_login_url = cloudSDK_url+"/management/v1/oauth2/token"
+    def get_bearer(cloudSDK_url, cloud_type):
+        cloud_login_url = cloudSDK_url+"/management/"+cloud_type+"/oauth2/token"
         payload = '''
         {
         "userId": "'''+user+'''",
@@ -179,3 +179,89 @@ class CloudSDK:
         cloud_sdk_version = response.json()
         return cloud_sdk_version
 
+    def create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles):
+        with open(template, 'r+') as ap_profile:
+            profile = json.load(ap_profile)
+            profile["name"] = name
+            profile["childProfileIds"] = child_profiles
+
+        with open(template, 'w') as ap_profile:
+            json.dump(profile, ap_profile)
+
+        url = cloudSDK_url+"/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        ap_profile = response.json()
+        print(ap_profile)
+        ap_profile_id = ap_profile['id']
+        return ap_profile_id
+
+    def create_ssid_profile(cloudSDK_url, bearer, template, name, ssid, passkey, radius, security, mode, vlan, radios):
+        with open(template, 'r+') as ssid_profile:
+            profile = json.load(ssid_profile)
+            profile['name'] = name
+            profile['details']['ssid'] = ssid
+            profile['details']['keyStr'] = passkey
+            profile['details']['radiusServiceName'] = radius
+            profile['details']['secureMode'] = security
+            profile['details']['forwardMode'] = mode
+            profile['details']['vlanId'] = vlan
+            profile['details']['appliedRadios'] = radios
+        with open(template, 'w') as ssid_profile:
+            json.dump(profile, ssid_profile)
+
+        url = cloudSDK_url + "/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        ssid_profile = response.json()
+        #print(ssid_profile)
+        ssid_profile_id = ssid_profile['id']
+        return ssid_profile_id
+
+    def create_radius_profile(cloudSDK_url, bearer, template, name, subnet_name, subnet, subnet_mask, region, server_name, server_ip, secret, auth_port):
+        with open(template, 'r+') as radius_profile:
+            profile = json.load(radius_profile)
+
+            profile['name'] = name
+
+            subnet_config = profile['details']['subnetConfiguration']
+            old_subnet_name = list(subnet_config.keys())[0]
+            subnet_config[subnet_name] = subnet_config.pop(old_subnet_name)
+            profile['details']['subnetConfiguration'][subnet_name]['subnetAddress'] = subnet
+            profile['details']['subnetConfiguration'][subnet_name]['subnetCidrPrefix'] = subnet_mask
+            profile['details']['subnetConfiguration'][subnet_name]['subnetName'] = subnet_name
+
+            region_map = profile['details']['serviceRegionMap']
+            old_region = list(region_map.keys())[0]
+            region_map[region] = region_map.pop(old_region)
+            profile['details']['serviceRegionName'] = region
+            profile['details']['subnetConfiguration'][subnet_name]['serviceRegionName'] = region
+            profile['details']['serviceRegionMap'][region]['regionName'] = region
+
+            server_map = profile['details']['serviceRegionMap'][region]['serverMap']
+            old_server_name = list(server_map.keys())[0]
+            server_map[server_name] = server_map.pop(old_server_name)
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['ipAddress'] = server_ip
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['secret'] = secret
+            profile['details']['serviceRegionMap'][region]['serverMap'][server_name][0]['authPort'] = auth_port
+
+        with open(template, 'w') as radius_profile:
+            json.dump(profile, radius_profile)
+
+        url = cloudSDK_url + "/portal/profile"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("POST", url, headers=headers, data=open(template, 'rb'))
+        radius_profile = response.json()
+        #print(radius_profile)
+        #print(ssid_profile)
+        radius_profile_id = radius_profile['id']
+        return radius_profile_id

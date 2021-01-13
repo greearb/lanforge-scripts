@@ -16,6 +16,8 @@ from pprint import pprint
 import os
 tr_user=os.getenv('TR_USER')
 tr_pw=os.getenv('TR_PWD')
+project = os.getenv('PROJECT_ID')
+
 
 class APIClient:
     def __init__(self, base_url):
@@ -112,7 +114,7 @@ class APIClient:
         "Get the project ID using project name"
         project_id = None
         projects = client.send_get('get_projects')
-        #pprint(projects)
+        ##pprint(projects)
         for project in projects:
             if project['name']== project_name:
                 project_id = project['id']
@@ -124,7 +126,7 @@ class APIClient:
     def get_run_id(self, test_run_name):
         "Get the run ID using test name and project name"
         run_id = None
-        project_id = client.get_project_id(project_name='WLAN')
+        project_id = client.get_project_id(project_name=project)
 
         try:
             test_runs = client.send_get('get_runs/%s' % (project_id))
@@ -178,7 +180,8 @@ class APIClient:
             {'name': name, 'case_ids': case_ids, 'milestone_id': milestone_id, 'description': description, 'include_all': False})
         print("result in post", result)
 
-client: APIClient = APIClient('https://telecominfraproject.testrail.com')
+client: APIClient = APIClient(os.getenv('TESTRAIL_URL'))
+
 
 class APIError(Exception):
     pass

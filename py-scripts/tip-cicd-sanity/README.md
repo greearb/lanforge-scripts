@@ -11,8 +11,13 @@ This script is used to look for and test new firmware available for the APs. AP 
     1. Check current AP firmware *(If AP already running newest firmware, test will skip)*
     2. Create Testrail test run with required test cases included 
     3. Upgrade AP via CloudSDK API
-    4. Check if AP upgrade and CloudSDK connection successful 
-    5. Test client connectivity on SSID modes, marking TestRail and report_data.json with pass/fail
+    4. Check if AP upgrade and CloudSDK connection successful
+    5. For each SSID mode (bridge, NAT and VLAN), marking TestRail and report_data.json with pass/fail:
+        1. Create SSID Profiles for various security modes and radio types
+        2. Create AP Profile for SSID mode
+        3. Apply AP profile to AP
+        5. Check that SSID have been applied properly on AP
+        4. Perform client connectivity tests
     6. Update sanity_status.json with **overall** pass/fail
  
 ## Throughput Test
