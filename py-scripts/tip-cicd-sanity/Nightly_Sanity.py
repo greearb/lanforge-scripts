@@ -55,12 +55,24 @@ import testrail_api
 from testrail_api import APIClient
 import eap_connect
 from eap_connect import EAPConnect
-import lab_ap_info
 import cloudsdk
 from cloudsdk import CloudSDK
 import ap_ssh
 from ap_ssh import ssh_cli_active_fw
 from ap_ssh import iwinfo_status
+
+##Import info for lab setup and APs under test
+import lab_ap_info
+from lab_ap_info import equipment_id_dict
+from lab_ap_info import profile_info_dict
+from lab_ap_info import cloud_sdk_models
+from lab_ap_info import equipment_ip_dict
+from lab_ap_info import eqiupment_credentials_dict
+from lab_ap_info import ap_models
+from lab_ap_info import customer_id
+from lab_ap_info import cloud_type
+from lab_ap_info import test_cases
+from lab_ap_info import radius_info
 
 ### Set CloudSDK URL ###
 cloudSDK_url = os.getenv('CLOUD_SDK_URL')
@@ -219,18 +231,27 @@ class RunTest:
 ####Use variables other than defaults for running tests on custom FW etc
 build = "pending"
 ignore = False
+equipment_ids = equipment_id_dict
 
 parser = argparse.ArgumentParser(description="Sanity Testing on Firmware Build")
 parser.add_argument("-b", "--build", type=str, help="FW commit ID (latest pending build on dev is default)")
 parser.add_argument("-i", "--ignore", type=bool, help="Ignore current running version on AP and run sanity regardless")
 parser.add_argument("-r", "--report", type=str, help="Report directory path other than default - directory must already exist!")
+parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420'], help="AP model to be run")
 args = parser.parse_args()
+
 if args.build is not None:
     build = args.build
 if args.ignore is not None:
     ignore = True
 if args.report is not None:
     report_path = args.report
+if args.model is not None:
+    model_id = args.model
+    equipment_ids = {
+        model_id: equipment_id_dict[model_id]
+    }
+    print(equipment_ids)
 
 print("Start of Sanity Testing...")
 print("Testing Latest Build with Tag: "+build)
@@ -258,18 +279,6 @@ ap_latest_dict = {
 
 # import json file used by throughput test
 sanity_status = json.load(open("sanity_status.json"))
-
-##Equipment IDs for Lab APs under test
-from lab_ap_info import equipment_id_dict
-from lab_ap_info import profile_info_dict
-from lab_ap_info import cloud_sdk_models
-from lab_ap_info import equipment_ip_dict
-from lab_ap_info import eqiupment_credentials_dict
-from lab_ap_info import ap_models
-from lab_ap_info import customer_id
-from lab_ap_info import cloud_type
-from lab_ap_info import test_cases
-from lab_ap_info import radius_info
 
 
 ############################################################################
@@ -343,7 +352,7 @@ for model in ap_models:
 ####################################################################################
 ####################################################################################
 
-for key in equipment_id_dict:
+for key in equipment_ids:
     ##Get Bearer Token to make sure its valid (long tests can require re-auth)
     bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
 
