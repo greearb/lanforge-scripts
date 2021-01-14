@@ -1205,14 +1205,27 @@ def main():
           i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
           if i == 0:
              logg.info("elevated to (config)#")
-             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
+             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan) # should the last one be ssid not wlan
              logg.info("open network command {}".format(command))
              egg.sendline(command)
              sleep(0.4)
              j = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)
              if j == 0:
-                 for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown"]:
+                 # previous commands for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                 #      "no security wpa akm dot1x","no shutdown"]:
+                  
+                 # 1/14/2021 - Gaurav suggestion
+                 # We are basically disabling all the possible security parameters for Authentication
+                 for command in [
+                     "no security ft",
+                     "no security ft adaptive",
+                     "no security wpa",
+                     "no security wpa wpa2",
+                     "no security wpa wpa1",
+                     "no security wpa wpa2 ciphers aes"
+                     "no security dot1x authentication-list",
+                     "no security wpa akm dot1x",
+                     "no shutdown"]:
                     egg.sendline(command)
                     sleep(1)
                     k = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)
