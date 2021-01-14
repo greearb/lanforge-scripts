@@ -1189,10 +1189,12 @@ def main():
    if (args.action == "show_wlan_summary"):
       egg.sendline("show wlan summary")
       sleep(0.1)
-      i = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
+      i = egg.expect([CCP,CCP_EN,pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         logg.info("show wlan summary sent")
+         logg.info("show wlan summary sent prompt {}".format(CCP))
       if i == 1:
+         logg.info("show wlan summary sent prompt {}".format(CCP_EN))
+      if i == 2:
          logg.info("show wlan summary timed out")
 
    if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
@@ -1214,7 +1216,7 @@ def main():
                  # previous commands for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                  #      "no security wpa akm dot1x","no shutdown"]:
                   
-                 # 1/14/2021 - Gaurav suggestion
+                 # 1/14/2021 - Cisco suggestion
                  # We are basically disabling all the possible security parameters for Authentication
                  for command in [
                      "no security ft",
