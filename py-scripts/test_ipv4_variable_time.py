@@ -204,6 +204,7 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
         optional_args.add_argument('--report_file',help='where you want to store results')
         optional_args.add_argument('--output_format', help='choose either csv or xlsx')
+        optional_args.add_argument('--show', help='display results of test in terminal',default=True)
     args = parser.parse_args()
 
     num_sta = 2
@@ -251,13 +252,17 @@ python3 ./test_ipv4_variable_time.py
         else:
             output=args.output_format
 
-    layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
-    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
+    try:
+        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
+    except:
+        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs','Rx Drop % A', 'Rx Drop % B', 'Bps Rx A', 'Bps Rx B', 'Rx Rate', 'Cx Estab'],
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).seconds,
                                     created_cx= layer3connections,
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
+                                    show=show,
                                     arguments=args)
     ip_var_test.stop()
     if not ip_var_test.passes():
