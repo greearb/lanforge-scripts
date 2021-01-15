@@ -817,6 +817,16 @@ class Realm(LFCliBase):
     def new_test_group_profile(self):
         return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+class BaseProfile(LFCliBase):
+    def __init__(self,local_realm):
+        self.parent_realm=local_realm
+        self.halt_on_error = False
+        self.exit_on_error = False
+
+    def json_get(self, target):
+        self.debug_ = False
+        return self.parent_realm.json_get(self,target)
+
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
@@ -994,7 +1004,7 @@ class MULTICASTProfile(LFCliBase):
 
 
 
-class L3CXProfile(LFCliBase):
+class L3CXProfile(BaseProfile):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  side_a_min_bps=None, side_b_min_bps=None,
                  side_a_max_bps=0, side_b_max_bps=0,
@@ -1017,7 +1027,7 @@ class L3CXProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(local_realm)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
@@ -1045,7 +1055,7 @@ class L3CXProfile(LFCliBase):
         return self.data
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
+        cx_list = self.json_get("endp?fields=name,rx+bytes")
         if self.debug:
             print(self.created_cx.values())
             print("==============\n", cx_list, "\n==============")
@@ -1079,13 +1089,13 @@ class L3CXProfile(LFCliBase):
                 monitor_interval=1,
                 col_names=None,
                 created_cx=None,
-                show=False,
+                show=True,
                 report_file=None,
                 output_format=None,
                 script_name=None,
                 arguments=None):
         try:
-            duration_sec=local_realm.parse_time(duration_sec).seconds
+            duration_sec=self.local_realm.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
@@ -1108,17 +1118,20 @@ class L3CXProfile(LFCliBase):
 
         #Step 1, column names
         fields=",".join(col_names)
+        print(fields)
         #Step 2, monitor columns
         start_time = datetime.datetime.now()
-        iterations=duration_sec/monitor_interval
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+        print(end_time)
 
         value_map = dict()
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         timestamps=[]
-        for x in range(0,int(round(iterations,0))):
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
+        #for x in range(0,int(round(iterations,0))):
+        while datetime.datetime.now() < end_time:
+            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1141,10 +1154,10 @@ class L3CXProfile(LFCliBase):
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
-        #print(value_map)
+        print(value_map)
 
-        if passes == expected_passes:
-            self._pass("PASS: All tests passed")
+        #if passes == expected_passes:
+            #self._pass("PASS: All tests passed")
         #step 3 organize data
         endpoints=list()
         for endpoint in value_map.values():
@@ -1159,6 +1172,7 @@ class L3CXProfile(LFCliBase):
             endpoints2[point].insert(0, timestamps2[point])
         #step 4 save and close
         header_row=col_names
+        print(header_row)
         header_row.insert(0,'Timestamp')
         if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] == 'xlsx':
             report_fh = open(report_file, "w+")
@@ -1211,10 +1225,9 @@ class L3CXProfile(LFCliBase):
             else:
                 pass
 
-
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
-            self.json_post("/cli-json/show_cxe", {
+            self.local_realm.json_post("/cli-json/show_cxe", {
                  "test_mgr": "ALL",
                  "cross_connect": cx_name
             }, debug_=self.debug)
@@ -1225,7 +1238,7 @@ class L3CXProfile(LFCliBase):
         for cx_name in self.created_cx.keys():
             if self.debug:
                 print("cx-name: %s"%(cx_name))
-            self.json_post("/cli-json/set_cx_state", {
+            self.local_realm.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
