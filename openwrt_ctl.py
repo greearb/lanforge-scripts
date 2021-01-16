@@ -133,17 +133,23 @@ def main():
          egg.logfile = FileAdapter(logg)
          egg.sendline(NL)
          try:
-             i = egg.expect([prompt, "Please press Enter to activate", "login:"], timeout=3)
-             if (i == 1):
-                 egg.setdline(NL)
-                 i = egg.expect([prompt, "Please press Enter to activate", "login:"], timeout=3)
-             if (i == 2):
-                 egg.sendline(user)
-                 egg.expect("Password:")
-                 egg.sendline(passwd)
-                 egg.expect(prompt)
+             logg.info("prompt: %s user: %s  passwd: %s"%(prompt, user, passwd))
+             while True:
+                i = egg.expect([prompt, "Please press Enter to activate", "login:", "Password:"], timeout=3)
+                logg.info("expect-0: %i"%(i))
+                if (i == 0):
+                    logg.info("Found prompt, login complete.")
+                    break
+                if (i == 1):
+                    logg.info("Sending newline")
+                    egg.setdline(NL)
+                if (i == 2):
+                    logg.info("Sending username: %s"%(user))
+                    egg.sendline(user)
+                if (i == 3):
+                    logg.info("Sending password: %s"%(passwd))
+                    egg.sendline(passwd)
 
-             egg.sendline(NL)
          except Exception as e:
              # maybe something like 'logread -f' is running?
              # send ctrl-c
