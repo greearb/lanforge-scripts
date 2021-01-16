@@ -3395,7 +3395,7 @@ class StationProfile:
         # First, request remove on the list.
         for port_eid in desired_stations:
             self.local_realm.rm_port(port_eid, check_exists=True, debug_=debug_)
-
+            time.sleep(delay)
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=desired_stations)
 
