@@ -8,8 +8,8 @@ cloud_type = "v1"
 
 ##LANForge Info
 lanforge_ip = "10.10.10.201"
-lanforge_2dot4g = "wiphy0"
-lanforge_5g = "wiphy3"
+lanforge_2dot4g = "wiphy6"
+lanforge_5g = "wiphy6"
 lanforge_prefix = "sdk"
 
 ##RADIUS Info
