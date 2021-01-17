@@ -9,6 +9,9 @@ Date :
 """
 
 import sys
+from pprint import pprint
+from uuid import uuid1
+
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
@@ -282,21 +285,33 @@ class RuntimeUpdates():
                 f.close()
 
 
+class StatusMsg(LFCliBase):
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080,
+                 _deep_clean=False,
+                 session_id="0",
+                 _debug_on=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False):
+        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.deep_clean = _deep_clean
+        self.session_id = session_id
+        self.json_put("/status-msg/" + self.session_id, {})
+
+    def update(self, key, message):
+        self.json_post("/status-msg/" + self.session_id, {
+            "key": key,
+            "content-type": "text/plain",
+            "message": message
+        })
+        pass
+
+
+
+
+
+
 if __name__ == "__main__":
-    thread1 = ClientVisualization(lfclient_host="192.168.200.15", thread_id=1)
-    thread1.start()
-    for i in range(0, 100):
-        time.sleep(1)
-        #print(thread1.client_data)
-    thread1.stop()
-    # obj = RuntimeUpdates("1", {"test_status": 1, "data": "None"})
-    # for i in range(0, 10):
-    #     time.sleep(3)
-    #     print(i)
-    #     obj.send_update({"test_status": i, "data": "None"})
-    # thread1 = ClientVisualization(lfclient_host="192.168.200.15", thread_id=1)
-    # thread1.start()
-    # for i in range(30):
-    #     print(thread1.client_data)
-    # thread1.stop()
+    obj = StatusMsg(lfclient_host="192.168.200.15", lfclient_port=8080, session_id="Connection Test")
+    obj.update()
+
 
