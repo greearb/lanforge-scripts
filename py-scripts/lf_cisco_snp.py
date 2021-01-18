@@ -38,7 +38,8 @@ class FileAdapter(object):
         pass  # leave it to logging to flush properly
 
 ################################################################################
-# cisco controller class :This class in the future will be moved to its own file
+# cisco controller class :This class will be left in this file to allow for the
+# Scaling and Performance to be self contained and not impact other tests
 ################################################################################
 
 class cisco_():
