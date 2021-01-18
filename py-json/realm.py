@@ -817,6 +817,45 @@ class Realm(LFCliBase):
     def new_test_group_profile(self):
         return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+class BaseProfile(LFCliBase):
+    def __init__(self,local_realm):
+        self.parent_realm=local_realm
+        self.halt_on_error = False
+        self.exit_on_error = False
+
+    def json_get(self, target):
+        return self.json_get(target)
+
+    def json_post(self, url,data,debug_,suppress_related_commands_=None):
+        return self.json_post(url,data,debug_=False,suppress_related_commands_=suppress_related_commands_)
+
+    def parse_time(self,target):
+        return self.parent_realm.parse_time(target)
+
+    def stop_cx(self, target):
+        return self.parent_realm.stop_cx(target)
+
+    def cleanup_cxe_prefix(self,prefix):
+        return self.parent_realm.cleanup_cxe_prefix(prefix)
+
+    def rm_cx(self,target):
+        return self.parent_realm.rm_cx(target)
+
+    def created_cx(self,target):
+        return self.parent_realm.created_cx(target)
+
+    def name_to_eid(self,target):
+        return self.parent_realm.name_to_eid(target)
+
+    def set_endp_tos(self,target):
+        return self.parent_realm.set_endp_tos(target)
+
+    def wait_until_endps_appear(self,target,debug=False):
+        return self.parent_realm.wait_until_endps_appear(target,debug=False)
+
+    def wait_until_cxs_appear(self,target,debug=False):
+        return self.parent_realm.wait_until_cxs_appear(target,debug=False)
+
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
                  report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
@@ -829,7 +868,7 @@ class MULTICASTProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(local_realm)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
@@ -864,7 +903,6 @@ class MULTICASTProfile(LFCliBase):
     def stop_mc(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
             debug_=True
-
         for endp_name in self.get_mc_names():
             json_data = {
                 "endp_name":endp_name
@@ -873,9 +911,6 @@ class MULTICASTProfile(LFCliBase):
             self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
         pass
-
-    def cleanup_prefix(self):
-        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
 
     def cleanup(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
@@ -994,8 +1029,8 @@ class MULTICASTProfile(LFCliBase):
 
 
 
-class L3CXProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm,
+class L3CXProfile(BaseProfile):
+    def __init__(self, lfclient_host, lfclient_port,local_realm,
                  side_a_min_bps=None, side_b_min_bps=None,
                  side_a_max_bps=0, side_b_max_bps=0,
                  side_a_min_pdu=-1, side_b_min_pdu=-1,
@@ -1004,7 +1039,6 @@ class L3CXProfile(LFCliBase):
         """
         :param lfclient_host:
         :param lfclient_port:
-        :param local_realm:
         :param side_a_min_bps:
         :param side_b_min_bps:
         :param side_a_max_bps:
@@ -1017,7 +1051,7 @@ class L3CXProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(local_realm)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
@@ -1045,7 +1079,7 @@ class L3CXProfile(LFCliBase):
         return self.data
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
+        cx_list = self.json_get("endp?fields=name,rx+bytes")
         if self.debug:
             print(self.created_cx.values())
             print("==============\n", cx_list, "\n==============")
@@ -1079,13 +1113,13 @@ class L3CXProfile(LFCliBase):
                 monitor_interval=1,
                 col_names=None,
                 created_cx=None,
-                show=False,
+                show=True,
                 report_file=None,
                 output_format=None,
                 script_name=None,
                 arguments=None):
         try:
-            duration_sec=local_realm.parse_time(duration_sec).seconds
+            duration_sec=self.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
@@ -1108,17 +1142,20 @@ class L3CXProfile(LFCliBase):
 
         #Step 1, column names
         fields=",".join(col_names)
+        print(fields)
         #Step 2, monitor columns
         start_time = datetime.datetime.now()
-        iterations=duration_sec/monitor_interval
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+        print(end_time)
 
         value_map = dict()
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         timestamps=[]
-        for x in range(0,int(round(iterations,0))):
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
+        #for x in range(0,int(round(iterations,0))):
+        while datetime.datetime.now() < end_time:
+            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1141,10 +1178,10 @@ class L3CXProfile(LFCliBase):
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
-        #print(value_map)
+        print(value_map)
 
-        if passes == expected_passes:
-            self._pass("PASS: All tests passed")
+        #if passes == expected_passes:
+            #self._pass("PASS: All tests passed")
         #step 3 organize data
         endpoints=list()
         for endpoint in value_map.values():
@@ -1160,6 +1197,7 @@ class L3CXProfile(LFCliBase):
         #step 4 save and close
         header_row=col_names
         header_row.insert(0,'Timestamp')
+        print(header_row)
         if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] == 'xlsx':
             report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
@@ -1211,10 +1249,9 @@ class L3CXProfile(LFCliBase):
             else:
                 pass
 
-
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
-            self.json_post("/cli-json/show_cxe", {
+            self.local_realm.json_post("/cli-json/show_cxe", {
                  "test_mgr": "ALL",
                  "cross_connect": cx_name
             }, debug_=self.debug)
@@ -1225,7 +1262,7 @@ class L3CXProfile(LFCliBase):
         for cx_name in self.created_cx.keys():
             if self.debug:
                 print("cx-name: %s"%(cx_name))
-            self.json_post("/cli-json/set_cx_state", {
+            self.local_realm.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
@@ -1236,7 +1273,7 @@ class L3CXProfile(LFCliBase):
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
-            self.local_realm.stop_cx(cx_name)
+            self.stop_cx(cx_name)
             print(".", end='')
         print("")
 
@@ -1249,13 +1286,13 @@ class L3CXProfile(LFCliBase):
             for cx_name in self.created_cx.keys():
                 if self.debug:
                     print("Cleaning cx: %s"%(cx_name))
-                self.local_realm.rm_cx(cx_name)
+                self.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
                     if self.debug:
                         print("Cleaning endpoint: %s"%(ename))
-                    self.local_realm.rm_endp(self.created_cx[cx_name][side])
+                    self.rm_endp(self.created_cx[cx_name][side])
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False, tos=None):
         if self.debug:
@@ -1275,12 +1312,12 @@ class L3CXProfile(LFCliBase):
             raise ValueError("side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
 
         if type(side_a) == list and type(side_b) != list:
-            side_b_info = self.local_realm.name_to_eid(side_b)
+            side_b_info = self.name_to_eid(side_b)
             side_b_shelf = side_b_info[0]
             side_b_resource = side_b_info[1]
 
             for port_name in side_a:
-                side_a_info = self.local_realm.name_to_eid(port_name)
+                side_a_info = self.name_to_eid(port_name)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
                 if port_name.find('.') < 0:
@@ -1345,8 +1382,8 @@ class L3CXProfile(LFCliBase):
                     self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 if tos != None:
-                    self.local_realm.set_endp_tos(endp_a_name, tos)
-                    self.local_realm.set_endp_tos(endp_b_name, tos)
+                    self.set_endp_tos(endp_a_name, tos)
+                    self.set_endp_tos(endp_b_name, tos)
 
                 data = {
                     "alias": cx_name,
@@ -1363,14 +1400,14 @@ class L3CXProfile(LFCliBase):
                 })
 
         elif type(side_b) == list and type(side_a) != list:
-            side_a_info = self.local_realm.name_to_eid(side_a)
+            side_a_info = self.name_to_eid(side_a)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
             #side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
-                side_b_info = self.local_realm.name_to_eid(port_name)
+                side_b_info = self.name_to_eid(port_name)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
                 side_b_name = side_b_info[2]
@@ -1421,7 +1458,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -1429,7 +1466,7 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 #print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
@@ -1446,14 +1483,14 @@ class L3CXProfile(LFCliBase):
         else:
             raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
 
-        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
+        self.wait_until_endps_appear(these_endp, debug=debug_)
 
         for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             time.sleep(0.01)
 
-        self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
+        self.wait_until_cxs_appear(these_cx, debug=debug_)
 
     def to_string(self):
         pprint.pprint(self)
