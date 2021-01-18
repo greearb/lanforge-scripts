@@ -1137,7 +1137,7 @@ class L3CXProfile(BaseProfile):
                 monitor_interval=1,
                 col_names=None,
                 created_cx=None,
-                show=True,
+                monitor=True,
                 report_file=None,
                 output_format=None,
                 script_name=None,
@@ -1183,7 +1183,7 @@ class L3CXProfile(BaseProfile):
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
-            if show:
+            if monitor:
                 print(response)
             t = datetime.datetime.now()
             timestamps.append(t)
