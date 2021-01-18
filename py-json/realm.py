@@ -20,6 +20,7 @@ import base64
 import xlsxwriter
 import pandas as pd
 
+
 def wpa_ent_list():
     return [
         "DEFAULT",
@@ -45,6 +46,7 @@ def wpa_ent_list():
         "OWE"
     ]
 
+
 class Realm(LFCliBase):
     def __init__(self,
                  lfclient_host="localhost",
@@ -67,13 +69,13 @@ class Realm(LFCliBase):
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         super().__init__(lfclient_host,
                          lfclient_port,
-                 _debug=debug_,
-                 _halt_on_error=halt_on_error_,
-                 _exit_on_error=_exit_on_error,
-                 _exit_on_fail=_exit_on_fail,
-                 #_local_realm=self,
-                 _proxy_str=_proxy_str,
-                 _capture_signal_list=_capture_signal_list)
+                         _debug=debug_,
+                         _halt_on_error=halt_on_error_,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         # _local_realm=self,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
 
         self.debug = debug_
         # if debug_:
@@ -638,7 +640,6 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
         return num_sta_with_ips
 
-
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
@@ -1049,7 +1050,6 @@ class MULTICASTProfile(LFCliBase):
         pprint.pprint(self)
 
 
-
 class L3CXProfile(BaseProfile):
     def __init__(self,
                  lfclient_host,
@@ -1143,13 +1143,13 @@ class L3CXProfile(BaseProfile):
                 monitor_interval=1,
                 col_names=None,
                 created_cx=None,
-                show=False,
+                monitor=True,
                 report_file=None,
                 output_format=None,
                 script_name=None,
                 arguments=None):
         try:
-            duration_sec=self.parse_time(duration_sec).seconds
+            duration_sec = self.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
@@ -1189,7 +1189,7 @@ class L3CXProfile(BaseProfile):
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
-            if show:
+            if monitor:
                 print(response)
             t = datetime.datetime.now()
             timestamps.append(t)
@@ -1908,8 +1908,6 @@ class WifiMonitor:
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
 
-
-
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", up_request)
@@ -2389,7 +2387,6 @@ class VRProfile(LFCliBase):
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
 
-
     def create(self, resource, upstream_port="eth1", debug=False,
                upstream_subnets="20.20.20.0/24", upstream_nexthop="20.20.20.1",
                local_subnets="10.40.0.0/24", local_nexthop="10.40.3.198",
@@ -2422,38 +2419,38 @@ class VRProfile(LFCliBase):
 class DUTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True, _local_realm=local_realm)
-        self.name            = "NA"
-        self.flags           = "NA"
-        self.img_file        = "NA"
-        self.sw_version      = "NA"
-        self.hw_version      = "NA"
-        self.model_num       = "NA"
-        self.serial_num      = "NA"
-        self.serial_port     = "NA"
-        self.wan_port        = "NA"
-        self.lan_port        = "NA"
-        self.ssid1           = "NA"
-        self.ssid2           = "NA"
-        self.ssid3           = "NA"
-        self.passwd1         = "NA"
-        self.passwd2         = "NA"
-        self.passwd3         = "NA"
-        self.mgt_ip          = "NA"
-        self.api_id          = "NA"
-        self.flags_mask      = "NA"
-        self.antenna_count1  = "NA"
-        self.antenna_count2  = "NA"
-        self.antenna_count3  = "NA"
-        self.bssid1          = "NA"
-        self.bssid2          = "NA"
-        self.bssid3          = "NA"
-        self.top_left_x      = "NA"
-        self.top_left_y      = "NA"
-        self.eap_id          = "NA"
-        self.flags           = 0
-        self.flags_mask      = 0
-        self.notes           = []
-        self.append          = []
+        self.name = "NA"
+        self.flags = "NA"
+        self.img_file = "NA"
+        self.sw_version = "NA"
+        self.hw_version = "NA"
+        self.model_num = "NA"
+        self.serial_num = "NA"
+        self.serial_port = "NA"
+        self.wan_port = "NA"
+        self.lan_port = "NA"
+        self.ssid1 = "NA"
+        self.ssid2 = "NA"
+        self.ssid3 = "NA"
+        self.passwd1 = "NA"
+        self.passwd2 = "NA"
+        self.passwd3 = "NA"
+        self.mgt_ip = "NA"
+        self.api_id = "NA"
+        self.flags_mask = "NA"
+        self.antenna_count1 = "NA"
+        self.antenna_count2 = "NA"
+        self.antenna_count3 = "NA"
+        self.bssid1 = "NA"
+        self.bssid2 = "NA"
+        self.bssid3 = "NA"
+        self.top_left_x = "NA"
+        self.top_left_y = "NA"
+        self.eap_id = "NA"
+        self.flags = 0
+        self.flags_mask = 0
+        self.notes = []
+        self.append = []
 
     def set_param(self, name, value):
         if (name in self.__dict__):
@@ -2958,7 +2955,6 @@ class MACVLANProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.created_macvlans)
 
-
     def admin_up(self):
         for macvlan in self.created_macvlans:
             self.local_realm.admin_up(macvlan)
@@ -3229,7 +3225,7 @@ class StationProfile:
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
