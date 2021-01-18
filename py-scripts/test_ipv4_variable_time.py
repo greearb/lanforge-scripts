@@ -259,6 +259,7 @@ python3 ./test_ipv4_variable_time.py
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
                                     arguments=args)
+    print(ip_var_test.cx_profile.create())
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())

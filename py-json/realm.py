@@ -20,6 +20,7 @@ import base64
 import xlsxwriter
 import pandas as pd
 
+
 def wpa_ent_list():
     return [
         "DEFAULT",
@@ -45,6 +46,7 @@ def wpa_ent_list():
         "OWE"
     ]
 
+
 class Realm(LFCliBase):
     def __init__(self,
                  lfclient_host="localhost",
@@ -67,13 +69,13 @@ class Realm(LFCliBase):
         # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         super().__init__(lfclient_host,
                          lfclient_port,
-                 _debug=debug_,
-                 _halt_on_error=halt_on_error_,
-                 _exit_on_error=_exit_on_error,
-                 _exit_on_fail=_exit_on_fail,
-                 #_local_realm=self,
-                 _proxy_str=_proxy_str,
-                 _capture_signal_list=_capture_signal_list)
+                         _debug=debug_,
+                         _halt_on_error=halt_on_error_,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         # _local_realm=self,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
 
         self.debug = debug_
         # if debug_:
@@ -84,7 +86,7 @@ class Realm(LFCliBase):
         self.freq_to_chan = {}
         freq = 0
         chan = 1
-        for freq in range( 2412, 2472, 5):
+        for freq in range(2412, 2472, 5):
             self.freq_to_chan[freq] = chan
             self.chan_to_freq[chan] = freq
             chan += 1
@@ -245,14 +247,14 @@ class Realm(LFCliBase):
         data = {
             "test_mgr": "ALL",
             "cx_name": cx_name
-            }
+        }
         self.json_post(req_url, data)
 
     def rm_endp(self, ename, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/rm_endp"
         data = {
             "endp_name": ename
-            }
+        }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
@@ -270,7 +272,7 @@ class Realm(LFCliBase):
         data = {
             "name": ename,
             "tos": tos
-            }
+        }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def stop_cx(self, cx_name):
@@ -278,7 +280,7 @@ class Realm(LFCliBase):
             "test_mgr": "ALL",
             "cx_name": cx_name,
             "cx_state": "STOPPED"
-            }, debug_=self.debug)
+        }, debug_=self.debug)
 
     def cleanup_cxe_prefix(self, prefix):
         cx_list = self.cx_list()
@@ -297,7 +299,7 @@ class Realm(LFCliBase):
                         self.rm_endp(endp_name)
             else:
                 if self.debug:
-                    print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list) )
+                    print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list))
 
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]
@@ -307,7 +309,7 @@ class Realm(LFCliBase):
 
     # checks for OK or BUSY when querying cli-json/cv+is_built
     def wait_while_building(self, debug_=False):
-        response_json=[]
+        response_json = []
         data = {
             "cmd": "cv is_built"
         }
@@ -317,8 +319,9 @@ class Realm(LFCliBase):
             dbg_param = "?__debug=1"
 
         while (last_response != "YES"):
-            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
-            #LFUtils.debug_printer.pprint(response_json)
+            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_,
+                                      response_json_list_=response_json)
+            # LFUtils.debug_printer.pprint(response_json)
             last_response = response_json[0]["LAST"]["response"]
             if (last_response != "YES"):
                 last_response = None
@@ -331,12 +334,13 @@ class Realm(LFCliBase):
     # loads a database
     def load(self, name):
         if (name is None) or (name == ""):
-            raise ValueError("Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
+            raise ValueError(
+                "Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
 
         data = {
             "name": name,
-            "action":"overwrite",
-            "clean_dut":"yes",
+            "action": "overwrite",
+            "clean_dut": "yes",
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", _data=data, debug_=self.debug)
@@ -367,7 +371,7 @@ class Realm(LFCliBase):
             for req in these_endp:
                 if not req in found_endps:
                     if debug:
-                        print("Waiting on endpoint: %s"%(req))
+                        print("Waiting on endpoint: %s" % (req))
                     wait_more = True
             count += 1
             if (count > 100):
@@ -396,7 +400,7 @@ class Realm(LFCliBase):
             for req in these_cx:
                 if not req in found_cxs:
                     if debug:
-                        print("Waiting on CX: %s"%(req))
+                        print("Waiting on CX: %s" % (req))
                     wait_more = True
             count += 1
             if (count > 100):
@@ -536,8 +540,8 @@ class Realm(LFCliBase):
         return LFUtils.name_to_eid(eid)
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60, debug=False):
-        print("Waiting for ips, timeout: %i..."%(timeout_sec))
-        #print(station_list)
+        print("Waiting for ips, timeout: %i..." % (timeout_sec))
+        # print(station_list)
         waiting_states = ["0.0.0.0", "NA", ""]
 
         if (station_list is None) or (len(station_list) < 1):
@@ -549,12 +553,12 @@ class Realm(LFCliBase):
 
             for sta_eid in station_list:
                 if debug:
-                    print("checking sta-eid: %s"%(sta_eid))
+                    print("checking sta-eid: %s" % (sta_eid))
                 eid = self.name_to_eid(sta_eid)
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                             (eid[0], eid[1], eid[2]))
-                #pprint(response)
+                # pprint(response)
 
                 if (response is None) or ("interface" not in response):
                     print("station_list: incomplete response:")
@@ -567,22 +571,22 @@ class Realm(LFCliBase):
                     if (v['ip'] in waiting_states):
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                            print("Waiting for port %s to get IPv4 Address." % (sta_eid))
                     else:
                         if debug:
-                            print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                            print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
                 if ipv6:
                     v = response['interface']
-                    #print(v)
+                    # print(v)
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
-                           and v['ipv6 address'] != 'AUTO':
+                            and v['ipv6 address'] != 'AUTO':
                         if debug:
                             print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
                     else:
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                            print("Waiting for port %s to get IPv6 Address." % (sta_eid))
 
             if wait_more:
                 time.sleep(1)
@@ -590,7 +594,7 @@ class Realm(LFCliBase):
 
         return not wait_more
 
-    def get_curr_num_ips(self,num_sta_with_ips=0,station_list=None, ipv4=True, ipv6=False, debug=False):
+    def get_curr_num_ips(self, num_sta_with_ips=0, station_list=None, ipv4=True, ipv6=False, debug=False):
         if debug:
             print("checking number of stations with ips...")
         waiting_states = ["0.0.0.0", "NA", ""]
@@ -598,44 +602,43 @@ class Realm(LFCliBase):
             raise ValueError("check for num curr ips expects non-empty list of ports")
         for sta_eid in station_list:
             if debug:
-                print("checking sta-eid: %s"%(sta_eid))
+                print("checking sta-eid: %s" % (sta_eid))
             eid = self.name_to_eid(sta_eid)
             response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
-                 (eid[0], eid[1], eid[2]))
+                                        (eid[0], eid[1], eid[2]))
             if debug:
                 pprint(response)
             if (response is None) or ("interface" not in response):
                 print("station_list: incomplete response:")
                 pprint(response)
-                #wait_more = True
+                # wait_more = True
                 break
             if ipv4:
                 v = response['interface']
                 if (v['ip'] in waiting_states):
                     if debug:
-                        print("Waiting for port %s to get IPv4 Address."%(sta_eid))
+                        print("Waiting for port %s to get IPv4 Address." % (sta_eid))
                 else:
                     if debug:
-                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
                         print("Incrementing stations with IP addresses found")
-                        num_sta_with_ips+=1
+                        num_sta_with_ips += 1
                     else:
-                        num_sta_with_ips+=1
+                        num_sta_with_ips += 1
             if ipv6:
                 v = response['interface']
                 if (v['ip'] in waiting_states):
                     if debug:
-                        print("Waiting for port %s to get IPv6 Address."%(sta_eid))
+                        print("Waiting for port %s to get IPv6 Address." % (sta_eid))
 
                 else:
                     if debug:
-                        print("Found IP: %s on port: %s"%(v['ip'], sta_eid))
+                        print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
                         print("Incrementing stations with IP addresses found")
-                        num_sta_with_ips+=1
+                        num_sta_with_ips += 1
                     else:
-                        num_sta_with_ips+=1
+                        num_sta_with_ips += 1
         return num_sta_with_ips
-
 
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
@@ -701,7 +704,7 @@ class Realm(LFCliBase):
         endp_list = self.json_get("/endp/list")
         if "items" in endp_list or "empty" in endp_list:
             return
-        if endp_list is not None or endp_list :
+        if endp_list is not None or endp_list:
             print("Removing all endps")
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
@@ -712,7 +715,7 @@ class Realm(LFCliBase):
                 }
                 self.json_post(req_url, data)
 
-    def remove_all_cxs(self,remove_all_endpoints=False):
+    def remove_all_cxs(self, remove_all_endpoints=False):
         # remove cross connects
         # remove endpoints
         # nc show endpoints
@@ -738,13 +741,13 @@ class Realm(LFCliBase):
             self.remove_all_endps()
             req_url = "cli-json/nc_show_endpoints"
             data = {
-                "endpoint":"all"
+                "endpoint": "all"
             }
             self.json_post(req_url, data)
             req_url = "cli-json/show_cx"
-            data ={
-                "test_mgr":"all",
-                "cross_connect":"all"
+            data = {
+                "test_mgr": "all",
+                "cross_connect": "all"
             }
 
     def parse_link(self, link):
@@ -757,7 +760,7 @@ class Realm(LFCliBase):
 
     def new_multicast_profile(self):
         multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
-                                  local_realm=self, debug_=self.debug, report_timer_=3000)
+                                      local_realm=self, debug_=self.debug, report_timer_=3000)
         return multi_prof
 
     def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
@@ -793,11 +796,13 @@ class Realm(LFCliBase):
         return cx_prof
 
     def new_vap_profile(self):
-        vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self, debug_=self.debug)
+        vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+                              debug_=self.debug)
         return vap_prof
 
     def new_vr_profile(self):
-        vap_prof = VRProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self, debug_=self.debug)
+        vap_prof = VRProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+                             debug_=self.debug)
         return vap_prof
 
     def new_http_profile(self):
@@ -817,44 +822,52 @@ class Realm(LFCliBase):
     def new_test_group_profile(self):
         return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+
 class BaseProfile(LFCliBase):
-    def __init__(self,local_realm):
-        self.parent_realm=local_realm
+    def __init__(self, local_realm):
+        self.parent_realm = local_realm
         self.halt_on_error = False
         self.exit_on_error = False
 
     def json_get(self, target):
-        return self.json_get(target)
+        return self.parent_realm.json_get(target)
 
-    def json_post(self, url,data,debug_,suppress_related_commands_=None):
-        return self.json_post(url,data,debug_=False,suppress_related_commands_=suppress_related_commands_)
+    def json_post(self, req_url, data, debug_=False, suppress_related_commands_=None):
+        return self.parent_realm.json_post(req_url,
+                                           data,
+                                           suppress_related_commands_=suppress_related_commands_,
+                                           debug_=debug_)
 
-    def parse_time(self,target):
+    def parse_time(self, target):
         return self.parent_realm.parse_time(target)
 
-    def stop_cx(self, target):
-        return self.parent_realm.stop_cx(target)
+    def stopping_cx(self, name):
+        return self.parent_realm.stop_cx(name)
 
-    def cleanup_cxe_prefix(self,prefix):
+    def cleanup_cxe_prefix(self, prefix):
         return self.parent_realm.cleanup_cxe_prefix(prefix)
 
-    def rm_cx(self,target):
+    def rm_cx(self, target):
         return self.parent_realm.rm_cx(target)
 
-    def created_cx(self,target):
+    def rm_endp(self, ename):
+        self.parent_realm.rm_endp(ename)
+
+    def created_cx(self, target):
         return self.parent_realm.created_cx(target)
 
-    def name_to_eid(self,target):
+    def name_to_eid(self, target):
         return self.parent_realm.name_to_eid(target)
 
-    def set_endp_tos(self,target):
+    def set_endp_tos(self, target):
         return self.parent_realm.set_endp_tos(target)
 
-    def wait_until_endps_appear(self,target,debug=False):
-        return self.parent_realm.wait_until_endps_appear(target,debug=False)
+    def wait_until_endps_appear(self, target, debug=False):
+        return self.parent_realm.wait_until_endps_appear(target, debug=False)
 
-    def wait_until_cxs_appear(self,target,debug=False):
-        return self.parent_realm.wait_until_cxs_appear(target,debug=False)
+    def wait_until_cxs_appear(self, target, debug=False):
+        return self.parent_realm.wait_until_cxs_appear(target, debug=False)
+
 
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -883,86 +896,88 @@ class MULTICASTProfile(LFCliBase):
     def refresh_mc(self, debug_=False):
         for endp_name in self.get_mc_names():
             self.json_post("/cli-json/show_endpoints", {
-                 "endpoint": endp_name
+                "endpoint": endp_name
             }, debug_=debug_)
 
-    def start_mc(self, suppress_related_commands=None, debug_ = False):
+    def start_mc(self, suppress_related_commands=None, debug_=False):
         if self.debug:
-            debug_=True
+            debug_ = True
 
         for endp_name in self.get_mc_names():
-            print("Starting mcast endpoint: %s"%(endp_name))
+            print("Starting mcast endpoint: %s" % (endp_name))
             json_data = {
-                "endp_name":endp_name
+                "endp_name": endp_name
             }
             url = "cli-json/start_endp"
-            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, json_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
 
         pass
 
-    def stop_mc(self, suppress_related_commands=None, debug_ = False):
+    def stop_mc(self, suppress_related_commands=None, debug_=False):
         if self.debug:
-            debug_=True
+            debug_ = True
         for endp_name in self.get_mc_names():
             json_data = {
-                "endp_name":endp_name
+                "endp_name": endp_name
             }
             url = "cli-json/stop_endp"
-            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, json_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
 
         pass
 
-    def cleanup(self, suppress_related_commands=None, debug_ = False):
+    def cleanup(self, suppress_related_commands=None, debug_=False):
         if self.debug:
-            debug_=True
+            debug_ = True
 
         for endp_name in self.get_mc_names():
             self.local_realm.rm_endp(endp_name, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
     def create_mc_tx(self, endp_type, side_tx, suppress_related_commands=None, debug_=False):
         if self.debug:
-            debug_=True
+            debug_ = True
 
         side_tx_info = self.local_realm.name_to_eid(side_tx)
         side_tx_shelf = side_tx_info[0]
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
-        side_tx_name = "%smtx-%s-%i"%(self.name_prefix, side_tx_port, len(self.created_mc))
+        side_tx_name = "%smtx-%s-%i" % (self.name_prefix, side_tx_port, len(self.created_mc))
 
         json_data = []
 
-        #add_endp mcast-xmit-sta 1 1 side_tx mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
+        # add_endp mcast-xmit-sta 1 1 side_tx mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
         json_data = {
-                        'alias':side_tx_name,
-                        'shelf':side_tx_shelf,
-                        'resource':side_tx_resource,
-                        'port':side_tx_port,
-                        'type':endp_type,
-                        'ip_port':-1,
-                        'is_rate_bursty':
-                        'NO','min_rate':256000,
-                        'max_rate':0,
-                        'is_pkt_sz_random':'NO',
-                        'min_pkt':1472,
-                        'max_pkt':0,
-                        'payload_pattern':'INCREASING',
-                        'use_checksum':'NO',
-                        'ttl':32,
-                        'send_bad_crc_per_million':0,
-                        'multi_conn':0
-                    }
+            'alias': side_tx_name,
+            'shelf': side_tx_shelf,
+            'resource': side_tx_resource,
+            'port': side_tx_port,
+            'type': endp_type,
+            'ip_port': -1,
+            'is_rate_bursty':
+                'NO', 'min_rate': 256000,
+            'max_rate': 0,
+            'is_pkt_sz_random': 'NO',
+            'min_pkt': 1472,
+            'max_pkt': 0,
+            'payload_pattern': 'INCREASING',
+            'use_checksum': 'NO',
+            'ttl': 32,
+            'send_bad_crc_per_million': 0,
+            'multi_conn': 0
+        }
 
         url = "/cli-json/add_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-        #set_mc_endp mcast-xmit-sta 32 224.9.9.9 9999 No  # critical
+        # set_mc_endp mcast-xmit-sta 32 224.9.9.9 9999 No  # critical
         json_data = {
-                        'name':side_tx_name,
-                        'ttl':32,
-                        'mcast_group':'224.9.9.9',
-                        'mcast_dest_port':9999,
-                        'rcv_mcast':'No'
-                    }
+            'name': side_tx_name,
+            'ttl': 32,
+            'mcast_group': '224.9.9.9',
+            'mcast_dest_port': 9999,
+            'rcv_mcast': 'No'
+        }
 
         url = "cli-json/set_mc_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
@@ -972,10 +987,9 @@ class MULTICASTProfile(LFCliBase):
         these_endp = [side_tx_name]
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
-
-    def create_mc_rx(self, endp_type, side_rx, suppress_related_commands=None, debug_ = False):
+    def create_mc_rx(self, endp_type, side_rx, suppress_related_commands=None, debug_=False):
         if self.debug:
-            debug_=True
+            debug_ = True
 
         these_endp = []
 
@@ -984,40 +998,42 @@ class MULTICASTProfile(LFCliBase):
             side_rx_shelf = side_rx_info[0]
             side_rx_resource = side_rx_info[1]
             side_rx_port = side_rx_info[2]
-            side_rx_name = "%smrx-%s-%i"%(self.name_prefix, side_rx_port, len(self.created_mc))
+            side_rx_name = "%smrx-%s-%i" % (self.name_prefix, side_rx_port, len(self.created_mc))
             # add_endp mcast-rcv-sta-001 1 1 sta0002 mc_udp 9999 NO 0 0 NO 1472 0 INCREASING NO 32 0 0
             json_data = {
-                            'alias':side_rx_name,
-                            'shelf':side_rx_shelf,
-                            'resource':side_rx_resource,
-                            'port':side_rx_port,
-                            'type':endp_type,
-                            'ip_port':9999,
-                            'is_rate_bursty':'NO',
-                            'min_rate':0,
-                            'max_rate':0,
-                            'is_pkt_sz_random':'NO',
-                            'min_pkt':1472,
-                            'max_pkt':0,
-                            'payload_pattern':'INCREASING',
-                            'use_checksum':'NO',
-                            'ttl':32,
-                            'send_bad_crc_per_million':0,
-                            'multi_conn':0
-                        }
+                'alias': side_rx_name,
+                'shelf': side_rx_shelf,
+                'resource': side_rx_resource,
+                'port': side_rx_port,
+                'type': endp_type,
+                'ip_port': 9999,
+                'is_rate_bursty': 'NO',
+                'min_rate': 0,
+                'max_rate': 0,
+                'is_pkt_sz_random': 'NO',
+                'min_pkt': 1472,
+                'max_pkt': 0,
+                'payload_pattern': 'INCREASING',
+                'use_checksum': 'NO',
+                'ttl': 32,
+                'send_bad_crc_per_million': 0,
+                'multi_conn': 0
+            }
 
             url = "cli-json/add_endp"
-            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, json_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
 
             json_data = {
-                            'name':side_rx_name,
-                            'ttl':32,
-                            'mcast_group':'224.9.9.9',
-                            'mcast_dest_port':9999,
-                            'rcv_mcast':'Yes'
-                        }
+                'name': side_rx_name,
+                'ttl': 32,
+                'mcast_group': '224.9.9.9',
+                'mcast_dest_port': 9999,
+                'rcv_mcast': 'Yes'
+            }
             url = "cli-json/set_mc_endp"
-            self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, json_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands)
 
             self.created_mc[side_rx_name] = side_rx_name
             these_endp.append(side_rx_name)
@@ -1028,14 +1044,23 @@ class MULTICASTProfile(LFCliBase):
         pprint.pprint(self)
 
 
-
 class L3CXProfile(BaseProfile):
-    def __init__(self, lfclient_host, lfclient_port,local_realm,
-                 side_a_min_bps=None, side_b_min_bps=None,
-                 side_a_max_bps=0, side_b_max_bps=0,
-                 side_a_min_pdu=-1, side_b_min_pdu=-1,
-                 side_a_max_pdu=0, side_b_max_pdu=0,
-                 report_timer_=3000, name_prefix_="Unset", number_template_="00000", debug_=False):
+    def __init__(self,
+                 lfclient_host,
+                 lfclient_port,
+                 local_realm,
+                 side_a_min_bps=None,
+                 side_b_min_bps=None,
+                 side_a_max_bps=0,
+                 side_b_max_bps=0,
+                 side_a_min_pdu=-1,
+                 side_b_min_pdu=-1,
+                 side_a_max_pdu=0,
+                 side_b_max_pdu=0,
+                 report_timer_=3000,
+                 name_prefix_="Unset",
+                 number_template_="00000",
+                 debug_=False):
         """
         :param lfclient_host:
         :param lfclient_port:
@@ -1054,7 +1079,6 @@ class L3CXProfile(BaseProfile):
         super().__init__(local_realm)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
-        self.local_realm = local_realm
         self.side_a_min_pdu = side_a_min_pdu
         self.side_b_min_pdu = side_b_min_pdu
         self.side_a_max_pdu = side_a_max_pdu
@@ -1088,8 +1112,8 @@ class L3CXProfile(BaseProfile):
             if cx_name != 'uri' and cx_name != 'handler':
                 for item, value in cx_name.items():
                     for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes' and item in self.created_cx.values():
-                        cx_rx_map[item] = value_rx
+                        if value_name == 'rx bytes' and item in self.created_cx.values():
+                            cx_rx_map[item] = value_rx
         return cx_rx_map
 
     def __compare_vals(self, old_list, new_list):
@@ -1119,11 +1143,11 @@ class L3CXProfile(BaseProfile):
                 script_name=None,
                 arguments=None):
         try:
-            duration_sec=self.parse_time(duration_sec).seconds
+            duration_sec = self.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
-            if (duration_sec <= monitor_interval ):
+            if (duration_sec <= monitor_interval):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file == None:
             raise ValueError("Monitor requires an output file to be defined")
@@ -1140,10 +1164,10 @@ class L3CXProfile(BaseProfile):
         else:
             output_format = report_file.split('.')[-1]
 
-        #Step 1, column names
-        fields=",".join(col_names)
+        # Step 1, column names
+        fields = ",".join(col_names)
         print(fields)
-        #Step 2, monitor columns
+        # Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
         print(end_time)
@@ -1152,8 +1176,8 @@ class L3CXProfile(BaseProfile):
         passes = 0
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
-        timestamps=[]
-        #for x in range(0,int(round(iterations,0))):
+        timestamps = []
+        # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
@@ -1161,9 +1185,9 @@ class L3CXProfile(BaseProfile):
                 raise ValueError("no endpoint?")
             if show:
                 print(response)
-            t=datetime.datetime.now()
+            t = datetime.datetime.now()
             timestamps.append(t)
-            value_map[t]=response
+            value_map[t] = response
             new_cx_rx_values = self.__get_rx_values()
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)
@@ -1180,80 +1204,84 @@ class L3CXProfile(BaseProfile):
             time.sleep(monitor_interval)
         print(value_map)
 
-        #if passes == expected_passes:
-            #self._pass("PASS: All tests passed")
-        #step 3 organize data
-        endpoints=list()
+        # if passes == expected_passes:
+        # self._pass("PASS: All tests passed")
+        # step 3 organize data
+        endpoints = list()
         for endpoint in value_map.values():
             endpoints.append(endpoint['endpoint'])
-        endpoints2=[]
+        endpoints2 = []
         for y in range(0, len(endpoints)):
             for x in range(0, len(endpoints[0])):
                 endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
         import itertools
-        timestamps2=list(itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
+        timestamps2 = list(
+            itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
-        #step 4 save and close
-        header_row=col_names
-        header_row.insert(0,'Timestamp')
+        # step 4 save and close
+        header_row = col_names
+        header_row.insert(0, 'Timestamp')
         print(header_row)
-        if output_format.lower() in ['excel','xlsx'] or report_file.split('.')[-1] == 'xlsx':
+        if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
             report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
-            for col_num,data in enumerate(header_row):
-                worksheet.write(0, col_num,data)
+            for col_num, data in enumerate(header_row):
+                worksheet.write(0, col_num, data)
             row_num = 1
             for x in endpoints2:
                 for col_num, data in enumerate(x):
-                        worksheet.write(row_num, col_num, str(data))
-                row_num+=1
+                    worksheet.write(row_num, col_num, str(data))
+                row_num += 1
             workbook.close()
         else:
-            df=pd.DataFrame(endpoints2)
-            df.columns=header_row
+            df = pd.DataFrame(endpoints2)
+            df.columns = header_row
             import requests
             import ast
-            systeminfo=ast.literal_eval(requests.get('http://localhost:8080').text)
+            try:
+                systeminfo = ast.literal_eval(requests.get('http://localhost:8080').text)
+            except:
+                systeminfo = ast.literal_eval(requests.get('http://192.168.1.3:8080').text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
-            for x in ['LFGUI Release','Script Name','Arguments']:
+            for x in ['LFGUI Release', 'Script Name', 'Arguments']:
                 df[x][1:] = ''
             if output_format == 'pdf':
                 import matplotlib.pyplot as plt
                 from matplotlib.backends.backend_pdf import PdfPages
-                fig, ax = plt.subplots(figsize=(12,4))
+                fig, ax = plt.subplots(figsize=(12, 4))
                 ax.axis('tight')
                 ax.axis('off')
                 the_table = ax.table(cellText=df.values, colLabels=df.columns, loc='center')
                 pp = PdfPages(report_file)
-                pp.savefig(fig, bbox_inches = 'tight')
+                pp.savefig(fig, bbox_inches='tight')
                 pp.close()
             if output_format == 'hdf':
-                df.to_hdf(report_file,'table', append=True)
+                df.to_hdf(report_file, 'table', append=True)
             if output_format == 'parquet':
-                df.to_parquet(report_file,engine='pyarrow')
+                df.to_parquet(report_file, engine='pyarrow')
             if output_format == 'png':
-                fig=df.plot().get_figure()
+                fig = df.plot().get_figure()
                 fig.savefig(report_file)
             if output_format == 'html':
                 print('Shivams function')
             if output_format == 'df':
                 return df
-            supported_formats = ['csv','json','stata','pickle']
+            supported_formats = ['csv', 'json', 'stata', 'pickle']
             for x in supported_formats:
                 if output_format.lower() == x or report_file.split('.')[-1] == x:
-                    exec('df.to_'+x+'("'+report_file+'")')
+                    exec('df.to_' + x + '("' + report_file + '")')
             else:
                 pass
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
-            self.local_realm.json_post("/cli-json/show_cxe", {
-                 "test_mgr": "ALL",
-                 "cross_connect": cx_name
+            self.json_post("/cli-json/show_cxe", {
+                "test_mgr": "ALL",
+                "cross_connect": cx_name
             }, debug_=self.debug)
             print(".", end='')
 
@@ -1261,8 +1289,8 @@ class L3CXProfile(BaseProfile):
         print("Starting CXs...")
         for cx_name in self.created_cx.keys():
             if self.debug:
-                print("cx-name: %s"%(cx_name))
-            self.local_realm.json_post("/cli-json/set_cx_state", {
+                print("cx-name: %s" % (cx_name))
+            self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
@@ -1273,30 +1301,31 @@ class L3CXProfile(BaseProfile):
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
-            self.stop_cx(cx_name)
+            self.stopping_cx(cx_name)
             print(".", end='')
         print("")
 
     def cleanup_prefix(self):
-        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
+        self.cleanup_cxe_prefix(self.name_prefix)
 
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 if self.debug:
-                    print("Cleaning cx: %s"%(cx_name))
+                    print("Cleaning cx: %s" % (cx_name))
                 self.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
                     if self.debug:
-                        print("Cleaning endpoint: %s"%(ename))
+                        print("Cleaning endpoint: %s" % (ename))
                     self.rm_endp(self.created_cx[cx_name][side])
 
-    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False, tos=None):
+    def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
+               tos=None):
         if self.debug:
-            debug_=True
+            debug_ = True
 
         cx_post_data = []
         timer_post_data = []
@@ -1309,7 +1338,8 @@ class L3CXProfile(BaseProfile):
                 or (self.side_a_max_bps is None) \
                 or (self.side_b_min_bps is None) \
                 or (self.side_b_max_bps is None):
-            raise ValueError("side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
+            raise ValueError(
+                "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
 
         if type(side_a) == list and type(side_b) != list:
             side_b_info = self.name_to_eid(side_b)
@@ -1323,11 +1353,11 @@ class L3CXProfile(BaseProfile):
                 if port_name.find('.') < 0:
                     port_name = "%d.%s" % (side_a_info[1], port_name)
 
-                cx_name = "%s%s-%i"%(self.name_prefix, side_a_info[2], len(self.created_cx))
+                cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
 
                 endp_a_name = cx_name + "-A"
                 endp_b_name = cx_name + "-B"
-                self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
+                self.created_cx[cx_name] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name
                 self.created_endp[endp_b_name] = endp_b_name
                 these_cx.append(cx_name)
@@ -1359,9 +1389,11 @@ class L3CXProfile(BaseProfile):
                 }
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("napping %f sec"%sleep_time)
+                self.json_post(url, endp_side_a, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, endp_side_b, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
+                # print("napping %f sec"%sleep_time)
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -1370,16 +1402,20 @@ class L3CXProfile(BaseProfile):
                     "flag": "AutoHelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, data, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
                 data["name"] = endp_b_name
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, data, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
 
                 if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
                     data["name"] = endp_a_name
                     data["flag"] = "UseAutoNAT"
-                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                    self.json_post(url, data, debug_=debug_,
+                                   suppress_related_commands_=suppress_related_commands)
                     data["name"] = endp_b_name
-                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                    self.json_post(url, data, debug_=debug_,
+                                   suppress_related_commands_=suppress_related_commands)
 
                 if tos != None:
                     self.set_endp_tos(endp_a_name, tos)
@@ -1391,19 +1427,19 @@ class L3CXProfile(BaseProfile):
                     "tx_endp": endp_a_name,
                     "rx_endp": endp_b_name,
                 }
-                #pprint(data)
+                # pprint(data)
                 cx_post_data.append(data)
                 timer_post_data.append({
-                    "test_mgr":"default_tm",
-                    "cx_name":cx_name,
-                    "milliseconds":self.report_timer
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name,
+                    "milliseconds": self.report_timer
                 })
 
         elif type(side_b) == list and type(side_a) != list:
             side_a_info = self.name_to_eid(side_a)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
-            #side_a_name = side_a_info[2]
+            # side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
@@ -1415,7 +1451,7 @@ class L3CXProfile(BaseProfile):
                 cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
                 endp_a_name = cx_name + "-A"
                 endp_b_name = cx_name + "-B"
-                self.created_cx[ cx_name ] = [endp_a_name, endp_b_name]
+                self.created_cx[cx_name] = [endp_a_name, endp_b_name]
                 self.created_endp[endp_a_name] = endp_a_name
                 self.created_endp[endp_b_name] = endp_b_name
                 these_cx.append(cx_name)
@@ -1447,9 +1483,11 @@ class L3CXProfile(BaseProfile):
                 }
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("napping %f sec" %sleep_time )
+                self.json_post(url, endp_side_a, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
+                self.json_post(url, endp_side_b, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands)
+                # print("napping %f sec" %sleep_time )
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -1467,7 +1505,7 @@ class L3CXProfile(BaseProfile):
                     "val": 1
                 }
                 self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("CXNAME451: %s" % cx_name)
+                # print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -1476,18 +1514,20 @@ class L3CXProfile(BaseProfile):
                 }
                 cx_post_data.append(data)
                 timer_post_data.append({
-                    "test_mgr":"default_tm",
-                    "cx_name":cx_name,
-                    "milliseconds":self.report_timer
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name,
+                    "milliseconds": self.report_timer
                 })
         else:
-            raise ValueError("side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (type(side_a), type(side_b)))
+            raise ValueError(
+                "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
+                    type(side_a), type(side_b)))
 
         self.wait_until_endps_appear(these_endp, debug=debug_)
 
         for data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             time.sleep(0.01)
 
         self.wait_until_cxs_appear(these_cx, debug=debug_)
@@ -1562,13 +1602,13 @@ class L4CXProfile(LFCliBase):
                     "cx_name": self.created_cx[cx_name]
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
                 req_url = "cli-json/rm_endp"
                 data = {
                     "endp_name": cx_name
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
@@ -1591,7 +1631,8 @@ class L4CXProfile(LFCliBase):
                 "proxy_auth_type": 0x200
             }
             url = "cli-json/add_l4_endp"
-            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, endp_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
             endp_data = {
@@ -1605,7 +1646,8 @@ class L4CXProfile(LFCliBase):
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, cx_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
 
@@ -1629,7 +1671,7 @@ class GenCXProfile(LFCliBase):
         if self.type == "lfping":
             if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
-                #print(self.cmd)
+                # print(self.cmd)
             else:
                 raise ValueError("Please ensure dest and interval have been set correctly")
         elif self.type == "generic":
@@ -1645,8 +1687,8 @@ class GenCXProfile(LFCliBase):
 
     def start_cx(self):
         print("Starting CXs...")
-        #print(self.created_cx)
-        #print(self.created_endp)
+        # print(self.created_cx)
+        # print(self.created_endp)
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
@@ -1704,15 +1746,15 @@ class GenCXProfile(LFCliBase):
 
             # this naming convention follows what you see when you use
             # lf_firemod.pl --action list_endp after creating a generic endpoint
-            gen_name_a = "%s-%s"%(self.name_prefix, name)
-            gen_name_b = "D_%s-%s"%(self.name_prefix, name)
-            endp_tpls.append( (resource, name, gen_name_a, gen_name_b))
+            gen_name_a = "%s-%s" % (self.name_prefix, name)
+            gen_name_b = "D_%s-%s" % (self.name_prefix, name)
+            endp_tpls.append((resource, name, gen_name_a, gen_name_b))
 
         for endp_tpl in endp_tpls:
-            resource    = endp_tpl[0]
-            name        = endp_tpl[1]
-            gen_name_a  = endp_tpl[2]
-            #gen_name_b  = endp_tpl[3]
+            resource = endp_tpl[0]
+            name = endp_tpl[1]
+            gen_name_a = endp_tpl[2]
+            # gen_name_b  = endp_tpl[3]
             genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, debug_=self.debug)
             # (self, alias=None, shelf=1, resource=1, port=None, type=None):
             genl.create_gen_endp(alias=gen_name_a, shelf=shelf, resource=resource, port=name)
@@ -1722,26 +1764,26 @@ class GenCXProfile(LFCliBase):
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            gen_name_a  = endp_tpl[2]
-            gen_name_b  = endp_tpl[3]
+            gen_name_a = endp_tpl[2]
+            gen_name_b = endp_tpl[3]
             genl.set_flags(gen_name_a, "ClearPortOnStart", 1)
             # genl.set_flags(gen_name_b, "ClearPortOnStart", 1)
             # genl.set_flags(gen_name_b, "Unmanaged", 1)
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name        = endp_tpl[1]
-            gen_name_a  = endp_tpl[2]
+            name = endp_tpl[1]
+            gen_name_a = endp_tpl[2]
             # gen_name_b  = endp_tpl[3]
             self.parse_command(name)
             genl.set_cmd(gen_name_a, self.cmd)
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name        = endp_tpl[1]
-            gen_name_a  = endp_tpl[2]
-            gen_name_b  = endp_tpl[3]
-            cx_name     = "CX_%s-%s"%(self.name_prefix, name)
+            name = endp_tpl[1]
+            gen_name_a = endp_tpl[2]
+            gen_name_b = endp_tpl[3]
+            cx_name = "CX_%s-%s" % (self.name_prefix, name)
             data = {
                 "alias": cx_name,
                 "test_mgr": "default_tm",
@@ -1764,10 +1806,11 @@ class GenCXProfile(LFCliBase):
         time.sleep(sleep_time)
         for data in post_data:
             self.local_realm.json_post("/cli-json/show_cx", {
-                "test_mgr":"default_tm",
+                "test_mgr": "default_tm",
                 "cross_connect": data["alias"]
             })
         time.sleep(sleep_time)
+
 
 class WifiMonitor:
     def __init__(self, lfclient_url, local_realm, up=True, debug_=False, resource_=1):
@@ -1780,10 +1823,10 @@ class WifiMonitor:
         self.flag_names = []
         self.flag_mask_names = []
         self.flags_mask = add_monitor.default_flags_mask
-        self.aid = "NA" # used when sniffing /ax radios
-        self.bsssid = "00:00:00:00:00:00" # used when sniffing on /ax radios
+        self.aid = "NA"  # used when sniffing /ax radios
+        self.bsssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
 
-    def create(self, resource_=1, channel=None, radio_="wiphy0", name_="moni0" ):
+    def create(self, resource_=1, channel=None, radio_="wiphy0", name_="moni0"):
         print("Creating monitor " + name_)
         self.monitor_name = name_
         computed_flags = 0
@@ -1793,11 +1836,12 @@ class WifiMonitor:
         # we want to query the existing country code of the radio
         # there's no reason to change it but we get hollering from server
         # if we don't provide a value for the parameter
-        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country"%(resource_, radio_), debug_=self.debug)
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource_, radio_),
+                                       debug_=self.debug)
         if jr is None:
-            raise ValueError("No radio %s.%s found"%(resource_, radio_))
+            raise ValueError("No radio %s.%s found" % (resource_, radio_))
 
-        eid = "1.%s.%s"%(resource_, radio_)
+        eid = "1.%s.%s" % (resource_, radio_)
         frequency = 0
         country = 0
         if eid in jr:
@@ -1807,7 +1851,7 @@ class WifiMonitor:
             "shelf": 1,
             "resource": resource_,
             "radio": radio_,
-            "mode": 0, #"NA", #0 for AUTO or "NA"
+            "mode": 0,  # "NA", #0 for AUTO or "NA"
             "channel": channel,
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
@@ -1844,24 +1888,22 @@ class WifiMonitor:
                                debug=self.debug)
         else:
             names = ",".join(desired_ports)
-            existing_ports = self.local_realm.json_get("/port/1/%d/%s?fields=alias"%(resource_, names), debug_=False)
+            existing_ports = self.local_realm.json_get("/port/1/%d/%s?fields=alias" % (resource_, names), debug_=False)
             if (existing_ports is None) or ("interfaces" not in existing_ports) or ("interface" not in existing_ports):
                 print("No monitor names found to delete")
                 return
             if ("interfaces" in existing_ports):
-                for eid,info in existing_ports["interfaces"].items():
+                for eid, info in existing_ports["interfaces"].items():
                     LFUtils.removePort(resource=resource_,
                                        port_name=info["alias"],
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
             if ("interface" in existing_ports):
-                for eid,info in existing_ports["interface"].items():
+                for eid, info in existing_ports["interface"].items():
                     LFUtils.removePort(resource=resource_,
                                        port_name=info["alias"],
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
-
-
 
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
@@ -1875,18 +1917,18 @@ class WifiMonitor:
         if capname is None:
             raise ValueError("Need a capture file name")
         data = {
-                "shelf": 1,
-                "resource": 1,
-                "port": self.monitor_name,
-                "display": "NA",
-                "flags": 0x2,
-                "outfile": capname,
-                "duration": duration_sec
-            }
-        self.local_realm.json_post("/cli-json/sniff_port", _data= data)
+            "shelf": 1,
+            "resource": 1,
+            "port": self.monitor_name,
+            "display": "NA",
+            "flags": 0x2,
+            "outfile": capname,
+            "duration": duration_sec
+        }
+        self.local_realm.json_post("/cli-json/sniff_port", _data=data)
 
+        # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
-               # "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))
 
 class VAPProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -1897,7 +1939,7 @@ class VAPProfile(LFCliBase):
                  debug_=False):
         super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
         self.debug = debug_
-        #self.lfclient_url = lfclient_url # done in super()
+        # self.lfclient_url = lfclient_url # done in super()
         self.ssid = ssid
         self.ssid_pass = ssid_pass
         self.mode = mode
@@ -2026,7 +2068,9 @@ class VAPProfile(LFCliBase):
                 self.desired_add_vap_flags_mask.append(param_name)
 
         elif command_name == "set_port":
-            if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags) and (param_name not in set_port.set_port_interest_flags):
+            if (param_name not in set_port.set_port_current_flags) and (
+                    param_name not in set_port.set_port_cmd_flags) and (
+                    param_name not in set_port.set_port_interest_flags):
                 print("Parameter name [%s] not defined in set_port.py" % param_name)
                 if self.debug:
                     pprint(set_port.set_port_cmd_flags)
@@ -2082,18 +2126,19 @@ class VAPProfile(LFCliBase):
                 if self.debug:
                     pprint(command_ref)
                 raise ValueError("flag %s not in map" % name)
-            #print("add-named-flags: %s  %i"%(name, command_ref[name]))
+            # print("add-named-flags: %s  %i"%(name, command_ref[name]))
             result |= command_ref[name]
 
         return result
 
-    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True, use_ht160=False,
+    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
+               use_ht160=False,
                suppress_related_commands_=True, use_radius=False, hs20_enable=False):
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
             port_list = port_list['interfaces']
             for port in port_list:
-                for k,v in port.items():
+                for k, v in port.items():
                     if v['alias'] == self.vap_name:
                         self.local_realm.rm_port(k, check_exists=True)
         if use_ht160:
@@ -2116,9 +2161,10 @@ class VAPProfile(LFCliBase):
             self.desired_add_vap_flags.append("hs20_enable")
             self.desired_add_vap_flags_mask.append("hs20_enable")
 
-        #print("MODE ========= ", self.mode)
+        # print("MODE ========= ", self.mode)
 
-        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio), debug_=self.debug)
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio),
+                                       debug_=self.debug)
         if jr is None:
             raise ValueError("No radio %s.%s found" % (resource, radio))
 
@@ -2132,7 +2178,7 @@ class VAPProfile(LFCliBase):
             "shelf": 1,
             "resource": resource,
             "radio": radio,
-            "mode": self.mode, #"NA", #0 for AUTO or "NA"
+            "mode": self.mode,  # "NA", #0 for AUTO or "NA"
             "channel": channel,
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
@@ -2193,12 +2239,11 @@ class VAPProfile(LFCliBase):
             wifi_extra_r.addPostData(self.wifi_extra_data)
             json_response = wifi_extra_r.jsonPost(debug)
 
-
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
             port_list = port_list['interfaces']
             for port in port_list:
-                for k,v in port.items():
+                for k, v in port.items():
                     if v['alias'] == 'br0':
                         self.local_realm.rm_port(k, check_exists=True)
                         time.sleep(5)
@@ -2221,8 +2266,6 @@ class VAPProfile(LFCliBase):
         }
         self.local_realm.json_post("cli-json/set_port", bridge_set_port)
 
-
-
         if (self.up):
             self.admin_up(1)
 
@@ -2239,10 +2282,11 @@ class VAPProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
 
+
 class VRProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, ssid="NA", ssid_pass="NA", mode=0, debug_=False):
         super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
-        #self.debug = debug_
+        # self.debug = debug_
         # self.lfclient_url = lfclient_url
         self.ssid = ssid
         self.ssid_pass = ssid_pass
@@ -2268,8 +2312,8 @@ class VRProfile(LFCliBase):
             'shelf': 1,
             'resource': 1,
             'vr-name': None,
-            'local_dev': None, # outer rdd
-            'remote_dev': None, # inner rdd
+            'local_dev': None,  # outer rdd
+            'remote_dev': None,  # inner rdd
             "x": 0,
             "y": 0,
             "width": 10,
@@ -2297,7 +2341,8 @@ class VRProfile(LFCliBase):
             "peer_ifname": "rdd1"
         }
         # print("creating rdd0")
-        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_,
+                                   debug_=debug_)
 
         rdd_data = {
             "shelf": 1,
@@ -2306,24 +2351,28 @@ class VRProfile(LFCliBase):
             "peer_ifname": "rdd0"
         }
         # print("creating rdd1")
-        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_,
+                                   debug_=debug_)
 
         self.set_port_data["port"] = "rdd0"
         self.set_port_data["ip_addr"] = gateway
         self.set_port_data["netmask"] = netmask
         self.set_port_data["gateway"] = gateway
-        self.local_realm.json_post("set_port", self.set_port_data, suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.local_realm.json_post("set_port", self.set_port_data,
+                                   suppress_related_commands_=suppress_related_commands_, debug_=debug_)
 
         self.set_port_data["port"] = "rdd1"
         self.set_port_data["ip_addr"] = ip_addr
         self.set_port_data["netmask"] = netmask
         self.set_port_data["gateway"] = gateway
-        self.local_realm.json_post("set_port", self.set_port_data, suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.local_realm.json_post("set_port", self.set_port_data,
+                                   suppress_related_commands_=suppress_related_commands_, debug_=debug_)
 
         self.created_rdds.append("rdd0")
         self.created_rdds.append("rdd1")
 
-    def create_vrcx(self, resource, local_dev, remote_dev, subnets, nexthop, flags, suppress_related_commands_=True, debug_=False):
+    def create_vrcx(self, resource, local_dev, remote_dev, subnets, nexthop, flags, suppress_related_commands_=True,
+                    debug_=False):
         if self.vr_name is not None:
             self.vrcx_data["resource"] = resource
             self.vrcx_data["vr_name"] = self.vr_name
@@ -2332,10 +2381,10 @@ class VRProfile(LFCliBase):
             self.vrcx_data["subnets"] = subnets
             self.vrcx_data["nexthop"] = nexthop
             self.vrcx_data["flags"] = flags
-            self.local_realm.json_post("add_vrcx", self.vrcx_data, suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+            self.local_realm.json_post("add_vrcx", self.vrcx_data,
+                                       suppress_related_commands_=suppress_related_commands_, debug_=debug_)
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
-
 
     def create(self, resource, upstream_port="eth1", debug=False,
                upstream_subnets="20.20.20.0/24", upstream_nexthop="20.20.20.1",
@@ -2350,53 +2399,57 @@ class VRProfile(LFCliBase):
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
         # Create 1 rdd pair
-        self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway, netmask=rdd_netmask)   # rdd0, rdd1; rdd0 gateway, rdd1 connected to network
+        self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
+                        netmask=rdd_netmask)  # rdd0, rdd1; rdd0 gateway, rdd1 connected to network
 
         # connect rdds and upstream
-        self.create_vrcx(resource=resource, local_dev=upstream_port, remote_dev="NA", subnets=upstream_subnets, nexthop=upstream_nexthop,
+        self.create_vrcx(resource=resource, local_dev=upstream_port, remote_dev="NA", subnets=upstream_subnets,
+                         nexthop=upstream_nexthop,
                          flags=257, suppress_related_commands_=suppress_related_commands_, debug_=debug)
-        self.create_vrcx(resource=resource, local_dev="rdd0", remote_dev="rdd1", subnets=local_subnets, nexthop=local_nexthop,
+        self.create_vrcx(resource=resource, local_dev="rdd0", remote_dev="rdd1", subnets=local_subnets,
+                         nexthop=local_nexthop,
                          flags=1, suppress_related_commands_=suppress_related_commands_, debug_=debug)
 
     def cleanup(self, resource, delay=0.03):
         # TODO: Cleanup for VRProfile
         pass
 
+
 class DUTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True, _local_realm=local_realm)
-        self.name            = "NA"
-        self.flags           = "NA"
-        self.img_file        = "NA"
-        self.sw_version      = "NA"
-        self.hw_version      = "NA"
-        self.model_num       = "NA"
-        self.serial_num      = "NA"
-        self.serial_port     = "NA"
-        self.wan_port        = "NA"
-        self.lan_port        = "NA"
-        self.ssid1           = "NA"
-        self.ssid2           = "NA"
-        self.ssid3           = "NA"
-        self.passwd1         = "NA"
-        self.passwd2         = "NA"
-        self.passwd3         = "NA"
-        self.mgt_ip          = "NA"
-        self.api_id          = "NA"
-        self.flags_mask      = "NA"
-        self.antenna_count1  = "NA"
-        self.antenna_count2  = "NA"
-        self.antenna_count3  = "NA"
-        self.bssid1          = "NA"
-        self.bssid2          = "NA"
-        self.bssid3          = "NA"
-        self.top_left_x      = "NA"
-        self.top_left_y      = "NA"
-        self.eap_id          = "NA"
-        self.flags           = 0
-        self.flags_mask      = 0
-        self.notes           = []
-        self.append          = []
+        self.name = "NA"
+        self.flags = "NA"
+        self.img_file = "NA"
+        self.sw_version = "NA"
+        self.hw_version = "NA"
+        self.model_num = "NA"
+        self.serial_num = "NA"
+        self.serial_port = "NA"
+        self.wan_port = "NA"
+        self.lan_port = "NA"
+        self.ssid1 = "NA"
+        self.ssid2 = "NA"
+        self.ssid3 = "NA"
+        self.passwd1 = "NA"
+        self.passwd2 = "NA"
+        self.passwd3 = "NA"
+        self.mgt_ip = "NA"
+        self.api_id = "NA"
+        self.flags_mask = "NA"
+        self.antenna_count1 = "NA"
+        self.antenna_count2 = "NA"
+        self.antenna_count3 = "NA"
+        self.bssid1 = "NA"
+        self.bssid2 = "NA"
+        self.bssid3 = "NA"
+        self.top_left_x = "NA"
+        self.top_left_y = "NA"
+        self.eap_id = "NA"
+        self.flags = 0
+        self.flags_mask = 0
+        self.notes = []
+        self.append = []
 
     def set_param(self, name, value):
         if (name in self.__dict__):
@@ -2414,13 +2467,13 @@ class DUTProfile(LFCliBase):
         for param in add_dut.dut_params:
             if (param.name in self.__dict__):
                 if (self.__dict__[param.name] is not None) \
-                    and (self.__dict__[param.name] != "NA"):
+                        and (self.__dict__[param.name] != "NA"):
                     data[param.name] = self.__dict__[param.name]
             else:
                 print("---------------------------------------------------------")
                 pprint(self.__dict__[param.name])
                 print("---------------------------------------------------------")
-                raise ValueError("parameter %s not in dut_profile"%param)
+                raise ValueError("parameter %s not in dut_profile" % param)
 
         if (flags is not None) and (int(flags) > -1):
             data["flags"] = flags
@@ -2441,7 +2494,7 @@ class DUTProfile(LFCliBase):
             print("---------------------------------------------------------")
         self.json_post(url, data, debug_=self.debug)
 
-        if (self.notes is not None) and (len(self.notes)>0):
+        if (self.notes is not None) and (len(self.notes) > 0):
             self.json_post("/cli-json/add_dut_notes", {
                 "dut": self.name,
                 "text": "[BLANK]"
@@ -2458,7 +2511,7 @@ class DUTProfile(LFCliBase):
                     "dut": self.name,
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
-        if (self.append is not None) and (len(self.append)>0):
+        if (self.append is not None) and (len(self.append) > 0):
             notebytes = None
             for line in self.append:
                 notebytes = base64.b64encode(line.encode('ascii'))
@@ -2471,6 +2524,7 @@ class DUTProfile(LFCliBase):
                     "dut": self.name,
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
+
 
 class TestGroupProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
@@ -2487,7 +2541,7 @@ class TestGroupProfile(LFCliBase):
 
     def quiesce_group(self):
         if self.group_name is not None:
-                self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})
+            self.local_realm.json_post("/cli-json/quiesce_group", {"name": self.group_name})
         else:
             raise ValueError("test_group name must be set.")
 
@@ -2520,7 +2574,7 @@ class TestGroupProfile(LFCliBase):
         if test_groups is not None and "groups" in test_groups:
             test_groups = test_groups["groups"]
             for group in test_groups:
-                for k,v in group.items():
+                for k, v in group.items():
                     if v['name'] == self.group_name:
                         return True
         else:
@@ -2541,7 +2595,7 @@ class TestGroupProfile(LFCliBase):
         if test_groups is not None:
             test_groups = test_groups["groups"]
             for group in test_groups:
-                for k,v in group.items():
+                for k, v in group.items():
                     if v['name'] == self.group_name:
                         return v['cross connects']
 
@@ -2554,6 +2608,7 @@ class FIOEndpProfile(LFCliBase):
     Very often you will create the FileIO writer profile first so that it creates the data
     that a reader profile will subsequently use.
     """
+
     def __init__(self, lfclient_host, lfclient_port, local_realm, io_direction="write", debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.local_realm = local_realm
@@ -2568,8 +2623,8 @@ class FIOEndpProfile(LFCliBase):
         self.min_write_rate_bps = 1000 * 1000 * 1000
         self.max_write_rate_bps = 1000 * 1000 * 1000
 
-        self.file_num = 10           # number of files to write
-        self.directory = None       # directory like /mnt/lf/$endp_name
+        self.file_num = 10  # number of files to write
+        self.directory = None  # directory like /mnt/lf/$endp_name
 
         # this refers to locally mounted directories presently used for writing
         # you would set this when doing read tests simultaneously to write tests
@@ -2578,14 +2633,14 @@ class FIOEndpProfile(LFCliBase):
         # /mnt/lf/ro_300GB_001, this overwrites a readers directory name to wo_300GB_001
         self.mount_dir = "AUTO"
 
-        self.server_mount = None    # like cifs://10.0.0.1/bashful or 192.168.1.1:/var/tmp
+        self.server_mount = None  # like cifs://10.0.0.1/bashful or 192.168.1.1:/var/tmp
         self.mount_options = None
         self.iscsi_vol = None
         self.retry_timer_ms = 2000
-        self.io_direction = io_direction # read / write
+        self.io_direction = io_direction  # read / write
         self.quiesce_ms = 3000
         self.pattern = "increasing"
-        self.file_prefix = "AUTO" # defaults to endp_name
+        self.file_prefix = "AUTO"  # defaults to endp_name
         self.cx_prefix = "wo_"
 
         self.created_cx = {}
@@ -2646,13 +2701,13 @@ class FIOEndpProfile(LFCliBase):
                     "cx_name": self.created_cx[cx_name]
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
                 req_url = "cli-json/rm_endp"
                 data = {
                     "endp_name": cx_name
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
 
     def create(self, ports=[], connections_per_port=1, sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
@@ -2665,9 +2720,10 @@ class FIOEndpProfile(LFCliBase):
                 else:
                     raise ValueError("Unexpected name for port_name %s" % port_name)
                 if self.directory is None or self.server_mount is None or self.fs_type is None:
-                    raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (self.directory, self.server_mount, self.fs_type))
+                    raise ValueError("directory [%s], server_mount [%s], and type [%s] must not be None" % (
+                        self.directory, self.server_mount, self.fs_type))
                 endp_data = {
-                    "alias": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "alias": self.cx_prefix + name + "_" + str(num_connection) + "_fio",
                     "shelf": shelf,
                     "resource": resource,
                     "port": name,
@@ -2689,11 +2745,12 @@ class FIOEndpProfile(LFCliBase):
                     endp_data["directory"] = "/mnt/lf/wo_" + name + "_" + str(num_connection) + "_fio"
 
                 url = "cli-json/add_file_endp"
-                self.local_realm.json_post(url, endp_data, debug_=False, suppress_related_commands_=suppress_related_commands_)
+                self.local_realm.json_post(url, endp_data, debug_=False,
+                                           suppress_related_commands_=suppress_related_commands_)
                 time.sleep(sleep_time)
 
                 data = {
-                    "name": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "name": self.cx_prefix + name + "_" + str(num_connection) + "_fio",
                     "io_direction": self.io_direction,
                     "num_files": 5
                 }
@@ -2709,17 +2766,19 @@ class FIOEndpProfile(LFCliBase):
                     name = self.local_realm.name_to_eid(port_name)[2]
 
                 endp_data = {
-                    "alias": "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "alias": "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio",
                     "test_mgr": "default_tm",
-                    "tx_endp": self.cx_prefix + name + "_" + str(num_connection) + "_fio" ,
+                    "tx_endp": self.cx_prefix + name + "_" + str(num_connection) + "_fio",
                     "rx_endp": "NA"
                 }
                 cx_post_data.append(endp_data)
-                self.created_cx[self.cx_prefix + name + "_" + str(num_connection) + "_fio" ] = "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio"
+                self.created_cx[self.cx_prefix + name + "_" + str(
+                    num_connection) + "_fio"] = "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio"
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, cx_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
 
@@ -2746,8 +2805,8 @@ class MACVLANProfile(LFCliBase):
         self.ip_list = []
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
-        self.desired_set_port_current_flags = [] # do not default down, "if_down"
-        self.desired_set_port_interest_flags = ["current_flags"] # do not default down, "ifdown"
+        self.desired_set_port_current_flags = []  # do not default down, "if_down"
+        self.desired_set_port_interest_flags = ["current_flags"]  # do not default down, "ifdown"
         self.set_port_data = {
             "shelf": 1,
             "resource": 1,
@@ -2835,7 +2894,8 @@ class MACVLANProfile(LFCliBase):
             self.desired_set_port_interest_flags.append("ip_address")
             self.desired_set_port_interest_flags.append("ip_Mask")
             self.desired_set_port_interest_flags.append("ip_gateway")
-            self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr, netmask=self.netmask, num_ips=self.num_macvlans)
+            self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr, netmask=self.netmask,
+                                                 num_ips=self.num_macvlans)
 
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
@@ -2854,7 +2914,7 @@ class MACVLANProfile(LFCliBase):
                 "resource": self.resource,
                 "mac": "xx:xx:xx:*:*:xx",
                 "port": self.local_realm.name_to_eid(self.macvlan_parent)[2],
-                "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#')+1:]),
+                "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:]),
                 "flags": None
             }
             if admin_down:
@@ -2862,11 +2922,12 @@ class MACVLANProfile(LFCliBase):
             else:
                 data["flags"] = 0
             self.created_macvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
-                                                          self.macvlan_parent, int(self.desired_macvlans[i][self.desired_macvlans[i].index('#')+1:])))
+                                                          self.macvlan_parent, int(
+                self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:])))
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
 
-        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,  port_list=self.created_macvlans)
+        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_macvlans)
         print(self.created_macvlans)
 
         time.sleep(5)
@@ -2893,7 +2954,6 @@ class MACVLANProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.created_macvlans)
 
-
     def admin_up(self):
         for macvlan in self.created_macvlans:
             self.local_realm.admin_up(macvlan)
@@ -2901,6 +2961,7 @@ class MACVLANProfile(LFCliBase):
     def admin_down(self):
         for macvlan in self.created_macvlans:
             self.local_realm.admin_down(macvlan)
+
 
 class PacketFilter():
 
@@ -2925,6 +2986,7 @@ class PacketFilter():
                 lines.append(line.rstrip())
 
         return lines
+
 
 class PortUtils():
     def __init__(self, local_realm):
@@ -2970,6 +3032,7 @@ class PortUtils():
         else:
             raise ValueError("Port name required")
 
+
 class HTTPProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
@@ -3004,7 +3067,7 @@ class HTTPProfile(LFCliBase):
             if passes == expected_passes:
                 return True
             else:
-                print(list(debug_info), " Endps in this list showed errors getting to its URL") #   %s") % self.url)
+                print(list(debug_info), " Endps in this list showed errors getting to its URL")  # %s") % self.url)
                 return False
 
     def start_cx(self):
@@ -3039,19 +3102,19 @@ class HTTPProfile(LFCliBase):
                     "cx_name": self.created_cx[cx_name]
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
                 req_url = "cli-json/rm_endp"
                 data = {
                     "endp_name": cx_name
                 }
                 self.json_post(req_url, data)
-                #pprint(data)
+                # pprint(data)
 
     def map_sta_ips(self, sta_list=[]):
         for sta_eid in sta_list:
             eid = self.local_realm.name_to_eid(sta_eid)
             sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" %
-                                        (eid[0], eid[1], eid[2]))
+                                     (eid[0], eid[1], eid[2]))
             if sta_list['interface'] is not None:
                 self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
 
@@ -3063,7 +3126,7 @@ class HTTPProfile(LFCliBase):
             url = None
             if i != len(list(self.ip_map)) - 1:
                 port_name = list(self.ip_map)[i]
-                ip_addr = self.ip_map[list(self.ip_map)[i+1]]
+                ip_addr = self.ip_map[list(self.ip_map)[i + 1]]
             else:
                 port_name = list(self.ip_map)[i]
                 ip_addr = self.ip_map[list(self.ip_map)[0]]
@@ -3084,7 +3147,7 @@ class HTTPProfile(LFCliBase):
             if ftp:
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
-                    url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd,  ip_addr, source, self.dest)
+                    url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
                 else:
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
             if not http and not ftp:
@@ -3105,7 +3168,8 @@ class HTTPProfile(LFCliBase):
                 "proxy_auth_type": 0x200
             }
             url = "cli-json/add_l4_endp"
-            self.local_realm.json_post(url, endp_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, endp_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
             endp_data = {
@@ -3119,7 +3183,8 @@ class HTTPProfile(LFCliBase):
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.local_realm.json_post(url, cx_data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.local_realm.json_post(url, cx_data, debug_=debug_,
+                                       suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
 
@@ -3152,14 +3217,14 @@ class StationProfile:
         self.ssid_pass = ssid_pass
         self.mode = mode
         self.up = up
-        self.resource=resource
-        self.shelf=shelf
+        self.resource = resource
+        self.shelf = shelf
         self.dhcp = dhcp
         self.security = security
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
@@ -3219,7 +3284,7 @@ class StationProfile:
                        pairwise="CCMP TKIP",
                        group="CCMP TKIP",
                        psk="[BLANK]",
-                       wep_key="[BLANK]",  #wep key
+                       wep_key="[BLANK]",  # wep key
                        ca_cert="[BLANK]",
                        eap="TTLS",
                        identity="testuser",
@@ -3295,7 +3360,7 @@ class StationProfile:
                     self.desired_add_sta_flags_mask.remove(name)
             if security_type != "open":
                 self.desired_add_sta_flags.append(types[security_type])
-                #self.set_command_flag("add_sta", types[security_type], 1)
+                # self.set_command_flag("add_sta", types[security_type], 1)
                 self.desired_add_sta_flags_mask.append(types[security_type])
             else:
                 passwd = "[BLANK]"
@@ -3305,7 +3370,7 @@ class StationProfile:
             if security_type == "wpa3":
                 self.set_command_param("add_sta", "ieee80211w", 2)
 
-            #self.add_sta_data["key"] = passwd
+            # self.add_sta_data["key"] = passwd
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
@@ -3344,7 +3409,9 @@ class StationProfile:
                 self.desired_add_sta_flags_mask.append(param_name)
 
         elif command_name == "set_port":
-            if (param_name not in set_port.set_port_current_flags) and (param_name not in set_port.set_port_cmd_flags) and (param_name not in set_port.set_port_interest_flags):
+            if (param_name not in set_port.set_port_current_flags) and (
+                    param_name not in set_port.set_port_cmd_flags) and (
+                    param_name not in set_port.set_port_interest_flags):
                 print("Parameter name [%s] not defined in set_port.py" % param_name)
                 if self.debug:
                     pprint(set_port.set_port_cmd_flags)
@@ -3367,7 +3434,8 @@ class StationProfile:
                 elif value == 0:
                     self.desired_set_port_interest_flags.remove(param_name)
             else:
-                raise ValueError("Unknown param name: "+param_name)
+                raise ValueError("Unknown param name: " + param_name)
+
     # use this for hinting station name; stations begin with 'sta', the
     # stations created with a prefix '0100' indicate value 10100 + n with
     # resulting substring(1,) applied; station 900 becomes 'sta1000'
@@ -3421,8 +3489,7 @@ class StationProfile:
             self.local_realm.rm_port(port_eid, check_exists=True, debug_=debug_)
 
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,  port_list=desired_stations)
-
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio,
@@ -3466,7 +3533,7 @@ class StationProfile:
             self.desired_add_sta_flags.append("create_admin_down")
 
         # create stations down, do set_port on them, then set stations up
-        self.add_sta_data["flags"]      = self.add_named_flags(self.desired_add_sta_flags,      add_sta.add_sta_flags)
+        self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
         self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         self.add_sta_data["radio"] = radio_port
 
@@ -3486,14 +3553,14 @@ class StationProfile:
         # these are unactivated LFRequest objects that we can modify and
         # re-use inside a loop, reducing the number of object creations
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta", debug_=debug)
-        set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port",debug_=debug)
-        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra",debug_=debug)
+        set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port", debug_=debug)
+        wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
         my_sta_names = []
-        #add radio here
+        # add radio here
         if (num_stations > 0) and (len(sta_names_) < 1):
-            #print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
             my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
-            #print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
         else:
             my_sta_names = sta_names_
 
@@ -3533,7 +3600,7 @@ class StationProfile:
             self.add_sta_data["shelf"] = radio_shelf
             self.add_sta_data["resource"] = radio_resource
             self.add_sta_data["radio"] = radio_port
-            self.add_sta_data["sta_name"] = name # for create station calls
+            self.add_sta_data["sta_name"] = name  # for create station calls
             self.set_port_data["port"] = name  # for set_port calls.
             self.set_port_data["shelf"] = radio_shelf
             self.set_port_data["resource"] = radio_resource
@@ -3547,7 +3614,7 @@ class StationProfile:
                 pprint(self.set_port_data)
                 print("- ~3254 - - - - - - - - - - - - - - - - - - - ")
             if dry_run:
-                print("dry run: not creating "+eidn)
+                print("dry run: not creating " + eidn)
                 continue
 
             # print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
@@ -3556,9 +3623,9 @@ class StationProfile:
             # print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
-            #print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            # print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             json_response = set_port_r.jsonPost(debug)
-            #print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            # print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
 
             self.wifi_extra_data["resource"] = radio_resource
@@ -3571,7 +3638,7 @@ class StationProfile:
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             time.sleep(sleep_time)
 
-        #print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - "%eidn)
+        # print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - "%eidn)
         LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_names)
 
         # and set ports up
