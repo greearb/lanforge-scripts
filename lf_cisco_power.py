@@ -908,6 +908,7 @@ def main():
                              exit_test(workbook)
 
                           #  "number of WLANs:\s+(\S+)"   
+                          search_wlan = False
                           for line in pss.splitlines():
                               logg.info(line)
                               if (line.startswith("---------")):
