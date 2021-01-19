@@ -1,18 +1,19 @@
-"""need to be modified not for testing """
+"""under progress"""
 
 import os
 import paramiko
 import time
-from subprocess import Popen, PIPE, STDOUT
 import threading
 from queue import Queue
 from cx_time import IPv4Test
+import datetime
+
+
 class DFS_TESTING:
-    def __init__(self):
+    def _init_(self):
         pass
 
     def hackrf_status_off(self):
-
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5220000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -31,33 +32,66 @@ class DFS_TESTING:
         time.sleep(1)
         return self.x
 
+    def exit_from_ap(self):
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
+        stdin, stdout, stderr = ssh.exec_command('exit')
+        time.sleep(1)
+
     def check_for_channels(self, q):
         self.q = q
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
-        stdin, stdout, stderr = ssh.exec_command('iwlist channel')
+        stdin, stdout, stderr = ssh.exec_command('iwlist wifi1vap0 channel ')
         output = stdout.readlines()
         # print('\n'.join(output))
         self.q = output
         time.sleep(1)
         return self.q
 
-    def set_channel_in_ap(self, w):
-        self.w = w
-        cmd = "conf_set system:wlanSettings:wlanSettingTable:wlan1:channel 52;conf_save"
+    def set_channel_in_ap_at_52(self):
+        # cmd = "conf_set system:wlanSettings:wlanSettingTable:wlan1:channel ;conf_save"
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
-        stdin, stdout, stderr = ssh.exec_command(cmd)
+        stdin, stdout, stderr = ssh.exec_command("conf_set system:wlanSettings:wlanSettingTable:wlan1:channel 52")
         output = stdout.readlines()
         print('\n'.join(output))
-        self.w = output
-        time.sleep(1)
-        return self.w
+        time.sleep(20)
 
-    def create_station_on_GUI(self, w):
-        self.w = w
+    def set_channel_in_ap_at_100(self):
+        # cmd = "conf_set system:wlanSettings:wlanSettingTable:wlan1:channel ;conf_save"
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
+        stdin, stdout, stderr = ssh.exec_command("conf_set system:wlanSettings:wlanSettingTable:wlan1:channel 100")
+        output = stdout.readlines()
+        print('\n'.join(output))
+        time.sleep(20)
+
+    def set_channel_in_ap_at_116(self):
+        # cmd = "conf_set system:wlanSettings:wlanSettingTable:wlan1:channel ;conf_save"
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
+        stdin, stdout, stderr = ssh.exec_command("conf_set system:wlanSettings:wlanSettingTable:wlan1:channel 116")
+        output = stdout.readlines()
+        print('\n'.join(output))
+        time.sleep(20)
+
+    def set_channel_in_ap_at_136(self):
+        # cmd = "conf_set system:wlanSettings:wlanSettingTable:wlan1:channel ;conf_save"
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
+        stdin, stdout, stderr = ssh.exec_command("conf_set system:wlanSettings:wlanSettingTable:wlan1:channel 136")
+        output = stdout.readlines()
+        print('\n'.join(output))
+        time.sleep(20)
+
+    def create_station_on_GUI_1(self):
         obj = IPv4Test(_host="localhost",
                        _port=8080,
                        _ssid="TestAP22",
@@ -71,8 +105,8 @@ class DFS_TESTING:
         time.sleep(5)
         var = obj.json_get("/port/1/1/sta0000?fields=channel")
         var_1 = (var['interface']['channel'])
-        self.w = var_1
-        return self.w
+        print(var_1)
+
 
     def generate_radar_at_ch52(self, r):
         self.r = r
@@ -84,8 +118,8 @@ class DFS_TESTING:
         self.r = "Radar detected"
         return self.r
 
-    def generate_radar_at_ch56(self,q):
-        self.q =q
+    def generate_radar_at_ch56(self, q):
+        self.q = q
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5280000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -95,7 +129,7 @@ class DFS_TESTING:
         self.q = "Radar detected"
         return self.q
 
-    def generate_radar_at_ch60(self,w):
+    def generate_radar_at_ch60(self, w):
         self.w = w
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5300000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -105,7 +139,7 @@ class DFS_TESTING:
         self.w = "Radar detected"
         return self.w
 
-    def generate_radar_at_ch64(self,e):
+    def generate_radar_at_ch64(self, e):
         self.e = e
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5320000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -115,7 +149,7 @@ class DFS_TESTING:
         self.e = "Radar detected"
         return self.e
 
-    def generate_radar_at_ch100(self,f):
+    def generate_radar_at_ch100(self, f):
         self.f = f
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5500000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -125,7 +159,7 @@ class DFS_TESTING:
         self.f = "Radar received"
         return self.f
 
-    def generate_radar_at_ch104(self,t):
+    def generate_radar_at_ch104(self, t):
         self.t = t
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5520000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -135,8 +169,8 @@ class DFS_TESTING:
         self.t = "Radar detected"
         return self.t
 
-    def generate_radar_at_ch108(self,u):
-        self.u=u
+    def generate_radar_at_ch108(self, u):
+        self.u = u
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5540000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -145,8 +179,8 @@ class DFS_TESTING:
         self.u = "Radar detected"
         return self.u
 
-    def generate_radar_at_ch112(self,i):
-        self.i=i
+    def generate_radar_at_ch112(self, i):
+        self.i = i
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5560000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -155,9 +189,9 @@ class DFS_TESTING:
         self.i = "Radar detected"
         return self.i
 
-    def generate_radar_at_ch116(self,o):
-        self.o =o
-        cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5280000"
+    def generate_radar_at_ch116(self, o):
+        self.o = o
+        cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5580000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -165,18 +199,18 @@ class DFS_TESTING:
         self.o = "Radar detected"
         return self.o
 
-    def generate_radar_at_ch120(self,p):
-        self.p=p
+    def generate_radar_at_ch120(self, p):
+        self.p = p
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5600000"
-        #print("Current working directory: {0}".format(os.getcwd()))
+        # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
         # print("Current working directory: {0}".format(os.getcwd()))
         os.system(cmd)
         self.p = "Radar detected"
         return self.p
 
-    def generate_radar_at_ch124(self,a):
-        self.a=a
+    def generate_radar_at_ch124(self, a):
+        self.a = a
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5620000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -185,8 +219,8 @@ class DFS_TESTING:
         self.a = "Radar detected"
         return self.a
 
-    def generate_radar_at_ch128(self,s):
-        self.s=s
+    def generate_radar_at_ch128(self, s):
+        self.s = s
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5640000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -195,7 +229,7 @@ class DFS_TESTING:
         self.s = "Radar detected"
         return self.s
 
-    def generate_radar_at_ch132(self,d):
+    def generate_radar_at_ch132(self, d):
         self.d = d
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5660000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -205,8 +239,8 @@ class DFS_TESTING:
         self.d = "Radar detected"
         return self.d
 
-    def generate_radar_at_ch136(self,h):
-        self.h=h
+    def generate_radar_at_ch136(self, h):
+        self.h = h
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5680000"
         # print("Current working directory: {0}".format(os.getcwd()))
         os.chdir('/usr/lib64/python2.7/site-packages/')
@@ -215,7 +249,7 @@ class DFS_TESTING:
         self.h = "Radar detected"
         return self.h
 
-    def generate_radar_at_ch140(self,j):
+    def generate_radar_at_ch140(self, j):
         self.j = j
         cmd = "sudo python lf_hackrf.py --pulse_width 1 --pulse_interval 1428 --pulse_count 18 --sweep_time 1000 --freq 5700000"
         # print("Current working directory: {0}".format(os.getcwd()))
@@ -225,8 +259,7 @@ class DFS_TESTING:
         self.j = "Radar detected"
         return self.j
 
-    def monitor_station_channel(self,m):
-        self.m = m
+    def station_clean(self):
         obj = IPv4Test(_host="localhost",
                        _port=8080,
                        _ssid="TestAP22",
@@ -235,15 +268,37 @@ class DFS_TESTING:
                        _radio="wiphy0")
         obj.cleanup(obj.sta_list)
         var_1 = "station cleaned"
-        self.m = var_1
-        return self.m
+        print(var_1)
 
-    def check_log(self, r):
+    def wait_for_ip(self):
+        obj = IPv4Test(_host="localhost",
+                        _port=8080,
+                        _ssid="TestAP22",
+                        _password="[BLANK]",
+                        _security="open",
+                        _radio="wiphy0")
+
+        obj.local_realm.wait_for_ip(obj.sta_list)
+        time.sleep(5)
+
+    def check_log_channel(self, r):
         self.r = r
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
-        stdin, stdout, stderr = ssh.exec_command('cat /tmp/log/messages | grep Radar')
+        stdin, stdout, stderr = ssh.exec_command('cat /tmp/log/messages | grep channel')
+        output = stdout.readlines()
+        print('\n'.join(output))
+        time.sleep(1)
+        self.r = output
+        return self.r
+
+    def check_for_all_logs(self, r):
+        self.r = r
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect('192.168.200.143', port=22, username='root', password='Netgear@123xzsawq@!')
+        stdin, stdout, stderr = ssh.exec_command('cat /tmp/log/messages')
         output = stdout.readlines()
         print('\n'.join(output))
         time.sleep(1)
@@ -254,6 +309,7 @@ class DFS_TESTING:
 
 def main():
     que = Queue()
+    threads_list = []
     dfs = DFS_TESTING()
 
     print("checking hackrf is oN/OFF")
@@ -263,7 +319,8 @@ def main():
 
     print("Now hackrf is OFF")
 
-    threads_list = []
+    time.sleep(2)
+
     print("checking if all radios is ON/OFF")
     t1 = threading.Thread(target=lambda q, arg1: q.put(dfs.check_radio_on_off(arg1)), args=(que, ""))
     t1.start()
@@ -284,43 +341,72 @@ def main():
     else:
         print("Radio is OFF")
 
+    time.sleep(2)
+
+    thr_1 = threading.Thread(target=dfs.exit_from_ap())
+    thr_1.start()
+    thr_1.join()
+    print("exit")
+
+    time.sleep(10)
+
     t2 = threading.Thread(target=lambda q, arg1: q.put(dfs.check_for_channels(arg1)), args=(que, ""))
     t2.start()
     threads_list.append(t2)
     t2.join()
     y = que.get()
-    print("Channel available are", y)
-    copy_y = y[:]
-    del copy_y[21:len(copy_y)]
-    # print("hi*********************" ,copy_y)
+    # print("Channel available are", y)
+    # print(type(y))
     a_list = []
-    for i in copy_y:
+    for i in y:
         a_list.append(i.strip())
-    # print("hi", a_list)
-    """['wifi1vap8  109 channels in total; available frequencies :', 'Channel 36 : 5.18 GHz', 
-    'Channel 40 : 5.2 GHz', 'Channel 44 : 5.22 GHz', 'Channel 48 : 5.24 GHz', 'Channel 52 : 5.26 GHz', 
-    'Channel 56 : 5.28 GHz', 'Channel 60 : 5.3 GHz', 'Channel 64 : 5.32 GHz', 'Channel 100 : 5.5 GHz',
-     'Channel 104 : 5.52 GHz', 'Channel 108 : 5.54 GHz', 'Channel 112 : 5.56 GHz', 'Channel 116 : 5.58 GHz', 
-     'Channel 120 : 5.6 GHz', 'Channel 124 : 5.62 GHz', 'Channel 128 : 5.64 GHz', 'Channel 132 : 5.66 GHz', 
-    'Channel 136 : 5.68 GHz', 'Channel 140 : 5.7 GHz', 'Current Frequency:5.22 GHz (Channel 44)']"""
+    print("hi", a_list)
+
     if any("Channel 52 : 5.26 GHz" in s for s in a_list):
         print("set channel to 52")
-        t3 = threading.Thread(target=lambda q, arg1: q.put(dfs.set_channel_in_ap(arg1)), args=(que, ""))
-        t3.start()
-        t3.join()
-        print("channel set hogya")
+    else:
+        print("check for some another channel")
 
-    t4 = threading.Thread(target=lambda q, arg1: q.put(dfs.create_station_on_GUI(arg1)), args=(que, ""))
+    time.sleep(2)
+
+    thr_2 = threading.Thread(target=dfs.exit_from_ap())
+    thr_2.start()
+    thr_2.join()
+    print("exit")
+
+    time.sleep(20)
+
+    t3 = threading.Thread(target=dfs.set_channel_in_ap_at_52())
+    t3.start()
+    t3.join()
+    print("channel set to 52")
+
+    time.sleep(10)
+
+    thr_3 = threading.Thread(target=dfs.exit_from_ap())
+    thr_3.start()
+    thr_3.join()
+    print("exit")
+
+    time.sleep(10)
+
+    t4 = threading.Thread(target=dfs.create_station_on_GUI_1())
     t4.start()
     t4.join()
     print("station created")
+
+    time.sleep(30)
 
     t5 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch52(arg1)), args=(que, ""))
     t5.start()
     t5.join()
     print("radar generated")
 
+    time.sleep(60)
 
+    t10 = threading.Thread(target=dfs.wait_for_ip())
+    t10.start()
+    t10.join()
 
     print("checking hackrf is oN/OFF")
     print("Hackrf is ON")
@@ -330,131 +416,104 @@ def main():
     t6.join()
     print("Now hackrf is OFF")
 
-    t7 =threading.Thread(target=lambda q, arg1: q.put(dfs.monitor_station_channel(arg1)), args=(que, ""))
+    print("setting channel to 100")
+
+    t7 = threading.Thread(target=dfs.set_channel_in_ap_at_100())
     t7.start()
-    threads_list.append(t7)
     t7.join()
-    f = que.get()
-    print("station cleaned ", f)
+    print("channel set  at 100")
 
-    time.sleep(60)
+    time.sleep(30)
 
-    t8 = threading.Thread(target=lambda q, arg1: q.put(dfs.create_station_on_GUI(arg1)), args=(que, ""))
+    t8 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch100(arg1)), args=(que, ""))
     t8.start()
-    threads_list.append(t8)
     t8.join()
-    b = que.get()
-    print("station at channel ", b)
-
-    if b == "52":
-        print("station is on DFS Channel")
-        t9 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch52(arg1)), args=(que, ""))
-        t9.start()
-        t9.join()
-    elif b == "56":
-        print("station is on DFS Channel 56")
-        t10 =threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch56(arg1)), args=(que, ""))
-        t10.start()
-        t10.join()
-    elif b == "60":
-        print("station is on DFS Channel 60")
-        t11 =threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch60(arg1)), args=(que, ""))
-        t11.start()
-        t11.join()
-    elif b == "64":
-        print("station is on DFS Channel 64")
-        t12 =threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch64(arg1)), args=(que, ""))
-        t12.start()
-        t12.join()
-    elif b == "100":
-        print("station is on DFS Channel 100")
-        t13 =threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch100(arg1)), args=(que, ""))
-        t13.start()
-        t13.join()
-    elif b == "104":
-        print("station is on DFS Channel 104")
-        t14 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch104(arg1)), args=(que, ""))
-        t14.start()
-        t14.join()
-    elif b == "108":
-        print("station is on DFS Channel 108")
-        t15 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch108(arg1)), args=(que, ""))
-        t15.start()
-        t15.join()
-    elif b == "112":
-        print("station is on DFS Channel 112")
-        t16 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch112(arg1)), args=(que, ""))
-        t16.start()
-        t16.join()
-    elif b == "116":
-        print("station is on DFS Channel 116")
-        t17 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch116(arg1)), args=(que, ""))
-        t17.start()
-        t17.join()
-    elif b == "120":
-        print("station is on DFS Channel 120")
-        t18 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch120(arg1)), args=(que, ""))
-        t18.start()
-        t18.join()
-    elif b == "124":
-        print("station is on DFS Channel 124")
-        t19 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch124(arg1)), args=(que, ""))
-        t19.start()
-        t19.join()
-    elif b == "128":
-        print("station is on DFS Channel 128")
-        t20 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch128(arg1)), args=(que, ""))
-        t20.start()
-        t20.join()
-    elif b == "132":
-        print("station is on DFS Channel 132")
-        t21 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch132(arg1)), args=(que, ""))
-        t21.start()
-        t21.join()
-    elif b == "136":
-        print("station is on DFS Channel 136")
-        t22 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch136(arg1)), args=(que, ""))
-        t22.start()
-        t22.join()
-    elif b == "140":
-        print("station is on DFS Channel 140")
-        t23 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch140(arg1)), args=(que, ""))
-        t23.start()
-        t23.join()
-    else:
-        print("station is on NON DFS Channel")
-
-    print("checking hackrf is oN/OFF")
-    print("Hackrf is ON")
-    print("press s --> enter --> q to stop hackrf")
-    t6 = threading.Thread(dfs.hackrf_status_off())
-    t6.start()
-    t6.join()
-    print("Now hackrf is OFF")
-
-    t24 = threading.Thread(target=lambda q, arg1: q.put(dfs.monitor_station_channel(arg1)), args=(que, ""))
-    t24.start()
-    threads_list.append(t24)
-    t24.join()
-    f = que.get()
-    print("station cleaned ", f)
+    print("radar generated")
 
     time.sleep(60)
 
-    t25 = threading.Thread(target=lambda q, arg1: q.put(dfs.create_station_on_GUI(arg1)), args=(que, ""))
-    t25.start()
-    threads_list.append(t25)
-    t25.join()
-    b = que.get()
-    print("station at channel ", b)
+    t11 = threading.Thread(target=dfs.wait_for_ip())
+    t11.start()
+    t11.join()
 
-    t26 = threading.Thread(target=lambda q, arg1: q.put(dfs.check_log(arg1)), args=(que, ""))
-    t26.start()
-    threads_list.append(t26)
-    t26.join()
-    v = que.get()
-    print(v)
+    print("done")
+
+    t12 = threading.Thread(target=dfs.set_channel_in_ap_at_116())
+    t12.start()
+    t12.join()
+    print("channel set hogya at 116")
+
+    time.sleep(30)
+
+    t13 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch116(arg1)), args=(que, ""))
+    t13.start()
+    t13.join()
+    print("radar generated")
+
+    time.sleep(60)
+
+    t14 = threading.Thread(target=dfs.wait_for_ip())
+    t14.start()
+    t14.join()
+
+    print("done")
+
+    t15 = threading.Thread(target=dfs.set_channel_in_ap_at_136())
+    t15.start()
+    t15.join()
+
+    time.sleep(30)
+
+    t16 = threading.Thread(target=lambda q, arg1: q.put(dfs.generate_radar_at_ch136(arg1)), args=(que, ""))
+    t16.start()
+    t16.join()
+    print("radar generated")
+
+    time.sleep(60)
+
+    t17 = threading.Thread(target=dfs.wait_for_ip())
+    t17.start()
+    t17.join()
+
+    print("done")
+
+    t18 = threading.Thread(target=lambda q, arg1: q.put(dfs.check_log_channel(arg1)), args=(que, ""))
+    t18.start()
+    threads_list.append(t18)
+    t18.join()
+    var = que.get()
+    print(type(var))
+    for i in range(len(var)):
+        var[i] = var[i] + "<br>"
+        #print(var[i])
+    print(var)
+
+    listToStr = ' '.join([str(elem) for elem in var])
+    print(listToStr)
+
+    t19 = threading.Thread(target=lambda q, arg1: q.put(dfs.check_for_all_logs(arg1)), args=(que, ""))
+    t19.start()
+    threads_list.append(t19)
+    t19.join()
+    var_4 = que.get()
+
+    for i in range(len(var_4)):
+        var_4[i] = var_4[i] + "<br>"
+
+    all_log = ' '.join([str(elem) for elem in var_4])
+
+    now = datetime.datetime.now()
+    print("Current date and time : ")
+    date = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    html_content = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>DFS TEST </title></head><body><div class='Section report_banner-1000x205' style='background-image:url(\"/home/lanforge/LANforgeGUI_5.4.3/images/OrangeReportHeader.jpg\"); background-size: 1000px; height: 200px;'><div class='HeaderStyle'><br><h1 class='TitleFontPrint' style='color:darkgreen;'>  Dynamic Frequency Selection  </h1><h3 class='TitleFontPrint' style='color:darkgreen;'>" + date + "</h3></div></div><br> <br><h2 align='left'>Objective</h2> <p align='left' width='900'>The DFS Test is designed to test the Performance of the Access Point.Dynamic frequency selection is a technology that is designed to ensure that wireless devices operating in the unlicensed WLAN 5 GHz bands are able to detect when they may be interfering with military and weather radar systems and automatically switch over to another frequency where they will not cause any disturbance. <br><table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><th colspan='2'>Test Setup Information</th></tr><tr><td>Device Under Test</td><td><table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><td>AP Name</td><td colspan='3'>Netgear WAC505</td></tr><tr><td>SSID</td><td colspan='3'>TestAP22</td></tr><tr><td>Number of Clients</td><td colspan='3'>1</td></tr></table></td></tr></table><br> <h2>Testing Results</h2><meta name='viewport' content='width=device-width, initial-scale=1'><style>.accordion {background-color: #eee;color: #444;cursor: pointer;padding: 18px;width: 100%;border: none;text-align: left;outline: none;font-size: 15px;transition: 0.4s;}.active, .accordion:hover {background-color: #ccc;}.panel {padding: 0 18px;display: none;background-color: white;overflow: hidden;}</style><h2></h2><button class='accordion'>All Logs</button><div class='panel'><p>" + all_log + "</p></div><button class='accordion'>Channel logs</button><div class='panel'><p>" + listToStr + "</p></div><script>var acc = document.getElementsByClassName('accordion');var i;for (i = 0; i < acc.length; i++) {acc[i].addEventListener('click', function() {this.classList.toggle('activ');var panel = this.nextElementSibling;if (panel.style.display === 'block') {panel.style.display = 'none';} else {panel.style.display = 'block';}});}</script></body></html>"
+
+
+    file = open("sample.html", "w")
+    file.write(html_content)
+    file.close()
+
+    print("Test Finished")
 
 if __name__ == '__main__':
     main()
-Displaying netgear_dfs_15.txt.
