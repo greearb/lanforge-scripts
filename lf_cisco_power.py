@@ -915,7 +915,7 @@ def main():
                                   search_wlan = True
                                   continue
                               if (search_wlan):
-                                  pat = "{}\s+(\S+)\s+\(\S+)".format(args.wlanID)
+                                  pat = "%s\s+(\S+)\s+\(\S+)"%(args.wlanID)
                                   m = re.search(pat, line)
                                   if (m != None):
                                       cc_wlan      = m.group(1)
