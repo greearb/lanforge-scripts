@@ -640,7 +640,13 @@ def main():
          pss = advanced.stdout.decode('utf-8', 'ignore');
          logg.info(pss)
       except subprocess.CalledProcessError as process_error:
-         logg.info("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
+         logg.info("####################################################################################################") 
+         logg.info("# CHECK IF CONTROLLER HAS TELNET CONNECTION ALREADY ACTIVE") 
+         logg.info("####################################################################################################") 
+
+         logg.info("####################################################################################################") 
+         logg.info("# Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+         logg.info("####################################################################################################") 
          exit_test(workbook)
 
       try:
@@ -928,7 +934,6 @@ def main():
                                       except subprocess.CalledProcessError as process_error:
                                           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                                           exit_test(workbook) 
-
 
                           # Create wlan  
                           wlan_created = True 
