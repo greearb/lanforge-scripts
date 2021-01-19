@@ -287,13 +287,13 @@ def main():
    parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier default wlan-open",required=True)
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier, this must match the -ssid",required=True)
    parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1",required=True)
    parser.add_argument("--series",           type=str, help="--series  9800 or 3504, defaults to 9800",default="9800")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",             type=str, help="ssid",required=True)
+   parser.add_argument("--ssid",             type=str, help="ssid, this must patch the wlan",required=True)
    parser.add_argument("--ssidpw",           type=str, help="ssidpw",required=True)
    parser.add_argument("--security",         type=str, help="security",required=True)
    parser.add_argument("--cleanup",          action='store_true',help="--cleanup , Clean up stations after test completes ")
@@ -347,7 +347,10 @@ def main():
           # capture the controller output , thus won't got to stdout some output always present
           cap_ctl_out = False
       else:
-          cap_ctl_out = True        
+          cap_ctl_out = True 
+      if (args.wlan != args.ssid):
+          print("wlan {} must equial the station ssid {}".format(args.wlan,args.ssid))
+          exit(1)                      
       # note: there would always be an args.outfile due to the default
       current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
       outfile = "{}_{}.txt".format(args.outfile,current_time)
