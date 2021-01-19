@@ -1190,10 +1190,15 @@ def main():
          logg.info("did not get the (config)# prompt")
    print("args.action {}".format(args.action))
    if (args.action == "show_wlan_summary"):
+      print("First check on show_wlan_summary {}".format(args.action))
+      logg.info("show_wlan_summary: {}".format(args.action))
+   if (args.action == "show_wlan_summary"):
       logg.info("show wlan summary command to send")
+      print("show wlan summary command to send 2")
       egg.sendline("show wlan summary")
       sleep(0.1)
       i = egg.expect([CCP,CCP_EN,pexpect.TIMEOUT],timeout=1)
+      print("CCP: {} CCP_EN: {} ".format(CCP,CCP_EN))
       if i == 0:
          logg.info("show wlan summary sent prompt {}".format(CCP))
       if i == 1:
