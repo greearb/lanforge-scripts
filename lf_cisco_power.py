@@ -349,7 +349,9 @@ def main():
       else:
           cap_ctl_out = True 
       if (args.wlan != args.ssid):
-          print("wlan {} must equial the station ssid {}".format(args.wlan,args.ssid))
+          print("####### ERROR ################################")
+          print("wlan: {} must equial the station ssid: {}".format(args.wlan,args.ssid))
+          print("####### ERROR ################################")
           exit(1)                      
       # note: there would always be an args.outfile due to the default
       current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
