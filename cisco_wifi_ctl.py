@@ -1188,7 +1188,7 @@ def main():
          sleep(0.1)
       if i == 1:
          logg.info("did not get the (config)# prompt")
-
+   print("args.action {}".format(args.action))
    if (args.action == "show_wlan_summary"):
       logg.info("show wlan summary command to send")
       egg.sendline("show wlan summary")
