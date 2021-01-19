@@ -349,7 +349,7 @@ def main():
                         found_escape = False
 
                   if j == 5:
-                     logg.info("9800 timed out looking for CCP,CCP_EN,User:,Password:,CCP_CONFIG loop_count {} i {} j {}  before {} after {}".format(CCP,CCP_EN,CCP_CONFIG,loop_count,i,j,egg.before,egg.after))
+                     logg.info("9800 timed out looking for CCP :{},CCP_EN: {},CCP_CONFIG: {} loop_count {} i {} j {}  before {} after {}".format(CCP,CCP_EN,CCP_CONFIG,loop_count,i,j,egg.before,egg.after))
                      logg.info("9800  Closing the connection and try to re-establish loop_count {} i {} j {}".format(loop_count,i,j))
                      egg.close(force = True)
                      sleep(1)
@@ -567,9 +567,9 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  #egg.sendline(CR)
+                  egg.sendline(CR) # 1/18/2021 - may need a bit more logic
                   found_escape = True
-                  sleep(0.1)
+                  sleep(0.2)
                   j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",CCP_CONFIG,pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:

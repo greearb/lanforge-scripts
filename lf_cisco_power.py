@@ -1339,7 +1339,7 @@ def main():
                    pi = int(pathloss)
                    ag = int(antenna_gain)   
                    calc_dbm_beacon = int(beacon_sig) + pi + rssi_adj + ag
-                   logg.info("calc_dbm_beacon".format(calc_dbm_beacon))
+                   logg.info("calc_dbm_beacon {}".format(calc_dbm_beacon))
 
                    logg.info("sig: %s"%sig)
                    calc_dbm = int(sig) + pi + rssi_adj + ag
