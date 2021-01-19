@@ -1188,23 +1188,10 @@ def main():
          sleep(0.1)
       if i == 1:
          logg.info("did not get the (config)# prompt")
-   print("args.action {}".format(args.action))
+
    if (args.action == "show_wlan_summary"):
-      print("First check on show_wlan_summary {}".format(args.action))
-      logg.info("show_wlan_summary: {}".format(args.action))
-   if (args.action == "show_wlan_summary"):
-      logg.info("show wlan summary command to send")
-      print("show wlan summary command to send 2")
-      egg.sendline("show wlan summary")
-      sleep(0.1)
-      i = egg.expect_exact([CCP,CCP_EN,pexpect.TIMEOUT],timeout=2)
-      print("CCP: {} CCP_EN: {} ".format(CCP,CCP_EN))
-      if i == 0:
-         logg.info("show wlan summary sent prompt {}".format(CCP))
-      if i == 1:
-         logg.info("show wlan summary sent prompt {}".format(CCP_EN))
-      if i == 2:
-         logg.info("show wlan summary timed out")
+      print("command show wlan summary ")
+      command = "show wlan summary"
 
    if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
       raise Exception("wlan  and wlanID is required an")
