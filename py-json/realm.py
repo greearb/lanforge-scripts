@@ -1298,15 +1298,19 @@ class L3CXProfile(BaseProfile):
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
-            print(".", end='')
-        print("")
+            if self.debug:
+                print(".", end='')
+        if self.debug:
+            print("")
 
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
             self.stopping_cx(cx_name)
-            print(".", end='')
-        print("")
+            if self.debug:
+                print(".", end='')
+        if self.debug:
+            print("")
 
     def cleanup_prefix(self):
         self.cleanup_cxe_prefix(self.name_prefix)

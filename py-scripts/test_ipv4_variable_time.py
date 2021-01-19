@@ -182,6 +182,8 @@ python3 ./test_ipv4_variable_time.py
     --a_min 1000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
+    --output_format csv
+    --report_file ~/Documents/results.csv (if csv file - please use another extension for other files)
     --debug
             ''')
 
@@ -190,10 +192,8 @@ python3 ./test_ipv4_variable_time.py
         if group.title == "required arguments":
             required_args=group
             break
-    if required_args is not None:
-        required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-        required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-        required_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+    #if required_args is not None:
+
     optional_args=None
     for group in parser._action_groups:
         if group.title == "optional arguments":
@@ -204,12 +204,29 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
         optional_args.add_argument('--report_file',help='where you want to store results')
         optional_args.add_argument('--output_format', help='choose either csv or xlsx')
-        optional_args.add_argument('--show', help='display results of test in terminal',default=True)
+        optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+        optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+        optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     args = parser.parse_args()
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
+
+    if args.report_file is None:
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet']:
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.' + args.output_format
+            output=args.output_format
+        else:
+            print('Defaulting to Excel')
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
+            output='excel'
+    else:
+        report_f=args.report_file
+        if args.output_format is None:
+            output=str(args.report_file).split('.')[-1]
+        else:
+            output=args.output_format
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
@@ -252,17 +269,13 @@ python3 ./test_ipv4_variable_time.py
         else:
             output=args.output_format
 
-    try:
-        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
-    except:
-        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs','Rx Drop % A', 'Rx Drop % B', 'Bps Rx A', 'Bps Rx B', 'Rx Rate', 'Cx Estab'],
+    layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
+    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).seconds,
                                     created_cx= layer3connections,
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
-                                    show=show,
                                     arguments=args)
     
     ip_var_test.stop()
