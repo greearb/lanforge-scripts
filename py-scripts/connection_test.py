@@ -24,6 +24,7 @@ from test_utility import CreateHTML
 from test_utility import StatusMsg
 import pdfkit
 
+
 webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 class ConnectionTest(LFCliBase):
@@ -97,6 +98,7 @@ class ConnectionTest(LFCliBase):
             self.status_msg.update('3', {"data": 'Building...', "data": [], "label": "Client Connectivity Time"})
         except:
             pass
+
     def build(self):
 
         self.station_profile.use_security(self.security, self.ssid, self.password)
@@ -111,6 +113,7 @@ class ConnectionTest(LFCliBase):
             self.status_msg.update('4', {"data": 'Starting...', "data": [], "label": "Client Connectivity Time"})
         except:
             pass
+
     def update(self, status="None"):
         for i in self.station_list:
             self.station_data[i.split(".")[2]] = \
@@ -119,6 +122,7 @@ class ConnectionTest(LFCliBase):
             self.status_msg.update('5', {"data": 'None', "data": [], "label": "Client Connectivity Time"})
         except:
             pass
+
     def start(self):
         self.station_profile.admin_up()
         associated_map = {}
@@ -213,6 +217,7 @@ class ConnectionTest(LFCliBase):
             self.status_msg.update('6', {"data": 'None', "data": [], "label": "Client Connectivity Time"})
         except:
             pass
+
     def stop(self):
         self.station_profile.admin_down()
         LFUtils.wait_until_ports_admin_down(port_list=self.station_profile.station_names)
@@ -258,12 +263,14 @@ def main():
         obj.status_msg.update('10', {"data": 'done...', "data": [], "label": "Client Connectivity Time"})
     except:
         pass
-
+    for i in obj.status_msg.read()['messages']:
+        print(i)
 def getSessionID():
     x = datetime.datetime.now()
     id = x.strftime("%x").replace("/","_")+"_"+x.strftime("%x") + "_" + x.strftime("%X").split(":")[0] + "_" + x.strftime("%X").split(":")[1] + "_" + x.strftime("%X").split(":")[2]+str(x).split(".")[1]
-    id = str(id).replace("/", "_")
+    id = str(id).replace("/", "_").split("P")[0].replace(" ","")
     return id
+
 
 if __name__ == '__main__':
     main()

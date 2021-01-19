@@ -293,6 +293,7 @@ class LFCliBase:
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
             json_response = lf_r.json_delete(debug=debug_, die_on_error_=self.halt_on_error)
+            print(json_response)
             #debug_printer.pprint(json_response)
             if (json_response is None) and debug_:
                 print("LFCliBase.json_delete: no entity/response, probabily status 404")
