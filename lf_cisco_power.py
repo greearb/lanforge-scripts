@@ -672,7 +672,8 @@ def main():
            continue
        # the summaries are different between the 9800 series controller and the 3504 series
        # if the output changes then the following pattern/regular expression parcing needs to be changed
-       # this site may help: https://regex101.com/
+       # this site may help: https://regex101.com/  
+       # when using https://regex101.com/ for tool beginning of string begins with ^
        if (searchap):
            if args.series == "9800":
                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)"%(args.ap)
@@ -887,7 +888,49 @@ def main():
                        if wlan_created:
                           logg.info("wlan already present, no need to create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           pass
-                       else: 
+                       else:
+                          # Verify that a wlan does not exist on wlanID
+                          # delete the wlan if already exists
+                          try:
+                             logg.info("9800 cisco_wifi_ctl.py: show_wlan_summary") 
+                             wlan_info = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                                 "--action", "show_wlan_summary","--series" , args.series,"--port", args.port,"--prompt",args.prompt], capture_output=True, check=True)
+                             pss = wlan_info.stdout.decode('utf-8', 'ignore')
+                             logg.info(pss)
+                          except subprocess.CalledProcessError as process_error:
+                             logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                             exit_test(workbook)
+
+                          #  "number of WLANs:\s+(\S+)"   
+                          for line in pss.splitlines():
+                              logg.info(line)
+                              if (line.startswith("---------")):
+                                  search_wlan = True
+                                  continue
+                              if (search_wlan):
+                                  pat = "{}\s+(\S+)\s+\(\S+)".format(args.wlanID)
+                                  m = re.search(pat, line)
+                                  if (m != None):
+                                      cc_wlan      = m.group(1)
+                                      cc_wlan_ssid = m.group(2)
+                                      # wlanID is in use
+                                      logg.info("###############################################################################")
+                                      logg.info("Need to remove wlan: {} wlanID: {} wlan ssid {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                      logg.info("###############################################################################")
+                                      try:
+                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan one was present wlan: {} wlanID: {} wlan_ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                                    "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                                          if cap_ctl_out:
+                                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                                               logg.info(pss)
+   
+                                      except subprocess.CalledProcessError as process_error:
+                                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                                          exit_test(workbook) 
+
+
+                          # Create wlan  
                           wlan_created = True 
                           logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           try:
