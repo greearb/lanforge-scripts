@@ -1190,7 +1190,8 @@ class L3CXProfile(BaseProfile):
                 print(response)
                 raise ValueError("no endpoint?")
             if monitor:
-                print(response)
+                if self.debug:
+                    print(response)
             t = datetime.datetime.now()
             timestamps.append(t)
             value_map[t] = response
