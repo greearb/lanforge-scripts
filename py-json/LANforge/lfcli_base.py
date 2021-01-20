@@ -293,6 +293,7 @@ class LFCliBase:
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
             json_response = lf_r.json_delete(debug=debug_, die_on_error_=self.halt_on_error)
+            print(json_response)
             #debug_printer.pprint(json_response)
             if (json_response is None) and debug_:
                 print("LFCliBase.json_delete: no entity/response, probabily status 404")
@@ -509,9 +510,9 @@ class LFCliBase:
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
         #Required Args
         required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2')
-        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
         required.add_argument('--ssid',           help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key')
+        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', default="[BLANK]")
 
         return parser
 
