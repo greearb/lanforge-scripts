@@ -862,6 +862,20 @@ def main():
                           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit_test(workbook)
 
+                   if (bw != "NA"):
+                       try:
+                          logg.info("9800/3504 cisco_wifi_ctl.py: bandwidth 20 prior to setting channel, some channels only support 20")
+                          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                          if cap_ctl_out:
+                             pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                             logg.info(pss)
+             
+                       except subprocess.CalledProcessError as process_error:
+                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                          exit_test(workbook)
+
+
                    # NSS is set on the station earlier...
                    if (ch != "NA"):
                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
