@@ -229,33 +229,31 @@ class RunTest:
         logger.warning("ERROR testing Client connectivity to " + ssid_name)
 
 ####Use variables other than defaults for running tests on custom FW etc
-build = "pending"
-ignore = False
 equipment_ids = equipment_id_dict
 
 parser = argparse.ArgumentParser(description="Sanity Testing on Firmware Build")
-parser.add_argument("-b", "--build", type=str, help="FW commit ID (latest pending build on dev is default)")
-parser.add_argument("-i", "--ignore", type=bool, help="Ignore current running version on AP and run sanity regardless")
-parser.add_argument("-r", "--report", type=str, help="Report directory path other than default - directory must already exist!")
+parser.add_argument("-b", "--build", type=str, default="pending", help="FW commit ID (latest pending build on dev is default)")
+parser.add_argument("-i", "--ignore", type=str, default='no', choices=['yes', 'no'], help="Set to 'no' to ignore current running version on AP and run sanity including upgrade")
+parser.add_argument("-r", "--report", type=str, default=report_path, help="Report directory path other than default - directory must already exist!")
 parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420'], help="AP model to be run")
+parser.add_argument("-u", "--upgrade", type=str, default='yes', choices=['yes', 'no'], help="Set to 'no' to skip upgrade and perfom testing on running FW")
 args = parser.parse_args()
 
-if args.build is not None:
-    build = args.build
-if args.ignore is not None:
-    ignore = True
-if args.report is not None:
-    report_path = args.report
+build = args.build
+ignore = args.ignore
+report_path = args.report
+perform_upgrade = args.upgrade
 if args.model is not None:
     model_id = args.model
     equipment_ids = {
         model_id: equipment_id_dict[model_id]
     }
     print(equipment_ids)
+#time.sleep(200)
 
 print("Start of Sanity Testing...")
 print("Testing Latest Build with Tag: "+build)
-if ignore == True:
+if ignore == 'yes':
     print("Will ignore if AP is already running build under test and run sanity regardless...")
 else:
     print("Checking for APs requiring upgrade to latest build...")
@@ -321,7 +319,6 @@ report_data['pass_percent'] = dict.fromkeys(ap_models, "")
 report_data['tests'] = dict.fromkeys(ap_models, "")
 for key in ap_models:
     report_data['tests'][key] = dict.fromkeys(test_cases.values(), "not run")
-
 print(report_data)
 
 # write to report_data contents to json file so it has something in case of unexpected fail
@@ -376,7 +373,8 @@ for key in equipment_ids:
 
     ##Compare Latest and Current AP FW and Upgrade
     latest_ap_image = ap_latest_dict[fw_model]
-    if ap_cli_fw == latest_ap_image and ignore != True:
+
+    if ap_cli_fw == latest_ap_image and ignore == 'no' and perform_upgrade == 'yes':
         print('FW does not require updating')
         report_data['fw_available'][key] = "No"
         logger.info(fw_model + " does not require upgrade. Not performing sanity tests for this AP variant")
@@ -388,8 +386,13 @@ for key in equipment_ids:
         report_data['cloud_sdk'][key] = cloudsdk_cluster_info
 
     else:
-        if ap_cli_fw == latest_ap_image and ignore == True:
-            print('AP is already running FW version under test. Ignored based on ignore flag, updating AP')
+        if ap_cli_fw == latest_ap_image and ignore == "yes":
+            print('AP is already running FW version under test. Ignored based on ignore flag')
+        elif perform_upgrade == 'no':
+            print("Upgrade argument is No, will use existing version and not upgrade AP")
+            report_data['fw_available'][key] = "N/A"
+            report_data['fw_under_test'][key] = ap_cli_fw
+            latest_ap_image = ap_cli_fw
         else:
             print('FW needs updating')
         report_data['fw_available'][key] = "Yes"
@@ -398,6 +401,13 @@ for key in equipment_ids:
         ###Create Test Run
         today = str(date.today())
         case_ids = list(test_cases.values())
+        if perform_upgrade == 'no':
+            print("Creating Test Run - will not include upgrade test")
+            upgrade_tc = test_cases["upgrade_api"]
+            print(upgrade_tc)
+            case_ids.remove(upgrade_tc)
+        else:
+            print("Creating Test Run")
         test_run_name = testRunPrefix + fw_model + "_" + today + "_" + latest_ap_image
         client.create_testrun(name=test_run_name, case_ids=case_ids, project_id=projId, milestone_id=milestoneId,
                               description="Automated Nightly Sanity test run for new firmware build")
@@ -489,33 +499,36 @@ for key in equipment_ids:
                 continue
 
         # Upgrade AP firmware
-        print("Upgrading...firmware ID is: ", fw_id)
-        upgrade_fw = CloudSDK.update_firmware(equipment_id, str(fw_id), cloudSDK_url, bearer)
-        logger.info("Lab " + fw_model + " Requires FW update")
-        print(upgrade_fw)
+        if perform_upgrade == 'no':
+            print("User Requested to Not Performing Upgrade, skipping to Connectivity Tests")
+        else:
+            print("Upgrading...firmware ID is: ", fw_id)
+            upgrade_fw = CloudSDK.update_firmware(equipment_id, str(fw_id), cloudSDK_url, bearer)
+            logger.info("Lab " + fw_model + " Requires FW update")
+            print(upgrade_fw)
 
-        if "success" in upgrade_fw:
-            if upgrade_fw["success"] == True:
-                print("CloudSDK Upgrade Request Success")
-                report_data['tests'][key][test_cases["upgrade_api"]] = "passed"
-                client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=1, msg='Upgrade request using API successful')
-                logger.info('Firmware upgrade API successfully sent')
+            if "success" in upgrade_fw:
+                if upgrade_fw["success"] == True:
+                    print("CloudSDK Upgrade Request Success")
+                    report_data['tests'][key][test_cases["upgrade_api"]] = "passed"
+                    client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=1, msg='Upgrade request using API successful')
+                    logger.info('Firmware upgrade API successfully sent')
+                else:
+                    print("Cloud SDK Upgrade Request Error!")
+                    # mark upgrade test case as failed with CloudSDK error
+                    client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5, msg='Error requesting upgrade via API')
+                    report_data['tests'][key][test_cases["upgrade_api"]] = "failed"
+                    logger.warning('Firmware upgrade API failed to send')
+                    continue
             else:
                 print("Cloud SDK Upgrade Request Error!")
                 # mark upgrade test case as failed with CloudSDK error
-                client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5, msg='Error requesting upgrade via API')
+                client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5,msg='Error requesting upgrade via API')
                 report_data['tests'][key][test_cases["upgrade_api"]] = "failed"
                 logger.warning('Firmware upgrade API failed to send')
                 continue
-        else:
-            print("Cloud SDK Upgrade Request Error!")
-            # mark upgrade test case as failed with CloudSDK error
-            client.update_testrail(case_id=test_cases["upgrade_api"], run_id=rid, status_id=5,msg='Error requesting upgrade via API')
-            report_data['tests'][key][test_cases["upgrade_api"]] = "failed"
-            logger.warning('Firmware upgrade API failed to send')
-            continue
 
-        time.sleep(300)
+            time.sleep(300)
 
         # Check if upgrade success is displayed on CloudSDK
         test_id_cloud = test_cases["cloud_fw"]
