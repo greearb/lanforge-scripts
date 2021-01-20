@@ -922,10 +922,10 @@ def main():
                                       cc_wlan_ssid = m.group(2)
                                       # wlanID is in use
                                       logg.info("###############################################################################")
-                                      logg.info("Need to remove wlan: {} wlanID: {} wlan ssid {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                      logg.info("Need to remove wlan: {} wlanID: {} wlan ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
                                       logg.info("###############################################################################")
                                       try:
-                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan one was present wlan: {} wlanID: {} wlan_ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan, wlan present at start of test:  wlan: {} wlanID: {} wlan_ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
                                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                     "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
                                           if cap_ctl_out:
