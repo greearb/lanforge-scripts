@@ -1,1 +1,1 @@
-pip install pandas seaborn plotly numpy --upgrade
+pip install pandas seaborn plotly numpy dash --upgrade
