@@ -528,6 +528,7 @@ def main():
    col = 0
    row = 0
    worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
    worksheet.write(row, col, 'Controller\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'AP\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'NSS', dblue_bold); col += 1
