@@ -109,7 +109,7 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
-testrail_url = os.getenv('TESTRAIL_URL')
+testrail_url = os.getenv('TR_URL')
 client: APIClient = APIClient(testrail_url)
 client.user = tr_user
 client.password = tr_pw

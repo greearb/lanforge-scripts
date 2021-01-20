@@ -180,7 +180,7 @@ class APIClient:
             {'name': name, 'case_ids': case_ids, 'milestone_id': milestone_id, 'description': description, 'include_all': False})
         print("result in post", result)
 
-client: APIClient = APIClient(os.getenv('TESTRAIL_URL'))
+client: APIClient = APIClient(os.getenv('TR_URL'))
 
 
 class APIError(Exception):
