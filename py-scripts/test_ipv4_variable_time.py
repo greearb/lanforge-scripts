@@ -89,23 +89,9 @@ class IPV4VariableTime(LFCliBase):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
-
-    def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        if self.debug:
-            print(self.cx_profile.created_cx.values())
-            print("==============\n", cx_list, "\n==============")
-        cx_rx_map = {}
-        for cx_name in cx_list['endpoint']:
-            if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes' and item in self.cx_profile.created_cx.values():
-                        cx_rx_map[item] = value_rx
-        return cx_rx_map
-
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
+        #to-do- check here if upstream port got IP
         temp_stas = self.station_profile.station_names.copy()
 
         if self.local_realm.wait_for_ip(temp_stas):
@@ -253,8 +239,6 @@ python3 ./test_ipv4_variable_time.py
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
     ip_var_test.start(False, False)
-
-
     layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
