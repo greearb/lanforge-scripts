@@ -177,7 +177,7 @@ def main():
     egg.sendline(args.passwd)
     egg.expect("#")
     egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-    egg.expect("#", timeout=5)
+    egg.expect("--More--")
     egg.sendcontrol('c')
     egg.expect("#",timeout=5)
     egg.sendline("exit")
