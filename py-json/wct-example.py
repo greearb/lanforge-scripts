@@ -2,7 +2,8 @@
 '''
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #                                                                             -
-# Example of how to operate a WCT instance using cli-socket                   -
+# Example of how to operate a WCT instance using cli-socket.                  -
+# This script is out-dated. Please refer to py-scripts/run_cv_scenario.py     -
 #                                                                             -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 make sure pexpect is installed:
