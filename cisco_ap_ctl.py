@@ -178,8 +178,13 @@ def main():
     egg.expect("#")
     egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
     egg.expect("#", timeout=5)
+    egg.sendcontrol('c')
+    egg.expect("#",timeout=5)
+    egg.sendline("exit")
+    egg.excect(">",timeout=5)
+    egg.sendline("exit")
+
     #             ctlr.execute(cn_cmd)
-    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
 
