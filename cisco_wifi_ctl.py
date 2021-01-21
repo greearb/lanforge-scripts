@@ -349,7 +349,7 @@ def main():
                         found_escape = False
 
                   if j == 5:
-                     logg.info("9800 timed out looking for CCP,CCP_EN,User:,Password:,CCP_CONFIG loop_count {} i {} j {}  before {} after {}".format(CCP,CCP_EN,CCP_CONFIG,loop_count,i,j,egg.before,egg.after))
+                     logg.info("9800 timed out looking for CCP :{},CCP_EN: {},CCP_CONFIG: {} loop_count {} i {} j {}  before {} after {}".format(CCP,CCP_EN,CCP_CONFIG,loop_count,i,j,egg.before,egg.after))
                      logg.info("9800  Closing the connection and try to re-establish loop_count {} i {} j {}".format(loop_count,i,j))
                      egg.close(force = True)
                      sleep(1)
@@ -567,9 +567,9 @@ def main():
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  #egg.sendline(CR)
+                  egg.sendline(CR) # 1/18/2021 - may need a bit more logic
                   found_escape = True
-                  sleep(0.1)
+                  sleep(0.2)
                   j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",CCP_CONFIG,pexpect.TIMEOUT],timeout=3)
                   sleep(0.1)
                   if j == 0:
@@ -1108,13 +1108,16 @@ def main():
       else:
          command = "show ap channel %s"%(args.ap)
 
+   if (args.action == "no_wlan_wireless_tag_policy" and (args.wlan is None)):
+      raise Exception("wlan is required")
    if (args.action == "no_wlan_wireless_tag_policy"):
       logg.info("send wireless tag policy no wlan")
+      logg.info("send wireless tag policy no wlan , for wlan {}".format(args.wlan))
       egg.sendline("config t")
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","no wlan open-wlan policy default-policy-profile"]:
+         for command in ["wireless tag policy default-policy-tag","no wlan {} policy default-policy-profile".format(args.wlan)]:
             egg.sendline(command)
             sleep(1)
             j = egg.expect_exact([CCP_POLICY_TAG,pexpect.TIMEOUT],timeout=2)
@@ -1187,13 +1190,8 @@ def main():
          logg.info("did not get the (config)# prompt")
 
    if (args.action == "show_wlan_summary"):
-      egg.sendline("show wlan summary")
-      sleep(0.1)
-      i = egg.expect([CCP_EN,pexpect.TIMEOUT],timeout=2)
-      if i == 0:
-         logg.info("show wlan summary sent")
-      if i == 1:
-         logg.info("show wlan summary timed out")
+      print("command show wlan summary ")
+      command = "show wlan summary"
 
    if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
       raise Exception("wlan  and wlanID is required an")
@@ -1205,14 +1203,27 @@ def main():
           i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
           if i == 0:
              logg.info("elevated to (config)#")
-             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan)
+             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan) # should the last one be ssid not wlan
              logg.info("open network command {}".format(command))
              egg.sendline(command)
              sleep(0.4)
              j = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)
              if j == 0:
-                 for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
-                        "no security wpa akm dot1x","no shutdown"]:
+                 # previous commands for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                 #      "no security wpa akm dot1x","no shutdown"]:
+                  
+                 # 1/14/2021 - Cisco suggestion
+                 # We are basically disabling all the possible security parameters for Authentication
+                 for command in [
+                     "no security ft",
+                     "no security ft adaptive",
+                     "no security wpa",
+                     "no security wpa wpa2",
+                     "no security wpa wpa1",
+                     "no security wpa wpa2 ciphers aes"
+                     "no security dot1x authentication-list",
+                     "no security wpa akm dot1x",
+                     "no shutdown"]:
                     egg.sendline(command)
                     sleep(1)
                     k = egg.expect_exact([CCP_CONFIG_WLAN,pexpect.TIMEOUT],timeout=2)

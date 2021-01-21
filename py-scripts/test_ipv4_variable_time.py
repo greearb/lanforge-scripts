@@ -204,9 +204,13 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
         optional_args.add_argument('--report_file',help='where you want to store results')
         optional_args.add_argument('--output_format', help='choose either csv or xlsx')
+<<<<<<< HEAD
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+=======
+        optional_args.add_argument('--show', help='display results of test in terminal',default=True)
+>>>>>>> e9a071eff8cfb397f9534ea865f8450e43078cee
     args = parser.parse_args()
 
     num_sta = 2
@@ -258,13 +262,17 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.start(False, False)
 
 
-    layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
-    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
+    try:
+        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
+    except:
+        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs','Rx Drop % A', 'Rx Drop % B', 'Bps Rx A', 'Bps Rx B', 'Rx Rate', 'Cx Estab'],
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
+                                    show=show,
                                     arguments=args)
 
     ip_var_test.stop()

@@ -220,6 +220,8 @@ def usage():
    print('-e','--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
    print('-ccp','--prompt', "--prompt controller prompt default WLC")
    print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
+   print('--show_lf_portmod',"<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+
 
    print("-h|--help")
 
@@ -285,13 +287,13 @@ def main():
    parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier default wlan-open",required=True)
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier, this must match the -ssid",required=True)
    parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1",required=True)
    parser.add_argument("--series",           type=str, help="--series  9800 or 3504, defaults to 9800",default="9800")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
    parser.add_argument("--radio",            type=str, help="radio to create LANforge station on at the beginning of the test")
-   parser.add_argument("--ssid",             type=str, help="ssid",required=True)
+   parser.add_argument("--ssid",             type=str, help="ssid, this must patch the wlan",required=True)
    parser.add_argument("--ssidpw",           type=str, help="ssidpw",required=True)
    parser.add_argument("--security",         type=str, help="security",required=True)
    parser.add_argument("--cleanup",          action='store_true',help="--cleanup , Clean up stations after test completes ")
@@ -302,6 +304,9 @@ def main():
    parser.add_argument('-e','--email',       action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
+   parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+   parser.add_argument('-ap','--ap',         action='append', nargs=1, type=str, help="--ap ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -343,7 +348,12 @@ def main():
           # capture the controller output , thus won't got to stdout some output always present
           cap_ctl_out = False
       else:
-          cap_ctl_out = True        
+          cap_ctl_out = True 
+      if (args.wlan != args.ssid):
+          print("####### ERROR ################################")
+          print("wlan: {} must equial the station ssid: {}".format(args.wlan,args.ssid))
+          print("####### ERROR ################################")
+          exit(1)                      
       # note: there would always be an args.outfile due to the default
       current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
       outfile = "{}_{}.txt".format(args.outfile,current_time)
@@ -355,6 +365,20 @@ def main():
       if args.log:
         outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
         print("output file log: {}".format(outfile_log))
+
+      ap_dict = []
+      if args.ap_info:
+          ap_info = args.ap_info
+          for _ap_info in ap_info:
+              print("ap_info {}".format(_ap_info))
+              ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw']
+              ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
+              for key in ap_keys:
+                    if key not in ap_dict:
+                        print("missing ap config, for the {}, all these need to be set {} ".format(key,ap_keys))
+                        exit(1)
+              print("ap_dict: {}".format(ap_dict))
+
       email_dicts = []
       if args.email:
         emails = args.email
@@ -397,6 +421,8 @@ def main():
        logging.basicConfig(format=FORMAT, handlers=[console_handler])
        #logg.addHandler(logging.StreamHandler()) # allows to logging to file and stderr
 
+   if bool(ap_dict):
+       logg.info("ap_dict {}".format(ap_dict))
 
    if bool(email_dicts):
        logg.info("email_dicts {}".format(email_dicts))
@@ -519,6 +545,8 @@ def main():
    col = 0
    row = 0
    worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold); col += 1
+   worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Controller\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'AP\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'NSS', dblue_bold); col += 1
    worksheet.set_column(col, col, 10) # Set width
@@ -631,7 +659,13 @@ def main():
          pss = advanced.stdout.decode('utf-8', 'ignore');
          logg.info(pss)
       except subprocess.CalledProcessError as process_error:
-         logg.info("Controller unable to commicate to AP or unable to communicate to controller error code {}  output {}".format(process_error.returncode, process_error.output))
+         logg.info("####################################################################################################") 
+         logg.info("# CHECK IF CONTROLLER HAS TELNET CONNECTION ALREADY ACTIVE") 
+         logg.info("####################################################################################################") 
+
+         logg.info("####################################################################################################") 
+         logg.info("# Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+         logg.info("####################################################################################################") 
          exit_test(workbook)
 
       try:
@@ -663,7 +697,8 @@ def main():
            continue
        # the summaries are different between the 9800 series controller and the 3504 series
        # if the output changes then the following pattern/regular expression parcing needs to be changed
-       # this site may help: https://regex101.com/
+       # this site may help: https://regex101.com/  
+       # when using https://regex101.com/ for tool beginning of string begins with ^
        if (searchap):
            if args.series == "9800":
                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)"%(args.ap)
@@ -844,6 +879,20 @@ def main():
                           logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
                           exit_test(workbook)
 
+                   if (bw != "NA"):
+                       try:
+                          logg.info("9800/3504 cisco_wifi_ctl.py: bandwidth 20 prior to setting channel, some channels only support 20")
+                          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                       "--action", "bandwidth", "--value", "20", "--series" , args.series,"--port", args.port,"--prompt",args.prompt],capture_output=cap_ctl_out, check=True)
+                          if cap_ctl_out:
+                             pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                             logg.info(pss)
+             
+                       except subprocess.CalledProcessError as process_error:
+                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                          exit_test(workbook)
+
+
                    # NSS is set on the station earlier...
                    if (ch != "NA"):
                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
@@ -878,7 +927,49 @@ def main():
                        if wlan_created:
                           logg.info("wlan already present, no need to create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           pass
-                       else: 
+                       else:
+                          # Verify that a wlan does not exist on wlanID
+                          # delete the wlan if already exists
+                          try:
+                             logg.info("9800 cisco_wifi_ctl.py: show_wlan_summary") 
+                             wlan_info = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                                 "--action", "show_wlan_summary","--series" , args.series,"--port", args.port,"--prompt",args.prompt], capture_output=True, check=True)
+                             pss = wlan_info.stdout.decode('utf-8', 'ignore')
+                             logg.info(pss)
+                          except subprocess.CalledProcessError as process_error:
+                             logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                             exit_test(workbook)
+
+                          #  "number of WLANs:\s+(\S+)"   
+                          search_wlan = False
+                          for line in pss.splitlines():
+                              logg.info(line)
+                              if (line.startswith("---------")):
+                                  search_wlan = True
+                                  continue
+                              if (search_wlan):
+                                  pat = "{}\s+(\S+)\s+(\S+)".format(args.wlanID)
+                                  m = re.search(pat, line)
+                                  if (m != None):
+                                      cc_wlan      = m.group(1)
+                                      cc_wlan_ssid = m.group(2)
+                                      # wlanID is in use
+                                      logg.info("###############################################################################")
+                                      logg.info("Need to remove wlan: {} wlanID: {} wlan ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                      logg.info("###############################################################################")
+                                      try:
+                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan, wlan present at start of test:  wlan: {} wlanID: {} wlan_ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                          ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
+                                                    "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                                          if cap_ctl_out:
+                                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                                               logg.info(pss)
+   
+                                      except subprocess.CalledProcessError as process_error:
+                                          logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                                          exit_test(workbook) 
+
+                          # Create wlan  
                           wlan_created = True 
                           logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           try:
@@ -1179,7 +1270,7 @@ def main():
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
 
-                   # Wait 10 more seconds
+                   # Wait configured number of seconds more seconds
                    logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration,ch, n, bw, tx))
                    time.sleep(int(args.duration))
 
@@ -1194,8 +1285,10 @@ def main():
                        port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                                     "--cli_cmd", "probe_port 1 %s %s"%(lfresource, lfstation)],capture_output=True, check=True)
                        pss = port_stats.stdout.decode('utf-8', 'ignore')
-                       logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr, lfresource, lfstation,lfresource,lfstation))
-                       logg.info(pss)
+                       # for debug: print the output of lf_portmod.pl and the command used 
+                       if (args.show_lf_portmod):
+                           logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr, lfresource, lfstation,lfresource,lfstation))
+                           logg.info(pss)
 
                        foundit = False
                        for line in pss.splitlines():
@@ -1339,7 +1432,7 @@ def main():
                    pi = int(pathloss)
                    ag = int(antenna_gain)   
                    calc_dbm_beacon = int(beacon_sig) + pi + rssi_adj + ag
-                   logg.info("calc_dbm_beacon".format(calc_dbm_beacon))
+                   logg.info("calc_dbm_beacon {}".format(calc_dbm_beacon))
 
                    logg.info("sig: %s"%sig)
                    calc_dbm = int(sig) + pi + rssi_adj + ag
@@ -1471,7 +1564,76 @@ def main():
                            failed_low += 1
                            least = min(least, diff_a4)
 
-                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= 1)):
+                       failed_low_treshold = 1
+                       # 
+                       #
+                       # If the ap dictionary is set the read the AP to see the number
+                       # of spatial streams used.  For tx power 1 the AP may determine to use
+                       # fewer spatial streams
+                       #
+                       #
+                       P1 = None
+                       T1 = None
+                       P2 = None
+                       T2 = None
+                       P3 = None
+                       T3 = None
+                       P4 = None
+                       T4 = None
+                       N_ANT = None
+                       DAA_Pwr = None
+                       DAA_N_TX = None
+                       DAA_Total_pwr = None
+                       if(bool(ap_dict)):
+                            logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                         ap_dict['ap_user'],ap_dict['ap_pw']))
+                            try:
+                               logg.info("cisco_ap_ctl.py: no_logging_console")
+                               ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                         "-user", ap_dict['ap_user'], "-passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
+                               pss = ap_info.stdout.decode('utf-8', 'ignore');
+                               logg.info(pss)
+                            except subprocess.CalledProcessError as process_error:
+                               logg.info("####################################################################################################") 
+                               logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE") 
+                               logg.info("####################################################################################################") 
+                      
+                               logg.info("####################################################################################################") 
+                               logg.info("# Unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                               logg.info("####################################################################################################") 
+                               #exit_test(workbook)
+                               exit(1)
+     
+                            for line in pss.splitlines():
+                                logg.info("ap {}".format(line))
+                                m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+                                if (m != None):
+                                    P1 = m.group(1)
+                                    T1 = m.group(2)
+                                    P2 = m.group(3)
+                                    T2 = m.group(4)
+                                    P3 = m.group(5)
+                                    T3 = m.group(6)
+                                    P4 = m.group(7)
+                                    T4 = m.group(8)
+                                    N_ANT = m.group(9)
+                                    DAA_Pwr = m.group(10)
+                                    DAA_N_TX = m.group(11)
+                                    DAA_Total_pwr = m.group(12)
+                                    print("P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}"
+                                           .format(P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr))
+
+                                else:
+                                    logg.info("AP Check regular expression!!!")
+                                    exit(1)
+
+
+
+                       #
+                       #  The controller may adjust the number of spatial streams to allow for the 
+                       #  best power values
+                       #
+                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= failed_low_treshold)):
                            pf = 0
 
                        if (diff_a1 > pfrange):
@@ -1513,6 +1675,7 @@ def main():
 
                    col = 0
                    worksheet.write(row, col, myrd, center_blue); col += 1
+                   worksheet.write(row, col, cc_ch, center_blue); col += 1
                    worksheet.write(row, col, _ch, center_blue); col += 1
                    worksheet.write(row, col, _nss, center_blue); col += 1
                    worksheet.write(row, col, cc_bw, center_blue); col += 1

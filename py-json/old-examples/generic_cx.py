@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+This script is out-dated, please see py-scripts/test_ipv4_variable_time.py
+"""
 import sys
 import pprint
 from pprint import pprint

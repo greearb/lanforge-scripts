@@ -310,7 +310,10 @@ Actions can be:
         if args.session is None:
             print("requires --session")
             return
-        response_o = status_messages.json_get("/status-msg/"+args.session)
+        if args.key is None:
+            print("requires --key")
+            return
+        response_o = status_messages.json_get("/status-msg/%s/%s"%(args.session, args.key))
         pprint(response_o)
         return
 

@@ -30,6 +30,9 @@ def main():
    num_wanlinks = -1
    # see if there are old wanlinks to remove
    lf_r = LFRequest.LFRequest(base_url+"/wl/list")
+
+   port_a ="rd0a"
+   port_b ="rd1a"
    try:
       json_response = lf_r.getAsJson()
       LFUtils.debug_printer.pprint(json_response)
@@ -69,7 +72,7 @@ def main():
       'alias': 'wl_eg1-A',
       'shelf': 1,
       'resource': '1',
-      'port': 'eth3',
+      'port': port_a,
       'latency': '75',
       'max_rate': '128000',
       'description': 'cookbook-example'
@@ -83,7 +86,7 @@ def main():
       'alias': 'wl_eg1-B',
       'shelf': 1,
       'resource': '1',
-      'port': 'eth5',
+      'port': port_b,
       'latency': '95',
       'max_rate': '256000',
       'description': 'cookbook-example'
