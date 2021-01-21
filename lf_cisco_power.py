@@ -305,8 +305,7 @@ def main():
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
    parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-   parser.add_argument('-ap_read',           type=str,help="controller prompt",required=True)
-   parser.add_argument('-ap','--ap_info',    action='append', nargs=1, type=str, help="--ap_info ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+   parser.add_argument('-ap','--ap',         action='append', nargs=1, type=str, help="--ap ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -421,6 +420,8 @@ def main():
        logging.basicConfig(format=FORMAT, handlers=[console_handler])
        #logg.addHandler(logging.StreamHandler()) # allows to logging to file and stderr
 
+   if bool(ap_dict):
+       logg.info("ap_dict {}".format(ap_dict))
 
    if bool(email_dicts):
        logg.info("email_dicts {}".format(email_dicts))
@@ -1268,7 +1269,7 @@ def main():
                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource",  lfresource, "--action", "do_cmd",
                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
 
-                   # Wait 10 more seconds
+                   # Wait configured number of seconds more seconds
                    logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration,ch, n, bw, tx))
                    time.sleep(int(args.duration))
 
@@ -1562,7 +1563,21 @@ def main():
                            failed_low += 1
                            least = min(least, diff_a4)
 
-                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= 1)):
+                       failed_low_treshold = 1
+                       # 
+                       #
+                       # If the ap dictionary is set the read the AP to see the number
+                       # of spatial streams used.  For tx power 1 the AP may determine to use
+                       # fewer spatial streams
+                       #
+                       #
+
+
+                       #
+                       #  The controller may adjust the number of spatial streams to allow for the 
+                       #  best power values
+                       #
+                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= failed_low_treshold)):
                            pf = 0
 
                        if (diff_a1 > pfrange):
