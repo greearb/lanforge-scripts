@@ -1184,10 +1184,10 @@ class L3CXProfile(BaseProfile):
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
-        if col_names = None:
+        if col_names == None:
             header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         while datetime.datetime.now() < end_time:
-            if fields = None:
+            if fields == None:
                 response = self.json_get("/endp/all")
             else:
                 response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
@@ -1235,7 +1235,6 @@ class L3CXProfile(BaseProfile):
         header_row.insert(0, 'Timestamp')
         # print(header_row)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
             for col_num, data in enumerate(header_row):
