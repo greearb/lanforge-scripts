@@ -305,7 +305,8 @@ def main():
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
    parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-   parser.add_argument('-ap','--ap',         action='append', nargs=1, type=str, help="--ap ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+   parser.add_argument('-ap','--ap',         action='append', nargs=1, type=str, help="--ap ap_scheme==<telnet,ssh or serial> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -370,7 +371,7 @@ def main():
           ap_info = args.ap_info
           for _ap_info in ap_info:
               print("ap_info {}".format(_ap_info))
-              ap_keys = ['ap_ip','ap_port','ap_user','ap_pw']
+              ap_keys = ['ap_scheme','ap_ip','ap_port','ap_user','ap_pw']
               ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
               for key in ap_keys:
                     if key not in ap_dict:
@@ -1571,6 +1572,35 @@ def main():
                        # fewer spatial streams
                        #
                        #
+                       if(bool(ap_dict)):
+                            logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                         ap_dict['ap_user'],ap_dict['ap_pw']))
+                            try:
+                               logg.info("cisco_ap_ctl.py: no_logging_console")
+                               ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "-d", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                         "-u", ap_dict['ap_user'], "-p", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
+                               pss = ap_info.stdout.decode('utf-8', 'ignore');
+                               logg.info(pss)
+                            except subprocess.CalledProcessError as process_error:
+                               logg.info("####################################################################################################") 
+                               logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE") 
+                               logg.info("####################################################################################################") 
+                      
+                               logg.info("####################################################################################################") 
+                               logg.info("# Unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                               logg.info("####################################################################################################") 
+                               exit_test(workbook)
+     
+                            for line in pss.splitlines():
+                                logg.info("ap {}".format(line))
+                                m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+                                if (m != None):
+                                    pass
+     
+                                else:
+                                    logg.info("AP Check regular expression!!!")
+                                    exit(1)
+
 
 
                        #
