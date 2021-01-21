@@ -89,23 +89,9 @@ class IPV4VariableTime(LFCliBase):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
-
-    def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        if self.debug:
-            print(self.cx_profile.created_cx.values())
-            print("==============\n", cx_list, "\n==============")
-        cx_rx_map = {}
-        for cx_name in cx_list['endpoint']:
-            if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes' and item in self.cx_profile.created_cx.values():
-                        cx_rx_map[item] = value_rx
-        return cx_rx_map
-
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
+        #to-do- check here if upstream port got IP
         temp_stas = self.station_profile.station_names.copy()
 
         if self.local_realm.wait_for_ip(temp_stas):
@@ -213,16 +199,13 @@ python3 ./test_ipv4_variable_time.py
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    #Create directory
-    homedir=str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time'
-    os.mkdir('/home/lanforge/report_data/'+homedir)
     if args.report_file is None:
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet']:
-            report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.' + args.output_format
             output=args.output_format
         else:
             print('Defaulting to Excel')
-            report_f='/home/lanforge/report-data/'+homedir+'/data.xlsx'
+            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
             output='excel'
     else:
         report_f=args.report_file
@@ -257,30 +240,16 @@ python3 ./test_ipv4_variable_time.py
         ip_var_test.exit_fail()
     ip_var_test.start(False, False)
 
-    if args.report_file is None:
-        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet']:
-            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.' + args.output_format
-            output=args.output_format
-        else:
-            print('Defaulting to Excel')
-            report_f='/home/lanforge/report-data/'+str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time.xlsx'
-            output='excel'
-    else:
-        report_f=args.report_file
-        if args.output_format is None:
-            output=str(args.report_file).split('.')[-1]
-        else:
-            output=args.output_format
 
     layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.l3cxprofile.json_get('endp')['endpoint']])
     ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs'],
                                     report_file=report_f,
-                                    duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                                    duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).seconds,
                                     created_cx= layer3connections,
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
                                     arguments=args)
-
+    
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
