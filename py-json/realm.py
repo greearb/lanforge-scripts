@@ -1184,8 +1184,13 @@ class L3CXProfile(BaseProfile):
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
+        if col_names = None:
+            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         while datetime.datetime.now() < end_time:
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            if fields = None:
+                response = self.json_get("/endp/all")
+            else:
+                response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1211,10 +1216,8 @@ class L3CXProfile(BaseProfile):
             time.sleep(monitor_interval)
         print(value_map)
 
-        # if passes == expected_passes:
-        # self._pass("PASS: All tests passed")
-        # step 3 organize data
-        endpoints = list()
+        #step 3 organize data
+        endpoints=list()
         for endpoint in value_map.values():
             endpoints.append(endpoint['endpoint'])
         endpoints2 = []
@@ -1226,6 +1229,7 @@ class L3CXProfile(BaseProfile):
             itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
+
         # step 4 save and close
         header_row = col_names
         header_row.insert(0, 'Timestamp')
@@ -3493,7 +3497,7 @@ class StationProfile:
         # First, request remove on the list.
         for port_eid in desired_stations:
             self.local_realm.rm_port(port_eid, check_exists=True, debug_=debug_)
-
+            time.sleep(delay)
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
 
