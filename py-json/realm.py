@@ -1154,6 +1154,9 @@ class L3CXProfile(BaseProfile):
         else:
             return False
 
+    """
+    coloumn names
+    """
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1307,9 +1310,9 @@ class L3CXProfile(BaseProfile):
             import requests
             import ast
             try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8080').text)
+                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
             except:
-                systeminfo = ast.literal_eval(requests.get('http://192.168.1.3:8080').text)
+                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
