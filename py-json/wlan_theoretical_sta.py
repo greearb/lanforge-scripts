@@ -1,5 +1,10 @@
 '''
 
+Candela Technologies Inc.
+Info : Standard Script for WLAN Capaity Calculator
+Date :
+Author : Anjali Rahamatkar
+
 This Script has three classes :
           1. abg11_calculator : It will take all the user input of 802.11a/b/g station,calculate Intermediate values and Theoretical values.
           2. n11_calculator : It will take all the user input of 802.11n station,calculate Intermediate values and Theoretical values.
@@ -15,7 +20,8 @@ import json
 # Class to take all user input (802.11a/b/g Standard)
 
 
-class abg11_calculator:
+
+class abg11_calculator():
 
     def __init__(self, Traffic_Type, PHY_Bit_Rate, Encryption, QoS, MAC_Frame_802_11, Basic_Rate_Set, Preamble,
                  slot_name, Codec_Type, RTS_CTS_Handshake, CTS_to_self):
@@ -31,9 +37,77 @@ class abg11_calculator:
         self.RTS_CTS_Handshake = RTS_CTS_Handshake
         self.CTS_to_self = CTS_to_self
 
+
+
+
     # This function is for calculate intermediate values and Theoretical values
 
-    def input_parameter(self):
+    @staticmethod
+    def create_argparse(prog=None, formatter_class=None, epilog=None, description=None):
+        if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
+            ap = argparse.ArgumentParser(prog=prog,
+                                             formatter_class=formatter_class,
+                                             allow_abbrev=True,
+                                             epilog=epilog,
+                                             description=description)
+        else:
+            ap = argparse.ArgumentParser()
+
+        # Station : 11abg
+
+        ap.add_argument("-sta", "--station", help="Enter Station Name : [11abg,11n,11ac](by Default 11abg)")
+        ap.add_argument("-t", "--traffic", help="Enter the Traffic Type : [Data,Voice](by Default Data)")
+        ap.add_argument("-p", "--phy",
+                        help="Enter the PHY Bit Rate of Data Flow : [1, 2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54](by Default 54)")
+        ap.add_argument("-e", "--encryption",
+                        help="Enter the Encryption  : [None,  WEP ,  TKIP, CCMP](by Default None)")
+        ap.add_argument("-q", "--qos", help="Enter the QoS = : [No,  Yes](by Default [No for 11abg] and [Yes for 11n])")
+        ap.add_argument("-m", "--mac",
+                        help="Enter the 802.11 MAC Frame  : [Any Value](by Default [106 for 11abg] and [1538 for 11n])")
+        ap.add_argument("-b", "--basic", nargs='+',
+                        help="Enter the Basic Rate Set : [1,2, 5.5, 11, 6, 9, 12, 18, 24, 36, 48, 54]"
+                             " (by Default [1 2 5.5 11 6 12] for 11abg, [6 12 24] for 11n/11ac])")
+        ap.add_argument("-pre", "--preamble", help="Enter Preamble value : [ Short, Long, N/A](by Default Short)")
+        ap.add_argument("-s", "--slot", help="Enter the Slot Time  : [Short,  Long, N/A](by Default Short)")
+        ap.add_argument("-co", "--codec", help="Enter the Codec Type (Voice Traffic): {[ G.711 ,  G.723 ,  G.729]"
+                                               "by Default G.723 for 11abg, G.711 for 11n} and"
+                                               "{['Mixed','Greenfield'] by Default Mixed for 11ac}")
+        ap.add_argument("-r", "--rts", help="Enter the RTS/CTS Handshake : [No,  Yes](by Default No)")
+        ap.add_argument("-c", "--cts", help="Enter the CTS-to-self (protection)	: [No,  Yes](by Default No)")
+
+        # Station : 11n and 11ac
+
+        ap.add_argument("-d", "--data",
+                        help="Enter the Data/Voice MCS Index : ['0','1','2','3','4','5','6','7','8','9','10',"
+                             "'11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26',"
+                             "'27','28','29','30','31']by Default 7")
+        ap.add_argument("-ch", "--channel",
+                        help="Enter the Channel Bandwidth = : ['20','40'] by Default 40 for 11n and "
+                             "['20','40','80'] by Default 80 for 11ac")
+        ap.add_argument("-gu", "--guard", help="Enter the Guard Interval = : ['400','800'] (by Default 400)")
+        ap.add_argument("-high", "--highest",
+                        help="Enter the Highest Basic MCS = : ['0','1','2','3','4','5','6','7','8','9',"
+                             "'10','11','12','13','14','15','16','17','18','19','20','21','22','23','24',"
+                             "'25','26','27','28','29','30','31'](by Default 1)")
+        ap.add_argument("-pl", "--plcp",
+                        help="Enter the PLCP Configuration = : ['Mixed','Greenfield'] (by Default Mixed) for 11n")
+        ap.add_argument("-ip", "--ip",
+                        help="Enter the IP Packets per A-MSDU = : ['0','1','2','3','4','5','6','7','8','9',"
+                             "'10','11','12','13','14','15','16','17','18','19','20'] (by Default 0)")
+        ap.add_argument("-mc", "--mc",
+                        help="Enter the MAC Frames per A-MPDU = : ['0','1','2','3','4','5','6','7','8',"
+                             "'9','10','11','12','13','14','15','16','17','18','19','20','21','22','23',"
+                             "'24','25','26','27','28','29','30','31','32','33','34','35','36','37','38',"
+                             "'39','40','41','42','43','44','45','46','47','48','49','50','51','52','53',"
+                             "'54','55','56','57','58','59','60','61','62','63','64'](by Default [42 for 11n] and [64 for 11ac])")
+        ap.add_argument("-cw", "--cwin",
+                        help="Enter the CWmin (leave alone for default) = : [Any Value] (by Default 15)")
+        ap.add_argument("-spa", "--spatial", help="Enter the Spatial Streams  = [1,2,3,4] (by Default 4)")
+        ap.add_argument("-rc", "--rtscts", help="Enter the RTS/CTS Handshake and CTS-to-self "
+                                                "  = ['No','Yes'] (by Default No for 11ac)")
+        return ap
+
+    def calculate(self):
 
         PHY_Bit_Rate_float = float(self.PHY_Bit_Rate)
         PHY_Bit_Rate_int = int(PHY_Bit_Rate_float)
@@ -419,7 +493,7 @@ class abg11_calculator:
         Client_5 = Ttxframe_data + SIFS_value + Ttxframe + DIFS_value + RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake + MeanBackoff_value / 20
         Client_6 = Ttxframe_data + SIFS_value + Ttxframe + DIFS_value + RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake + MeanBackoff_value / 50
         Client_7 = Ttxframe_data + SIFS_value + Ttxframe + DIFS_value + RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake + MeanBackoff_value / 100
-        Client_1_new = format(Client_1, '.2f')
+        self.Client_1_new = format(Client_1, '.2f')
         Client_2_new = format(Client_2, '.4f')
         Client_3_new = format(Client_3, '.4f')
         Client_4_new = format(Client_4, '.4f')
@@ -430,7 +504,7 @@ class abg11_calculator:
         # Max Frame Rate
 
         Max_Frame_Rate_C1 = 1000000 / Client_1
-        Max_Frame_Rate_C1_round = round(Max_Frame_Rate_C1)
+        self.Max_Frame_Rate_C1_round = round(Max_Frame_Rate_C1)
         Max_Frame_Rate_C2 = 1000000 / Client_2
         Max_Frame_Rate_C2_round = round(Max_Frame_Rate_C2)
         Max_Frame_Rate_C3 = 1000000 / Client_3
@@ -447,7 +521,7 @@ class abg11_calculator:
         # Max. Offered Load (802.11)
 
         Max_Offered_Load_C1 = Max_Frame_Rate_C1 * Nbits_value / 1000000
-        Max_Offered_Load_C1_new = format(Max_Offered_Load_C1, '.3f')
+        self.Max_Offered_Load_C1_new = format(Max_Offered_Load_C1, '.3f')
         Max_Offered_Load_C2 = Max_Frame_Rate_C2 * Nbits_value / 1000000
         Max_Offered_Load_C2_new = format(Max_Offered_Load_C2, '.3f')
         Max_Offered_Load_C3 = Max_Frame_Rate_C3 * Nbits_value / 1000000
@@ -464,7 +538,7 @@ class abg11_calculator:
         # Offered Load Per 802.11 Client
 
         Offered_Load_Per_Client1 = Max_Offered_Load_C1 / 1
-        Offered_Load_Per_Client1_new = format(Offered_Load_Per_Client1, '.3f')
+        self.Offered_Load_Per_Client1_new = format(Offered_Load_Per_Client1, '.3f')
         Offered_Load_Per_Client2 = Max_Offered_Load_C2 / 2
         Offered_Load_Per_Client2_new = format(Offered_Load_Per_Client2, '.3f')
         Offered_Load_Per_Client3 = Max_Offered_Load_C3 / 5
@@ -481,7 +555,7 @@ class abg11_calculator:
         # Offered Load (802.3 Side)
 
         Offered_Load_C1 = Max_Frame_Rate_C1 * Ethernet_MAC_Frame_int * 8 / 1000000
-        Offered_Load_C1_new = format(Offered_Load_C1, '.3f')
+        self.Offered_Load_C1_new = format(Offered_Load_C1, '.3f')
         Offered_Load_C2 = Max_Frame_Rate_C2 * Ethernet_MAC_Frame_int * 8 / 1000000
         Offered_Load_C2_new = format(Offered_Load_C2, '.3f')
         Offered_Load_C3 = Max_Frame_Rate_C3 * Ethernet_MAC_Frame_int * 8 / 1000000
@@ -499,7 +573,7 @@ class abg11_calculator:
 
         if ip == 1:
             IP_Throughput_C1 = Max_Frame_Rate_C1 * ip_packet * 8 / 1000000
-            IP_Throughput_C1_new = format(IP_Throughput_C1, '.3f')
+            self.IP_Throughput_C1_new = format(IP_Throughput_C1, '.3f')
             IP_Throughput_C2 = Max_Frame_Rate_C2 * ip_packet * 8 / 1000000
             IP_Throughput_C2_new = format(IP_Throughput_C2, '.3f')
             IP_Throughput_C3 = Max_Frame_Rate_C3 * ip_packet * 8 / 1000000
@@ -513,7 +587,7 @@ class abg11_calculator:
             IP_Throughput_C7 = Max_Frame_Rate_C7 * ip_packet * 8 / 1000000
             IP_Throughput_C7_new = format(IP_Throughput_C7, '.3f')
         else:
-            IP_Throughput_C1_new = "N/A"
+            self.IP_Throughput_C1_new = "N/A"
             IP_Throughput_C2_new = "N/A"
             IP_Throughput_C3_new = "N/A"
             IP_Throughput_C4_new = "N/A"
@@ -521,102 +595,104 @@ class abg11_calculator:
             IP_Throughput_C6_new = "N/A"
             IP_Throughput_C7_new = "N/A"
 
-        print("\n" + "******************Station : 11abgCalculator*****************************" + "\n")
-        print("Theoretical Maximum Offered Load" + "\n")
-        print("1 Client:")
-        All_theoretical_output = {'Packet Interval(usec)': Client_1_new, 'Max Frame Rate(fps)': Max_Frame_Rate_C1_round,
-                                  'Max. Offered Load (802.11)(Mb/s)': Max_Offered_Load_C1_new,
-                                  'Offered Load Per 802.11 Client(Mb/s)': Offered_Load_Per_Client1_new,
-                                  'Offered Load (802.3 Side)(Mb/s)': Offered_Load_C1_new,
-                                  'IP Throughput (802.11 -> 802.3)(Mb/s)': IP_Throughput_C1_new}
-        print(json.dumps(All_theoretical_output, indent=4))
+
 
         Voice_Call = Max_Frame_Rate_C1 / Codec_Frame_rate
         Voice_Call_value = round(Voice_Call)
 
         if "Data" in self.Traffic_Type:
-            Maximum_Theoretical_R_value = "N/A"
+            self.Maximum_Theoretical_R_value = "N/A"
         else:
             if "G.711" in self.Codec_Type:
-                Maximum_Theoretical_R_value = 85.9
+                self.Maximum_Theoretical_R_value = 85.9
             else:
                 if "G.723" in self.Codec_Type:
-                    Maximum_Theoretical_R_value = 72.9
+                    self.Maximum_Theoretical_R_value = 72.9
                 else:
                     if "G.729" in self.Codec_Type:
-                        Maximum_Theoretical_R_value = 81.7
+                        self.Maximum_Theoretical_R_value = 81.7
                     else:
-                        Maximum_Theoretical_R_value = 93.2
+                        self.Maximum_Theoretical_R_value = 93.2
 
         if "Data" in self.Traffic_Type:
-            Estimated_MOS_Score = "N/A"
-            Maximum_Bidirectional = "N/A"
+            self.Estimated_MOS_Score = "N/A"
+            self.Maximum_Bidirectional_Voice_Calls = "N/A"
         else:
             if (Voice_Call_value <= 1):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C1_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = self.Max_Frame_Rate_C1_round / Codec_Frame_rate
             elif (Voice_Call_value <= 2):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C2_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C2_round / Codec_Frame_rate
             elif (Voice_Call_value <= 5):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C3_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C3_round / Codec_Frame_rate
 
             elif (Voice_Call_value <= 10):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C4_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C4_round / Codec_Frame_rate
             elif (Voice_Call_value <= 20):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C5_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C5_round / Codec_Frame_rate
             elif (Voice_Call_value <= 50):
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C6_round / Codec_Frame_rate
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C6_round / Codec_Frame_rate
             else:
-                Maximum_Bidirectional_Voice_Calls = Max_Frame_Rate_C7_round / Codec_Frame_rate
-            Maximum_Bidirectional = round(Maximum_Bidirectional_Voice_Calls, 2)
-            if Maximum_Theoretical_R_value < 0:
-                Estimated_MOS_Score = 1
+                Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C7_round / Codec_Frame_rate
+            self.Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional_Voice_Calls1, 2)
+            if self.Maximum_Theoretical_R_value < 0:
+                self.Estimated_MOS_Score = 1
             else:
-                if Maximum_Theoretical_R_value > 100:
-                    Estimated_MOS_Score = 4.5
+                if self.Maximum_Theoretical_R_value > 100:
+                    self.Estimated_MOS_Score = 4.5
 
                 else:
-                    Estimated_MOS_Score_1 = 1 + 0.035 * Maximum_Theoretical_R_value + Maximum_Theoretical_R_value * (
-                                Maximum_Theoretical_R_value - 60) * (
-                                                    100 - Maximum_Theoretical_R_value) * 7 * 0.000001
-                    Estimated_MOS_Score = round(Estimated_MOS_Score_1, 2)
+                    Estimated_MOS_Score_1 = 1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
+                                self.Maximum_Theoretical_R_value - 60) * (
+                                                    100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001
+                    self.Estimated_MOS_Score = round(Estimated_MOS_Score_1, 2)
+
+
+
+    def get_result(self):
+
+        print("\n" + "******************Station : 11abgCalculator*****************************" + "\n")
+        print("Theoretical Maximum Offered Load" + "\n")
+        print("1 Client:")
+        All_theoretical_output = {'Packet Interval(usec)': self.Client_1_new, 'Max Frame Rate(fps)': self.Max_Frame_Rate_C1_round,
+                                  'Max. Offered Load (802.11)(Mb/s)': self.Max_Offered_Load_C1_new,
+                                  'Offered Load Per 802.11 Client(Mb/s)': self.Offered_Load_Per_Client1_new,
+                                  'Offered Load (802.3 Side)(Mb/s)': self.Offered_Load_C1_new,
+                                  'IP Throughput (802.11 -> 802.3)(Mb/s)': self.IP_Throughput_C1_new}
+        print(json.dumps(All_theoretical_output, indent=4))
 
         print("\n" + "Theroretical Voice Call Capacity" + "\n")
 
-        All_theoretical_voice = {'Maximum Theoretical R-value': Maximum_Theoretical_R_value,
-                                 'Estimated MOS Score': Estimated_MOS_Score,
-                                 'Maximum Bidirectional Voice Calls(calls)': Maximum_Bidirectional}
+        All_theoretical_voice = {'Maximum Theoretical R-value': self.Maximum_Theoretical_R_value,
+                                 'Estimated MOS Score': self.Estimated_MOS_Score,
+                                 'Maximum Bidirectional Voice Calls(calls)': self.Maximum_Bidirectional_Voice_Calls}
         print(json.dumps(All_theoretical_voice, indent=4))
 
 
 ##Class to take all user input (802.11n Standard)
 
-class n11_calculator():
+class n11_calculator(abg11_calculator):
 
     def __init__(self, Traffic_Type, Data_Voice_MCS, Channel_Bandwidth, Guard_Interval_value, Highest_Basic_str,
                  Encryption, QoS,
                  IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
-                 Codec_Type_Voice_Traffic, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self_protection):
-        self.Traffic_Type = Traffic_Type
+                 Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self,PHY_Bit_Rate=None,MAC_Frame_802_11=None,Basic_Rate_Set=None,Preamble=None,slot_name=None):
+        super().__init__(Traffic_Type, PHY_Bit_Rate, Encryption, QoS, MAC_Frame_802_11, Basic_Rate_Set, Preamble,
+                 slot_name, Codec_Type, RTS_CTS_Handshake, CTS_to_self)
         self.Data_Voice_MCS = Data_Voice_MCS
         self.Channel_Bandwidth = Channel_Bandwidth
         self.Guard_Interval_value = Guard_Interval_value
         self.Highest_Basic_str = Highest_Basic_str
-        self.Encryption = Encryption
-        self.QoS = QoS
         self.IP_Packets_MSDU_str = IP_Packets_MSDU_str
         self.MAC_Frames_per_A_MPDU_str = MAC_Frames_per_A_MPDU_str
         self.BSS_Basic_Rate = BSS_Basic_Rate
         self.MAC_MPDU_Size_Data_Traffic = MAC_MPDU_Size_Data_Traffic
-        self.Codec_Type_Voice_Traffic = Codec_Type_Voice_Traffic
         self.PLCP = PLCP
         self.CWmin = CWmin
-        self.RTS_CTS_Handshake = RTS_CTS_Handshake
-        self.CTS_to_self_protection = CTS_to_self_protection
+
 
     # This function is for calculate intermediate values and Theoretical values
 
-    def input_parameter(self):
-
+    def calculate(self):
         global HT_data_temp
         global temp_value
         SIFS = 16.00
@@ -773,17 +849,17 @@ class n11_calculator():
                 Encrypt_Hdr = 16
         # c36 Codec IP Packet Size
 
-        if "G.711" in self.Codec_Type_Voice_Traffic:
+        if "G.711" in self.Codec_Type:
             Codec_IP_Packet_Size = 200
             Codec_Frame_Rate = 100
 
         else:
-            if "G.723" in self.Codec_Type_Voice_Traffic:
+            if "G.723" in self.Codec_Type:
                 Codec_IP_Packet_Size = 60
                 Codec_Frame_Rate = 67
 
             else:
-                if "G.729" in self.Codec_Type_Voice_Traffic:
+                if "G.729" in self.Codec_Type:
                     Codec_IP_Packet_Size = 60
                     Codec_Frame_Rate = 100
 
@@ -1096,7 +1172,7 @@ class n11_calculator():
             CTS_to_self_Handshake_Overhead = 0
 
         else:
-            if "Yes" in self.CTS_to_self_protection:
+            if "Yes" in self.CTS_to_self:
                 if "20" in self.Channel_Bandwidth:
                     CTS_to_self_Handshake_Overhead = 20 + 4 * int((22 + 14 * 8 + 24 * 4 - 1) / (24 * 4)) + SIFS
 
@@ -1112,7 +1188,7 @@ class n11_calculator():
 
         MAC_PPDU_Interval_1 = RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake_Overhead + Ttxframe + Ack_Response_Overhead + BlockAck_Response_Overhead + DIFS + (
                 MeanBackoff / 1)
-        Client_1_new = format(MAC_PPDU_Interval_1, '.2f')
+        self.Client_1_new = format(MAC_PPDU_Interval_1, '.2f')
         MAC_PPDU_Interval_2 = RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake_Overhead + Ttxframe + Ack_Response_Overhead + BlockAck_Response_Overhead + DIFS + (
                 MeanBackoff / 2)
         Client_2_new = format(MAC_PPDU_Interval_2, '.2f')
@@ -1135,7 +1211,7 @@ class n11_calculator():
         # Max PPDU Rate
 
         Max_PPDU_Rate_1 = 1000000 / MAC_PPDU_Interval_1
-        Client_8_new = format(Max_PPDU_Rate_1, '.2f')
+        self.Client_8_new = format(Max_PPDU_Rate_1, '.2f')
         Max_PPDU_Rate_2 = 1000000 / MAC_PPDU_Interval_2
         Client_9_new = format(Max_PPDU_Rate_2, '.2f')
         Max_PPDU_Rate_3 = 1000000 / MAC_PPDU_Interval_3
@@ -1167,7 +1243,7 @@ class n11_calculator():
             Max_MAC_MPDU_Rate_6 = Max_PPDU_Rate_6
             Max_MAC_MPDU_Rate_7 = Max_PPDU_Rate_7
 
-        Client_15_new = round(Max_MAC_MPDU_Rate_1)
+        self.Client_15_new = round(Max_MAC_MPDU_Rate_1)
         Client_16_new = round(Max_MAC_MPDU_Rate_2)
         Client_17_new = round(Max_MAC_MPDU_Rate_3)
         Client_18_new = round(Max_MAC_MPDU_Rate_4)
@@ -1195,7 +1271,7 @@ class n11_calculator():
             Max_MAC_MSDU_Rate_6 = Max_MAC_MPDU_Rate_6
             Max_MAC_MSDU_Rate_7 = Max_MAC_MPDU_Rate_7
 
-        Client_22_new = round(Max_MAC_MSDU_Rate_1)
+        self.Client_22_new = round(Max_MAC_MSDU_Rate_1)
         Client_23_new = round(Max_MAC_MSDU_Rate_2)
         Client_24_new = round(Max_MAC_MSDU_Rate_3)
         Client_25_new = round(Max_MAC_MSDU_Rate_4)
@@ -1212,7 +1288,7 @@ class n11_calculator():
         Max_802_11_MAC_Frame_Data_Rate_6 = Max_MAC_MPDU_Rate_6 * MAC_MPDU_Size * 8 / 1000000
         Max_802_11_MAC_Frame_Data_Rate_7 = Max_MAC_MPDU_Rate_7 * MAC_MPDU_Size * 8 / 1000000
 
-        Client_29_new = format(Max_802_11_MAC_Frame_Data_Rate_1, '.3f')
+        self.Client_29_new = format(Max_802_11_MAC_Frame_Data_Rate_1, '.3f')
         Client_30_new = format(Max_802_11_MAC_Frame_Data_Rate_2, '.3f')
         Client_31_new = format(Max_802_11_MAC_Frame_Data_Rate_3, '.3f')
         Client_32_new = format(Max_802_11_MAC_Frame_Data_Rate_4, '.3f')
@@ -1230,7 +1306,7 @@ class n11_calculator():
         Max_802_11_MAC_Payload_Goodput_6 = MSDU * 8 * Max_MAC_MSDU_Rate_6 / 1000000
         Max_802_11_MAC_Payload_Goodput_7 = MSDU * 8 * Max_MAC_MSDU_Rate_7 / 1000000
 
-        Client_36_new = format(Max_802_11_MAC_Payload_Goodput_1, '.3f')
+        self.Client_36_new = format(Max_802_11_MAC_Payload_Goodput_1, '.3f')
         Client_37_new = format(Max_802_11_MAC_Payload_Goodput_2, '.3f')
         Client_38_new = format(Max_802_11_MAC_Payload_Goodput_3, '.3f')
         Client_39_new = format(Max_802_11_MAC_Payload_Goodput_4, '.3f')
@@ -1248,7 +1324,7 @@ class n11_calculator():
         MAC_Goodput_Per_802_11_Client_6 = Max_802_11_MAC_Payload_Goodput_6 / 50
         MAC_Goodput_Per_802_11_Client_7 = Max_802_11_MAC_Payload_Goodput_7 / 100
 
-        Client_43_new = format(MAC_Goodput_Per_802_11_Client_1, '.3f')
+        self.Client_43_new = format(MAC_Goodput_Per_802_11_Client_1, '.3f')
         Client_44_new = format(MAC_Goodput_Per_802_11_Client_2, '.3f')
         Client_45_new = format(MAC_Goodput_Per_802_11_Client_3, '.3f')
         Client_46_new = format(MAC_Goodput_Per_802_11_Client_4, '.3f')
@@ -1268,7 +1344,7 @@ class n11_calculator():
             Offered_Load_8023_Side_5 = Max_MAC_MSDU_Rate_5 * Ethernet_value * 8 / 1000000
             Offered_Load_8023_Side_6 = Max_MAC_MSDU_Rate_6 * Ethernet_value * 8 / 1000000
             Offered_Load_8023_Side_7 = Max_MAC_MSDU_Rate_7 * Ethernet_value * 8 / 1000000
-            Client_50_new = format(Offered_Load_8023_Side_1, '.3f')
+            self.Client_50_new = format(Offered_Load_8023_Side_1, '.3f')
             Client_51_new = format(Offered_Load_8023_Side_2, '.3f')
             Client_52_new = format(Offered_Load_8023_Side_3, '.3f')
             Client_53_new = format(Offered_Load_8023_Side_4, '.3f')
@@ -1277,7 +1353,7 @@ class n11_calculator():
             Client_56_new = format(Offered_Load_8023_Side_7, '.3f')
 
         else:
-            Client_50_new = "N/A"
+            self.Client_50_new = "N/A"
             Client_51_new = "N/A"
             Client_52_new = "N/A"
             Client_53_new = "N/A"
@@ -1294,7 +1370,7 @@ class n11_calculator():
             IP_Goodput_802_11_8023_5 = Max_MAC_MSDU_Rate_5 * ip_1 * 8 / 1000000
             IP_Goodput_802_11_8023_6 = Max_MAC_MSDU_Rate_6 * ip_1 * 8 / 1000000
             IP_Goodput_802_11_8023_7 = Max_MAC_MSDU_Rate_7 * ip_1 * 8 / 1000000
-            Client_57_new = format(IP_Goodput_802_11_8023_1, '.3f')
+            self.Client_57_new = format(IP_Goodput_802_11_8023_1, '.3f')
             Client_58_new = format(IP_Goodput_802_11_8023_2, '.3f')
             Client_59_new = format(IP_Goodput_802_11_8023_3, '.3f')
             Client_60_new = format(IP_Goodput_802_11_8023_4, '.3f')
@@ -1303,7 +1379,7 @@ class n11_calculator():
             Client_63_new = format(IP_Goodput_802_11_8023_7, '.3f')
 
         else:
-            Client_57_new = "N/A"
+            self.Client_57_new = "N/A"
             Client_58_new = "N/A"
             Client_59_new = "N/A"
             Client_60_new = "N/A"
@@ -1315,31 +1391,31 @@ class n11_calculator():
 
         # c53
         if "Data" in self.Traffic_Type:
-            Maximum_Theoretical_R_value = "N/A"
-            Estimated_MOS_Score = "N/A"
+            self.Maximum_Theoretical_R_value = "N/A"
+            self.Estimated_MOS_Score = "N/A"
         else:
-            if "G.711" in self.Codec_Type_Voice_Traffic:
-                Maximum_Theoretical_R_value = 85.9
+            if "G.711" in self.Codec_Type:
+                self.Maximum_Theoretical_R_value = 85.9
             else:
-                if "G.723" in self.Codec_Type_Voice_Traffic:
-                    Maximum_Theoretical_R_value = 72.9
+                if "G.723" in self.Codec_Type:
+                    self.Maximum_Theoretical_R_value = 72.9
                 else:
-                    if "G.729" in self.Codec_Type_Voice_Traffic:
-                        Maximum_Theoretical_R_value = 81.7
+                    if "G.729" in self.Codec_Type:
+                        self.Maximum_Theoretical_R_value = 81.7
                     else:
-                        Maximum_Theoretical_R_value = 93.2
+                        self.Maximum_Theoretical_R_value = 93.2
 
-            if Maximum_Theoretical_R_value < 0:
-                Estimated_MOS_Score = 1
+            if self.Maximum_Theoretical_R_value < 0:
+                self.Estimated_MOS_Score = 1
             else:
-                if Maximum_Theoretical_R_value > 100:
-                    Estimated_MOS_Score = 4.5
+                if self.Maximum_Theoretical_R_value > 100:
+                    self.Estimated_MOS_Score = 4.5
                 else:
-                    Estimated_MOS_Score_1 = (
-                            1 + 0.035 * Maximum_Theoretical_R_value + Maximum_Theoretical_R_value * (
-                            Maximum_Theoretical_R_value - 60) * (
-                                    100 - Maximum_Theoretical_R_value) * 7 * 0.000001)
-                    Estimated_MOS_Score = format(Estimated_MOS_Score_1, '.2f')
+                    self.Estimated_MOS_Score_1 = (
+                            1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
+                            self.Maximum_Theoretical_R_value - 60) * (
+                                    100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001)
+                    self.Estimated_MOS_Score = format(self.Estimated_MOS_Score_1, '.2f')
 
         # Voice_Call_Range
         try:
@@ -1376,58 +1452,57 @@ class n11_calculator():
             pass
 
         if "Data" in self.Traffic_Type:
-            Maximum_Bidirectional_Voice_Calls = "N/A"
+            self.Maximum_Bidirectional_Voice_Calls = "N/A"
         else:
-            Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
+            self.Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
+
+
+
+    def get_result(self):
 
         print("\n" + "******************Station : 11nCalculator*****************************" + "\n")
         print("Theoretical Maximum Offered Load" + "\n")
         print("1 Client:")
-        All_theoretical_output = {'MAC PPDU Interval(usec)': Client_1_new, 'Max PPDU Rate(fps)': Client_8_new,
-                                  'Max MAC MPDU Rate': Client_15_new,
-                                  'Max MAC MSDU Rate': Client_22_new,
-                                  'Max. 802.11 MAC Frame Data Rate(Mb/s)': Client_29_new,
-                                  'Max. 802.11 MAC Payload Goodput(Mb/s)': Client_36_new,
-                                  'MAC Goodput Per 802.11 Client(Mb/s)': Client_43_new,
-                                  'Offered Load (802.3 Side)(Mb/s)': Client_50_new,
-                                  'IP Goodput (802.11 -> 802.3)(Mb/s)': Client_57_new}
+        All_theoretical_output = {'MAC PPDU Interval(usec)': self.Client_1_new,
+                                   'Max PPDU Rate(fps)': self.Client_8_new,
+                                  'Max MAC MPDU Rate': self.Client_15_new,
+                                  'Max MAC MSDU Rate': self.Client_22_new,
+                                  'Max. 802.11 MAC Frame Data Rate(Mb/s)': self.Client_29_new,
+                                  'Max. 802.11 MAC Payload Goodput(Mb/s)': self.Client_36_new,
+                                  'MAC Goodput Per 802.11 Client(Mb/s)': self.Client_43_new,
+                                  'Offered Load (802.3 Side)(Mb/s)': self.Client_50_new,
+                                  'IP Goodput (802.11 -> 802.3)(Mb/s)': self.Client_57_new}
         print(json.dumps(All_theoretical_output, indent=4))
 
         print("\n" + "Theroretical Voice Call Capacity" + "\n")
 
-        All_theoretical_voice = {'Maximum Theoretical R-value': Maximum_Theoretical_R_value,
-                                 'Estimated MOS Score': Estimated_MOS_Score,
-                                 'Maximum Bidirectional Voice Calls(calls)': Maximum_Bidirectional_Voice_Calls}
+        All_theoretical_voice = {'Maximum Theoretical R-value': self.Maximum_Theoretical_R_value,
+                                 'Estimated MOS Score': self.Estimated_MOS_Score,
+                                 'Maximum Bidirectional Voice Calls(calls)': self.Maximum_Bidirectional_Voice_Calls}
         print(json.dumps(All_theoretical_voice, indent=4))
 
 
 ##Class to take all user input (802.11ac Standard)
 
-class ac11_calculator():
+class ac11_calculator(n11_calculator):
+
+
 
     def __init__(self, Traffic_Type, Data_Voice_MCS, spatial, Channel_Bandwidth, Guard_Interval_value,
-                 Highest_Basic_str, Encryption, QoS,
+                 Highest_Basic_str, Encryption, QoS,IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
+                 Codec_Type, CWmin, RTS_CTS,PLCP = None,RTS_CTS_Handshake=None,CTS_to_self=None):
+        super().__init__(Traffic_Type, Data_Voice_MCS, Channel_Bandwidth, Guard_Interval_value, Highest_Basic_str,
+                 Encryption, QoS,
                  IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
-                 Codec_Type_Voice_Traffic, CWmin, RTS_CTS):
-        self.Traffic_Type = Traffic_Type
-        self.Data_Voice_MCS = Data_Voice_MCS
-        self.Channel_Bandwidth = Channel_Bandwidth
-        self.Guard_Interval_value = Guard_Interval_value
-        self.Highest_Basic_str = Highest_Basic_str
-        self.Encryption = Encryption
-        self.QoS = QoS
-        self.IP_Packets_MSDU_str = IP_Packets_MSDU_str
-        self.MAC_Frames_per_A_MPDU_str = MAC_Frames_per_A_MPDU_str
-        self.BSS_Basic_Rate = BSS_Basic_Rate
-        self.MAC_MPDU_Size_Data_Traffic = MAC_MPDU_Size_Data_Traffic
-        self.Codec_Type_Voice_Traffic = Codec_Type_Voice_Traffic
-        self.CWmin = CWmin
-        self.RTS_CTS = RTS_CTS
+                 Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self)
+
         self.spatial = spatial
+        self.RTS_CTS = RTS_CTS
+
 
     # This function is for calculate intermediate values and Theoretical values
 
-    def input_parameter(self):
+    def calculate(self):
 
         SIFS = 16.00
         DIFS = 34.00
@@ -1572,16 +1647,16 @@ class ac11_calculator():
         MeanBackoff = CWmin_leave_alone_for_default * Slot_Time / 2
 
         IP_Packets_MSDU = int(self.IP_Packets_MSDU_str)
-        if "Mixed" in self.Codec_Type_Voice_Traffic:
+        if "Mixed" in self.Codec_Type:
             plcp = 1
-        elif "Greenfield" in self.Codec_Type_Voice_Traffic:
+        elif "Greenfield" in self.Codec_Type:
             plcp = 2
 
         RTS_CTS_Handshake = 1
         if "No" in self.RTS_CTS:
-            CTS_to_self_protection = 1
+            CTS_to_self = 1
         elif "Yes" in self.RTS_CTS:
-            CTS_to_self_protection = 2
+            CTS_to_self = 2
 
         # g24 QoS Hdr
 
@@ -1836,7 +1911,7 @@ class ac11_calculator():
         if RTS_CTS_Handshake == 2:
             CTS_to_self_Handshake_Overhead = 0
         else:
-            if CTS_to_self_protection == 2:
+            if CTS_to_self == 2:
                 if "20" in self.Channel_Bandwidth:
                     CTS_to_self_Handshake_Overhead = 20 + 4 * int((22 + 14 * 8 + 24 * 4 - 1) / (24 * 4)) + SIFS
                 else:
@@ -1869,7 +1944,7 @@ class ac11_calculator():
 
         MAC_PPDU_Interval_1 = RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake_Overhead + Ttxframe + Ack_Response_Overhead + BlockAck_Response_Overhead + DIFS + (
                 MeanBackoff / 1)
-        Client_1_new = format(MAC_PPDU_Interval_1, '.2f')
+        self.Client_1_new = format(MAC_PPDU_Interval_1, '.2f')
         MAC_PPDU_Interval_2 = RTS_CTS_Handshake_Overhead + CTS_to_self_Handshake_Overhead + Ttxframe + Ack_Response_Overhead + BlockAck_Response_Overhead + DIFS + (
                 MeanBackoff / 2)
         Client_2_new = format(MAC_PPDU_Interval_2, '.2f')
@@ -1894,7 +1969,7 @@ class ac11_calculator():
         # Max PPDU Rate
 
         Max_PPDU_Rate_1 = 1000000 / MAC_PPDU_Interval_1
-        Client_8_new = format(Max_PPDU_Rate_1, '.2f')
+        self.Client_8_new = format(Max_PPDU_Rate_1, '.2f')
         Max_PPDU_Rate_2 = 1000000 / MAC_PPDU_Interval_2
         Client_9_new = format(Max_PPDU_Rate_2, '.2f')
         Max_PPDU_Rate_3 = 1000000 / MAC_PPDU_Interval_3
@@ -1927,7 +2002,7 @@ class ac11_calculator():
             Max_MAC_MPDU_Rate_6 = Max_PPDU_Rate_6
             Max_MAC_MPDU_Rate_7 = Max_PPDU_Rate_7
 
-        Client_15_new = round(Max_MAC_MPDU_Rate_1)
+        self.Client_15_new = round(Max_MAC_MPDU_Rate_1)
         Client_16_new = round(Max_MAC_MPDU_Rate_2)
         Client_17_new = round(Max_MAC_MPDU_Rate_3)
         Client_18_new = round(Max_MAC_MPDU_Rate_4)
@@ -1955,7 +2030,7 @@ class ac11_calculator():
             Max_MAC_MSDU_Rate_6 = Max_MAC_MPDU_Rate_6
             Max_MAC_MSDU_Rate_7 = Max_MAC_MPDU_Rate_7
 
-        Client_22_new = round(Max_MAC_MSDU_Rate_1)
+        self.Client_22_new = round(Max_MAC_MSDU_Rate_1)
         Client_23_new = round(Max_MAC_MSDU_Rate_2)
         Client_24_new = round(Max_MAC_MSDU_Rate_3)
         Client_25_new = round(Max_MAC_MSDU_Rate_4)
@@ -1973,7 +2048,7 @@ class ac11_calculator():
         Max_802_11_MAC_Frame_Data_Rate_6 = Max_MAC_MPDU_Rate_6 * MAC_MPDU_Size * 8 / 1000000
         Max_802_11_MAC_Frame_Data_Rate_7 = Max_MAC_MPDU_Rate_7 * MAC_MPDU_Size * 8 / 1000000
 
-        Client_29_new = format(Max_802_11_MAC_Frame_Data_Rate_1, '.3f')
+        self.Client_29_new = format(Max_802_11_MAC_Frame_Data_Rate_1, '.3f')
         Client_30_new = format(Max_802_11_MAC_Frame_Data_Rate_2, '.3f')
         Client_31_new = format(Max_802_11_MAC_Frame_Data_Rate_3, '.3f')
         Client_32_new = format(Max_802_11_MAC_Frame_Data_Rate_4, '.3f')
@@ -1991,7 +2066,7 @@ class ac11_calculator():
         Max_802_11_MAC_Payload_Goodput_6 = MSDU * 8 * Max_MAC_MSDU_Rate_6 / 1000000
         Max_802_11_MAC_Payload_Goodput_7 = MSDU * 8 * Max_MAC_MSDU_Rate_7 / 1000000
 
-        Client_36_new = format(Max_802_11_MAC_Payload_Goodput_1, '.3f')
+        self.Client_36_new = format(Max_802_11_MAC_Payload_Goodput_1, '.3f')
         Client_37_new = format(Max_802_11_MAC_Payload_Goodput_2, '.3f')
         Client_38_new = format(Max_802_11_MAC_Payload_Goodput_3, '.3f')
         Client_39_new = format(Max_802_11_MAC_Payload_Goodput_4, '.3f')
@@ -2009,7 +2084,7 @@ class ac11_calculator():
         MAC_Goodput_Per_802_11_Client_6 = Max_802_11_MAC_Payload_Goodput_6 / 50
         MAC_Goodput_Per_802_11_Client_7 = Max_802_11_MAC_Payload_Goodput_7 / 100
 
-        Client_43_new = format(MAC_Goodput_Per_802_11_Client_1, '.3f')
+        self.Client_43_new = format(MAC_Goodput_Per_802_11_Client_1, '.3f')
         Client_44_new = format(MAC_Goodput_Per_802_11_Client_2, '.3f')
         Client_45_new = format(MAC_Goodput_Per_802_11_Client_3, '.3f')
         Client_46_new = format(MAC_Goodput_Per_802_11_Client_4, '.3f')
@@ -2028,7 +2103,7 @@ class ac11_calculator():
             Offered_Load_8023_Side_5 = Max_MAC_MSDU_Rate_5 * Ethernet_value * 8 / 1000000
             Offered_Load_8023_Side_6 = Max_MAC_MSDU_Rate_6 * Ethernet_value * 8 / 1000000
             Offered_Load_8023_Side_7 = Max_MAC_MSDU_Rate_7 * Ethernet_value * 8 / 1000000
-            Client_50_new = format(Offered_Load_8023_Side_1, '.3f')
+            self.Client_50_new = format(Offered_Load_8023_Side_1, '.3f')
             Client_51_new = format(Offered_Load_8023_Side_2, '.3f')
             Client_52_new = format(Offered_Load_8023_Side_3, '.3f')
             Client_53_new = format(Offered_Load_8023_Side_4, '.3f')
@@ -2037,7 +2112,7 @@ class ac11_calculator():
             Client_56_new = format(Offered_Load_8023_Side_7, '.3f')
 
         else:
-            Client_50_new = "N/A"
+            self.Client_50_new = "N/A"
             Client_51_new = "N/A"
             Client_52_new = "N/A"
             Client_53_new = "N/A"
@@ -2054,7 +2129,7 @@ class ac11_calculator():
             IP_Goodput_802_11_8023_5 = Max_MAC_MSDU_Rate_5 * ip_1 * 8 / 1000000
             IP_Goodput_802_11_8023_6 = Max_MAC_MSDU_Rate_6 * ip_1 * 8 / 1000000
             IP_Goodput_802_11_8023_7 = Max_MAC_MSDU_Rate_7 * ip_1 * 8 / 1000000
-            Client_57_new = format(IP_Goodput_802_11_8023_1, '.3f')
+            self.Client_57_new = format(IP_Goodput_802_11_8023_1, '.3f')
             Client_58_new = format(IP_Goodput_802_11_8023_2, '.3f')
             Client_59_new = format(IP_Goodput_802_11_8023_3, '.3f')
             Client_60_new = format(IP_Goodput_802_11_8023_4, '.3f')
@@ -2063,7 +2138,7 @@ class ac11_calculator():
             Client_63_new = format(IP_Goodput_802_11_8023_7, '.3f')
 
         else:
-            Client_57_new = "N/A"
+            self.Client_57_new = "N/A"
             Client_58_new = "N/A"
             Client_59_new = "N/A"
             Client_60_new = "N/A"
@@ -2074,20 +2149,20 @@ class ac11_calculator():
             # Theoretical Voice Call Capacity
 
         if "Data" in self.Traffic_Type:
-            Maximum_Theoretical_R_value = "N/A"
-            Estimated_MOS_Score = "N/A"
+            self.Maximum_Theoretical_R_value = "N/A"
+            self.Estimated_MOS_Score = "N/A"
         else:
 
-            Maximum_Theoretical_R_value = 85.9
-            if Maximum_Theoretical_R_value < 0:
-                Estimated_MOS_Score = 1
+            self.Maximum_Theoretical_R_value = 85.9
+            if self.Maximum_Theoretical_R_value < 0:
+                self.Estimated_MOS_Score = 1
             else:
-                if Maximum_Theoretical_R_value > 100:
-                    Estimated_MOS_Score = 4.5
+                if self.Maximum_Theoretical_R_value > 100:
+                    self.Estimated_MOS_Score = 4.5
                 else:
-                    Estimated_MOS_Score_1 = (1 + 0.035 * Maximum_Theoretical_R_value + Maximum_Theoretical_R_value * (
-                            Maximum_Theoretical_R_value - 60) * (100 - Maximum_Theoretical_R_value) * 7 * 0.000001)
-                    Estimated_MOS_Score = format(Estimated_MOS_Score_1, '.2f')
+                    Estimated_MOS_Score_1 = (1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
+                            self.Maximum_Theoretical_R_value - 60) * (100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001)
+                    self.Estimated_MOS_Score = format(Estimated_MOS_Score_1, '.2f')
 
         # Voice_Call_Range
 
@@ -2126,26 +2201,29 @@ class ac11_calculator():
             pass
 
         if "Data" in self.Traffic_Type:
-            Maximum_Bidirectional_Voice_Calls = "N/A"
+            self.Maximum_Bidirectional_Voice_Calls = "N/A"
         else:
-            Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
+            self.Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
+
+
+    def get_result(self):
 
         print("\n" + "******************Station : 11ac Calculator*****************************" + "\n")
         print("Theoretical Maximum Offered Load" + "\n")
         print("1 Client:")
-        All_theoretical_output = {'MAC PPDU Interval(usec)': Client_1_new, 'Max PPDU Rate(fps)': Client_8_new,
-                                  'Max MAC MPDU Rate': Client_15_new,
-                                  'Max MAC MSDU Rate': Client_22_new,
-                                  'Max. 802.11 MAC Frame Data Rate(Mb/s)': Client_29_new,
-                                  'Max. 802.11 MAC Payload Goodput(Mb/s)': Client_36_new,
-                                  'MAC Goodput Per 802.11 Client(Mb/s)': Client_43_new,
-                                  'Offered Load (802.3 Side)(Mb/s)': Client_50_new,
-                                  'IP Goodput (802.11 -> 802.3)(Mb/s)': Client_57_new}
+        All_theoretical_output = {'MAC PPDU Interval(usec)': self.Client_1_new, 'Max PPDU Rate(fps)': self.Client_8_new,
+                                  'Max MAC MPDU Rate': self.Client_15_new,
+                                  'Max MAC MSDU Rate': self.Client_22_new,
+                                  'Max. 802.11 MAC Frame Data Rate(Mb/s)': self.Client_29_new,
+                                  'Max. 802.11 MAC Payload Goodput(Mb/s)': self.Client_36_new,
+                                  'MAC Goodput Per 802.11 Client(Mb/s)': self.Client_43_new,
+                                  'Offered Load (802.3 Side)(Mb/s)': self.Client_50_new,
+                                  'IP Goodput (802.11 -> 802.3)(Mb/s)': self.Client_57_new}
         print(json.dumps(All_theoretical_output, indent=4))
 
         print("\n" + "Theroretical Voice Call Capacity" + "\n")
 
-        All_theoretical_voice = {'Maximum Theoretical R-value': Maximum_Theoretical_R_value,
-                                 'Estimated MOS Score': Estimated_MOS_Score,
-                                 'Maximum Bidirectional Voice Calls(calls)': Maximum_Bidirectional_Voice_Calls}
+        All_theoretical_voice = {'Maximum Theoretical R-value': self.Maximum_Theoretical_R_value,
+                                 'Estimated MOS Score': self.Estimated_MOS_Score,
+                                 'Maximum Bidirectional Voice Calls(calls)': self.Maximum_Bidirectional_Voice_Calls}
         print(json.dumps(All_theoretical_voice, indent=4))
