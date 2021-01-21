@@ -1171,7 +1171,10 @@ class L3CXProfile(BaseProfile):
             output_format = report_file.split('.')[-1]
 
         # Step 1, column names
-        fields = ",".join(col_names)
+        if fields = None:
+            pass
+        else:
+            fields = ",".join(col_names)
         print(fields)
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1184,8 +1187,13 @@ class L3CXProfile(BaseProfile):
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
+        if col_names = None:
+            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         while datetime.datetime.now() < end_time:
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            if fields = None:
+                response = self.json_get("/endp/all")
+            else:
+                response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1211,8 +1219,6 @@ class L3CXProfile(BaseProfile):
             time.sleep(monitor_interval)
         print(value_map)
 
-        # if passes == expected_passes:
-        # self._pass("PASS: All tests passed")
         # step 3 organize data
         endpoints = list()
         for endpoint in value_map.values():
