@@ -305,7 +305,8 @@ def main():
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
    parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-   
+   parser.add_argument('-ap_read',           type=str,help="controller prompt",required=True)
+   parser.add_argument('-ap','--ap_info',    action='append', nargs=1, type=str, help="--ap_info ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
    #print(current_time)
@@ -364,6 +365,20 @@ def main():
       if args.log:
         outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
         print("output file log: {}".format(outfile_log))
+
+      ap_dict = []
+      if args.ap_info:
+          ap_info = args.ap_info
+          for _ap_info in ap_info:
+              print("ap_info {}".format(_ap_info))
+              ap_keys = ['ap_ip','ap_port','ap_user','ap_pw']
+              ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
+              for key in ap_keys:
+                    if key not in ap_dict:
+                        print("missing ap config, for the {}, all these need to be set {} ".format(key,ap_keys))
+                        exit(1)
+              print("ap_dict: {}".format(ap_dict))
+
       email_dicts = []
       if args.email:
         emails = args.email
