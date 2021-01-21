@@ -181,7 +181,7 @@ def main():
     egg.sendcontrol('c')
     egg.expect("#",timeout=5)
     egg.sendline("exit")
-    egg.excect(">",timeout=5)
+    egg.expect(">",timeout=5)
     egg.sendline("exit")
 
     #             ctlr.execute(cn_cmd)
