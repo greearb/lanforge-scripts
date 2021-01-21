@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #This bash script aims to automate the test process of all Candela Technologies's test_* scripts in the lanforge-scripts directory. The script can be run 2 ways and may include (via user input) the "start_num" and "stop_num" variables to select which tests should be run.
 # OPTION ONE: ./test_all_scripts.sh : this command runs all the scripts in the array "testCommands"
