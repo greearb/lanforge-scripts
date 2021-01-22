@@ -11,7 +11,7 @@ from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
-from generic_cx import GenericCx
+# from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
