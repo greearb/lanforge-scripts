@@ -11,7 +11,7 @@ from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
-from generic_cx import GenericCx
+#from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
@@ -1162,11 +1162,12 @@ class L3CXProfile(BaseProfile):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1, column names
-        if fields == None:
-            pass
-        else:
+        # Step 1, column names . what is this for?
+        fields=None 
+        if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
+        else:
+            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         print(fields)
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1179,8 +1180,6 @@ class L3CXProfile(BaseProfile):
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
-        if col_names == None:
-            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         while datetime.datetime.now() < end_time:
             if fields == None:
                 response = self.json_get("/endp/all")
@@ -1199,7 +1198,7 @@ class L3CXProfile(BaseProfile):
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)
                 print("\n-----------------------------------")
-                print(curr_time)
+                print(t)
                 print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
@@ -1711,46 +1710,53 @@ class L4CXProfile(LFCliBase):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1, column names
-        fields = ",".join(col_names)
+        # Step 1, column names  
+               
+        fields=None 
+        if col_names is not None and len(col_names) > 0:
+            fields = ",".join(col_names)
+        else:
+            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         print(fields)
+        
         # Step 2, monitor columns, 
+
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
-        #print(end_time)
         sleep_interval =  duration_sec // 5
         value_map = dict()
         passes = 0
         expected_passes = 0
-    
         timestamps = []
-        for x in range(0,int(round(iterations,0))):
+        for test in range(1+iterations):
+            #while current loop hasn't ended
             while datetime.datetime.now() < end_time:
-                response = self.json_get("layer4/list?fields=urls/s")
+                #what does response ? get? 
+                response=self.json_get("layer4/all")
+                #response = self.json_get("layer4/list?fields=urls/s")
                 if "endpoint" not in response:
                     print(response)
-                    raise ValueError("no endpoint?")
+                    raise ValueError("Cannot find any endpoints")
                 if monitor:
                     if self.debug:
                         print(response)
+                time.sleep(sleep_interval.total_seconds())
                 t = datetime.datetime.now()
                 timestamps.append(t)
                 value_map[t] = response
-                if self.debug:
-                    print(old_cx_rx_values, new_cx_rx_values)
-                    print("\n-----------------------------------")
-                    print(curr_time)
-                    print("-----------------------------------\n")
                 expected_passes += 1
-                if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
-                    passes += 1
+                if self.cx_profile.check_errors(self.debug):
+                    if self.__check_request_rate():
+                        passes += 1
+                    else:
+                        self._fail("FAIL: Request rate did not exceed 90% target rate", print_fail)
+                        break
                 else:
-                    self._fail("FAIL: Not all stations increased traffic")
-                    self.exit_fail()
-                old_cx_rx_values = new_cx_rx_values
+                    self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
+                    break
                 time.sleep(monitor_interval)
         print(value_map)
-
+############################################# edited 'til here - dipti 1/21/20
         # if passes == expected_passes:
         # self._pass("PASS: All tests passed")
         # step 3 organize data
