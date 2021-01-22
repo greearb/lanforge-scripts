@@ -305,7 +305,7 @@ def main():
    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt",required=True)
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
    parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-   parser.add_argument('-ap','--ap',         action='append', nargs=1, type=str, help="--ap ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+   parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
