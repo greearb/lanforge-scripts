@@ -171,7 +171,7 @@ def main():
     loop_count = 0
     while (loop_count <= 8 and logged_in == False):
         loop_count += 1
-        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,pexpect.TIMEOUT],timeout=5)
+        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
             egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
@@ -193,9 +193,14 @@ def main():
             egg.sendline(args.passwd) 
             sleep(0.2)
         if i == 5:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))
+            egg.sendcontrol('c')
+            sleep(0.2)
+        if i == 6:
             logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
             egg.sendline(CR) 
             sleep(0.2)
+
 
     if (args.action == "powercfg"):
         logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
@@ -203,7 +208,7 @@ def main():
         i = egg.expect_exact(AP_MORE,timeout=2)
         if i == 0:
             egg.sendcontrol('c')
-        else:
+        if i == 1:
             logg.info("send cntl c anyway")
             egg.sendcontrol('c')
 
@@ -213,7 +218,7 @@ def main():
         i = egg.expect_exact(AP_MORE,timeout=2)
         if i == 0:
             egg.sendcontrol('c')
-        else:
+        if i == 1:
             logg.info("send cntl c anyway, received timeout")
             egg.sendcontrol('c')
 
@@ -222,10 +227,10 @@ def main():
         logg.info("received {} we are done send exit".format(AP_PROMPT))
         egg.sendline(AP_EXIT)
 
-    elif i == 1:
+    if i == 1:
         logg.info("received {} send exit".format(AP_HASH))
         egg.sendline(AP_EXIT)
-    else:
+    if i == 2:
         logg.info("timed out waiting for {} or {}".format(AP_PROMPT,AP_HASH))
         
     #             ctlr.execute(cn_cmd)
