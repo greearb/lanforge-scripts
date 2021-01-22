@@ -200,8 +200,9 @@ python3 ./test_ipv4_variable_time.py
         num_sta = int(args.num_stations)
 
     #Create directory
-    homedir=str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time'
-    os.mkdir('/home/lanforge/report_data/'+homedir)
+    homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
+    path = os.path.join('/home/lanforge/report-data/',homedir)
+    os.mkdir(path)
 
     if args.report_file is None:
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
@@ -265,7 +266,7 @@ python3 ./test_ipv4_variable_time.py
     if ip_var_test.passes():
         ip_var_test.exit_success()
 
-    IPV4VariableTime.cx_profile.stop_cx() #is this needed? 
+    IPV4VariableTime.cx_profile.stop_cx() #is this needed?
 
 if __name__ == "__main__":
     main()

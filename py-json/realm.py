@@ -1091,6 +1091,7 @@ class L3CXProfile(BaseProfile):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
+        self.lfclient_port = lfclient_port
 
     def get_cx_names(self):
         return self.created_cx.keys()
@@ -1163,12 +1164,11 @@ class L3CXProfile(BaseProfile):
             output_format = report_file.split('.')[-1]
 
         # Step 1, column names . what is this for?
-        fields=None 
+        fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
         else:
             header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
-        print(fields)
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
@@ -1181,7 +1181,7 @@ class L3CXProfile(BaseProfile):
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
-            if fields == None:
+            if fields is None:
                 response = self.json_get("/endp/all")
             else:
                 response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
@@ -1224,7 +1224,6 @@ class L3CXProfile(BaseProfile):
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
         # step 4 save and close
-        header_row = col_names
         header_row.insert(0, 'Timestamp')
         print(header_row)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
@@ -1244,9 +1243,9 @@ class L3CXProfile(BaseProfile):
             import requests
             import ast
             try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
             except:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -1706,20 +1705,20 @@ class L4CXProfile(LFCliBase):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1, column names  
-               
-        fields=None 
+        # Step 1, column names
+
+        fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
             if self.debug:
                 print(fields)
         else:
-            #todo:rename this... 
+            #todo:rename this...
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
             if self.debug:
                 print(header_row)
-        
-        # Step 2, monitor columns, 
+
+        # Step 2, monitor columns,
 
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
@@ -1731,7 +1730,7 @@ class L4CXProfile(LFCliBase):
         for test in range(1+iterations):
             #while current loop hasn't ended
             while datetime.datetime.now() < end_time:
-                #what does response ? get? 
+                #what does response ? get?
                 response=self.json_get("layer4/all")
                 #response = self.json_get("layer4/list?fields=urls/s")
                 if "endpoint" not in response:
@@ -1828,7 +1827,7 @@ class L4CXProfile(LFCliBase):
                     exec('df.to_' + x + '("' + report_file + '")')
             else:
                 pass
-#end of L4CXProf class 
+#end of L4CXProf class
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
