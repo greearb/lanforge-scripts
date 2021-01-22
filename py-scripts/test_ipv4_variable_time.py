@@ -249,7 +249,7 @@ python3 ./test_ipv4_variable_time.py
         layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    ip_var_test.l3cxprofile.monitor(col_names=['Name','Tx Rate','Rx Rate','Tx PDUs','Rx PDUs','Rx Drop % A', 'Rx Drop % B', 'Bps Rx A', 'Bps Rx B', 'Rx Rate', 'Cx Estab'],
+    ip_var_test.l3cxprofile.monitor(col_names=['Name','Rx Rate','Rx PDUs'],
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
