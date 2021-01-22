@@ -1589,6 +1589,10 @@ def main():
                             logg.info("ap_dict {}".format(ap_dict))
                             logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
                                                          ap_dict['ap_user'],ap_dict['ap_pw']))
+                            logg.info("####################################################################################################") 
+                            logg.info("# READ AP POWERCFG") 
+                            logg.info("####################################################################################################") 
+
                             try:
                                 logg.info("cisco_ap_ctl.py: read AP power information")
                                 ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
