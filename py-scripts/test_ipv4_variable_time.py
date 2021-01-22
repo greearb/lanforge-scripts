@@ -203,7 +203,7 @@ python3 ./test_ipv4_variable_time.py
     homedir=str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time'
     os.mkdir('/home/lanforge/report_data/'+homedir)
     if args.report_file is None:
-        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet','xlsx']:
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
             report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
             output=args.output_format
         else:
@@ -265,7 +265,7 @@ python3 ./test_ipv4_variable_time.py
     if ip_var_test.passes():
         ip_var_test.exit_success()
 
-    IPV4VariableTime.cx_profile.stop_cx()
+    IPV4VariableTime.cx_profile.stop_cx() #is this needed? 
 
 if __name__ == "__main__":
     main()
