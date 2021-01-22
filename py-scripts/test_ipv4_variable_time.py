@@ -275,7 +275,5 @@ python3 ./test_ipv4_variable_time.py
     if ip_var_test.passes():
         ip_var_test.exit_success()
 
-    IPV4VariableTime.cx_profile.stop_cx() #is this needed?
-
 if __name__ == "__main__":
     main()
