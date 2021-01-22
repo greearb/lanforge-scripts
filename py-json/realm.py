@@ -1674,9 +1674,6 @@ class L4CXProfile(LFCliBase):
                                        suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
-################# MONITOR CODE IN L4CXPROF#######################
-
-
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1716,6 +1713,7 @@ class L4CXProfile(LFCliBase):
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
         else:
+            #todo:rename this... 
             header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         print(fields)
         
@@ -1749,16 +1747,15 @@ class L4CXProfile(LFCliBase):
                     if self.__check_request_rate():
                         passes += 1
                     else:
-                        self._fail("FAIL: Request rate did not exceed 90% target rate", print_fail)
-                        break
+                        self._fail("FAIL: Request rate did not exceed 90% target rate")
+                        self.exit_fail()
                 else:
-                    self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
-                    break
+                    self._fail("FAIL: Errors found getting to %s " % self.url)
+                    self.exit_fail()
+                    #check monitor sleep time
                 time.sleep(monitor_interval)
         print(value_map)
 ############################################# edited 'til here - dipti 1/21/20
-        # if passes == expected_passes:
-        # self._pass("PASS: All tests passed")
         # step 3 organize data
         endpoints = list()
         for endpoint in value_map.values():
