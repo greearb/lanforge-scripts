@@ -1679,7 +1679,8 @@ class L4CXProfile(LFCliBase):
                 output_format=None,
                 script_name=None,
                 arguments=None,
-                iterations=0):
+                iterations=0,
+                debug=False):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except:
@@ -1705,12 +1706,12 @@ class L4CXProfile(LFCliBase):
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
             header_row=col_names
-            if self.debug:
+            if debug:
                 print(fields)
         else:
             #todo:rename this...
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
-            if self.debug:
+            if debug:
                 print(header_row)
 
         # Step 2, monitor columns,
@@ -1718,6 +1719,10 @@ class L4CXProfile(LFCliBase):
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
         sleep_interval =  round(duration_sec // 5)
+        if debug:
+            print("Sleep_interval is..." + sleep_interval)
+            print("Start time is..."+ start_time)
+            print("End time is..."+ end_time)
         value_map = dict()
         passes = 0
         expected_passes = 0
@@ -1726,21 +1731,22 @@ class L4CXProfile(LFCliBase):
             while datetime.datetime.now() < end_time:
                 response=self.json_get("layer4/all")
                 #response = self.json_get("layer4/list?fields=urls/s")
-                if self.debug:
+                if debug:
                     print(response)
                 if "endpoint" not in response:
                     print(response)
                     raise ValueError("Cannot find any endpoints")
                 if monitor:
-                    if self.debug:
+                    if debug:
                         print(response)
-                time.sleep(sleep_interval.total_seconds())
+                
+                time.sleep(sleep_interval)
                 t = datetime.datetime.now()
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
-                if self.cx_profile.check_errors(self.debug):
-                    if self.__check_request_rate():
+                if self.cx_profile.check_errors(debug):
+                    if self.__check_request_rate(): #need to changed
                         passes += 1
                     else:
                         self._fail("FAIL: Request rate did not exceed 90% target rate")

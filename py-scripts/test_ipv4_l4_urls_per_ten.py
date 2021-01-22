@@ -45,6 +45,7 @@ class IPV4L4(LFCliBase):
         self.url = url
         self.mode=mode
         self.ap=ap
+        self.debug=_debug_on
         self.requests_per_ten = int(requests_per_ten)
         self.number_template = number_template
         self.test_duration=test_duration
@@ -209,6 +210,7 @@ python3 ./test_ipv4_l4_urls_per_ten.py
                      url=args.url,
                      mode=args.mode,
                      ap=args.ap,
+                     _debug_on=args.debug,
                      test_duration=args.test_duration,
                      num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
@@ -227,7 +229,8 @@ python3 ./test_ipv4_l4_urls_per_ten.py
                                 created_cx=layer4traffic, 
                                 output_format=output_form, 
                                 script_name='test_ipv4_l4_urls_per_ten', 
-                                arguments=args)
+                                arguments=args,
+                                debug=args.debug)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
