@@ -1599,7 +1599,7 @@ def main():
                                logg.info("####################################################################################################") 
                       
                                logg.info("####################################################################################################") 
-                               logg.info("# Unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                               logg.info("# Unable to commicate to AP  error code: {} output {}".format(process_error.returncode, process_error.output)) 
                                logg.info("####################################################################################################") 
                                #exit_test(workbook)
                                exit(1)
@@ -1626,9 +1626,6 @@ def main():
                                 else:
                                     logg.info("AP Check regular expression!!!")
                                     exit(1)
-
-
-
                        #
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values

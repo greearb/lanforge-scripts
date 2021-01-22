@@ -20,12 +20,12 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-import re
+#import re
 import logging
 import time
 from time import sleep
-import pprint
-import telnetlib
+#import pprint
+#import telnetlib
 import argparse
 import pexpect
 
@@ -95,10 +95,8 @@ def main():
         scheme = args.scheme
         port = (default_ports[scheme], args.port)[args.port != None]
         user = args.user
-        passwd = args.passwd
         if (args.log != None):
             logfile = args.log
-        filehandler = None
     except Exception as e:
         logging.exception(e)
         usage()
@@ -159,31 +157,60 @@ def main():
     except Exception as e:
         logging.exception(e)
     
-    ap_prompt = "{}>".format(args.prompt)
-    ap_hash = "{}#".format(args.prompt)
-    egg.sendline()
+    AP_PROMPT       = "{}>".format(args.prompt)
+    AP_HASH         = "{}#".format(args.prompt)
+    AP_ESCAPE       = "Escape character is '^]'."
+    AP_USERNAME     = "Username:"
+    AP_PASSWORD     = "Password:"
+    AP_EN           = "en"
+    AP_MORE         = "--More--"
+    AP_EXIT         = "exit"
+    CR = "\r\n"
+    time.sleep(0.1)
+    logged_in  = False
+    loop_count = 0
+    while (loop_count <= 8 and logged_in == False):
+        loop_count += 1
+        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,pexpect.TIMEOUT],timeout=5)
+        if i == 0:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
+            egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
+            sleep(0.2)
+        if i == 1:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PROMPT,i,egg.before,egg.after))
+            egg.sendline(AP_EN) 
+            sleep(0.2)
+        if i == 2:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_HASH,i,egg.before,egg.after))
+            logged_in = True 
+            sleep(0.2)
+        if i == 3:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_USERNAME,i,egg.before,egg.after))
+            egg.sendline(args.user) 
+            sleep(0.2)
+        if i == 4:
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PASSWORD,i,egg.before,egg.after))
+            egg.sendline(args.passwd) 
+            sleep(0.2)
+        if i == 5:
+            logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
+            egg.sendline(CR) 
+            sleep(0.2)
 
-    egg.sendline()
-    time.sleep(0.1)
-    egg.expect('Username:', timeout=3)
-    time.sleep(0.1)
-    egg.sendline(args.user)
-    time.sleep(0.1)
-    egg.expect('Password:')
-    egg.sendline(args.passwd)
-    egg.expect(ap_prompt)
-    egg.sendline("en")
-    egg.expect("Password:")
-    egg.sendline(args.passwd)
-    egg.expect("#")
-    egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-    egg.expect("--More--")
-    egg.sendcontrol('c')
-    egg.expect("#",timeout=5)
-    egg.sendline("exit")
-    egg.expect(">",timeout=5)
-    egg.sendline("exit")
+    if (args.action == "powercfg"):
+        egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
+        egg.expect_exact(AP_MORE,timeout=5)
+        egg.sendcontrol('c')
 
+    else: # no other command at this time so send the same power command
+        egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
+        egg.expect_exact(AP_MORE,timeout=5)
+        egg.sendcontrol('c')
+
+    egg.expect_exact(AP_HASH,timeout=5)
+    egg.sendline(AP_EXIT)
+    egg.expect_exact(AP_PROMPT,timeout=5)
+    egg.sendline(AP_EXIT)
     #             ctlr.execute(cn_cmd)
 if __name__ == '__main__':
     main()
