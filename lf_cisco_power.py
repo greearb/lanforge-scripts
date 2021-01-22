@@ -1596,11 +1596,12 @@ def main():
                             try:
                                 logg.info("cisco_ap_ctl.py: read AP power information")
                                 ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                         "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
-                                if ap_info == None:
-                                    pss = "empty"
-                                else:
+                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
+                                try:
                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
+                                except:
+                                    logg.info("ap_info was of type NoneType will set pss empty")
+                                    pss = "empty"
 
                             except subprocess.CalledProcessError as process_error:
                                 logg.info("####################################################################################################") 
