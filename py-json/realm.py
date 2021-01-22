@@ -1801,7 +1801,7 @@ class L4CXProfile(LFCliBase):
                 fig = df.plot().get_figure()
                 fig.savefig(report_file)
             if output_format == 'html':
-                print('Shivams function')
+                df.to_html(report_file)
             if output_format == 'df':
                 return df
             supported_formats = ['csv', 'json', 'stata', 'pickle']
