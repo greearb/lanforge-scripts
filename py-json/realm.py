@@ -1092,6 +1092,7 @@ class L3CXProfile(BaseProfile):
         self.name_prefix = name_prefix_
         self.number_template = number_template_
         self.lfclient_port = lfclient_port
+        self.lfclient_host = lfclient_host
 
     def get_cx_names(self):
         return self.created_cx.keys()
@@ -1244,9 +1245,9 @@ class L3CXProfile(BaseProfile):
             import requests
             import ast
             try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             except:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -1945,7 +1946,7 @@ class GenCXProfile(LFCliBase):
         for endp_tpl in endp_tpls:
             gen_name_a = endp_tpl[2]
             gen_name_b = endp_tpl[3]
-            genl.set_flags(gen_name_a, "ClearPortOnStart", 1)
+            genl.set_ (gen_name_a, "ClearPortOnStart", 1)
             # genl.set_flags(gen_name_b, "ClearPortOnStart", 1)
             # genl.set_flags(gen_name_b, "Unmanaged", 1)
         time.sleep(sleep_time)
