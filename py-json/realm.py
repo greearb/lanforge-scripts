@@ -1702,8 +1702,7 @@ class L4CXProfile(LFCliBase):
             raise ValueError("L4CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                if output_format.lower() != 'excel':
-                    raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
+                raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
@@ -1712,12 +1711,13 @@ class L4CXProfile(LFCliBase):
         fields=None 
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
+            if self.debug:
+                print(fields)
         else:
             #todo:rename this... 
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
             if self.debug:
                 print(header_row)
-        print(fields)
         
         # Step 2, monitor columns, 
 

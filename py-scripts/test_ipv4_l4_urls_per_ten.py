@@ -140,12 +140,14 @@ python3 ./test_ipv4_l4_urls_per_ten.py
                 "an"     : "10",
                 "bgnAC"  : "11",
                 "abgnAX" : "12",
-                "bgnAX"  : "13",
+                "bgnAX"  : "13"} \\
     --num_tests 1 \\
     --url "dl http://10.40.0.1 /dev/null" \\
     --ap "00:0e:8e:78:e1:76"
     --target_per_ten 600 \\
-    --test_duration 2m
+    --output_format csv \\
+    --report_file ~/Documents/results.csv \\
+    --test_duration 2m \\
     --debug
             ''')
     required = None
@@ -168,7 +170,7 @@ python3 ./test_ipv4_l4_urls_per_ten.py
         optional.add_argument('--mode',help='Used to force mode of stations')
         optional.add_argument('--ap',help='Used to force a connection to a particular AP')
         optional.add_argument('--report_file',help='where you want to store results')
-        optional.add_argument('--output_format', help='choose either csv or xlsx')
+        optional.add_argument('--output_format', help='choose csv or xlsx') #update once other forms are completed
     
     args = parser.parse_args()
 
@@ -177,8 +179,8 @@ python3 ./test_ipv4_l4_urls_per_ten.py
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
     if args.report_file is None:
-        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet','xlsx']:
-            output_form=args.output_format
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet','png','df','xlsx']:
+            output_form=args.output_format.lower()
             print("Defaulting file output placement to /home/lanforge.")
             rpt_file='/home/lanforge/data.' + output_form
         else:
@@ -220,10 +222,7 @@ python3 ./test_ipv4_l4_urls_per_ten.py
     except:
         pass
     ip_test.l4cxprofile.monitor(report_file=rpt_file, duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
-    created_cx=layer4traffic,
-    output_format=output_form,
-    script_name='test_ipv4_l4_urls_per_ten',
-    arguments=args)
+                                created_cx=layer4traffic, output_format=output_form, script_name='test_ipv4_l4_urls_per_ten', arguments=args)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
