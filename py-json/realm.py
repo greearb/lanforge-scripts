@@ -640,6 +640,7 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
         return num_sta_with_ips
 
+
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
@@ -1098,7 +1099,6 @@ class L3CXProfile(BaseProfile):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
-        self.lfclient_port = lfclient_port
 
     def get_cx_names(self):
         return self.created_cx.keys()
@@ -1250,10 +1250,7 @@ class L3CXProfile(BaseProfile):
             df.columns = header_row
             import requests
             import ast
-            try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
-            except:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
+            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -1268,7 +1265,7 @@ class L3CXProfile(BaseProfile):
                 fig.savefig(report_file)
             if output_format == 'df':
                 return df
-            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+            supported_formats = ['csv','json','stata','pickle']
             for x in supported_formats:
                 if output_format.lower() == x or report_file.split('.')[-1] == x:
                     exec('df.to_' + x + '("' + report_file + '")')
@@ -2074,6 +2071,7 @@ class WifiMonitor:
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
 
+
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", up_request)
@@ -2552,6 +2550,7 @@ class VRProfile(LFCliBase):
                                        suppress_related_commands_=suppress_related_commands_, debug_=debug_)
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
+
 
     def create(self, resource, upstream_port="eth1", debug=False,
                upstream_subnets="20.20.20.0/24", upstream_nexthop="20.20.20.1",
@@ -3121,6 +3120,7 @@ class MACVLANProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.created_macvlans)
 
+
     def admin_up(self):
         for macvlan in self.created_macvlans:
             self.local_realm.admin_up(macvlan)
@@ -3391,7 +3391,7 @@ class StationProfile:
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
@@ -3657,6 +3657,7 @@ class StationProfile:
             time.sleep(delay)
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
+
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio,
