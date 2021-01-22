@@ -1603,6 +1603,23 @@ class L4CXProfile(LFCliBase):
             print(".", end='')
         print("")
 
+    def check_request_rate(self):
+        endp_list = self.json_get("layer4/list?fields=urls/s")
+        expected_passes = 0
+        passes = 0
+        if endp_list is not None and endp_list['endpoint'] is not None:
+            endp_list = endp_list['endpoint']
+            for item in endp_list:
+                for name, info in item.items():
+                    if name in self.cx_profile.created_cx.keys():
+                        expected_passes += 1
+                        if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
+                            print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                            passes += 1
+
+        return passes == expected_passes
+
+
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:

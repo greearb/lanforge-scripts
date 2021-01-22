@@ -24,6 +24,7 @@ from LANforge import LFUtils
 import realm
 import time
 import datetime
+from realm import TestGroupProfile
 
 
 class IPV4L4(LFCliBase):
@@ -66,21 +67,20 @@ class IPV4L4(LFCliBase):
         self.cx_profile.url = self.url
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
-    def __check_request_rate(self):
-        endp_list = self.json_get("layer4/list?fields=urls/s")
-        expected_passes = 0
-        passes = 0
-        if endp_list is not None and endp_list['endpoint'] is not None:
-            endp_list = endp_list['endpoint']
-            for item in endp_list:
-                for name, info in item.items():
-                    if name in self.cx_profile.created_cx.keys():
-                        expected_passes += 1
-                        if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
-                            print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
-                            passes += 1
-
-        return passes == expected_passes
+  #  def __check_request_rate(self):
+  #      endp_list = self.json_get("layer4/list?fields=urls/s")
+  #      expected_passes = 0
+  #      passes = 0
+  #      if endp_list is not None and endp_list['endpoint'] is not None:
+  #          endp_list = endp_list['endpoint']
+  #          for item in endp_list:
+  #              for name, info in item.items():
+  #                  if name in self.cx_profile.created_cx.keys():
+  #                      expected_passes += 1
+  #                      if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
+  #                          print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+  #                          passes += 1
+  #      return passes == expected_passes
 
     def build(self):
         # Build stations
@@ -106,9 +106,9 @@ class IPV4L4(LFCliBase):
             exit(1)
         self.cx_profile.start_cx()
         print("Starting test")
-        curr_time = datetime.datetime.now()
+        curr_time = datetime.datetime.now() 
         end_time = self.local_realm.parse_time(self.test_duration) + curr_time
-        sleep_interval = self.local_realm.parse_time(self.test_duration) // 5
+       sleep_interval = self.local_realm.parse_time(self.test_duration) // 5
         passes = 0
         expected_passes = 0
         for test in range(self.num_tests):
