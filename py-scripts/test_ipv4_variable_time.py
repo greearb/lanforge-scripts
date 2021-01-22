@@ -193,6 +193,7 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+        optional_args.add_argument('--col_names', help='Which columns you want to monitor', default=['Name','Rx Rate','Rx PDUs'])
     args = parser.parse_args()
 
     num_sta = 2
@@ -249,7 +250,12 @@ python3 ./test_ipv4_variable_time.py
         layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    ip_var_test.l3cxprofile.monitor(col_names=['Name','Rx Rate','Rx PDUs'],
+    if type(args.col_names) is not list:
+        col_names=None
+    else:
+        col_names = args.col_names
+    print(col_names)
+    ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
