@@ -188,8 +188,8 @@ python3 ./test_ipv4_variable_time.py
     if optional_args is not None:
         optional_args.add_argument('--mode',help='Used to force mode of stations')
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
-        optional_args.add_argument('--report_file',help='where you want to store results')
         optional_args.add_argument('--output_format', help='choose either csv or xlsx')
+        optional_args.add_argument('--report_file',help='where you want to store results', default=None)
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
@@ -201,9 +201,12 @@ python3 ./test_ipv4_variable_time.py
         num_sta = int(args.num_stations)
 
     #Create directory
-    homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
-    path = os.path.join('/home/lanforge/report-data/',homedir)
-    os.mkdir(path)
+    if args.report_file is None:
+        homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
+        path = os.path.join('/home/lanforge/report-data/',homedir)
+        os.mkdir(path)
+    else:
+        pass
 
     if args.report_file is None:
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
