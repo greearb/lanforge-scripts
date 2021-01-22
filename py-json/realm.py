@@ -1098,6 +1098,7 @@ class L3CXProfile(BaseProfile):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
+        self.lfclient_port = lfclient_port
 
     def get_cx_names(self):
         return self.created_cx.keys()
@@ -1171,13 +1172,12 @@ class L3CXProfile(BaseProfile):
             output_format = report_file.split('.')[-1]
 
         # Step 1, column names . what is this for?
-        fields=None 
+        fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
             header_row=col_names
         else:
             header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
-        print(fields)
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
@@ -1232,7 +1232,6 @@ class L3CXProfile(BaseProfile):
             itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
-
         # step 4 save and close
         header_row = col_names
         header_row.insert(0, 'Timestamp')
@@ -1253,7 +1252,10 @@ class L3CXProfile(BaseProfile):
             df.columns = header_row
             import requests
             import ast
-            systeminfo=ast.literal_eval(requests.get('http://localhost:8080').text)
+            try:
+                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
+            except:
+                systeminfo = ast.literal_eval(requests.get('http://localhost:'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -1681,6 +1683,161 @@ class L4CXProfile(LFCliBase):
                                        suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
+    def monitor(self,
+                duration_sec=60,
+                monitor_interval=1,
+                col_names=None,
+                created_cx=None,
+                monitor=True,
+                report_file=None,
+                output_format=None,
+                script_name=None,
+                arguments=None,
+                iterations=0):
+        try:
+            duration_sec = self.parse_time(duration_sec).seconds
+        except:
+            if (duration_sec is None) or (duration_sec <= 1):
+                raise ValueError("L4CXProfile::monitor wants duration_sec > 1 second")
+            if (duration_sec <= monitor_interval):
+                raise ValueError("L4CXProfile::monitor wants duration_sec > monitor_interval")
+        if report_file == None:
+            raise ValueError("Monitor requires an output file to be defined")
+        if created_cx == None:
+            raise ValueError("Monitor needs a list of Layer 4 connections")
+        if (monitor_interval is None) or (monitor_interval < 1):
+            raise ValueError("L4CXProfile::monitor wants monitor_interval >= 1 second")
+        if col_names is None:
+            raise ValueError("L4CXProfile::monitor wants a list of column names to monitor")
+        if output_format is not None:
+            if output_format.lower() != report_file.split('.')[-1]:
+                raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
+        else:
+            output_format = report_file.split('.')[-1]
+
+        # Step 1, column names
+
+        fields=None
+        if col_names is not None and len(col_names) > 0:
+            fields = ",".join(col_names)
+            if self.debug:
+                print(fields)
+        else:
+            #todo:rename this...
+            header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
+            if self.debug:
+                print(header_row)
+
+        # Step 2, monitor columns,
+
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+        sleep_interval =  duration_sec // 5
+        value_map = dict()
+        passes = 0
+        expected_passes = 0
+        timestamps = []
+        for test in range(1+iterations):
+            #while current loop hasn't ended
+            while datetime.datetime.now() < end_time:
+                #what does response ? get?
+                response=self.json_get("layer4/all")
+                #response = self.json_get("layer4/list?fields=urls/s")
+                if "endpoint" not in response:
+                    print(response)
+                    raise ValueError("Cannot find any endpoints")
+                if monitor:
+                    if self.debug:
+                        print(response)
+                time.sleep(sleep_interval.total_seconds())
+                t = datetime.datetime.now()
+                timestamps.append(t)
+                value_map[t] = response
+                expected_passes += 1
+                if self.cx_profile.check_errors(self.debug):
+                    if self.__check_request_rate():
+                        passes += 1
+                    else:
+                        self._fail("FAIL: Request rate did not exceed 90% target rate")
+                        self.exit_fail()
+                else:
+                    self._fail("FAIL: Errors found getting to %s " % self.url)
+                    self.exit_fail()
+                    #check monitor sleep time
+                time.sleep(monitor_interval)
+        print(value_map)
+############################################# edited 'til here - dipti 1/21/20
+        # step 3 organize data
+        endpoints = list()
+        for endpoint in value_map.values():
+            endpoints.append(endpoint['endpoint'])
+        endpoints2 = []
+        for y in range(0, len(endpoints)):
+            for x in range(0, len(endpoints[0])):
+                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
+        import itertools
+        timestamps2 = list(
+            itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
+        for point in range(0, len(endpoints2)):
+            endpoints2[point].insert(0, timestamps2[point])
+        # step 4 save and close
+        header_row = col_names
+        header_row.insert(0, 'Timestamp')
+        print(header_row)
+        if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
+            report_fh = open(report_file, "w+")
+            workbook = xlsxwriter.Workbook(report_file)
+            worksheet = workbook.add_worksheet()
+            for col_num, data in enumerate(header_row):
+                worksheet.write(0, col_num, data)
+            row_num = 1
+            for x in endpoints2:
+                for col_num, data in enumerate(x):
+                    worksheet.write(row_num, col_num, str(data))
+                row_num += 1
+            workbook.close()
+        else:
+            df = pd.DataFrame(endpoints2)
+            df.columns = header_row
+            import requests
+            import ast
+            try:
+                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+            except:
+                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+            df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+            df['Script Name'] = script_name
+            df['Arguments'] = arguments
+            for x in ['LFGUI Release', 'Script Name', 'Arguments']:
+                df[x][1:] = ''
+            if output_format == 'pdf':
+                import matplotlib.pyplot as plt
+                from matplotlib.backends.backend_pdf import PdfPages
+                fig, ax = plt.subplots(figsize=(12, 4))
+                ax.axis('tight')
+                ax.axis('off')
+                the_table = ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+                pp = PdfPages(report_file)
+                pp.savefig(fig, bbox_inches='tight')
+                pp.close()
+            if output_format == 'hdf':
+                df.to_hdf(report_file, 'table', append=True)
+            if output_format == 'parquet':
+                df.to_parquet(report_file, engine='pyarrow')
+            if output_format == 'png':
+                fig = df.plot().get_figure()
+                fig.savefig(report_file)
+            if output_format == 'html':
+                print('Shivams function')
+            if output_format == 'df':
+                return df
+            supported_formats = ['csv', 'json', 'stata', 'pickle']
+            for x in supported_formats:
+                if output_format.lower() == x or report_file.split('.')[-1] == x:
+                    exec('df.to_' + x + '("' + report_file + '")')
+            else:
+                pass
+#end of L4CXProf class
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
