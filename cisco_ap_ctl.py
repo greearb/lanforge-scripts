@@ -85,7 +85,7 @@ def main():
     parser.add_argument("-p", "--passwd",  type=str, help="credential password Wnbulab@123")
     parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
     parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
-    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
+    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
     parser.add_argument("-z", "--action",  type=str, help="action,  current action is powercfg")
 
     args = None
