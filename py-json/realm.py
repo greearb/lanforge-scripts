@@ -1181,7 +1181,6 @@ class L3CXProfile(BaseProfile):
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
-        print(end_time)
 
         value_map = dict()
         passes = 0
@@ -1217,7 +1216,6 @@ class L3CXProfile(BaseProfile):
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
-        print(value_map)
 
         #step 3 organize data
         endpoints=list()
@@ -1261,16 +1259,6 @@ class L3CXProfile(BaseProfile):
             df['Arguments'] = arguments
             for x in ['LFGUI Release', 'Script Name', 'Arguments']:
                 df[x][1:] = ''
-            if output_format == 'pdf':
-                import matplotlib.pyplot as plt
-                from matplotlib.backends.backend_pdf import PdfPages
-                fig, ax = plt.subplots(figsize=(12, 4))
-                ax.axis('tight')
-                ax.axis('off')
-                the_table = ax.table(cellText=df.values, colLabels=df.columns, loc='center')
-                pp = PdfPages(report_file)
-                pp.savefig(fig, bbox_inches='tight')
-                pp.close()
             if output_format == 'hdf':
                 df.to_hdf(report_file, 'table', append=True)
             if output_format == 'parquet':
@@ -1278,11 +1266,9 @@ class L3CXProfile(BaseProfile):
             if output_format == 'png':
                 fig = df.plot().get_figure()
                 fig.savefig(report_file)
-            if output_format == 'html':
-                print('Shivams function')
             if output_format == 'df':
                 return df
-            supported_formats = ['csv', 'json', 'stata', 'pickle']
+            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for x in supported_formats:
                 if output_format.lower() == x or report_file.split('.')[-1] == x:
                     exec('df.to_' + x + '("' + report_file + '")')
@@ -1810,16 +1796,6 @@ class L4CXProfile(LFCliBase):
             df['Arguments'] = arguments
             for x in ['LFGUI Release', 'Script Name', 'Arguments']:
                 df[x][1:] = ''
-            if output_format == 'pdf':
-                import matplotlib.pyplot as plt
-                from matplotlib.backends.backend_pdf import PdfPages
-                fig, ax = plt.subplots(figsize=(12, 4))
-                ax.axis('tight')
-                ax.axis('off')
-                the_table = ax.table(cellText=df.values, colLabels=df.columns, loc='center')
-                pp = PdfPages(report_file)
-                pp.savefig(fig, bbox_inches='tight')
-                pp.close()
             if output_format == 'hdf':
                 df.to_hdf(report_file, 'table', append=True)
             if output_format == 'parquet':
