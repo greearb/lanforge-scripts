@@ -83,7 +83,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 ./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1 \
 --first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
 
-Changing regulatory domain should happen outside of this script.  See cisco_ap_ctl.py
+Changing regulatory domain should happen outside of this script.  
 
 ##############################################################################################
 # If wish to send Text after test completion follow the email format based on carrier
@@ -757,9 +757,10 @@ def main():
                                    "--cli_cmd", set_cmd], capture_output=True)
                # tx power 1 is the highest power ,  2 power is 1/2 of 1 power etc till power 8 the lowest.
                for tx in txpowers:
-                   # e_tot is the errors, w_tot is the warning 
+                   # e_tot is the errors, w_tot is the warning, i_tot is information
                    e_tot = ""
                    w_tot = ""
+                   i_tot = ""
 
                    # Stop traffic , if traffic was running ,  this is on the lanforge side.  Commands that start with lf_ are directed 
                    # towards the lanforge
@@ -1593,39 +1594,40 @@ def main():
                                                          "-user", ap_dict['ap_user'], "-passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
                                pss = ap_info.stdout.decode('utf-8', 'ignore');
                                logg.info(pss)
+                               for line in pss.splitlines():
+                                    logg.info("ap {}".format(line))
+                                    m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+                                    if (m != None):
+                                        P1 = m.group(1)
+                                        T1 = m.group(2)
+                                        P2 = m.group(3)
+                                        T2 = m.group(4)
+                                        P3 = m.group(5)
+                                        T3 = m.group(6)
+                                        P4 = m.group(7)
+                                        T4 = m.group(8)
+                                        N_ANT = m.group(9)
+                                        DAA_Pwr = m.group(10)
+                                        DAA_N_TX = m.group(11)
+                                        DAA_Total_pwr = m.group(12)
+                                        i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
+                                            P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr)
+                                        print(i_tot)
+                                        logg.info(i_tot)
+                                    else:
+                                        logg.info("AP Check regular expression!!!")
+
                             except subprocess.CalledProcessError as process_error:
                                logg.info("####################################################################################################") 
                                logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE") 
                                logg.info("####################################################################################################") 
                       
                                logg.info("####################################################################################################") 
-                               logg.info("# Unable to commicate to AP  error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                               logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
                                logg.info("####################################################################################################") 
-                               #exit_test(workbook)
-                               exit(1)
+                               # for now this is not a fatal error, 
      
-                            for line in pss.splitlines():
-                                logg.info("ap {}".format(line))
-                                m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
-                                if (m != None):
-                                    P1 = m.group(1)
-                                    T1 = m.group(2)
-                                    P2 = m.group(3)
-                                    T2 = m.group(4)
-                                    P3 = m.group(5)
-                                    T3 = m.group(6)
-                                    P4 = m.group(7)
-                                    T4 = m.group(8)
-                                    N_ANT = m.group(9)
-                                    DAA_Pwr = m.group(10)
-                                    DAA_N_TX = m.group(11)
-                                    DAA_Total_pwr = m.group(12)
-                                    print("P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}"
-                                           .format(P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr))
 
-                                else:
-                                    logg.info("AP Check regular expression!!!")
-                                    exit(1)
                        #
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values
@@ -1738,14 +1740,13 @@ def main():
                        e_tot += err
 
                    if (e_tot == ""):
-                       e_w_tot = e_tot + w_tot
+                       e_w_tot = e_tot + w_tot + i_tot
                        if(w_tot == ""):
                            worksheet.write(row, col, e_w_tot, green_left); col += 1
                        else:
                            worksheet.write(row, col, e_w_tot, orange_left); col += 1
-
                    else:
-                       e_w_tot = e_tot + w_tot
+                       e_w_tot = e_tot + w_tot + i_tot
                        worksheet.write(row, col, e_w_tot, red_left); col += 1
                    row += 1
 
