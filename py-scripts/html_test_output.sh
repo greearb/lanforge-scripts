@@ -19,20 +19,20 @@ testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid j
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio $RADIO_USED --security wep"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
-    "./test_ipv4_connection.py --radio wiphy2 --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --upstream_port eth1"
-    "./test_generic.py --mgr localhost --mgr_port 4122 --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
-    "./test_generic.py --mgr localhost --mgr_port 4122 --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
-    "./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
-    "./test_ipv4_l4_wifi.py --upstream_port eth1 --radio wiphy0 --num_stations $NUM_STA --security $SECURITY --ssid jedway-wpa2-x2048-4-4 --passwd jedway-wpa2-x2048-4-4  --test_duration 3m"
-    "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security wpa2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m --debug"
-    "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format excel"
-    "./test_ipv4_variable_time.py --radio wiphy1 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --mode 4 --ap 00:0e:8e:ff:86:e6 --test_duration 30s --output_format csv"
+    "./test_ipv4_connection.py --radio wiphy2 --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./test_generic.py --mgr localhost --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
+    "./test_generic.py --mgr localhost --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
+    "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
+    "./test_ipv4_l4_wifi.py --radio wiphy0 --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --test_duration 2m"
+    "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format excel"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format csv"
     "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"
-    "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    "./create_macvlan.py --radio wiphy1"
-    "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    #"./create_macvlan.py --radio wiphy1"
+    #"./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    #"./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
 )
 declare -A name_to_num
 name_to_num=(
@@ -73,14 +73,14 @@ function run_test() {
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
-            [[ x$DEBUG != x ]] && sleep 2
-            results+=("<tr><td>${CURR_TEST_NAME}</td><td>success</td></tr>")
-            eval "$i" >>~/test_all_output_file_success.txt || true
-            [[ x$DEBUG != x ]] && exit 1
-            results+=("<tr><td>${CURR_TEST_NAME}</td><td>failure</td></tr>")
-            eval "$i" >>~/test_all_output_file_failure.txt
-            [[ x$DEBUG != x ]]
+            if $i; then
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Success</td></tr>")
+            else
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Failure</td></tr>")
+            fi
+        fi
     done
+    echo $results
 }
 function check_args() {
     if [ ! -z $1 ]; then
@@ -112,7 +112,8 @@ function html_generator() {
     </body>
     </html>"
     fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
-    echo $header"${results[@]}"$tail > ${fname}
+    echo $fname
+    echo $header"${results[@]}"$tail >> $fname
 }
 #true >~/test_all_output_file.txt
 check_args $1 $2
