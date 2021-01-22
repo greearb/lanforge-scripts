@@ -1204,7 +1204,7 @@ class L3CXProfile(BaseProfile):
             if self.debug:
                 print(old_cx_rx_values, new_cx_rx_values)
                 print("\n-----------------------------------")
-                print(curr_time)
+                print(t)
                 print("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):

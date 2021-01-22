@@ -108,7 +108,7 @@ class IPV4L4(LFCliBase):
         print("Starting test")
         curr_time = datetime.datetime.now() 
         end_time = self.local_realm.parse_time(self.test_duration) + curr_time
-       sleep_interval = self.local_realm.parse_time(self.test_duration) // 5
+        sleep_interval = self.local_realm.parse_time(self.test_duration) // 5
         passes = 0
         expected_passes = 0
         for test in range(self.num_tests):
@@ -128,7 +128,6 @@ class IPV4L4(LFCliBase):
             else:
                 self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
                 break
-            #interval_time = cur_time + datetime.timedelta(minutes=2)
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
