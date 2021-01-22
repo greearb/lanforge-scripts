@@ -1714,7 +1714,9 @@ class L4CXProfile(LFCliBase):
             fields = ",".join(col_names)
         else:
             #todo:rename this... 
-            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
+            header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
+            if self.debug:
+                print(header_row)
         print(fields)
         
         # Step 2, monitor columns, 

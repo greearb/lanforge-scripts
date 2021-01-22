@@ -202,14 +202,15 @@ python3 ./test_ipv4_variable_time.py
     #Create directory
     homedir=str(datetime.datetime.now()).replace(':','-')+'test_ipv4_variable_time'
     os.mkdir('/home/lanforge/report_data/'+homedir)
+
     if args.report_file is None:
-        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet']:
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet','xlsx']:
             report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
             output=args.output_format
         else:
-            print('Defaulting to Excel')
+            print('Defaulting data file output type to Excel')
             report_f='/home/lanforge/report-data/'+homedir+'/data.xlsx'
-            output='excel'
+            output='xlsx'
     else:
         report_f=args.report_file
         if args.output_format is None:
@@ -253,7 +254,6 @@ python3 ./test_ipv4_variable_time.py
                                     created_cx= layer3connections,
                                     output_format=output,
                                     script_name='test_ipv4_variable_time',
-                                    show=show,
                                     arguments=args)
 
     ip_var_test.stop()
