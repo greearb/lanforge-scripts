@@ -221,8 +221,13 @@ python3 ./test_ipv4_l4_urls_per_ten.py
         layer4traffic=','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     except:
         pass
-    ip_test.l4cxprofile.monitor(report_file=rpt_file, duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
-                                created_cx=layer4traffic, output_format=output_form, script_name='test_ipv4_l4_urls_per_ten', arguments=args)
+    ip_test.l4cxprofile.monitor(col_names=['Name','bytes-rd','rx rate (1 min)', 'urls/s'],
+                                report_file=rpt_file, 
+                                duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                                created_cx=layer4traffic, 
+                                output_format=output_form, 
+                                script_name='test_ipv4_l4_urls_per_ten', 
+                                arguments=args)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
