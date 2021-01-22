@@ -345,7 +345,7 @@ def main():
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
       if (args.verbose):
-          # capture the controller output , thus won't got to stdout some output always present
+          # capture the controller output , thus won't go to stdout some output always present
           cap_ctl_out = False
       else:
           cap_ctl_out = True 
@@ -1596,7 +1596,7 @@ def main():
                             try:
                                 logg.info("cisco_ap_ctl.py: read AP power information")
                                 ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
+                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],stdout=subprocess.PIPE)
                                 try:
                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                 except:
