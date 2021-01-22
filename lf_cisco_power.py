@@ -1589,21 +1589,25 @@ def main():
                             logg.info("ap_dict {}".format(ap_dict))
                             logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
                                                          ap_dict['ap_user'],ap_dict['ap_pw']))
-                            #try:
-                            logg.info("cisco_ap_ctl.py: read AP power information")
-                            ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                         "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=False, check=True)
-                            pss = ap_info.stdout.decode('utf-8', 'ignore')
+                            try:
+                                logg.info("cisco_ap_ctl.py: read AP power information")
+                                ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                         "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
+                                if ap_info == None:
+                                    pss = "empty"
+                                else:
+                                    pss = ap_info.stdout.decode('utf-8', 'ignore')
 
-                            #except subprocess.CalledProcessError as process_error:
-                            logg.info("####################################################################################################") 
-                            logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE") 
-                            logg.info("####################################################################################################") 
+                            except subprocess.CalledProcessError as process_error:
+                                logg.info("####################################################################################################") 
+                                logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE") 
+                                logg.info("####################################################################################################") 
                       
-                            logg.info("####################################################################################################") 
-                            #logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                            logg.info("####################################################################################################") 
-                            #exit_test(workbook)
+                                logg.info("####################################################################################################") 
+                                logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                                logg.info("####################################################################################################") 
+                                #exit_test(workbook)
+                                pss = "empty_process_error"
 
                             logg.info(pss)
                             for line in pss.splitlines():
