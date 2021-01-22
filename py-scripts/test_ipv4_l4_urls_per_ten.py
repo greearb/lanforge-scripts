@@ -183,7 +183,7 @@ python3 ./test_ipv4_l4_urls_per_ten.py
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','parquet','png','df','xlsx']:
             output_form=args.output_format.lower()
             print("Defaulting file output placement to /home/lanforge.")
-            rpt_file='/home/lanforge/data.' + output_form
+            rpt_file='/home/data.' + output_form
         else:
             print("Defaulting data file output type to Excel")
             rpt_file='/home/lanforge/data.xlsx'
