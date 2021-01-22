@@ -205,7 +205,7 @@ def main():
     if (args.action == "powercfg"):
         logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-        i = egg.expect_exact(AP_MORE,timeout=2)
+        i = egg.expect_exact(AP_MORE,timeout=5)
         if i == 0:
             egg.sendcontrol('c')
         if i == 1:
@@ -215,7 +215,7 @@ def main():
     else: # no other command at this time so send the same power command
         logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-        i = egg.expect_exact(AP_MORE,timeout=2)
+        i = egg.expect_exact(AP_MORE,timeout=5)
         if i == 0:
             egg.sendcontrol('c')
         if i == 1:
