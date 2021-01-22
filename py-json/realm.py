@@ -1167,6 +1167,7 @@ class L3CXProfile(BaseProfile):
         fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
+            header_row=col_names
         else:
             header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         # Step 2, monitor columns
