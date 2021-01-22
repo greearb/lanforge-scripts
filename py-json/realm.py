@@ -1184,8 +1184,6 @@ class L3CXProfile(BaseProfile):
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
-        if col_names == None:
-            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         while datetime.datetime.now() < end_time:
             if fields == None:
                 response = self.json_get("/endp/all")
