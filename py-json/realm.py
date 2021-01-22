@@ -1170,8 +1170,12 @@ class L3CXProfile(BaseProfile):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1, column names
-        fields = ",".join(col_names)
+        # Step 1, column names . what is this for?
+        fields=None 
+        if col_names is not None and len(col_names) > 0:
+            fields = ",".join(col_names)
+        else:
+            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
         print(fields)
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1185,7 +1189,7 @@ class L3CXProfile(BaseProfile):
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
-            if fields == None:
+            if fields is None:
                 response = self.json_get("/endp/all")
             else:
                 response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
