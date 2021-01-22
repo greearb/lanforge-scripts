@@ -1685,8 +1685,6 @@ class L4CXProfile(LFCliBase):
             raise ValueError("Monitor needs a list of Layer 4 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L4CXProfile::monitor wants monitor_interval >= 1 second")
-        if col_names is None:
-            raise ValueError("L4CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
@@ -1698,6 +1696,7 @@ class L4CXProfile(LFCliBase):
         fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
+            header_row=col_names
             if self.debug:
                 print(fields)
         else:
@@ -1710,17 +1709,17 @@ class L4CXProfile(LFCliBase):
 
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
-        sleep_interval =  duration_sec // 5
+        sleep_interval =  round(duration_sec // 5)
         value_map = dict()
         passes = 0
         expected_passes = 0
         timestamps = []
         for test in range(1+iterations):
-            #while current loop hasn't ended
             while datetime.datetime.now() < end_time:
-                #what does response ? get?
                 response=self.json_get("layer4/all")
                 #response = self.json_get("layer4/list?fields=urls/s")
+                if self.debug:
+                    print(response)
                 if "endpoint" not in response:
                     print(response)
                     raise ValueError("Cannot find any endpoints")
