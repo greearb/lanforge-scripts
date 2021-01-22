@@ -1594,29 +1594,6 @@ def main():
                                ap_info= subprocess.run(["./cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],capture_output=True, check=True)
                                pss = ap_info.stdout.decode('utf-8', 'ignore');
-                               logg.info(pss)
-                               for line in pss.splitlines():
-                                    logg.info("ap {}".format(line))
-                                    m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
-                                    if (m != None):
-                                        P1 = m.group(1)
-                                        T1 = m.group(2)
-                                        P2 = m.group(3)
-                                        T2 = m.group(4)
-                                        P3 = m.group(5)
-                                        T3 = m.group(6)
-                                        P4 = m.group(7)
-                                        T4 = m.group(8)
-                                        N_ANT = m.group(9)
-                                        DAA_Pwr = m.group(10)
-                                        DAA_N_TX = m.group(11)
-                                        DAA_Total_pwr = m.group(12)
-                                        i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
-                                            P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr)
-                                        print(i_tot)
-                                        logg.info(i_tot)
-                                    else:
-                                        logg.info("AP Check regular expression!!!")
 
                             except subprocess.CalledProcessError as process_error:
                                logg.info("####################################################################################################") 
@@ -1626,8 +1603,32 @@ def main():
                                logg.info("####################################################################################################") 
                                logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
                                logg.info("####################################################################################################") 
-                               # for now this is not a fatal error, 
-     
+                               exit_test(workbook)
+
+                            logg.info(pss)
+                            for line in pss.splitlines():
+                                logg.info("ap {}".format(line))
+                                m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+                                if (m != None):
+                                    P1 = m.group(1)
+                                    T1 = m.group(2)
+                                    P2 = m.group(3)
+                                    T2 = m.group(4)
+                                    P3 = m.group(5)
+                                    T3 = m.group(6)
+                                    P4 = m.group(7)
+                                    T4 = m.group(8)
+                                    N_ANT = m.group(9)
+                                    DAA_Pwr = m.group(10)
+                                    DAA_N_TX = m.group(11)
+                                    DAA_Total_pwr = m.group(12)
+                                    i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
+                                        P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr)
+                                    print(i_tot)
+                                    logg.info(i_tot)
+                                else:
+                                    logg.info("AP Check regular expression!!!")
+
 
                        #
                        #  The controller may adjust the number of spatial streams to allow for the 
