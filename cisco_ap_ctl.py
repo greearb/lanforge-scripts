@@ -198,19 +198,36 @@ def main():
             sleep(0.2)
 
     if (args.action == "powercfg"):
+        logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-        egg.expect_exact(AP_MORE,timeout=5)
-        egg.sendcontrol('c')
+        i = egg.expect_exact(AP_MORE,timeout=2)
+        if i == 0:
+            egg.sendcontrol('c')
+        else:
+            logg.info("send cntl c anyway")
+            egg.sendcontrol('c')
 
     else: # no other command at this time so send the same power command
+        logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-        egg.expect_exact(AP_MORE,timeout=5)
-        egg.sendcontrol('c')
+        i = egg.expect_exact(AP_MORE,timeout=2)
+        if i == 0:
+            egg.sendcontrol('c')
+        else:
+            logg.info("send cntl c anyway, received timeout")
+            egg.sendcontrol('c')
 
-    egg.expect_exact(AP_HASH,timeout=5)
-    egg.sendline(AP_EXIT)
-    egg.expect_exact(AP_PROMPT,timeout=5)
-    egg.sendline(AP_EXIT)
+    i = egg.expect_exact(AP_PROMPT,AP_HASH,timeout=1)
+    if i == 0:
+        logg.info("received {} we are done send exit".format(AP_PROMPT))
+        egg.sendline(AP_EXIT)
+
+    elif i == 1:
+        logg.info("received {} send exit".format(AP_HASH))
+        egg.sendline(AP_EXIT)
+    else:
+        logg.info("timed out waiting for {} or {}".format(AP_PROMPT,AP_HASH))
+        
     #             ctlr.execute(cn_cmd)
 if __name__ == '__main__':
     main()
