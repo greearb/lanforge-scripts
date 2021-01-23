@@ -593,7 +593,7 @@ def main():
    worksheet.set_column(col, col, 24) # Set width
    worksheet.write(row, col, 'Time Stamp\n', dgreen_bold); col += 1
    worksheet.set_column(col, col, 100) # Set width
-   worksheet.write(row, col, 'Warnings and Errors', dgreen_bold_left); col += 1
+   worksheet.write(row, col, 'Information, Warnings, Errors', dgreen_bold_left); col += 1
    row += 1
 
    bandwidths = args.bandwidth.split()
