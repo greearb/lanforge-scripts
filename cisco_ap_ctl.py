@@ -205,6 +205,8 @@ def main():
     if (args.action == "powercfg"):
         logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
+        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this allows for subprocess to see output
+        print(egg.before.decode('utf-8', 'ignore')) # do not delete this allows for subprocess to see output
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
             egg.sendcontrol('c')
@@ -215,6 +217,9 @@ def main():
     else: # no other command at this time so send the same power command
         logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
+        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this allows for subprocess to see output
+        print(egg.before.decode('utf-8', 'ignore')) # do not delete this allows for subprocess to see output
+
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
             egg.sendcontrol('c')

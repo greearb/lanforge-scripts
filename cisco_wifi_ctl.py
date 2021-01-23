@@ -559,15 +559,15 @@ def main():
                egg.sendline(CR)
                sleep(0.4)
                try:
-                  i = egg.expect_exact(["Escape character is '^]'.",CCP,CCP_EN,"User:","Password:",CCP_CONFIG,"Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
+                  i = egg.expect_exact(["Escape character is '^]'.",CCP,CCP_EN,"Username:","Password:",CCP_CONFIG,"Bad secrets", PRESS_RETURN, CONFIG_I,pexpect.TIMEOUT],timeout=2)
                except Exception as e:
-                  logg.info('connection failed. or refused Connection open by other process')
+                  logg.info('AP connection failed. or refused Connection open by other process')
                   logg.exception(e)
                   exit(1)
 
                if i == 0:
                   logg.info("9800 found Escape character is '^] i:{} before: {} after: {}".format(i,egg.before,egg.after))
-                  egg.sendline(CR) # 1/18/2021 - may need a bit more logic
+                  egg.sendline(CR) 
                   found_escape = True
                   sleep(0.2)
                   j = egg.expect_exact([CCP,CCP_EN,"User:","Password:",CCP_CONFIG,pexpect.TIMEOUT],timeout=3)
@@ -1340,7 +1340,7 @@ def main():
       while logged_out_9800 == False and loop_count <= 6:
          loop_count += 1
          i = egg.expect_exact([CCP,CCP_EN, CCP_CONFIG,CCP_CONFIG_WLAN,CCP_POLICY_TAG,CCP_CONFIG_LINE,pexpect.TIMEOUT],timeout=5)
-         print (egg.before.decode('utf-8', 'ignore'))
+         print (egg.before.decode('utf-8', 'ignore'))  # allows program that calls from subprocess to see output from command
          if i == 0:
             logg.info("{} prompt received can send logout, loop_count: {}".format(CCP,loop_count))
             egg.sendline("logout")
