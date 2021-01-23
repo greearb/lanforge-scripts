@@ -1617,7 +1617,8 @@ def main():
                             logg.info(pss)
                             for line in pss.splitlines():
                                 logg.info("ap {}".format(line))
-                                m = re.search('^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
+                                pat = '^\s+1\s+6\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
+                                m = re.search(pat, line)
                                 if (m != None):
                                     P1 = m.group(1)
                                     T1 = m.group(2)
