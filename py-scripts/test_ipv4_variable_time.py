@@ -202,19 +202,23 @@ python3 ./test_ipv4_variable_time.py
 
     #Create directory
     if args.report_file is None:
-        homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
-        path = os.path.join('/home/lanforge/report-data/',homedir)
-        os.mkdir(path)
+        try:
+            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
+            path = os.path.join('/home/lanforge/report-data/',homedir)
+            os.mkdir(path)
+        except:
+            path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            print('Saving file to local directory')
     else:
         pass
 
     if args.report_file is None:
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
+            report_f=path+'/data.' + args.output_format
             output=args.output_format
         else:
             print('Defaulting data file output type to Excel')
-            report_f='/home/lanforge/report-data/'+homedir+'/data.xlsx'
+            report_f=path+'/data.xlsx'
             output='xlsx'
     else:
         report_f=args.report_file
@@ -257,7 +261,7 @@ python3 ./test_ipv4_variable_time.py
         col_names=None
     else:
         col_names = args.col_names
-    print(col_names)
+    print(report_f)
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
