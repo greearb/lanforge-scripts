@@ -14,6 +14,9 @@ CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
 STOP_NUM=9
 
+DATA_DIR="/home/lanforge/report-data"
+REPORT_DIR="/home/lanforge/html-reports"
+
 #Test array
 testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa "
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
@@ -65,11 +68,13 @@ function run_test() {
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
-        echo "$CURR_TEST_NAME $CURR_TEST_NUM"
 
         if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
             exit 1
         fi
+        echo ""
+        echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
+
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
@@ -93,28 +98,44 @@ function check_args() {
 function html_generator() {
     NOW=$(date +"%Y-%m-%d-%T")
     header="<html>
-    <head>
-    <title>Candela Test All Scripts Results</title>
-    <style>
-    success {
-        background-color:green;
-    }
-    failure {
-        background-color:red;
-    }
-    </style>
-    </head>
-    <body>
-    <p>Candela Technologies</p>
-    <table border ='1'>
-    "
-    tail="</table>
-    </body>
-    </html>"
-    fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
-    echo $fname
-    echo $header"${results[@]}"$tail >> $fname
+<head>
+<title>Test All Scripts Results $NOW</title>
+<style>
+.success {
+    background-color:green;
 }
+.failure {
+    background-color:red;
+}
+table {
+    border: 1px solid gray;
+}
+td {
+    margin: 0;
+    padding: 2px;
+    font-family: 'Courier New',courier,sans-serif;
+}
+h1, h2, h3, h4 {
+    font-family: 'Century Gothic',Arial,sans,sans-serif;
+}
+</style>
+</head>
+<body>
+<h1>Test All Scripts Results</h1>
+<h4> $NOW</h4>
+<table border ='1'>
+"
+    tail="</table>
+</body>
+</html>"
+
+    fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
+    echo $fname  >> $fname
+    echo "$header"  >> $fname
+    echo "${results[@]}"  >> $fname
+    echo "$tail" >> $fname
+}
+
 #true >~/test_all_output_file.txt
 check_args $1 $2
 run_test
