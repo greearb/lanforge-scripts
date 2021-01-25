@@ -36,7 +36,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
     --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
     --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose \
-    --antenna_gain "6" --wlan open-wlan --wlanID 1 \
+    --antenna_gain "6" --wlanID 1 --wlan open-wlan --wlanSSID open-wlan\
     --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
 
 
@@ -53,13 +53,13 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --series "3504" --prompt "(Cisco Controler)"
 
 ##############################################################################################
-# Long duration test -- need to create the --wlan open-wlan --wlanID -  need to put in the notes
+# Long duration test -- need to create the ---wlanID 1 --wlan open-wlan --wlanSSID open-wlan 
 ##############################################################################################
 
 ./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
-    --wlan open-wlan --wlanID 1 --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
+    --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
     --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1 --verbose
 
 
@@ -77,7 +77,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
---upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --create_station sta2222 --radio wiphy1 --ssid open-wlan \
+--upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open --verbose
 
 ##############################################################################################
@@ -86,7 +86,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 ./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
---upstream_port eth2 --series 9800 --wlan open-wlan --wlanID 1 --verbose
+--upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --verbose
 
 
 ##############################################################################################
@@ -216,8 +216,9 @@ def usage():
    print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   print("--wlan: for 9800, wlan identifier defaults to wlan-open")
+   print("--wlan: for 9800, wlan identifier ")
    print("--wlanID: wlanID  for 9800 , defaults to 1")
+   print("--wlanSSID: wlanSSID  for 9800")
    print("--series: controller series  9800 , defaults to 3504")
    print("--slot: 9800 AP slot defaults to 1")
    print("--create_station", "create LANforge station at the beginning of the test")
@@ -302,8 +303,9 @@ def main():
    parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier, this must match the -ssid",required=True)
+   parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
    parser.add_argument("--wlanID",           type=str, help="--wlanID  9800 , defaults to 1",default="1",required=True)
+   parser.add_argument("--wlanSSID",         type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station",required=True)
    parser.add_argument("--series",           type=str, help="--series  9800 or 3504, defaults to 9800",default="9800")
    parser.add_argument("--slot",             type=str, help="--slot 1 , 9800 AP slot defaults to 1",default="1")
    parser.add_argument("--create_station",   type=str, help="create LANforge station at the beginning of the test")
@@ -364,9 +366,9 @@ def main():
           cap_ctl_out = False
       else:
           cap_ctl_out = True 
-      if (args.wlan != args.ssid):
+      if (args.wlanSSID != args.ssid):
           print("####### ERROR ################################")
-          print("wlan: {} must equial the station ssid: {}".format(args.wlan,args.ssid))
+          print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID,args.ssid))
           print("####### ERROR ################################")
           exit(1)                      
       # note: there would always be an args.outfile due to the default
@@ -811,7 +813,8 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: disable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "disable_wlan","--wlan", args.wlan, "--wlanID", args.wlanID,"--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
+                                   "--action", "disable_wlan","--wlan", args.wlan, "--wlanID", args.wlanID, "--wlanSSID", args.wlanSSID, 
+                                   "--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)
                           if cap_ctl_out:   
                              pss = ctl_output.stdout.decode('utf-8', 'ignore')
                              logg.info(pss) 
@@ -941,7 +944,7 @@ def main():
                    # only create the wlan the first time  
                    if args.series == "9800":
                        if wlan_created:
-                          logg.info("wlan already present, no need to create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
+                          logg.info("wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(args.wlanID, args.wlan, args.wlanSSID, args.port)) 
                           pass
                        else:
                           # Verify that a wlan does not exist on wlanID
@@ -971,12 +974,13 @@ def main():
                                       cc_wlan_ssid = m.group(2)
                                       # wlanID is in use
                                       logg.info("###############################################################################")
-                                      logg.info("Need to remove wlan: {} wlanID: {} wlan ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                      logg.info("Need to remove wlanID: {} cc_wlan: {} cc_wlan_ssid: {}".format(args.wlanID, cc_wlan, cc_wlan_ssid))
                                       logg.info("###############################################################################")
                                       try:
-                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan, wlan present at start of test:  wlan: {} wlanID: {} wlan_ssid: {}".format(cc_wlan, args.wlanID, cc_wlan_ssid))
+                                          logg.info("9800 cisco_wifi_ctl.py: delete_wlan, wlan present at start of test: wlanID: {} cc_wlan {} cc_wlan_ssid: {}".format(args.wlanID, cc_wlan, cc_wlan_ssid))
                                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                                    "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                                                    "--action", "delete_wlan","--series",args.series, "--wlanID", args.wlanID, "--wlan", cc_wlan, "--wlanSSID", cc_wlan_ssid, 
+                                                    "--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
                                           if cap_ctl_out:
                                                pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                                logg.info(pss)
@@ -989,9 +993,9 @@ def main():
                           wlan_created = True 
                           logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port)) 
                           try:
-                              logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
+                              logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} wlanSSID {} port {}".format(args.wlan, args.wlanID, args.wlanSSID, args.port))
                               ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "create_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                                      "--action", "create_wlan","--series",args.series, "--wlanID", args.wlanID,"--wlanSSID", "--wlan", args.wlan, args.wlanSSID, "--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
@@ -1014,7 +1018,8 @@ def main():
                        try:
                           logg.info("9800 cisco_wifi_ctl.py: enable_wlan")
                           ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                   "--action", "enable_wlan","--wlan", args.wlan, "--wlanID", args.wlanID,"--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)                 
+                                   "--action", "enable_wlan", "--wlanID", args.wlanID, "--wlan", args.wlan, "--wlanSSID", args.wlanSSID, 
+                                   "--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)                 
                           if cap_ctl_out:   
                               pss = ctl_output.stdout.decode('utf-8', 'ignore')
                               logg.info(pss) 
@@ -1903,7 +1908,8 @@ def main():
           try:
              logg.info("9800 cisco_wifi_ctl.py: delete_wlan")
              ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                         "--action", "delete_wlan","--series",args.series, "--wlan", args.wlan, "--wlanID", args.wlanID,"--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                         "--action", "delete_wlan","--series",args.series, "--wlanID", args.wlanID, "--wlan", args.wlan, "--wlanSSID", args.wlanSSID,
+                         "--port",args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
              if cap_ctl_out:
                 pss = ctl_output.stdout.decode('utf-8', 'ignore')
                 logg.info(pss)

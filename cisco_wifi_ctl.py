@@ -72,6 +72,7 @@ def usage():
    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
    print("-w|--wlan:  WLAN name")
    print("-i|--wlanID:  WLAN ID")
+   print("-i|--wlanSSID:  WLAN SSID")
 
    print("-h|--help")
 
@@ -102,6 +103,7 @@ def main():
    #parser.add_argument("-r", "--radio",   type=str, help="select radio")
    parser.add_argument("-w", "--wlan",    type=str, help="wlan name")
    parser.add_argument("-i", "--wlanID",  type=str, help="wlan ID")
+   parser.add_argument("--wlanSSID",      type=str, help="wlan SSID")
    parser.add_argument("-a", "--ap",      type=str, help="select AP", default="APA453.0E7B.CF9C")
    parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
                        choices=["a", "b", "abgn"])
@@ -1196,14 +1198,15 @@ def main():
    if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
       raise Exception("wlan  and wlanID is required an")
    if (args.action == "create_wlan"):
-      logg.info("create_wlan wlanID {} wlan {}".format(args.wlanID, args.wlan))
+      logg.info("create_wlan wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
       if args.series == "9800":
           egg.sendline("config t")
           sleep(0.4)
           i = egg.expect_exact(["(config)#",pexpect.TIMEOUT],timeout=2)
           if i == 0:
              logg.info("elevated to (config)#")
-             command = "wlan %s %s %s"%(args.wlan, args.wlanID, args.wlan) # should the last one be ssid not wlan
+             # for create wlan <name> <ID> <ssid>  
+             command = "wlan {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID) # should the last one be ssid not wlan
              logg.info("open network command {}".format(command))
              egg.sendline(command)
              sleep(0.4)
@@ -1236,7 +1239,7 @@ def main():
           if i == 0:
              logg.info("did not get the (config)# prompt")
       else:   
-         command = "config wlan create %s %s %s"%(args.wlanID, args.wlan, args.wlan)
+         command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
 
    if (args.action == "delete_wlan"):
       if args.series == "9800":
@@ -1256,7 +1259,7 @@ def main():
       else:
          if (args.action == "delete_wlan" and (args.wlanID is None)):
             raise Exception("wlan ID is required")
-         command = "config wlan delete %s"%(args.wlanID) 
+         command = "config wlan delete {}".format(args.wlanID) 
 
    logg.info("action {} series {}".format(args.action,args.series))
    if (args.action == "enable_wlan"):
