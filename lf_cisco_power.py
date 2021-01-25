@@ -27,16 +27,29 @@ The user also has the option of setting up the station oustide of this script, h
 # See cisco_power_results.xlsx when complete.
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
+
+##############################################################################################
+# read AP for powercfg values using : show controllers dot11Radio 1 powercfg | g T1'
+##############################################################################################
+
+./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
+    --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
+    --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
+    --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose \
+    --antenna_gain "6" --wlan open-wlan --wlanID 1 \
+    --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
+
+
 ##############################################################################################
 # send email and or text on --exit_on_fail
 ##############################################################################################
 
-./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178  
-    --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a 
-    --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] --security open  
-    -l out_file2  -D 14 --exit_on_fail 
-    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465" 
-    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"
+./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178 \
+    --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a \
+    --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] \
+    --security open -l out_file2  -D 14 --exit_on_fail \
+    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465"\
+    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"\
     --series "3504" --prompt "(Cisco Controler)"
 
 ##############################################################################################
@@ -221,6 +234,8 @@ def usage():
    print('-ccp','--prompt', "--prompt controller prompt default WLC")
    print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
    print('--show_lf_portmod',"<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+   print('-api','--ap_info', "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+
 
 
    print("-h|--help")
