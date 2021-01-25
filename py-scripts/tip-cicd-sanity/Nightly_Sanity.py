@@ -236,23 +236,36 @@ parser.add_argument("-b", "--build", type=str, default="pending", help="FW commi
 parser.add_argument("-i", "--ignore", type=str, default='no', choices=['yes', 'no'], help="Set to 'no' to ignore current running version on AP and run sanity including upgrade")
 parser.add_argument("-r", "--report", type=str, default=report_path, help="Report directory path other than default - directory must already exist!")
 parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420'], help="AP model to be run")
-parser.add_argument("-u", "--upgrade", type=str, default='yes', choices=['yes', 'no'], help="Set to 'no' to skip upgrade and perfom testing on running FW")
+parser.add_argument("--skip_upgrade", dest="skip_upgrade", action='store_true', help="Skip Upgrade testing")
+parser.set_defaults(skip_eap=False)
+parser.add_argument("--skip_eap", dest="skip_eap", action='store_true', help="Skip EAP testing")
+parser.set_defaults(skip_eap=False)
+parser.add_argument("--skip_bridge", dest="skip_bridge", action='store_true', help="Skip Bridge testing")
+parser.set_defaults(skip_bridge=False)
+parser.add_argument("--skip_nat", dest="skip_nat", action='store_true', help="Skip NAT testing")
+parser.set_defaults(skip_nat=False)
+parser.add_argument("--skip_vlan", dest="skip_vlan", action='store_true', help="Skip VLAN testing")
+parser.set_defaults(skip_vlan=False)
 args = parser.parse_args()
 
 build = args.build
 ignore = args.ignore
 report_path = args.report
-perform_upgrade = args.upgrade
 if args.model is not None:
     model_id = args.model
     equipment_ids = {
         model_id: equipment_id_dict[model_id]
     }
     print(equipment_ids)
-#time.sleep(200)
 
 print("Start of Sanity Testing...")
+print("Skipping Upgrade Tests? "+str(args.skip_upgrade))
+print("Skipping EAP Tests? "+str(args.skip_eap))
+print("Skipping Bridge Tests? "+str(args.skip_bridge))
+print ("Skipping NAT Tests? "+str(args.skip_nat))
+print ("Skipping VLAN Tests? "+str(args.skip_vlan))
 print("Testing Latest Build with Tag: "+build)
+
 if ignore == 'yes':
     print("Will ignore if AP is already running build under test and run sanity regardless...")
 else:
@@ -344,6 +357,7 @@ for model in ap_models:
     print(model, "Latest FW on jFrog:", latest_image)
     ap_latest_dict[model] = latest_image
 
+print(ap_latest_dict)
 ####################################################################################
 ############ Update FW and Run Test Cases on Each AP Variant #######################
 ####################################################################################
@@ -369,12 +383,13 @@ for key in equipment_ids:
 
     fw_model = ap_cli_fw.partition("-")[0]
     print('Current Active AP FW from CLI:', ap_cli_fw)
+    print(fw_model)
     ###Find Latest FW for Current AP Model and Get FW ID
 
     ##Compare Latest and Current AP FW and Upgrade
     latest_ap_image = ap_latest_dict[fw_model]
 
-    if ap_cli_fw == latest_ap_image and ignore == 'no' and perform_upgrade == 'yes':
+    if ap_cli_fw == latest_ap_image and ignore == 'no' and args.skip_upgrade != True:
         print('FW does not require updating')
         report_data['fw_available'][key] = "No"
         logger.info(fw_model + " does not require upgrade. Not performing sanity tests for this AP variant")
@@ -388,8 +403,8 @@ for key in equipment_ids:
     else:
         if ap_cli_fw == latest_ap_image and ignore == "yes":
             print('AP is already running FW version under test. Ignored based on ignore flag')
-        elif perform_upgrade == 'no':
-            print("Upgrade argument is No, will use existing version and not upgrade AP")
+        elif args.skip_upgrade == True:
+            print("User requested to skip upgrade, will use existing version and not upgrade AP")
             report_data['fw_available'][key] = "N/A"
             report_data['fw_under_test'][key] = ap_cli_fw
             latest_ap_image = ap_cli_fw
@@ -401,13 +416,49 @@ for key in equipment_ids:
         ###Create Test Run
         today = str(date.today())
         case_ids = list(test_cases.values())
-        if perform_upgrade == 'no':
-            print("Creating Test Run - will not include upgrade test")
-            upgrade_tc = test_cases["upgrade_api"]
-            print(upgrade_tc)
-            case_ids.remove(upgrade_tc)
+
+        ##Remove unused test cases based on command line arguments
+
+        #Skip upgrade argument
+        if args.skip_upgrade == True:
+            case_ids.remove(test_cases["upgrade_api"])
         else:
-            print("Creating Test Run")
+            pass
+
+        # Skip Bridge argument
+        if args.skip_bridge == True:
+            for x in test_cases:
+                if "bridge" in x:
+                        case_ids.remove(test_cases[x])
+        else:
+            pass
+
+        # Skip NAT argument
+        if args.skip_nat == True:
+            for x in test_cases:
+                if "nat" in x:
+                    case_ids.remove(test_cases[x])
+        else:
+            pass
+
+        # Skip VLAN argument
+        if args.skip_vlan == True:
+            for x in test_cases:
+                if "vlan" in x:
+                    case_ids.remove(test_cases[x])
+        else:
+            pass
+        #Skip EAP argument
+        if args.skip_eap == True:
+            case_ids.remove(test_cases["radius_profile"])
+            for x in test_cases:
+                if "eap" in x:
+                    case_ids.remove(test_cases[x])
+        else:
+            pass
+
+        print(case_ids)
+
         test_run_name = testRunPrefix + fw_model + "_" + today + "_" + latest_ap_image
         client.create_testrun(name=test_run_name, case_ids=case_ids, project_id=projId, milestone_id=milestoneId,
                               description="Automated Nightly Sanity test run for new firmware build")
@@ -499,7 +550,7 @@ for key in equipment_ids:
                 continue
 
         # Upgrade AP firmware
-        if perform_upgrade == 'no':
+        if args.skip_upgrade == True:
             print("User Requested to Not Performing Upgrade, skipping to Connectivity Tests")
         else:
             print("Upgrading...firmware ID is: ", fw_id)
@@ -648,1012 +699,1080 @@ for key in equipment_ids:
             json.dump(report_data, report_json_file)
 
         ### Create RADIUS profile - used for all EAP SSIDs
-        radius_template = "templates/radius_profile_template.json"
-        radius_name = radius_info['name']
-        subnet_name = radius_info['subnet_name']
-        subnet = radius_info['subnet']
-        subnet_mask = radius_info['subnet_mask']
-        region = radius_info['region']
-        server_name = radius_info['server_name']
-        server_ip = radius_info['server_ip']
-        secret = radius_info['secret']
-        auth_port = radius_info['auth_port']
-        try:
-            radius_profile = CloudSDK.create_radius_profile(cloudSDK_url, bearer, radius_template, radius_name, subnet_name, subnet,
+        if args.skip_eap != True:
+            radius_template = "templates/radius_profile_template.json"
+            radius_name = radius_info['name']
+            subnet_name = radius_info['subnet_name']
+            subnet = radius_info['subnet']
+            subnet_mask = radius_info['subnet_mask']
+            region = radius_info['region']
+            server_name = radius_info['server_name']
+            server_ip = radius_info['server_ip']
+            secret = radius_info['secret']
+            auth_port = radius_info['auth_port']
+            try:
+                radius_profile = CloudSDK.create_radius_profile(cloudSDK_url, bearer, radius_template, radius_name, subnet_name, subnet,
                                                         subnet_mask, region, server_name, server_ip, secret, auth_port)
-            print("radius profile Id is", radius_profile)
-            client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=1,
+                print("radius profile Id is", radius_profile)
+                client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=1,
                                    msg='RADIUS profile created successfully')
-            report_data['tests'][key][test_cases["radius_profile"]] = "passed"
-        except:
-            radius_profile = 'error'
-            print("RADIUS Profile Create Error, will use existing profile for tests")
-            #Set backup profile ID so test can continue
-            radius_profile = lab_ap_info.radius_profile
-            server_name = "Lab-RADIUS"
-            client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=5,
+                report_data['tests'][key][test_cases["radius_profile"]] = "passed"
+            except:
+                radius_profile = 'error'
+                print("RADIUS Profile Create Error, will use existing profile for tests")
+                #Set backup profile ID so test can continue
+                radius_profile = lab_ap_info.radius_profile
+                server_name = "Lab-RADIUS"
+                client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=5,
                                    msg='Failed to create RADIUS profile')
-            report_data['tests'][key][test_cases["radius_profile"]] = "failed"
-
+                report_data['tests'][key][test_cases["radius_profile"]] = "failed"
+        else:
+            print("Skipped creating RADIUS profile based on skip_eap argument")
         ###########################################################################
         ############## Bridge Mode Client Connectivity ############################
         ###########################################################################
+        if args.skip_bridge != True:
+            ### Create SSID Profiles
+            ssid_template = "templates/ssid_profile_template.json"
 
-        ### Create SSID Profiles
-        ssid_template = "templates/ssid_profile_template.json"
+            # 5G SSIDs
+            if args.skip_eap != True:
+                try:
+                    fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_EAP_' + today,
+                                                         profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"], None,
+                                                         radius_name,
+                                                         "wpa2OnlyRadius", "BRIDGE", 1, ["is5GHzU", "is5GHz", "is5GHzL"])
+                    print("5G EAP SSID created successfully - bridge mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=1, msg='5G EAP SSID created successfully - bridge mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_bridge"]] = "passed"
 
-        # 5G SSIDs
-        try:
-            fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_EAP_' + today,
-                                                     profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"], None,
-                                                     radius_name,
-                                                     "wpa2OnlyRadius", "BRIDGE", 1, ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G EAP SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=1, msg='5G EAP SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_bridge"]] = "passed"
-
-        except:
-            fiveG_eap = "error"
-            print("5G EAP SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=5,
-                                   msg='5G EAP SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_bridge"]] = "failed"
-            fiveG_eap = profile_info_dict[fw_model]["fiveG_WPA2-EAP_profile"]
-
-        try:
-            fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_WPA2_' + today,
-                                                      profile_info_dict[fw_model]["fiveG_WPA2_SSID"],
-                                                      profile_info_dict[fw_model]["fiveG_WPA2_PSK"],
-                                                      "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 1,
-                                                      ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA2 SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_bridge"], run_id=rid, status_id=1, msg='5G WPA2 SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_bridge"]] = "passed"
-        except:
-            fiveG_wpa2 = "error"
-            print("5G WPA2 SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_bridge"], run_id=rid, status_id=5,
-                                   msg='5G WPA2 SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_bridge"]] = "failed"
-            fiveG_wpa2 = profile_info_dict[fw_model]["fiveG_WPA2_profile"]
-
-        try:
-            fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_WPA_' + today,
-                                                     profile_info_dict[fw_model]["fiveG_WPA_SSID"],
-                                                     profile_info_dict[fw_model]["fiveG_WPA_PSK"],
-                                                     "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 1,
-                                                     ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_bridge"], run_id=rid, status_id=1,
-                                   msg='5G WPA SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_bridge"]] = "passed"
-        except:
-            fiveG_wpa = "error"
-            print("5G WPA SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_bridge"], run_id=rid, status_id=5,
-                                   msg='5G WPA SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_bridge"]] = "failed"
-            fiveG_wpa = profile_info_dict[fw_model]["fiveG_WPA_profile"]
-
-        # 2.4G SSIDs
-        try:
-            twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_EAP_' + today,
-                                                        profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"], None,
-                                                        radius_name, "wpa2OnlyRadius", "BRIDGE", 1, ["is2dot4GHz"])
-            print("2.4G EAP SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=1,
-                                   msg='2.4G EAP SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_bridge"]] = "passed"
-        except:
-            twoFourG_eap = "error"
-            print("2.4G EAP SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=5,
-                                   msg='2.4G EAP SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_bridge"]] = "failed"
-            twoFourG_eap = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
-
-        try:
-            twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_2G_WPA2_' + today,
-                                                         profile_info_dict[fw_model]["twoFourG_WPA2_SSID"],
-                                                         profile_info_dict[fw_model]["twoFourG_WPA2_PSK"],
-                                                         "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 1,
-                                                         ["is2dot4GHz"])
-            print("2.4G WPA2 SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA2 SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "passed"
-        except:
-            twoFourG_wpa2 = "error"
-            print("2.4G WPA2 SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA2 SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "failed"
-            twoFourG_wpa2 = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
-
-        try:
-            twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_WPA_' + today,
-                                                        profile_info_dict[fw_model]["twoFourG_WPA_SSID"],
-                                                        profile_info_dict[fw_model]["twoFourG_WPA_PSK"],
-                                                        "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 1,
-                                                        ["is2dot4GHz"])
-            print("2.4G WPA SSID created successfully - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_bridge"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA SSID created successfully - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_bridge"]] = "passed"
-        except:
-            twoFourG_wpa = "error"
-            print("2.4G WPA SSID create failed - bridge mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_bridge"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA SSID create failed - bridge mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_bridge"]] = "failed"
-            twoFourG_wpa = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
-
-        ### Create AP Bridge Profile
-        rfProfileId = lab_ap_info.rf_profile
-        radiusProfileId = radius_profile
-        child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
-        print(child_profiles)
-
-        ap_template = "templates/ap_profile_template.json"
-        name = "Nightly_Sanity_" + fw_model + "_" + today + "_bridge"
-
-        try:
-            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
-            test_profile_id = create_ap_profile
-            print("Test Profile ID for Test is:",test_profile_id)
-            client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=1,
-                                   msg='AP profile for bridge tests created successfully')
-            report_data['tests'][key][test_cases["ap_bridge"]] = "passed"
-        except:
-            create_ap_profile = "error"
-            test_profile_id = profile_info_dict[fw_model]["profile_id"]
-            print("Error creating AP profile for bridge tests. Will use existing AP profile")
-            client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=5,
-                                   msg='AP profile for bridge tests could not be created using API')
-            report_data['tests'][key][test_cases["ap_bridge"]] = "failed"
-
-        ### Set Proper AP Profile for Bridge SSID Tests
-        ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
-
-        ### Wait for Profile Push
-        time.sleep(180)
-
-        ### Check if VIF Config and VIF State reflect AP Profile from CloudSDK
-        ## VIF Config
-        try:
-            ssid_config = profile_info_dict[key]["ssid_list"]
-            print("SSIDs in AP Profile:", ssid_config)
-
-            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF Config:", ssid_list)
-
-            if set(ssid_list) == set(ssid_config):
-                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
-                client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config matches AP Profile Config')
-                report_data['tests'][key][test_cases["bridge_vifc"]] = "passed"
+                except:
+                    fiveG_eap = "error"
+                    print("5G EAP SSID create failed - bridge mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=5,
+                                       msg='5G EAP SSID create failed - bridge mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_bridge"]] = "failed"
+                    fiveG_eap = profile_info_dict[fw_model]["fiveG_WPA2-EAP_profile"]
             else:
-                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
-                client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config do not match AP Profile Config')
-                report_data['tests'][key][test_cases["bridge_vifc"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF Config - re-test required')
-            report_data['tests'][key][test_cases["bridge_vifc"]] = "error"
-        # VIF State
-        try:
-            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF State:", ssid_state)
+                pass
 
-            if set(ssid_state) == set(ssid_config):
-                print("SSIDs properly applied on AP")
-                client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config applied to VIF State')
-                report_data['tests'][key][test_cases["bridge_vifs"]] = "passed"
+            try:
+                fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_WPA2_' + today,
+                                                          profile_info_dict[fw_model]["fiveG_WPA2_SSID"],
+                                                          profile_info_dict[fw_model]["fiveG_WPA2_PSK"],
+                                                          "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 1,
+                                                          ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA2 SSID created successfully - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_bridge"], run_id=rid, status_id=1, msg='5G WPA2 SSID created successfully - bridge mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_bridge"]] = "passed"
+            except:
+                fiveG_wpa2 = "error"
+                print("5G WPA2 SSID create failed - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_bridge"], run_id=rid, status_id=5,
+                                       msg='5G WPA2 SSID create failed - bridge mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_bridge"]] = "failed"
+                fiveG_wpa2 = profile_info_dict[fw_model]["fiveG_WPA2_profile"]
+
+            try:
+                fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template, fw_model + '_5G_WPA_' + today,
+                                                         profile_info_dict[fw_model]["fiveG_WPA_SSID"],
+                                                         profile_info_dict[fw_model]["fiveG_WPA_PSK"],
+                                                         "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 1,
+                                                         ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA SSID created successfully - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_bridge"], run_id=rid, status_id=1,
+                                       msg='5G WPA SSID created successfully - bridge mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_bridge"]] = "passed"
+            except:
+                fiveG_wpa = "error"
+                print("5G WPA SSID create failed - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_bridge"], run_id=rid, status_id=5,
+                                       msg='5G WPA SSID create failed - bridge mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_bridge"]] = "failed"
+                fiveG_wpa = profile_info_dict[fw_model]["fiveG_WPA_profile"]
+
+            # 2.4G SSIDs
+            if args.skip_eap != True:
+                try:
+                    twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                            fw_model + '_2G_EAP_' + today,
+                                                            profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"], None,
+                                                            radius_name, "wpa2OnlyRadius", "BRIDGE", 1, ["is2dot4GHz"])
+                    print("2.4G EAP SSID created successfully - bridge mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=1,
+                                       msg='2.4G EAP SSID created successfully - bridge mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_bridge"]] = "passed"
+                except:
+                    twoFourG_eap = "error"
+                    print("2.4G EAP SSID create failed - bridge mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=5,
+                                       msg='2.4G EAP SSID create failed - bridge mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_bridge"]] = "failed"
+                    twoFourG_eap = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_profile"]
             else:
-                print("SSIDs not applied on AP")
-                client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config not applied to VIF State')
-                report_data['tests'][key][test_cases["bridge_vifs"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF State from AP CLI")
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF State - re-test required')
-            report_data['tests'][key][test_cases["bridge_vifs"]] = "error"
+                pass
 
-        ### Set LANForge port for tests
-        port = "eth2"
+            try:
+                twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                             fw_model + '_2G_WPA2_' + today,
+                                                             profile_info_dict[fw_model]["twoFourG_WPA2_SSID"],
+                                                             profile_info_dict[fw_model]["twoFourG_WPA2_PSK"],
+                                                             "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 1,
+                                                             ["is2dot4GHz"])
+                print("2.4G WPA2 SSID created successfully - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA2 SSID created successfully - bridge mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "passed"
+            except:
+                twoFourG_wpa2 = "error"
+                print("2.4G WPA2 SSID create failed - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA2 SSID create failed - bridge mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "failed"
+                twoFourG_wpa2 = profile_info_dict[fw_model]["twoFourG_WPA2_profile"]
 
-        # print iwinfo for information
-        iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
-        print(iwinfo)
+            try:
+                twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                            fw_model + '_2G_WPA_' + today,
+                                                            profile_info_dict[fw_model]["twoFourG_WPA_SSID"],
+                                                            profile_info_dict[fw_model]["twoFourG_WPA_PSK"],
+                                                            "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 1,
+                                                            ["is2dot4GHz"])
+                print("2.4G WPA SSID created successfully - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_bridge"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA SSID created successfully - bridge mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_bridge"]] = "passed"
+            except:
+                twoFourG_wpa = "error"
+                print("2.4G WPA SSID create failed - bridge mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_bridge"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA SSID create failed - bridge mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_bridge"]] = "failed"
+                twoFourG_wpa = profile_info_dict[fw_model]["twoFourG_WPA_profile"]
 
-        ###Run Client Single Connectivity Test Cases for Bridge SSIDs
-        # TC5214 - 2.4 GHz WPA2-Enterprise
-        test_case = test_cases["2g_eap_bridge"]
-        radio = lab_ap_info.lanforge_2dot4g
-        sta_list = [lanforge_prefix+"5214"]
-        ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
+            ### Create AP Bridge Profile
+            rfProfileId = lab_ap_info.rf_profile
+            if args.skip_eap != True:
+                radiusProfileId = radius_profile
+                child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
+                                  radiusProfileId]
+                print(child_profiles)
+            else:
+                child_profiles = [fiveG_wpa2, fiveG_wpa, twoFourG_wpa2, twoFourG_wpa, rfProfileId]
+                print(child_profiles)
+
+            ap_template = "templates/ap_profile_template.json"
+            name = "Nightly_Sanity_" + fw_model + "_" + today + "_bridge"
+
+            try:
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                test_profile_id = create_ap_profile
+                print("Test Profile ID for Test is:",test_profile_id)
+                client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=1,
+                                       msg='AP profile for bridge tests created successfully')
+                report_data['tests'][key][test_cases["ap_bridge"]] = "passed"
+            except:
+                create_ap_profile = "error"
+                test_profile_id = profile_info_dict[fw_model]["profile_id"]
+                print("Error creating AP profile for bridge tests. Will use existing AP profile")
+                client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=5,
+                                       msg='AP profile for bridge tests could not be created using API')
+                report_data['tests'][key][test_cases["ap_bridge"]] = "failed"
+
+            ### Set Proper AP Profile for Bridge SSID Tests
+            ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
+
+            ### Wait for Profile Push
+            time.sleep(180)
+
+            ### Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+            ## VIF Config
+            if args.skip_eap != True:
+                ssid_config = profile_info_dict[key]["ssid_list"]
+            else:
+                ssid_config = [x for x in profile_info_dict[key]["ssid_list"] if "EAP" not in x]
+            try:
+                print("SSIDs in AP Profile:", ssid_config)
+
+                ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF Config:", ssid_list)
+
+                if set(ssid_list) == set(ssid_config):
+                    print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                    client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config matches AP Profile Config')
+                    report_data['tests'][key][test_cases["bridge_vifc"]] = "passed"
+                else:
+                    print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                    client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config do not match AP Profile Config')
+                    report_data['tests'][key][test_cases["bridge_vifc"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["bridge_vifc"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF Config - re-test required')
+                report_data['tests'][key][test_cases["bridge_vifc"]] = "error"
+            # VIF State
+            try:
+                ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF State:", ssid_state)
+
+                if set(ssid_state) == set(ssid_config):
+                    print("SSIDs properly applied on AP")
+                    client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config applied to VIF State')
+                    report_data['tests'][key][test_cases["bridge_vifs"]] = "passed"
+                else:
+                    print("SSIDs not applied on AP")
+                    client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config not applied to VIF State')
+                    report_data['tests'][key][test_cases["bridge_vifs"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF State from AP CLI")
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["bridge_vifs"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF State - re-test required')
+                report_data['tests'][key][test_cases["bridge_vifs"]] = "error"
+
+            ### Set LANForge port for tests
+            port = "eth2"
+
+            # print iwinfo for information
+            iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
+            print(iwinfo)
+
+            ###Run Client Single Connectivity Test Cases for Bridge SSIDs
+            # TC5214 - 2.4 GHz WPA2-Enterprise
+            if args.skip_eap != True:
+                test_case = test_cases["2g_eap_bridge"]
+                radio = lab_ap_info.lanforge_2dot4g
+                sta_list = [lanforge_prefix+"5214"]
+                ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                        ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+                time.sleep(10)
+            else:
+                pass
+
+            ###Run Client Single Connectivity Test Cases for Bridge SSIDs
+            # TC - 2.4 GHz WPA2
+            test_case = test_cases["2g_wpa2_bridge"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"2237"]
+            ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 2.4 GHz WPA
+            test_case = test_cases["2g_wpa_bridge"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"2420"]
+            ssid_name = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 5 GHz WPA2-Enterprise
+            if args.skip_eap != True:
+                test_case = test_cases["5g_eap_bridge"]
+                radio = lab_ap_info.lanforge_5g
+                sta_list = [lanforge_prefix+"5215"]
+                ssid_name = profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                        ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+                time.sleep(10)
+            else:
+                pass
+
+            # TC 5 GHz WPA2
+            test_case = test_cases["5g_wpa2_bridge"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"2236"]
+            ssid_name = profile_info_dict[fw_model]["fiveG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 5 GHz WPA
+            test_case = test_cases["5g_wpa_bridge"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"2419"]
+            ssid_name = profile_info_dict[fw_model]["fiveG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            logger.info("Testing for " + fw_model + "Bridge Mode SSIDs Complete")
+            with open(report_path + today + '/report_data.json', 'w') as report_json_file:
+                json.dump(report_data, report_json_file)
+        else:
+            print("Skipping Bridge tests at user request...")
             pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        ###Run Client Single Connectivity Test Cases for Bridge SSIDs
-        # TC - 2.4 GHz WPA2
-        test_case = test_cases["2g_wpa2_bridge"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"2237"]
-        ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 2.4 GHz WPA
-        test_case = test_cases["2g_wpa_bridge"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"2420"]
-        ssid_name = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA2-Enterprise
-        test_case = test_cases["5g_eap_bridge"]
-        radio = lab_ap_info.lanforge_5g
-        sta_list = [lanforge_prefix+"5215"]
-        ssid_name = profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC 5 GHz WPA2
-        test_case = test_cases["5g_wpa2_bridge"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"2236"]
-        ssid_name = profile_info_dict[fw_model]["fiveG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA
-        test_case = test_cases["5g_wpa_bridge"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"2419"]
-        ssid_name = profile_info_dict[fw_model]["fiveG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        logger.info("Testing for " + fw_model + "Bridge Mode SSIDs Complete")
-        with open(report_path + today + '/report_data.json', 'w') as report_json_file:
-            json.dump(report_data, report_json_file)
 
         ###########################################################################
         ################# NAT Mode Client Connectivity ############################
         ###########################################################################
+        if args.skip_nat != True:
 
-        ### Create SSID Profiles
-        ssid_template = "templates/ssid_profile_template.json"
+            ### Create SSID Profiles
+            ssid_template = "templates/ssid_profile_template.json"
 
-        # 5G SSIDs
-        try:
-            fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                     fw_model + '_5G_EAP_NAT_' + today,
-                                                     profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"], None,
-                                                     radius_name,
-                                                     "wpa2OnlyRadius", "NAT", 1,
-                                                     ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G EAP SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_nat"], run_id=rid, status_id=1,
-                                   msg='5G EAP SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_nat"]] = "passed"
+            # 5G SSIDs
+            if args.skip_eap != True:
+                try:
+                    fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                         fw_model + '_5G_EAP_NAT_' + today,
+                                                         profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"], None,
+                                                         radius_name,
+                                                         "wpa2OnlyRadius", "NAT", 1,
+                                                         ["is5GHzU", "is5GHz", "is5GHzL"])
+                    print("5G EAP SSID created successfully - NAT mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_nat"], run_id=rid, status_id=1,
+                                       msg='5G EAP SSID created successfully - NAT mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_nat"]] = "passed"
 
-        except:
-            fiveG_eap = "error"
-            print("5G EAP SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_nat"], run_id=rid, status_id=5,
-                                   msg='5G EAP SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_nat"]] = "failed"
-            fiveG_eap = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_profile"]
-
-        try:
-            fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                      fw_model + '_5G_WPA2_NAT_' + today,
-                                                      profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"],
-                                                      profile_info_dict[fw_model + '_nat']["fiveG_WPA2_PSK"],
-                                                      "Radius-Accounting-Profile", "wpa2OnlyPSK", "NAT", 1,
-                                                      ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA2 SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_nat"], run_id=rid, status_id=1,
-                                   msg='5G WPA2 SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_nat"]] = "passed"
-        except:
-            fiveG_wpa2 = "error"
-            print("5G WPA2 SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_nat"], run_id=rid, status_id=5,
-                                   msg='5G WPA2 SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_nat"]] = "failed"
-            fiveG_wpa2 = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_profile"]
-
-        try:
-            fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                     fw_model + '_5G_WPA_NAT_' + today,
-                                                     profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"],
-                                                     profile_info_dict[fw_model + '_nat']["fiveG_WPA_PSK"],
-                                                     "Radius-Accounting-Profile", "wpaPSK", "NAT", 1,
-                                                     ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_nat"], run_id=rid, status_id=1,
-                                   msg='5G WPA SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_nat"]] = "passed"
-        except:
-            fiveG_wpa = "error"
-            print("5G WPA SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_nat"], run_id=rid, status_id=5,
-                                   msg='5G WPA SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_nat"]] = "failed"
-            fiveG_wpa = profile_info_dict[fw_model + '_nat']["fiveG_WPA_profile"]
-
-            # 2.4G SSIDs
-        try:
-            twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_EAP_NAT_' + today,
-                                                        profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"],
-                                                        None,
-                                                        radius_name, "wpa2OnlyRadius", "NAT", 1, ["is2dot4GHz"])
-            print("2.4G EAP SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=1,
-                                   msg='2.4G EAP SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_nat"]] = "passed"
-        except:
-            twoFourG_eap = "error"
-            print("2.4G EAP SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=5,
-                                   msg='2.4G EAP SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_nat"]] = "failed"
-            twoFourG_eap = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"]
-
-        try:
-            twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_2G_WPA2_NAT_' + today,
-                                                         profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"],
-                                                         profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"],
-                                                         "Radius-Accounting-Profile", "wpa2OnlyPSK", "NAT", 1,
-                                                         ["is2dot4GHz"])
-            print("2.4G WPA2 SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_nat"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA2 SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_nat"]] = "passed"
-        except:
-            twoFourG_wpa2 = "error"
-            print("2.4G WPA2 SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_nat"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA2 SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_nat"]] = "failed"
-            twoFourG_wpa2 = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"]
-
-        try:
-            twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_WPA_NAT_' + today,
-                                                        profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"],
-                                                        profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"],
-                                                        "Radius-Accounting-Profile", "wpaPSK", "NAT", 1,
-                                                        ["is2dot4GHz"])
-            print("2.4G WPA SSID created successfully - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_nat"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA SSID created successfully - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_nat"]] = "passed"
-        except:
-            twoFourG_wpa = "error"
-            print("2.4G WPA SSID create failed - NAT mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_nat"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA SSID create failed - NAT mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_nat"]] = "failed"
-            twoFourG_wpa = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
-
-        ### Create AP NAT Profile
-        rfProfileId = lab_ap_info.rf_profile
-        radiusProfileId = radius_profile
-        child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
-                              radiusProfileId]
-        print(child_profiles)
-        ap_template = "templates/ap_profile_template.json"
-        name = "Nightly_Sanity_" + fw_model + "_" + today + "_nat"
-        try:
-            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
-            test_profile_id = create_ap_profile
-            print("Test Profile ID for Test is:", test_profile_id)
-            client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=1,
-                                       msg='AP profile for NAT tests created successfully')
-            report_data['tests'][key][test_cases["ap_nat"]] = "passed"
-        except:
-            create_ap_profile = "error"
-            test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
-            print("Error creating AP profile for NAT tests. Will use existing AP profile")
-            client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=5,
-                                       msg='AP profile for NAT tests could not be created using API')
-            report_data['tests'][key][test_cases["ap_nat"]] = "failed"
-
-        ###Set Proper AP Profile for NAT SSID Tests
-        ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
-
-        ### Wait for Profile Push
-        time.sleep(180)
-
-        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
-        ## VIF Config
-        try:
-            ssid_config = profile_info_dict[fw_model + '_nat']["ssid_list"]
-            print("SSIDs in AP Profile:", ssid_config)
-
-            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF Config:", ssid_list)
-
-            if set(ssid_list) == set(ssid_config):
-                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
-                client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config matches AP Profile Config')
-                report_data['tests'][key][test_cases["nat_vifc"]] = "passed"
+                except:
+                    fiveG_eap = "error"
+                    print("5G EAP SSID create failed - NAT mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_nat"], run_id=rid, status_id=5,
+                                       msg='5G EAP SSID create failed - NAT mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_nat"]] = "failed"
+                    fiveG_eap = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_profile"]
             else:
-                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
-                client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config do not match AP Profile Config')
-                report_data['tests'][key][test_cases["nat_vifc"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF Config - re-test required')
-            report_data['tests'][key][test_cases["nat_vifc"]] = "error"
-        # VIF State
-        try:
-            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF State:", ssid_state)
+                pass
 
-            if set(ssid_state) == set(ssid_config):
-                print("SSIDs properly applied on AP")
-                client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config applied to VIF State')
-                report_data['tests'][key][test_cases["nat_vifs"]] = "passed"
+            try:
+                fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                          fw_model + '_5G_WPA2_NAT_' + today,
+                                                          profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"],
+                                                          profile_info_dict[fw_model + '_nat']["fiveG_WPA2_PSK"],
+                                                          "Radius-Accounting-Profile", "wpa2OnlyPSK", "NAT", 1,
+                                                          ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA2 SSID created successfully - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_nat"], run_id=rid, status_id=1,
+                                       msg='5G WPA2 SSID created successfully - NAT mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_nat"]] = "passed"
+            except:
+                fiveG_wpa2 = "error"
+                print("5G WPA2 SSID create failed - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_nat"], run_id=rid, status_id=5,
+                                       msg='5G WPA2 SSID create failed - NAT mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_nat"]] = "failed"
+                fiveG_wpa2 = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_profile"]
+
+            try:
+                fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                         fw_model + '_5G_WPA_NAT_' + today,
+                                                         profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"],
+                                                         profile_info_dict[fw_model + '_nat']["fiveG_WPA_PSK"],
+                                                         "Radius-Accounting-Profile", "wpaPSK", "NAT", 1,
+                                                         ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA SSID created successfully - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_nat"], run_id=rid, status_id=1,
+                                       msg='5G WPA SSID created successfully - NAT mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_nat"]] = "passed"
+            except:
+                fiveG_wpa = "error"
+                print("5G WPA SSID create failed - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_nat"], run_id=rid, status_id=5,
+                                       msg='5G WPA SSID create failed - NAT mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_nat"]] = "failed"
+                fiveG_wpa = profile_info_dict[fw_model + '_nat']["fiveG_WPA_profile"]
+
+                # 2.4G SSIDs
+            if args.skip_eap != True:
+                try:
+                    twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                            fw_model + '_2G_EAP_NAT_' + today,
+                                                            profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"],
+                                                            None,
+                                                            radius_name, "wpa2OnlyRadius", "NAT", 1, ["is2dot4GHz"])
+                    print("2.4G EAP SSID created successfully - NAT mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=1,
+                                       msg='2.4G EAP SSID created successfully - NAT mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_nat"]] = "passed"
+                except:
+                    twoFourG_eap = "error"
+                    print("2.4G EAP SSID create failed - NAT mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=5,
+                                       msg='2.4G EAP SSID create failed - NAT mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_nat"]] = "failed"
+                    twoFourG_eap = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_profile"]
             else:
-                print("SSIDs not applied on AP")
-                client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config not applied to VIF State')
-                report_data['tests'][key][test_cases["nat_vifs"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF State from AP CLI")
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF State - re-test required')
-            report_data['tests'][key][test_cases["nat_vifs"]] = "error"
+                pass
 
-        ### Set LANForge port for tests
-        port = "eth2"
+            try:
+                twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                             fw_model + '_2G_WPA2_NAT_' + today,
+                                                             profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"],
+                                                             profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"],
+                                                             "Radius-Accounting-Profile", "wpa2OnlyPSK", "NAT", 1,
+                                                             ["is2dot4GHz"])
+                print("2.4G WPA2 SSID created successfully - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_nat"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA2 SSID created successfully - NAT mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_nat"]] = "passed"
+            except:
+                twoFourG_wpa2 = "error"
+                print("2.4G WPA2 SSID create failed - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_nat"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA2 SSID create failed - NAT mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_nat"]] = "failed"
+                twoFourG_wpa2 = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_profile"]
 
-        # Print iwinfo for logs
-        iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
-        print(iwinfo)
+            try:
+                twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                            fw_model + '_2G_WPA_NAT_' + today,
+                                                            profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"],
+                                                            profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"],
+                                                            "Radius-Accounting-Profile", "wpaPSK", "NAT", 1,
+                                                            ["is2dot4GHz"])
+                print("2.4G WPA SSID created successfully - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_nat"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA SSID created successfully - NAT mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_nat"]] = "passed"
+            except:
+                twoFourG_wpa = "error"
+                print("2.4G WPA SSID create failed - NAT mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_nat"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA SSID create failed - NAT mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_nat"]] = "failed"
+                twoFourG_wpa = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_profile"]
 
-        ###Run Client Single Connectivity Test Cases for NAT SSIDs
-        # TC - 2.4 GHz WPA2-Enterprise NAT
-        test_case = test_cases["2g_eap_nat"]
-        radio = lab_ap_info.lanforge_2dot4g
-        sta_list = [lanforge_prefix+"5216"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
+            ### Create AP NAT Profile
+            rfProfileId = lab_ap_info.rf_profile
+            if args.skip_eap != True:
+                radiusProfileId = radius_profile
+                child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
+                                  radiusProfileId]
+                print(child_profiles)
+            else:
+                child_profiles = [fiveG_wpa2, fiveG_wpa, twoFourG_wpa2, twoFourG_wpa, rfProfileId]
+                print(child_profiles)
+            ap_template = "templates/ap_profile_template.json"
+            name = "Nightly_Sanity_" + fw_model + "_" + today + "_nat"
+
+            try:
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                test_profile_id = create_ap_profile
+                print("Test Profile ID for Test is:", test_profile_id)
+                client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=1,
+                                           msg='AP profile for NAT tests created successfully')
+                report_data['tests'][key][test_cases["ap_nat"]] = "passed"
+            except:
+                create_ap_profile = "error"
+                test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
+                print("Error creating AP profile for NAT tests. Will use existing AP profile")
+                client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=5,
+                                           msg='AP profile for NAT tests could not be created using API')
+                report_data['tests'][key][test_cases["ap_nat"]] = "failed"
+
+            ###Set Proper AP Profile for NAT SSID Tests
+            ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
+
+            ### Wait for Profile Push
+            time.sleep(180)
+
+            ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+            ## VIF Config
+            if args.skip_eap != True:
+                ssid_config = profile_info_dict[fw_model + '_nat']["ssid_list"]
+            else:
+                ssid_config = [x for x in profile_info_dict[fw_model + '_nat']["ssid_list"] if "EAP" not in x]
+            try:
+                print("SSIDs in AP Profile:", ssid_config)
+
+                ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF Config:", ssid_list)
+
+                if set(ssid_list) == set(ssid_config):
+                    print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                    client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config matches AP Profile Config')
+                    report_data['tests'][key][test_cases["nat_vifc"]] = "passed"
+                else:
+                    print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                    client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config do not match AP Profile Config')
+                    report_data['tests'][key][test_cases["nat_vifc"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["nat_vifc"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF Config - re-test required')
+                report_data['tests'][key][test_cases["nat_vifc"]] = "error"
+            # VIF State
+            try:
+                ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF State:", ssid_state)
+
+                if set(ssid_state) == set(ssid_config):
+                    print("SSIDs properly applied on AP")
+                    client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config applied to VIF State')
+                    report_data['tests'][key][test_cases["nat_vifs"]] = "passed"
+                else:
+                    print("SSIDs not applied on AP")
+                    client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config not applied to VIF State')
+                    report_data['tests'][key][test_cases["nat_vifs"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF State from AP CLI")
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["nat_vifs"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF State - re-test required')
+                report_data['tests'][key][test_cases["nat_vifs"]] = "error"
+
+            ### Set LANForge port for tests
+            port = "eth2"
+
+            # Print iwinfo for logs
+            iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
+            print(iwinfo)
+
+            ###Run Client Single Connectivity Test Cases for NAT SSIDs
+            # TC - 2.4 GHz WPA2-Enterprise NAT
+            if args.skip_eap != True:
+                test_case = test_cases["2g_eap_nat"]
+                radio = lab_ap_info.lanforge_2dot4g
+                sta_list = [lanforge_prefix+"5216"]
+                ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                        ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+
+                time.sleep(10)
+            else:
+                pass
+
+            # TC - 2.4 GHz WPA2 NAT
+            test_case = test_cases["2g_wpa2_nat"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"4325"]
+            ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 2.4 GHz WPA NAT
+            test_case = test_cases["2g_wpa_nat"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"4323"]
+            ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case, rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 5 GHz WPA2-Enterprise NAT
+            if args.skip_eap != True:
+                test_case = test_cases["5g_eap_nat"]
+                radio = lab_ap_info.lanforge_5g
+                sta_list = [lanforge_prefix+"5217"]
+                ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                        ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+
+                time.sleep(10)
+
+            # TC - 5 GHz WPA2 NAT
+            test_case = test_cases["5g_wpa2_nat"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"4326"]
+            ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC - 5 GHz WPA NAT
+            test_case = test_cases["5g_wpa_nat"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"4324"]
+            ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            logger.info("Testing for " + fw_model + "NAT Mode SSIDs Complete")
+            with open(report_path + today + '/report_data.json', 'w') as report_json_file:
+                json.dump(report_data, report_json_file)
+        else:
+            print("Skipping NAT tests at user request...")
             pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 2.4 GHz WPA2 NAT
-        test_case = test_cases["2g_wpa2_nat"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"4325"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 2.4 GHz WPA NAT
-        test_case = test_cases["2g_wpa_nat"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"4323"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA2-Enterprise NAT
-        test_case = test_cases["5g_eap_nat"]
-        radio = lab_ap_info.lanforge_5g
-        sta_list = [lanforge_prefix+"5217"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA2 NAT
-        test_case = test_cases["5g_wpa2_nat"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"4326"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA NAT
-        test_case = test_cases["5g_wpa_nat"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"4324"]
-        ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        logger.info("Testing for " + fw_model + "NAT Mode SSIDs Complete")
-        with open(report_path + today + '/report_data.json', 'w') as report_json_file:
-            json.dump(report_data, report_json_file)
 
         ###########################################################################
         ################# Customer VLAN Client Connectivity #######################
         ###########################################################################
+        if args.skip_vlan != True:
+            ### Create SSID Profiles
+            ssid_template = "templates/ssid_profile_template.json"
 
-        ### Create SSID Profiles
-        ssid_template = "templates/ssid_profile_template.json"
+            # 5G SSIDs
+            if args.skip_eap != True:
+                try:
+                    fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                             fw_model + '_5G_EAP_VLAN' + today,
+                                                             profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"], None,
+                                                             radius_name,
+                                                             "wpa2OnlyRadius", "BRIDGE", 100, ["is5GHzU", "is5GHz", "is5GHzL"])
+                    print("5G EAP SSID created successfully - custom VLAN mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=1,
+                                           msg='5G EAP SSID created successfully - Custom VLAN mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_vlan"]] = "passed"
 
-        # 5G SSIDs
-        try:
-            fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                     fw_model + '_5G_EAP_VLAN' + today,
-                                                     profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"], None,
-                                                     radius_name,
-                                                     "wpa2OnlyRadius", "BRIDGE", 100, ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G EAP SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=1,
-                                   msg='5G EAP SSID created successfully - Custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_vlan"]] = "passed"
+                except:
+                    fiveG_eap = "error"
+                    print("5G EAP SSID create failed - custom VLAN mode")
+                    client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=5,
+                                           msg='5G EAP SSID create failed - custom VLAN mode')
+                    report_data['tests'][key][test_cases["ssid_5g_eap_vlan"]] = "failed"
+                    fiveG_eap = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_profile"]
+            else:
+                pass
 
-        except:
-            fiveG_eap = "error"
-            print("5G EAP SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=5,
-                                   msg='5G EAP SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_eap_vlan"]] = "failed"
-            fiveG_eap = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_profile"]
+            try:
+                fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                          fw_model + '_5G_WPA2_VLAN' + today,
+                                                          profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"],
+                                                          profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_PSK"],
+                                                          "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 100,
+                                                          ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA2 SSID created successfully - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_vlan"], run_id=rid, status_id=1,
+                                       msg='5G WPA2 SSID created successfully - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_vlan"]] = "passed"
+            except:
+                fiveG_wpa2 = "error"
+                print("5G WPA2 SSID create failed - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa2_vlan"], run_id=rid, status_id=5,
+                                       msg='5G WPA2 SSID create failed - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa2_vlan"]] = "failed"
+                fiveG_wpa2 = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_profile"]
 
-        try:
-            fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                      fw_model + '_5G_WPA2_VLAN' + today,
-                                                      profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"],
-                                                      profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_PSK"],
-                                                      "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 100,
-                                                      ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA2 SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_vlan"], run_id=rid, status_id=1,
-                                   msg='5G WPA2 SSID created successfully - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_vlan"]] = "passed"
-        except:
-            fiveG_wpa2 = "error"
-            print("5G WPA2 SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa2_vlan"], run_id=rid, status_id=5,
-                                   msg='5G WPA2 SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa2_vlan"]] = "failed"
-            fiveG_wpa2 = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_profile"]
+            try:
+                fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                         fw_model + '_5G_WPA_VLAN_' + today,
+                                                         profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"],
+                                                         profile_info_dict[fw_model + '_vlan']["fiveG_WPA_PSK"],
+                                                         "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 100,
+                                                         ["is5GHzU", "is5GHz", "is5GHzL"])
+                print("5G WPA SSID created successfully - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_vlan"], run_id=rid, status_id=1,
+                                       msg='5G WPA SSID created successfully - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_vlan"]] = "passed"
+            except:
+                fiveG_wpa = "error"
+                print("5G WPA SSID create failed - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_5g_wpa_vlan"], run_id=rid, status_id=5,
+                                       msg='5G WPA SSID create failed - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_5g_wpa_vlan"]] = "failed"
+                fiveG_wpa = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_profile"]
 
-        try:
-            fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                     fw_model + '_5G_WPA_VLAN_' + today,
-                                                     profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"],
-                                                     profile_info_dict[fw_model + '_vlan']["fiveG_WPA_PSK"],
-                                                     "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 100,
-                                                     ["is5GHzU", "is5GHz", "is5GHzL"])
-            print("5G WPA SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_vlan"], run_id=rid, status_id=1,
-                                   msg='5G WPA SSID created successfully - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_vlan"]] = "passed"
-        except:
-            fiveG_wpa = "error"
-            print("5G WPA SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_5g_wpa_vlan"], run_id=rid, status_id=5,
-                                   msg='5G WPA SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_5g_wpa_vlan"]] = "failed"
-            fiveG_wpa = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_profile"]
+            # 2.4G SSIDs
+            if args.skip_eap != True:
+                try:
+                    twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                                fw_model + '_2G_EAP_VLAN_' + today,
+                                                                profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"],
+                                                                None,
+                                                                radius_name, "wpa2OnlyRadius", "BRIDGE", 100, ["is2dot4GHz"])
+                    print("2.4G EAP SSID created successfully - custom VLAN mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=1,
+                                           msg='2.4G EAP SSID created successfully - custom VLAN mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_vlan"]] = "passed"
+                except:
+                    twoFourG_eap = "error"
+                    print("2.4G EAP SSID create failed - custom VLAN mode")
+                    client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=5,
+                                           msg='2.4G EAP SSID create failed - custom VLAN mode')
+                    report_data['tests'][key][test_cases["ssid_2g_eap_vlan"]] = "failed"
+                    twoFourG_eap = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_profile"]
+            else:
+                pass
 
-        # 2.4G SSIDs
-        try:
-            twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_EAP_VLAN_' + today,
-                                                        profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"],
-                                                        None,
-                                                        radius_name, "wpa2OnlyRadius", "BRIDGE", 100, ["is2dot4GHz"])
-            print("2.4G EAP SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=1,
-                                   msg='2.4G EAP SSID created successfully - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_vlan"]] = "passed"
-        except:
-            twoFourG_eap = "error"
-            print("2.4G EAP SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=5,
-                                   msg='2.4G EAP SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_eap_vlan"]] = "failed"
-            twoFourG_eap = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
+            try:
+                twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                             fw_model + '_2G_WPA2_VLAN_' + today,
+                                                             profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"],
+                                                             profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"],
+                                                             "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 100,
+                                                             ["is2dot4GHz"])
+                print("2.4G WPA2 SSID created successfully - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_vlan"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA2 SSID created successfully - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_vlan"]] = "passed"
+            except:
+                twoFourG_wpa2 = "error"
+                print("2.4G WPA2 SSID create failed - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa2_vlan"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA2 SSID create failed - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa2_vlan"]] = "failed"
+                twoFourG_wpa2 = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_profile"]
 
-        try:
-            twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_2G_WPA2_VLAN_' + today,
-                                                         profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"],
-                                                         profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"],
-                                                         "Radius-Accounting-Profile", "wpa2OnlyPSK", "BRIDGE", 100,
-                                                         ["is2dot4GHz"])
-            print("2.4G WPA2 SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_vlan"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA2 SSID created successfully - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_vlan"]] = "passed"
-        except:
-            twoFourG_wpa2 = "error"
-            print("2.4G WPA2 SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa2_vlan"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA2 SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa2_vlan"]] = "failed"
-            twoFourG_wpa2 = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
+            try:
+                twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
+                                                            fw_model + '_2G_WPA_VLAN_' + today,
+                                                            profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"],
+                                                            profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"],
+                                                            "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 100,
+                                                            ["is2dot4GHz"])
+                print("2.4G WPA SSID created successfully - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_vlan"], run_id=rid, status_id=1,
+                                       msg='2.4G WPA SSID created successfully - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_vlan"]] = "passed"
+            except:
+                twoFourG_wpa = "error"
+                print("2.4G WPA SSID create failed - custom VLAN mode")
+                client.update_testrail(case_id=test_cases["ssid_2g_wpa_vlan"], run_id=rid, status_id=5,
+                                       msg='2.4G WPA SSID create failed - custom VLAN mode')
+                report_data['tests'][key][test_cases["ssid_2g_wpa_vlan"]] = "failed"
+                twoFourG_wpa = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_profile"]
 
-        try:
-            twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                        fw_model + '_2G_WPA_VLAN_' + today,
-                                                        profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"],
-                                                        profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"],
-                                                        "Radius-Accounting-Profile", "wpaPSK", "BRIDGE", 100,
-                                                        ["is2dot4GHz"])
-            print("2.4G WPA SSID created successfully - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_vlan"], run_id=rid, status_id=1,
-                                   msg='2.4G WPA SSID created successfully - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_vlan"]] = "passed"
-        except:
-            twoFourG_wpa = "error"
-            print("2.4G WPA SSID create failed - custom VLAN mode")
-            client.update_testrail(case_id=test_cases["ssid_2g_wpa_vlan"], run_id=rid, status_id=5,
-                                   msg='2.4G WPA SSID create failed - custom VLAN mode')
-            report_data['tests'][key][test_cases["ssid_2g_wpa_vlan"]] = "failed"
-            twoFourG_wpa = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
+            ### Create AP VLAN Profile
+            rfProfileId = lab_ap_info.rf_profile
+            if args.skip_eap != True:
+                radiusProfileId = radius_profile
+                child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId,
+                                  radiusProfileId]
+                print(child_profiles)
+            else:
+                child_profiles = [fiveG_wpa2, fiveG_wpa, twoFourG_wpa2, twoFourG_wpa, rfProfileId]
+                print(child_profiles)
+            ap_template = "templates/ap_profile_template.json"
+            name = "Nightly_Sanity_" + fw_model + "_" + today + "_vlan"
 
-        ### Create AP VLAN Profile
-        rfProfileId = lab_ap_info.rf_profile
-        radiusProfileId = radius_profile
-        child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa, rfProfileId, radiusProfileId]
-        print(child_profiles)
-        ap_template = "templates/ap_profile_template.json"
-        name = "Nightly_Sanity_" + fw_model + "_" + today + "_vlan"
-
-        try:
-            create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
-            test_profile_id = create_ap_profile
-            print("Test Profile ID for Test is:", test_profile_id)
-            client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=1,
+            try:
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                test_profile_id = create_ap_profile
+                print("Test Profile ID for Test is:", test_profile_id)
+                client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=1,
                                        msg='AP profile for VLAN tests created successfully')
-            report_data['tests'][key][test_cases["ap_vlan"]] = "passed"
-        except:
-            create_ap_profile = "error"
-            test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
-            print("Error creating AP profile for bridge tests. Will use existing AP profile")
-            client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=5,
+                report_data['tests'][key][test_cases["ap_vlan"]] = "passed"
+            except:
+                create_ap_profile = "error"
+                test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
+                print("Error creating AP profile for bridge tests. Will use existing AP profile")
+                client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=5,
                                        msg='AP profile for VLAN tests could not be created using API')
-            report_data['tests'][key][test_cases["ap_vlan"]] = "failed"
+                report_data['tests'][key][test_cases["ap_vlan"]] = "failed"
 
-        ### Set Proper AP Profile for VLAN SSID Tests
-        ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
+            ### Set Proper AP Profile for VLAN SSID Tests
+            ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
-        ### Wait for Profile Push
-        time.sleep(180)
+            ### Wait for Profile Push
+            time.sleep(180)
 
-        ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
-        ## VIF Config
-        try:
-            ssid_config = profile_info_dict[fw_model + '_vlan']["ssid_list"]
-            print("SSIDs in AP Profile:", ssid_config)
-
-            ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF Config:", ssid_list)
-
-            if set(ssid_list) == set(ssid_config):
-                print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
-                client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config matches AP Profile Config')
-                report_data['tests'][key][test_cases["vlan_vifc"]] = "passed"
+            ###Check if VIF Config and VIF State reflect AP Profile from CloudSDK
+            ## VIF Config
+            if args.skip_eap != True:
+                ssid_config = profile_info_dict[fw_model + '_vlan']["ssid_list"]
             else:
-                print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
-                client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config do not match AP Profile Config')
-                report_data['tests'][key][test_cases["vlan_vifc"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF Config - re-test required')
-            report_data['tests'][key][test_cases["vlan_vifc"]] = "error"
-        # VIF State
-        try:
-            ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
-            print("SSIDs in AP VIF State:", ssid_state)
+                ssid_config = [x for x in profile_info_dict[fw_model + '_vlan']["ssid_list"] if "EAP" not in x]
 
-            if set(ssid_state) == set(ssid_config):
-                print("SSIDs properly applied on AP")
-                client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=1,
-                                       msg='SSIDs in VIF Config applied to VIF State')
-                report_data['tests'][key][test_cases["vlan_vifs"]] = "passed"
+            try:
+                print("SSIDs in AP Profile:", ssid_config)
+
+                ssid_list = ap_ssh.get_vif_config(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF Config:", ssid_list)
+
+                if set(ssid_list) == set(ssid_config):
+                    print("SSIDs in Wifi_VIF_Config Match AP Profile Config")
+                    client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config matches AP Profile Config')
+                    report_data['tests'][key][test_cases["vlan_vifc"]] = "passed"
+                else:
+                    print("SSIDs in Wifi_VIF_Config do not match desired AP Profile Config")
+                    client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config do not match AP Profile Config')
+                    report_data['tests'][key][test_cases["vlan_vifc"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["vlan_vifc"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF Config - re-test required')
+                report_data['tests'][key][test_cases["vlan_vifc"]] = "error"
+            # VIF State
+            try:
+                ssid_state = ap_ssh.get_vif_state(ap_ip, ap_username, ap_password)
+                print("SSIDs in AP VIF State:", ssid_state)
+
+                if set(ssid_state) == set(ssid_config):
+                    print("SSIDs properly applied on AP")
+                    client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=1,
+                                           msg='SSIDs in VIF Config applied to VIF State')
+                    report_data['tests'][key][test_cases["vlan_vifs"]] = "passed"
+                else:
+                    print("SSIDs not applied on AP")
+                    client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=5,
+                                           msg='SSIDs in VIF Config not applied to VIF State')
+                    report_data['tests'][key][test_cases["vlan_vifs"]] = "failed"
+            except:
+                ssid_list = "ERROR"
+                print("Error accessing VIF State from AP CLI")
+                print("Error accessing VIF Config from AP CLI")
+                client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=4,
+                                       msg='Cannot determine VIF State - re-test required')
+                report_data['tests'][key][test_cases["vlan_vifs"]] = "error"
+
+            ### Set port for LANForge
+            port = "vlan100"
+
+            # Print iwinfo for logs
+            iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
+            print(iwinfo)
+
+            ###Run Client Single Connectivity Test Cases for VLAN SSIDs
+            # TC- 2.4 GHz WPA2-Enterprise VLAN
+            if args.skip_eap != True:
+                test_case = test_cases["2g_eap_vlan"]
+                radio = lab_ap_info.lanforge_2dot4g
+                sta_list = [lanforge_prefix+"5253"]
+                ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                            ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+
+                time.sleep(10)
             else:
-                print("SSIDs not applied on AP")
-                client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=5,
-                                       msg='SSIDs in VIF Config not applied to VIF State')
-                report_data['tests'][key][test_cases["vlan_vifs"]] = "failed"
-        except:
-            ssid_list = "ERROR"
-            print("Error accessing VIF State from AP CLI")
-            print("Error accessing VIF Config from AP CLI")
-            client.update_testrail(case_id=test_cases["vlan_vifs"], run_id=rid, status_id=4,
-                                   msg='Cannot determine VIF State - re-test required')
-            report_data['tests'][key][test_cases["vlan_vifs"]] = "error"
+                pass
+            # TC - 2.4 GHz WPA2 VLAN
+            test_case = test_cases["2g_wpa2_vlan"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"5251"]
+            ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
 
-        ### Set port for LANForge
-        port = "vlan100"
+            time.sleep(10)
 
-        # Print iwinfo for logs
-        iwinfo = iwinfo_status(ap_ip, ap_username, ap_password)
-        print(iwinfo)
+            # TC 4323 - 2.4 GHz WPA VLAN
+            test_case = test_cases["2g_wpa_vlan"]
+            radio = lab_ap_info.lanforge_2dot4g
+            station = [lanforge_prefix+"5252"]
+            ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case, rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
 
-        ###Run Client Single Connectivity Test Cases for VLAN SSIDs
-        # TC- 2.4 GHz WPA2-Enterprise VLAN
-        test_case = test_cases["2g_eap_vlan"]
-        radio = lab_ap_info.lanforge_2dot4g
-        sta_list = [lanforge_prefix+"5253"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
+            time.sleep(10)
+
+            # TC - 5 GHz WPA2-Enterprise VLAN
+            if args.skip_eap != True:
+                test_case = test_cases["5g_eap_vlan"]
+                radio = lab_ap_info.lanforge_5g
+                sta_list = [lanforge_prefix+"5250"]
+                ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"]
+                security = "wpa2"
+                eap_type = "TTLS"
+                try:
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
+                                                            ttls_password, test_case, rid)
+                except:
+                    test_result = "error"
+                    Test.testrail_retest(test_case, rid, ssid_name)
+                    pass
+                report_data['tests'][key][int(test_case)] = test_result
+                print(report_data['tests'][key])
+
+                time.sleep(10)
+            else:
+                pass
+
+            # TC - 5 GHz WPA2 VLAN
+            test_case = test_cases["5g_wpa2_vlan"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"5248"]
+            ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
+            security = "wpa2"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            # TC 4324 - 5 GHz WPA VLAN
+            test_case = test_cases["5g_wpa_vlan"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lanforge_prefix+"5249"]
+            ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"]
+            ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
+            security = "wpa"
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, ssid_name)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            print(report_data['tests'][key])
+
+            time.sleep(10)
+
+            logger.info("Testing for " + fw_model + "Custom VLAN SSIDs Complete")
+        else:
+            print("Skipping VLAN tests at user request...")
             pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 2.4 GHz WPA2 VLAN
-        test_case = test_cases["2g_wpa2_vlan"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"5251"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC 4323 - 2.4 GHz WPA VLAN
-        test_case = test_cases["2g_wpa_vlan"]
-        radio = lab_ap_info.lanforge_2dot4g
-        station = [lanforge_prefix+"5252"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA2-Enterprise VLAN
-        test_case = test_cases["5g_eap_vlan"]
-        radio = lab_ap_info.lanforge_5g
-        sta_list = [lanforge_prefix+"5250"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"]
-        security = "wpa2"
-        eap_type = "TTLS"
-        try:
-            test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity,
-                                                    ttls_password, test_case, rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC - 5 GHz WPA2 VLAN
-        test_case = test_cases["5g_wpa2_vlan"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"5248"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
-        security = "wpa2"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        # TC 4324 - 5 GHz WPA VLAN
-        test_case = test_cases["5g_wpa_vlan"]
-        radio = lab_ap_info.lanforge_5g
-        station = [lanforge_prefix+"5249"]
-        ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"]
-        ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
-        security = "wpa"
-        try:
-            test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
-                                                          test_case,
-                                                          rid)
-        except:
-            test_result = "error"
-            Test.testrail_retest(test_case, rid, ssid_name)
-            pass
-        report_data['tests'][key][int(test_case)] = test_result
-        print(report_data['tests'][key])
-
-        time.sleep(10)
-
-        logger.info("Testing for " + fw_model + "Custom VLAN SSIDs Complete")
 
         logger.info("Testing for " + fw_model + "Complete")
 
@@ -1690,13 +1809,22 @@ for key in ap_models:
     if report_data['fw_available'][key] is "No":
         report_data["pass_percent"][key] = "Not Run"
     else:
-        no_of_tests = len(report_data["tests"][key])
+        #no_of_tests = len(report_data["tests"][key])
         passed_tests = sum(x == "passed" for x in report_data["tests"][key].values())
-        print(passed_tests)
-        percent = float(passed_tests / no_of_tests) * 100
-        percent_pass = round(percent, 2)
-        print(key, "pass rate is", str(percent_pass) + "%")
-        report_data["pass_percent"][key] = str(percent_pass) + '%'
+        failed_tests = sum(y == "failed" for y in report_data["tests"][key].values())
+        no_of_tests = passed_tests + failed_tests
+        if no_of_tests == 0:
+            print("No tests run for",key)
+        else:
+            print("--- Test Data for",key,"---")
+            print(key,"tests passed:",passed_tests)
+            print(key,"tests failed:",failed_tests)
+            print(key,"total tests:",no_of_tests)
+            percent = float(passed_tests / no_of_tests) * 100
+            percent_pass = round(percent, 2)
+            print(key, "pass rate is", str(percent_pass) + "%")
+            print("---------------------------")
+            report_data["pass_percent"][key] = str(percent_pass) + '%'
 
 # write to report_data contents to json file
 print(report_data)
