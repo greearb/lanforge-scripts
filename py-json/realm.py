@@ -1186,6 +1186,11 @@ class L3CXProfile(BaseProfile):
                 response = self.json_get("/endp/all")
             else:
                 response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+                print("created cx.........")
+                print(created_cx)
+                print(fields)
+                print("response...........................")
+                print(response)
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1594,7 +1599,7 @@ class L4CXProfile(LFCliBase):
             endp_list = endp_list['endpoint']
             for item in endp_list:
                 for name, info in item.items():
-                    if name in self.cx_profile.created_cx.keys():
+                    if name in self.created_cx.keys():
                         expected_passes += 1
                         if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
                             print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
@@ -1701,7 +1706,6 @@ class L4CXProfile(LFCliBase):
             if debug:
                 print(fields)
         else:
-            #todo:rename this...
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
             if debug:
                 print(header_row)
@@ -1712,20 +1716,22 @@ class L4CXProfile(LFCliBase):
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
         sleep_interval =  round(duration_sec // 5)
         if debug:
-            print("Sleep_interval is..." + sleep_interval)
-            print("Start time is..."+ start_time)
-            print("End time is..."+ end_time)
+            print("Sleep_interval is %s ", sleep_interval)
+            print("Start time is %s " , start_time)
+            print("End time is %s " ,end_time)
         value_map = dict()
         passes = 0
         expected_passes = 0
         timestamps = []
         for test in range(1+iterations):
             while datetime.datetime.now() < end_time:
-                response=self.json_get("layer4/all")
-                #response = self.json_get("layer4/list?fields=urls/s")
+                if fields is None:
+                    response = self.json_get("/layer4/all")
+                else:
+                    response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields))
                 if debug:
                     print(response)
-                if "endpoint" not in response:
+                if response is None: 
                     print(response)
                     raise ValueError("Cannot find any endpoints")
                 if monitor:
@@ -1737,8 +1743,8 @@ class L4CXProfile(LFCliBase):
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
-                if self.cx_profile.check_errors(debug):
-                    if self.__check_request_rate(): #need to changed
+                if self.check_errors(debug):
+                    if self.check_request_rate(): 
                         passes += 1
                     else:
                         self._fail("FAIL: Request rate did not exceed 90% target rate")
@@ -1746,10 +1752,9 @@ class L4CXProfile(LFCliBase):
                 else:
                     self._fail("FAIL: Errors found getting to %s " % self.url)
                     self.exit_fail()
-                    #check monitor sleep time
                 time.sleep(monitor_interval)
         print(value_map)
-############################################# edited 'til here - dipti 1/21/20
+
         # step 3 organize data
         endpoints = list()
         for endpoint in value_map.values():
@@ -1764,11 +1769,9 @@ class L4CXProfile(LFCliBase):
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
         # step 4 save and close
-        header_row = col_names
         header_row.insert(0, 'Timestamp')
         print(header_row)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            report_fh = open(report_file, "w+")
             workbook = xlsxwriter.Workbook(report_file)
             worksheet = workbook.add_worksheet()
             for col_num, data in enumerate(header_row):
@@ -1781,13 +1784,14 @@ class L4CXProfile(LFCliBase):
             workbook.close()
         else:
             df = pd.DataFrame(endpoints2)
+            print(header_row)
             df.columns = header_row
             import requests
             import ast
             try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             except:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -1800,11 +1804,9 @@ class L4CXProfile(LFCliBase):
             if output_format == 'png':
                 fig = df.plot().get_figure()
                 fig.savefig(report_file)
-            if output_format == 'html':
-                df.to_html(report_file)
             if output_format == 'df':
                 return df
-            supported_formats = ['csv', 'json', 'stata', 'pickle']
+            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for x in supported_formats:
                 if output_format.lower() == x or report_file.split('.')[-1] == x:
                     exec('df.to_' + x + '("' + report_file + '")')
