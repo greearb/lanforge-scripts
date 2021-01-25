@@ -1195,8 +1195,8 @@ def main():
       print("command show wlan summary ")
       command = "show wlan summary"
 
-   if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None))):
-      raise Exception("wlan  and wlanID is required an")
+   if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
+      raise Exception("wlanID, wlan, wlanSSID are required an")
    if (args.action == "create_wlan"):
       logg.info("create_wlan wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
       if args.series == "9800":
@@ -1206,7 +1206,7 @@ def main():
           if i == 0:
              logg.info("elevated to (config)#")
              # for create wlan <name> <ID> <ssid>  
-             command = "wlan {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID) # should the last one be ssid not wlan
+             command = "wlan {} {} {}".format(args.wlan, args.wlanID, args.wlanSSID) 
              logg.info("open network command {}".format(command))
              egg.sendline(command)
              sleep(0.4)
