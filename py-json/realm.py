@@ -1602,7 +1602,7 @@ class L4CXProfile(LFCliBase):
             endp_list = endp_list['endpoint']
             for item in endp_list:
                 for name, info in item.items():
-                    if name in self.cx_profile.created_cx.keys():
+                    if name in self.created_cx.keys():
                         expected_passes += 1
                         if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
                             print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
@@ -1739,13 +1739,13 @@ class L4CXProfile(LFCliBase):
                 if monitor:
                     if debug:
                         print(response)
-                
+
                 time.sleep(sleep_interval)
                 t = datetime.datetime.now()
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
-                if self.cx_profile.check_errors(debug):
+                if self.check_errors(debug):
                     if self.__check_request_rate(): #need to changed
                         passes += 1
                     else:
