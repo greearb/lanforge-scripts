@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 """
-    This script will create a variable number of stations each with their own set of cross-connects and endpoints.
-    It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
-    This test will pass if all stations increase traffic over the full test duration.
+    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
 
-    Use './test_ipv4_variable_time.py --help' to see command line usage and options
+    Use './create_l3.py --help' to see command line usage and options
 """
 
 import sys
@@ -75,48 +73,11 @@ class CreateL3(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
-
-    def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
-        if self.debug:
-            print(self.cx_profile.created_cx.values())
-            print("==============\n", cx_list, "\n==============")
-        cx_rx_map = {}
-        for cx_name in cx_list['endpoint']:
-            if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                      if value_name == 'rx bytes' and item in self.cx_profile.created_cx.values():
-                        cx_rx_map[item] = value_rx
-        return cx_rx_map
-
-    def start(self, print_pass=False, print_fail=False):
-        self.station_profile.admin_up()
-        temp_stas = self.station_profile.station_names.copy()
-
-        if self.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs")
-        else:
-            self._fail("Stations failed to get IPs")
-            self.exit_fail()
-        self.cx_profile.start_cx()
-
-
-    def stop(self):
-        self.cx_profile.stop_cx()
-        self.station_profile.admin_down()
-
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
             self.rm_port(sta, check_exists=True)
 
-    def cleanup(self):
-        self.cx_profile.cleanup()
-        self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                            port_list=self.station_profile.station_names,
-                                            debug=self.debug)
 
     def build(self):
 
