@@ -995,7 +995,7 @@ def main():
                           try:
                               logg.info("9800 cisco_wifi_ctl.py: create_wlan wlan {} wlanID {} wlanSSID {} port {}".format(args.wlan, args.wlanID, args.wlanSSID, args.port))
                               ctl_output = subprocess.run(["./cisco_wifi_ctl.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "create_wlan","--series",args.series, "--wlanID", args.wlanID,"--wlanSSID", "--wlan", args.wlan, args.wlanSSID, "--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
+                                      "--action", "create_wlan","--series",args.series, "--wlanID", args.wlanID, "--wlan", args.wlan, "--wlanSSID", args.wlanSSID, "--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True)    
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
