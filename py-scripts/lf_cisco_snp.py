@@ -51,10 +51,10 @@ class cisco_():
     def controller_show_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -76,10 +76,10 @@ class cisco_():
     def controller_show_ap_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"advanced"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "advanced"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -97,10 +97,10 @@ class cisco_():
     def controller_show_wlan_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"show wlan summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "show_wlan_summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -120,10 +120,10 @@ class cisco_():
     def controller_disable_ap(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", 
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", 
                                     self.args.cisco_ctlr, "-u",self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -144,10 +144,10 @@ class cisco_():
     def controller_disable_wlan(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_wlan"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -169,10 +169,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_network_5ghz"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_5ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -189,10 +189,10 @@ class cisco_():
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11a disable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -214,10 +214,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_network_24ghz"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_24ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -234,10 +234,10 @@ class cisco_():
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11b disable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -261,10 +261,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"manual"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "manual"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -288,10 +288,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"auto"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "auto"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -313,9 +313,9 @@ class cisco_():
     def controller_set_tx_power(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"txPower", self.args.cisco_tx_power ))  # TODO fix txPower to tx_power in cisco_wifi_ctl.py
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "txPower","--value", self.args.cisco_tx_power], 
@@ -339,9 +339,9 @@ class cisco_():
     def controller_set_channel(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"channel", self.args.cisco_channel ))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "channel","--value", self.args.cisco_channel], 
@@ -363,9 +363,9 @@ class cisco_():
     def controller_set_bandwidth(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"channel", self.args.cisco_chan_width ))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "channel","--value", self.args.cisco_chan_width], 
@@ -388,9 +388,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID ))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
@@ -414,9 +414,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"wireless_tag_policy" ))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "wireless_tag_policy"], 
@@ -440,9 +440,9 @@ class cisco_():
     def controller_enable_wlan(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"enable_wlan"))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "enable_wlan"], 
@@ -465,9 +465,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"enable_network_5ghz"))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "enable_network_5ghz"], 
@@ -485,10 +485,10 @@ class cisco_():
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11a enable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -511,9 +511,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"enable_network_24ghz"))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "enable_network_24ghz"], 
@@ -531,10 +531,10 @@ class cisco_():
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11b enable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -556,9 +556,9 @@ class cisco_():
     def controller_enable_ap(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"enable"))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "enable"], 
@@ -578,7 +578,7 @@ class cisco_():
     #advanced (showes summary)
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action advanced --series 9800
     def controller_show_ap_channel(self):
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "ap_channel"], capture_output=True)
 
@@ -953,10 +953,10 @@ class L3VariableTime(LFCliBase):
 
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                        self.args.cisco_user, "-p", self.args.cisco_passwd,
                                        "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
             pss = ctl_output.stdout.decode('utf-8', 'ignore')
