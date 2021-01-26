@@ -563,6 +563,8 @@ def main():
    row = 0
    worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold); col += 1
    worksheet.set_column(col, col, 10) # Set width
+   worksheet.write(row, col, 'Controller', dblue_bold); col += 1
+   worksheet.set_column(col, col, 12) # Set width
    worksheet.write(row, col, 'Controller\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'AP\nChannel', dblue_bold); col += 1
    worksheet.write(row, col, 'NSS', dblue_bold); col += 1
@@ -1650,8 +1652,19 @@ def main():
                                     T4 = m.group(8)
                                     N_ANT = m.group(9)
                                     DAA_Pwr = m.group(10)
-                                    DAA_N_TX = m.group(11)
+                                    DAA_N_TX = m.group(11) # number of spatial streams
                                     DAA_Total_pwr = m.group(12)
+                                    # adjust the fail criterial based on the number of spatial streams
+                                    if DAA_N_TX == 4:
+                                        failed_low_treshold = 1
+                                    if DAA_N_TX == 3:
+                                        failed_low_treshold = 2
+                                    if DAA_N_TX == 2:
+                                        failed_low_treshold = 3
+                                    if DAA_N_TX == 1:
+                                        failed_low_treshold = 4
+
+
                                     i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
                                         P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr)
                                     print(i_tot)
