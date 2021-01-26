@@ -1719,6 +1719,7 @@ def main():
 
                    col = 0
                    worksheet.write(row, col, myrd, center_blue); col += 1
+                   worksheet.write(row, col, args.series, center_blue); col += 1
                    worksheet.write(row, col, cc_ch, center_blue); col += 1
                    worksheet.write(row, col, _ch, center_blue); col += 1
                    worksheet.write(row, col, _nss, center_blue); col += 1
