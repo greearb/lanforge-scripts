@@ -1222,11 +1222,13 @@ class L3CXProfile(BaseProfile):
                         print(endpoint_data)
                     endpoint_data["Timestamp"] = test_timestamp
                     full_test_data_list.append(endpoint_data)
+                if self.debug:
+                    print("Printing full data list...")
                     print(full_test_data_list)
                     
         header_row.append('Timestamp')
         df = pd.DataFrame(full_test_data_list)
-        df.columns=header_row
+        df=df[["Timestamp",*header_row[:-1]]]
 
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
@@ -1253,7 +1255,7 @@ class L3CXProfile(BaseProfile):
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
         for x in supported_formats:
             if output_format.lower() == x or report_file.split('.')[-1] == x:
-                exec('df.to_' + x + '("' + report_file + '")')
+                exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
 
 
     def refresh_cx(self):
