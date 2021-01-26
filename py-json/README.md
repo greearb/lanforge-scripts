@@ -10,6 +10,8 @@ Follow our [getting started cookbook](http://www.candelatech.com/cookbook.php?vo
 to learn more about how to operate your LANforge client.
 
 ## Getting Started ##
+The first step is to run update_deps.py which is located in py-scripts. This command will install all dependencies necessary for lanforge-scripts on your system.
+
 New automation tests and JSON client scripts should go in `../py-scripts`. This directory
 is intended for utility and library scripts. To use this module, make sure your include path
 captures this module by adding it to your `sys.path`. We recommend your scripts in `../py-scripts`
@@ -33,7 +35,7 @@ begin with these imports:
                 `import LANforge`
                 `from LANforge import LFUtils`
                 `from LANforge import LFRequest`
-## create_sta.py ## 
+## create_sta.py ##
 Please follow though `create_sta.py` to see how you can
 utilize the JSON API provided by the LANforge client. It
 is possible to use similar commands to create virtual Access points.
@@ -41,7 +43,7 @@ is possible to use similar commands to create virtual Access points.
 Example that creates a WANlink
 ## generic_cx.py ##
 Example that creates a cross connect
-## realm.py ## 
+## realm.py ##
 Module defining the Realm class. `Realm` is a toolbox class that also serves as a facade for finer-grained methods in LFUtils and LFRequest:
 
     * `__init__`: our constructor
@@ -107,7 +109,7 @@ Module defining the Realm class. `Realm` is a toolbox class that also serves as 
         * `run_filter()` : This function will run the filter specified by the `filter` argument on the pcap
                           file specified by the `pcap_file` argument. It redirects this output into a txt file in /tmp
                           and returns the lines in that file as an array.
-## realm_test.py ## 
+## realm_test.py ##
 Exercises realm.py
 ## show_ports.py ##
 This simple example shows how to gather a digest of ports
@@ -115,7 +117,7 @@ This simple example shows how to gather a digest of ports
 Example of how to use LFRequest to create a L4 endpoint
 ## wct-example.py ##
 Example of using expect on port 3990 to operate a WiFi Capacity Test
-## ws-sta-monitor.py ## 
+## ws-sta-monitor.py ##
 Websocket 8081 client that filters interesting station events from the lfclient websocket
 
 
@@ -172,4 +174,3 @@ This directory defines the LANforge module holding the following classes:
 
 Have fun coding!
 support@candelatech.com
-
