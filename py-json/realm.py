@@ -1220,15 +1220,17 @@ class L3CXProfile(BaseProfile):
                 for endpoint_data in datum.values():
                     if self.debug:
                         print(endpoint_data)
-                    endpoint_data["Timestamp"] = test_timestamp
+                    endpoint_data["Timestamp"] = test_timestamp.strftime("%m/%d/%Y %I:%M:%S")
+                    endpoint_data["Timestamp milliseconds"] = test_timestamp.strftime("%f")
                     full_test_data_list.append(endpoint_data)
                 if self.debug:
                     print("Printing full data list...")
                     print(full_test_data_list)
                     
         header_row.append('Timestamp')
+        header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
-        df=df[["Timestamp",*header_row[:-1]]]
+        df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
 
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
@@ -1249,7 +1251,7 @@ class L3CXProfile(BaseProfile):
             fig = df.plot().get_figure()
             fig.savefig(report_file)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            df.to_excel(report_file)
+            df.to_excel(report_file, index=False)
         if output_format == 'df':
             return df
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
