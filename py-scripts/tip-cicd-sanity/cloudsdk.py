@@ -265,3 +265,16 @@ class CloudSDK:
         #print(ssid_profile)
         radius_profile_id = radius_profile['id']
         return radius_profile_id
+
+    def delete_profile(cloudSDK_url, bearer, profile_id):
+        url = cloudSDK_url + "/portal/profile?profileId="+profile_id
+        payload = {}
+        headers = {
+            'Authorization': 'Bearer ' + bearer
+        }
+        del_profile = requests.request("DELETE", url, headers=headers, data=payload)
+        status_code = del_profile.status_code
+        if status_code is 200:
+            return("SUCCESS")
+        else:
+            return ("ERROR")

@@ -457,7 +457,7 @@ for key in equipment_ids:
 
         # Skip EAP argument
         if args.skip_eap == True:
-            #case_ids.remove(test_cases["radius_profile"])
+            case_ids.remove(test_cases["radius_profile"])
             for x in test_cases:
                 if "eap" in x and test_cases[x] in case_ids:
                     case_ids.remove(test_cases[x])
@@ -705,11 +705,14 @@ for key in equipment_ids:
             print(report_data['tests'][key])
             # Pass cloud connectivity test case
 
-        ###Update report json
+        # Update report json
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
-        ### Create RADIUS profile - used for all EAP SSIDs
+        # Create List of Created Profiles to Delete After Test
+        delete_list = []
+
+        # Create RADIUS profile - used for all EAP SSIDs
         if args.skip_eap != True:
             radius_template = "templates/radius_profile_template.json"
             radius_name = radius_info['name']
@@ -730,6 +733,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["radius_profile"], run_id=rid, status_id=1,
                                        msg='RADIUS profile created successfully')
                 report_data['tests'][key][test_cases["radius_profile"]] = "passed"
+                # Add created RADIUS profile to list for deletion at end of test
+                delete_list.append(radius_profile)
             except:
                 radius_profile = 'error'
                 print("RADIUS Profile Create Error, will use existing profile for tests")
@@ -761,7 +766,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_5g_eap_bridge"], run_id=rid, status_id=1,
                                            msg='5G EAP SSID created successfully - bridge mode')
                     report_data['tests'][key][test_cases["ssid_5g_eap_bridge"]] = "passed"
-
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(fiveG_eap)
                 except:
                     fiveG_eap = "error"
                     print("5G EAP SSID create failed - bridge mode")
@@ -783,6 +789,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa2_bridge"], run_id=rid, status_id=1,
                                        msg='5G WPA2 SSID created successfully - bridge mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa2_bridge"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa2)
             except:
                 fiveG_wpa2 = "error"
                 print("5G WPA2 SSID create failed - bridge mode")
@@ -802,6 +810,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa_bridge"], run_id=rid, status_id=1,
                                        msg='5G WPA SSID created successfully - bridge mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa_bridge"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa)
             except:
                 fiveG_wpa = "error"
                 print("5G WPA SSID create failed - bridge mode")
@@ -823,6 +833,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_2g_eap_bridge"], run_id=rid, status_id=1,
                                            msg='2.4G EAP SSID created successfully - bridge mode')
                     report_data['tests'][key][test_cases["ssid_2g_eap_bridge"]] = "passed"
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(twoFourG_eap)
                 except:
                     twoFourG_eap = "error"
                     print("2.4G EAP SSID create failed - bridge mode")
@@ -844,6 +856,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa2_bridge"], run_id=rid, status_id=1,
                                        msg='2.4G WPA2 SSID created successfully - bridge mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa2_bridge"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa2)
             except:
                 twoFourG_wpa2 = "error"
                 print("2.4G WPA2 SSID create failed - bridge mode")
@@ -863,6 +877,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa_bridge"], run_id=rid, status_id=1,
                                        msg='2.4G WPA SSID created successfully - bridge mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa_bridge"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa)
             except:
                 twoFourG_wpa = "error"
                 print("2.4G WPA SSID create failed - bridge mode")
@@ -893,6 +909,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=1,
                                        msg='AP profile for bridge tests created successfully')
                 report_data['tests'][key][test_cases["ap_bridge"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(test_profile_id)
             except:
                 create_ap_profile = "error"
                 test_profile_id = profile_info_dict[fw_model]["profile_id"]
@@ -1120,6 +1138,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_5g_eap_nat"], run_id=rid, status_id=1,
                                            msg='5G EAP SSID created successfully - NAT mode')
                     report_data['tests'][key][test_cases["ssid_5g_eap_nat"]] = "passed"
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(fiveG_eap)
 
                 except:
                     fiveG_eap = "error"
@@ -1142,6 +1162,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa2_nat"], run_id=rid, status_id=1,
                                        msg='5G WPA2 SSID created successfully - NAT mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa2_nat"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa2)
             except:
                 fiveG_wpa2 = "error"
                 print("5G WPA2 SSID create failed - NAT mode")
@@ -1161,6 +1183,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa_nat"], run_id=rid, status_id=1,
                                        msg='5G WPA SSID created successfully - NAT mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa_nat"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa)
             except:
                 fiveG_wpa = "error"
                 print("5G WPA SSID create failed - NAT mode")
@@ -1182,6 +1206,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_2g_eap_nat"], run_id=rid, status_id=1,
                                            msg='2.4G EAP SSID created successfully - NAT mode')
                     report_data['tests'][key][test_cases["ssid_2g_eap_nat"]] = "passed"
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(twoFourG_eap)
                 except:
                     twoFourG_eap = "error"
                     print("2.4G EAP SSID create failed - NAT mode")
@@ -1203,6 +1229,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa2_nat"], run_id=rid, status_id=1,
                                        msg='2.4G WPA2 SSID created successfully - NAT mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa2_nat"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa2)
             except:
                 twoFourG_wpa2 = "error"
                 print("2.4G WPA2 SSID create failed - NAT mode")
@@ -1222,6 +1250,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa_nat"], run_id=rid, status_id=1,
                                        msg='2.4G WPA SSID created successfully - NAT mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa_nat"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa)
             except:
                 twoFourG_wpa = "error"
                 print("2.4G WPA SSID create failed - NAT mode")
@@ -1251,6 +1281,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=1,
                                        msg='AP profile for NAT tests created successfully')
                 report_data['tests'][key][test_cases["ap_nat"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(test_profile_id)
             except:
                 create_ap_profile = "error"
                 test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
@@ -1475,6 +1507,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_5g_eap_vlan"], run_id=rid, status_id=1,
                                            msg='5G EAP SSID created successfully - Custom VLAN mode')
                     report_data['tests'][key][test_cases["ssid_5g_eap_vlan"]] = "passed"
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(fiveG_eap)
 
                 except:
                     fiveG_eap = "error"
@@ -1497,6 +1531,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa2_vlan"], run_id=rid, status_id=1,
                                        msg='5G WPA2 SSID created successfully - custom VLAN mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa2_vlan"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa2)
             except:
                 fiveG_wpa2 = "error"
                 print("5G WPA2 SSID create failed - custom VLAN mode")
@@ -1516,6 +1552,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_5g_wpa_vlan"], run_id=rid, status_id=1,
                                        msg='5G WPA SSID created successfully - custom VLAN mode')
                 report_data['tests'][key][test_cases["ssid_5g_wpa_vlan"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(fiveG_wpa)
             except:
                 fiveG_wpa = "error"
                 print("5G WPA SSID create failed - custom VLAN mode")
@@ -1538,6 +1576,8 @@ for key in equipment_ids:
                     client.update_testrail(case_id=test_cases["ssid_2g_eap_vlan"], run_id=rid, status_id=1,
                                            msg='2.4G EAP SSID created successfully - custom VLAN mode')
                     report_data['tests'][key][test_cases["ssid_2g_eap_vlan"]] = "passed"
+                    # Add created profile to list for deletion at end of test
+                    delete_list.append(twoFourG_eap)
                 except:
                     twoFourG_eap = "error"
                     print("2.4G EAP SSID create failed - custom VLAN mode")
@@ -1560,6 +1600,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa2_vlan"], run_id=rid, status_id=1,
                                        msg='2.4G WPA2 SSID created successfully - custom VLAN mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa2_vlan"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa2)
             except:
                 twoFourG_wpa2 = "error"
                 print("2.4G WPA2 SSID create failed - custom VLAN mode")
@@ -1579,6 +1621,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ssid_2g_wpa_vlan"], run_id=rid, status_id=1,
                                        msg='2.4G WPA SSID created successfully - custom VLAN mode')
                 report_data['tests'][key][test_cases["ssid_2g_wpa_vlan"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(twoFourG_wpa)
             except:
                 twoFourG_wpa = "error"
                 print("2.4G WPA SSID create failed - custom VLAN mode")
@@ -1608,6 +1652,8 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=1,
                                        msg='AP profile for VLAN tests created successfully')
                 report_data['tests'][key][test_cases["ap_vlan"]] = "passed"
+                # Add created profile to list for deletion at end of test
+                delete_list.append(test_profile_id)
             except:
                 create_ap_profile = "error"
                 test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
@@ -1837,8 +1883,23 @@ for key in equipment_ids:
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
-        ## Post-test Profile Cleanup
+        ###########################################################################
+        ################# Post-test Prfofile Cleanup ##############################
+        ###########################################################################
 
+        # Set AP to use permanently available profile to allow for deletion of RADIUS, SSID, and AP profiles
+        print("Cleaning up! Deleting created test profiles")
+        print("Set AP to profile not created in test")
+        ap_profile = CloudSDK.set_ap_profile(equipment_id, profile_info_dict[fw_model]["profile_id"], cloudSDK_url, bearer)
+        time.sleep(5)
+
+        # Delete profiles in delete_list
+        for x in delete_list:
+            delete_profile = CloudSDK.delete_profile(cloudSDK_url, bearer, str(x))
+            if delete_profile == "SUCCESS":
+                print("profile", x, "delete successful")
+            else:
+                print("Error deleting profile")
 
 # Dump all sanity test results to external json file again just to be sure
 with open('sanity_status.json', 'w') as json_file:

@@ -137,7 +137,7 @@ test_cases = {
 
 ## Other profiles
 radius_profile = 129
-rf_profile = 3459
+rf_profile = 10
 
 ###Testing AP Profile Information
 profile_info_dict = {
@@ -146,7 +146,7 @@ profile_info_dict = {
         "childProfileIds": [
             129,
             3,
-            3459,
+            10,
             11,
             12,
             13,
@@ -189,7 +189,7 @@ profile_info_dict = {
             18,
             201,
             202,
-            3459,
+            10,
             14,
             15
         ],
@@ -235,7 +235,7 @@ profile_info_dict = {
             22,
             24,
             25,
-            3459
+            10
         ],
         "fiveG_WPA2_SSID": "EC420_5G_WPA2",
         "fiveG_WPA2_PSK": "Connectus123$",
@@ -270,7 +270,7 @@ profile_info_dict = {
         "childProfileIds": [
             32,
             129,
-            3459,
+            10,
             28,
             29,
             205,
@@ -313,7 +313,7 @@ profile_info_dict = {
             81,
             193,
             82,
-            3459,
+            10,
             78,
             79
         ],
@@ -351,7 +351,7 @@ profile_info_dict = {
             129,
             72,
             73,
-            3459,
+            10,
             75,
             203,
             76,
@@ -396,7 +396,7 @@ profile_info_dict = {
             211,
             212,
             90,
-            3459,
+            10,
             91,
             93,
             94
@@ -438,7 +438,7 @@ profile_info_dict = {
             85,
             87,
             88,
-            3459,
+            10,
             207
         ],
         "fiveG_WPA2_SSID": "ECW5211_5G_WPA2_NAT",
@@ -476,7 +476,7 @@ profile_info_dict = {
             320,
             129,
             337,
-            3459,
+            10,
             333,
             334,
             335
@@ -514,7 +514,7 @@ profile_info_dict = {
         "childProfileIds": [
             129,
             313,
-            3459,
+            10,
             314,
             315,
             316,
@@ -562,7 +562,7 @@ profile_info_dict = {
             354,
             355,
             356,
-            3459,
+            10,
             351
         ],
         "fiveG_WPA2_SSID": "EC420_5G_WPA2_VLAN",
@@ -601,7 +601,7 @@ profile_info_dict = {
             359,
             360,
             361,
-            3459,
+            10,
             362,
             363
         ],
