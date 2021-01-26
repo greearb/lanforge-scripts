@@ -15,7 +15,7 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
-import datetime
+import datetime 
 import base64
 import xlsxwriter
 import pandas as pd
@@ -1211,6 +1211,7 @@ class L3CXProfile(BaseProfile):
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
+        print(value_map)
 
     #organize data 
         full_test_data_list = []
@@ -1220,16 +1221,18 @@ class L3CXProfile(BaseProfile):
                 for endpoint_data in datum.values():
                     if self.debug:
                         print(endpoint_data)
-                    endpoint_data["Timestamp"] = test_timestamp.strftime("%m/%d/%Y %I:%M:%S")
-                    endpoint_data["Timestamp milliseconds"] = test_timestamp.strftime("%f")
+                    endpoint_data["Timestamp"] = test_timestamp
                     full_test_data_list.append(endpoint_data)
                 if self.debug:
                     print("Printing full data list...")
                     print(full_test_data_list)
                     
         header_row.append('Timestamp')
-        header_row.append('Timestamp milliseconds')
+       # header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
+       
+        df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
 
         try:
