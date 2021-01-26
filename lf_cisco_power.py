@@ -1670,7 +1670,7 @@ def main():
                                     print(i_tot)
                                     logg.info(i_tot)
                                 else:
-                                    logg.info("AP Check regular expression!!!")
+                                    logg.info("AP Check using regular expressions")
 
 
                        #
