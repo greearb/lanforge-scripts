@@ -1182,7 +1182,7 @@ class L3CXProfile(BaseProfile):
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
-        # for x in range(0,int(round(iterations,0))):
+     
         while datetime.datetime.now() < end_time:
             if fields is None:
                 response = self.json_get("/endp/all")
@@ -1224,6 +1224,8 @@ class L3CXProfile(BaseProfile):
                     full_test_data_list.append(endpoint_data)
 
         df = pd.DataFrame(full_test_data_list)
+        df.columns=header_row
+        #df=df[[*header_row]]
 
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
@@ -1248,7 +1250,6 @@ class L3CXProfile(BaseProfile):
         if output_format == 'df':
             return df
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-
         for x in supported_formats:
             if output_format.lower() == x or report_file.split('.')[-1] == x:
                 exec('df.to_' + x + '("' + report_file + '")')

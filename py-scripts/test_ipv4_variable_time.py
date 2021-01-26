@@ -78,7 +78,6 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap",self.ap)
-        #self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
 
 
         self.cx_profile.host = self.host
@@ -193,7 +192,7 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Which columns you want to monitor', default=['Dropped', 'Name', 'Rx Bytes', 'Tx Bytes'])
+        optional_args.add_argument('--col_names', help='Which columns you want to monitor', default=['Tx Bytes','Name','Dropped', 'Rx Bytes'])
     args = parser.parse_args()
 
     num_sta = 2
