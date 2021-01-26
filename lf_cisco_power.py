@@ -174,9 +174,10 @@ full_outfile = "cisco_power_results_full.txt"
 outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
+
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_a4_dropoff = 3
+pf_a4_dropoff = 20
 
 # This below is only used when --adjust_nf is used.
 # Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
@@ -213,7 +214,7 @@ def usage():
    print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
    print("--pf_dbm: Pass/Fail range, default is 6")
-   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
+   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 20. Unless AP is read")
    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("--wlan: for 9800, wlan identifier ")
@@ -299,8 +300,8 @@ def main():
    parser.add_argument("--antenna_gain",     type=str, help="Antenna gain,  take into account the gain due to the antenna",default="0")
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
-   parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6")
-   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow one chain to use lower tx-power and still pass when doing 4x4.  Default is 3")
+   parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6",default="6" )
+   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass.  Unless AP is read")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
@@ -1570,8 +1571,8 @@ def main():
                        diff_a4 = calc_ant4 - allowed_per_path
                        logg.info("(Offset 4) diff_a4: {} = calc_ant4: {} - allowed_per_path: {}".format(diff_a4, calc_ant4, allowed_per_path))
 
-                       # DUT transmits one chain at lower power when using higher MCS, so allow
-                       # for that as passing result.
+                       # Read AP to determin if there are less chains or spatial steams then expected
+                       # Thus provide a passing result 
                        failed_low = 0
                        least = 0
                        if (diff_a1 < -pfrange):
@@ -1587,7 +1588,7 @@ def main():
                            failed_low += 1
                            least = min(least, diff_a4)
 
-                       failed_low_treshold = 1
+                       failed_low_threshold = 1
                        # 
                        #
                        # If the ap dictionary is set the read the AP to see the number
@@ -1656,13 +1657,13 @@ def main():
                                     DAA_Total_pwr = m.group(12)
                                     # adjust the fail criterial based on the number of spatial streams
                                     if DAA_N_TX == 4:
-                                        failed_low_treshold = 1
+                                        failed_low_threshold = 0
                                     if DAA_N_TX == 3:
-                                        failed_low_treshold = 2
+                                        failed_low_threshold = 1
                                     if DAA_N_TX == 2:
-                                        failed_low_treshold = 3
+                                        failed_low_threshold = 2
                                     if DAA_N_TX == 1:
-                                        failed_low_treshold = 4
+                                        failed_low_threshold = 3
 
 
                                     i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
@@ -1677,7 +1678,12 @@ def main():
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values
                        #
-                       if ((least < (-pfrange - pf_a4_dropoff)) or (failed_low >= failed_low_treshold)):
+                       if bool(ap_dict) and ( failed_low > failed_low_threshold ):
+                            pf = 0
+                       # if the AP is not read for number of spatial streams
+                       # a value may be put in that if the spatial stream is less
+                       # then it will still count as a failure 
+                       elif(least < (-pfrange - pf_a4_dropoff)):
                            pf = 0
 
                        if (diff_a1 > pfrange):
