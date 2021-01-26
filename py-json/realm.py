@@ -1182,7 +1182,7 @@ class L3CXProfile(BaseProfile):
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
         timestamps = []
-     
+        # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             if fields is None:
                 response = self.json_get("/endp/all")
@@ -1212,7 +1212,7 @@ class L3CXProfile(BaseProfile):
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
 
-
+    #organize data 
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             #reduce the endpoint data to single dictionary of dictionaries
@@ -1222,10 +1222,11 @@ class L3CXProfile(BaseProfile):
                         print(endpoint_data)
                     endpoint_data["Timestamp"] = test_timestamp
                     full_test_data_list.append(endpoint_data)
-
+                    print(full_test_data_list)
+                    
+        header_row.append('Timestamp')
         df = pd.DataFrame(full_test_data_list)
         df.columns=header_row
-        #df=df[[*header_row]]
 
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
