@@ -132,10 +132,11 @@ def main():
          egg = SerialSpawn(ser);
          egg.logfile = FileAdapter(logg)
          egg.sendline(NL)
+         has_reset = False
          try:
              logg.info("prompt: %s user: %s  passwd: %s"%(prompt, user, passwd))
              while True:
-                i = egg.expect([prompt, "Please press Enter to activate", "login:", "Password:"], timeout=3)
+                i = egg.expect([prompt, "Please press Enter to activate", "login:", "Password:", "IPQ6018#"], timeout=3)
                 logg.info("expect-0: %i"%(i))
                 if (i == 0):
                     logg.info("Found prompt, login complete.")
@@ -149,6 +150,15 @@ def main():
                 if (i == 3):
                     logg.info("Sending password: %s"%(passwd))
                     egg.sendline(passwd)
+                if (i == 4): # in bootloader
+                    if has_reset:
+                        logg.info("ERROR:  Have reset once already, back in bootloader?")
+                        sys.exit(1)
+                    has_reset = True
+                    logg.info("In boot loader, will reset and sleep 30 seconds")
+                    egg.sendline("reset")
+                    time.sleep(30)
+                    egg.sendline(NL)
 
          except Exception as e:
              # maybe something like 'logread -f' is running?
