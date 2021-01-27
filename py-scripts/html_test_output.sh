@@ -158,9 +158,8 @@ function html_generator() {
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     for item in "${testCommands[@]}"; do
-        CURR_TEST_NAME=${item%%.py*}
-        CURR_TEST_NAME=${CURR_TEST_NAME#./*}
-        echo "<div id=${item} style=\"display:none;\"><iframe src=\"${TEST_DIR}/${item}.txt\"></iframe></div>" >> $fname
+        item2=$(echo $item | sed 's/^..//')
+        echo "<div id=\"${item}\" style=\"display:none;\"><iframe src=\"${TEST_DIR}/${item2}.txt\"></iframe></div>" >> $fname
     done;
     echo "$tail" >> $fname
 }
