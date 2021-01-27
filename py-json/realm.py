@@ -1143,7 +1143,8 @@ class L3CXProfile(BaseProfile):
                 report_file=None,
                 output_format=None,
                 script_name=None,
-                arguments=None):
+                arguments=None,
+                compared_report=None):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except:
@@ -1237,6 +1238,8 @@ class L3CXProfile(BaseProfile):
         df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
         df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
+        #compare previous data to current data
+        
 
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)

@@ -192,7 +192,8 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Which columns you want to monitor', default=['name','tx bytes', 'rx bytes','dropped'])
+        optional_args.add_argument('--col_names', help='Columns wished to be monitor', default=['name','tx bytes', 'rx bytes','dropped'])
+        optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
 
     num_sta = 2
@@ -221,6 +222,15 @@ python3 ./test_ipv4_variable_time.py
             output=str(args.report_file).split('.')[-1]
         else:
             output=args.output_format
+    #Retrieve last data file
+    if args.compared_report:
+        #check if last report format is same as current rpt format
+        last_report_format = args.compared_report.split('.')[-1]
+        if output == last_report_format:
+            compared_rept = args.compared_report
+        else:
+            ValueError("Compared report format is not the same as the new report format. Please make sure they are of the same file type.")
+
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
@@ -262,6 +272,7 @@ python3 ./test_ipv4_variable_time.py
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
                                     output_format=output,
+                                    compared_report=compared_rept,
                                     script_name='test_ipv4_variable_time',
                                     arguments=args)
 
