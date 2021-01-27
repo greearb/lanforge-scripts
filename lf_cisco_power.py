@@ -1675,7 +1675,7 @@ def main():
 
 
 
-                                    i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
+                                    i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}  ".format(
                                         P1,T1,P2,T2,P3,T3,P4,T4,N_ANT,DAA_Pwr,DAA_N_TX,DAA_Total_pwr)
                                     print(i_tot)
                                     logg.info(i_tot)
@@ -1694,42 +1694,41 @@ def main():
                        if bool(ap_dict) and failed_low > failed_low_threshold:
                            logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low,failed_low_threshold))
                            pf = 0
-
-                       # a value may be put in that if the spatial stream is less
-                       # then it will still count as a failure 
-                       logg.info("diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(diff_a1,diff_a2,diff_a3,diff_a4,pfrange,pf_ignore_offset))
-                       if (diff_a1 < -pfrange):
-                           if(diff_a1 < (-pfrange - pf_ignore_offset)):
-                               logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
-                               i_tot = "PASSED diff_a1({}) < -pfrange({}) - pf_ignore_offset({})".format(diff_a1, pfrange, pf_ignore_offset) 
-                               logg.info("i_tot {}".format(i_tot))
-                           else:    
-                               logg.info("diff_a1: {} failure".format(diff_a1))
-                               pf = 0
-                       if (diff_a2 < -pfrange):
-                           if(diff_a2 < (-pfrange - pf_ignore_offset)):
-                               logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
-                               i_tot = "PASSED diff_a2({}) < -pfrange({}) - pf_ignore_offset({})".format(diff_a2, pfrange, pf_ignore_offset) 
-                               logg.info("i_tot {}".format(i_tot))
-                           else:
-                               logg.info("diff_a2: {} failure".format(diff_a2))
-                               pf = 0
-                       if (diff_a3 < -pfrange):
-                           if(diff_a3 < (-pfrange - pf_ignore_offset)):
-                               logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
-                               i_tot = "PASSED diff_a3({}) < -pfrange({}) - pf_ignore_offset({})".format(diff_a3, pfrange, pf_ignore_offset) 
-                               logg.info("i_tot {}".format(i_tot))
-                           else:
-                               logg.info("diff_a3: {} failure".format(diff_a3))
-                               pf = 0
-                       if (diff_a4 < -pfrange):
-                           if(diff_a4 < (-pfrange - pf_ignore_offset)):
-                               logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
-                               i_tot = "PASSED diff_a4({}) < -pfrange({}) - pf_ignore_offset({})".format(diff_a4, pfrange, pf_ignore_offset) 
-                               logg.info("i_tot {}".format(i_tot))
-                           else:                            
-                               logg.info("diff_a4: {} failure".format(diff_a4))
-                               pf = 0
+                       
+                       if(pf_ignore_offset != 0):
+                           logg.info("diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(diff_a1,diff_a2,diff_a3,diff_a4,pfrange,pf_ignore_offset))
+                           if (diff_a1 < -pfrange):
+                               if(diff_a1 < (-pfrange - pf_ignore_offset)):
+                                   logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
+                                   i_tot += "PASSED diff_a1({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a1, pfrange, pf_ignore_offset) 
+                                   logg.info("i_tot {}".format(i_tot))
+                               else:    
+                                   logg.info("diff_a1: {} failure".format(diff_a1))
+                                   pf = 0
+                           if (diff_a2 < -pfrange):
+                               if(diff_a2 < (-pfrange - pf_ignore_offset)):
+                                   logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
+                                   i_tot += "PASSED diff_a2({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a2, pfrange, pf_ignore_offset) 
+                                   logg.info("i_tot {}".format(i_tot))
+                               else:
+                                   logg.info("diff_a2: {} failure".format(diff_a2))
+                                   pf = 0
+                           if (diff_a3 < -pfrange):
+                               if(diff_a3 < (-pfrange - pf_ignore_offset)):
+                                   logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
+                                   i_tot += "PASSED diff_a3({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a3, pfrange, pf_ignore_offset) 
+                                   logg.info("i_tot {}".format(i_tot))
+                               else:
+                                   logg.info("diff_a3: {} failure".format(diff_a3))
+                                   pf = 0
+                           if (diff_a4 < -pfrange):
+                               if(diff_a4 < (-pfrange - pf_ignore_offset)):
+                                   logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
+                                   i_tot += "PASSED diff_a4({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a4, pfrange, pf_ignore_offset) 
+                                   logg.info("i_tot {}".format(i_tot))
+                               else:                            
+                                   logg.info("diff_a4: {} failure".format(diff_a4))
+                                   pf = 0
 
                        # check for range to high
                        if (diff_a1 > pfrange):
