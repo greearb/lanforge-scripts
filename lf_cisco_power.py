@@ -177,7 +177,7 @@ pf_dbm = 6
 
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_a4_dropoff = 20
+pf_a4_dropoff = 0
 
 # This below is only used when --adjust_nf is used.
 # Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
@@ -214,7 +214,7 @@ def usage():
    print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
    print("--pf_dbm: Pass/Fail range, default is 6")
-   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 20. Unless AP is read")
+   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 0. Unless AP is read")
    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("--wlan: for 9800, wlan identifier ")
@@ -301,7 +301,7 @@ def main():
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6",default="6" )
-   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass.  Unless AP is read")
+   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass.  Unless AP is read",default="0")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
@@ -361,7 +361,7 @@ def main():
       if (args.pf_dbm != None):
           pf_dbm = int(args.pf_dbm)
       if (args.pf_a4_dropoff != None):
-          pf_a4_dropoff = args.pf_p4_dropoff
+          pf_a4_dropoff = int(args.pf_p4_dropoff)
       if (args.verbose):
           # capture the controller output , thus won't go to stdout some output always present
           cap_ctl_out = False
@@ -1588,7 +1588,7 @@ def main():
                            failed_low += 1
                            least = min(least, diff_a4)
 
-                       failed_low_threshold = 1
+                       failed_low_threshold = 0
                        # 
                        #
                        # If the ap dictionary is set the read the AP to see the number
@@ -1678,12 +1678,16 @@ def main():
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values
                        #
-                       if bool(ap_dict) and ( failed_low > failed_low_threshold ):
-                            pf = 0
+                       logg.info("failed_low: {} falied_low_threshold: {}".format(failed_low,failed_low_threshold))
+                       if failed_low > failed_low_threshold:
+                           logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low,failed_low_threshold))
+                           pf = 0
                        # if the AP is not read for number of spatial streams
                        # a value may be put in that if the spatial stream is less
                        # then it will still count as a failure 
-                       elif(least < (-pfrange - pf_a4_dropoff)):
+                       logg.info("least: {} pfrange: {} pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
+                       if(least < (-pfrange - pf_a4_dropoff)):
+                           logg.info("least: {} < -pfrange: {} - pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
                            pf = 0
 
                        if (diff_a1 > pfrange):
