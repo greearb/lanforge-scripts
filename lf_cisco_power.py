@@ -177,7 +177,7 @@ pf_dbm = 6
 
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_a4_dropoff = 0
+pf_a4_dropoff = 100
 
 # Threshold for allowing a pass
 failed_low_threshold = 0
@@ -217,7 +217,7 @@ def usage():
    print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
    print("--pf_dbm: Pass/Fail range, default is 6")
-   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 0. Unless AP is read")
+   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("--wlan: for 9800, wlan identifier ")
@@ -305,7 +305,7 @@ def main():
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6",default="6" )
-   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass.  Unless AP is read",default="0")
+   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass. default 100 so disabled",default="100")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
@@ -1695,7 +1695,7 @@ def main():
                        # a value may be put in that if the spatial stream is less
                        # then it will still count as a failure 
                        logg.info("least: {} pfrange: {} pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
-                       if(least < (-pfrange - pf_a4_dropoff)):
+                       if(least < (-pfrange - pf_a4_dropoff)) and int(pf_a4_dropoff) != 100:
                            logg.info("least: {} < -pfrange: {} - pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
                            pf = 0
 
