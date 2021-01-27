@@ -2559,6 +2559,8 @@ class VRProfile(LFCliBase):
                suppress_related_commands_=True):
 
         # Create vr
+        if self.debug:
+            debug = True
         if self.vr_name is not None:
             self.add_vr_data["alias"] = self.vr_name
             self.local_realm.json_post("add_vr", self.add_vr_data, debug_=debug)
