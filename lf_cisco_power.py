@@ -177,7 +177,7 @@ pf_dbm = 6
 
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_ignore_offset = 100
+pf_ignore_offset = 0
 
 # Threshold for allowing a pass
 failed_low_threshold = 0
@@ -305,7 +305,7 @@ def main():
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6",default="6" )
-   parser.add_argument("--pf_ignore_offset",    type=str, help="Allow a chain to have lower tx-power and still pass. default 100 so disabled",default="100")
+   parser.add_argument("--pf_ignore_offset",    type=str, help="Allow a chain to have lower tx-power and still pass. default 0 so disabled",default="0")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
@@ -1694,21 +1694,29 @@ def main():
 
                        # a value may be put in that if the spatial stream is less
                        # then it will still count as a failure 
-                       logg.info("pf_ignore_offset: {} if set to 100 will not evaluate spatial stream for pf_ignore_offset")
                        logg.info("diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(diff_a1,diff_a2,diff_a3,diff_a4,pfrange,pf_ignore_offset))
-                       if(diff_a1 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
-                           logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
-                           pf = 0
-                       if(diff_a2 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
-                           logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
-                           pf = 0
-                       if(diff_a3 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
-                           logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
-                           pf = 0
-                       if(diff_a4 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
-                           logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
-                           pf = 0
+                       if (diff_a1 < -pfrange):
+                           if(diff_a1 < (-pfrange - pf_ignore_offset)):
+                               logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
+                           else:    
+                               pf = 0
+                       if (diff_a1 < -pfrange):
+                           if(diff_a2 < (-pfrange - pf_ignore_offset)):
+                               logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
+                           else:
+                               pf = 0
+                       if (diff_a3 < -pfrange):
+                           if(diff_a3 < (-pfrange - pf_ignore_offset)):
+                               logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
+                           else:
+                               pf = 0
+                       if (diff_a4 < -pfrange):
+                           if(diff_a4 < (-pfrange - pf_ignore_offset)):
+                               logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
+                           else:                            
+                               pf = 0
 
+                       # check for range to high
                        if (diff_a1 > pfrange):
                            pf = 0
                        if (diff_a2 > pfrange):
