@@ -461,7 +461,10 @@ class LFCliBase:
     #         zelf.adjust_proxy(values)
 
     @staticmethod
-    def create_bare_argparse(prog=None, formatter_class=None, epilog=None, description=None):
+    def create_bare_argparse(prog=None,
+                             formatter_class=argparse.RawTextHelpFormatter,
+                             epilog=None,
+                             description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog,
                                              formatter_class=formatter_class,
