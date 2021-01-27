@@ -361,7 +361,7 @@ def main():
       if (args.pf_dbm != None):
           pf_dbm = int(args.pf_dbm)
       if (args.pf_a4_dropoff != None):
-          pf_a4_dropoff = int(args.pf_p4_dropoff)
+          pf_a4_dropoff = int(args.pf_a4_dropoff)
       if (args.verbose):
           # capture the controller output , thus won't go to stdout some output always present
           cap_ctl_out = False
