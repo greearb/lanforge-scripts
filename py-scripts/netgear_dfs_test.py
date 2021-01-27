@@ -417,8 +417,18 @@ def main():
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')
     parser.add_argument('-sec', '--security', type=str, help='security')
     parser.add_argument('-rad', '--radio', type=str, help='radio at which client will be connected')
+    parser.add_argument('-n', '--name', type=str, help='Type Name of AP on which test is performed')
+
+
+
 
     args = parser.parse_args()
+
+    if (args.name is not None):
+        AP_name = args.name
+
+    if(args.ssid is not None):
+        ssid = args.ssid
 
     dfs = DFS_Test(args.ip, args.user, args.pswd, args.host, args.ssid, args.passwd, args.security, args.radio)
 
@@ -683,6 +693,7 @@ def main():
     #plt.show()
     plt.savefig("channel.png")"""
 
+
     ###############################################################################
 
     time_ass = ['23348', '19126', '']
@@ -718,10 +729,8 @@ def main():
     # Show graphic
     #plt.show()
     plt.savefig("/home/lanforge/lanforge-scripts/py-scripts/time.png")
-    '''data = "pass"
-    data_1 = "Fail"
-    data_2 = "pass"
-    ch_list = ['44', '36', '120']'''
+
+    ch_list = ['44', '36', '120']
     for i in range(0, len(time_ass)):
         time_ass[i] = str(time_ass[i])
 
@@ -729,6 +738,7 @@ def main():
         data = "FAIL"
     else:
         data = "PASS"
+        # print(data)
 
     if ch_list[1] == "100" or ch_list[1] == "-1" or ch_list[1] == "" or ch_list[1] == "0":
         data_1 = "FAIL"
@@ -742,15 +752,36 @@ def main():
 
 
 
+
     now = datetime.now()
     print("Current date and time : ")
     date_1 = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    html_content = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>DFS TEST </title></head><body><div class='Section report_banner-1000x205' style='background-image:url(\"/home/lanforge/LANforgeGUI_5.4.3/images/OrangeReportHeader.jpg\"); background-size: 1000px; height: 200px;'><div class='HeaderStyle'><br><h1 class='TitleFontPrint' style='color:darkgreen;'>  Dynamic Frequency Selection  </h1>" \
-                   "<h3 class='TitleFontPrint' style='color:darkgreen;'>" + date_1 + "</h3></div></div><br> <br><h3 align='left'>Objective</h3> <p align='left' width='900'>The DFS Test is designed to test the Performance of the Netgear Access Point.Dynamic frequency selection is a technology that is designed to ensure that wireless devices operating in the unlicensed WLAN 5 GHz bands are able to detect when they may be interfering with military and weather radar systems and automatically switch over to another frequency where they will not cause any disturbance. <br><table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><th colspan='2'>Test Setup Information</th></tr><tr><td>Device Under Test</td><td><table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><td>AP Name</td><td colspan='3'>Netgear WAC505</td></tr><tr><td>SSID</td><td colspan='3'>TestAP22</td></tr><tr><td>Number of Clients</td><td colspan='3'>1</td></tr></table></td></tr></table> " \
-                                                                                     "<br><h3>Graph</h3> <img align='center' style='padding:15;margin:5;width:400px;' src='time.png' border='0' /> <br><table width='1000px' border='1' cellpadding='2' cellspacing='0' ><tr><th colspan='2'>Detailed Results</th></tr><table width='1000px' border='1'><tr><th>Client Name</th><th>Channel</th><th>Switched Channel</th><th>station association time(milliseconds)</th><th>Result</th></tr><tr><td>sta0000</td><td>52</td><td>"+ ch_list[0] +"</td><td>"+ time_ass[0] +"</td><td>"+ data +"</td></tr><tr><td>sta0000</td><td>100</td><td>"+ ch_list[1] + "</td><td>"+ time_ass[1] +"</td><td>"+ data_1 +"</td></tr><tr><td>sta0000</td><td>120</td><td>"+ ch_list[2] +"</td><td>"+ time_ass[2] +"</td><td>"+ data_2 +"</td></tr></table>"
+    if data == "FAIL":
+        x = "<th colspan='2' bgcolor='orange' > FAIL </th>"
+    else:
+        if data == "PASS":
+            x = "<th colspan='2' bgcolor='#90EE90' > PASS </th>"
 
-    file = open("/home/lanforge/lanforge-scripts/py-scripts/dfs.html", "w")
+    if data_1 == "FAIL":
+        x_1 = "<th colspan='2' bgcolor='orange' > FAIL </th>"
+    else:
+        if data_1 == "PASS":
+            x_1 = "<th colspan='2' bgcolor='#90EE90' > PASS </th>"
+
+    if data_2 == "FAIL":
+        x_2 = "<th colspan='2' bgcolor='orange' > FAIL </th>"
+    else:
+        if data_2 == "PASS":
+            x_2 = "<th colspan='2' bgcolor='#90EE90' > PASS </th>"
+
+
+
+    html_content = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>DFS TEST </title></head><body><div class='Section report_banner-1000x205' style='background-image:url(\"/home/lanforge/LANforgeGUI_5.4.3/images/OrangeReportHeader.jpg\"); background-size: 1000px; height: 200px;'><div class='HeaderStyle'><br><h1 class='TitleFontPrint' style='color:darkgreen;'>  Dynamic Frequency Selection  </h1>" \
+                   "<h3 class='TitleFontPrint' style='color:darkgreen;'>" + date_1 + "</h3></div></div><br> <br><h3 align='left'>Objective</h3> <p align='left' width='900'>The DFS Test is designed to test the Performance of the Netgear Access Point.Dynamic frequency selection is a technology that is designed to ensure that wireless devices operating in the unlicensed WLAN 5 GHz bands are able to detect when they may be interfering with military and weather radar systems and automatically switch over to another frequency where they will not cause any disturbance. <br><table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><th colspan='2'>Test Setup Information</th></tr><tr><td>Device Under Test</td><td><table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><td>AP Name</td><td colspan='3'>" + AP_name + "</td></tr><tr><td>SSID</td><td colspan='3'>" + ssid + "</td></tr><tr><td>Number of Clients</td><td colspan='3'>1</td></tr></table></td></tr></table> " \
+                                                                                     "<br><h3>Graph</h3> <img align='center' style='padding:15;margin:5;width:400px;' src='time.png' border='0' /> <br><table width='1000px' border='1' cellpadding='2' cellspacing='0' ><tr><th colspan='2'>Detailed Results</th></tr><table width='1000px' border='1'><tr><th>Client Name</th><th>Channel</th><th>Switched Channel</th><th>station association time(milliseconds)</th><th>Result</th></tr><tr><td>sta0000</td><td>52</td><td>"+ ch_list[0] +"</td><td>"+ time_ass[0] +"</td>" + x + "</tr>""<tr><td>sta0000</td><td>100</td><td>"+ ch_list[1] + "</td><td>"+ time_ass[1] +"</td>" + x_1 + "</tr><tr><td>sta0000</td><td>120</td><td>"+ ch_list[2] +"</td><td>"+ time_ass[2] +"</td>" + x_2 + "</tr></table>"
+
+    file = open("/home/lanforge/lanforge-scripts/py-scripts/result.html", "w")
     file.write(html_content)
     file.close()
 
