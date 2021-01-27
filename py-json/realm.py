@@ -1166,6 +1166,32 @@ class L3CXProfile(BaseProfile):
                     raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
+        #retrieve compared report if specified - turn into dataframe
+        if compared_report is not None:
+            compared_format = compared_report.split('.')[-1]
+            #initial dataframe
+            previous_data_df = pd.DataFrame()
+            if compared_format == 'hdf':
+                #df.to_hdf(report_file, 'table', append=True)
+                continue
+            if compared_format == 'parquet':
+                #df.to_parquet(report_file, engine='pyarrow')
+                continue
+            if compared_format == 'png':
+                #fig = df.plot().get_figure()
+                #fig.savefig(report_file)
+                continue
+            if compared_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
+                continue
+            if compared_format == 'df':
+                #return df
+                continue
+            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+            for format in supported_formats:
+                if compared_format.lower() == format:
+                   # exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
+                    previous_data_df= read_csv()
+
 
         # Step 1, column names 
         fields=None
