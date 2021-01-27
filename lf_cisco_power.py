@@ -1660,16 +1660,16 @@ def main():
                                     DAA_N_TX = m.group(11) # number of spatial streams
                                     DAA_Total_pwr = m.group(12)
                                     # adjust the fail criterial based on the number of spatial streams
-                                    if DAA_N_TX == 4:
+                                    if DAA_N_TX == "4":
                                         failed_low_threshold = 0
                                         logg.info("4 failed_low_threshold {}".format(failed_low_threshold))
-                                    if DAA_N_TX == 3:
+                                    if DAA_N_TX == "3":
                                         failed_low_threshold = 1
                                         logg.info("3 failed_low_threshold {}".format(failed_low_threshold))
-                                    if DAA_N_TX == 2:
+                                    if DAA_N_TX == "2":
                                         failed_low_threshold = 2
                                         logg.info("2 failed_low_threshold {}".format(failed_low_threshold))
-                                    if DAA_N_TX == 1:
+                                    if DAA_N_TX == "1":
                                         failed_low_threshold = 3
                                         logg.info("1 failed_low_threshold {}".format(failed_low_threshold))
 
