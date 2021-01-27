@@ -179,6 +179,9 @@ pf_dbm = 6
 # lower tx-power on one chain when doing high MCS at 4x4.
 pf_a4_dropoff = 0
 
+# Threshold for allowing a pass
+failed_low_threshold = 0
+
 # This below is only used when --adjust_nf is used.
 # Noise floor on ch 36 where we calibrated -54 path loss (based on hard-coded -95 noise-floor in driver)
 nf_at_calibration = -105
@@ -271,6 +274,7 @@ def main():
    global upstream_port
    global pf_dbm
    global pf_a4_dropoff
+   global failed_low_threshold
 
    scheme = "ssh"
 
@@ -1658,12 +1662,17 @@ def main():
                                     # adjust the fail criterial based on the number of spatial streams
                                     if DAA_N_TX == 4:
                                         failed_low_threshold = 0
+                                        logg.info("4 failed_low_threshold {}".format(failed_low_threshold))
                                     if DAA_N_TX == 3:
                                         failed_low_threshold = 1
+                                        logg.info("3 failed_low_threshold {}".format(failed_low_threshold))
                                     if DAA_N_TX == 2:
                                         failed_low_threshold = 2
+                                        logg.info("2 failed_low_threshold {}".format(failed_low_threshold))
                                     if DAA_N_TX == 1:
                                         failed_low_threshold = 3
+                                        logg.info("1 failed_low_threshold {}".format(failed_low_threshold))
+
 
 
                                     i_tot = "P1: {} T1: {} P2: {} T2: {} P3: {} T3: {} P4: {} T4: {} N_ANT: {} DAA_Pwr: {} DAA_N_TX: {} DAA_Total_pwr: {}".format(
@@ -1678,7 +1687,7 @@ def main():
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values
                        #
-                       logg.info("failed_low: {} falied_low_threshold: {}".format(failed_low,failed_low_threshold))
+                       logg.info("failed_low: {} failed_low_threshold: {}".format(failed_low,failed_low_threshold))
                        if failed_low > failed_low_threshold:
                            logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low,failed_low_threshold))
                            pf = 0
