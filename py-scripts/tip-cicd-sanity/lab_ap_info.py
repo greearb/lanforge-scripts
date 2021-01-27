@@ -59,9 +59,9 @@ customer_id = "2"
 
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
-    "ea8300": "19",
-    "ecw5410": "20",
-    "ecw5211": "21",
+    "ea8300": "115",
+    "ecw5410": "116",
+    "ecw5211": "117",
     "ec420": "27"
 }
 
