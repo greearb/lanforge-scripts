@@ -1702,21 +1702,25 @@ def main():
                            if(diff_a1 < (-pfrange - pf_ignore_offset)):
                                logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
                            else:    
+                               logg.info("diff_a1: {} failure".format(diff_a1))
                                pf = 0
-                       if (diff_a1 < -pfrange):
+                       if (diff_a2 < -pfrange):
                            if(diff_a2 < (-pfrange - pf_ignore_offset)):
                                logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
                            else:
+                               logg.info("diff_a2: {} failure".format(diff_a2))
                                pf = 0
                        if (diff_a3 < -pfrange):
                            if(diff_a3 < (-pfrange - pf_ignore_offset)):
                                logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
                            else:
+                               logg.info("diff_a3: {} failure".format(diff_a3))
                                pf = 0
                        if (diff_a4 < -pfrange):
                            if(diff_a4 < (-pfrange - pf_ignore_offset)):
                                logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
                            else:                            
+                               logg.info("diff_a4: {} failure".format(diff_a4))
                                pf = 0
 
                        # check for range to high
