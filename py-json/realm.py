@@ -817,6 +817,13 @@ class Realm(LFCliBase):
     def new_test_group_profile(self):
         return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
+    def new_vr_profile(self):
+        profile = VRProfile(parent_realm=self,
+                            debug=self.debug,
+                            halt_on_error=self.halt_on_error,
+                            exit_on_error=self.exit_on_error)
+        return profile
+
 class BaseProfile(LFCliBase):
     def __init__(self,local_realm):
         self.parent_realm=local_realm
@@ -2320,6 +2327,8 @@ class VRProfile(LFCliBase):
                suppress_related_commands_=True):
 
         # Create vr
+        if self.debug:
+            debug = True
         if self.vr_name is not None:
             self.add_vr_data["alias"] = self.vr_name
             self.local_realm.json_post("add_vr", self.add_vr_data, debug_=debug)
