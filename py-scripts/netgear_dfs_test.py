@@ -1,3 +1,7 @@
+''' This script uses Netgear AP for DFS testing
+'''
+
+
 import os
 import paramiko
 import time
@@ -384,15 +388,6 @@ class DFS_Test:
         var_1 = (var['interface']['cx time (us)'])
         return var_1
 
-    def convert_to_sec(self, time_string):
-        self.time_string = time_string
-        date_time = datetime.datetime.strptime(self.time_string, "%H:%M:%S")
-
-        print(date_time)
-
-        a_timedelta = date_time - datetime.datetime(1900, 1, 1)
-        seconds = a_timedelta.total_seconds()
-        return seconds
 
 
 class ThreadWithReturnValue(Thread):
@@ -755,7 +750,7 @@ def main():
                    "<h3 class='TitleFontPrint' style='color:darkgreen;'>" + date_1 + "</h3></div></div><br> <br><h3 align='left'>Objective</h3> <p align='left' width='900'>The DFS Test is designed to test the Performance of the Netgear Access Point.Dynamic frequency selection is a technology that is designed to ensure that wireless devices operating in the unlicensed WLAN 5 GHz bands are able to detect when they may be interfering with military and weather radar systems and automatically switch over to another frequency where they will not cause any disturbance. <br><table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><th colspan='2'>Test Setup Information</th></tr><tr><td>Device Under Test</td><td><table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'><tr><td>AP Name</td><td colspan='3'>Netgear WAC505</td></tr><tr><td>SSID</td><td colspan='3'>TestAP22</td></tr><tr><td>Number of Clients</td><td colspan='3'>1</td></tr></table></td></tr></table> " \
                                                                                      "<br><h3>Graph</h3> <img align='center' style='padding:15;margin:5;width:400px;' src='time.png' border='0' /> <br><table width='1000px' border='1' cellpadding='2' cellspacing='0' ><tr><th colspan='2'>Detailed Results</th></tr><table width='1000px' border='1'><tr><th>Client Name</th><th>Channel</th><th>Switched Channel</th><th>station association time(milliseconds)</th><th>Result</th></tr><tr><td>sta0000</td><td>52</td><td>"+ ch_list[0] +"</td><td>"+ time_ass[0] +"</td><td>"+ data +"</td></tr><tr><td>sta0000</td><td>100</td><td>"+ ch_list[1] + "</td><td>"+ time_ass[1] +"</td><td>"+ data_1 +"</td></tr><tr><td>sta0000</td><td>120</td><td>"+ ch_list[2] +"</td><td>"+ time_ass[2] +"</td><td>"+ data_2 +"</td></tr></table>"
 
-    file = open("dfs.html", "w")
+    file = open("/home/lanforge/lanforge-scripts/py-scripts/dfs.html", "w")
     file.write(html_content)
     file.close()
 
