@@ -27,6 +27,8 @@ Read more examples in the [scripting LANforge](http://www.candelatech.com/lfcli_
 
 ### Python Scripts ###
 
+When starting to use Python, please run the update_deps.py script located in py-scripts to install all necessary dependencies for this library.
+
 | Name | Purpose |
 |------|---------|
 | `lf_tos_test.py`                   | Python script to generate traffic at different QoS and report performance in a spreadsheet |
@@ -121,7 +123,7 @@ one script to a separate directory is going to break its requirements.
 
 ### Requirements ###
 The perl scripts require the following perl packages to be installed. Most of these
-perl packages are available through your repository as `.deb` or `.rpm` packages. 
+perl packages are available through your repository as `.deb` or `.rpm` packages.
 
 | Perl Package       | RPM              | Required       |
 | -------------------|------------------|----------------|
@@ -161,5 +163,3 @@ Please contact support@candelatech.com if you have any questions.
 
 _Thanks,
 Ben_
-
-
