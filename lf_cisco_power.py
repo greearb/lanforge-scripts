@@ -177,7 +177,7 @@ pf_dbm = 6
 
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
-pf_a4_dropoff = 100
+pf_ignore_offset = 100
 
 # Threshold for allowing a pass
 failed_low_threshold = 0
@@ -217,7 +217,7 @@ def usage():
    print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
    print("--pf_dbm: Pass/Fail range, default is 6")
-   print("--pf_a4_dropoff: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
+   print("--pf_ignore_offset: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    print("--wlan: for 9800, wlan identifier ")
@@ -273,7 +273,7 @@ def main():
    global full_outfile
    global upstream_port
    global pf_dbm
-   global pf_a4_dropoff
+   global pf_ignore_offset
    global failed_low_threshold
 
    scheme = "ssh"
@@ -305,7 +305,7 @@ def main():
    parser.add_argument("--band",             type=str, help="Select band (a | b), a means 5Ghz, b means 2.4Ghz.  Default is a",
                        choices=["a", "b", "abgn"])
    parser.add_argument("--pf_dbm",           type=str, help="Pass/Fail threshold.  Default is 6",default="6" )
-   parser.add_argument("--pf_a4_dropoff",    type=str, help="Allow a chain to have lower tx-power and still pass. default 100 so disabled",default="100")
+   parser.add_argument("--pf_ignore_offset",    type=str, help="Allow a chain to have lower tx-power and still pass. default 100 so disabled",default="100")
    parser.add_argument("--wait_forever",     action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
    parser.add_argument("--adjust_nf",        action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
    parser.add_argument("--wlan",             type=str, help="--wlan  9800, wlan identifier",required=True)
@@ -364,8 +364,8 @@ def main():
           band = "a"
       if (args.pf_dbm != None):
           pf_dbm = int(args.pf_dbm)
-      if (args.pf_a4_dropoff != None):
-          pf_a4_dropoff = int(args.pf_a4_dropoff)
+      if (args.pf_ignore_offset != None):
+          pf_ignore_offset = int(args.pf_ignore_offset)
       if (args.verbose):
           # capture the controller output , thus won't go to stdout some output always present
           cap_ctl_out = False
@@ -1578,19 +1578,19 @@ def main():
                        # Read AP to determine if there are less chains or spatial steams then expected
                        # Thus provide a passing result 
                        failed_low = 0
-                       least = 0
+                       # least = 0
                        if (diff_a1 < -pfrange):
                            failed_low += 1
-                           least = diff_a1
+                           #least = diff_a1 #leave in code if want to move to least 
                        if (diff_a2 < -pfrange):
                            failed_low += 1
-                           least = min(least, diff_a2)
+                           #least = min(least, diff_a2)
                        if (diff_a3 < -pfrange):
                            failed_low += 1
-                           least = min(least, diff_a3)
+                           #least = min(least, diff_a3)
                        if (diff_a4 < -pfrange):
                            failed_low += 1
-                           least = min(least, diff_a4)
+                           #least = min(least, diff_a4)
 
                        failed_low_threshold = 0
                        # 
@@ -1691,12 +1691,22 @@ def main():
                        if failed_low > failed_low_threshold:
                            logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low,failed_low_threshold))
                            pf = 0
-                       # if the AP is not read for number of spatial streams
+
                        # a value may be put in that if the spatial stream is less
                        # then it will still count as a failure 
-                       logg.info("least: {} pfrange: {} pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
-                       if(least < (-pfrange - pf_a4_dropoff)) and int(pf_a4_dropoff) != 100:
-                           logg.info("least: {} < -pfrange: {} - pf_a4_dropoff: {}".format(least, pfrange, pf_a4_dropoff))
+                       logg.info("pf_ignore_offset: {} if set to 100 will not evaluate spatial stream for pf_ignore_offset")
+                       logg.info("diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(diff_a1,diff_a2,diff_a3,diff_a4,pfrange,pf_ignore_offset))
+                       if(diff_a1 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
+                           logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
+                           pf = 0
+                       if(diff_a2 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
+                           logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
+                           pf = 0
+                       if(diff_a3 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
+                           logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
+                           pf = 0
+                       if(diff_a4 < (-pfrange - pf_ignore_offset)) and int(pf_ignore_offset) != 100:
+                           logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
                            pf = 0
 
                        if (diff_a1 > pfrange):
