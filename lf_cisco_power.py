@@ -359,7 +359,7 @@ def main():
       else:
           band = "a"
       if (args.pf_dbm != None):
-          pf_dbm = args.pf_dbm
+          pf_dbm = int(args.pf_dbm)
       if (args.pf_a4_dropoff != None):
           pf_a4_dropoff = args.pf_p4_dropoff
       if (args.verbose):
@@ -1505,7 +1505,7 @@ def main():
                       w_tot = "WARNING: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(args.beacon_dbm_diff) 
 
                    pfs = "PASS"
-                   pfrange = pf_dbm;
+                   pfrange = pf_dbm
 
 
 
@@ -1571,7 +1571,7 @@ def main():
                        diff_a4 = calc_ant4 - allowed_per_path
                        logg.info("(Offset 4) diff_a4: {} = calc_ant4: {} - allowed_per_path: {}".format(diff_a4, calc_ant4, allowed_per_path))
 
-                       # Read AP to determin if there are less chains or spatial steams then expected
+                       # Read AP to determine if there are less chains or spatial steams then expected
                        # Thus provide a passing result 
                        failed_low = 0
                        least = 0
