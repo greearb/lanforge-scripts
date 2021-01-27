@@ -1687,8 +1687,11 @@ def main():
                        #  The controller may adjust the number of spatial streams to allow for the 
                        #  best power values
                        #
+                       # for 4 spatial streams if the AP is read and the failed threshold is met then there is a failure
+                       # the failure will be caugh below if the range is not correct. 
+                       # range check and reading the data from the AP may be used in conjunction thus it is coded to be non-exclusive
                        logg.info("failed_low: {} failed_low_threshold: {}".format(failed_low,failed_low_threshold))
-                       if failed_low > failed_low_threshold:
+                       if bool(ap_dict) and failed_low > failed_low_threshold:
                            logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low,failed_low_threshold))
                            pf = 0
 
