@@ -144,8 +144,7 @@ profile_info_dict = {
     "ecw5410": {
         "profile_id": "2",
         "childProfileIds": [
-            129,
-            3,
+            3647,
             10,
             11,
             12,
@@ -185,7 +184,6 @@ profile_info_dict = {
         "profile_id": "153",
         "childProfileIds": [
             17,
-            129,
             18,
             201,
             202,
@@ -228,7 +226,6 @@ profile_info_dict = {
     "ec420": {
         "profile_id": "20",
         "childProfileIds": [
-            129,
             209,
             210,
             21,
@@ -269,7 +266,6 @@ profile_info_dict = {
         "profile_id": "27",
         "childProfileIds": [
             32,
-            129,
             10,
             28,
             29,
@@ -309,7 +305,6 @@ profile_info_dict = {
         "profile_id": "68",
         "childProfileIds": [
             192,
-            129,
             81,
             193,
             82,
@@ -348,7 +343,6 @@ profile_info_dict = {
     "ea8300_nat": {
         "profile_id": "67",
         "childProfileIds": [
-            129,
             72,
             73,
             10,
@@ -392,7 +386,6 @@ profile_info_dict = {
     "ec420_nat": {
         "profile_id": "70",
         "childProfileIds": [
-            129,
             211,
             212,
             90,
@@ -433,7 +426,6 @@ profile_info_dict = {
         "profile_id": "69",
         "childProfileIds": [
             208,
-            129,
             84,
             85,
             87,
@@ -474,7 +466,6 @@ profile_info_dict = {
         "childProfileIds": [
             336,
             320,
-            129,
             337,
             10,
             333,
@@ -512,7 +503,6 @@ profile_info_dict = {
     "ea8300_vlan": {
         "profile_id": "319",
         "childProfileIds": [
-            129,
             313,
             10,
             314,
@@ -557,7 +547,6 @@ profile_info_dict = {
         "profile_id": "357",
         "childProfileIds": [
             352,
-            129,
             353,
             354,
             355,
@@ -596,7 +585,6 @@ profile_info_dict = {
     "ecw5211_vlan": {
         "profile_id": "364",
         "childProfileIds": [
-            129,
             358,
             359,
             360,
