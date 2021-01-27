@@ -1173,8 +1173,6 @@ class L3CXProfile(BaseProfile):
 
         # Step 1, column names . what is this for?
         fields=None
-        if 'Name' not in col_names:
-            col_names.insert(0,'Name')
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
             header_row=col_names
