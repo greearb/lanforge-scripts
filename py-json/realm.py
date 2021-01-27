@@ -1227,11 +1227,14 @@ class L3CXProfile(BaseProfile):
                     print("Printing full data list...")
                     print(full_test_data_list)
                     
-        header_row.append('Timestamp')
-       # header_row.append('Timestamp milliseconds')
+
+        header_row.append("Timestamp")
+        header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
        
         df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        #round entire column
+        df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
         df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
 
