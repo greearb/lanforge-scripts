@@ -715,7 +715,7 @@ for key in equipment_ids:
         # Create RADIUS profile - used for all EAP SSIDs
         if args.skip_eap != True:
             radius_template = "templates/radius_profile_template.json"
-            radius_name = radius_info['name']
+            radius_name = "Automation_RADIUS_"+today
             server_ip = radius_info['server_ip']
             secret = radius_info['secret']
             auth_port = radius_info['auth_port']
