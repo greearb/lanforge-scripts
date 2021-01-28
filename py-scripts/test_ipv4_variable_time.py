@@ -193,9 +193,10 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Columns wished to be monitor', default=['name','tx bytes', 'rx bytes','dropped'])
+        optional_args.add_argument('--col_names', help='Columns wished to be monitor',default=['name','tx bytes', 'rx bytes','dropped'])
         optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
+    #['name','tx bytes', 'rx bytes','dropped']
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -223,7 +224,9 @@ python3 ./test_ipv4_variable_time.py
             output=str(args.report_file).split('.')[-1]
         else:
             output=args.output_format
+
     #Retrieve last data file
+    compared_rept=None
     if args.compared_report:
         #check if last report format is same as current rpt format
         last_report_format = args.compared_report.split('.')[-1]
@@ -267,7 +270,8 @@ python3 ./test_ipv4_variable_time.py
         col_names=None
     else:
         col_names = args.col_names
-    print(col_names)
+    if args.debug:
+        print(col_names)
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),

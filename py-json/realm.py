@@ -1168,24 +1168,6 @@ class L3CXProfile(BaseProfile):
             output_format = report_file.split('.')[-1]
         #retrieve compared report if specified - turn into dataframe
         if compared_report is not None:
-            compared_format = compared_report.split('.')[-1]
-            #initial dataframe
-            previous_data_df = pd.DataFrame()
-            if compared_format == 'hdf':
-                #df.to_hdf(report_file, 'table', append=True)
-                continue
-            if compared_format == 'parquet':
-                #df.to_parquet(report_file, engine='pyarrow')
-                continue
-            if compared_format == 'png':
-                #fig = df.plot().get_figure()
-                #fig.savefig(report_file)
-                continue
-            if compared_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-                continue
-            if compared_format == 'df':
-                #return df
-                continue
             supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for format in supported_formats:
                 if compared_format.lower() == format:
@@ -1237,6 +1219,7 @@ class L3CXProfile(BaseProfile):
                 self._fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
+            #write csv file here - open, write,  and close file
             time.sleep(monitor_interval)
         print(value_map)
 
@@ -1266,7 +1249,6 @@ class L3CXProfile(BaseProfile):
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
         
-
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
         except:
