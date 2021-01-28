@@ -63,7 +63,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
                     .format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -88,7 +88,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -110,7 +110,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -133,7 +133,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -157,7 +157,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -182,7 +182,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -202,7 +202,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -227,7 +227,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -247,7 +247,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -274,7 +274,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -301,7 +301,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -326,7 +326,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -352,7 +352,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -376,7 +376,7 @@ class cisco_():
                 logg.info(pss)
             
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -401,7 +401,7 @@ class cisco_():
                     logg.info(pss)
                 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -427,7 +427,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -453,7 +453,7 @@ class cisco_():
                 logg.info(pss)
             
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -478,7 +478,7 @@ class cisco_():
                     logg.info(pss)
                 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -498,7 +498,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -524,7 +524,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -544,7 +544,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -569,7 +569,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -962,7 +962,7 @@ class L3VariableTime(LFCliBase):
             pss = ctl_output.stdout.decode('utf-8', 'ignore')
             logg.info(pss)
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
                  .format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
