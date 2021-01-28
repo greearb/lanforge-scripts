@@ -1099,6 +1099,8 @@ class L3CXProfile(BaseProfile):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
+        self.lfclient_port = lfclient_port
+        self.lfclient_host = lfclient_host
 
     def get_cx_names(self):
         return self.created_cx.keys()
@@ -1231,7 +1233,6 @@ class L3CXProfile(BaseProfile):
         for point in range(0, len(endpoints2)):
             endpoints2[point].insert(0, timestamps2[point])
         # step 4 save and close
-        header_row = col_names
         header_row.insert(0, 'Timestamp')
         # print(header_row)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
