@@ -143,9 +143,9 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_wlan --series 9800
     def controller_disable_wlan(self):
         try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.args.cisco_scheme,
                 self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
-                self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_wlan"))
+                self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"--wlan", self.args.cisco_wlan,"disable_wlan"))
 
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
@@ -387,13 +387,13 @@ class cisco_():
     def controller_create_wlan(self):
         if self.args.cisco_series == "9800":
             try:
-                logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {}".format(self.args.cisco_scheme,
+                logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {} wlanSSID {}".format(self.args.cisco_scheme,
                     self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
-                    self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID ))
+                    self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID, self.args.cisco_wlanSSID ))
                 ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
-                                        "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
+                                        "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID, "--wlanSSID", self.args.cisco_wlanSSID], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
                 if self.args.cap_ctl_out:
@@ -439,12 +439,12 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_wlan --series 9800
     def controller_enable_wlan(self):
         try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.args.cisco_scheme,
                 self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
-                self.args.cisco_band,"enable_wlan"))
+                self.args.cisco_band,"--wlan", self.args.cisco_wlan,"enable_wlan"))
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--wlan","--wlan", self.args.cisco_wlan,
                                     "--action", "enable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
@@ -1462,8 +1462,8 @@ Eventual Realm at Cisco
 
     # reorder to follow looping
 
-    parser.add_argument('-ca','--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct','--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
+    parser.add_argument('-ca' ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
+    parser.add_argument('-ct' ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
     # cisco wanted 11ax , 11ac, 11n, 11gb
@@ -1478,17 +1478,19 @@ Eventual Realm at Cisco
                             default="1 10 20 50 100 200" )
 
     parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
-    parser.add_argument('-cs','--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
+    parser.add_argument('-cs' ,'--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-ccp','--cisco_prompt',    type=str,help="controller prompt default WLC",default="WLC")
 
-    parser.add_argument('-cc','--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
-    parser.add_argument('-cp','--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
-    parser.add_argument('-cu','--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
+    parser.add_argument('-cc' ,'--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
+    parser.add_argument('-cp' ,'--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
+    parser.add_argument('-cu' ,'--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
     parser.add_argument('-cpw','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
-    parser.add_argument('-cd','--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
+    parser.add_argument('-cd' ,'--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
     parser.add_argument('-ccs','--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
-    parser.add_argument('-cw','--cisco_wlan', help='--cisco_wlan <wlan name> default: NA, NA means no change',default="NA")
-    parser.add_argument('-cwi','--cisco_wlanID', help='--cisco_wlanID <wlanID> default: NA , NA means not change',default="NA")
+    parser.add_argument('-cw' ,'--cisco_wlan', help='--cisco_wlan <wlan name> ',required=True)
+    parser.add_argument('-cwi','--cisco_wlanID', help='--cisco_wlanID <wlanID> ',required=True)
+    parser.add_argument('-cws' ,'--cisco_wlanSSID', help='--cisco_wlanSSID <wlan ssid>',required=True)
+
     parser.add_argument('-ctp','--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the cisco controller output will be captured', action='store_true')
@@ -1507,7 +1509,6 @@ Eventual Realm at Cisco
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='10s')
-    #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
 
     #to do add wifimode
