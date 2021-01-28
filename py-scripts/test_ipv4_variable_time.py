@@ -267,11 +267,14 @@ python3 ./test_ipv4_variable_time.py
         layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    if type(args.col_names) is not list:
-        col_names=None
-    else:
-        col_names = args.col_names
+    if args.col_names is not None:
+        print(args.col_names)
+        if type(args.col_names) is not list:
+            col_names=list(args.col_names.split(","))
+        else:
+            col_names = args.col_names
     if args.debug:
+        print("Column names are...")
         print(col_names)
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
