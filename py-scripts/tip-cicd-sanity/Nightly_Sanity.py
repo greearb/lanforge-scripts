@@ -241,6 +241,7 @@ parser.add_argument("-r", "--report", type=str, default=report_path,
                     help="Report directory path other than default - directory must already exist!")
 parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420'],
                     help="AP model to be run")
+parser.add_argument("--tr_prefix", type=str, default=testRunPrefix, help="Testrail test run prefix override (default is Env variable)")
 parser.add_argument("--skip_upgrade", dest="skip_upgrade", action='store_true', help="Skip Upgrade testing")
 parser.set_defaults(skip_eap=False)
 parser.add_argument("--skip_eap", dest="skip_eap", action='store_true', help="Skip EAP testing")
@@ -256,14 +257,19 @@ args = parser.parse_args()
 build = args.build
 ignore = args.ignore
 report_path = args.report
+
 if args.model is not None:
     model_id = args.model
     equipment_ids = {
         model_id: equipment_id_dict[model_id]
     }
-    print(equipment_ids)
+    print("User requested test on equipment ID:",equipment_ids)
+
+if args.tr_prefix is not None:
+    testRunPrefix = args.tr_prefix
 
 print("Start of Sanity Testing...")
+print("TestRail Test Run Prefix is: "+testRunPrefix)
 print("Skipping Upgrade Tests? " + str(args.skip_upgrade))
 print("Skipping EAP Tests? " + str(args.skip_eap))
 print("Skipping Bridge Tests? " + str(args.skip_bridge))
@@ -687,7 +693,6 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["cloud_connection"], run_id=rid, status_id=5,
                                        msg='CloudSDK connectivity failed')
                 report_data['tests'][key][test_cases["cloud_connection"]] = "failed"
-                print(report_data['tests'][key])
                 continue
             else:
                 print("Manager status is Active. Proceeding to connectivity testing!")
@@ -695,14 +700,12 @@ for key in equipment_ids:
                 client.update_testrail(case_id=test_cases["cloud_connection"], run_id=rid, status_id=1,
                                        msg='Manager status is Active')
                 report_data['tests'][key][test_cases["cloud_connection"]] = "passed"
-                print(report_data['tests'][key])
         else:
             print("Manager status is Active. Proceeding to connectivity testing!")
             # TC5222 pass in testrail
             client.update_testrail(case_id=test_cases["cloud_connection"], run_id=rid, status_id=1,
                                    msg='Manager status is Active')
             report_data['tests'][key][test_cases["cloud_connection"]] = "passed"
-            print(report_data['tests'][key])
             # Pass cloud connectivity test case
 
         # Update report json
@@ -993,7 +996,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
                 time.sleep(10)
             else:
                 pass
@@ -1015,8 +1017,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 2.4 GHz WPA
@@ -1035,8 +1035,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 5 GHz WPA2-Enterprise
@@ -1056,7 +1054,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
                 time.sleep(10)
             else:
                 pass
@@ -1077,8 +1074,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 5 GHz WPA
@@ -1097,10 +1092,9 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
+            print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "Bridge Mode SSIDs Complete")
             with open(report_path + today + '/report_data.json', 'w') as report_json_file:
                 json.dump(report_data, report_json_file)
@@ -1365,8 +1359,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
-
                 time.sleep(10)
             else:
                 pass
@@ -1387,8 +1379,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 2.4 GHz WPA NAT
@@ -1406,8 +1396,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 5 GHz WPA2-Enterprise NAT
@@ -1427,8 +1415,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
-
                 time.sleep(10)
 
             # TC - 5 GHz WPA2 NAT
@@ -1447,8 +1433,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 5 GHz WPA NAT
@@ -1467,10 +1451,9 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
+            print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "NAT Mode SSIDs Complete")
             with open(report_path + today + '/report_data.json', 'w') as report_json_file:
                 json.dump(report_data, report_json_file)
@@ -1735,8 +1718,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
-
                 time.sleep(10)
             else:
                 pass
@@ -1756,8 +1737,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC 4323 - 2.4 GHz WPA VLAN
@@ -1775,8 +1754,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC - 5 GHz WPA2-Enterprise VLAN
@@ -1796,8 +1773,6 @@ for key in equipment_ids:
                     Test.testrail_retest(test_case, rid, ssid_name)
                     pass
                 report_data['tests'][key][int(test_case)] = test_result
-                print(report_data['tests'][key])
-
                 time.sleep(10)
             else:
                 pass
@@ -1818,8 +1793,6 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
             # TC 4324 - 5 GHz WPA VLAN
@@ -1838,10 +1811,9 @@ for key in equipment_ids:
                 Test.testrail_retest(test_case, rid, ssid_name)
                 pass
             report_data['tests'][key][int(test_case)] = test_result
-            print(report_data['tests'][key])
-
             time.sleep(10)
 
+            print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "Custom VLAN SSIDs Complete")
         else:
             print("Skipping VLAN tests at user request...")
@@ -1903,13 +1875,15 @@ for key in ap_models:
         # no_of_tests = len(report_data["tests"][key])
         passed_tests = sum(x == "passed" for x in report_data["tests"][key].values())
         failed_tests = sum(y == "failed" for y in report_data["tests"][key].values())
-        no_of_tests = passed_tests + failed_tests
+        error_tests = sum(z == "error" for z in report_data["tests"][key].values())
+        no_of_tests = passed_tests + failed_tests + error_tests
         if no_of_tests == 0:
             print("No tests run for", key)
         else:
             print("--- Test Data for", key, "---")
             print(key, "tests passed:", passed_tests)
             print(key, "tests failed:", failed_tests)
+            print(key, "tests with error:", error_tests)
             print(key, "total tests:", no_of_tests)
             percent = float(passed_tests / no_of_tests) * 100
             percent_pass = round(percent, 2)
