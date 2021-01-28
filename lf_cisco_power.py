@@ -6,6 +6,26 @@ Controller is 192.1.0.10
 AP is 192.1.0.2'''
 
 EPILOG = '''\
+
+##############################################################################################
+# Support History 
+##############################################################################################    
+
+##############################################################################
+Sample script to run create station, wlan and talk to ap 1/26/2021 run on 9800
+carriage returns specifically left out
+##############################################################################
+./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "52 100 104" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
+
+
+
+#############################################################
+Sample to test pf_ignore_offset switch 1/27/2021 run on 9800
+carriage returns specifically left out
+#############################################################
+./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "36 52 100 104 161" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --pf_ignore_offset "35"
+
+
 ##############################################################################################
 ##############################################################################################
 
