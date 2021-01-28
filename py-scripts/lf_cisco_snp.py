@@ -1762,7 +1762,8 @@ Eventual Realm at Cisco
         }
 
     if args.cisco_all:
-        cisco_aps              = "APA453.0E7B.CF9C".split()
+#        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_aps              = "vanc-e".split()
 #        cisco_bands            = "a b".split()
         cisco_bands            = "a ".split()
 #        cisco_wifimodes        = "an anAX anAC abgn bg".split()
