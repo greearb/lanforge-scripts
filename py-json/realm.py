@@ -1158,8 +1158,6 @@ class L3CXProfile(BaseProfile):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
-        #if col_names is None:
-            #raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 if output_format.lower() != 'excel':
@@ -1221,7 +1219,9 @@ class L3CXProfile(BaseProfile):
             old_cx_rx_values = new_cx_rx_values
             #write csv file here - open, write,  and close file
             time.sleep(monitor_interval)
-        print(value_map)
+        if self.debug:
+            print("Printing value map...")
+            print(value_map)
 
     #organize data 
         full_test_data_list = []

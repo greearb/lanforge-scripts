@@ -164,12 +164,13 @@ python3 ./test_ipv4_variable_time.py
     --ssid netgear
     --password admin123
     --test_duration 2m (default)
-    --a_min 1000
+    --a_min 3000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --output_format csv
     --report_file ~/Documents/results.csv (Example of csv file output  - please use another extension for other files)
-    --compared_report ~/Documents/results_prev.csv (Example of csv file retrieval  - please use another extension for other files)
+    --compared_report ~/Documents/results_prev.csv (Example of csv file retrieval  - please use another extension for other files) - UNDER CONSTRUCTION
+    --col_names ['name','tx bytes', 'rx bytes','dropped']
     --debug
             ''')
 
