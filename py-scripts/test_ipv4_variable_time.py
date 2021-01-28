@@ -170,7 +170,7 @@ python3 ./test_ipv4_variable_time.py
     --output_format csv
     --report_file ~/Documents/results.csv (Example of csv file output  - please use another extension for other files)
     --compared_report ~/Documents/results_prev.csv (Example of csv file retrieval  - please use another extension for other files) - UNDER CONSTRUCTION
-    --col_names ['name','tx bytes', 'rx bytes','dropped']
+    --col_names 'name','tx bytes', 'rx bytes','dropped'
     --debug
             ''')
 
@@ -194,7 +194,7 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Columns wished to be monitor',default=['name','tx bytes', 'rx bytes','dropped'])
+        optional_args.add_argument('--col_names', help='Columns wished to be monitor',default=None)
         optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
     #['name','tx bytes', 'rx bytes','dropped']
@@ -273,6 +273,8 @@ python3 ./test_ipv4_variable_time.py
             col_names=list(args.col_names.split(","))
         else:
             col_names = args.col_names
+    else:
+        col_names=None
     if args.debug:
         print("Column names are...")
         print(col_names)
