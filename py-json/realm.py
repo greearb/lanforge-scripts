@@ -55,7 +55,7 @@ class Realm(LFCliBase):
                  halt_on_error_=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 _local_realm=None,
+                 # _local_realm=None,
                  _proxy_str=None,
                  _capture_signal_list=[]):
         super().__init__(_lfjson_host=lfclient_host,
@@ -802,7 +802,9 @@ class Realm(LFCliBase):
         return vap_prof
 
     def new_vr_profile(self):
-        vap_prof = VRProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+        vap_prof = VRProfile(lfclient_host=self.lfclient_host,
+                             lfclient_port=self.lfclient_port,
+                             local_realm=self,
                              debug_=self.debug)
         return vap_prof
 
@@ -824,24 +826,23 @@ class Realm(LFCliBase):
         return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_vr_profile(self):
-        profile = VRProfile(parent_realm=self,
-                            debug=self.debug,
-                            halt_on_error=self.halt_on_error,
-                            exit_on_error=self.exit_on_error)
+        profile = VRProfile(local_realm=self,
+                            debug=self.debug)
         return profile
 
-class BaseProfile(LFCliBase):
-    def __init__(self, local_realm):
+class BaseProfile:
+    def __init__(self, local_realm, debug=False):
         self.parent_realm = local_realm
         self.halt_on_error = False
         self.exit_on_error = False
+        self.debug = debug or local_realm.debug
 
     def json_get(self, target):
         return self.parent_realm.json_get(target)
 
-    def json_post(self, req_url, data, debug_=False, suppress_related_commands_=None):
-        return self.parent_realm.json_post(req_url,
-                                           data,
+    def json_post(self, req_url=None, data=None, debug_=False, suppress_related_commands_=None):
+        return self.parent_realm.json_post(_req_url=req_url,
+                                           _data=data,
                                            suppress_related_commands_=suppress_related_commands_,
                                            debug_=debug_)
 
@@ -2449,17 +2450,17 @@ class VAPProfile(LFCliBase):
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
 
 
-class VRProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, ssid="NA", ssid_pass="NA", mode=0, debug_=False):
-        super().__init__(_lfjson_host=lfclient_host, _lfjson_port=lfclient_port, _debug=debug_)
-        # self.debug = debug_
-        # self.lfclient_url = lfclient_url
-        self.ssid = ssid
-        self.ssid_pass = ssid_pass
-        self.mode = mode
-        self.local_realm = local_realm
-        self.vr_name = None
-
+class VRProfile(BaseProfile):
+    """
+    Virtual Router profile
+    """
+    def __init__(self,
+                 local_realm,
+                 vr_id=0,
+                 debug=False):
+        super().__init__(local_realm=local_realm,
+                         debug=debug)
+        self.vr_name = vr_id
         self.created_rdds = []
         self.created_vrcxs = []
 
@@ -2499,7 +2500,13 @@ class VRProfile(LFCliBase):
             "gateway": None
         }
 
-    def create_rdd(self, resource, ip_addr, netmask, gateway, suppress_related_commands_=True, debug_=False):
+    def create_rdd(self,
+                   resource=1,
+                   ip_addr=None,
+                   netmask=None,
+                   gateway=None,
+                   suppress_related_commands_=True,
+                   debug_=False):
         rdd_data = {
             "shelf": 1,
             "resource": resource,
@@ -2507,8 +2514,10 @@ class VRProfile(LFCliBase):
             "peer_ifname": "rdd1"
         }
         # print("creating rdd0")
-        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_,
-                                   debug_=debug_)
+        self.json_post("/cli-json/add_rdd",
+                       rdd_data,
+                       suppress_related_commands_=suppress_related_commands_,
+                       debug_=debug_)
 
         rdd_data = {
             "shelf": 1,
@@ -2517,27 +2526,40 @@ class VRProfile(LFCliBase):
             "peer_ifname": "rdd0"
         }
         # print("creating rdd1")
-        self.local_realm.json_post("add_rdd", rdd_data, suppress_related_commands_=suppress_related_commands_,
-                                   debug_=debug_)
+        self.json_post("/cli-json/add_rdd",
+                       rdd_data,
+                       suppress_related_commands_=suppress_related_commands_,
+                       debug_=debug_)
 
         self.set_port_data["port"] = "rdd0"
         self.set_port_data["ip_addr"] = gateway
         self.set_port_data["netmask"] = netmask
         self.set_port_data["gateway"] = gateway
-        self.local_realm.json_post("set_port", self.set_port_data,
-                                   suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.json_post("/cli-json/set_port",
+                       self.set_port_data,
+                       suppress_related_commands_=suppress_related_commands_,
+                       debug_=debug_)
 
         self.set_port_data["port"] = "rdd1"
         self.set_port_data["ip_addr"] = ip_addr
         self.set_port_data["netmask"] = netmask
         self.set_port_data["gateway"] = gateway
-        self.local_realm.json_post("set_port", self.set_port_data,
-                                   suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+        self.json_post("/cli-json/set_port",
+                       self.set_port_data,
+                       suppress_related_commands_=suppress_related_commands_,
+                       debug_=debug_)
 
         self.created_rdds.append("rdd0")
         self.created_rdds.append("rdd1")
 
-    def create_vrcx(self, resource, local_dev, remote_dev, subnets, nexthop, flags, suppress_related_commands_=True,
+    def create_vrcx(self,
+                    resource=1,
+                    local_dev=None,
+                    remote_dev=None,
+                    subnets=None,
+                    nexthop=None,
+                    flags=0,
+                    suppress_related_commands_=True,
                     debug_=False):
         if self.vr_name is not None:
             self.vrcx_data["resource"] = resource
@@ -2547,24 +2569,33 @@ class VRProfile(LFCliBase):
             self.vrcx_data["subnets"] = subnets
             self.vrcx_data["nexthop"] = nexthop
             self.vrcx_data["flags"] = flags
-            self.local_realm.json_post("add_vrcx", self.vrcx_data,
-                                       suppress_related_commands_=suppress_related_commands_, debug_=debug_)
+            self.json_post("/cli-json/add_vrcx",
+                           self.vrcx_data,
+                           suppress_related_commands_=suppress_related_commands_,
+                           debug_=debug_)
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
 
 
-    def create(self, resource, upstream_port="eth1", debug=False,
-               upstream_subnets="20.20.20.0/24", upstream_nexthop="20.20.20.1",
-               local_subnets="10.40.0.0/24", local_nexthop="10.40.3.198",
-               rdd_ip="20.20.20.20", rdd_gateway="20.20.20.1", rdd_netmask="255.255.255.0",
+    def create(self,
+               resource=1,
+               vr_id=0,
+               upstream_port="eth1",
+               upstream_subnets="20.20.20.0/24",
+               upstream_nexthop="20.20.20.1",
+               local_subnets="10.40.0.0/24",
+               local_nexthop="10.40.3.198",
+               rdd_ip="20.20.20.20",
+               rdd_gateway="20.20.20.1",
+               rdd_netmask="255.255.255.0",
+               debug=False,
                suppress_related_commands_=True):
-
         # Create vr
         if self.debug:
             debug = True
         if self.vr_name is not None:
             self.add_vr_data["alias"] = self.vr_name
-            self.local_realm.json_post("add_vr", self.add_vr_data, debug_=debug)
+            self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
         # Create 1 rdd pair
