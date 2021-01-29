@@ -91,9 +91,9 @@ function run_test() {
             grep -i fail "${TEST_DIR}/${i}.txt" && retval=1
             chmod 664 "${TEST_DIR}/${i}.txt"
             if (( $retval == 0 )); then
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='success'>Success</td><td><button onclick=\"toggle_visibility('${i}');\">Show/Hide</button></td></tr>")
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='success'>Success</td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}.txt>STDOUT</button></td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
             else
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='failure'>Failure</td><td><button onclick=\"toggle_visibility('${i}');\">Show/Hide</button></td></tr>")
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='failure'>Failure</td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}.txt>STDOUT</button></td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
             fi
         fi
     done
@@ -133,16 +133,6 @@ function html_generator() {
 		.scriptdetails {
 			font-size: 10px;
 		}
-		</style>
-		<script type='text/javascript'>
-			function toggle_visibility(id) {
-				var e = document.getElementById(id);
-				if(e.style.display == 'block')
-					e.style.display = 'none';
-		 		else
-		 			e.style.display = 'block';
-			}
-		</script>
 		</head>
 		<body>
 		<h1>Test All Scripts Results</h1>
@@ -157,10 +147,6 @@ function html_generator() {
     echo "$header"  >> $fname
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
-    for item in "${testCommands[@]}"; do
-        item2=$(echo $item | sed 's/^..//')
-        echo "<div id=\"${item}\" style=\"display:none;\"><iframe src=\"${TEST_DIR}/${item2}.txt\"></iframe></div>" >> $fname
-    done;
     echo "$tail" >> $fname
 }
 
