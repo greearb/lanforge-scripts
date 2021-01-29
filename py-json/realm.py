@@ -11,14 +11,17 @@ from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
-# from generic_cx import GenericCx
+#from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
-import datetime
+import datetime 
 import base64
 import xlsxwriter
 import pandas as pd
+import requests
+import ast
+
 
 
 def wpa_ent_list():
@@ -640,7 +643,6 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
         return num_sta_with_ips
 
-
     def duration_time_to_seconds(self, time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
@@ -1140,7 +1142,6 @@ class L3CXProfile(BaseProfile):
                 return False
         else:
             return False
-
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1150,7 +1151,8 @@ class L3CXProfile(BaseProfile):
                 report_file=None,
                 output_format=None,
                 script_name=None,
-                arguments=None):
+                arguments=None,
+                compared_report=None):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except:
@@ -1164,16 +1166,22 @@ class L3CXProfile(BaseProfile):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
-        #if col_names is None:
-            #raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 if output_format.lower() != 'excel':
                     raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
+        #retrieve compared report if specified - turn into dataframe
+        if compared_report is not None:
+            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+            for format in supported_formats:
+                if compared_format.lower() == format:
+                   # exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
+                    previous_data_df= read_csv()
 
-        # Step 1, column names . what is this for?
+
+        # Step 1, column names 
         fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
@@ -1217,61 +1225,65 @@ class L3CXProfile(BaseProfile):
                 self._fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
+            #write csv file here - open, write,  and close file
             time.sleep(monitor_interval)
+        if self.debug:
+            print("Printing value map...")
+            print(value_map)
 
-        #step 3 organize data
-        endpoints=list()
-        for endpoint in value_map.values():
-            endpoints.append(endpoint['endpoint'])
-        endpoints2 = []
-        for y in range(0, len(endpoints)):
-            for x in range(0, len(endpoints[0])):
-                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
-        import itertools
-        timestamps2 = list(
-            itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
-        for point in range(0, len(endpoints2)):
-            endpoints2[point].insert(0, timestamps2[point])
-        # step 4 save and close
-        header_row.insert(0, 'Timestamp')
-        # print(header_row)
-        if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            workbook = xlsxwriter.Workbook(report_file)
-            worksheet = workbook.add_worksheet()
-            for col_num, data in enumerate(header_row):
-                worksheet.write(0, col_num, data)
-            row_num = 1
-            for x in endpoints2:
-                for col_num, data in enumerate(x):
-                    worksheet.write(row_num, col_num, str(data))
-                row_num += 1
-            workbook.close()
-        else:
-            df = pd.DataFrame(endpoints2)
-            df.columns = header_row
-            import requests
-            import ast
+    #organize data 
+        full_test_data_list = []
+        for test_timestamp, data in value_map.items():
+            #reduce the endpoint data to single dictionary of dictionaries
+            for datum in data["endpoint"]:
+                for endpoint_data in datum.values():
+                    if self.debug:
+                        print(endpoint_data)
+                    endpoint_data["Timestamp"] = test_timestamp
+                    full_test_data_list.append(endpoint_data)
+                if self.debug:
+                    print("Printing full data list...")
+                    print(full_test_data_list)
+                    
+
+        header_row.append("Timestamp")
+        header_row.append('Timestamp milliseconds')
+        df = pd.DataFrame(full_test_data_list)
+       
+        df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        #round entire column
+        df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
+        df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
+        df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
+        #compare previous data to current data
+        
+        try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
-            df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-            df['Script Name'] = script_name
-            df['Arguments'] = arguments
-            for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-                df[x][1:] = ''
-            if output_format == 'hdf':
-                df.to_hdf(report_file, 'table', append=True)
-            if output_format == 'parquet':
-                df.to_parquet(report_file, engine='pyarrow')
-            if output_format == 'png':
-                fig = df.plot().get_figure()
-                fig.savefig(report_file)
-            if output_format == 'df':
-                return df
-            supported_formats = ['csv','json','stata','pickle']
-            for x in supported_formats:
-                if output_format.lower() == x or report_file.split('.')[-1] == x:
-                    exec('df.to_' + x + '("' + report_file + '")')
-            else:
-                pass
+        except:
+            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+
+        df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+        df['Script Name'] = script_name
+        df['Arguments'] = arguments
+
+        for x in ['LFGUI Release', 'Script Name', 'Arguments']:
+            df[x][1:] = ''
+        if output_format == 'hdf':
+            df.to_hdf(report_file, 'table', append=True)
+        if output_format == 'parquet':
+            df.to_parquet(report_file, engine='pyarrow')
+        if output_format == 'png':
+            fig = df.plot().get_figure()
+            fig.savefig(report_file)
+        if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
+            df.to_excel(report_file, index=False)
+        if output_format == 'df':
+            return df
+        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        for x in supported_formats:
+            if output_format.lower() == x or report_file.split('.')[-1] == x:
+                exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
+
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
@@ -1707,7 +1719,6 @@ class L4CXProfile(LFCliBase):
             if debug:
                 print(fields)
         else:
-            #todo:rename this...
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
             if debug:
                 print(header_row)
@@ -1718,33 +1729,35 @@ class L4CXProfile(LFCliBase):
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
         sleep_interval =  round(duration_sec // 5)
         if debug:
-            print("Sleep_interval is..." + sleep_interval)
-            print("Start time is..."+ start_time)
-            print("End time is..."+ end_time)
+            print("Sleep_interval is %s ", sleep_interval)
+            print("Start time is %s " , start_time)
+            print("End time is %s " ,end_time)
         value_map = dict()
         passes = 0
         expected_passes = 0
         timestamps = []
         for test in range(1+iterations):
             while datetime.datetime.now() < end_time:
-                response=self.json_get("layer4/all")
-                #response = self.json_get("layer4/list?fields=urls/s")
+                if fields is None:
+                    response = self.json_get("/layer4/all")
+                else:
+                    response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields))
                 if debug:
                     print(response)
-                if "endpoint" not in response:
+                if response is None: 
                     print(response)
                     raise ValueError("Cannot find any endpoints")
                 if monitor:
                     if debug:
                         print(response)
-
+                
                 time.sleep(sleep_interval)
                 t = datetime.datetime.now()
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
                 if self.check_errors(debug):
-                    if self.__check_request_rate(): #need to changed
+                    if self.check_request_rate(): 
                         passes += 1
                     else:
                         self._fail("FAIL: Request rate did not exceed 90% target rate")
@@ -1752,10 +1765,9 @@ class L4CXProfile(LFCliBase):
                 else:
                     self._fail("FAIL: Errors found getting to %s " % self.url)
                     self.exit_fail()
-                    #check monitor sleep time
                 time.sleep(monitor_interval)
         print(value_map)
-############################################# edited 'til here - dipti 1/21/20
+
         # step 3 organize data
         endpoints = list()
         for endpoint in value_map.values():
@@ -1787,13 +1799,14 @@ class L4CXProfile(LFCliBase):
             workbook.close()
         else:
             df = pd.DataFrame(endpoints2)
+            print(header_row)
             df.columns = header_row
             import requests
             import ast
             try:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             except:
-                systeminfo = ast.literal_eval(requests.get('http://localhost:8090').text)
+                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
             df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
             df['Script Name'] = script_name
             df['Arguments'] = arguments
@@ -2072,7 +2085,10 @@ class WifiMonitor:
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> dipti-branch
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", up_request)
@@ -2551,7 +2567,6 @@ class VRProfile(LFCliBase):
                                        suppress_related_commands_=suppress_related_commands_, debug_=debug_)
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
-
 
     def create(self, resource, upstream_port="eth1", debug=False,
                upstream_subnets="20.20.20.0/24", upstream_nexthop="20.20.20.1",
@@ -3123,7 +3138,6 @@ class MACVLANProfile(LFCliBase):
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.created_macvlans)
 
-
     def admin_up(self):
         for macvlan in self.created_macvlans:
             self.local_realm.admin_up(macvlan)
@@ -3394,7 +3408,7 @@ class StationProfile:
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
         self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags      = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
@@ -3660,7 +3674,10 @@ class StationProfile:
             time.sleep(delay)
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
+<<<<<<< HEAD
 
+=======
+>>>>>>> dipti-branch
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio,

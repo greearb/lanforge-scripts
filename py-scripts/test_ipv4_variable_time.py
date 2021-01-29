@@ -78,7 +78,6 @@ class IPV4VariableTime(LFCliBase):
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap",self.ap)
-        #self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
 
 
         self.cx_profile.host = self.host
@@ -165,11 +164,13 @@ python3 ./test_ipv4_variable_time.py
     --ssid netgear
     --password admin123
     --test_duration 2m (default)
-    --a_min 1000
+    --a_min 3000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --output_format csv
-    --report_file ~/Documents/results.csv (if csv file - please use another extension for other files)
+    --report_file ~/Documents/results.csv (Example of csv file output  - please use another extension for other files)
+    --compared_report ~/Documents/results_prev.csv (Example of csv file retrieval  - please use another extension for other files) - UNDER CONSTRUCTION
+    --col_names 'name','tx bytes', 'rx bytes','dropped'
     --debug
             ''')
 
@@ -193,8 +194,10 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Which columns you want to monitor', default=['Name','Rx Rate','Rx PDUs'])
+        optional_args.add_argument('--col_names', help='Columns wished to be monitor',default=None)
+        optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
+    #['name','tx bytes', 'rx bytes','dropped']
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -214,11 +217,11 @@ python3 ./test_ipv4_variable_time.py
 
     if args.report_file is None:
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            report_f=path+'/data.' + args.output_format
+            report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
             output=args.output_format
         else:
             print('Defaulting data file output type to Excel')
-            report_f=path+'/data.xlsx'
+            report_f='/home/lanforge/report-data/'+homedir+'/data.xlsx'
             output='xlsx'
     else:
         report_f=args.report_file
@@ -226,6 +229,17 @@ python3 ./test_ipv4_variable_time.py
             output=str(args.report_file).split('.')[-1]
         else:
             output=args.output_format
+
+    #Retrieve last data file
+    compared_rept=None
+    if args.compared_report:
+        #check if last report format is same as current rpt format
+        last_report_format = args.compared_report.split('.')[-1]
+        if output == last_report_format:
+            compared_rept = args.compared_report
+        else:
+            ValueError("Compared report format is not the same as the new report format. Please make sure they are of the same file type.")
+
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
@@ -257,16 +271,23 @@ python3 ./test_ipv4_variable_time.py
         layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    if type(args.col_names) is not list:
-        col_names=None
+    if args.col_names is not None:
+        print(args.col_names)
+        if type(args.col_names) is not list:
+            col_names=list(args.col_names.split(","))
+        else:
+            col_names = args.col_names
     else:
-        col_names = args.col_names
-    print(report_f)
+        col_names=None
+    if args.debug:
+        print("Column names are...")
+        print(col_names)
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
                                     output_format=output,
+                                    compared_report=compared_rept,
                                     script_name='test_ipv4_variable_time',
                                     arguments=args)
 

@@ -14,6 +14,7 @@ CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
 STOP_NUM=9
 
+<<<<<<< HEAD
 DATA_DIR="${TEST_DIR}"
 REPORT_DIR="/home/lanforge/html-reports"
 
@@ -22,10 +23,15 @@ REPORT_DIR="/home/lanforge/html-reports"
 #Test array
 testCommands=(
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa"
+=======
+#Test array
+testCommands=("./example_security_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa "
+>>>>>>> dipti-branch
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio $RADIO_USED --security wep"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
     "./test_ipv4_connection.py --radio wiphy2 --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+<<<<<<< HEAD
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
@@ -34,6 +40,16 @@ testCommands=(
     "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format excel"
     "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format csv"
     #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"
+=======
+    "./test_generic.py --mgr localhost --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
+    "./test_generic.py --mgr localhost --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
+    "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
+    "./test_ipv4_l4_wifi.py --radio wiphy0 --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --test_duration 2m"
+    "./test_ipv4_l4.py --radio wiphy3 --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED  --url \"dl http://10.40.0.1 /dev/null\"  --test_duration 2m"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format excel"
+    "./test_ipv4_variable_time.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format csv"
+    "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"
+>>>>>>> dipti-branch
     #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_macvlan.py --radio wiphy1"
@@ -66,20 +82,28 @@ function echo_print() {
     echo "Beginning $CURR_TEST_NAME test..." >>~/test_all_output_file.txt
 }
 results=()
+<<<<<<< HEAD
 detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
+=======
+>>>>>>> dipti-branch
 function run_test() {
     for i in "${testCommands[@]}"; do
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
+<<<<<<< HEAD
+=======
+        echo "$CURR_TEST_NAME $CURR_TEST_NUM"
+>>>>>>> dipti-branch
 
         if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
             exit 1
         fi
+<<<<<<< HEAD
         echo ""
         echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
 
@@ -94,6 +118,15 @@ function run_test() {
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='success'>Success</td><td><button onclick=\"toggle_visibility('${i}');\">Show/Hide</button></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='failure'>Failure</td><td><button onclick=\"toggle_visibility('${i}');\">Show/Hide</button></td></tr>")
+=======
+        if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
+            echo_print
+            echo "$i"
+            if $i; then
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Success</td></tr>")
+            else
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Failure</td></tr>")
+>>>>>>> dipti-branch
             fi
         fi
     done
@@ -110,6 +143,7 @@ function check_args() {
 function html_generator() {
     NOW=$(date +"%Y-%m-%d-%T")
     header="<html>
+<<<<<<< HEAD
 		<head>
 		<title>Test All Scripts Results $NOW</title>
 		<style>
@@ -168,5 +202,32 @@ function html_generator() {
 check_args $1 $2
 run_test
 echo "${detailedresults}"
+=======
+    <head>
+    <title>Candela Test All Scripts Results</title>
+    <style>
+    success {
+        background-color:green;
+    }
+    failure {
+        background-color:red;
+    }
+    </style>
+    </head>
+    <body>
+    <p>Candela Technologies</p>
+    <table border ='1'>
+    "
+    tail="</table>
+    </body>
+    </html>"
+    fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
+    echo $fname
+    echo $header"${results[@]}"$tail >> $fname
+}
+#true >~/test_all_output_file.txt
+check_args $1 $2
+run_test
+>>>>>>> dipti-branch
 html_generator
 #test generic and fileio are for macvlans

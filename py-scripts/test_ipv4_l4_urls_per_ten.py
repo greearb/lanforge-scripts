@@ -197,6 +197,34 @@ python3 ./test_ipv4_l4_urls_per_ten.py
             output_form=args.output_format 
 
 
+    #Create directory
+    if args.report_file is None:
+        try:
+            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_l4_urls_per_ten'
+            path = os.path.join('/home/lanforge/report-data/',homedir)
+            os.mkdir(path)
+        except:
+            path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            print('Saving file to local directory')
+    else:
+        pass
+
+    if args.report_file is None:
+        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
+            rpt_file=path+'/data.' + args.output_format
+            output=args.output_format
+        else:
+            print('Defaulting data file output type to Excel')
+            rpt_file=path+'/data.xlsx'
+            output='xlsx'
+    else:
+        rpt_file=args.report_file
+        if args.output_format is None:
+            output=str(args.report_file).split('.')[-1]
+        else:
+            output=args.output_format
+
+
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
                                           radio=args.radio)
 
@@ -223,11 +251,19 @@ python3 ./test_ipv4_l4_urls_per_ten.py
         layer4traffic=','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     except:
         pass
+<<<<<<< HEAD
     ip_test.l4cxprofile.monitor(col_names=['Name','bytes-rd','rx rate (1 min)', 'urls/s'],
                                 report_file=rpt_file, 
                                 duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                 created_cx=layer4traffic, 
                                 output_format=output_form, 
+=======
+    ip_test.l4cxprofile.monitor(col_names=['Name','bytes-rd','urls/s'],
+                                report_file=rpt_file, 
+                                duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                                created_cx=layer4traffic, 
+                                output_format=output, 
+>>>>>>> dipti-branch
                                 script_name='test_ipv4_l4_urls_per_ten', 
                                 arguments=args,
                                 debug=args.debug)
