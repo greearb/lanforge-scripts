@@ -14,8 +14,10 @@ $ pip3 install pexpect-serial
 ./cisco_wifi_ctl.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet
 
 # For LANforge lab system.
-./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action summary --prompt "\(Cisco Controller\)"
-./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 -u admin -p Cisco123 --action cmd --value "show ap config general APA453.0E7B.CF9C"
+./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action cmd --value "show ap config general APA453.0E7B.CF9C" --prompt "(Cisco Controller)"
+./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action summary --prompt "(Cisco Controller)"
+
+
 
 telnet 172.19.36.168(Pwd:), go to the privileged mode and execute the command “clear line 43”.
 
