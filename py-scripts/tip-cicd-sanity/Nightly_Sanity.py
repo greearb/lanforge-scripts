@@ -239,7 +239,7 @@ parser.add_argument("-i", "--ignore", type=str, default='no', choices=['yes', 'n
                     help="Set to 'no' to ignore current running version on AP and run sanity including upgrade")
 parser.add_argument("-r", "--report", type=str, default=report_path,
                     help="Report directory path other than default - directory must already exist!")
-parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420'],
+parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420', "wf188n"],
                     help="AP model to be run")
 parser.add_argument("--tr_prefix", type=str, default=testRunPrefix, help="Testrail test run prefix override (default is Env variable)")
 parser.add_argument("--skip_upgrade", dest="skip_upgrade", action='store_true', help="Skip Upgrade testing")
@@ -393,7 +393,7 @@ for key in equipment_ids:
 
     fw_model = ap_cli_fw.partition("-")[0]
     print('Current Active AP FW from CLI:', ap_cli_fw)
-    print(fw_model)
+
     ###Find Latest FW for Current AP Model and Get FW ID
 
     ##Compare Latest and Current AP FW and Upgrade
@@ -440,7 +440,6 @@ for key in equipment_ids:
         if args.skip_bridge == True:
             for x in test_cases:
                 if "bridge" in x:
-                    print(x)
                     case_ids.remove(test_cases[x])
         else:
             pass
@@ -1251,8 +1250,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 radiusProfileId = radius_profile
                 child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa,
-                                  rfProfileId,
-                                  radiusProfileId]
+                                  rfProfileId]
                 print(child_profiles)
             else:
                 child_profiles = [fiveG_wpa2, fiveG_wpa, twoFourG_wpa2, twoFourG_wpa, rfProfileId]

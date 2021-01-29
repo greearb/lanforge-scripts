@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 ##AP Models Under Test
-ap_models = ["ec420","ea8300","ecw5211","ecw5410"]
+ap_models = ["ec420","ea8300","ecw5211","ecw5410","wf188n"]
 
 ##Cloud Type(cloudSDK = v1, CMAP = cmap)
 cloud_type = "v1"
@@ -30,28 +30,32 @@ cloud_sdk_models = {
     "ec420": "EC420-G1",
     "ea8300": "EA8300-CA",
     "ecw5211": "ECW5211",
-    "ecw5410": "ECW5410"
+    "ecw5410": "ECW5410",
+    "wf188n": "WF188N"
 }
 
 mimo_5g = {
     "ec420": "4x4",
     "ea8300": "2x2",
     "ecw5211": "2x2",
-    "ecw5410": "4x4"
+    "ecw5410": "4x4",
+    "wf188n": "2x2"
 }
 
 mimo_2dot4g = {
     "ec420": "2x2",
     "ea8300": "2x2",
     "ecw5211": "2x2",
-    "ecw5410": "4x4"
+    "ecw5410": "4x4",
+    "wf188n": "2x2"
 }
 
 sanity_status = {
     "ea8300": "failed",
     "ecw5211": 'passed',
     "ecw5410": 'failed',
-    "ec420": 'failed'
+    "ec420": 'failed',
+    "wf188n": "failed"
 }
 
 ##Customer ID for testing
@@ -62,21 +66,24 @@ equipment_id_dict = {
     "ea8300": "115",
     "ecw5410": "116",
     "ecw5211": "117",
-    "ec420": "27"
+    "ec420": "27",
+    "wf188n": "127"
 }
 
 equipment_ip_dict = {
     "ea8300": "10.10.10.103",
     "ecw5410": "10.10.10.105",
     "ec420": "10.10.10.104",
-    "ecw5211": "10.10.10.102"
+    "ecw5211": "10.10.10.102",
+    "wf188n": "10.10.10.179"
 }
 
 eqiupment_credentials_dict = {
     "ea8300": "openwifi",
     "ecw5410": "openwifi",
     "ec420": "openwifi",
-    "ecw5211": "admin123"
+    "ecw5211": "admin123",
+    "wf188n": "openwifi"
 }
 
 ##Test Case information - Maps a generic TC name to TestRail TC numbers
@@ -301,6 +308,45 @@ profile_info_dict = {
         ]
     },
 
+    "wf188n": {
+        "profile_id": "3724",
+        "childProfileIds": [
+            3718,
+            3719,
+            3720,
+            3721,
+            3722,
+            3723,
+            10
+        ],
+        "fiveG_WPA2_SSID": "WF188N_5G_WPA2",
+        "fiveG_WPA2_PSK": "Connectus123$",
+        "fiveG_WPA_SSID": "WF188N_5G_WPA",
+        "fiveG_WPA_PSK": "Connectus123$",
+        "fiveG_OPEN_SSID": "WF188N_5G_OPEN",
+        "fiveG_WPA2-EAP_SSID": "WF188N_5G_WPA2-EAP",
+        "twoFourG_OPEN_SSID": "WF188N_2dot4G_OPEN",
+        "twoFourG_WPA2_SSID": "WF188N_2dot4G_WPA2",
+        "twoFourG_WPA2_PSK": "Connectus123$",
+        "twoFourG_WPA_SSID": "WF188N_2dot4G_WPA",
+        "twoFourG_WPA_PSK": "Connectus123$",
+        "twoFourG_WPA2-EAP_SSID": "WF188N_2dot4G_WPA2-EAP",
+        "fiveG_WPA2_profile": 3719,
+        "fiveG_WPA_profile": 3720,
+        "fiveG_WPA2-EAP_profile": 3718,
+        "twoFourG_WPA2_profile": 3722,
+        "twoFourG_WPA_profile": 3723,
+        "twoFourG_WPA2-EAP_profile": 3721,
+        "ssid_list": [
+            "WF188N_5G_WPA2",
+            "WF188N_5G_WPA",
+            "WF188N_5G_WPA2-EAP",
+            "WF188N_2dot4G_WPA2",
+            "WF188N_2dot4G_WPA",
+            "WF188N_2dot4G_WPA2-EAP"
+        ]
+    },
+
     "ecw5410_nat": {
         "profile_id": "68",
         "childProfileIds": [
@@ -461,6 +507,45 @@ profile_info_dict = {
         ]
     },
 
+    "wf188n_nat": {
+        "profile_id": "3732",
+        "childProfileIds": [
+            3728,
+            3729,
+            3730,
+            3731,
+            10,
+            3726,
+            3727
+        ],
+        "fiveG_WPA2_SSID": "WF188N_5G_WPA2_NAT",
+        "fiveG_WPA2_PSK": "Connectus123$",
+        "fiveG_WPA_SSID": "WF188N_5G_WPA_NAT",
+        "fiveG_WPA_PSK": "Connectus123$",
+        "fiveG_OPEN_SSID": "WF188N_5G_OPEN_NAT",
+        "fiveG_WPA2-EAP_SSID": "WF188N_5G_WPA2-EAP_NAT",
+        "twoFourG_OPEN_SSID": "WF188N_2dot4G_OPEN_NAT",
+        "twoFourG_WPA2_SSID": "WF188N_2dot4G_WPA2_NAT",
+        "twoFourG_WPA2_PSK": "Connectus123$",
+        "twoFourG_WPA_SSID": "WF188N_2dot4G_WPA_NAT",
+        "twoFourG_WPA_PSK": "Connectus123$",
+        "twoFourG_WPA2-EAP_SSID": "WF188N_2dot4G_WPA2-EAP_NAT",
+        "fiveG_WPA2_profile": 3727,
+        "fiveG_WPA_profile": 3728,
+        "fiveG_WPA2-EAP_profile": 3726,
+        "twoFourG_WPA2_profile": 3730,
+        "twoFourG_WPA_profile": 3731,
+        "twoFourG_WPA2-EAP_profile": 3729,
+        "ssid_list": [
+            "WF188N_5G_WPA2_NAT",
+            "WF188N_5G_WPA_NAT",
+            "WF188N_5G_WPA2-EAP_NAT",
+            "WF188N_2dot4G_WPA2_NAT",
+            "WF188N_2dot4G_WPA_NAT",
+            "WF188N_2dot4G_WPA2-EAP_NAT"
+        ]
+    },
+
     "ecw5410_vlan": {
         "profile_id": "338",
         "childProfileIds": [
@@ -618,6 +703,45 @@ profile_info_dict = {
             "ECW5211_2dot4G_WPA2_VLAN",
             "ECW5211_2dot4G_WPA_VLAN",
             "ECW5211_2dot4G_WPA2-EAP_VLAN"
+        ]
+    },
+
+    "wf188n_vlan": {
+        "profile_id": "3740",
+        "childProfileIds": [
+            3734,
+            3735,
+            3736,
+            3737,
+            3738,
+            10,
+            3739
+        ],
+        "fiveG_WPA2_SSID": "WF188N_5G_WPA2_VLAN",
+        "fiveG_WPA2_PSK": "Connectus123$",
+        "fiveG_WPA_SSID": "WF188N_5G_WPA_VLAN",
+        "fiveG_WPA_PSK": "Connectus123$",
+        "fiveG_OPEN_SSID": "WF188N_5G_OPEN_VLAN",
+        "fiveG_WPA2-EAP_SSID": "WF188N_5G_WPA2-EAP_VLAN",
+        "twoFourG_OPEN_SSID": "WF188N_2dot4G_OPEN_VLAN",
+        "twoFourG_WPA2_SSID": "WF188N_2dot4G_WPA2_VLAN",
+        "twoFourG_WPA2_PSK": "Connectus123$",
+        "twoFourG_WPA_SSID": "WF188N_2dot4G_WPA_VLAN",
+        "twoFourG_WPA_PSK": "Connectus123$",
+        "twoFourG_WPA2-EAP_SSID": "WF188N_2dot4G_WPA2-EAP_VLAN",
+        "fiveG_WPA2_profile": 3738,
+        "fiveG_WPA_profile": 3739,
+        "fiveG_WPA2-EAP_profile": 3737,
+        "twoFourG_WPA2_profile": 3722,
+        "twoFourG_WPA_profile": 3723,
+        "twoFourG_WPA2-EAP_profile": 3721,
+        "ssid_list": [
+            "WF188N_5G_WPA2_VLAN",
+            "WF188N_5G_WPA_VLAN",
+            "WF188N_5G_WPA2-EAP_VLAN",
+            "WF188N_2dot4G_WPA2_VLAN",
+            "WF188N_2dot4G_WPA_VLAN",
+            "WF188N_2dot4G_WPA2-EAP_VLAN"
         ]
     }
 }

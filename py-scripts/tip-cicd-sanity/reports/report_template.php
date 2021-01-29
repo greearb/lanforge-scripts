@@ -46,7 +46,7 @@ $json = json_decode($results, true);
     
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="4" CELLSPACING="3" Style="background-color: lightgray; font-size:16px">
    <TR>
-      <TH COLSPAN="7"><BR><H3>Test Results</H3>
+      <TH COLSPAN="8"><BR><H3>Test Results</H3>
       </TH>
    </TR>
    <TR>
@@ -56,6 +56,7 @@ $json = json_decode($results, true);
        <TH WIDTH="150px">ECW5211 Result</TH>
        <TH WIDTH="150px">ECW5410 Result</TH>
        <TH WIDTH="150px">EC420 Result</TH>
+       <TH WIDTH="150px">WF188N Result</TH>
    </TR>
     
     <TR ALIGN="CENTER">
@@ -64,6 +65,7 @@ $json = json_decode($results, true);
        <TD style="font-weight:bold"><?php echo print_r($json['fw_available']['ecw5211'],true) ?></TD>
        <TD style="font-weight:bold"><?php echo print_r($json['fw_available']['ecw5410'],true) ?></TD>
        <TD style="font-weight:bold"><?php echo print_r($json['fw_available']['ec420'],true) ?></TD>
+       <TD style="font-weight:bold"><?php echo print_r($json['fw_available']['wf188n'],true) ?></TD>
    </TR>
        
        <TR ALIGN="CENTER" style="font-weight:bold">
@@ -72,6 +74,7 @@ $json = json_decode($results, true);
         <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['ecw5211'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['ecw5410'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['ec420'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['fw_under_test']['wf188n'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER" style="font-weight:bold">
@@ -80,6 +83,7 @@ $json = json_decode($results, true);
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5211']['date'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5410']['date'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ec420']['date'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['wf188n']['date'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER" style="font-weight:bold">
@@ -88,6 +92,7 @@ $json = json_decode($results, true);
         <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ecw5211']['commitId'],true) ?></TD>
         <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ecw5410']['commitId'],true) ?></TD>
         <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['ec420']['commitId'],true) ?></TD>
+        <TD style="font-size:10px"><?php echo print_r($json['cloud_sdk']['wf188n']['commitId'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER" style="font-weight:bold">
@@ -96,6 +101,7 @@ $json = json_decode($results, true);
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5211']['projectVersion'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ecw5410']['projectVersion'],true) ?></TD>
         <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['ec420']['projectVersion'],true) ?></TD>
+        <TD style="font-size:12px"><?php echo print_r($json['cloud_sdk']['wf188n']['projectVersion'],true) ?></TD>
    </TR>
        
        <TR ALIGN="CENTER" style="font-weight:bold">
@@ -104,12 +110,14 @@ $json = json_decode($results, true);
         <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5211'],true) ?></TD>
         <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ecw5410'],true) ?></TD>
         <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['ec420'],true) ?></TD>
+        <TD style="font-size:14px"><?php echo print_r($json['pass_percent']['wf188n'],true) ?></TD>
    </TR>
 
       <TR ALIGN="CENTER">
       <TH>Test Case</TH>
-      <TH WIDTH= 7%">Category</TH>
+      <TH WIDTH= 7%>Category</TH>
       <TH>Description</TH>
+      <TH></TH>
       <TH></TH>
       <TH></TH>
       <TH></TH>
@@ -123,6 +131,7 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ecw5211']['5540'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ecw5410']['5540'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ec420']['5540'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['wf188n']['5540'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -133,6 +142,7 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ecw5211']['5548'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ecw5410']['5548'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ec420']['5548'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['wf188n']['5548'],true) ?></TD>
    </TR>
 
        <TR ALIGN="CENTER">
@@ -143,6 +153,7 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ecw5211']['5547'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ecw5410']['5547'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ec420']['5547'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['wf188n']['5547'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -153,6 +164,7 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ecw5211']['2233'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ecw5410']['2233'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ec420']['2233'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['wf188n']['2233'],true) ?></TD>
    </TR>
        
     <TR ALIGN="CENTER">
@@ -163,6 +175,7 @@ $json = json_decode($results, true);
        <TD><?php echo print_r($json['tests']['ecw5211']['5247'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ecw5410']['5247'],true) ?></TD>
        <TD><?php echo print_r($json['tests']['ec420']['5247'],true) ?></TD>
+       <TD><?php echo print_r($json['tests']['wf188n']['5247'],true) ?></TD>
    </TR>
        
     <TR ALIGN="CENTER">
@@ -173,6 +186,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5222'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5222'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5222'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5222'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -183,6 +197,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5808'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5808'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5808'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5808'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -193,6 +208,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5644'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5644'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5644'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -202,7 +218,8 @@ $json = json_decode($results, true);
       <TD><?php echo print_r($json['tests']['ea8300']['5645'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5645'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5645'],true) ?></TD>
-        <TD><?php echo print_r($json['tests']['ec420']['5645'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5644'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -212,7 +229,8 @@ $json = json_decode($results, true);
       <TD><?php echo print_r($json['tests']['ea8300']['5646'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5646'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5646'],true) ?></TD>
-        <TD><?php echo print_r($json['tests']['ec420']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['5644'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5644'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -223,6 +241,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5646'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5646'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5646'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5646'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -233,6 +252,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5647'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5647'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5647'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5647'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -243,6 +263,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5648'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5648'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5648'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5648'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -253,6 +274,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5641'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5641'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5641'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5641'],true) ?></TD>
    </TR>
 
        <TR ALIGN="CENTER">
@@ -263,6 +285,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5541'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5541'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5541'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5541'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -273,6 +296,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5544'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5544'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5544'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5544'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -283,6 +307,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5214'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5214'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5214'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5214'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>2237</TD>
@@ -292,6 +317,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['2237'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['2237'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2237'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['2237'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>2420</TD>
@@ -301,6 +327,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['2420'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['2420'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2420'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['2420'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5215</TD>
@@ -310,6 +337,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5215'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5215'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5215'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5215'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>2236</TD>
@@ -319,6 +347,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['2236'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['2236'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['2236'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['2236'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>2419</TD>
@@ -327,7 +356,8 @@ $json = json_decode($results, true);
       <TD><?php echo print_r($json['tests']['ea8300']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['2419'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['2419'],true) ?></TD>
-        <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD> 
+        <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['2419'],true) ?></TD>
 
     <TR ALIGN="CENTER">
       <TD>5650</TD>
@@ -336,7 +366,8 @@ $json = json_decode($results, true);
       <TD><?php echo print_r($json['tests']['ea8300']['5650'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['5650'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5650'],true) ?></TD>
-        <TD><?php echo print_r($json['tests']['ec420']['5650'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['ec420']['2419'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['2419'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -347,6 +378,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5651'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5651'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5651'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5651'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -357,6 +389,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5652'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5652'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5652'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5652'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -367,6 +400,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5653'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5653'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5653'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5653'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -377,6 +411,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5654'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5654'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5654'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5654'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -387,6 +422,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5655'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5655'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5655'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5655'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -397,6 +433,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5642'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5642'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5642'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5642'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER">
@@ -407,6 +444,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5542'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5542'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5542'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5542'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -417,6 +455,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5545'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5545'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5545'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5545'],true) ?></TD>
    </TR>
         <TR ALIGN="CENTER">
       <TD>5216</TD>
@@ -426,6 +465,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5216'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5216'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5216'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5216'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>4325</TD>
@@ -435,6 +475,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['4325'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['4325'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4325'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['4325'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>4323</TD>
@@ -444,6 +485,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['4323'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['4323'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4323'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['4323'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5217</TD>
@@ -453,6 +495,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5217'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5217'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5217'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5217'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>4326</TD>
@@ -462,6 +505,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['4326'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['4326'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['4326'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['4326'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>4324</TD>
@@ -470,7 +514,8 @@ $json = json_decode($results, true);
       <TD><?php echo print_r($json['tests']['ea8300']['4324'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5211']['4324'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['4324'],true) ?></TD>
-        <TD><?php echo print_r($json['tests']['ec420']['4324'],true) ?></TD>    
+        <TD><?php echo print_r($json['tests']['ec420']['4324'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['4324'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -481,6 +526,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5656'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5656'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5656'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5656'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -491,6 +537,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5657'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5657'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5657'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5657'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -501,6 +548,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5658'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5658'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5658'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5658'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -511,6 +559,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5659'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5659'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5659'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5659'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -521,6 +570,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5660'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5660'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5660'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5659'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -531,6 +581,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5661'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5661'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5661'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5661'],true) ?></TD>
    </TR>
 
     <TR ALIGN="CENTER">
@@ -541,6 +592,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5643'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5643'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5643'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5643'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER">
@@ -551,6 +603,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5543'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5543'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5543'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5543'],true) ?></TD>
    </TR>
 
    <TR ALIGN="CENTER">
@@ -561,6 +614,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5546'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5546'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5546'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5546'],true) ?></TD>
    </TR>
 
         <TR ALIGN="CENTER">
@@ -571,6 +625,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5253'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5253'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5253'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5253'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5251</TD>
@@ -580,6 +635,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5251'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5251'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5251'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5251'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5252</TD>
@@ -589,6 +645,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5252'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5252'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5252'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5252'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5250</TD>
@@ -598,6 +655,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5250'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5250'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5250'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5250'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5248</TD>
@@ -607,6 +665,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5248'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5248'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5248'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5248'],true) ?></TD>
    </TR>
     <TR ALIGN="CENTER">
       <TD>5249</TD>
@@ -616,6 +675,7 @@ $json = json_decode($results, true);
         <TD><?php echo print_r($json['tests']['ecw5211']['5249'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ecw5410']['5249'],true) ?></TD>
         <TD><?php echo print_r($json['tests']['ec420']['5249'],true) ?></TD>
+        <TD><?php echo print_r($json['tests']['wf188n']['5249'],true) ?></TD>
         </TR>
 </TABLE> 
     
