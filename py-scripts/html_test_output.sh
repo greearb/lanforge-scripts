@@ -80,7 +80,6 @@ function run_test() {
         if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
             exit 1
         fi
-<<<<<<< HEAD
         echo ""
         echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
 
@@ -94,20 +93,8 @@ function run_test() {
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='success'>Success</td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}.txt>STDOUT</button></td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
             else
-<<<<<<< HEAD
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='failure'>Failure</td><td><button onclick=\"toggle_visibility('${i}');\">Show/Hide</button></td></tr>")
-=======
-        if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
-            echo_print
-            echo "$i"
-            if $i; then
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Success</td></tr>")
-            else
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td>Failure</td></tr>")
->>>>>>> dipti-branch
-=======
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td><td class='failure'>Failure</td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}.txt>STDOUT</button></td><td><a href=\"/home/lanforge/report-data/${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
->>>>>>> 8a513833eb4e4b4859182d1875cf5b61f05d80cb
+
             fi
         fi
     done
@@ -124,7 +111,6 @@ function check_args() {
 function html_generator() {
     NOW=$(date +"%Y-%m-%d-%T")
     header="<html>
-<<<<<<< HEAD
 		<head>
 		<title>Test All Scripts Results $NOW</title>
 		<style>
@@ -169,32 +155,5 @@ function html_generator() {
 check_args $1 $2
 run_test
 echo "${detailedresults}"
-=======
-    <head>
-    <title>Candela Test All Scripts Results</title>
-    <style>
-    success {
-        background-color:green;
-    }
-    failure {
-        background-color:red;
-    }
-    </style>
-    </head>
-    <body>
-    <p>Candela Technologies</p>
-    <table border ='1'>
-    "
-    tail="</table>
-    </body>
-    </html>"
-    fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
-    echo $fname
-    echo $header"${results[@]}"$tail >> $fname
-}
-#true >~/test_all_output_file.txt
-check_args $1 $2
-run_test
->>>>>>> dipti-branch
 html_generator
 #test generic and fileio are for macvlans
