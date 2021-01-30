@@ -2086,10 +2086,6 @@ class WifiMonitor:
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> dipti-branch
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
         self.local_realm.json_post("/cli-json/set_port", up_request)
