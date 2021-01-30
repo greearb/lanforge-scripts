@@ -168,10 +168,74 @@ python3 ./test_ipv4_variable_time.py
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --output_format csv
-    --report_file ~/Documents/results.csv (Example of csv file output  - please use another extension for other files)
-    --compared_report ~/Documents/results_prev.csv (Example of csv file retrieval  - please use another extension for other files) - UNDER CONSTRUCTION
-    --col_names 'name','tx bytes', 'rx bytes','dropped'
+    --report_file ~/Documents/results.csv               (Example of csv file output  - please use another extension for other files)
+    --compared_report ~/Documents/results_prev.csv      (Example of csv file retrieval  - please use another extension for other files) - UNDER CONSTRUCTION
+    --col_names 'name', 'tx bytes', 'rx bytes', 'dropped'       (names of according json columns, please read below to understand what to put here according to what you would like to track)
     --debug
+===============================================================================
+ ** FURTHER INFORMATION **
+    Using the col_names flag:
+
+    Currently the output function does not support inputting the columns in col_names the way they are displayed in the GUI. That is under construction. To output
+    certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in 
+    your report.
+
+    GUI Column          Col_names argument (to print in report)
+
+    Name            |   
+    EID             |  'eid'
+    Run             |  'run'
+    Mng             |  'mng'
+    Script          |  'script'
+    Tx Rate         |  'tx rate'
+    Tx Rate (1 min) |  'tx rate (1&nbsp;min)'
+    Tx Rate (last)  |  'tx rate (last)'
+    Tx Rate LL      |  'tx rate ll'
+    Rx Rate         |  'rx rate'
+    Rx Rate (1 min) |  'rx rate (1&nbsp;min)'
+    Rx Rate (last)  |  'rx rate (last)'
+    Rx Rate LL      |  'rx rate ll'
+    Rx Drop %       |  'rx drop %'
+    Tx PDUs         |  'tx pdus'
+    Tx Pkts LL      |  'tx pkts ll'
+    PDU/s TX        |  'pdu/s tx'
+    Pps TX LL       |  'pps tx ll'
+    Rx PDUs         |  'rx pdus'
+    Rx Pkts LL      |  'pps rx ll'
+    PDU/s RX        |  'pdu/s tx'
+    Pps RX LL       |  'pps rx ll'
+    Delay           |  'delay'
+    Dropped         |  'dropped'
+    Jitter          |  'jitter'
+    Tx Bytes        |  'tx bytes'
+    Rx Bytes        |  'rx bytes'
+    Replays         |  'replays'
+    TCP Rtx         |  'tcp rtx'
+    Dup Pkts        |  'dup pkts'
+    Rx Dup %        |  'rx dup %'
+    OOO Pkts        |  'ooo pkts'
+    Rx OOO %        |  'rx ooo %'
+    RX Wrong Dev    |  'rx wrong dev'
+    CRC Fail        |  'crc fail'
+    RX BER          |  'rx ber'
+    CX Active       |  'cx active'
+    CX Estab/s      |  'cx estab/s'
+    1st RX          |  '1st rx'
+    CX TO           |  'cx to'
+    Pattern         |  'pattern'
+    Min PDU         |  'min pdu'
+    Max PDU         |  'max pdu'
+    Min Rate        |  'min rate'
+    Max Rate        |  'max rate'
+    Send Buf        |  'send buf'
+    Rcv Buf         |  'rcv buf'
+    CWND            |  'cwnd'
+    TCP MSS         |  'tcp mss'
+    Bursty          |  'bursty'
+    A/B             |  'a/b'
+    Elapsed         |  'elapsed'
+    Destination Addr|  'destination addr'
+    Source Addr     |  'source addr'
             ''')
 
     required_args=None
@@ -289,7 +353,8 @@ python3 ./test_ipv4_variable_time.py
                                     output_format=output,
                                     compared_report=compared_rept,
                                     script_name='test_ipv4_variable_time',
-                                    arguments=args)
+                                    arguments=args,
+                                    debug=args.debug)
 
     ip_var_test.stop()
     if not ip_var_test.passes():

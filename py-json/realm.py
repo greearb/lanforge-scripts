@@ -1153,7 +1153,8 @@ class L3CXProfile(BaseProfile):
                 output_format=None,
                 script_name=None,
                 arguments=None,
-                compared_report=None):
+                compared_report=None,
+                debug=False):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except:
@@ -1173,16 +1174,16 @@ class L3CXProfile(BaseProfile):
                     raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
-        #retrieve compared report if specified - turn into dataframe
+        #retrieve compared report if specified - turn into dataframe -- under construction
         if compared_report is not None:
             supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for format in supported_formats:
-                if compared_format.lower() == format:
-                   # exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
-                    previous_data_df= read_csv()
+                if compared_report.lower() == format:
+                    #exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
+                    #previous_data_df= read_csv()
+                    pass
 
-
-        # Step 1, column names 
+        #Step 1, column names 
         fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
@@ -1208,13 +1209,13 @@ class L3CXProfile(BaseProfile):
                 print(response)
                 raise ValueError("no endpoint?")
             if monitor:
-                if self.debug:
+                if debug:
                     print(response)
             t = datetime.datetime.now()
             timestamps.append(t)
             value_map[t] = response
             new_cx_rx_values = self.__get_rx_values()
-            if self.debug:
+            if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
                 print("\n-----------------------------------")
                 print(t)
@@ -1223,12 +1224,12 @@ class L3CXProfile(BaseProfile):
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
             else:
-                self._fail("FAIL: Not all stations increased traffic")
+                self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             #write csv file here - open, write,  and close file
             time.sleep(monitor_interval)
-        if self.debug:
+        if debug:
             print("Printing value map...")
             print(value_map)
 
@@ -1238,13 +1239,10 @@ class L3CXProfile(BaseProfile):
             #reduce the endpoint data to single dictionary of dictionaries
             for datum in data["endpoint"]:
                 for endpoint_data in datum.values():
-                    if self.debug:
+                    if debug:
                         print(endpoint_data)
                     endpoint_data["Timestamp"] = test_timestamp
                     full_test_data_list.append(endpoint_data)
-                if self.debug:
-                    print("Printing full data list...")
-                    print(full_test_data_list)
                     
 
         header_row.append("Timestamp")
