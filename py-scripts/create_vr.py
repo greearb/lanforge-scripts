@@ -26,8 +26,8 @@ class CreateVR(Realm):
                  lfclient_host="localhost",
                  lfclient_port=8080,
                  debug=False,
-                 vr_id=0,
-                 resource=1,
+                 # resource=1, # USE name=1.2.vr0 convention instead
+                 vr_names=None,
                  ports_list=[],
                  services_list=[],
                  _halt_on_error=False,
@@ -43,8 +43,8 @@ class CreateVR(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
-        self.vr_id = vr_id
-        self.resource = resource
+        self.vr_names = vr_names
+        self.ports_list = ports_list
         self.services_list = services_list
         self.vr_profile = self.new_vr_profile()
         self.vr_profile.resource=self.resource
@@ -68,12 +68,13 @@ def main():
 %s
 --------------------
 Command example:
-%s --vr_id 0 --resource 2 --ports br0,rdd0a --services br0=dhcp,nat
+%s --vr_name 1.vr0 --ports 1.br0,1.rdd0a --services 1.br0=dhcp,nat --services 1.vr0=radvd
+%s --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 
     
     --debug
 """)
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--vr_id', help='ID of virtual router', default=0, required=False)
+    required.add_argument('--vr_name', '--vr_names', help='ID of virtual router', default="1.1.vr0", required=False)
 
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument('--resource', help='Resource number to create virtual router on', default=1, required=False)
@@ -85,8 +86,7 @@ Command example:
 
     create_vr = CreateVR(lfclient_host=args.mgr,
                          lfclient_port=args.mgr_port,
-                         vr_id=args.vr_id,
-                         resource=1,
+                         vr_names=args.vr_names,
                          ports_list=args.ports,
                          services_list=args.services,
                          debug=args.debug,
