@@ -3702,10 +3702,6 @@ class StationProfile:
             time.sleep(delay)
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
-<<<<<<< HEAD
-
-=======
->>>>>>> dipti-branch
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio,
