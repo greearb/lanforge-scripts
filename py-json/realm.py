@@ -15,7 +15,7 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 import os
-import datetime 
+import datetime
 import base64
 import xlsxwriter
 import pandas as pd
@@ -1143,6 +1143,7 @@ class L3CXProfile(BaseProfile):
                 return False
         else:
             return False
+
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1183,7 +1184,7 @@ class L3CXProfile(BaseProfile):
                     #previous_data_df= read_csv()
                     pass
 
-        #Step 1, column names 
+        #Step 1, column names
         fields=None
         if col_names is not None and len(col_names) > 0:
             fields = ",".join(col_names)
@@ -1233,7 +1234,7 @@ class L3CXProfile(BaseProfile):
             print("Printing value map...")
             print(value_map)
 
-    #organize data 
+    #organize data
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             #reduce the endpoint data to single dictionary of dictionaries
@@ -1243,19 +1244,19 @@ class L3CXProfile(BaseProfile):
                         print(endpoint_data)
                     endpoint_data["Timestamp"] = test_timestamp
                     full_test_data_list.append(endpoint_data)
-                    
+
 
         header_row.append("Timestamp")
         header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
-       
+
         df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
         #round entire column
         df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
         df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
-        
+
         try:
             systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
         except:
@@ -1281,7 +1282,7 @@ class L3CXProfile(BaseProfile):
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
         for x in supported_formats:
             if output_format.lower() == x or report_file.split('.')[-1] == x:
-                exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
+                exec('df.to_' + x + '("'+report_file+'")')
 
 
     def refresh_cx(self):
@@ -1743,20 +1744,20 @@ class L4CXProfile(LFCliBase):
                     response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields))
                 if debug:
                     print(response)
-                if response is None: 
+                if response is None:
                     print(response)
                     raise ValueError("Cannot find any endpoints")
                 if monitor:
                     if debug:
                         print(response)
-                
+
                 time.sleep(sleep_interval)
                 t = datetime.datetime.now()
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
                 if self.check_errors(debug):
-                    if self.check_request_rate(): 
+                    if self.check_request_rate():
                         passes += 1
                     else:
                         self._fail("FAIL: Request rate did not exceed 90% target rate")
