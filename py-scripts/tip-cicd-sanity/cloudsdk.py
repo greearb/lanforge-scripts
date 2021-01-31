@@ -72,10 +72,15 @@ class CloudSDK:
         if status_code is 200:
             status_data = status_response.json()
             #print(status_data)
-            current_ap_fw = status_data[2]['details']['reportedSwVersion']
-            return current_ap_fw
+            try:
+                current_ap_fw = status_data[2]['details']['reportedSwVersion']
+                return current_ap_fw
+            except:
+                current_ap_fw = "error"
+                return "ERROR"
+
         else:
-            return("ERROR")
+            return "ERROR"
 
     def CloudSDK_images(apModel, cloudSDK_url, bearer):
         getFW_url = cloudSDK_url+"/portal/firmware/version/byEquipmentType?equipmentType=AP&modelId=" + apModel

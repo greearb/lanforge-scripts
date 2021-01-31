@@ -1874,7 +1874,7 @@ for key in ap_models:
         passed_tests = sum(x == "passed" for x in report_data["tests"][key].values())
         failed_tests = sum(y == "failed" for y in report_data["tests"][key].values())
         error_tests = sum(z == "error" for z in report_data["tests"][key].values())
-        no_of_tests = passed_tests + failed_tests + error_tests
+        no_of_tests = len(case_ids)
         if no_of_tests == 0:
             print("No tests run for", key)
         else:
