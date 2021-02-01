@@ -722,7 +722,7 @@ for key in equipment_ids:
             secret = radius_info['secret']
             auth_port = radius_info['auth_port']
             try:
-                radius_profile = CloudSDK.create_radius_profile(cloudSDK_url, bearer, radius_template, radius_name,
+                radius_profile = CloudSDK.create_radius_profile(cloudSDK_url, bearer, radius_template, radius_name, customer_id,
                                                                 server_ip, secret,
                                                                 auth_port)
                 print("radius profile Id is", radius_profile)
@@ -753,8 +753,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_5G_EAP_' + today,
-                                                             profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"], None,
+                                                             fw_model + '_5G_EAP_' + today, customer_id,                                                             profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"], None,
                                                              radius_profile,
                                                              "wpa2OnlyRadius", "BRIDGE", 1,
                                                              ["is5GHzU", "is5GHz", "is5GHzL"])
@@ -776,7 +775,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                          fw_model + '_5G_WPA2_' + today,
+                                                          fw_model + '_5G_WPA2_' + today, customer_id,
                                                           profile_info_dict[fw_model]["fiveG_WPA2_SSID"],
                                                           profile_info_dict[fw_model]["fiveG_WPA2_PSK"],
                                                           0, "wpa2OnlyPSK", "BRIDGE", 1,
@@ -797,7 +796,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_5G_WPA_' + today,
+                                                         fw_model + '_5G_WPA_' + today, customer_id,
                                                          profile_info_dict[fw_model]["fiveG_WPA_SSID"],
                                                          profile_info_dict[fw_model]["fiveG_WPA_PSK"],
                                                          0, "wpaPSK", "BRIDGE", 1,
@@ -820,7 +819,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                                fw_model + '_2G_EAP_' + today,
+                                                                fw_model + '_2G_EAP_' + today, customer_id,
                                                                 profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"],
                                                                 None,
                                                                 radius_profile, "wpa2OnlyRadius", "BRIDGE", 1,
@@ -843,7 +842,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_2G_WPA2_' + today,
+                                                             fw_model + '_2G_WPA2_' + today, customer_id,
                                                              profile_info_dict[fw_model]["twoFourG_WPA2_SSID"],
                                                              profile_info_dict[fw_model]["twoFourG_WPA2_PSK"],
                                                              0, "wpa2OnlyPSK", "BRIDGE", 1,
@@ -864,7 +863,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                            fw_model + '_2G_WPA_' + today,
+                                                            fw_model + '_2G_WPA_' + today, customer_id,
                                                             profile_info_dict[fw_model]["twoFourG_WPA_SSID"],
                                                             profile_info_dict[fw_model]["twoFourG_WPA_PSK"],
                                                             0, "wpaPSK", "BRIDGE", 1,
@@ -897,7 +896,7 @@ for key in equipment_ids:
             name = "Nightly_Sanity_" + fw_model + "_" + today + "_bridge"
 
             try:
-                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, customer_id, child_profiles)
                 test_profile_id = create_ap_profile
                 print("Test Profile ID for Test is:", test_profile_id)
                 client.update_testrail(case_id=test_cases["ap_bridge"], run_id=rid, status_id=1,
@@ -1113,7 +1112,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_5G_EAP_NAT_' + today,
+                                                             fw_model + '_5G_EAP_NAT_' + today, customer_id,
                                                              profile_info_dict[fw_model + '_nat'][
                                                                  "fiveG_WPA2-EAP_SSID"], None,
                                                              radius_profile,
@@ -1138,7 +1137,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                          fw_model + '_5G_WPA2_NAT_' + today,
+                                                          fw_model + '_5G_WPA2_NAT_' + today, customer_id,
                                                           profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"],
                                                           profile_info_dict[fw_model + '_nat']["fiveG_WPA2_PSK"],
                                                           0, "wpa2OnlyPSK", "NAT", 1,
@@ -1159,7 +1158,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_5G_WPA_NAT_' + today,
+                                                         fw_model + '_5G_WPA_NAT_' + today, customer_id,
                                                          profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"],
                                                          profile_info_dict[fw_model + '_nat']["fiveG_WPA_PSK"],
                                                          0, "wpaPSK", "NAT", 1,
@@ -1182,7 +1181,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                                fw_model + '_2G_EAP_NAT_' + today,
+                                                                fw_model + '_2G_EAP_NAT_' + today, customer_id,
                                                                 profile_info_dict[fw_model + '_nat'][
                                                                     "twoFourG_WPA2-EAP_SSID"],
                                                                 None,
@@ -1205,7 +1204,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_2G_WPA2_NAT_' + today,
+                                                             fw_model + '_2G_WPA2_NAT_' + today, customer_id,
                                                              profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"],
                                                              profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"],
                                                              0, "wpa2OnlyPSK", "NAT", 1,
@@ -1226,7 +1225,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                            fw_model + '_2G_WPA_NAT_' + today,
+                                                            fw_model + '_2G_WPA_NAT_' + today, customer_id,
                                                             profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"],
                                                             profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"],
                                                             0, "wpaPSK", "NAT", 1,
@@ -1259,7 +1258,7 @@ for key in equipment_ids:
             name = "Nightly_Sanity_" + fw_model + "_" + today + "_nat"
 
             try:
-                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, customer_id, child_profiles)
                 test_profile_id = create_ap_profile
                 print("Test Profile ID for Test is:", test_profile_id)
                 client.update_testrail(case_id=test_cases["ap_nat"], run_id=rid, status_id=1,
@@ -1470,7 +1469,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     fiveG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_5G_EAP_VLAN' + today,
+                                                             fw_model + '_5G_EAP_VLAN' + today, customer_id,
                                                              profile_info_dict[fw_model + '_vlan'][
                                                                  "fiveG_WPA2-EAP_SSID"], None,
                                                              radius_profile,
@@ -1495,7 +1494,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                          fw_model + '_5G_WPA2_VLAN' + today,
+                                                          fw_model + '_5G_WPA2_VLAN' + today, customer_id,
                                                           profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"],
                                                           profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_PSK"],
                                                           0, "wpa2OnlyPSK", "BRIDGE", 100,
@@ -1516,7 +1515,7 @@ for key in equipment_ids:
 
             try:
                 fiveG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                         fw_model + '_5G_WPA_VLAN_' + today,
+                                                         fw_model + '_5G_WPA_VLAN_' + today, customer_id,
                                                          profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"],
                                                          profile_info_dict[fw_model + '_vlan']["fiveG_WPA_PSK"],
                                                          0, "wpaPSK", "BRIDGE", 100,
@@ -1539,7 +1538,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 try:
                     twoFourG_eap = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                                fw_model + '_2G_EAP_VLAN_' + today,
+                                                                fw_model + '_2G_EAP_VLAN_' + today, customer_id,
                                                                 profile_info_dict[fw_model + '_vlan'][
                                                                     "twoFourG_WPA2-EAP_SSID"],
                                                                 None,
@@ -1563,7 +1562,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa2 = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                             fw_model + '_2G_WPA2_VLAN_' + today,
+                                                             fw_model + '_2G_WPA2_VLAN_' + today, customer_id,
                                                              profile_info_dict[fw_model + '_vlan'][
                                                                  "twoFourG_WPA2_SSID"],
                                                              profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"],
@@ -1585,7 +1584,7 @@ for key in equipment_ids:
 
             try:
                 twoFourG_wpa = CloudSDK.create_ssid_profile(cloudSDK_url, bearer, ssid_template,
-                                                            fw_model + '_2G_WPA_VLAN_' + today,
+                                                            fw_model + '_2G_WPA_VLAN_' + today, customer_id,
                                                             profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"],
                                                             profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"],
                                                             0, "wpaPSK", "BRIDGE", 100,
@@ -1617,7 +1616,7 @@ for key in equipment_ids:
             name = "Nightly_Sanity_" + fw_model + "_" + today + "_vlan"
 
             try:
-                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, child_profiles)
+                create_ap_profile = CloudSDK.create_ap_profile(cloudSDK_url, bearer, ap_template, name, customer_id, child_profiles)
                 test_profile_id = create_ap_profile
                 print("Test Profile ID for Test is:", test_profile_id)
                 client.update_testrail(case_id=test_cases["ap_vlan"], run_id=rid, status_id=1,

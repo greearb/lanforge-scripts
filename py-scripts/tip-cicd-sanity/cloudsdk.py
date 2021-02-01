@@ -184,10 +184,11 @@ class CloudSDK:
         cloud_sdk_version = response.json()
         return cloud_sdk_version
 
-    def create_ap_profile(cloudSDK_url, bearer, template, name, child_profiles):
+    def create_ap_profile(cloudSDK_url, bearer, template, name, customer_id, child_profiles):
         with open(template, 'r+') as ap_profile:
             profile = json.load(ap_profile)
             profile["name"] = name
+            profile['customerId'] = customer_id
             profile["childProfileIds"] = child_profiles
 
         with open(template, 'w') as ap_profile:
@@ -204,10 +205,11 @@ class CloudSDK:
         ap_profile_id = ap_profile['id']
         return ap_profile_id
 
-    def create_ssid_profile(cloudSDK_url, bearer, template, name, ssid, passkey, radius, security, mode, vlan, radios):
+    def create_ssid_profile(cloudSDK_url, bearer, template, name, customer_id, ssid, passkey, radius, security, mode, vlan, radios):
         with open(template, 'r+') as ssid_profile:
             profile = json.load(ssid_profile)
             profile['name'] = name
+            profile['customerId'] = customer_id
             profile['details']['ssid'] = ssid
             profile['details']['keyStr'] = passkey
             profile['details']['radiusServiceId'] = radius
@@ -233,11 +235,12 @@ class CloudSDK:
         ssid_profile_id = ssid_profile['id']
         return ssid_profile_id
 
-    def create_radius_profile(cloudSDK_url, bearer, template, name, server_ip, secret, auth_port):
+    def create_radius_profile(cloudSDK_url, bearer, template, name, customer_id, server_ip, secret, auth_port):
         with open(template, 'r+') as radius_profile:
             profile = json.load(radius_profile)
 
             profile['name'] = name
+            profile['customerId'] = customer_id
             profile['details']["primaryRadiusAuthServer"]['ipAddress'] = server_ip
             profile['details']["primaryRadiusAuthServer"]['secret'] = secret
             profile['details']["primaryRadiusAuthServer"]['port'] = auth_port
