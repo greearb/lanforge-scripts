@@ -8,6 +8,11 @@ You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
 ./openwrt_ctl.py -l stdout -u root -p TIP -s serial --tty ttyUSB0
+
+# Set up reverse ssh tunnel
+./openwrt_ctl.py --tty /dev/ttyAP1 --action ssh-tunnel \
+        --value "ssh -y -y -f -N -T -M -R 9999:localhost:22 lanforge@10.28.3.100" \
+        --value2 password-for-10.28.3.100 --log stdout --scheme serial --prompt root@Open
 '''
 
 
@@ -48,9 +53,9 @@ def usage():
    print("--prompt   Prompt to look for when commands are done (default: root@OpenWrt)")
    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
    print("-l|--log file log messages here")
-   print("--action (logread | journalctl | lurk | sysupgrade | download | upload | reboot | cmd")
+   print("--action (logread | journalctl | lurk | sysupgrade | download | upload | reboot | cmd | ssh-tunnel")
    print("--value (option to help complete the action")
-   print("--value2 (option to help complete the action, dest filename for download")
+   print("--value2 (option to help complete the action, dest filename for download, passwd for ssh-tunnel")
    print("-h|--help")
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -78,7 +83,7 @@ def main():
    parser.add_argument("-t", "--tty",     type=str, help="tty serial device")
    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console")
    parser.add_argument("--action",        type=str, help="perform action",
-      choices=["logread", "journalctl", "lurk", "sysupgrade", "sysupgrade-n", "download", "upload", "reboot", "cmd" ])
+      choices=["logread", "journalctl", "lurk", "sysupgrade", "sysupgrade-n", "download", "upload", "reboot", "cmd", "ssh-tunnel" ])
    parser.add_argument("--value",         type=str, help="set value")
    parser.add_argument("--value2",        type=str, help="set value2")
    tty = None
@@ -246,6 +251,20 @@ def main():
       command = "date"
       TO=1
       wait_forever = True
+
+   if (args.action == "ssh-tunnel"):
+       command = "%s"%(args.value)
+       passwd = "%s"%(args.value2)
+       logg.info("Command[%s]"%command)
+       egg.sendline(command);
+
+       i = egg.expect(["password:", "Do you want to continue connecting"], timeout=5)
+       if i == 1:
+           egg.sendline("y")
+           egg.expect("password:", timeout=5)
+       egg.sendline(passwd)
+       egg.expect(CCPROMPT, timeout=20)
+       return
 
    if ((args.action == "sysupgrade") or (args.action == "sysupgrade-n")):
        command = "scp %s /tmp/new_img.bin"%(args.value)
