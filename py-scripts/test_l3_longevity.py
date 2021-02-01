@@ -11,52 +11,31 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-import LANforge
+from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
+import realm
 import time
 import datetime
 import subprocess
 import re
 import csv
 import random
-from realm import Realm
 
-class L3VariableTime(Realm):
-    def __init__(self,
-                 args, 
-                 endp_types, 
-                 tos, 
-                 side_b, 
-                 radio_name_list, 
-                 number_of_stations_per_radio_list,
-                 ssid_list, 
-                 ssid_password_list, 
-                 ssid_security_list, 
-                 station_lists, 
-                 name_prefix, 
+class L3VariableTime(LFCliBase):
+    def __init__(self, host, port, endp_types, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
+                 ssid_list, ssid_password_list, ssid_security_list, station_lists, name_prefix, debug_on, outfile,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
-                 lfclient_host="localhost",
-                 lfclient_port=8080,
                  side_a_min_rate=56000, side_a_max_rate=0,
                  side_b_min_rate=56000, side_b_max_rate=0,
                  number_template="00", test_duration="256s",
                  polling_interval="60s",
-                 _halt_on_error=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False,
-                 debug=False,
-                 outfile="outfile"):
-        super().__init__(lfclient_host="localhost",
-                         lfclient_port=8080,
-                         debug_=debug, 
-                         _halt_on_error=False, 
-                         _exit_on_error=False, 
-                         _exit_on_fail=False
-                        )
-
-
+                 _exit_on_fail=False):
+        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        self.host = host
+        self.port = port
         self.tos = tos.split()
         self.endp_types = endp_types.split()
         self.side_b = side_b
@@ -72,19 +51,17 @@ class L3VariableTime(Realm):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        #self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
-        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
-        #self.cx_profile = self.local_realm.new_l3_cx_profile()
-        self.cx_profile = self.new_l3_cx_profile()
-        #self.multicast_profile = self.local_realm.new_multicast_profile()
-        self.multicast_profile = self.new_multicast_profile()
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
+        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.multicast_profile = self.local_realm.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-";
         self.station_profiles = []
         self.args = args
         self.outfile = outfile
         self.csv_started = False
         self.epoch_time = int(time.time())
+        self.debug = debug_on
         
 
         # Some checking on the duration
@@ -105,8 +82,7 @@ class L3VariableTime(Realm):
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
             in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
             reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
-            #self.station_profile = self.local_realm.new_station_profile()
-            self.station_profile = self.new_station_profile()
+            self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_
             self.station_profile.ssid_pass = ssid_password_
@@ -114,13 +90,9 @@ class L3VariableTime(Realm):
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                #test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
-                #reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
-                #reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
-
-                test_duration=self.duration_time_to_seconds(self.test_duration),\
-                reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
-                reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
+                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
+                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
         self.multicast_profile.host = self.host
@@ -890,8 +862,7 @@ class L3VariableTime(Realm):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0,len(station_profile.station_names)-1)
                         print("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
-                        #self.local_realm.reset_port(station_profile.station_names[port_to_reset])
-                        self.reset_port(station_profile.station_names[port_to_reset])
+                        self.local_realm.reset_port(station_profile.station_names[port_to_reset])
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -899,8 +870,7 @@ class L3VariableTime(Realm):
         self.total_stas = 0
         for station_list in self.station_lists:
             for sta in station_list:
-                #self.local_realm.rm_port(sta, check_exists=True)
-                self.rm_port(sta, check_exists=True)
+                self.local_realm.rm_port(sta, check_exists=True)
                 self.total_stas += 1
 
         # Make sure they are gone
@@ -942,21 +912,18 @@ class L3VariableTime(Realm):
         
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
-        #self.local_realm.admin_up(self.side_b) 
-        self.admin_up(self.side_b) 
+        self.local_realm.admin_up(self.side_b) 
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
                 print("Bringing up station %s"%(sta))
-                #self.local_realm.admin_up(sta)
-                self.admin_up(sta)
+                self.local_realm.admin_up(sta)
 
         temp_stations_list = []
         temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        #if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120):
-        if self.wait_for_ip(temp_stations_list, timeout_sec=120):
+        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120):
             print("ip's acquired")
         else:
             print("print failed to get IP's")
@@ -973,8 +940,7 @@ class L3VariableTime(Realm):
         print("Getting initial values.")
         old_rx_values, rx_drop_percent = self.__get_rx_values()
 
-        #end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        end_time = self.parse_time(self.test_duration) + cur_time
+        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
 
         print("Monitoring throughput for duration: %s"%(self.test_duration))
 
@@ -1011,8 +977,7 @@ class L3VariableTime(Realm):
         self.multicast_profile.stop_mc()
         for station_list in self.station_lists:
             for station_name in station_list:
-                #self.local_realm.admin_down(station_name)
-                self.admin_down(station_name)
+                self.local_realm.admin_down(station_name)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -1236,7 +1201,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     if args.radio:
         radios = args.radio
-    csv_outfile = "dog"
+
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
@@ -1306,15 +1271,17 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     #print("endp-types: %s"%(endp_types))
 
-    ip_var_test = L3VariableTime(   
+    ip_var_test = L3VariableTime(
+                                    lfjson_host,
+                                    lfjson_port,
                                     args=args,
+                                    number_template="00", 
+                                    station_lists= station_lists,
+                                    name_prefix="LT-",
                                     endp_types=endp_types,
                                     tos=args.tos,
                                     side_b=side_b,
                                     radio_name_list=radio_name_list,
-                                    number_template="00", 
-                                    station_lists= station_lists,
-                                    name_prefix="LT-",
                                     number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                     ssid_list=ssid_list,
                                     ssid_password_list=ssid_password_list,
@@ -1324,15 +1291,10 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     reset_port_enable_list=reset_port_enable_list,
                                     reset_port_time_min_list=reset_port_time_min_list,
                                     reset_port_time_max_list=reset_port_time_max_list,
-                                    #lfclient_host=lfjson_host,
-                                    #lfjson_port=lfjson_port,
                                     side_a_min_rate=256000, 
                                     side_b_min_rate=256000, 
-                                    debug=debug_on,
-                                    outfile=csv_outfile,
-                                    _halt_on_error=False,
-                                    _exit_on_error=False,
-                                    _exit_on_fail=False)
+                                    debug_on=debug_on, 
+                                    outfile=csv_outfile)
 
     ip_var_test.pre_cleanup()
 
