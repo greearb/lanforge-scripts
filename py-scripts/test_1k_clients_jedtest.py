@@ -67,6 +67,16 @@ class Test1KClients(LFCliBase):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
         self.station_profile_map = {}
+        #change resource admin_up rate
+        self.local_realm.json_post("/cli-json/set_resource", {
+            "shelf":1,
+            "resource":all,
+            "max_staged_bringup": 30,
+            "max_trying_ifup": 15,
+            "max_station_bringup": 6
+        })
+
+
     def build(self):
         for (radio, name_series) in self.station_radio_map.items():
             print("building stations for %s"%radio)
