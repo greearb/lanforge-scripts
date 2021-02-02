@@ -140,6 +140,7 @@ function html_generator() {
 		.scriptdetails {
 			font-size: 10px;
 		}
+		</style>
 		</head>
 		<body>
 		<h1>Test All Scripts Results</h1>

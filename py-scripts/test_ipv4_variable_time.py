@@ -24,32 +24,32 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import datetime
-from realm import TestGroupProfile
 
-class IPV4VariableTime(LFCliBase):
+class IPV4VariableTime(Realm):
     def __init__(self,
-                 ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 host="localhost", port=8080, mode = 0, ap=None,
+                 ssid=None,
+                 security=None,
+                 password=None,
+                 sta_list=[],
+                 name_prefix=None,
+                 upstream=None,
+                 radio=None,
+                 host="localhost",
+                 port=8080,
+                 mode = 0,
+                 ap=None,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port,
-                         _local_realm = realm.Realm(lfclient_host=host,
-                                                    lfclient_port=port,
-                                                    debug_=_debug_on,
-                                                    halt_on_error_=_exit_on_error),
-                         _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail),
-        self.l3cxprofile = realm.L3CXProfile(lfclient_host=host,
-                                                        lfclient_port=port,
-                                                        local_realm=self.local_realm)
+        super().__init__(lfclient_host=host,
+                         lfclient_port=port),
+        self.l3cxprofile = self.new_l3_cx_profile()
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -64,8 +64,8 @@ class IPV4VariableTime(LFCliBase):
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l3_cx_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
@@ -93,7 +93,7 @@ class IPV4VariableTime(LFCliBase):
         #to-do- check here if upstream port got IP
         temp_stas = self.station_profile.station_names.copy()
 
-        if self.local_realm.wait_for_ip(temp_stas):
+        if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -108,7 +108,7 @@ class IPV4VariableTime(LFCliBase):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.local_realm.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -332,7 +332,7 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.start(False, False)
 
     try:
-        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.local_realm.json_get('endp')['endpoint']])
+        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
     if args.col_names is not None:
@@ -348,7 +348,7 @@ python3 ./test_ipv4_variable_time.py
         print(col_names)
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
-                                    duration_sec=ip_var_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                                    duration_sec=ip_var_test.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,
                                     output_format=output,
                                     compared_report=compared_rept,

@@ -839,8 +839,8 @@ class BaseProfile:
         self.exit_on_error = False
         self.debug = debug or local_realm.debug
 
-    def json_get(self, target):
-        return self.parent_realm.json_get(target)
+    def json_get(self, _req_url, debug_=False):
+        return self.parent_realm.json_get(_req_url, debug_=False)
 
     def json_post(self, req_url=None, data=None, debug_=False, suppress_related_commands_=None):
         return self.parent_realm.json_post(_req_url=req_url,
@@ -848,8 +848,8 @@ class BaseProfile:
                                            suppress_related_commands_=suppress_related_commands_,
                                            debug_=debug_)
 
-    def parse_time(self, target):
-        return self.parent_realm.parse_time(target)
+    def parse_time(self, time_string):
+        return self.parent_realm.parse_time(time_string)
 
     def stopping_cx(self, name):
         return self.parent_realm.stop_cx(name)
@@ -857,26 +857,23 @@ class BaseProfile:
     def cleanup_cxe_prefix(self, prefix):
         return self.parent_realm.cleanup_cxe_prefix(prefix)
 
-    def rm_cx(self, target):
-        return self.parent_realm.rm_cx(target)
+    def rm_cx(self, cx_name):
+        return self.parent_realm.rm_cx(cx_name)
 
-    def rm_endp(self, ename):
-        self.parent_realm.rm_endp(ename)
+    def rm_endp(self, ename, debug_=False, suppress_related_commands_=True):
+        self.parent_realm.rm_endp(ename, debug_=False, suppress_related_commands_=True)
 
-    def created_cx(self, target):
-        return self.parent_realm.created_cx(target)
+    def name_to_eid(self, eid):
+        return self.parent_realm.name_to_eid(eid)
 
-    def name_to_eid(self, target):
-        return self.parent_realm.name_to_eid(target)
+    def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
+        return self.parent_realm.set_endp_tos(ename, _tos, debug_=False, suppress_related_commands_=True)
 
-    def set_endp_tos(self, target):
-        return self.parent_realm.set_endp_tos(target)
+    def wait_until_endps_appear(self, these_endp, debug=False):
+        return self.parent_realm.wait_until_endps_appear(these_endp, debug=False)
 
-    def wait_until_endps_appear(self, target, debug=False):
-        return self.parent_realm.wait_until_endps_appear(target, debug=False)
-
-    def wait_until_cxs_appear(self, target, debug=False):
-        return self.parent_realm.wait_until_cxs_appear(target, debug=False)
+    def wait_until_cxs_appear(self, these_cx, debug=False):
+        return self.parent_realm.wait_until_cxs_appear(these_cx, debug=False)
 
 
 class MULTICASTProfile(LFCliBase):
