@@ -245,6 +245,7 @@ for key in equipment_id_dict:
         ###Set Proper AP Profile for NAT SSID Tests
         test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
         print(test_profile_id)
+        bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
         ### Wait for Profile Push
@@ -375,6 +376,7 @@ for key in equipment_id_dict:
         ###Set Proper AP Profile for NAT SSID Tests
         test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
         print(test_profile_id)
+        bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
 
         ### Wait for Profile Push
