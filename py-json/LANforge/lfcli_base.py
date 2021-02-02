@@ -480,7 +480,7 @@ class LFCliBase:
         required = parser.add_argument_group('required arguments')
         optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
         optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
-        optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
+        optional.add_argument('--debug', '-d',    help='Enable debugging', default=False, action="store_true")
         optional.add_argument('--proxy',          nargs='?', default=None, # action=ProxyAction,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
 
