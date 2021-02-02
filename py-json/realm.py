@@ -55,7 +55,7 @@ class Realm(LFCliBase):
                  lfclient_host="localhost",
                  lfclient_port=8080,
                  debug_=False,
-                 halt_on_error_=False,
+                 halt_on_error_=False, # remove me
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  # _local_realm=None,
@@ -2584,7 +2584,7 @@ class VRProfile(BaseProfile):
 
     def create(self,
                resource=1,
-               vr_id=0,
+               vr_name=None,
                upstream_port="eth1",
                upstream_subnets="20.20.20.0/24",
                upstream_nexthop="20.20.20.1",
@@ -2598,11 +2598,13 @@ class VRProfile(BaseProfile):
         # Create vr
         if self.debug:
             debug = True
-        if self.vr_name is not None:
-            self.add_vr_data["alias"] = self.vr_name
-            self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
-        else:
+        if self.vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
+
+        self.add_vr_data["alias"] = self.vr_name
+        self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
+
+
         # Create 1 rdd pair
         self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
                         netmask=rdd_netmask)  # rdd0, rdd1; rdd0 gateway, rdd1 connected to network
