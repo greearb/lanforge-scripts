@@ -15,7 +15,7 @@ lanforge_prefix = "sdk"
 ##RADIUS Info
 radius_info = {
 
-    "name": "Lab-RADIUS",
+    "name": "Automation_RADIUS",
     "subnet_name": "Lab",
     "subnet": "10.10.0.0",
     "subnet_mask": 16,
@@ -67,7 +67,7 @@ equipment_id_dict = {
     "ecw5410": "116",
     "ecw5211": "117",
     "ec420": "27",
-    "wf188n": "130"
+    "wf188n": "131"
 }
 
 equipment_ip_dict = {
@@ -143,7 +143,7 @@ test_cases = {
 }
 
 ## Other profiles
-radius_profile = 129
+radius_profile = 4159
 rf_profile = 10
 
 ###Testing AP Profile Information
