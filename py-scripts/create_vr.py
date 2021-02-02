@@ -38,7 +38,6 @@ class CreateVR(Realm):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
-                         halt_on_error_=_halt_on_error,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
