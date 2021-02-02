@@ -73,7 +73,7 @@ TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
-        NAME=python -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))"
+        NAME=$(python -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))")
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
