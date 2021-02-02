@@ -339,8 +339,10 @@ python3 ./test_ipv4_variable_time.py
         print(args.col_names)
         if type(args.col_names) is not list:
             col_names=list(args.col_names.split(","))
+            #send col names here to file to reformat
         else:
             col_names = args.col_names
+            #send col names here to file to reformat
     else:
         col_names=None
     if args.debug:

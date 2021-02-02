@@ -24,7 +24,7 @@ class Test1KClients(LFCliBase):
                 side_a_min_rate= 0,side_a_max_rate= 56000,
                 side_b_min_rate= 0,side_b_max_rate= 56000,
                 num_sta_=200,
-                test_duration="30s",
+                test_duration="2d",
                 _debug_on=True,
                 _exit_on_error=False,
                 _exit_on_fail=False):
@@ -133,7 +133,7 @@ class Test1KClients(LFCliBase):
             self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=30)
             curr_ip_num = self.local_realm.get_curr_num_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
             while ((prev_ip_num < curr_ip_num) and (curr_ip_num < total_num_sta)):
-                self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=60)
+                self.local_realm.wait_for_ip(station_list=self.station_radio_map[radio], debug=self.debug, timeout_sec=90)
                 prev_ip_num = curr_ip_num
                 curr_ip_num = self.local_realm.get_curr_num_ips(num_sta_with_ips=prev_ip_num,station_list=self.station_radio_map[radio], debug=self.debug)
         if curr_ip_num == total_num_sta:
