@@ -6,6 +6,8 @@ import traceback
 # Extend this class to use common set of debug and request features for your script
 from pprint import pprint
 import time
+import random
+import string
 import LANforge.LFUtils
 from LANforge.LFUtils import *
 import argparse
@@ -16,7 +18,7 @@ class LFCliBase:
 
     SHOULD_RUN  = 0     # indicates normal operation
     SHOULD_QUIT = 1     # indicates to quit loops, close files, send SIGQUIT to threads and return
-    SHOULD_HALT = 2     # indicates to quit loops, send SIGABRT to threads and exit 
+    SHOULD_HALT = 2     # indicates to quit loops, send SIGABRT to threads and exit
 
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
@@ -385,11 +387,11 @@ class LFCliBase:
 
     def get_pass_message(self):
         pass_messages = self.get_passed_result_list()
-        return "\n".join(pass_messages) 
+        return "\n".join(pass_messages)
 
     def get_fail_message(self):
         fail_messages = self.get_failed_result_list()
-        return "\n".join(fail_messages) 
+        return "\n".join(fail_messages)
 
     def get_all_message(self):
         return "\n".join(self.test_results)
@@ -422,7 +424,7 @@ class LFCliBase:
         if self.exit_on_fail:
             sys.exit(1)
 
-    #EXIT script with a success 
+    #EXIT script with a success
     def exit_success(self,message="%d out of %d tests passed successfully. Exiting script with script success."):
         num_total=len(self.get_result_list())
         num_passing=len(self.get_passed_result_list())
@@ -520,7 +522,12 @@ class LFCliBase:
         return parser
 
     # use this function to add an event You can see these events when watching websocket_client at 8081 port
-    def add_event(self, message=None, event_id="new", name="custom", priority=1, debug_=False):
+    def add_event(self,
+                  message=None,
+                  event_id="new",
+                  name="custom",
+                  priority=1,
+                  debug_=False):
         data = {
             "event_id": event_id,
             "details": message,
@@ -528,6 +535,20 @@ class LFCliBase:
             "name": name
         }
         self.json_post("/cli-json/add_event", data, debug_=debug_)
+
+    def read_file(self,
+                  filename):
+        #Convert file contents to a list
+        filename = open(filename, 'r')
+        return [line.split(',') for line in filename.readlines()]
+
+    def random_chars(self,
+                     size,
+                     chars=None):
+        #Create random characters made of letters
+        if chars is None:
+            chars = string.ascii_letters
+        return ''.join(random.choice(chars) for x in range(size))
 
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,

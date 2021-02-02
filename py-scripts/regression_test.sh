@@ -33,7 +33,7 @@ testCommands=(
     "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 2m"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format excel"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format csv"
-    #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"
+    #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"NAME
     #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_macvlan.py --radio wiphy1"
@@ -73,6 +73,7 @@ TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
+        NAME=python -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))"
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
@@ -86,20 +87,20 @@ function run_test() {
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
-            $i > "${TEST_DIR}/${i}.txt" 2> "${TEST_DIR}/${i}_stderr.txt"
+            $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
             retval=$?
-            grep -i fail "${TEST_DIR}/${i}.txt" && retval=1
-            chmod 664 "${TEST_DIR}/${i}.txt"
+            grep -i fail "${TEST_DIR}/${NAME}.txt" && retval=1
+            chmod 664 "${TEST_DIR}/${NAME}.txt"
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${TEST_DIR}/${i}.txt\">STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt\">STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</button></td>
+                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</button></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${TEST_DIR}/${i}.txt\">STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt\">STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</button></td>
+                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</button></td></tr>")
 
             fi
         fi
