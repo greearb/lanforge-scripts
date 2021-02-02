@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 ##AP Models Under Test
-ap_models = ["ec420","ea8300","ecw5211","ecw5410","wf188n"]
+ap_models = ["ec420","ea8300","ecw5211","ecw5410", "wf188n"]
 
 ##Cloud Type(cloudSDK = v1, CMAP = cmap)
 cloud_type = "v1"
@@ -67,7 +67,7 @@ equipment_id_dict = {
     "ecw5410": "116",
     "ecw5211": "117",
     "ec420": "27",
-    "wf188n": "127"
+    "wf188n": "130"
 }
 
 equipment_ip_dict = {
