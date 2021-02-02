@@ -93,13 +93,13 @@ function run_test() {
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${TEST_DIR}/${i}.txt>STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${i}.txt\">STDOUT</button></td>
+                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt\">STDERR</button></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${TEST_DIR}/${i}.txt>STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt>STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${i}.txt\">STDOUT</button></td>
+                          <td><a href=\"${TEST_DIR}/${i}_stderr.txt\">STDERR</button></td></tr>")
 
             fi
         fi
