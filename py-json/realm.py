@@ -888,7 +888,7 @@ class MULTICASTProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(local_realm)
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
@@ -934,7 +934,10 @@ class MULTICASTProfile(LFCliBase):
 
         pass
 
-    def cleanup(self, suppress_related_commands=None, debug_=False):
+    def cleanup_prefix(self):
+        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
+
+    def cleanup(self, suppress_related_commands=None, debug_ = False):
         if self.debug:
             debug_ = True
 
@@ -1051,7 +1054,7 @@ class MULTICASTProfile(LFCliBase):
         pprint.pprint(self)
 
 
-class L3CXProfile(BaseProfile):
+class L3CXProfile(LFCliBase):
     def __init__(self,
                  lfclient_host,
                  lfclient_port,
@@ -1071,6 +1074,7 @@ class L3CXProfile(BaseProfile):
         """
         :param lfclient_host:
         :param lfclient_port:
+        :param local_realm:
         :param side_a_min_bps:
         :param side_b_min_bps:
         :param side_a_max_bps:
@@ -1083,9 +1087,10 @@ class L3CXProfile(BaseProfile):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(local_realm)
+        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
+        self.local_realm = local_realm
         self.side_a_min_pdu = side_a_min_pdu
         self.side_b_min_pdu = side_b_min_pdu
         self.side_a_max_pdu = side_a_max_pdu
@@ -1166,6 +1171,8 @@ class L3CXProfile(BaseProfile):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
+        if col_names is None:
+            raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 if output_format.lower() != 'excel':
@@ -1308,28 +1315,26 @@ class L3CXProfile(BaseProfile):
     def stop_cx(self):
         print("Stopping CXs...")
         for cx_name in self.created_cx.keys():
-            self.stopping_cx(cx_name)
-            if self.debug:
-                print(".", end='')
-        if self.debug:
-            print("")
+            self.local_realm.stop_cx(cx_name)
+            print(".", end='')
+        print("")
 
     def cleanup_prefix(self):
-        self.cleanup_cxe_prefix(self.name_prefix)
+        self.local_realm.cleanup_cxe_prefix(self.name_prefix)
 
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 if self.debug:
-                    print("Cleaning cx: %s" % (cx_name))
-                self.rm_cx(cx_name)
+                    print("Cleaning cx: %s"%(cx_name))
+                self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
                     if self.debug:
-                        print("Cleaning endpoint: %s" % (ename))
-                    self.rm_endp(self.created_cx[cx_name][side])
+                        print("Cleaning endpoint: %s"%(ename))
+                    self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
                tos=None):
@@ -1351,12 +1356,12 @@ class L3CXProfile(BaseProfile):
                 "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
 
         if type(side_a) == list and type(side_b) != list:
-            side_b_info = self.name_to_eid(side_b)
+            side_b_info = self.local_realm.name_to_eid(side_b)
             side_b_shelf = side_b_info[0]
             side_b_resource = side_b_info[1]
 
             for port_name in side_a:
-                side_a_info = self.name_to_eid(port_name)
+                side_a_info = self.local_realm.name_to_eid(port_name)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
                 if port_name.find('.') < 0:
@@ -1398,11 +1403,9 @@ class L3CXProfile(BaseProfile):
                 }
 
                 url = "/cli-json/add_endp"
-                self.json_post(url, endp_side_a, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
-                self.json_post(url, endp_side_b, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
-                # print("napping %f sec"%sleep_time)
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                #print("napping %f sec"%sleep_time)
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -1411,24 +1414,20 @@ class L3CXProfile(BaseProfile):
                     "flag": "AutoHelper",
                     "val": 1
                 }
-                self.json_post(url, data, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                 data["name"] = endp_b_name
-                self.json_post(url, data, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
                     data["name"] = endp_a_name
                     data["flag"] = "UseAutoNAT"
-                    self.json_post(url, data, debug_=debug_,
-                                   suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
                     data["name"] = endp_b_name
-                    self.json_post(url, data, debug_=debug_,
-                                   suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 if tos != None:
-                    self.set_endp_tos(endp_a_name, tos)
-                    self.set_endp_tos(endp_b_name, tos)
+                    self.local_realm.set_endp_tos(endp_a_name, tos)
+                    self.local_realm.set_endp_tos(endp_b_name, tos)
 
                 data = {
                     "alias": cx_name,
@@ -1445,14 +1444,14 @@ class L3CXProfile(BaseProfile):
                 })
 
         elif type(side_b) == list and type(side_a) != list:
-            side_a_info = self.name_to_eid(side_a)
+            side_a_info = self.local_realm.name_to_eid(side_a)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
             # side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
-                side_b_info = self.name_to_eid(port_name)
+                side_b_info = self.local_realm.name_to_eid(port_name)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
                 side_b_name = side_b_info[2]
@@ -1492,11 +1491,9 @@ class L3CXProfile(BaseProfile):
                 }
 
                 url = "/cli-json/add_endp"
-                self.json_post(url, endp_side_a, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
-                self.json_post(url, endp_side_b, debug_=debug_,
-                               suppress_related_commands_=suppress_related_commands)
-                # print("napping %f sec" %sleep_time )
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                #print("napping %f sec" %sleep_time )
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -1505,7 +1502,7 @@ class L3CXProfile(BaseProfile):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -1513,8 +1510,8 @@ class L3CXProfile(BaseProfile):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                # print("CXNAME451: %s" % cx_name)
+                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                #print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -1532,14 +1529,14 @@ class L3CXProfile(BaseProfile):
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
 
-        self.wait_until_endps_appear(these_endp, debug=debug_)
+        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
         for data in cx_post_data:
             url = "/cli-json/add_cx"
-            self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             time.sleep(0.01)
 
-        self.wait_until_cxs_appear(these_cx, debug=debug_)
+        self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
 
     def to_string(self):
         pprint.pprint(self)
