@@ -121,9 +121,9 @@ class L3VariableTime(Realm):
                 reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
-        self.multicast_profile.host = self.host
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
+        self.multicast_profile.host = self.lfclient_host
+        self.cx_profile.host = self.lfclient_host
+        self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
@@ -1059,7 +1059,7 @@ def main():
             1. Polling interval for checking traffic is fixed at 1 minute
             2. The test will generate csv file 
             3. The tx/rx rates are fixed at 256000 bits per second
-            4. Maximum stations per radio is 64
+            4. Maximum stations per radio based on radio
             ''',
         
         description='''\
@@ -1234,7 +1234,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         print("csv output file : {}".format(csv_outfile))
         
 
-    MAX_NUMBER_OF_STATIONS = 64
+    MAX_NUMBER_OF_STATIONS = 1000
     
     radio_name_list = []
     number_of_stations_per_radio_list = []
