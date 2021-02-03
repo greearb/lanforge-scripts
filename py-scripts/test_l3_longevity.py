@@ -1204,6 +1204,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
                         , required=True)
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
+    parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
 
     args = parser.parse_args()
 
@@ -1342,8 +1343,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     except Exception as e:
         print("Exception: {} failed creating summary and raw for {}, are all packages installed , pandas?".format(e,csv_outfile))
 
-    print("Pausing 30 seconds after run for manual inspection before we clean up.")
-    time.sleep(30)
+    print("Pausing {} seconds after run for manual inspection before we clean up.".format(args.wait))
+    time.sleep(int(args.wait))
     ip_var_test.cleanup()
     if ip_var_test.passes():
         print("Full test passed, all connections increased rx bytes")
