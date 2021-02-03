@@ -1,4 +1,6 @@
 import realm
+from realm import Realm
+import random
 from realm import BaseProfile
 
 class VRProfile(BaseProfile):
@@ -7,49 +9,37 @@ class VRProfile(BaseProfile):
     """
     def __init__(self,
                  local_realm,
-                 vr_id=0,
                  debug=False):
         super().__init__(local_realm=local_realm,
                          debug=debug)
-        self.vr_name = vr_id
+        self.vr_eid = None
         self.created_rdds = []
         self.created_vrcxs = []
 
-        self.add_vr_data = {
-            "alias": None,
-            "shelf": 1,
-            "resource": 1,
-            "x": 100,
-            "y": 100,
-            "width": 250,
-            "height": 250,
-            "flags": 0
-        }
-
-        self.vrcx_data = {
-            'shelf': 1,
-            'resource': 1,
-            'vr-name': None,
-            'local_dev': None,  # outer rdd
-            'remote_dev': None,  # inner rdd
-            "x": 0,
-            "y": 0,
-            "width": 10,
-            "height": 10,
-            'flags': 0,
-            "subnets": None,
-            "nexthop": None,
-            "vrrp_ip": "0.0.0.0"
-        }
-
-        self.set_port_data = {
-            "shelf": 1,
-            "resource": 1,
-            "port": None,
-            "ip_addr": None,
-            "netmask": None,
-            "gateway": None
-        }
+        # self.vrcx_data = {
+        #     'shelf': 1,
+        #     'resource': 1,
+        #     'vr-name': None,
+        #     'local_dev': None,  # outer rdd
+        #     'remote_dev': None,  # inner rdd
+        #     "x": 200+ran,
+        #     "y": 0,
+        #     "width": 10,
+        #     "height": 10,
+        #     'flags': 0,
+        #     "subnets": None,
+        #     "nexthop": None,
+        #     "vrrp_ip": "0.0.0.0"
+        # }
+        #
+        # self.set_port_data = {
+        #     "shelf": 1,
+        #     "resource": 1,
+        #     "port": None,
+        #     "ip_addr": None,
+        #     "netmask": None,
+        #     "gateway": None
+        # }
 
     def create_rdd(self,
                    resource=1,
@@ -67,8 +57,7 @@ class VRProfile(BaseProfile):
         # print("creating rdd0")
         self.json_post("/cli-json/add_rdd",
                        rdd_data,
-                       suppress_related_commands_=suppress_related_commands_,
-                       debug_=debug_)
+                       )
 
         rdd_data = {
             "shelf": 1,
@@ -77,31 +66,31 @@ class VRProfile(BaseProfile):
             "peer_ifname": "rdd0"
         }
         # print("creating rdd1")
-        self.json_post("/cli-json/add_rdd",
-                       rdd_data,
-                       suppress_related_commands_=suppress_related_commands_,
-                       debug_=debug_)
-
-        self.set_port_data["port"] = "rdd0"
-        self.set_port_data["ip_addr"] = gateway
-        self.set_port_data["netmask"] = netmask
-        self.set_port_data["gateway"] = gateway
-        self.json_post("/cli-json/set_port",
-                       self.set_port_data,
-                       suppress_related_commands_=suppress_related_commands_,
-                       debug_=debug_)
-
-        self.set_port_data["port"] = "rdd1"
-        self.set_port_data["ip_addr"] = ip_addr
-        self.set_port_data["netmask"] = netmask
-        self.set_port_data["gateway"] = gateway
-        self.json_post("/cli-json/set_port",
-                       self.set_port_data,
-                       suppress_related_commands_=suppress_related_commands_,
-                       debug_=debug_)
-
-        self.created_rdds.append("rdd0")
-        self.created_rdds.append("rdd1")
+        # self.json_post("/cli-json/add_rdd",
+        #                rdd_data,
+        #                suppress_related_commands_=suppress_related_commands_,
+        #                debug_=debug_)
+        #
+        # self.set_port_data["port"] = "rdd0"
+        # self.set_port_data["ip_addr"] = gateway
+        # self.set_port_data["netmask"] = netmask
+        # self.set_port_data["gateway"] = gateway
+        # self.json_post("/cli-json/set_port",
+        #                self.set_port_data,
+        #                suppress_related_commands_=suppress_related_commands_,
+        #                debug_=debug_)
+        #
+        # self.set_port_data["port"] = "rdd1"
+        # self.set_port_data["ip_addr"] = ip_addr
+        # self.set_port_data["netmask"] = netmask
+        # self.set_port_data["gateway"] = gateway
+        # self.json_post("/cli-json/set_port",
+        #                self.set_port_data,
+        #                suppress_related_commands_=suppress_related_commands_,
+        #                debug_=debug_)
+        #
+        # self.created_rdds.append("rdd0")
+        # self.created_rdds.append("rdd1")
 
     def create_vrcx(self,
                     resource=1,
@@ -127,30 +116,36 @@ class VRProfile(BaseProfile):
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
 
-
     def create(self,
-               resource=1,
                vr_name=None,
-               upstream_port="eth1",
-               upstream_subnets="20.20.20.0/24",
-               upstream_nexthop="20.20.20.1",
-               local_subnets="10.40.0.0/24",
-               local_nexthop="10.40.3.198",
-               rdd_ip="20.20.20.20",
-               rdd_gateway="20.20.20.1",
-               rdd_netmask="255.255.255.0",
+               upstream_port=None,
+               upstream_subnets=[],
+               upstream_nexthop=None,
+               local_subnets=[],
+               local_nexthop=None,
                debug=False,
                suppress_related_commands_=True):
         # Create vr
         if self.debug:
             debug = True
-        if self.vr_name is None:
-            raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
+        if vr_name is None:
+            raise ValueError("vr_name must be set. Current name: %s" % vr_name)
+        self.vr_eid = self.parent_realm.name_to_eid(vr_name)
+        from random import randint
+        x = randint(100, 200)
+        y = randint(100, 200)
+        self.add_vr_data = {
+            "alias": self.vr_eid[2],
+            "shelf": 1,
+            "resource": self.vr_eid[1],
+            "x": x,
+            "y": y,
+            "width": 250,
+            "height": 250,
+            "flags": 0
+        }
 
-        self.add_vr_data["alias"] = self.vr_name
-        self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
-
-
+        self.json_post("/cli-json/add_vr", self.add_vr_data)
         # # Create 1 rdd pair
         # self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
         #                 netmask=rdd_netmask)  # rdd0, rdd1; rdd0 gateway, rdd1 connected to network
@@ -166,3 +161,5 @@ class VRProfile(BaseProfile):
     def cleanup(self, resource, delay=0.03):
         # TODO: Cleanup for VRProfile
         pass
+
+#
