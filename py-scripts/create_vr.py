@@ -4,9 +4,8 @@
     Script for creating a variable number of bridges.
 """
 
-import sys
 import os
-import argparse
+import sys
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -14,12 +13,9 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import LANforge
 from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
 from realm import Realm
-import time
-import pprint
+
 
 class CreateVR(Realm):
     def __init__(self,
@@ -51,12 +47,14 @@ class CreateVR(Realm):
 
 
     def build(self):
-        self.vr_profile.create(upstream_port="up0",
-                               upstream_subnets="10.0.0.0/24",
-                               upstream_nexthop="10.0.0.1",
-                               local_nexthop="10.1.0.1",
-                               local_subnets="10.1.0.0/24",
-                               debug=self.debug)
+        self.vr_profile.create(
+            vr_name="1.1.vr9",
+            upstream_port="up0",
+            upstream_subnets="10.0.0.0/24",
+            upstream_nexthop="10.0.0.1",
+            local_nexthop="10.1.0.1",
+            local_subnets="10.1.0.0/24",
+            debug=self.debug)
 
 
 def main():
