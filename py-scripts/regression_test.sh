@@ -73,7 +73,11 @@ TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
-        NAME=$(python -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))")
+        chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+        for i in {1..10} ; do
+            NAME+=
+        done
+        NAME=$(python3 -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))")
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
@@ -94,13 +98,13 @@ function run_test() {
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</button></td>
-                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</button></td></tr>")
+                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
 
             fi
         fi
@@ -116,7 +120,6 @@ function check_args() {
     fi
 }
 function html_generator() {
-    NOW=$(date +"%Y-%m-%d-%T")
     header="<html>
 		<head>
 		<title>Test All Scripts Results $NOW</title>
@@ -152,7 +155,6 @@ function html_generator() {
 		</html>"
 
     fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
-    echo $fname  >> $fname
     echo "$header"  >> $fname
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname

@@ -1554,6 +1554,8 @@ class L4CXProfile(LFCliBase):
         self.local_realm = local_realm
         self.created_cx = {}
         self.created_endp = []
+        self.lfclient_port = lfclient_port
+        self.lfclient_host = lfclient_host
 
     def check_errors(self, debug=False):
         fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
@@ -1764,68 +1766,56 @@ class L4CXProfile(LFCliBase):
                 time.sleep(monitor_interval)
         print(value_map)
 
-        # step 3 organize data
-        endpoints = list()
-        for endpoint in value_map.values():
-            endpoints.append(endpoint['endpoint'])
-        endpoints2 = []
-        for y in range(0, len(endpoints)):
-            for x in range(0, len(endpoints[0])):
-                endpoints2.append(list(list(endpoints[y][x].values())[0].values()))
-        import itertools
-        timestamps2 = list(
-            itertools.chain.from_iterable(itertools.repeat(x, len(created_cx.split(','))) for x in timestamps))
-        for point in range(0, len(endpoints2)):
-            endpoints2[point].insert(0, timestamps2[point])
-        # step 4 save and close
-        header_row = col_names
-        header_row.insert(0, 'Timestamp')
-        print(header_row)
+    #organize data
+        full_test_data_list = []
+        for test_timestamp, data in value_map.items():
+            #reduce the endpoint data to single dictionary of dictionaries
+            for datum in data["endpoint"]:
+                for endpoint_data in datum.values():
+                    if debug:
+                        print(endpoint_data)
+                    endpoint_data["Timestamp"] = test_timestamp
+                    full_test_data_list.append(endpoint_data)
+
+
+        header_row.append("Timestamp")
+        header_row.append('Timestamp milliseconds')
+        df = pd.DataFrame(full_test_data_list)
+
+        df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        #round entire column
+        df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
+        df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
+        df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
+        #compare previous data to current data
+
+        try:
+            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+        except:
+            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+
+        df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+        df['Script Name'] = script_name
+        df['Arguments'] = arguments
+
+        for x in ['LFGUI Release', 'Script Name', 'Arguments']:
+            df[x][1:] = ''
+        if output_format == 'hdf':
+            df.to_hdf(report_file, 'table', append=True)
+        if output_format == 'parquet':
+            df.to_parquet(report_file, engine='pyarrow')
+        if output_format == 'png':
+            fig = df.plot().get_figure()
+            fig.savefig(report_file)
         if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            report_fh = open(report_file, "w+")
-            workbook = xlsxwriter.Workbook(report_file)
-            worksheet = workbook.add_worksheet()
-            for col_num, data in enumerate(header_row):
-                worksheet.write(0, col_num, data)
-            row_num = 1
-            for x in endpoints2:
-                for col_num, data in enumerate(x):
-                    worksheet.write(row_num, col_num, str(data))
-                row_num += 1
-            workbook.close()
-        else:
-            df = pd.DataFrame(endpoints2)
-            print(header_row)
-            df.columns = header_row
-            import requests
-            import ast
-            try:
-                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
-            except:
-                systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
-            df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-            df['Script Name'] = script_name
-            df['Arguments'] = arguments
-            for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-                df[x][1:] = ''
-            if output_format == 'hdf':
-                df.to_hdf(report_file, 'table', append=True)
-            if output_format == 'parquet':
-                df.to_parquet(report_file, engine='pyarrow')
-            if output_format == 'png':
-                fig = df.plot().get_figure()
-                fig.savefig(report_file)
-            if output_format == 'html':
-                df.to_html(report_file)
-            if output_format == 'df':
-                return df
-            supported_formats = ['csv', 'json', 'stata', 'pickle']
-            for x in supported_formats:
-                if output_format.lower() == x or report_file.split('.')[-1] == x:
-                    exec('df.to_' + x + '("' + report_file + '")')
-            else:
-                pass
-#end of L4CXProf class
+            df.to_excel(report_file, index=False)
+        if output_format == 'df':
+            return df
+        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        for x in supported_formats:
+            if output_format.lower() == x or report_file.split('.')[-1] == x:
+                exec('df.to_' + x + '("'+report_file+'")')
+
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
