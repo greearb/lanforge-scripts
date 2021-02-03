@@ -11,9 +11,10 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-from LANforge.lfcli_base import LFCliBase
+#from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+#import realm
+from realm import Realm
 import time
 import datetime
 import subprocess
@@ -629,25 +630,56 @@ class cisco_():
 # End of cisco controller class
 ##########################################
 
-class L3VariableTime(LFCliBase):
-    def __init__(self, host, port, endp_type, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile, results,
-                 test_keys,test_config,
-                 reset_port_enable_list,
-                 reset_port_time_min_list,
-                 reset_port_time_max_list,
-                 csv_started=False,
-                 side_a_min_bps=560000, side_a_max_bps=0,
-                 side_a_min_pdu=1518,side_a_max_pdu=0,
-                 side_b_min_bps=560000, side_b_max_bps=0,
-                 side_b_min_pdu=1518,side_b_max_pdu=0,
-                 number_template="00", test_duration="256s",
-                 polling_interval="60s",
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
-        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
+class L3VariableTime(Realm):
+    def __init__(self, 
+                endp_type, 
+                args, 
+                tos, 
+                side_b, 
+                radio_name_list, 
+                number_of_stations_per_radio_list,
+                ssid_list, 
+                ssid_password_list, 
+                ssid_security_list, 
+                wifimode_list,
+                station_lists, 
+                name_prefix, 
+                debug_on, 
+                outfile, 
+                results,
+                test_keys,
+                test_config,
+                reset_port_enable_list,
+                reset_port_time_min_list,
+                reset_port_time_max_list,
+                csv_started=False,
+                side_a_min_bps=560000, 
+                side_a_max_bps=0,
+                side_a_min_pdu=1518,
+                side_a_max_pdu=0,
+                side_b_min_bps=560000, 
+                side_b_max_bps=0,
+                side_b_min_pdu=1518,
+                side_b_max_pdu=0,
+                number_template="00",
+                test_duration="256s",
+                polling_interval="60s",
+                lfclient_host="localhost",
+                lfclient_port=8080,
+                debug=False,
+                _halt_on_error=False,
+                _exit_on_error=False,
+                _exit_on_fail=False,
+                _proxy_str=None,
+                _capture_signal_list=[]):
+        super().__init__(lfclient_host=lfclient_host,
+                         lfclient_port=lfclient_port,
+                         debug_=debug,
+                         halt_on_error_=_halt_on_error,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
         self.tos = tos.split()
         self.endp_type = endp_type
         self.side_b = side_b
@@ -664,7 +696,7 @@ class L3VariableTime(LFCliBase):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.multicast_profile = self.local_realm.new_multicast_profile()
