@@ -24,7 +24,7 @@ REPORT_DIR="/home/lanforge/html-reports"
 testCommands=(
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-r8000-36 --passwd jedway-r8000-36 --radio $RADIO_USED --security wpa"
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
-    "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd jedway-wep-48 --radio $RADIO_USED --security wep"
+    "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
@@ -71,6 +71,7 @@ detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="/home/lanforge/report-data/${NOW}"
+URL="../report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
@@ -95,13 +96,13 @@ function run_test() {
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                           <td></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${TEST_DIR}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${TEST_DIR}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
 
             fi
         fi
