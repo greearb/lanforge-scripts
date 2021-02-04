@@ -1148,6 +1148,9 @@ class L3CXProfile(LFCliBase):
         else:
             return False
 
+    def instantiate_file(self, file_name, file_format):
+        pass
+
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1757,7 +1760,7 @@ class L4CXProfile(LFCliBase):
                 time.sleep(monitor_interval)
         print(value_map)
 
-    #organize data
+    #[further] post-processing data, after test completion
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             #reduce the endpoint data to single dictionary of dictionaries
