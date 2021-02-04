@@ -1880,6 +1880,21 @@ class GenCXProfile(LFCliBase):
             }
             self.json_post(req_url, data)
 
+    def set_flags(self, endp_name, flag_name, val):
+        data = {
+            "name": endp_name,
+            "flag": flag_name,
+            "val": val
+        }
+        self.json_post("cli-json/set_endp_flag", data, debug_=self.debug)
+
+    def set_cmd(self, endp_name, cmd):
+        data = {
+            "name": endp_name,
+            "command": cmd
+        }
+        self.json_post("cli-json/set_gen_cmd", data, debug_=self.debug)
+
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         if self.debug:
             debug_ = True
@@ -1902,41 +1917,49 @@ class GenCXProfile(LFCliBase):
             # lf_firemod.pl --action list_endp after creating a generic endpoint
             gen_name_a = "%s-%s" % (self.name_prefix, name)
             gen_name_b = "D_%s-%s" % (self.name_prefix, name)
-            endp_tpls.append((resource, name, gen_name_a, gen_name_b))
+            endp_tpls.append((shelf, resource, name, gen_name_a, gen_name_b))
 
         for endp_tpl in endp_tpls:
-            resource = endp_tpl[0]
-            name = endp_tpl[1]
-            gen_name_a = endp_tpl[2]
+            shelf = endp_tpl[0]
+            resource = endp_tpl[1]
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
             # gen_name_b  = endp_tpl[3]
-            genl = GenericCx(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, debug_=self.debug)
-            # (self, alias=None, shelf=1, resource=1, port=None, type=None):
-            genl.create_gen_endp(alias=gen_name_a, shelf=shelf, resource=resource, port=name)
-            # genl.create_gen_endp(alias=gen_name_b, shelf=shelf, resource=resource, port=name)
+            # (self, alias=None, shelf=1, resource=1, port=None, type=None)
+
+            data = {
+                "alias": gen_name_a,
+                "shelf": shelf,
+                "resource": resource,
+                "port": name,
+                "type": "gen_generic"
+            }
+            if self.debug:
+                pprint(data)
+
+            self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            gen_name_a = endp_tpl[2]
-            gen_name_b = endp_tpl[3]
-            genl.set_flags(gen_name_a, "ClearPortOnStart", 1)
-            # genl.set_flags(gen_name_b, "ClearPortOnStart", 1)
-            # genl.set_flags(gen_name_b, "Unmanaged", 1)
+            gen_name_a = endp_tpl[3]
+            gen_name_b = endp_tpl[4]
+            self.set_flags(gen_name_a, "ClearPortOnStart", 1)
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name = endp_tpl[1]
-            gen_name_a = endp_tpl[2]
-            # gen_name_b  = endp_tpl[3]
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            # gen_name_b  = endp_tpl[4]
             self.parse_command(name)
-            genl.set_cmd(gen_name_a, self.cmd)
+            self.set_cmd(gen_name_a, self.cmd)
         time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
-            name = endp_tpl[1]
-            gen_name_a = endp_tpl[2]
-            gen_name_b = endp_tpl[3]
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            gen_name_b = endp_tpl[4]
             cx_name = "CX_%s-%s" % (self.name_prefix, name)
             data = {
                 "alias": cx_name,
