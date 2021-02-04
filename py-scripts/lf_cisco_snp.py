@@ -697,9 +697,9 @@ class L3VariableTime(Realm):
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
         #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
-        self.multicast_profile = self.local_realm.new_multicast_profile()
+        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
+        self.cx_profile = self.new_l3_cx_profile()
+        self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
         self.station_profiles = []
         self.args = args
@@ -727,7 +727,7 @@ class L3VariableTime(Realm):
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
             in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list, wifimode_list,\
             reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
-            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile = self.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_
             self.station_profile.ssid_pass = ssid_password_
@@ -736,14 +736,14 @@ class L3VariableTime(Realm):
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = wifimode_  
             self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
-                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
-                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
+                test_duration=self.duration_time_to_seconds(self.test_duration),\
+                reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
+                reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
-        self.multicast_profile.host = self.host
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
+        self.multicast_profile.host = self.lfclient_host
+        self.cx_profile.host = self.lfclient_host
+        self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_bps
         self.cx_profile.side_a_max_bps = side_a_min_bps
@@ -1036,7 +1036,7 @@ class L3VariableTime(Realm):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0,len(station_profile.station_names)-1)
                         logg.info("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
-                        self.local_realm.reset_port(station_profile.station_names[port_to_reset])
+                        self.reset_port(station_profile.station_names[port_to_reset])
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -1044,7 +1044,7 @@ class L3VariableTime(Realm):
         self.total_stas = 0
         for station_list in self.station_lists:
             for sta in station_list:
-                self.local_realm.rm_port(sta, check_exists=True)
+                self.rm_port(sta, check_exists=True)
                 self.total_stas += 1
 
         # Make sure they are gone
@@ -1053,7 +1053,7 @@ class L3VariableTime(Realm):
             more = False
             for station_list in self.station_lists:
                 for sta in station_list:
-                    rv = self.local_realm.rm_port(sta, check_exists=True)
+                    rv = self.rm_port(sta, check_exists=True)
                     if (rv):
                         more = True
             if not more:
@@ -1090,18 +1090,18 @@ class L3VariableTime(Realm):
         csv_rx_row_data = " "
         Result = False
         logg.info("Bringing up stations")
-        self.local_realm.admin_up(self.side_b) 
+        self.admin_up(self.side_b) 
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
                 logg.info("Bringing up station %s"%(sta))
-                self.local_realm.admin_up(sta)
+                self.admin_up(sta)
 
         temp_stations_list = []
         temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
         # need algorithm for setting time default 
-        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
+        if self.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
@@ -1120,7 +1120,7 @@ class L3VariableTime(Realm):
         logg.info("Getting initial values.")
         old_rx_values, rx_drop_percent = self.__get_rx_values()
 
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
 
         logg.info("Monitoring throughput for duration: %s"%(self.test_duration))
 
@@ -1174,7 +1174,7 @@ class L3VariableTime(Realm):
         self.multicast_profile.stop_mc()
         for station_list in self.station_lists:
             for station_name in station_list:
-                self.local_realm.admin_down(station_name)
+                self.admin_down(station_name)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -2069,8 +2069,6 @@ Eventual Realm at Cisco
                                                             side_b_min_bps = cisco_side_b_min_bps  
                                                         # current default is to have a values
                                                         ip_var_test = L3VariableTime(
-                                                                                        lfjson_host,
-                                                                                        lfjson_port,
                                                                                         args=args,
                                                                                         number_template="00", 
                                                                                         station_lists= station_lists,
@@ -2086,6 +2084,8 @@ Eventual Realm at Cisco
                                                                                         wifimode_list=wifimode_list, 
                                                                                         test_duration=test_duration,
                                                                                         polling_interval= polling_interval,
+                                                                                        lfclient_host=lfjson_host,
+                                                                                        lfclient_port=lfjson_port,
                                                                                         reset_port_enable_list=reset_port_enable_list,
                                                                                         reset_port_time_min_list=reset_port_time_min_list,
                                                                                         reset_port_time_max_list=reset_port_time_max_list,
