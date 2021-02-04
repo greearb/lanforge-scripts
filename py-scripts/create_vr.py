@@ -24,13 +24,13 @@ class CreateVR(Realm):
                  debug=False,
                  # resource=1, # USE name=1.2.vr0 convention instead
                  vr_name=None,
-                 ports_list=[],
-                 services_list=[],
+                 ports_list=(),
+                 services_list=(),
                  _halt_on_error=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=()):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -45,6 +45,16 @@ class CreateVR(Realm):
         self.services_list = services_list
         self.vr_profile = self.new_vr_profile()
 
+    def clean(self):
+        if (self.vr_profile.vr_eid is None) or (self.vr_profile.vr_eid) == "":
+            return
+
+        data = {
+            "self": 1,
+            "resource": self.vr_profile.vr_eid[1],
+            "name": self.vr_profile.vr_eid[2]
+        }
+        self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
 
     def build(self):
         self.vr_profile.create(
@@ -70,15 +80,17 @@ Command example:
     --debug
 """.format(f=__file__))
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--vr_name', '--vr_names', help='EID of virtual router, like 1.2.vr0', default="1.1.vr0", required=False)
+    required.add_argument('--vr_name', '--vr_names', default="1.1.vr0", required=False,
+                          help='EID of virtual router, like 1.2.vr0')
 
     optional = parser.add_argument_group('optional arguments')
 
-    optional.add_argument('--ports', help='Comma separated list of ports to add to virtual router', default=None, required=False)
-    optional.add_argument('--services', help='Add router services to a port, "br0=nat,dhcp"', default=None, required=False)
+    optional.add_argument('--ports', default=None, required=False,
+                          help='Comma separated list of ports to add to virtual router')
+    optional.add_argument('--services', default=None, required=False,
+                          help='Add router services to a port, "br0=nat,dhcp"')
 
     args = parser.parse_args()
-
 
     create_vr = CreateVR(lfclient_host=args.mgr,
                          lfclient_port=args.mgr_port,
@@ -89,8 +101,12 @@ Command example:
                          _halt_on_error=True,
                          _exit_on_error=True,
                          _exit_on_fail=True)
-
+    # create_vr.clean()
     create_vr.build()
+    # create_vr.start()
+    # create_vr.monitor()
+    # create_vr.stop()
+    # create_vr.clean()
 
 if __name__ == "__main__":
     main()
