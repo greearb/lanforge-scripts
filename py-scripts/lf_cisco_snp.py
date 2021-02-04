@@ -1770,6 +1770,7 @@ Eventual Realm at Cisco
                                           '200' : radio_ath9K_9984_an_AC_list_200}
     
     radio_ath10K_9984_an_AC_dict_test_1  = {'1'  : radio_ath10K_9984_an_AC_list_001}
+
     MAX_NUMBER_OF_STATIONS = 200
     
     radio_name_list = []
@@ -1873,7 +1874,7 @@ Eventual Realm at Cisco
         cisco_directions       = "upstream downstream".split()
         #cisco_packet_sizes     = "88 512 1370 1518".split()
         cisco_packet_sizes     = "1518".split()
-        cisco_client_densities = "10".split()
+        cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
         cisco_side_a_min_bps  = 56000
