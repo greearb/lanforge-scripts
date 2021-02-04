@@ -1496,13 +1496,13 @@ Eventual Realm at Cisco
 
     # reorder to follow looping
 
-    parser.add_argument('-ca' ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct' ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
-    parser.add_argument('-ct' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
-    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
+    parser.add_argument('-ca'  ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
+    parser.add_argument('-ct'  ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct2' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
+    parser.add_argument('-cca' ,'--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
+    parser.add_argument('-ccf' ,'--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
     # cisco wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
+    parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
