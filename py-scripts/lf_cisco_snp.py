@@ -1535,6 +1535,7 @@ Eventual Realm at Cisco
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='2m')
+    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
@@ -1542,7 +1543,6 @@ Eventual Realm at Cisco
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
-    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='10s')
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
 
     #to do add wifimode
@@ -1819,8 +1819,8 @@ Eventual Realm at Cisco
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 500000000
-        cisco_side_b_min_bps  = 500000000
+        cisco_side_a_min_bps  = 56000
+        cisco_side_b_min_bps  = 56000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -1846,8 +1846,8 @@ Eventual Realm at Cisco
         cisco_client_densities = "10".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 500000000
-        cisco_side_b_min_bps  = 500000000
+        cisco_side_a_min_bps  = 56000
+        cisco_side_b_min_bps  = 56000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
