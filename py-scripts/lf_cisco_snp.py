@@ -1883,7 +1883,6 @@ Eventual Realm at Cisco
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_1
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_1
 
-
     else:    
         cisco_aps             = args.cisco_ap.split()
         cisco_bands           = args.cisco_band.split()
@@ -1935,6 +1934,9 @@ Eventual Realm at Cisco
                 # check for valid frequency and wifi_mode combination put here to simplify logic since all radios do not support all modes
                 # "an anAX anAC abgn bg"
                 if((cisco_band == "a" and cisco_wifimode == "bg") or (cisco_band == "b" and cisco_wifimode == "anAC")):
+                    logg.info("#######################################################################")
+                    logg.info("# Skipping combination cisco_band {} cisco_wifimode {}".format(cisco_band,cisco_wifimode))
+                    logg.info("#######################################################################")
                     pass # invalid combination continue  
                 else:
                     for cisco_chan_width in cisco_chan_widths: #bandwidth
