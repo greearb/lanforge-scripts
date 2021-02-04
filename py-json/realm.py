@@ -1209,9 +1209,9 @@ class L3CXProfile(LFCliBase):
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
-            if "endpoint" not in response:
+            if "endpoint" not in response or response is None:
                 print(response)
-                raise ValueError("no endpoint?")
+                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
             if monitor:
                 if debug:
                     print(response)
