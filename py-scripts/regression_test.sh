@@ -8,6 +8,7 @@ SSID_USED="jedway-wpa2-x2048-5-3"
 PASSWD_USED="jedway-wpa2-x2048-5-3"
 RADIO_USED="wiphy1"
 SECURITY="wpa2"
+COL_NAMES="'"'name'"','"'tx bytes'"','"'rx bytes'"','"'dropped'"'"
 
 START_NUM=0
 CURR_TEST_NUM=0
@@ -29,10 +30,10 @@ testCommands=(
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600"
-    "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 2m"
-    "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 2m"
-    "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format excel"
-    "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 30s --output_format csv"
+    "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s"
+    "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s"
+    "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --col_names $COL_NAMES"
+    "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --col_names $COL_NAMES"
     #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"NAME
     #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
@@ -73,11 +74,7 @@ TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
-        chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
-        for i in {1..10} ; do
-            NAME+=
-        done
-        NAME=$(python3 -c "import sys ; sys.path.append('../py-json') ; from LANforge.lfcli_base import LFCliBase ; lfcli=LFCliBase('localhost','8080') ; print(lfcli.random_chars(10))")
+        NAME=cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"

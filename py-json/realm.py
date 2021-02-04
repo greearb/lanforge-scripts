@@ -1191,12 +1191,8 @@ class L3CXProfile(LFCliBase):
                     pass
 
         #Step 1, column names
-        fields=None
-        if col_names is not None and len(col_names) > 0:
-            fields = ",".join(col_names)
-            header_row=col_names
-        else:
-            header_row=list((list(self.json_get("/endp/all")['endpoint'][0].values())[0].keys()))
+        fields = ",".join(col_names)
+        header_row=col_names
         # Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
@@ -1208,10 +1204,7 @@ class L3CXProfile(LFCliBase):
         timestamps = []
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
-            if fields is None:
-                response = self.json_get("/endp/all")
-            else:
-                response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
             if "endpoint" not in response:
                 print(response)
                 raise ValueError("no endpoint?")
@@ -1263,10 +1256,7 @@ class L3CXProfile(LFCliBase):
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
 
-        try:
-            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
-        except:
-            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+        systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
 
         df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
         df['Script Name'] = script_name
@@ -1789,10 +1779,7 @@ class L4CXProfile(LFCliBase):
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
 
-        try:
-            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
-        except:
-            systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+        systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
 
         df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
         df['Script Name'] = script_name

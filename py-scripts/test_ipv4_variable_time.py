@@ -145,7 +145,7 @@ python3 ./test_ipv4_variable_time.py
     --upstream_port eth1
     --radio wiphy0
     --num_stations 32
-    --security {open|wep|wpa|wpa2|wpa3} 
+    --security {open|wep|wpa|wpa2|wpa3}
     --mode   1
         {"auto"   : "0",
         "a"      : "1",
@@ -177,12 +177,12 @@ python3 ./test_ipv4_variable_time.py
     Using the col_names flag:
 
     Currently the output function does not support inputting the columns in col_names the way they are displayed in the GUI. This quirk is under construction. To output
-    certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in 
+    certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in
     your report.
 
     GUI Column Display       Col_names argument to type in (to print in report)
 
-    Name                |   
+    Name                |
     EID                 |  'eid'
     Run                 |  'run'
     Mng                 |  'mng'
@@ -335,19 +335,17 @@ python3 ./test_ipv4_variable_time.py
         layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-    if args.col_names is not None:
-        print(args.col_names)
-        if type(args.col_names) is not list:
-            col_names=list(args.col_names.split(","))
-            #send col names here to file to reformat
-        else:
-            col_names = args.col_names
-            #send col names here to file to reformat
+
+    if type(args.col_names) is not list:
+        col_names=list(args.col_names.split(","))
+        #send col names here to file to reformat
     else:
-        col_names=None
+        col_names = args.col_names
+        #send col names here to file to reformat
     if args.debug:
         print("Column names are...")
         print(col_names)
+
     ip_var_test.l3cxprofile.monitor(col_names=col_names,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.parse_time(args.test_duration).total_seconds(),
