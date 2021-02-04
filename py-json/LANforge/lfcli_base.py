@@ -555,6 +555,10 @@ class LFCliBase:
                          timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
 
+    def replace_special_char(self,
+                             str):
+        return str.replace('+', ' ').replace('_', ' ')
+
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,
                 a      : 1,

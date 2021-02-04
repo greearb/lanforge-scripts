@@ -1191,6 +1191,7 @@ class L3CXProfile(LFCliBase):
                     pass
 
         #Step 1, column names
+        col_names=[self.replace_special_char(x) for x in col_names]
         fields = ",".join(col_names)
         header_row=col_names
         # Step 2, monitor columns

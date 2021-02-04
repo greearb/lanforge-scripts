@@ -8,7 +8,7 @@ SSID_USED="jedway-wpa2-x2048-5-3"
 PASSWD_USED="jedway-wpa2-x2048-5-3"
 RADIO_USED="wiphy1"
 SECURITY="wpa2"
-COL_NAMES="'"'name'"','"'tx bytes'"','"'rx bytes'"','"'dropped'"'"
+COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 START_NUM=0
 CURR_TEST_NUM=0
@@ -74,7 +74,7 @@ TEST_DIR="/home/lanforge/report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
-        NAME=cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+        NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
