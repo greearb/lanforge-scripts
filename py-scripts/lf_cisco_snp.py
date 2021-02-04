@@ -632,8 +632,8 @@ class cisco_():
 
 class L3VariableTime(Realm):
     def __init__(self, 
-                endp_type, 
                 args, 
+                endp_type, 
                 tos, 
                 side_b, 
                 radio_name_list, 
@@ -2070,9 +2070,6 @@ Eventual Realm at Cisco
                                                         # current default is to have a values
                                                         ip_var_test = L3VariableTime(
                                                                                         args=args,
-                                                                                        number_template="00", 
-                                                                                        station_lists= station_lists,
-                                                                                        name_prefix="LT-",
                                                                                         endp_type=cisco_packet_type,
                                                                                         tos=args.tos,
                                                                                         side_b=side_b,
@@ -2082,23 +2079,30 @@ Eventual Realm at Cisco
                                                                                         ssid_password_list=ssid_password_list,
                                                                                         ssid_security_list=ssid_security_list, 
                                                                                         wifimode_list=wifimode_list, 
-                                                                                        test_duration=test_duration,
-                                                                                        polling_interval= polling_interval,
-                                                                                        lfclient_host=lfjson_host,
-                                                                                        lfclient_port=lfjson_port,
-                                                                                        reset_port_enable_list=reset_port_enable_list,
-                                                                                        reset_port_time_min_list=reset_port_time_min_list,
-                                                                                        reset_port_time_max_list=reset_port_time_max_list,
-                                                                                        side_a_min_bps=side_a_min_bps, 
-                                                                                        side_a_min_pdu =cisco_packet_size, 
-                                                                                        side_b_min_bps=side_b_min_bps, 
-                                                                                        side_b_min_pdu =cisco_packet_size, 
+                                                                                        station_lists= station_lists,
+                                                                                        name_prefix="LT-",
                                                                                         debug_on=debug_on, 
                                                                                         outfile=csv_outfile,
                                                                                         results=csv_results,
                                                                                         test_keys=test_keys,
                                                                                         test_config=test_config,
-                                                                                        csv_started=__csv_started )
+                                                                                        reset_port_enable_list=reset_port_enable_list,
+                                                                                        reset_port_time_min_list=reset_port_time_min_list,
+                                                                                        reset_port_time_max_list=reset_port_time_max_list,
+                                                                                        csv_started=__csv_started,
+                                                                                        side_a_min_bps =side_a_min_bps, 
+                                                                                        side_a_max_bps =0,
+                                                                                        side_a_min_pdu =cisco_packet_size, 
+                                                                                        side_a_max_pdu =0,
+                                                                                        side_b_min_bps =side_b_min_bps, 
+                                                                                        side_b_max_bps =0,
+                                                                                        side_b_min_pdu =cisco_packet_size, 
+                                                                                        side_b_max_pdu = 0,
+                                                                                        number_template="00", 
+                                                                                        test_duration=test_duration,
+                                                                                        polling_interval= polling_interval,
+                                                                                        lfclient_host=lfjson_host,
+                                                                                        lfclient_port=lfjson_port)
                                                         __csv_started = True
                                                         ip_var_test.pre_cleanup()
                                                         ip_var_test.build()
