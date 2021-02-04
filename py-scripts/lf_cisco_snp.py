@@ -1498,6 +1498,7 @@ Eventual Realm at Cisco
 
     parser.add_argument('-ca' ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
     parser.add_argument('-ct' ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
     parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
     # cisco wanted 11ax , 11ac, 11n, 11gb
@@ -1753,8 +1754,9 @@ Eventual Realm at Cisco
                                         ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001,
-                                     '4': radio_AX200_abgn_ax_list_004}
+    radio_AX200_abgn_ax_dict_test   = {'1' : radio_AX200_abgn_ax_list_001,
+                                       '4': radio_AX200_abgn_ax_list_004}
+    radio_AX200_abgn_ax_dict_test_1 = {'1' : radio_AX200_abgn_ax_list_001}
 
     radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1762,11 +1764,12 @@ Eventual Realm at Cisco
     radio_ath10K_9984_an_AC_list_050  = [['radio==1.wiphy1 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath9K_9984_an_AC_list_200   = [['radio==1.wiphy0 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_ath10K_9984_an_AC_dict_test = {'1'  : radio_ath10K_9984_an_AC_list_001,
-                                        '10'  : radio_ath10K_9984_an_AC_list_010,
-                                        '50'  : radio_ath10K_9984_an_AC_list_050,
-                                        '200' : radio_ath9K_9984_an_AC_list_200}
-
+    radio_ath10K_9984_an_AC_dict_test   = {'1'  : radio_ath10K_9984_an_AC_list_001,
+                                          '10'  : radio_ath10K_9984_an_AC_list_010,
+                                          '50'  : radio_ath10K_9984_an_AC_list_050,
+                                          '200' : radio_ath9K_9984_an_AC_list_200}
+    
+    radio_ath10K_9984_an_AC_dict_test_1  = {'1'  : radio_ath10K_9984_an_AC_list_001}
     MAX_NUMBER_OF_STATIONS = 200
     
     radio_name_list = []
@@ -1851,6 +1854,34 @@ Eventual Realm at Cisco
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
+
+    elif args.cisco_test2:
+        # Note the local system only supports 802.11-abgn , 802.11a
+        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_bands            = "a".split()
+        #cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_wifimodes        = "an".split()
+        cisco_tx_power         = "3"
+        cisco_chan_5ghz        = "36".split()
+        cisco_chan_24ghz       = "1".split()
+        cisco_chan_widths      = "20".split()
+        cisco_ap_modes         = "local".split()
+        cisco_data_encryptions = "disable".split()
+        #cisco_packet_types     = "lf_udp lf_tcp".split()
+        cisco_packet_types     = "lf_udp".split()
+        #cisco_directions       = "upstream downstream".split()
+        cisco_directions       = "upstream downstream".split()
+        #cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_packet_sizes     = "1518".split()
+        cisco_client_densities = "10".split()
+        cisco_data_encryptions = "disable".split()
+
+        cisco_side_a_min_bps  = 56000
+        cisco_side_b_min_bps  = 56000
+
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_1
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_1
+
 
     else:    
         cisco_aps             = args.cisco_ap.split()
