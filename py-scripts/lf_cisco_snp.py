@@ -667,6 +667,7 @@ class L3VariableTime(Realm):
                 lfclient_host="localhost",
                 lfclient_port=8080,
                 debug=False,
+                wait_timeout=120,
                 _halt_on_error=False,
                 _exit_on_error=False,
                 _exit_on_fail=False,
@@ -708,6 +709,7 @@ class L3VariableTime(Realm):
         self.csv_started = csv_started
         self.epoch_time = int(time.time())
         self.debug = debug_on
+        self.wait_timeout = wait_timeout
         self.test_keys = test_keys
         self.test_config = test_config
 
@@ -1101,7 +1103,7 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
         # need algorithm for setting time default 
-        if self.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
+        if self.wait_for_ip(temp_stations_list, timeout_sec=self.wait_timeout, debug=self.debug):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
@@ -1555,6 +1557,7 @@ Eventual Realm at Cisco
     # Parameters that allow for testing
     parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
     parser.add_argument('-nos','--no_stations',    help='--no_stations , no stations', action='store_true')
+    parser.add_argument('-wto','--wait_timeout',   help='--wait_timeout , time to wait for stations to get IP ', default="120")
 
     args = parser.parse_args()
 
@@ -1597,6 +1600,9 @@ Eventual Realm at Cisco
     else:
         outfile_log = "stdout"
         print("output file log: {}".format(outfile_log))    
+
+    if args.wait_timeout:
+        wait_timeout = int(args.wait_timeout)        
 
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
@@ -2082,6 +2088,7 @@ Eventual Realm at Cisco
                                                                                         station_lists= station_lists,
                                                                                         name_prefix="LT-",
                                                                                         debug_on=debug_on, 
+                                                                                        wait_timeout=wait_timeout,
                                                                                         outfile=csv_outfile,
                                                                                         results=csv_results,
                                                                                         test_keys=test_keys,
