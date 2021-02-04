@@ -1249,14 +1249,14 @@ class L3CXProfile(LFCliBase):
         header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
 
-        df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        df["Timestamp milliseconds"] = [self.get_milliseconds(x) for x in df["Timestamp"]]
         #round entire column
         df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
         df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
         df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
 
-        systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
+        systeminfo = self.json_get('/')
 
         df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
         df['Script Name'] = script_name
@@ -1772,7 +1772,7 @@ class L4CXProfile(LFCliBase):
         header_row.append('Timestamp milliseconds')
         df = pd.DataFrame(full_test_data_list)
 
-        df["Timestamp milliseconds"] = (df["Timestamp"] - datetime.datetime(1970,1,1)).dt.total_seconds()*1000
+        df["Timestamp milliseconds"] = [self.get_milliseconds(x) for x in df["Timestamp"]]
         #round entire column
         df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
         df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))

@@ -8,9 +8,10 @@ from pprint import pprint
 import time
 import random
 import string
+import datetime
+import argparse
 import LANforge.LFUtils
 from LANforge.LFUtils import *
-import argparse
 from LANforge import LFRequest
 import LANforge.LFRequest
 
@@ -549,6 +550,10 @@ class LFCliBase:
         if chars is None:
             chars = string.ascii_letters
         return ''.join(random.choice(chars) for x in range(size))
+
+    def get_milliseconds(self,
+                         timestamp):
+        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
 
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,
