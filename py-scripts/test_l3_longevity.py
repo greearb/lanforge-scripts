@@ -213,6 +213,8 @@ class L3VariableTime(Realm):
                     print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                    fail_msg = "Failed to increase rx data: station: {} rx_new: {} rx_old: {}".format(item, new_list[item], old_list[item])
+                    self._fail(fail_msg, True)
                 if not self.csv_started:
                     csv_rx_headers.append(item)
                 csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
@@ -988,7 +990,8 @@ class L3VariableTime(Realm):
             if self.__compare_vals(old_rx_values, new_rx_values):
                 passes += 1
             else:
-                self._fail("FAIL: Not all stations increased traffic", print_fail)
+                fail_msg = "FAIL: TIME: {} EPOCH: {} Not all stations increasked traffic".format(cur_time, self.epoch_time) 
+                self._fail(fail_msg, print_fail)
             old_rx_values = new_rx_values
 
             self.__record_rx_dropped_percent(rx_drop_percent)
@@ -1333,7 +1336,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     ip_var_test.start(False, False)
     ip_var_test.stop()
     if not ip_var_test.passes():
-        print("stop test failed")
+        print("Test Ended: There were Failures")
         print(ip_var_test.get_fail_message())
          
     try: 
