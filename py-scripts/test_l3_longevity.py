@@ -213,6 +213,8 @@ class L3VariableTime(Realm):
                     print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_list[item], old_list[item])
+                    fail_msg = "Failed to increase rx data: station: {} rx_new: {} rx_old: {}".format(item, new_list[item], old_list[item])
+                    self._fail(fail_msg, True)
                 if not self.csv_started:
                     csv_rx_headers.append(item)
                 csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
