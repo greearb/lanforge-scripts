@@ -22,13 +22,13 @@ REPORT_DIR="/home/lanforge/html-reports"
 
 #Test array
 testCommands=(
-    "./cpu_stats.py"
+    #"./cpu_stats.py"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa"
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
     "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
-    "./test_fileio.py "
+    "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
     "./testgroup.py --group_name group1 --add_group --list_groups"
@@ -41,7 +41,7 @@ testCommands=(
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --col_names $COL_NAMES"
     "./test_ipv6_connection.py"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6"
-    "./test_l3_longevity.py"
+    "./test_l3_longevity.py --radio $RADIO_USED"
     "./test_l3_powersave_traffic.py" #this is all which is needed to run
     "./test_l3_scenario_throughput.py -t 15s"
     "./test_status_msg.py" #this is all which is needed to run
@@ -170,11 +170,19 @@ function html_generator() {
 			font-size: 10px;
 		}
 		</style>
+		<script src=\"sortabletable.js\"></script>
 		</head>
 		<body>
 		<h1>Test All Scripts Results</h1>
 		<h4>$NOW</h4>
-		<table border ='1'>
+		<table border ='1' id='myTable2'>
+		<tr>
+        <th onclick=\"sortTable(0)\">Command Name</th>
+        <th onclick=\"sortTable(1)\">Command</th>
+        <th onclick=\"sortTable(2)\">Status</th>
+        <th onclick=\"sortTable(3)\">STDOUT</th>
+        <th onclick=\"sortTable(4)\">STDERR</th>
+    </tr>
 		"
     tail="</body>
 		</html>"

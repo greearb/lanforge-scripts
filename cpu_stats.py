@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ''' Author: Nikita Yadav
 
 	This script will calculate the cpu and memory utilization by the system during runtime the output of which is a graph on html page also the second tab of html gives the system logs
