@@ -71,6 +71,18 @@ name_to_num=(
     ["create_macvlan"]=10
     ["create_station"]=11
     ["create_vap"]=12
+    ["cpu_stats"]=13
+    ["test_fileio"]=14
+    ["testgroup"]=15
+    ["test_ipv6_connection"]=16
+    ["test_ipv6_variable_time"]=17
+    ["test_l3_longevity"]=18
+    ["test_l3_powersave_traffic"]=19
+    ["test_l3_scenario_throughput"]=20
+    ["test_status_msg"]=21
+    ["test_wanlink"]=22
+    ["wlan_theoretical_sta"]=23
+    ["ws_generic_monitor_test"]=24
 )
 
 function blank_db() {
