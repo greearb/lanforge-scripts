@@ -1749,26 +1749,30 @@ Eventual Realm at Cisco
     #
     ####################################################
     #iwlwifi(AX200) 521
-    radio_AX200_abgn_ax_list_001_wiphy0  = [['radio==1.wiphy0 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_list_001_wiphy2  = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
 
-    radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+                                        ['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_AX200_abgn_ax_dict_test   = {'1' : radio_AX200_abgn_ax_list_001,
                                        '4': radio_AX200_abgn_ax_list_004}
-    radio_AX200_abgn_ax_dict_test_wiphy0 = {'1' : radio_AX200_abgn_ax_list_001_wiphy0}
+
+    radio_AX200_abgn_ax_dict_test_wiphy2 = {'1' : radio_AX200_abgn_ax_list_001_wiphy2}
+
+
+    radio_ath10K_9984_an_AC_list_001    = [['radio==1.wiphy0 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020    = [['radio==1.wiphy0 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050    = [['radio==1.wiphy0 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_an_AC_list_200     = [['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_list_001_wiphy0  = [['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010_wiphy0  = [['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_ath10K_9984_an_AC_list_001    = [['radio==1.wiphy1 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy1 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_020    = [['radio==1.wiphy1 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_050    = [['radio==1.wiphy1 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_an_AC_list_200     = [['radio==1.wiphy0 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_dict_test   = {'1'  : radio_ath10K_9984_an_AC_list_001,
                                           '10'  : radio_ath10K_9984_an_AC_list_010,
@@ -1875,19 +1879,19 @@ Eventual Realm at Cisco
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local".split()
         cisco_data_encryptions = "disable".split()
-        cisco_packet_types     = "lf_udp lf_tcp".split()
-        #cisco_packet_types     = "lf_udp".split()
+        #cisco_packet_types     = "lf_udp lf_tcp".split()
+        cisco_packet_types     = "lf_udp".split()
         #cisco_directions       = "upstream downstream".split()
         cisco_directions       = "upstream downstream".split()
-        cisco_packet_sizes     = "88 512 1370 1518".split()
-        #cisco_packet_sizes     = "1518".split()
+        #cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_packet_sizes     = "1518".split()
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
         cisco_side_a_min_bps  = 256000
         cisco_side_b_min_bps  = 256000
 
-        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy0
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_wiphy0
 
     else:    
@@ -1909,7 +1913,6 @@ Eventual Realm at Cisco
         cisco_packet_types       = args.endp_type.split()
         cisco_directions         = "upstream downstream".split()
         cisco_packet_sizes       = args.cisco_packet_size.split()
-        cisco_client_densities   = args.cisco_client_density.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()
 
         cisco_side_a_min_bps    = args.side_a_min_bps
