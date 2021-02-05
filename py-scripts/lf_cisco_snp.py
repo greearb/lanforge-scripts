@@ -1759,9 +1759,10 @@ Eventual Realm at Cisco
 
     radio_AX200_abgn_ax_dict_test   = {'1' : radio_AX200_abgn_ax_list_001,
                                        '4': radio_AX200_abgn_ax_list_004}
-    radio_AX200_abgn_ax_dict_test_1 = {'1' : radio_AX200_abgn_ax_list_001_wiphy0}
+    radio_AX200_abgn_ax_dict_test_wiphy0 = {'1' : radio_AX200_abgn_ax_list_001_wiphy0}
 
-    radio_ath10K_9984_an_AC_list_001_wiphy0  = [['radio==1.wiphy0 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_001_wiphy0  = [['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010_wiphy0  = [['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_list_001    = [['radio==1.wiphy1 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy1 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1774,7 +1775,8 @@ Eventual Realm at Cisco
                                           '50'  : radio_ath10K_9984_an_AC_list_050,
                                           '200' : radio_ath9K_9984_an_AC_list_200}
     
-    radio_ath10K_9984_an_AC_dict_test_1  = {'1'  : radio_ath10K_9984_an_AC_list_001_wiphy0}
+    radio_ath10K_9984_an_AC_dict_test_wiphy0  = {'1'  : radio_ath10K_9984_an_AC_list_001_wiphy0,
+                                                '10'  : radio_ath10K_9984_an_AC_list_010_wiphy0}
 
     MAX_NUMBER_OF_STATIONS = 200
     
@@ -1828,8 +1830,8 @@ Eventual Realm at Cisco
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 56000
-        cisco_side_b_min_bps  = 56000
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -1855,8 +1857,8 @@ Eventual Realm at Cisco
         cisco_client_densities = "10".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 56000
-        cisco_side_b_min_bps  = 56000
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -1882,11 +1884,11 @@ Eventual Realm at Cisco
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 56000
-        cisco_side_b_min_bps  = 56000
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
 
-        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_1
-        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_1
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy0
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_wiphy0
 
     else:    
         cisco_aps             = args.cisco_ap.split()
