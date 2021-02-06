@@ -366,7 +366,8 @@ class Realm(LFCliBase):
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
-            print("Waiting on endpoint endp_list {}".format(endp_list))
+            if debug:
+                print("Waiting on endpoint endp_list {}".format(endp_list))
             if (endp_list is not None) and ("items" not in endp_list):
                 try:
                     endp_list = list(endp_list['endpoint'])
@@ -1241,7 +1242,7 @@ class L3CXProfile(LFCliBase):
                 temp_list.extend([timestamp,t_to_millisec_epoch])
                 for name in header_row[2:]:
                     temp_list.append(temp_endp_values[name])
-            self.write_to_csv_file(new_data_list=temp_list,csvwriter=csvwriter,debug=debug)
+            self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
             new_cx_rx_values = self.__get_rx_values()
             if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
@@ -1256,7 +1257,6 @@ class L3CXProfile(LFCliBase):
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
-        #close csv file after while loop
         csvfile.close()
         
     
