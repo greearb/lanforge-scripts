@@ -258,10 +258,9 @@ python3 ./test_ipv4_variable_time.py
         optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Columns wished to be monitor', default=None)
+        optional_args.add_argument('--col_names', help='Columns wished to be monitor', default=['name','tx bytes','rx bytes'])
         optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
-    #['name','tx bytes', 'rx bytes','dropped']
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
