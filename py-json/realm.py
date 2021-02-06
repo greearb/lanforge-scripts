@@ -1215,7 +1215,7 @@ class L3CXProfile(LFCliBase):
         old_cx_rx_values = self.__get_rx_values()        
 
         #instantiate csv file here, add specified column headers 
-        csvfile=open(''+ report_file+'','w') #replace with report file
+        csvfile=open(str(report_file),'w')
         csvwriter = csv.writer(csvfile,delimiter=",")
         csvwriter.writerow(header_row)
 
