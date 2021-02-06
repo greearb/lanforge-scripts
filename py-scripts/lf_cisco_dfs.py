@@ -640,12 +640,80 @@ class cisco_():
         
         logg.info("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
         # Verify channel and channel width. 
+
+##########################################        
+# DFS Begin
+##########################################
+    def verify_cac_on_ap(self):
+        pass
+        # Do this after you get the configuration Verify CAC
+        # use pySerial to check if the AP is configured:
+        # 1. You can grep for "DFS CAC timer enabled time 60" 
+        # 2. and "changed to DFS channel 52, running CAC for 60 seconds
+        # Wait for 60 sec and check for this log "CAC_EXPIRY_EVT: CAC finished on DFS channel 52"
+        #"make a note of the time and check the CAC timer expired in 60-61 seconds."
+
+        # After CAC expires Verify Traffic. (the loop should start up may want some special detection)
+
+    def lf_hackrf_enable(self):
+        # hard coded for now
+        # need json and update to realm
+        #if os.path.isfile(self.args.hackrf):
+        #    print("hack rf file found {}".format(self.args.hackrf))
+        #else:
+        #    print("WARNING: hack rf file not found at {}".format(self.args.hackrf))
+
+        # look for lf_hackrf.py in local directory the look for in 
+        pass
+
+    def verify_radar_detected_on_ap(self):
+        pass
+        #You will see logs as below in the AP:(show logging will help you getting this info)
+
+        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: radar detected
+        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: sending packet out to capwapd, slotId=1, msgLen=386, chanCnt=1 -100
+        #[*07/07/2020 23:44:27.7900] DOT11_DRV[1]: DFS CAC timer disabled time 0
+        #[*07/07/2020 23:44:27.7960] Enabling Channel and channel width Switch Announcement on current channel 
+        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
+        #[*07/07/2020 23:44:27.8620] DOT11_DRV[1]: DFS CAC timer enabled time 60
+
+    def verify_black_list_time_ap(self):
+        # This will be an advanced functionality
+        pass
+
+    def lf_hackrf_disable(self):
+        pass
+        #need to save the process id
+
+    # dfs dynamic frequency selection
+    def dfs(self):
+        print("testing dfs")
+        self.verify_cac_on_ap()                 
+        self.lf_hackrf_enable()
+        self.verify_radar_detected_on_ap()
+        self.verify_black_list_time_ap()
+        self.lf_hackrf_disable()
+
+        # For Testing  only - since hackrf not causing channel changes
+        self.controller_disable_ap()
+        self.controller_set_channel_ap_36()
+        #self.dfs_set_chan_width_ap()
+        self.controller_enable_ap()
+        #check the AP for 52 is configured or not ,  check the CAC timer 
+        # verify the clien can connect back to the AP once the CAC expires (check all connections)
+
+
+
+##########################################        
+# DFS End
+##########################################
+
 ##########################################        
 # End of cisco controller class
 ##########################################
 
 ##########################################        
-# Traffic Generation
+# Traffic Generation Begin
 ##########################################
 
 class L3VariableTime(Realm):
@@ -1898,7 +1966,7 @@ Eventual Realm at Cisco
         #cisco_wifimodes        = "an anAX anAC abgn bg".split()
         cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
-        cisco_chan_5ghz        = "36".split()
+        cisco_chan_5ghz        = "52".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local".split()
@@ -1937,7 +2005,6 @@ Eventual Realm at Cisco
         cisco_packet_types       = args.endp_type.split()
         cisco_directions         = "upstream downstream".split()
         cisco_packet_sizes       = args.cisco_packet_size.split()
-        cisco_client_densities   = args.cisco_client_density.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()
 
         cisco_side_a_min_bps    = args.side_a_min_bps
@@ -1947,7 +2014,8 @@ Eventual Realm at Cisco
     logg.info(cisco_aps)
     logg.info(cisco_bands)
     logg.info(cisco_wifimodes)
-    logg.info(cisco_chan_widths)
+    logg.info(cisco_chan_5ghz)
+    logg.info(cisco_chan_24ghz)
     logg.info(cisco_chan_widths)
     logg.info(cisco_ap_modes)
     logg.info(cisco_client_densities)
@@ -1961,6 +2029,8 @@ Eventual Realm at Cisco
     __chan_width_set  = None
     __ap_mode_set     = None
     __tx_power_set    = None
+    __chan_5ghz_set   = None
+    __chan_24ghz_set  = None
     __csv_started     = False
     
     for cisco_ap in cisco_aps:
@@ -1999,7 +2069,9 @@ Eventual Realm at Cisco
                                                             cisco_band          != __band_set or
                                                             cisco_chan_width    != __chan_width_set or
                                                             cisco_ap_mode       != __ap_mode_set or
-                                                            cisco_tx_power      != __tx_power_set 
+                                                            cisco_tx_power      != __tx_power_set or
+                                                            cisco_chan_5ghz     != __chan_5ghz_set or
+                                                            cisco_chan_24ghz    != __chan_24ghz_set
                                                             ):
                                                             logg.info("###############################################")
                                                             logg.info("# NEW CONTROLLER CONFIG")
@@ -2009,6 +2081,8 @@ Eventual Realm at Cisco
                                                             __chan_width_set  = cisco_chan_width
                                                             __ap_mode_set     = cisco_ap_mode
                                                             __tx_power_set    = cisco_tx_power
+                                                            __chan_5ghz_set   = cisco_chan_5ghz
+                                                            __chan_24ghz_set  = cisco_chan_24ghz
                                                             #############################################
                                                             # configure cisco controller
                                                             #############################################
@@ -2054,6 +2128,10 @@ Eventual Realm at Cisco
                                                             logg.info("###############################################")
                                                             logg.info("# NO CHANGE TO CONTROLLER CONFIG")
                                                             logg.info("###############################################")
+                                                            logg.info("cisco_ap: {} cisco_band: {} cisco_chan_width: {} cisco_ap_mode: {} cisco_tx_power: {} cisco_chan_5ghz: {} cisco_chan_24ghz: {}"
+                                                                .format(cisco_ap,cisco_band, cisco_chan_width, cisco_ap_mode, cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
+                                                            logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
+                                                                .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                         logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                         if args.radio:
                                                             radios = args.radio

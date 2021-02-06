@@ -1922,7 +1922,8 @@ Eventual Realm at Cisco
     logg.info(cisco_aps)
     logg.info(cisco_bands)
     logg.info(cisco_wifimodes)
-    logg.info(cisco_chan_widths)
+    logg.info(cisco_chan_5ghz)
+    logg.info(cisco_chan_24ghz)
     logg.info(cisco_chan_widths)
     logg.info(cisco_ap_modes)
     logg.info(cisco_client_densities)
@@ -1936,6 +1937,8 @@ Eventual Realm at Cisco
     __chan_width_set  = None
     __ap_mode_set     = None
     __tx_power_set    = None
+    __chan_5ghz_set   = None
+    __chan_24ghz_set  = None
     __csv_started     = False
     
     for cisco_ap in cisco_aps:
@@ -1974,7 +1977,9 @@ Eventual Realm at Cisco
                                                             cisco_band          != __band_set or
                                                             cisco_chan_width    != __chan_width_set or
                                                             cisco_ap_mode       != __ap_mode_set or
-                                                            cisco_tx_power      != __tx_power_set 
+                                                            cisco_tx_power      != __tx_power_set or
+                                                            cisco_chan_5ghz     != __chan_5ghz_set or
+                                                            cisco_chan_24ghz    != __chan_24ghz_set
                                                             ):
                                                             logg.info("###############################################")
                                                             logg.info("# NEW CONTROLLER CONFIG")
@@ -1984,6 +1989,8 @@ Eventual Realm at Cisco
                                                             __chan_width_set  = cisco_chan_width
                                                             __ap_mode_set     = cisco_ap_mode
                                                             __tx_power_set    = cisco_tx_power
+                                                            __chan_5ghz_set   = cisco_chan_5ghz
+                                                            __chan_24ghz_set  = cisco_chan_24ghz
                                                             #############################################
                                                             # configure cisco controller
                                                             #############################################
@@ -2029,6 +2036,10 @@ Eventual Realm at Cisco
                                                             logg.info("###############################################")
                                                             logg.info("# NO CHANGE TO CONTROLLER CONFIG")
                                                             logg.info("###############################################")
+                                                            logg.info("cisco_ap: {} cisco_band: {} cisco_chan_width: {} cisco_ap_mode: {} cisco_tx_power: {} cisco_chan_5ghz: {} cisco_chan_24ghz: {}"
+                                                                .format(cisco_ap,cisco_band, cisco_chan_width, cisco_ap_mode, cisco_tx_power, cisco_chan_5ghz, cisco_chan_24ghz))
+                                                            logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
+                                                                .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                         logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                         if args.radio:
                                                             radios = args.radio
