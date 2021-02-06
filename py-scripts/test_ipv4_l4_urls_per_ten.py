@@ -28,11 +28,26 @@ from realm import TestGroupProfile
 
 
 class IPV4L4(LFCliBase):
-    def __init__(self,  ssid, security, password, url, requests_per_ten, station_list, host="localhost", port=8080,test_duration="2m",ap=None,mode=0,
-                 target_requests_per_ten=60, number_template="00000", num_tests=1, radio="wiphy0",
-                 _debug_on=False, upstream_port="eth1",
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(self, 
+                host="localhost", 
+                port=8080,  
+                ssid=None, 
+                security=None, 
+                password=None, 
+                url=None, 
+                requests_per_ten=None, 
+                station_list=None, 
+                test_duration="2m",
+                ap=None,
+                mode=0,
+                target_requests_per_ten=60, 
+                number_template="00000", 
+                num_tests=1, 
+                radio="wiphy0",
+                _debug_on=False, 
+                upstream_port="eth1",
+                _exit_on_error=False,
+                _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
 
         self.host = host

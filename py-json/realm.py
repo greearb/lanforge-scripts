@@ -21,6 +21,7 @@ import xlsxwriter
 import pandas as pd
 import requests
 import ast
+import csv
 
 
 
@@ -1148,6 +1149,9 @@ class L3CXProfile(LFCliBase):
         else:
             return False
 
+    def instantiate_file(self, file_name, file_format):
+        pass
+
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
@@ -1190,31 +1194,50 @@ class L3CXProfile(LFCliBase):
                     #previous_data_df= read_csv()
                     pass
 
-        #Step 1, column names
+        #================== Step 1, set column names and header row
         col_names=[self.replace_special_char(x) for x in col_names]
         fields = ",".join(col_names)
         header_row=col_names
-        # Step 2, monitor columns
+        header_row.insert(0,'Timestamp milliseconds')
+        header_row.insert(0,'Timestamp')
+
+        #================== Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
-        value_map = dict()
         passes = 0
         expected_passes = 0
-        old_cx_rx_values = self.__get_rx_values()
-        timestamps = []
+        old_cx_rx_values = self.__get_rx_values()        
+
+        #instantiate csv file here, with headers 
+        csvfile=open(''+ report_file+'','w') #replace with report file
+        csvwriter = csv.writer(csvfile,delimiter=",")
+        csvwriter.writerow(header_row)
+
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
-            if "endpoint" not in response:
+            if "endpoint" not in response or response is None:
                 print(response)
-                raise ValueError("no endpoint?")
+                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
             if monitor:
                 if debug:
-                    print(response)
+                    print("Json response from LANforge... " + response) 
+            #timestamp
             t = datetime.datetime.now()
-            timestamps.append(t)
-            value_map[t] = response
+
+            timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
+            t_to_millisec_epoch= int(self.get_milliseconds(t))
+            
+            temp_list=[]
+            for endpoint in response["endpoint"]:
+                if debug:
+                    print("Current endpoint values list... " + list(endpoint.values())[0])
+                temp_endp_values=list(endpoint.values())[0]
+                temp_list.extend([timestamp,t_to_millisec_epoch])
+                for name in header_row[2:]:
+                    temp_list.append(temp_endp_values[name])
+            self.write_to_csv_file(new_data_list=temp_list,csvwriter=csvwriter,debug=debug)
             new_cx_rx_values = self.__get_rx_values()
             if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
@@ -1228,58 +1251,41 @@ class L3CXProfile(LFCliBase):
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
-            #write csv file here - open, write,  and close file
             time.sleep(monitor_interval)
-        if debug:
-            print("Printing value map...")
-            print(value_map)
+        #close csv file after while loop
+        csvfile.close()
+        
+    
+        #===================================== convert under this line to new function (function csv to other format)=======================================
 
-    #organize data
-        full_test_data_list = []
-        for test_timestamp, data in value_map.items():
-            #reduce the endpoint data to single dictionary of dictionaries
-            for datum in data["endpoint"]:
-                for endpoint_data in datum.values():
-                    if debug:
-                        print(endpoint_data)
-                    endpoint_data["Timestamp"] = test_timestamp
-                    full_test_data_list.append(endpoint_data)
-
-
-        header_row.append("Timestamp")
-        header_row.append('Timestamp milliseconds')
-        df = pd.DataFrame(full_test_data_list)
-
-        df["Timestamp milliseconds"] = [self.get_milliseconds(x) for x in df["Timestamp"]]
-        #round entire column
-        df["Timestamp milliseconds"]=df["Timestamp milliseconds"].astype(int)
-        df["Timestamp"]=df["Timestamp"].apply(lambda x:x.strftime("%m/%d/%Y %I:%M:%S"))
-        df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
+        #dataframe conversion
+       # df = pd.DataFrame(full_test_data_list)
+       # df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
         #compare previous data to current data
 
-        systeminfo = self.json_get('/')
+        #systeminfo = self.json_get('/')
 
-        df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-        df['Script Name'] = script_name
-        df['Arguments'] = arguments
+        # df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+        # df['Script Name'] = script_name
+        # df['Arguments'] = arguments
 
-        for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-            df[x][1:] = ''
-        if output_format == 'hdf':
-            df.to_hdf(report_file, 'table', append=True)
-        if output_format == 'parquet':
-            df.to_parquet(report_file, engine='pyarrow')
-        if output_format == 'png':
-            fig = df.plot().get_figure()
-            fig.savefig(report_file)
-        if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            df.to_excel(report_file, index=False)
-        if output_format == 'df':
-            return df
-        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        for x in supported_formats:
-            if output_format.lower() == x or report_file.split('.')[-1] == x:
-                exec('df.to_' + x + '("'+report_file+'")')
+        # for x in ['LFGUI Release', 'Script Name', 'Arguments']:
+        #     df[x][1:] = ''
+        # if output_format == 'hdf':
+        #     df.to_hdf(report_file, 'table', append=True)
+        # if output_format == 'parquet':
+        #     df.to_parquet(report_file, engine='pyarrow')
+        # if output_format == 'png':
+        #     fig = df.plot().get_figure()
+        #     fig.savefig(report_file)
+        # if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
+        #     df.to_excel(report_file, index=False)
+        # if output_format == 'df':
+        #     return df
+        # supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        # for x in supported_formats:
+        #     if output_format.lower() == x or report_file.split('.')[-1] == x:
+        #         exec('df.to_' + x + '("'+report_file+'")')
 
 
     def refresh_cx(self):
@@ -1757,7 +1763,7 @@ class L4CXProfile(LFCliBase):
                 time.sleep(monitor_interval)
         print(value_map)
 
-    #organize data
+    #[further] post-processing data, after test completion
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             #reduce the endpoint data to single dictionary of dictionaries

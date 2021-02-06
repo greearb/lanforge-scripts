@@ -14,6 +14,7 @@ import LANforge.LFUtils
 from LANforge.LFUtils import *
 from LANforge import LFRequest
 import LANforge.LFRequest
+import csv
 
 class LFCliBase:
 
@@ -574,6 +575,30 @@ class LFCliBase:
                 bgnAC  : 11,
                 abgnAX : 12,
                 bgnAX  : 13
-"""
+""" 
+    def write_to_csv_file(self,new_data_list=None, csvwriter=None,debug=False):
+        print(new_data_list)
+        if type(new_data_list) is not list:
+            raise ValueError("Data type passed into CSV to write is not a list. Exiting script.")
+            exit(1)
+        if debug:
+            print("Writing data: "+ new_data_list)
+        
+        for data_value in new_data_list:
+            if isinstance(data_value,datetime.datetime):
+                csvwriter.write("\n")
+            csvwriter.write(data_value)
+        exit(1)     
+
+    
+    #================ Pandas Dataframe Functions ======================================
+    def df_to_file(dataframe, file_name, file_type):
+        pass
+    def file_to_df(file_type, file_name):
+        pass
+    def append_df_to_file(dataframe, file_name):
+        pass
+    def csv_to_other_format(csv, format):
+        pass
 
 # ~class

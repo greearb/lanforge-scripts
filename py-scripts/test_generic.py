@@ -142,7 +142,7 @@ class GenTest(LFCliBase):
         expected_passes = 0
         self.generic_endps_profile.start_cx()
         time.sleep(15)
-        end_time = self.local_realm.parse_time("30s") + cur_time
+        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         print("Starting Test...")
         result = False
         while cur_time < end_time:
