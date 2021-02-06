@@ -11,9 +11,10 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-from LANforge.lfcli_base import LFCliBase
+#from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+#import realm
+from realm import Realm
 import time
 import datetime
 import subprocess
@@ -65,10 +66,10 @@ class cisco_():
     def controller_show_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -77,7 +78,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
                     .format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -90,10 +91,10 @@ class cisco_():
     def controller_show_ap_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"advanced"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "advanced"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -102,7 +103,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -111,10 +112,10 @@ class cisco_():
     def controller_show_wlan_summary(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"show wlan summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "show_wlan_summary"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -124,7 +125,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -134,10 +135,10 @@ class cisco_():
     def controller_disable_ap(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                 self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", 
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", 
                                     self.args.cisco_ctlr, "-u",self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
@@ -147,7 +148,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -157,13 +158,13 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_wlan --series 9800
     def controller_disable_wlan(self):
         try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
-                self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_wlan"))
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.args.cisco_scheme,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
+                self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"--wlan", self.args.cisco_wlan,"disable_wlan"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_wlan"], 
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band,"--wlan", self.args.cisco_wlan, "--action", "disable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
             if self.args.cap_ctl_out:
@@ -171,7 +172,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -183,10 +184,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_network_5ghz"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_5ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -196,17 +197,17 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11a disable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -216,7 +217,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -228,10 +229,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"disable_network_24ghz"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "disable_network_24ghz"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -241,17 +242,17 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11b disable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b disable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -261,7 +262,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -275,10 +276,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"manual"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "manual"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -288,7 +289,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -302,10 +303,10 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
                     self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"auto"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "auto"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -315,7 +316,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -327,9 +328,9 @@ class cisco_():
     def controller_set_tx_power(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"txPower", self.args.cisco_tx_power ))  # TODO fix txPower to tx_power in cisco_wifi_ctl.py
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "txPower","--value", self.args.cisco_tx_power], 
@@ -340,7 +341,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -353,9 +354,9 @@ class cisco_():
     def controller_set_channel(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"channel", self.args.cisco_channel ))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "channel","--value", self.args.cisco_channel], 
@@ -366,7 +367,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -377,9 +378,9 @@ class cisco_():
     def controller_set_bandwidth(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"channel", self.args.cisco_chan_width ))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "channel","--value", self.args.cisco_chan_width], 
@@ -390,7 +391,7 @@ class cisco_():
                 logg.info(pss)
             
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -401,13 +402,13 @@ class cisco_():
     def controller_create_wlan(self):
         if self.args.cisco_series == "9800":
             try:
-                logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
-                    self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID ))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} wlan {} wlanID {} wlanSSID {}".format(self.args.cisco_scheme,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_band,"create_wlan", self.args.cisco_wlan, self.args.cisco_wlanID, self.args.cisco_wlanSSID ))
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
-                                        "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID], 
+                                        "--action", "create_wlan","--wlan", self.args.cisco_wlan, "--wlanID", self.args.cisco_wlanID, "--wlanSSID", self.args.cisco_wlanSSID], 
                                         capture_output=self.args.cap_ctl_out, check=True)
 
                 if self.args.cap_ctl_out:
@@ -415,7 +416,7 @@ class cisco_():
                     logg.info(pss)
                 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -428,9 +429,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"wireless_tag_policy" ))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "wireless_tag_policy"], 
@@ -441,7 +442,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -453,12 +454,12 @@ class cisco_():
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_wlan --series 9800
     def controller_enable_wlan(self):
         try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
-                self.args.cisco_band,"enable_wlan"))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.args.cisco_scheme,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"--wlan", self.args.cisco_wlan,"enable_wlan"))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
-                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--wlan", self.args.cisco_wlan,
                                     "--action", "enable_wlan"], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
@@ -467,7 +468,7 @@ class cisco_():
                 logg.info(pss)
             
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -479,9 +480,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"enable_network_5ghz"))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "enable_network_5ghz"], 
@@ -492,17 +493,17 @@ class cisco_():
                     logg.info(pss)
                 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11a enable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11a enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -512,7 +513,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -525,9 +526,9 @@ class cisco_():
         if self.args.cisco_series == "9800":
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                     self.args.cisco_band,"enable_network_24ghz"))
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                         "--action", "enable_network_24ghz"], 
@@ -538,17 +539,17 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
         else:
             try:
                 logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value: {}".format(self.args.cisco_scheme,
-                    self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
+                    self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series,
                     self.args.cisco_band,"cmd","config 802.11b enable network"))
 
-                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                         self.args.cisco_user, "-p", self.args.cisco_passwd,
                                         "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, "--action", "cmd", "--value", "config 802.11b enable network"], 
                                         capture_output=self.args.cap_ctl_out, check=True)
@@ -558,7 +559,7 @@ class cisco_():
                     logg.info(pss)
 
             except subprocess.CalledProcessError as process_error:
-                logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
@@ -570,9 +571,9 @@ class cisco_():
     def controller_enable_ap(self):
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
-                self.args.cisco_ctlr,self.args.cisco_port,self.args.prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
                 self.args.cisco_band,"enable"))
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
                                     "--action", "enable"], 
@@ -583,7 +584,7 @@ class cisco_():
                 logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
@@ -592,7 +593,7 @@ class cisco_():
     #advanced (showes summary)
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action advanced --series 9800
     def controller_show_ap_channel(self):
-        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+        advanced = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--action", "ap_channel"], capture_output=True)
 
@@ -643,30 +644,61 @@ class cisco_():
 # End of cisco controller class
 ##########################################
 
-
-
 ##########################################        
 # Traffic Generation
 ##########################################
-class L3VariableTime(LFCliBase):
-    def __init__(self, host, port, endp_type, args, tos, side_b, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, ssid_security_list, wifimode_list,station_lists, name_prefix, debug_on, outfile, results,
-                 test_keys,test_config,
-                 reset_port_enable_list,
-                 reset_port_time_min_list,
-                 reset_port_time_max_list,
-                 csv_started=False,
-                 side_a_min_bps=560000, side_a_max_bps=0,
-                 side_a_min_pdu=1518,side_a_max_pdu=0,
-                 side_b_min_bps=560000, side_b_max_bps=0,
-                 side_b_min_pdu=1518,side_b_max_pdu=0,
-                 number_template="00", test_duration="256s",
-                 polling_interval="60s",
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
-        super().__init__(host, port, _debug=debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
-        self.host = host
-        self.port = port
+
+class L3VariableTime(Realm):
+    def __init__(self, 
+                args, 
+                endp_type, 
+                tos, 
+                side_b, 
+                radio_name_list, 
+                number_of_stations_per_radio_list,
+                ssid_list, 
+                ssid_password_list, 
+                ssid_security_list, 
+                wifimode_list,
+                station_lists, 
+                name_prefix, 
+                debug_on, 
+                outfile, 
+                results,
+                test_keys,
+                test_config,
+                reset_port_enable_list,
+                reset_port_time_min_list,
+                reset_port_time_max_list,
+                csv_started=False,
+                side_a_min_bps=560000, 
+                side_a_max_bps=0,
+                side_a_min_pdu=1518,
+                side_a_max_pdu=0,
+                side_b_min_bps=560000, 
+                side_b_max_bps=0,
+                side_b_min_pdu=1518,
+                side_b_max_pdu=0,
+                number_template="00",
+                test_duration="256s",
+                polling_interval="60s",
+                lfclient_host="localhost",
+                lfclient_port=8080,
+                debug=False,
+                wait_timeout=120,
+                _halt_on_error=False,
+                _exit_on_error=False,
+                _exit_on_fail=False,
+                _proxy_str=None,
+                _capture_signal_list=[]):
+        super().__init__(lfclient_host=lfclient_host,
+                         lfclient_port=lfclient_port,
+                         debug_=debug,
+                         halt_on_error_=_halt_on_error,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
+                         _proxy_str=_proxy_str,
+                         _capture_signal_list=_capture_signal_list)
         self.tos = tos.split()
         self.endp_type = endp_type
         self.side_b = side_b
@@ -683,10 +715,10 @@ class L3VariableTime(LFCliBase):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.local_realm.duration_time_to_seconds(polling_interval)
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
-        self.multicast_profile = self.local_realm.new_multicast_profile()
+        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
+        self.cx_profile = self.new_l3_cx_profile()
+        self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
         self.station_profiles = []
         self.args = args
@@ -695,6 +727,7 @@ class L3VariableTime(LFCliBase):
         self.csv_started = csv_started
         self.epoch_time = int(time.time())
         self.debug = debug_on
+        self.wait_timeout = wait_timeout
         self.test_keys = test_keys
         self.test_config = test_config
 
@@ -714,7 +747,7 @@ class L3VariableTime(LFCliBase):
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
             in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list, wifimode_list,\
             reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
-            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile = self.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_
             self.station_profile.ssid_pass = ssid_password_
@@ -723,14 +756,14 @@ class L3VariableTime(LFCliBase):
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = wifimode_  
             self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                test_duration=self.local_realm.duration_time_to_seconds(self.test_duration),\
-                reset_port_min_time=self.local_realm.duration_time_to_seconds(reset_port_time_min_),\
-                reset_port_max_time=self.local_realm.duration_time_to_seconds(reset_port_time_max_))
+                test_duration=self.duration_time_to_seconds(self.test_duration),\
+                reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
+                reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
-        self.multicast_profile.host = self.host
-        self.cx_profile.host = self.host
-        self.cx_profile.port = self.port
+        self.multicast_profile.host = self.lfclient_host
+        self.cx_profile.host = self.lfclient_host
+        self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_bps
         self.cx_profile.side_a_max_bps = side_a_min_bps
@@ -971,16 +1004,17 @@ class L3VariableTime(LFCliBase):
             return
 
         try:
-            logg.info("scheme: {} ctlr: {} user: {} passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,self.args.cisco_ctlr,self.args.cisco_user,
-                self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, self.args.cisco_band,"summary"))
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
+                self.args.cisco_passwd,self.args.cisco_ap,self.args.cisco_series,self.args.cisco_band,"summary"))
 
-            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                        self.args.cisco_user, "-p", self.args.cisco_passwd,
                                        "-a", self.args.cisco_ap,"--series", self.args.cisco_series,"--action", "summary"], capture_output=True)
             pss = ctl_output.stdout.decode('utf-8', 'ignore')
             logg.info(pss)
         except subprocess.CalledProcessError as process_error:
-            logg.info("Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
                  .format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -1022,7 +1056,7 @@ class L3VariableTime(LFCliBase):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0,len(station_profile.station_names)-1)
                         logg.info("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
-                        self.local_realm.reset_port(station_profile.station_names[port_to_reset])
+                        self.reset_port(station_profile.station_names[port_to_reset])
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -1030,7 +1064,7 @@ class L3VariableTime(LFCliBase):
         self.total_stas = 0
         for station_list in self.station_lists:
             for sta in station_list:
-                self.local_realm.rm_port(sta, check_exists=True)
+                self.rm_port(sta, check_exists=True)
                 self.total_stas += 1
 
         # Make sure they are gone
@@ -1039,7 +1073,7 @@ class L3VariableTime(LFCliBase):
             more = False
             for station_list in self.station_lists:
                 for sta in station_list:
-                    rv = self.local_realm.rm_port(sta, check_exists=True)
+                    rv = self.rm_port(sta, check_exists=True)
                     if (rv):
                         more = True
             if not more:
@@ -1076,18 +1110,18 @@ class L3VariableTime(LFCliBase):
         csv_rx_row_data = " "
         Result = False
         logg.info("Bringing up stations")
-        self.local_realm.admin_up(self.side_b) 
+        self.admin_up(self.side_b) 
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
                 logg.info("Bringing up station %s"%(sta))
-                self.local_realm.admin_up(sta)
+                self.admin_up(sta)
 
         temp_stations_list = []
         temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
         # need algorithm for setting time default 
-        if self.local_realm.wait_for_ip(temp_stations_list, timeout_sec=120, debug=self.debug):
+        if self.wait_for_ip(temp_stations_list, timeout_sec=self.wait_timeout, debug=self.debug):
             logg.info("ip's acquired")
         else:
             logg.info("print failed to get IP's")
@@ -1106,7 +1140,7 @@ class L3VariableTime(LFCliBase):
         logg.info("Getting initial values.")
         old_rx_values, rx_drop_percent = self.__get_rx_values()
 
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
 
         logg.info("Monitoring throughput for duration: %s"%(self.test_duration))
 
@@ -1160,7 +1194,7 @@ class L3VariableTime(LFCliBase):
         self.multicast_profile.stop_mc()
         for station_list in self.station_lists:
             for station_name in station_list:
-                self.local_realm.admin_down(station_name)
+                self.admin_down(station_name)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -1222,7 +1256,7 @@ def valid_endp_types(_endp_type):
     return _endp_type
 
 ##########################################        
-# Traffic Generation
+# Traffic Generation End
 ##########################################
 
 
@@ -1234,7 +1268,7 @@ def main():
     debug_on = False
 
     parser = argparse.ArgumentParser(
-        prog='lf_cisco_snp.py',
+        prog='lf_cisco_dfs.py',
         #formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -1254,11 +1288,11 @@ DFS Testing can do multiple clients at once and various radios
 
 Our ultimate aim is to achieve the following things:
 
-1. 1 to 200 client SNP on 11ac (1, 50 and 200 client count tests)
+1. 1 to 200 client DFS on 11ac (1, 50 and 200 client count tests)
       1. 5 Ghz with different channel widths
       2. Data encryption enabled/disabled
       3. Local/central switching and authentication combinations
-2. 1 to 37 client SNP on 11ax (1, 10 and 37 client count tests) eventually 200 clients
+2. 1 to 37 client DFS on 11ax (1, 10 and 37 client count tests) eventually 200 clients
       1. Different channel widths
       2. Data encryption enabled/disabled
       3. Local/central switching and authentication combinations
@@ -1279,13 +1313,13 @@ and recieved.
 
 Generic command layout:
 -----------------------
-python .\\lf_cisco_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
+python .\\lf_cisco_dfs.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
         --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3> wifimode==AUTO" --debug
 
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 30 sec
-python3 lf_cisco_snp.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
+python3 lf_cisco_dfs.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
@@ -1333,7 +1367,7 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 -t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types
 -u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
--o / --outfile <Output file for csv data>", default='snp'
+-o / --outfile <Output file for csv data>", default='dfs'
 
 #########################################
 # Examples
@@ -1347,7 +1381,7 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 .\\lf_cisco_snp.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
+python3 .\\lf_cisco_dfs.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
@@ -1364,7 +1398,7 @@ Example #2 using cisco controller
 10. duration 5m
 
 Command:
-python3 lf_cisco_snp.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
+python3 lf_cisco_dfs.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
     --cisco_channel 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
@@ -1486,12 +1520,13 @@ Eventual Realm at Cisco
 
     # reorder to follow looping
 
-    parser.add_argument('-ca','--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct','--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
-    parser.add_argument('-cca','--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf','--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
+    parser.add_argument('-ca'  ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
+    parser.add_argument('-ct'  ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct2' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
+    parser.add_argument('-cca' ,'--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
+    parser.add_argument('-ccf' ,'--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
     # cisco wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm','--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
+    parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
@@ -1502,18 +1537,19 @@ Eventual Realm at Cisco
                             default="1 10 20 50 100 200" )
 
     parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
-    parser.add_argument('-cs','--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
-    parser.add_argument('-ccp','--prompt',    type=str,help="controller prompt default WLC",default="WLC")
+    parser.add_argument('-cs' ,'--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
+    parser.add_argument('-ccp','--cisco_prompt',    type=str,help="controller prompt default WLC",default="WLC")
 
-    parser.add_argument('-cc','--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
-    parser.add_argument('-cp','--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
-    parser.add_argument('-cu','--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
+    parser.add_argument('-cc' ,'--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
+    parser.add_argument('-cp' ,'--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
+    parser.add_argument('-cu' ,'--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
     parser.add_argument('-cpw','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
-    parser.add_argument('-ccp','--cisco_prompt', help='--cisco_prompt <Prompt for Cisco Controller>',default="\(Cisco Controller\) >")
-    parser.add_argument('-cd','--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
+    parser.add_argument('-cd' ,'--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
     parser.add_argument('-ccs','--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
-    parser.add_argument('-cw','--cisco_wlan', help='--cisco_wlan <wlan name> default: NA, NA means no change',default="NA")
-    parser.add_argument('-cwi','--cisco_wlanID', help='--cisco_wlanID <wlanID> default: NA , NA means not change',default="NA")
+    parser.add_argument('-cw' ,'--cisco_wlan', help='--cisco_wlan <wlan name> ',required=True)
+    parser.add_argument('-cwi','--cisco_wlanID', help='--cisco_wlanID <wlanID> ',required=True)
+    parser.add_argument('-cws' ,'--cisco_wlanSSID', help='--cisco_wlanSSID <wlan ssid>',required=True)
+
     parser.add_argument('-ctp','--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the cisco controller output will be captured', action='store_true')
@@ -1524,15 +1560,14 @@ Eventual Realm at Cisco
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='2m')
+    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
+    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='dfs')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
-    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='10s')
-    #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
 
     #to do add wifimode
@@ -1547,6 +1582,7 @@ Eventual Realm at Cisco
     # Parameters that allow for testing
     parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
     parser.add_argument('-nos','--no_stations',    help='--no_stations , no stations', action='store_true')
+    parser.add_argument('-wto','--wait_timeout',   help='--wait_timeout , time to wait for stations to get IP ', default="120")
 
     args = parser.parse_args()
 
@@ -1589,6 +1625,9 @@ Eventual Realm at Cisco
     else:
         outfile_log = "stdout"
         print("output file log: {}".format(outfile_log))    
+
+    if args.wait_timeout:
+        wait_timeout = int(args.wait_timeout)        
 
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
@@ -1734,24 +1773,38 @@ Eventual Realm at Cisco
     #
     ####################################################
     #iwlwifi(AX200) 521
-    radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+    radio_AX200_abgn_ax_list_001_wiphy2  = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+    radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
+                                        ['radio==1.wiphy3 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy4 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
                                         ['radio==1.wiphy5 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_AX200_abgn_ax_dict_test = {'1' : radio_AX200_abgn_ax_list_001,
-                                     '4': radio_AX200_abgn_ax_list_004}
+    radio_AX200_abgn_ax_dict_test   = {'1' : radio_AX200_abgn_ax_list_001,
+                                       '4': radio_AX200_abgn_ax_list_004}
 
-    radio_ath10K_9984_an_AC_list_001  = [['radio==1.wiphy1 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_010  = [['radio==1.wiphy1 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_020  = [['radio==1.wiphy1 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_050  = [['radio==1.wiphy1 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_an_AC_list_200   = [['radio==1.wiphy0 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_AX200_abgn_ax_dict_test_wiphy2 = {'1' : radio_AX200_abgn_ax_list_001_wiphy2}
 
-    radio_ath10K_9984_an_AC_dict_test = {'1'  : radio_ath10K_9984_an_AC_list_001,
-                                        '10'  : radio_ath10K_9984_an_AC_list_010,
-                                        '50'  : radio_ath10K_9984_an_AC_list_050,
-                                        '200' : radio_ath9K_9984_an_AC_list_200}
+
+    radio_ath10K_9984_an_AC_list_001    = [['radio==1.wiphy0 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_020    = [['radio==1.wiphy0 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050    = [['radio==1.wiphy0 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_an_AC_list_200     = [['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+    radio_ath10K_9984_an_AC_list_001_wiphy0  = [['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_010_wiphy0  = [['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+    radio_ath10K_9984_an_AC_dict_test   = {'1'  : radio_ath10K_9984_an_AC_list_001,
+                                          '10'  : radio_ath10K_9984_an_AC_list_010,
+                                          '50'  : radio_ath10K_9984_an_AC_list_050,
+                                          '200' : radio_ath9K_9984_an_AC_list_200}
+    
+    radio_ath10K_9984_an_AC_dict_test_wiphy0  = {'1'  : radio_ath10K_9984_an_AC_list_001_wiphy0,
+                                                '10'  : radio_ath10K_9984_an_AC_list_010_wiphy0}
 
     MAX_NUMBER_OF_STATIONS = 200
     
@@ -1786,7 +1839,8 @@ Eventual Realm at Cisco
         }
 
     if args.cisco_all:
-        cisco_aps              = "APA453.0E7B.CF9C".split()
+#        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_aps              = "vanc-e".split()
 #        cisco_bands            = "a b".split()
         cisco_bands            = "a ".split()
 #        cisco_wifimodes        = "an anAX anAC abgn bg".split()
@@ -1804,8 +1858,8 @@ Eventual Realm at Cisco
         cisco_client_densities = "1".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 500000000
-        cisco_side_b_min_bps  = 500000000
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -1831,11 +1885,38 @@ Eventual Realm at Cisco
         cisco_client_densities = "10".split()
         cisco_data_encryptions = "disable".split()
 
-        cisco_side_a_min_bps  = 500000000
-        cisco_side_b_min_bps  = 500000000
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
+
+    elif args.cisco_test2:
+        # Note the local system only supports 802.11-abgn , 802.11a
+        cisco_aps              = "APA453.0E7B.CF9C".split()
+        cisco_bands            = "a".split()
+        #cisco_wifimodes        = "an anAX anAC abgn bg".split()
+        cisco_wifimodes        = "an".split()
+        cisco_tx_power         = "3"
+        cisco_chan_5ghz        = "36".split()
+        cisco_chan_24ghz       = "1".split()
+        cisco_chan_widths      = "20".split()
+        cisco_ap_modes         = "local".split()
+        cisco_data_encryptions = "disable".split()
+        #cisco_packet_types     = "lf_udp lf_tcp".split()
+        cisco_packet_types     = "lf_udp".split()
+        #cisco_directions       = "upstream downstream".split()
+        cisco_directions       = "upstream downstream".split()
+        #cisco_packet_sizes     = "88 512 1370 1518".split()
+        cisco_packet_sizes     = "1518".split()
+        cisco_client_densities = "1".split()
+        cisco_data_encryptions = "disable".split()
+
+        cisco_side_a_min_bps  = 256000
+        cisco_side_b_min_bps  = 256000
+
+        radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_wiphy0
 
     else:    
         cisco_aps             = args.cisco_ap.split()
@@ -1888,6 +1969,9 @@ Eventual Realm at Cisco
                 # check for valid frequency and wifi_mode combination put here to simplify logic since all radios do not support all modes
                 # "an anAX anAC abgn bg"
                 if((cisco_band == "a" and cisco_wifimode == "bg") or (cisco_band == "b" and cisco_wifimode == "anAC")):
+                    logg.info("#######################################################################")
+                    logg.info("# Skipping combination cisco_band {} cisco_wifimode {}".format(cisco_band,cisco_wifimode))
+                    logg.info("#######################################################################")
                     pass # invalid combination continue  
                 else:
                     for cisco_chan_width in cisco_chan_widths: #bandwidth
@@ -2060,12 +2144,7 @@ Eventual Realm at Cisco
                                                             side_b_min_bps = cisco_side_b_min_bps  
                                                         # current default is to have a values
                                                         ip_var_test = L3VariableTime(
-                                                                                        lfjson_host,
-                                                                                        lfjson_port,
                                                                                         args=args,
-                                                                                        number_template="00", 
-                                                                                        station_lists= station_lists,
-                                                                                        name_prefix="LT-",
                                                                                         endp_type=cisco_packet_type,
                                                                                         tos=args.tos,
                                                                                         side_b=side_b,
@@ -2075,21 +2154,31 @@ Eventual Realm at Cisco
                                                                                         ssid_password_list=ssid_password_list,
                                                                                         ssid_security_list=ssid_security_list, 
                                                                                         wifimode_list=wifimode_list, 
-                                                                                        test_duration=test_duration,
-                                                                                        polling_interval= polling_interval,
-                                                                                        reset_port_enable_list=reset_port_enable_list,
-                                                                                        reset_port_time_min_list=reset_port_time_min_list,
-                                                                                        reset_port_time_max_list=reset_port_time_max_list,
-                                                                                        side_a_min_bps=side_a_min_bps, 
-                                                                                        side_a_min_pdu =cisco_packet_size, 
-                                                                                        side_b_min_bps=side_b_min_bps, 
-                                                                                        side_b_min_pdu =cisco_packet_size, 
+                                                                                        station_lists= station_lists,
+                                                                                        name_prefix="LT-",
                                                                                         debug_on=debug_on, 
+                                                                                        wait_timeout=wait_timeout,
                                                                                         outfile=csv_outfile,
                                                                                         results=csv_results,
                                                                                         test_keys=test_keys,
                                                                                         test_config=test_config,
-                                                                                        csv_started=__csv_started )
+                                                                                        reset_port_enable_list=reset_port_enable_list,
+                                                                                        reset_port_time_min_list=reset_port_time_min_list,
+                                                                                        reset_port_time_max_list=reset_port_time_max_list,
+                                                                                        csv_started=__csv_started,
+                                                                                        side_a_min_bps =side_a_min_bps, 
+                                                                                        side_a_max_bps =0,
+                                                                                        side_a_min_pdu =cisco_packet_size, 
+                                                                                        side_a_max_pdu =0,
+                                                                                        side_b_min_bps =side_b_min_bps, 
+                                                                                        side_b_max_bps =0,
+                                                                                        side_b_min_pdu =cisco_packet_size, 
+                                                                                        side_b_max_pdu = 0,
+                                                                                        number_template="00", 
+                                                                                        test_duration=test_duration,
+                                                                                        polling_interval= polling_interval,
+                                                                                        lfclient_host=lfjson_host,
+                                                                                        lfclient_port=lfjson_port)
                                                         __csv_started = True
                                                         ip_var_test.pre_cleanup()
                                                         ip_var_test.build()
