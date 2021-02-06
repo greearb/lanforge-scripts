@@ -366,11 +366,15 @@ class Realm(LFCliBase):
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
+            print("Waiting on endpoint endp_list {}".format(endp_list))
             if (endp_list is not None) and ("items" not in endp_list):
-                endp_list = list(endp_list['endpoint'])
-                for idx in range(len(endp_list)):
-                    name = list(endp_list[idx])[0]
-                    found_endps[name] = name
+                try:
+                    endp_list = list(endp_list['endpoint'])
+                    for idx in range(len(endp_list)):
+                        name = list(endp_list[idx])[0]
+                        found_endps[name] = name
+                except:
+                    print("non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
             for req in these_endp:
                 if not req in found_endps:
@@ -1527,7 +1531,7 @@ class L3CXProfile(LFCliBase):
             raise ValueError(
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
-
+        print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp,debug_))
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
         for data in cx_post_data:
