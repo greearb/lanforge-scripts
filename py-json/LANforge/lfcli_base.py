@@ -504,6 +504,7 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('optional arguments')
         required = parser.add_argument_group('required arguments')
+
         #Optional Args
         optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
         optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
@@ -515,7 +516,8 @@ class LFCliBase:
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
         optional.add_argument('--proxy',          nargs='?', default=None,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
-        #Required Args
+       
+       #Required Args
         required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2')
         required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
         required.add_argument('--ssid',           help='WiFi SSID for script objects to associate to')
@@ -579,7 +581,7 @@ class LFCliBase:
     def write_to_csv_file(self,new_data_list=None, csvwriter=None,debug=False):
         print(new_data_list)
         if type(new_data_list) is not list:
-            raise ValueError("Data type passed into CSV to write is not a list. Exiting script.")
+            raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
             exit(1)
         if debug:
             print("Writing data: "+ new_data_list)
