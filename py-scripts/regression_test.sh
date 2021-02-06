@@ -6,7 +6,7 @@
 NUM_STA=4
 SSID_USED="jedway-wpa2-x2048-5-3"
 PASSWD_USED="jedway-wpa2-x2048-5-3"
-RADIO_USED="wiphy1"
+RADIO_USED="wiphy0"
 SECURITY="wpa2"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
@@ -39,16 +39,16 @@ testCommands=(
     "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --col_names $COL_NAMES"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --col_names $COL_NAMES"
-    "./test_ipv6_connection.py"
+    "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6"
     "./test_l3_longevity.py --radio $RADIO_USED"
-    "./test_l3_powersave_traffic.py" #this is all which is needed to run
+    "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     "./test_l3_scenario_throughput.py -t 15s"
     "./test_status_msg.py" #this is all which is needed to run
     "./test_wanlink.py"
-    "./wlan_theoretical_sta.py"
+    "../py-json/wlan_theoretical_sta.py"
     "./ws_generic_monitor_test.py"
-    #"./ws-sta-monitor.py"
+    "../py-json/ws-sta-monitor.py"
     #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"NAME
     #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
@@ -81,8 +81,10 @@ name_to_num=(
     ["test_l3_scenario_throughput"]=20
     ["test_status_msg"]=21
     ["test_wanlink"]=22
-    ["wlan_theoretical_sta"]=23
+    ["../py-json/wlan_theoretical_sta"]=23
     ["ws_generic_monitor_test"]=24
+    ["sta_connect2"]=25
+    ["py-json/ws-sta-monitor"]=26
 )
 
 function blank_db() {
@@ -107,9 +109,9 @@ function run_test() {
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
 
-        if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
-            exit 1
-        fi
+        #if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
+        #    exit 1
+        #fi
         echo ""
         echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
 
