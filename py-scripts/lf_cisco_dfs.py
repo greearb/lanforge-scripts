@@ -1619,17 +1619,17 @@ Eventual Realm at Cisco
     parser.add_argument('-ct'  ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
     parser.add_argument('-ct2' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
     parser.add_argument('-cca' ,'--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--cisco_band', help='--cisco_band <a | b | abgn>',default="a b")
+    parser.add_argument('-ccf' ,'--cisco_band', help='--cisco_band <a | b | abgn> default a',default="a")
     # cisco wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
+    parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test <11ax 11ac 11n 11gb> default: an',default="an",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
-    parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80")
+    parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect>',default="local flexconnect")
-    parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
-    parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities defaults 1 10 20 50 100 200 ',
-                            default="1 10 20 50 100 200" )
+    parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
+    parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities <1 10 20 50 100 200> default 1 ',
+                            default="1" )
 
     parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
@@ -1658,8 +1658,8 @@ Eventual Realm at Cisco
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
-                        default='lf_udp lf_tcp', type=valid_endp_types)
+    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+                        default='lf_tcp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='dfs')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
@@ -1669,9 +1669,9 @@ Eventual Realm at Cisco
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 256000', default=256000)
+    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 9600', default=9600)
     parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
-    parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
+    parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=9600)
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     # Parameters that allow for testing
@@ -1993,7 +1993,7 @@ Eventual Realm at Cisco
         #cisco_wifimodes        = "an anAX anAC abgn bg".split()
         cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
-        cisco_chan_5ghz        = "52".split()
+        cisco_chan_5ghz        = "52 ".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local".split()
@@ -2031,6 +2031,7 @@ Eventual Realm at Cisco
         cisco_client_densities   = args.cisco_client_density.split()
         cisco_packet_types       = args.endp_type.split()
         cisco_directions         = "upstream downstream".split()
+        #cisco_directions         = "upstream".split()
         cisco_packet_sizes       = args.cisco_packet_size.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()
 
