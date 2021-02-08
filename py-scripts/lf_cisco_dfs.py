@@ -110,7 +110,7 @@ class cisco_():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-    return pss
+        return pss
 
     #show wlan summary
     def controller_show_wlan_summary(self):
