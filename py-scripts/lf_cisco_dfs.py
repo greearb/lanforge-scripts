@@ -83,6 +83,7 @@ class cisco_():
                 time.sleep(1)
                 exit(1)
 
+        return pss
 
     #show ap dot11 5ghz summary (band defaults to 5ghz) --band a
     #show ap dot11 24ghz summary use --band b for 2.4 ghz
@@ -371,6 +372,29 @@ class cisco_():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
+
+    def controller_set_bandwidth_20(self):
+        cisco_chan_width_20 = "20"
+        try:
+            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
+                self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
+                self.args.cisco_band,"channel", cisco_chan_width_20 ))
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
+                                    self.args.cisco_user, "-p", self.args.cisco_passwd,
+                                    "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
+                                    "--action", "channel","--value", cisco_chan_width_20], 
+                                    capture_output=self.args.cap_ctl_out, check=True)
+
+            if self.args.cap_ctl_out:
+                pss = ctl_output.stdout.decode('utf-8', 'ignore')
+                logg.info(pss)
+            
+        except subprocess.CalledProcessError as process_error:
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
 
 
     #set bandwidth [20 40 80 160]
@@ -2058,7 +2082,7 @@ Eventual Realm at Cisco
                                                         cisco_ap,cisco_band,cisco_chan_5ghz,cisco_chan_24ghz,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                         cisco_packet_type,cisco_direction,cisco_packet_size)
                                                     test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
-                                                    
+
                                                     logg.info("# Cisco run settings: {}".format(test_config))
                                                     if(args.no_controller):
                                                         logg.info("################################################")
@@ -2098,6 +2122,13 @@ Eventual Realm at Cisco
                                                             logg.info(cisco_args)
                                                             cisco = cisco_(cisco_args)  # << is there a way to make a structure as compared to passing all args
                                                             #Disable AP
+                                                            #
+                                                            # Controller Configuration
+                                                            #
+                                                            #if cisco_args.cisco_series == "9800":
+                                                            #    cisco_controller_no_loggin_console()
+                                                            pss = cisco.controller_show_summary()
+                                                            logg.info("pss {}".format(pss))
                                                             cisco.controller_disable_ap()
                                                             if cisco_args.cisco_series == "9800":
                                                                 cisco.controller_disable_wlan()
@@ -2108,6 +2139,7 @@ Eventual Realm at Cisco
                                                                 cisco.controller_disable_network_5ghz()
                                                                 cisco.controller_disable_network_24ghz()
                                                             cisco.controller_set_tx_power()
+                                                            cisco.controller_set_bandwidth_20()
                                                             cisco.controller_set_channel()
                                                             cisco.controller_set_bandwidth()
                                                             if cisco_args.cisco_series == "9800":
@@ -2133,6 +2165,11 @@ Eventual Realm at Cisco
                                                             logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
                                                                 .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                         logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
+                                                        
+                                                        pss = cisco.controller_show_summary()
+                                                        logg.info("pss {}".format(pss))
+
+
                                                         if args.radio:
                                                             radios = args.radio
                                                         elif cisco_band == "a":
