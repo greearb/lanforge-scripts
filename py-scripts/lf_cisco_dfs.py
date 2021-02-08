@@ -64,6 +64,7 @@ class cisco_():
     #show summary (to get AP) (3400/9800)
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action summary --series 9800 --log stdout
     def controller_show_summary(self):
+        pss = ""
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
                 self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
@@ -90,6 +91,7 @@ class cisco_():
     #action advanced  (3400/9800)
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action advanced --series 9800 --log stdout
     def controller_show_ap_summary(self):
+        pss = ""
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.args.cisco_scheme,
                 self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,
@@ -108,6 +110,7 @@ class cisco_():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
+    return pss
 
     #show wlan summary
     def controller_show_wlan_summary(self):
@@ -2127,7 +2130,7 @@ Eventual Realm at Cisco
                                                             #
                                                             #if cisco_args.cisco_series == "9800":
                                                             #    cisco_controller_no_loggin_console()
-                                                            pss = cisco.controller_show_summary()
+                                                            pss = cisco.controller_show_ap_summary()
                                                             logg.info("pss {}".format(pss))
                                                             cisco.controller_disable_ap()
                                                             if cisco_args.cisco_series == "9800":
@@ -2165,8 +2168,8 @@ Eventual Realm at Cisco
                                                             logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
                                                                 .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                         logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
-                                                        
-                                                        pss = cisco.controller_show_summary()
+
+                                                        pss = cisco.controller_show_ap_summary()
                                                         logg.info("pss {}".format(pss))
 
 
