@@ -1,5 +1,5 @@
 """ this is generic report format for DFSS Test
- rum - python3 html_template.py"""
+ run - python3 html_template.py"""
 
 from matplotlib import pyplot as plt
 from datetime import datetime
