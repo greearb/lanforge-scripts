@@ -22,14 +22,14 @@ REPORT_DIR="/home/lanforge/html-reports"
 
 #Test array
 testCommands=(
-    "./cpu_stats.py"
-    "./scenario.py --load BLANK --clean_dut --clean_chambers"
+    "../cpu_stats.py --duration 15"
+    "./scenario.py --load BLANK"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa"
     "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep"
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3"
     "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
-    "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1"
+    #"./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY"
     "./testgroup.py --group_name group1 --add_group --list_groups"
@@ -40,22 +40,22 @@ testCommands=(
     "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --col_names $COL_NAMES"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --col_names $COL_NAMES"
-    "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED"
+    "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6"
     "./test_l3_longevity.py --radio $RADIO_USED"
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    "./test_l3_scenario_throughput.py -t 15s"
+    "./test_l3_scenario_throughput.py -t 15"
     "./test_status_msg.py" #this is all which is needed to run
     "./test_wanlink.py"
     "../py-json/wlan_theoretical_sta.py"
-    "./ws_generic_monitor_test.py"
+    #"./ws_generic_monitor_test.py"
     "../py-json/ws-sta-monitor.py"
-    #"./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"NAME
-    #"./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    #"./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    #"./create_macvlan.py --radio wiphy1"
-    #"./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-    #"./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000"NAME
+    "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1"
+    "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+    "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
 )
 declare -A name_to_num
 name_to_num=(
@@ -105,6 +105,7 @@ URL="../report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
+        ./scenario.py --load BLANK
         NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
