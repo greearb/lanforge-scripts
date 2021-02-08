@@ -560,7 +560,7 @@ class LFCliBase:
 
     def replace_special_char(self,
                              str):
-        return str.replace('+', ' ').replace('_', ' ')
+        return str.replace('+', ' ').replace('_', ' ').strip(' ')
 
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,
