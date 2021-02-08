@@ -2058,7 +2058,7 @@ Eventual Realm at Cisco
                                                         cisco_ap,cisco_band,cisco_chan_5ghz,cisco_chan_24ghz,cisco_wifimode,cisco_chan_width,cisco_data_encryption,cisco_ap_mode,cisco_client_density,
                                                         cisco_packet_type,cisco_direction,cisco_packet_size)
                                                     test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
-
+                                                    
                                                     logg.info("# Cisco run settings: {}".format(test_config))
                                                     if(args.no_controller):
                                                         logg.info("################################################")
