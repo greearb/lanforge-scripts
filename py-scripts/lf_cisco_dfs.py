@@ -2035,7 +2035,7 @@ Eventual Realm at Cisco
         cisco_data_encryptions   = args.cisco_data_encryption.split()
 
         cisco_side_a_min_bps    = args.side_a_min_bps
-        cisco_side_a_min_bps    = args.side_b_min_bps
+        cisco_side_b_min_bps    = args.side_b_min_bps
 
     
     logg.info(cisco_aps)
