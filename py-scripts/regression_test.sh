@@ -46,9 +46,6 @@ testCommands=(
     "./test_l3_scenario_throughput.py -t 15 --debug"
     "./test_status_msg.py --debug " #this is all which is needed to run
     #"./test_wanlink.py --debug"
-    "../py-json/wlan_theoretical_sta.py --debug --abg11_calculator"
-    "../py-json/wlan_theoretical_sta.py --debug --n11_calculator"
-    "../py-json/wlan_theoretical_sta.py --debug --ac11_calculator"
     #"./ws_generic_monitor_test.py"
     "../py-json/ws-sta-monitor.py --debug"
     "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
