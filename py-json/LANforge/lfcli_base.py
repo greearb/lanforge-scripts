@@ -617,10 +617,10 @@ class LFCliBase:
             return df.to_excel(output_file_type, index=False)
         if output_file_type == 'df':
             return df
-        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        for format in supported_formats:
-            if output_file_type.lower() == format:
-                return exec('df.to_' + x + '("'+file_name'")')
+        #supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        #for format in supported_formats:
+        #    if output_file_type.lower() == format:
+        #        return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
     def file_to_df(file_type, file_name):
@@ -629,19 +629,4 @@ class LFCliBase:
     def append_df_to_file(dataframe, file_name):
         pass
 
-    
-        #dataframe conversion
-       # df = pd.DataFrame(full_test_data_list)
-       # df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
-        #compare previous data to current data
-
-        #systeminfo = self.json_get('/')
-
-        # df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-        # df['Script Name'] = script_name
-        # df['Arguments'] = arguments
-
-        # for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-        #     df[x][1:] = ''
-        # 
 # ~class

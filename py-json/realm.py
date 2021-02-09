@@ -1190,7 +1190,9 @@ class L3CXProfile(LFCliBase):
                     raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
-        #retrieve compared report if specified - turn into dataframe -- under construction
+
+
+        #retrieve compared report if specified - turn into dataframe === under construction ===
         if compared_report is not None:
             supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for format in supported_formats:
@@ -1217,6 +1219,12 @@ class L3CXProfile(LFCliBase):
         #instantiate csv file here, add specified column headers 
         csvfile=open(str(report_file),'w')
         csvwriter = csv.writer(csvfile,delimiter=",")
+
+        #write system info to csv
+        systeminfo = self.json_get('/')
+        csvwriter.writerow(systeminfo['VersionInfo']['BuildVersion'])
+        csvwriter.writerow(script_name)
+        #csvwriter.writerow(arguments)
         csvwriter.writerow(header_row)
 
         # for x in range(0,int(round(iterations,0))):
@@ -1258,8 +1266,12 @@ class L3CXProfile(LFCliBase):
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
         csvfile.close()
+
         #here, do column manipulations
-        #here, 
+
+        dataframe_output = self.file_to_df()
+        #here, do csv to df
+        #here, do df to final report file output
         
 
     def refresh_cx(self):

@@ -267,25 +267,32 @@ python3 ./test_ipv4_variable_time.py
         num_sta = int(args.num_stations)
 
     #Create directory
-    if args.report_file is None:
-        try:
-            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time'
-            path = os.path.join('/home/lanforge/report-data/',homedir)
-            os.mkdir(path)
-        except:
-            path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            print('Saving file to local directory')
-    else:
-        pass
+
+    #if file path with output file extension is not given... 
+    # check if home/lanforge/report-data exists. if not, save 
+    # in new folder based in current file's directory
 
     if args.report_file is None:
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time' #create path name
+        try:
+            path = os.path.join('/home/lanforge/report-data/',new_file_path)
+            os.mkdir(path)
+        except:
+            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            path = os.path.join(curr_dir_path, new_file_path)
+            os.mkdir(path)
+            print('Saving file to ' + path)
+        
+
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            report_f='/home/lanforge/report-data/'+homedir+'/data.' + args.output_format
+            report_f= str(path) + '/data.' + args.output_format
+            print(report_f)
             output=args.output_format
         else:
-            print('Defaulting data file output type to Excel')
-            report_f='/home/lanforge/report-data/'+homedir+'/data.xlsx'
-            output='xlsx'
+            print('Defaulting to csv data file output type, naming it data.csv.')
+            report_f= str(path)+'/data.csv'
+            print(report_f)
+            output='csv'
     else:
         report_f=args.report_file
         if args.output_format is None:
