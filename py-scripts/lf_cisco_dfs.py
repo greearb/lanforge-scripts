@@ -1624,7 +1624,8 @@ Eventual Realm at Cisco
     parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test <11ax 11ac 11n 11gb> default: an',default="an",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
-    parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
+    parser.add_argument('-cc5','--cisco_channel_5ghz', help='--cisco_channel 5ghz <36 40 ...> default 36',default="36")
+    parser.add_argument('-cc2','--cisco_channel_24ghz', help='--cisco_channel 24ghz <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
@@ -1993,7 +1994,7 @@ Eventual Realm at Cisco
         #cisco_wifimodes        = "an anAX anAC abgn bg".split()
         cisco_wifimodes        = "an".split()
         cisco_tx_power         = "3"
-        cisco_chan_5ghz        = "52 ".split()
+        cisco_chan_5ghz        = "52".split()
         cisco_chan_24ghz       = "1".split()
         cisco_chan_widths      = "20".split()
         cisco_ap_modes         = "local".split()
@@ -2024,8 +2025,8 @@ Eventual Realm at Cisco
                 logg.info("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
         cisco_tx_power           = "3"
-        cisco_chan_5ghz          = "36".split()
-        cisco_chan_24ghz         = "1".split()
+        cisco_chan_5ghz          = args.cisco_chan_5ghz.split()
+        cisco_chan_24ghz         = args.cisco_chan_24ghz.split()
         cisco_chan_widths        = args.cisco_chan_width.split()
         cisco_ap_modes           = args.cisco_ap_mode.split()
         cisco_client_densities   = args.cisco_client_density.split()
