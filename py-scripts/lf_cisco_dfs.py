@@ -1624,8 +1624,8 @@ Eventual Realm at Cisco
     parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test <11ax 11ac 11n 11gb> default: an',default="an",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
-    parser.add_argument('-cc5','--cisco_channel_5ghz', help='--cisco_channel 5ghz <36 40 ...> default 36',default="36")
-    parser.add_argument('-cc2','--cisco_channel_24ghz', help='--cisco_channel 24ghz <1 2 ...> default 1',default="1")
+    parser.add_argument('-cc5','--cisco_chan_5ghz', help='--cisco_channel 5ghz <36 40 ...> default 36',default="36")
+    parser.add_argument('-cc2','--cisco_chan_24ghz', help='--cisco_channel 24ghz <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
