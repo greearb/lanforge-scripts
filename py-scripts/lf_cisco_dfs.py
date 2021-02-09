@@ -1626,7 +1626,7 @@ Eventual Realm at Cisco
 
     parser.add_argument('-ccc','--cisco_channel', help='--cisco_channel <channel> default 36',default="36")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
-    parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect>',default="local flexconnect")
+    parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
     parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities <1 10 20 50 100 200> default 1 ',
                             default="1" )
