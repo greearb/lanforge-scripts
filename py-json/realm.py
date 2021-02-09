@@ -1186,7 +1186,7 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                if output_format.lower() != 'excel':
+                if output_format.lower() != 'csv':
                     raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
@@ -1258,39 +1258,9 @@ class L3CXProfile(LFCliBase):
             old_cx_rx_values = new_cx_rx_values
             time.sleep(monitor_interval)
         csvfile.close()
+        #here, do column manipulations
+        #here, 
         
-    
-        #===================================== convert under this line to new function (function csv to other format)=======================================
-
-        #dataframe conversion
-       # df = pd.DataFrame(full_test_data_list)
-       # df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
-        #compare previous data to current data
-
-        #systeminfo = self.json_get('/')
-
-        # df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-        # df['Script Name'] = script_name
-        # df['Arguments'] = arguments
-
-        # for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-        #     df[x][1:] = ''
-        # if output_format == 'hdf':
-        #     df.to_hdf(report_file, 'table', append=True)
-        # if output_format == 'parquet':
-        #     df.to_parquet(report_file, engine='pyarrow')
-        # if output_format == 'png':
-        #     fig = df.plot().get_figure()
-        #     fig.savefig(report_file)
-        # if output_format.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-        #     df.to_excel(report_file, index=False)
-        # if output_format == 'df':
-        #     return df
-        # supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        # for x in supported_formats:
-        #     if output_format.lower() == x or report_file.split('.')[-1] == x:
-        #         exec('df.to_' + x + '("'+report_file+'")')
-
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
@@ -1709,20 +1679,16 @@ class L4CXProfile(LFCliBase):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1, column names
+        # Step 1 - Assign column names 
 
-        fields=None
         if col_names is not None and len(col_names) > 0:
-            fields = ",".join(col_names)
             header_row=col_names
-            if debug:
-                print(fields)
         else:
             header_row=list((list(self.json_get("/layer4/all")['endpoint'][0].values())[0].keys()))
-            if debug:
-                print(header_row)
+        if debug:
+            print(header_row)
 
-        # Step 2, monitor columns,
+        # Step 2 - Monitor columns
 
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
@@ -1737,9 +1703,10 @@ class L4CXProfile(LFCliBase):
         timestamps = []
         for test in range(1+iterations):
             while datetime.datetime.now() < end_time:
-                if fields is None:
+                if col_names is None:
                     response = self.json_get("/layer4/all")
                 else:
+                    fields = ",".join(col_names)
                     response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields))
                 if debug:
                     print(response)

@@ -602,13 +602,46 @@ class LFCliBase:
             col_counter_per_line += 1
     
     #================ Pandas Dataframe Functions ======================================
-    def df_to_file(dataframe, file_name, file_type):
-        pass
+    
+     #takes any format of a file and returns a dataframe of it
+    def df_to_file(dataframe, outputfile_name_path):
+        df = dataframe
+        if output_file_type == 'hdf':
+            return df.to_hdf(output_file_type, 'table', append=True)
+        if output_file_type == 'parquet':
+            return df.to_parquet(output_file_type, engine='pyarrow')
+        if output_file_type == 'png':
+            fig = df.plot().get_figure()
+            return fig.savefig(output_file_type)
+        if output_file_type.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
+            return df.to_excel(output_file_type, index=False)
+        if output_file_type == 'df':
+            return df
+        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        for format in supported_formats:
+            if output_file_type.lower() == format:
+                return exec('df.to_' + x + '("'+file_name'")')
+    
+    #takes any format of a file and returns a dataframe of it
     def file_to_df(file_type, file_name):
         pass
+
     def append_df_to_file(dataframe, file_name):
         pass
-    def csv_to_other_format(csv, format):
-        pass
 
+    
+        #dataframe conversion
+       # df = pd.DataFrame(full_test_data_list)
+       # df=df[["Timestamp","Timestamp milliseconds", *header_row[:-2]]]
+        #compare previous data to current data
+
+        #systeminfo = self.json_get('/')
+
+        # df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
+        # df['Script Name'] = script_name
+        # df['Arguments'] = arguments
+
+        # for x in ['LFGUI Release', 'Script Name', 'Arguments']:
+        #     df[x][1:] = ''
+        # 
 # ~class
