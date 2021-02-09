@@ -209,6 +209,13 @@ python3 ./test_ipv4_variable_time.py
         if group.title == "optional arguments":
             optional_args=group
             break
+    if optional_args is not None:
+        optional_args.add_argument('--lanport', help='Select the port you want for lanport', default='wiphy0')
+        optional_args.add_argument('--wanport', help='Select the port you want for wanport', default='wiphy1')
+    for group in parser._action_groups:
+        if group.title == "optional arguments":
+            optional_args=group
+            break
     #if optional_args is not None:
     args = parser.parse_args()
     ltw=LANtoWAN(host=args.mgr,

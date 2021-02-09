@@ -41,12 +41,14 @@ testCommands=(
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --col_names $COL_NAMES --debug"
     "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
-    "./test_l3_longevity.py --radio $RADIO_USED --debug"
+    "./test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --radio \"radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_l3_scenario_throughput.py -t 15 --debug"
     "./test_status_msg.py --debug " #this is all which is needed to run
-    "./test_wanlink.py --debug"
-    "../py-json/wlan_theoretical_sta.py --debug"
+    #"./test_wanlink.py --debug"
+    "../py-json/wlan_theoretical_sta.py --debug --abg11_calculator"
+    "../py-json/wlan_theoretical_sta.py --debug --n11_calculator"
+    "../py-json/wlan_theoretical_sta.py --debug --ac11_calculator"
     #"./ws_generic_monitor_test.py"
     "../py-json/ws-sta-monitor.py --debug"
     "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
@@ -59,7 +61,7 @@ testCommands=(
 declare -A name_to_num
 name_to_num=(
     ["example_security_connection"]=1
-    ["test_ipv4_connection"]=2
+    ["test_ipv4_connectio n"]=2
     ["test_generic"]=3
     ["test_ipv4_l4_urls_per_ten"]=4
     ["test_ipv4_l4_wifi"]=5
