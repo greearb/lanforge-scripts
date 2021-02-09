@@ -57,6 +57,9 @@ testCommands=(
     "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
     "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    "./test_wlan_theoretical_station.py --mode abg11"
+    "./test_wlan_theoretical_station.py --mode n11"
+    "./test_wlan_theoretical_station.py --mode ac11"
 )
 declare -A name_to_num
 name_to_num=(
