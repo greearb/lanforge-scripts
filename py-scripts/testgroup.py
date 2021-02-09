@@ -154,6 +154,7 @@ def main():
     tg.do_tg_action()
     tg.update_cxs()
     tg.do_cx_action()
+    time.sleep(5)
     tg.show_info()
 
 

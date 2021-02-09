@@ -84,7 +84,7 @@ name_to_num=(
     ["../py-json/wlan_theoretical_sta"]=23
     ["ws_generic_monitor_test"]=24
     ["sta_connect2"]=25
-    ["py-json/ws-sta-monitor"]=26
+    ["../py-json/ws-sta-monitor"]=26
 )
 
 function blank_db() {
