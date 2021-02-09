@@ -357,13 +357,18 @@ class cisco_():
     # 3504 : (Cisco Controller) >config 802.11a channel ap APA453.0E7B.CF9C  52
     def controller_set_channel(self):
         try:
+            if (self.args.cisco_band == "a"):
+                cisco_channel = self.args.cisco_chan_5ghz
+            else:
+                cisco_channel = self.args.cisco_chan_24ghz
+
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.args.cisco_scheme,
                 self.args.cisco_ctlr,self.args.cisco_port,self.args.cisco_prompt,self.args.cisco_user,self.args.cisco_passwd, self.args.cisco_ap, self.args.cisco_series, 
-                self.args.cisco_band,"channel", self.args.cisco_channel ))
+                self.args.cisco_band,"channel", cisco_channel ))
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.args.cisco_scheme, "--prompt", self.args.cisco_prompt, "--port", self.args.cisco_port, "-d", self.args.cisco_ctlr, "-u",
                                     self.args.cisco_user, "-p", self.args.cisco_passwd,
                                     "-a", self.args.cisco_ap,"--series", self.args.cisco_series, "--band", self.args.cisco_band, 
-                                    "--action", "channel","--value", self.args.cisco_channel], 
+                                    "--action", "channel","--value", cisco_channel], 
                                     capture_output=self.args.cap_ctl_out, check=True)
 
             if self.args.cap_ctl_out:
@@ -628,6 +633,11 @@ class cisco_():
         logg.info(pss)
 
         if self.args.cisco_series == "9800":
+            if (self.args.cisco_band == "a"):
+                cisco_channel = self.args.cisco_chan_5ghz
+            else:
+                cisco_channel = self.args.cisco_chan_24ghz
+
             for line in pss.splitlines():
                 search_str = self.args.cisco_ap
                 logg.info("line {}".format(line))
@@ -639,15 +649,19 @@ class cisco_():
                     logg.info("element_list {}".format(element_list))
                     # AP Name (0) mac (1) slot (2) Admin State [enable/disable] (3) Oper State [Up/Down] (4) Width (5) Txpwr (6,7) channel (8) mode (9)
                     logg.info("ap: {} slof {} channel {}  chan_width {}".format(element_list[0],element_list[2],element_list[8],element_list[5]))
-                    if (str(self.args.cisco_channel) in str(element_list[8])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
+                    if (str(cisco_channel) in str(element_list[8])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
                         logg.info("ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}"
-                        .format(element_list[0],self.args.cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
+                        .format(element_list[0],cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
                     else:
                         logg.info("WARNING ap {} configuration: channel {} in expected {}  chan_width {} in expected {}"
-                        .format(element_list[0],self.args.cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
+                        .format(element_list[0],cisco_channel,element_list[8],self.args.cisco_chan_width,element_list[5])) 
                     break
         else:
             logg.info("checking for 802.11{}".format(self.args.cisco_band))
+            if (self.args.cisco_band == "a"):
+                cisco_channel = self.args.cisco_chan_5ghz
+            else:
+                cisco_channel = self.args.cisco_chan_24ghz
 
             for line in pss.splitlines():
                 #logg.info("line {}".format(line))
@@ -657,12 +671,12 @@ class cisco_():
                     element_list = line.lstrip().split()
                     logg.info("element_list {}".format(element_list))
                     logg.info("ap: {} channel {}  chan_width {}".format(self.args.cisco_ap,element_list[4],element_list[5]))
-                    if (str(self.args.cisco_channel) in str(element_list[4])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
+                    if (str(cisco_channel) in str(element_list[4])) and (str(self.args.cisco_chan_width) in str(element_list[5])):
                         logg.info("ap configuration successful: channel {} in expected {}  chan_width {} in expected {}"
-                        .format(self.args.cisco_channel,element_list[4],self.args.cisco_chan_width,element_list[5])) 
+                        .format(cisco_channel,element_list[4],self.args.cisco_chan_width,element_list[5])) 
                     else:
                         logg.info("AP WARNING: channel {} expected {}  chan_width {} expected {}"
-                        .format(element_list[4],self.cisco_channel,element_list[5],self.args.cisco_chan_width)) 
+                        .format(element_list[4],cisco_channel,element_list[5],self.args.cisco_chan_width)) 
                     break
         
         logg.info("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
@@ -1415,7 +1429,7 @@ Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 30 sec
 python3 lf_cisco_dfs.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
-    --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
+    --cisco_chan_5ghz <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
     --duration 5m
@@ -1451,7 +1465,7 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 --cisco_ap <Cisco AP in question>',default="APA453.0E7B.CF9C"
     
 --cisco_dfs <True/False>',default=False
---cisco_channel <channel>',default=None  , no change
+--cisco_chan_5ghz <channel>',default=None  , no change
 --cisco_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"]
 --cisco_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"]
 
@@ -1494,7 +1508,7 @@ Example #2 using cisco controller
 
 Command:
 python3 lf_cisco_dfs.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr 192.168.100.178 
-    --cisco_channel 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
+    --cisco_chan_5ghz 52 --cisco_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
     --test_duration 5m
@@ -1624,8 +1638,8 @@ Eventual Realm at Cisco
     parser.add_argument('-cwm' ,'--cisco_wifimode', help='List of of wifi mode to test <11ax 11ac 11n 11gb> default: an',default="an",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
-    parser.add_argument('-cc5','--cisco_chan_5ghz', help='--cisco_channel 5ghz <36 40 ...> default 36',default="36")
-    parser.add_argument('-cc2','--cisco_chan_24ghz', help='--cisco_channel 24ghz <1 2 ...> default 1',default="1")
+    parser.add_argument('-cc5','--cisco_chan_5ghz', help='--cisco_chan_5ghz <36 40 ...> default 36',default="36")
+    parser.add_argument('-cc2','--cisco_chan_24ghz', help='--cisco_chan_24ghz <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
@@ -2118,9 +2132,9 @@ Eventual Realm at Cisco
                                                             cisco_args.cisco_ap            = cisco_ap
                                                             cisco_args.cisco_band          = cisco_band
                                                             if cisco_band == "a":
-                                                                cisco_args.cisco_chan      = cisco_chan_5ghz
+                                                                cisco_args.cisco_chan_5ghz      = cisco_chan_5ghz
                                                             else:
-                                                                cisco_args.cisco_chan      = cisco_chan_24ghz    
+                                                                cisco_args.cisco_chan_24ghz      = cisco_chan_24ghz    
                                                             cisco_args.cisco_chan_width    = cisco_chan_width
                                                             cisco_args.cisco_ap_mode       = cisco_ap_mode
                                                             cisco_args.cisco_tx_power      = cisco_tx_power 
