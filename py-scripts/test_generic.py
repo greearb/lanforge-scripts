@@ -35,9 +35,11 @@ class GenTest(LFCliBase):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
                  number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
+                 file_output=None,
+                 loop_count=None,
                  _debug_on=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False,):
+                 _exit_on_fail=False):
         super().__init__(host, port, _local_realm=realm.Realm(host,port), _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
@@ -72,6 +74,8 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.dest = dest
         self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
+        self.generic_endps_profile.file_output= file_output
+        self.generic_endps_profile.loop_count = loop_count
 
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -242,7 +246,9 @@ python3 ./test_generic.py
     parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
-    parser.add_argument('--client', help='client to the iperf3 server',default=None)
+    parser.add_argument('--client', help='client to the iperf3 server', default=None)
+    parser.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred', default=None)
+    parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
 
     args = parser.parse_args()
     num_sta = 2
@@ -273,6 +279,8 @@ python3 ./test_generic.py
                            speedtest_min_up=args.speedtest_min_up,
                            speedtest_min_dl=args.speedtest_min_dl,
                            speedtest_max_ping=args.speedtest_max_ping,
+                           file_output=args.file_output,
+                           loop_count=args.loop_count,
                            client=args.client,
                            _debug_on=args.debug)
 
@@ -280,7 +288,8 @@ python3 ./test_generic.py
     generic_test.build()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
-        generic_test.exit_fail()        
+        generic_test.exit_fail()
+    exit(1)
     generic_test.start()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
