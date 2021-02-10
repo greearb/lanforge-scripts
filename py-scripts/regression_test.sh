@@ -44,7 +44,7 @@ testCommands=(
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
     "./test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 --radio \"radio==wiphy0 stations==32 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\" --radio \"radio==wiphy1 stations==32 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./test_l3_scenario_throughput.py -t 15"
+    "./test_l3_scenario_throughput.py -t 15 -sc BLANK"
     "./test_status_msg.py --debug " #this is all which is needed to run
     #"./test_wanlink.py --debug"
     #"./ws_generic_monitor_test.py"
