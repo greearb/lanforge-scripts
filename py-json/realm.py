@@ -1811,6 +1811,8 @@ class GenCXProfile(LFCliBase):
         self.name_prefix = "generic"
         self.created_cx = []
         self.created_endp = []
+        self.file_output = "/dev/null"
+        self.loop_count = 1
 
     def parse_command(self, sta_name):
         if self.type == "lfping":
@@ -1827,6 +1829,12 @@ class GenCXProfile(LFCliBase):
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
+        elif self.type == "lfcurl":
+            if self.file_output is not None:
+                self.cmd = "./scripts/lf_curl.sh  -p %s -o %s -n %s -d %s" % \
+                           (sta_name, self.file_output, self.loop_count, self.dest)
+            else:
+                raise ValueError("Please ensure file_output has been set correctly")
         else:
             raise ValueError("Unknown command type")
 
@@ -1970,7 +1978,7 @@ class GenCXProfile(LFCliBase):
             if self.debug:
                 pprint(data)
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
-            time.sleep(10)
+            time.sleep(2)
         time.sleep(sleep_time)
         for data in post_data:
             self.local_realm.json_post("/cli-json/show_cx", {
