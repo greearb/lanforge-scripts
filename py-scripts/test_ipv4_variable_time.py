@@ -273,7 +273,9 @@ python3 ./test_ipv4_variable_time.py
         
 
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            report_f= str(path) + '/data.' + args.output_format
+            #always save to csv first
+            report_f= str(path) + '/data.csv'
+            #report_f= str(path) + '/data.' + args.output_format
             print(report_f)
             output=args.output_format
         else:

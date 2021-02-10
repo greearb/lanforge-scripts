@@ -1235,8 +1235,8 @@ class L3CXProfile(LFCliBase):
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
             if monitor:
                 if debug:
-                    print("Json response from LANforge... " + response) 
-            #timestamp
+                    print("Json response from LANforge... " + str(response)) 
+            
             t = datetime.datetime.now()
 
             timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
@@ -1268,10 +1268,12 @@ class L3CXProfile(LFCliBase):
         csvfile.close()
 
         #here, do column manipulations
-
-        dataframe_output = self.file_to_df()
-        #here, do csv to df
+        
         #here, do df to final report file output
+        if output_format.lower() != 'csv':
+            dataframe_output = self.file_to_df()
+       
+        
         
 
     def refresh_cx(self):

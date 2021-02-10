@@ -618,7 +618,7 @@ class LFCliBase:
     
     #================ Pandas Dataframe Functions ======================================
     
-     #takes any format of a file and returns a dataframe of it
+     #takes any dataframe and returns the specified outputfile format of it
     def df_to_file(dataframe, outputfile_name_path):
         df = dataframe
         if output_file_type == 'hdf':
@@ -632,10 +632,10 @@ class LFCliBase:
             return df.to_excel(output_file_type, index=False)
         if output_file_type == 'df':
             return df
-        #supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        #for format in supported_formats:
-        #    if output_file_type.lower() == format:
-        #        return exec('df.to_' + x + '("'+file_name'")')
+        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
+        for format in supported_formats:
+           if output_file_type.lower() == format:
+               return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
     def file_to_df(file_type, file_name):
