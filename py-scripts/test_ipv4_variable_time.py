@@ -129,13 +129,22 @@ class IPV4VariableTime(Realm):
         self._pass("PASS: Station build finished")
 
 def main():
+    optional=[]
+    optional.append({'name':'--mode','help':'Used to force mode of stations'})
+    optional.append({'name':'--ap','help':'Used to force a connection to a particular AP'})
+    optional.append({'name':'--output_format','help':'choose either csv or xlsx'})
+    optional.append({'name':'--report_file','help':'where you want to store results', 'default':None})
+    optional.append({'name':'--a_min','help':'--a_min bps rate minimum for side_a', 'default':256000})
+    optional.append({'name':'--b_min','help':'--b_min bps rate minimum for side_b', 'default':256000})
+    optional.append({'name':'--test_duration','help':'--test_duration sets the duration of the test', 'default':"2m"})
+    optional.append({'name':'--col_names','help':'Columns wished to be monitor', 'default':['name','tx bytes','rx bytes']})
+    optional.append({'name':'--compared_report','help':'report path and file which is wished to be compared with new report', 'default':None})
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
             Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
             ''',
-
         description='''\
 test_ipv4_variable_time.py:
 --------------------
@@ -236,30 +245,9 @@ python3 ./test_ipv4_variable_time.py
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
-            ''')
+            ''',
+        more_optional=optional)
 
-    required_args=None
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args=group
-            break
-    #if required_args is not None:
-
-    optional_args=None
-    for group in parser._action_groups:
-        if group.title == "optional arguments":
-            optional_args=group
-            break
-    if optional_args is not None:
-        optional_args.add_argument('--mode',help='Used to force mode of stations')
-        optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
-        optional_args.add_argument('--output_format', help='choose either csv or xlsx')
-        optional_args.add_argument('--report_file',help='where you want to store results', default=None)
-        optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-        optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-        optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-        optional_args.add_argument('--col_names', help='Columns wished to be monitor', default=['name','tx bytes','rx bytes'])
-        optional_args.add_argument('--compared_report',help='report path and file which is wished to be compared with new report', default=None)
     args = parser.parse_args()
 
     num_sta = 2

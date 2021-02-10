@@ -494,7 +494,9 @@ class LFCliBase:
     def create_basic_argparse(prog=None,
                               formatter_class=None,
                               epilog=None,
-                              description=None):
+                              description=None,
+                              more_optional=None,
+                              more_required=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             parser = argparse.ArgumentParser(prog=prog,
                                              formatter_class=formatter_class,
@@ -516,12 +518,25 @@ class LFCliBase:
         optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
         optional.add_argument('--proxy',          nargs='?', default=None,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
-       
-       #Required Args
+        if more_optional is not None:
+           for x in more_optional:
+               if 'default' in x.keys():
+                   optional.add_argument(x['name'], help=x['help'], default=x['default'])
+               else:
+                   optional.add_argument(x['name'], help=x['help'])
+
+        #Required Args
         required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2')
         required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
         required.add_argument('--ssid',           help='WiFi SSID for script objects to associate to')
         required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', default="[BLANK]")
+
+        if more_required is not None:
+            for x in more_required:
+                if 'default' in x.keys():
+                    required.add_argument(x['name'], help=x['help'], default=x['default'])
+                else:
+                    required.add_argument(x['name'], help=x['help'])
 
         return parser
 
