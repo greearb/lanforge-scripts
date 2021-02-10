@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 Candela Technologies Inc.
 Info : Standard Script for WLAN Capacity Calculator

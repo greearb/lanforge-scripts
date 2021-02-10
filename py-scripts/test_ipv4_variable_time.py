@@ -185,13 +185,13 @@ python3 ./test_ipv4_variable_time.py
     --debug
 ===============================================================================
  ** FURTHER INFORMATION **
-    Using the col_names flag:
+    Using the layer3_cols flag:
 
     Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI. This quirk is under construction. To output
     certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in
     your report.
 
-    GUI Column Display       Col_names argument to type in (to print in report)
+    GUI Column Display       Layer3_cols argument to type in (to print in report)
 
     Name                |  'name'
     EID                 |  'eid'
