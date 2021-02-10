@@ -1755,6 +1755,10 @@ Eventual Realm at Cisco
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=9600)
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
+    # AP parameters
+    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+
+
     # Parameters that allow for testing
     parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
     parser.add_argument('-nos','--no_stations',    help='--no_stations , no stations', action='store_true')
@@ -1830,6 +1834,20 @@ Eventual Realm at Cisco
         __cap_ctl_out = args.cap_ctl_out
     else:
         __cap_ctl_out = False
+
+    ap_dict = []
+    if args.ap_info:
+        ap_info = args.ap_info
+        for _ap_info in ap_info:
+            print("ap_info {}".format(_ap_info))
+            ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw']
+            ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
+            for key in ap_keys:
+                if key not in ap_dict:
+                    print("missing ap config, for the {}, all these need to be set {} ".format(key,ap_keys))
+                    exit(1)
+            print("ap_dict: {}".format(ap_dict))
+
 
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
@@ -2040,6 +2058,8 @@ Eventual Realm at Cisco
         "anAX"   : "14"
         }
 
+    dfs_channel_bw20_values = [52, 56, 60, 64, 68, 96, 100, 104, 108, 112, 116, 120, 124 ,128, 132, 136, 140, 144]
+
     if args.cisco_all:
 #        cisco_aps              = "APA453.0E7B.CF9C".split()
         cisco_aps              = "vanc-e".split()
@@ -2159,6 +2179,11 @@ Eventual Realm at Cisco
     logg.info(cisco_packet_sizes)
     logg.info(cisco_client_densities)
     logg.info(cisco_data_encryptions)
+    if bool(ap_dict):
+        logg.info("ap_dict {}".format(ap_dict))
+    else:
+        logg.info("AP NO login information")
+
 
     __ap_set          = None
     __band_set        = None
@@ -2269,8 +2294,20 @@ Eventual Realm at Cisco
                                                                     else:    
                                                                         cisco.controller_enable_network_24ghz()
                                                                     cisco.controller_enable_ap()
-                                                                    # need to actually check the CAC timer
+                                                                    # need to actually check the CAC timer 
                                                                     time.sleep(30)
+                                                                    # When the AP moves to another DFS channel, the wait time is 60 second
+                                                                    # the CAC (Channel Avaiability Check Time) 
+                                                                    if (int(__chan_5ghz_set) in dfs_channel_bw20_values):
+                                                                        logg.info("DFS 5ghz channel {} being set wait CAC time 60, 2.4 ghz: {} : ".format(__chan_5ghz_set, __chan_24ghz_set))
+                                                                        # will need to use time to verify CAC from AP - need in results
+                                                                        time.sleep(65)
+                                                                        # will need to verify that timer has timed out on AP - need in results
+                                                                        logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}")
+                                                                    else:
+                                                                        logg.info("Non-DFS 5ghz channel {} being set sleep 30, 2.4 ghz: {} ".format(__chan_5ghz_set, __chan_24ghz_set))
+                                                                        time.sleep(30)
+
                                                                     ####################################
                                                                     # end of cisco controller code
                                                                     ####################################
