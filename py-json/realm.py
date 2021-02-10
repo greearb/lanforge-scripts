@@ -1160,7 +1160,8 @@ class L3CXProfile(LFCliBase):
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
-                col_names=None,
+                layer3_cols=None,
+                port_mgr_cols=None,
                 created_cx=None,
                 monitor=True,
                 report_file=None,
@@ -1182,7 +1183,7 @@ class L3CXProfile(LFCliBase):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
-        if col_names is None:
+        if layer3_cols is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
@@ -1204,9 +1205,9 @@ class L3CXProfile(LFCliBase):
                     pass
 
         #================== Step 1, set column names and header row
-        col_names=[self.replace_special_char(x) for x in col_names]
-        fields = ",".join(col_names)
-        header_row=col_names
+        layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
+        fields = ",".join(layer3_cols)
+        header_row=layer3_cols
         header_row.insert(0,'Timestamp milliseconds')
         header_row.insert(0,'Timestamp')
 
@@ -1229,9 +1230,16 @@ class L3CXProfile(LFCliBase):
         #csvwriter.writerow(arguments)
         csvwriter.writerow(header_row)
 
+        #get shelf,resource,port to json_get from /port
+        cx_a_side_list=[]
+
+        port_info_dict=self.json_get("/endp/%s?fields=eid" % (cx_a_side_list))
+
+
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            #get info from port manager with list of values from cx_a_side_list
             if "endpoint" not in response or response is None:
                 print(response)
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
@@ -1273,7 +1281,9 @@ class L3CXProfile(LFCliBase):
 
         #here, do df to final report file output
         if output_format.lower() != 'csv':
-            dataframe_output = self.file_to_df(report_file, output_format)
+            dataframe_output = self.file_to_df(file_name=report_file)
+            file_output_file = self.df_to_file(dataframe=dataframe_output, output_f=output_format)
+
        
         
         
