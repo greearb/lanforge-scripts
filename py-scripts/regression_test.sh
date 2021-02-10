@@ -54,9 +54,9 @@ testCommands=(
     "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
     "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./test_wlan_theoretical_station.py --mode abg11"
-    "./test_wlan_theoretical_station.py --mode n11"
-    "./test_wlan_theoretical_station.py --mode ac11"
+    "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
+    "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes"
+    "./wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"
 )
 declare -A name_to_num
 name_to_num=(
@@ -86,7 +86,7 @@ name_to_num=(
     ["../py-json/wlan_theoretical_sta"]=23
     ["ws_generic_monitor_test"]=24
     ["sta_connect2"]=25
-    ["../py-json/ws-sta-monitor"]=26
+    ["wlan_capacity_calculator"]=26
 )
 
 function blank_db() {
