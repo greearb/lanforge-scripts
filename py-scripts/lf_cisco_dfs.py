@@ -189,7 +189,8 @@ class CreateCtlr():
     def controller_show_ap_summary(self):
         pss = ""
         try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.scheme,
+            logg.info("\
+                scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.scheme,
                 self.ctlr,self.port,self.prompt,self.user,
                 self.passwd,self.ap,self.series,self.band,"advanced"))
 
@@ -1707,6 +1708,7 @@ Eventual Realm at Cisco
     parser.add_argument('-ccw','--cisco_chan_width', help='--cisco_chan_width <20 40 80 160> default: 20',default="20")
     parser.add_argument('-cam','--cisco_ap_mode', help='--cisco_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--cisco_packet_size', help='--cisco_packet_size List of packet sizes <88 512 1370 1518> default 1518 ',default="1518" )
+    parser.add_argument('-ctd','--cisco_directions', help='--cisco_directions <upstream downstream both> default: upstream downstream ',default="upstream downstream" )
     parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities <1 10 20 50 100 200> default 1 ',
                             default="1" )
 
@@ -2135,7 +2137,7 @@ Eventual Realm at Cisco
         cisco_ap_modes           = args.cisco_ap_mode.split()
         cisco_client_densities   = args.cisco_client_density.split()
         cisco_packet_types       = args.endp_type.split()
-        cisco_directions         = "upstream downstream".split()
+        cisco_directions         = args.cisco_directions.split()
         #cisco_directions         = "upstream".split()
         cisco_packet_sizes       = args.cisco_packet_size.split()
         cisco_data_encryptions   = args.cisco_data_encryption.split()

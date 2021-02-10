@@ -137,7 +137,8 @@ def main():
     optional.append({'name':'--a_min','help':'--a_min bps rate minimum for side_a', 'default':256000})
     optional.append({'name':'--b_min','help':'--b_min bps rate minimum for side_b', 'default':256000})
     optional.append({'name':'--test_duration','help':'--test_duration sets the duration of the test', 'default':"2m"})
-    optional.append({'name':'--col_names','help':'Columns wished to be monitor', 'default':['name','tx bytes','rx bytes']})
+    optional.append({'name':'--layer3_cols','help':'Columns wished to be monitored from layer 3 endpoint tab', 'default':['name','tx bytes','rx bytes']})
+    optional.append({'name':'--port_mgr_cols','help':'Columns wished to be monitored from port manager tab', 'default':['ap','ip','rx bytes']})
     optional.append({'name':'--compared_report','help':'report path and file which is wished to be compared with new report', 'default':None})
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
@@ -179,13 +180,14 @@ python3 ./test_ipv4_variable_time.py
     --output_format csv
     --report_file ~/Documents/results.csv                       (Example of csv file output  - please use another extension for other file formats)
     --compared_report ~/Documents/results_prev.csv              (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
-    --col_names 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+    --layer3_cols'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+    --port_mgr_cols 'ap','ip'                                    (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --debug
 ===============================================================================
  ** FURTHER INFORMATION **
     Using the col_names flag:
 
-    Currently the output function does not support inputting the columns in col_names the way they are displayed in the GUI. This quirk is under construction. To output
+    Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI. This quirk is under construction. To output
     certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in
     your report.
 
@@ -268,21 +270,17 @@ python3 ./test_ipv4_variable_time.py
         except:
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
-            os.mkdir(path)
-            print('Saving file to ' + path)
-        
+            os.mkdir(path)        
 
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            #always save to csv first
-            report_f= str(path) + '/data.csv'
-            #report_f= str(path) + '/data.' + args.output_format
-            print(report_f)
+            report_f= str(path) + '/data.' + args.output_format
             output=args.output_format
         else:
             print('Defaulting to csv data file output type, naming it data.csv.')
             report_f= str(path)+'/data.csv'
-            print(report_f)
             output='csv'
+        if args.debug:
+            print("Saving report data in ... " + report_f)
     else:
         report_f=args.report_file
         if args.output_format is None:
@@ -332,17 +330,25 @@ python3 ./test_ipv4_variable_time.py
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
-    if type(args.col_names) is not list:
-        col_names=list(args.col_names.split(","))
+    if type(args.layer3_cols) is not list:
+        layer3_cols=list(args.layer3_cols.split(","))
         #send col names here to file to reformat
     else:
-        col_names = args.col_names
+        layer3_cols = args.layer3_cols
         #send col names here to file to reformat
+    if type(args.port_mgr_cols) is not list:
+        port_mgr_cols=list(args.port_mgr_cols.split(","))
+        #send col names here to file to reformat
+    else:
+        port_mgr_cols=args.port_mgr_cols
     if args.debug:
-        print("Column names are...")
-        print(col_names)
+        print("Layer 3 Endp column names are...")
+        print(layer3_cols)
+        print("Port Manager column names are...")
+        print(port_mgr_cols)
 
-    ip_var_test.l3cxprofile.monitor(col_names=col_names,
+    ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
+                                    port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
                                     duration_sec=ip_var_test.parse_time(args.test_duration).total_seconds(),
                                     created_cx= layer3connections,

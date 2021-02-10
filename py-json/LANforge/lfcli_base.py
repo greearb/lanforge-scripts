@@ -619,26 +619,29 @@ class LFCliBase:
     #================ Pandas Dataframe Functions ======================================
     
      #takes any dataframe and returns the specified outputfile format of it
-    def df_to_file(dataframe, outputfile_name_path):
+    def df_to_file(dataframe=None, output_f=None):
         df = dataframe
-        if output_file_type == 'hdf':
-            return df.to_hdf(output_file_type, 'table', append=True)
-        if output_file_type == 'parquet':
-            return df.to_parquet(output_file_type, engine='pyarrow')
-        if output_file_type == 'png':
+        if output_f == 'hdf':
+            return df.to_hdf(output_f, 'table', append=True)
+        if output_f == 'parquet':
+            return df.to_parquet(output_f, engine='pyarrow')
+        if output_f == 'png':
             fig = df.plot().get_figure()
-            return fig.savefig(output_file_type)
-        if output_file_type.lower() in ['excel', 'xlsx'] or report_file.split('.')[-1] == 'xlsx':
-            return df.to_excel(output_file_type, index=False)
-        if output_file_type == 'df':
+            return fig.savefig(output_f)
+        if output_f.lower() in ['excel', 'xlsx']:
+            return df.to_excel(output_f, index=False)
+        if output_f == 'df':
             return df
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        for format in supported_formats:
-           if output_file_type.lower() == format:
-               return exec('df.to_' + x + '("'+file_name'")')
+        #for format in supported_formats:
+          # if output_file_type.lower() == format:
+              # return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
-    def file_to_df(file_type, file_name):
+    def file_to_df(file_name=None):
+        pass
+    
+    def compare_two_df(dataframe_one=None,dataframe_two=None):
         pass
 
     def append_df_to_file(dataframe, file_name):

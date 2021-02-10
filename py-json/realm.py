@@ -1160,7 +1160,8 @@ class L3CXProfile(LFCliBase):
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
-                col_names=None,
+                layer3_cols=None,
+                port_mgr_cols=None,
                 created_cx=None,
                 monitor=True,
                 report_file=None,
@@ -1182,15 +1183,17 @@ class L3CXProfile(LFCliBase):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
-        if col_names is None:
+        if layer3_cols is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                if output_format.lower() != 'csv':
-                    raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
+                raise ValueError('Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
+        #default save to csv first
+        if report_file.split('.')[-1] != 'csv':
+            report_file = report_file.replace(str(output_format),'csv',1)
 
         #retrieve compared report if specified - turn into dataframe === under construction ===
         if compared_report is not None:
@@ -1202,9 +1205,9 @@ class L3CXProfile(LFCliBase):
                     pass
 
         #================== Step 1, set column names and header row
-        col_names=[self.replace_special_char(x) for x in col_names]
-        fields = ",".join(col_names)
-        header_row=col_names
+        layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
+        fields = ",".join(layer3_cols)
+        header_row=layer3_cols
         header_row.insert(0,'Timestamp milliseconds')
         header_row.insert(0,'Timestamp')
 
@@ -1227,9 +1230,16 @@ class L3CXProfile(LFCliBase):
         #csvwriter.writerow(arguments)
         csvwriter.writerow(header_row)
 
+        #get shelf,resource,port to json_get from /port
+        cx_a_side_list=[]
+
+        port_info_dict=self.json_get("/endp/%s?fields=eid" % (cx_a_side_list))
+
+
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            #get info from port manager with list of values from cx_a_side_list
             if "endpoint" not in response or response is None:
                 print(response)
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
@@ -1268,10 +1278,12 @@ class L3CXProfile(LFCliBase):
         csvfile.close()
 
         #here, do column manipulations
-        
+
         #here, do df to final report file output
         if output_format.lower() != 'csv':
-            dataframe_output = self.file_to_df()
+            dataframe_output = self.file_to_df(file_name=report_file)
+            file_output_file = self.df_to_file(dataframe=dataframe_output, output_f=output_format)
+
        
         
         
@@ -1811,6 +1823,8 @@ class GenCXProfile(LFCliBase):
         self.name_prefix = "generic"
         self.created_cx = []
         self.created_endp = []
+        self.file_output = "/dev/null"
+        self.loop_count = 1
 
     def parse_command(self, sta_name):
         if self.type == "lfping":
@@ -1827,6 +1841,12 @@ class GenCXProfile(LFCliBase):
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
+        elif self.type == "lfcurl":
+            if self.file_output is not None:
+                self.cmd = "./scripts/lf_curl.sh  -p %s -o %s -n %s -d %s" % \
+                           (sta_name, self.file_output, self.loop_count, self.dest)
+            else:
+                raise ValueError("Please ensure file_output has been set correctly")
         else:
             raise ValueError("Unknown command type")
 
@@ -1970,7 +1990,7 @@ class GenCXProfile(LFCliBase):
             if self.debug:
                 pprint(data)
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
-            time.sleep(10)
+            time.sleep(2)
         time.sleep(sleep_time)
         for data in post_data:
             self.local_realm.json_post("/cli-json/show_cx", {
