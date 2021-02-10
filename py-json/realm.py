@@ -1230,14 +1230,11 @@ class L3CXProfile(LFCliBase):
         #csvwriter.writerow(arguments)
         csvwriter.writerow(header_row)
 
-        cx_a_list=[]
-        for cx_endp in created_cx.split(",") :
-            if cx_endp.endswith('A'):
-                cx_a_list.append(cx_endp)      
+        #get shelf,resource,port to json_get from /port
+        cx_a_side_list=[]
 
-        port_info_dict=self.json_get("/endp/%s?fields=eid,name" % (",".join(cx_a_list)))
-        print(port_info_dict)
-        #exit(1)
+        port_info_dict=self.json_get("/endp/%s?fields=eid" % (cx_a_side_list))
+
 
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
@@ -1249,6 +1246,7 @@ class L3CXProfile(LFCliBase):
             if monitor:
                 if debug:
                     print("Json response from LANforge... " + str(response)) 
+            
             t = datetime.datetime.now()
 
             timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
@@ -1262,10 +1260,6 @@ class L3CXProfile(LFCliBase):
                 temp_list.extend([timestamp,t_to_millisec_epoch])
                 for name in header_row[2:]:
                     temp_list.append(temp_endp_values[name])
-                if port_mgr_cols is not None:
-                    
-                    #get port info on endpoint
-                    #append port info on endpoint
             self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
             new_cx_rx_values = self.__get_rx_values()
             if debug:
