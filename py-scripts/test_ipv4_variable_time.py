@@ -268,21 +268,17 @@ python3 ./test_ipv4_variable_time.py
         except:
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
-            os.mkdir(path)
-            print('Saving file to ' + path)
-        
+            os.mkdir(path)        
 
         if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            #always save to csv first
-            report_f= str(path) + '/data.csv'
-            #report_f= str(path) + '/data.' + args.output_format
-            print(report_f)
+            report_f= str(path) + '/data.' + args.output_format
             output=args.output_format
         else:
             print('Defaulting to csv data file output type, naming it data.csv.')
             report_f= str(path)+'/data.csv'
-            print(report_f)
             output='csv'
+        if self.debug:
+            print("Saving report data in ... " + report_f)
     else:
         report_f=args.report_file
         if args.output_format is None:

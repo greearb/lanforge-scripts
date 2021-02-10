@@ -633,9 +633,9 @@ class LFCliBase:
         if output_file_type == 'df':
             return df
         supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        for format in supported_formats:
-           if output_file_type.lower() == format:
-               return exec('df.to_' + x + '("'+file_name'")')
+        #for format in supported_formats:
+          # if output_file_type.lower() == format:
+              # return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
     def file_to_df(file_type, file_name):

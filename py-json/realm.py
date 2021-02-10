@@ -1186,11 +1186,13 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                if output_format.lower() != 'csv':
-                    raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
+                raise ValueError('Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
+        #default save to csv first
+        if report_file.split('.')[-1] != 'csv':
+            report_file = report_file.replace(str(output_format),'csv',1)
 
         #retrieve compared report if specified - turn into dataframe === under construction ===
         if compared_report is not None:
@@ -1268,10 +1270,10 @@ class L3CXProfile(LFCliBase):
         csvfile.close()
 
         #here, do column manipulations
-        
+
         #here, do df to final report file output
         if output_format.lower() != 'csv':
-            dataframe_output = self.file_to_df()
+            dataframe_output = self.file_to_df(report_file, output_format)
        
         
         
