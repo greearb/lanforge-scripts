@@ -107,6 +107,7 @@ Command example:
     # create_vr.monitor()
     # create_vr.stop()
     # create_vr.clean()
+    print('Created Virtual Router')
 
 if __name__ == "__main__":
     main()

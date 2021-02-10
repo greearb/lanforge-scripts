@@ -185,6 +185,7 @@ python3 ./test_ipv4_variable_time.py
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
+    print('Creates %s stations and connections' % num_sta)
 
 
 if __name__ == "__main__":

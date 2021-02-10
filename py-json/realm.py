@@ -1255,7 +1255,7 @@ class L3CXProfile(LFCliBase):
             temp_list=[]
             for endpoint in response["endpoint"]:
                 if debug:
-                    print("Current endpoint values list... " + list(endpoint.values())[0])
+                    print("Current endpoint values list... " + str(list(endpoint.values())[0]))
                 temp_endp_values=list(endpoint.values())[0]
                 temp_list.extend([timestamp,t_to_millisec_epoch])
                 for name in header_row[2:]:
@@ -3628,7 +3628,7 @@ class StationProfile:
 
         num = 0
         if debug:
-            print("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
+            print("== == Existing STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
             pprint(self.station_names)
             print("== == vs Pending STA names == ==")
             pprint(my_sta_names)

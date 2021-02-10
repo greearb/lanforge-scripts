@@ -131,6 +131,7 @@ def main():
                                        _debug_on=args.debug)
 
         create_station.build()
+    print('Created %s stations' % len(unique.index))
 
 if __name__ == "__main__":
     main()

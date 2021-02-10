@@ -181,6 +181,8 @@ python3 ./layer4.py
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
 
+    print('Created %s stations and connections' % num_sta)
+
 
 if __name__ == "__main__":
     main()

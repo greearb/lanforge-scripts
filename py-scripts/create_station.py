@@ -131,6 +131,7 @@ Command example:
                        _debug_on=args.debug)
 
     create_station.build()
+    print('Created %s stations' % num_sta)
 
 if __name__ == "__main__":
     main()

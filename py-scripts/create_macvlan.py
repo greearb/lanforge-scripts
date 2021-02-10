@@ -182,6 +182,7 @@ Generic command layout:
                             )
 
     ip_test.build()
+    print('Created %s MacVlan connections' % args.num_ports)
 
 
 if __name__ == "__main__":
