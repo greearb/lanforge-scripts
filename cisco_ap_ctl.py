@@ -174,7 +174,7 @@ def main():
         loop_count += 1
         i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,pexpect.TIMEOUT],timeout=5)
         if i == 0:
-            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
+            logg.info("Expect: {} i: {} loop_count: {}before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
             egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
             sleep(0.2)
         if i == 1:
@@ -195,7 +195,10 @@ def main():
             sleep(0.2)
         if i == 5:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))
-            egg.sendcontrol('c')
+            if (scheme == "serial"):
+                egg.sendline("r")
+            else:
+                egg.sendcontrol('c')
             sleep(0.2)
         # for Testing serial connection using Lanforge
         if i == 6:
