@@ -1420,6 +1420,12 @@ class L3VariableTime(Realm):
             writer.writerow(row)
             csv_file.flush()
 
+#########################################
+# 
+# AP helper functions
+# 
+# #######################################            
+
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split()
     for endp_type in etypes:
@@ -1690,6 +1696,12 @@ Eventual Realm at Cisco
 6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
+       
+Sample script
+
+   ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
+    
+       
         ''')
 
     # reorder to follow looping
@@ -1756,7 +1768,15 @@ Eventual Realm at Cisco
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     # AP parameters
-    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, \
+        help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
+    #--ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
+
+    '''./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "36" \
+    -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 \
+    --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" \
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" \
+    --ap_info "ap_scheme==serial ap_prompt--APA53.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2" '''   
 
 
     # Parameters that allow for testing
@@ -1840,7 +1860,7 @@ Eventual Realm at Cisco
         ap_info = args.ap_info
         for _ap_info in ap_info:
             print("ap_info {}".format(_ap_info))
-            ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw']
+            ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw', 'ap_tty']
             ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
             for key in ap_keys:
                 if key not in ap_dict:
@@ -2193,6 +2213,11 @@ Eventual Realm at Cisco
     __chan_5ghz_set   = None
     __chan_24ghz_set  = None
     __csv_started     = False
+
+    __dfs_channel     = None
+    __cac_timer_time  = 0
+    __dfs_chan_switch_to = None
+
     
     for cisco_ap in cisco_aps:
         for cisco_band in cisco_bands:  # frequency
@@ -2205,6 +2230,8 @@ Eventual Realm at Cisco
                     logg.info("#######################################################################")
                     pass # invalid combination continue  
                 else:
+                    # TODO the following 
+                    #[(x, y, z) for x in [1,2,3] for y in [4,5,6] for z in [7,8,9] if x != z]:
                     for cisco_tx_power in cisco_tx_powers:
                         for cisco_chan_5ghz in cisco_chan_5ghzs:
                             for cisco_chan_24ghz in cisco_chan_24ghzs:
@@ -2293,24 +2320,121 @@ Eventual Realm at Cisco
                                                                         cisco.controller_enable_network_5ghz()
                                                                     else:    
                                                                         cisco.controller_enable_network_24ghz()
+                                                                    # clear logs on AP  /dev/ttyUSB2 - candelatech
+                                                                    if(bool(ap_dict)):
+                                                                        logg.info("ap_dict {}".format(ap_dict))
+                                                                        logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                                                ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty']))
+
+                                                                        # clear log  (AP)
+                                                                        try:
+                                                                            logg.info("cisco_ap_ctl.py: clear log")
+                                                                            # TODO remove position dependence if in tree 
+                                                                            ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "clear_log"],stdout=subprocess.PIPE)
+                                                                            try:
+                                                                                pss = ap_info.stdout.decode('utf-8', 'ignore')
+                                                                            except:
+                                                                                logg.info("ap_info was of type NoneType will set pss empty")
+                                                                                pss = "empty"
+                                                                        except subprocess.CalledProcessError as process_error:
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("# CHECK IF AP HAS CONNECTION ALREADY ACTIVE") 
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                                                                            logg.info("####################################################################################################") 
+                                                                        logg.info(pss)
+
+                                                                        # show log  (AP)
+                                                                        try:
+                                                                            logg.info("cisco_ap_ctl.py: show log")
+                                                                            # TODO remove position dependence if in tree 
+                                                                            ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                            try:
+                                                                                pss = ap_info.stdout.decode('utf-8', 'ignore')
+                                                                            except:
+                                                                                logg.info("ap_info was of type NoneType will set pss empty")
+                                                                                pss = "empty"
+                                                                        except subprocess.CalledProcessError as process_error:
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("# CHECK IF AP HAS CONNECTION ALREADY ACTIVE") 
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                                                                            logg.info("####################################################################################################") 
+                                                                        logg.info(pss)
+                                                                        exit(1)
+
                                                                     cisco.controller_enable_ap()
                                                                     # need to actually check the CAC timer 
-                                                                    time.sleep(30)
+                                                                    time.sleep(10)
                                                                     # When the AP moves to another DFS channel, the wait time is 60 second
                                                                     # the CAC (Channel Avaiability Check Time) 
                                                                     if (int(__chan_5ghz_set) in dfs_channel_bw20_values):
                                                                         logg.info("DFS 5ghz channel {} being set wait CAC time 60, 2.4 ghz: {} : ".format(__chan_5ghz_set, __chan_24ghz_set))
+                                                                        # read AP to verify CAC timer set
                                                                         # will need to use time to verify CAC from AP - need in results
-                                                                        time.sleep(65)
-                                                                        # will need to verify that timer has timed out on AP - need in results
-                                                                        logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}")
+                                                                        cac_sleeptime = "65"
+                                                                        logg.info("CAC sleep time start {}".format(cac_sleeptime))
+                                                                        time.sleep(int(cac_sleeptime))
+                                                                        logg.info("CAC sleeptime complete: {}".format(cac_sleeptime))
+                                                                        if(bool(ap_dict)):
+                                                                            # will need to verify that timer has timed out on AP - need in results
+                                                                            logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}".format(__chan_5ghz_set, __chan_24ghz_set))
+                                                                            logg.info("####################################################################################################") 
+                                                                            logg.info("# READ changed to DFS channel {}, running CAC for 60 seconds.".format(__chan_5ghz_set))
+                                                                            logg.info("# READ AP CAC_EXPIRY_EVT:  CAC finished on DFS channel <channel>") 
+                                                                            logg.info("####################################################################################################") 
+
+                                                                            logg.info("ap_dict {}".format(ap_dict))
+                                                                            logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                                                    ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty']))
+
+                                                                            try:
+                                                                                logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
+                                                                                # TODO remove position dependence if in tree 
+                                                                                ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                                try:
+                                                                                    pss = ap_info.stdout.decode('utf-8', 'ignore')
+                                                                                except:
+                                                                                    logg.info("ap_info was of type NoneType will set pss empty")
+                                                                                    pss = "empty"
+
+                                                                            except subprocess.CalledProcessError as process_error:
+                                                                                logg.info("####################################################################################################") 
+                                                                                logg.info("# CHECK IF AP HAS CONNECTION ALREADY ACTIVE") 
+                                                                                logg.info("####################################################################################################") 
+
+                                                                                logg.info("####################################################################################################") 
+                                                                                logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                                                                                logg.info("####################################################################################################") 
+
+                                                                            logg.info(pss)
+                                                                            # find the DFS Channel
+                                                                            for line in pss.splitlines():
+                                                                                logg.info("ap: {}".format(line))
+                                                                                pat = 'CAC_EXPIRY_EVT:\s+\S+\s+\S+\s+\S+\s\S+\s\S+\s(\S+)'
+                                                                                m = re.search(pat, line)
+                                                                                if (m != None):
+                                                                                    __dfs_channel = m.group(1)
+                                                                                    logg.info("__dfs_channel: {}".format(__dfs_channel))
+                                                                                    logg.info("__dfs_channel line: {}".format(line))
+                                                                                else:
+                                                                                    logg.info("__dfs_channel COULD NOT FIND LINE")
+                                                                                    
+
                                                                     else:
                                                                         logg.info("Non-DFS 5ghz channel {} being set sleep 30, 2.4 ghz: {} ".format(__chan_5ghz_set, __chan_24ghz_set))
                                                                         time.sleep(30)
+                                                                    ##########################################
+                                                                    # end of cisco controller code 
+                                                                    ##########################################   
+                                                                    exit(1)                                                             
 
-                                                                    ####################################
-                                                                    # end of cisco controller code
-                                                                    ####################################
+                                                                    
                                                                 else:
                                                                     logg.info("###############################################")
                                                                     logg.info("# NO CHANGE TO CONTROLLER CONFIG")
@@ -2322,6 +2446,9 @@ Eventual Realm at Cisco
                                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                                 pss = cisco.controller_show_ap_summary()
                                                                 logg.info("pss {}".format(pss))
+                                                                ######################################################
+                                                                # end of cisco controller code no change to controller
+                                                                ######################################################                                                                
                                                                 if args.radio:
                                                                     radios = args.radio
                                                                 elif cisco_band == "a":
