@@ -1776,7 +1776,7 @@ Sample script
     -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 \
     --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" \
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" \
-    --ap_info "ap_scheme==serial ap_prompt--APA53.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2" '''   
+    --ap_info "ap_scheme==serial ap_prompt--APA53.0E7B.EF9C ap_ip==0 ap_port==0 ap_baud==9600 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2" '''   
 
 
     # Parameters that allow for testing
@@ -1860,7 +1860,7 @@ Sample script
         ap_info = args.ap_info
         for _ap_info in ap_info:
             print("ap_info {}".format(_ap_info))
-            ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw', 'ap_tty']
+            ap_keys = ['ap_scheme','ap_prompt','ap_ip','ap_port','ap_user','ap_pw', 'ap_tty', 'ap_baud']
             ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[','').replace(']','').replace("'","").split()))
             for key in ap_keys:
                 if key not in ap_dict:
@@ -2323,15 +2323,15 @@ Sample script
                                                                     # clear logs on AP  /dev/ttyUSB2 - candelatech
                                                                     if(bool(ap_dict)):
                                                                         logg.info("ap_dict {}".format(ap_dict))
-                                                                        logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
-                                                                                ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty']))
+                                                                        logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {} ap_baud: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                                                ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty'],ap_dict['ap_baud']))
 
                                                                         # clear log  (AP)
                                                                         try:
                                                                             logg.info("cisco_ap_ctl.py: clear log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "clear_log"],stdout=subprocess.PIPE)
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],stdout=subprocess.PIPE)
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2351,7 +2351,7 @@ Sample script
                                                                             logg.info("cisco_ap_ctl.py: show log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],stdout=subprocess.PIPE)
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2389,14 +2389,14 @@ Sample script
                                                                             logg.info("####################################################################################################") 
 
                                                                             logg.info("ap_dict {}".format(ap_dict))
-                                                                            logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
-                                                                                    ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty']))
+                                                                            logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {} ap_baud: {}".format("show_log",ap_dict['ap_scheme'],ap_dict['ap_ip'],ap_dict["ap_port"],
+                                                                                    ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty'],ap_dict['ap_baud'],))
 
                                                                             try:
                                                                                 logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                                                                                 # TODO remove position dependence if in tree 
                                                                                 ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],stdout=subprocess.PIPE)
                                                                                 try:
                                                                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                                 except:

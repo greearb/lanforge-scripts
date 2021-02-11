@@ -11,7 +11,7 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
-$ sudo pip install pexpect-serial
+$ sudo pip3 install pexpect-serial
 
 ./cisco_ap_ctl.py 
 '''
@@ -95,6 +95,7 @@ def main():
     parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
     parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
     parser.add_argument("-z", "--action",  type=str, help="action,  current action is powercfg")
+    parser.add_argument("-b", "--baud",    type=str, help="action,  baud rate lanforge: 115200  cisco: 9600")
 
     args = None
     try:
@@ -129,7 +130,7 @@ def main():
     try:
         if (scheme == "serial"):
             #eggspect = pexpect.fdpexpect.fdspan(telcon, logfile=sys.stdout.buffer)
-            ser = serial.Serial(args.tty, 115200, timeout=5)
+            ser = serial.Serial(args.tty, int(args.baud), timeout=5)
             print("Created serial connection on %s, open: %s"%(args.tty, ser.is_open))
             egg = SerialSpawn(ser)
             egg.logfile = FileAdapter(logg)
