@@ -1196,6 +1196,7 @@ class L3CXProfile(LFCliBase):
                 raise ValueError('Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
+       
 
         #default save to csv first
         if report_file.split('.')[-1] != 'csv':
@@ -1219,8 +1220,17 @@ class L3CXProfile(LFCliBase):
 
         if port_mgr_cols is not None:
             port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled =[]
+            for col_name in port_mgr_cols:
+                port_mgr_cols_labelled.append(col_name)
+            
             port_mgr_fields=",".join(port_mgr_cols)
-            header_row.extend(port_mgr_cols)
+            header_row.extend(port_mgr_cols_labelled)
+        sta_list_edit=[]
+        if sta_list is not None:
+            for sta in sta_list:
+                sta_list_edit.append(sta[4:])
+            sta_list=",".join(sta_list_edit)
 
         #================== Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1247,7 +1257,8 @@ class L3CXProfile(LFCliBase):
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
-            port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
+            if port_mgr_cols is not None:
+                port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
             #get info from port manager with list of values from cx_a_side_list
             if "endpoint" not in layer_3_response or layer_3_response is None:
                 print(layer_3_response)
@@ -1271,15 +1282,21 @@ class L3CXProfile(LFCliBase):
             for endpoint in layer_3_response["endpoint"]:
                 if debug:
                     print("Current endpoint values list... " + list(endpoint.values())[0])
+        
                 temp_endp_values=list(endpoint.values())[0]
                 temp_list.extend([timestamp,t_to_millisec_epoch])
-                for name in header_row[2:]:
-                    temp_list.append(temp_endp_values[name])
+                current_sta = temp_endp_values['name']
+                merge={}
                 if port_mgr_cols is not None:
-                    pass 
-
-                    
-                    #append to temp list
+                    for sta_name in sta_list_edit:
+                        if sta_name in current_sta:
+                            for interface in port_mgr_response["interfaces"]:
+                                if sta_name in list(interface.keys())[0]:
+                                    merge=temp_endp_values.copy()
+                                    merge.update(list(interface.values())[0])
+                                    
+                for name in header_row[2:]:
+                    temp_list.append(merge[name])
         
             self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
             new_cx_rx_values = self.__get_rx_values()
