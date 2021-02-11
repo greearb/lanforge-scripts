@@ -683,6 +683,10 @@ class Realm(LFCliBase):
                     duration_time = datetime.timedelta(hours=dur_time)
                 elif dur_measure == "m":
                     duration_time = datetime.timedelta(minutes=dur_time)
+                elif dur_measure == "ms":
+                    duration_time = datetime.timedelta(milliseconds=dur_time)
+                elif dur_measure == "w":
+                    duration_time = datetime.timedelta(weeks=dur_time)
                 else:
                     duration_time = datetime.timedelta(seconds=dur_time)
             else:
