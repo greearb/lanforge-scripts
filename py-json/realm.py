@@ -1217,6 +1217,8 @@ class L3CXProfile(LFCliBase):
         header_row=layer3_cols
         header_row.insert(0,'Timestamp milliseconds')
         header_row.insert(0,'Timestamp')
+      
+        #csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
 
         if port_mgr_cols is not None:
             port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
@@ -1226,6 +1228,9 @@ class L3CXProfile(LFCliBase):
             
             port_mgr_fields=",".join(port_mgr_cols)
             header_row.extend(port_mgr_cols_labelled)
+        #add sys info to header row
+        systeminfo = self.json_get('/')
+        header_row.extend([str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']), str("Script Name: " + script_name), str("Argument input: " + str(arguments))])
         sta_list_edit=[]
         if sta_list is not None:
             for sta in sta_list:
@@ -1242,13 +1247,7 @@ class L3CXProfile(LFCliBase):
 
         #instantiate csv file here, add specified column headers 
         csvfile=open(str(report_file),'w')
-        csvwriter = csv.writer(csvfile,delimiter=",")
-
-        #write system info to csv
-        systeminfo = self.json_get('/')
-        csvwriter.writerow(systeminfo['VersionInfo']['BuildVersion'])
-        csvwriter.writerow(script_name)
-        #csvwriter.writerow(arguments) 
+        csvwriter = csv.writer(csvfile,delimiter=",")      
         csvwriter.writerow(header_row)
 
         #wait 10 seconds to get proper port data
@@ -1296,7 +1295,7 @@ class L3CXProfile(LFCliBase):
                                     merge=temp_endp_values.copy()
                                     merge.update(list(interface.values())[0])
 
-                for name in header_row[2:]:
+                for name in header_row[2:-3]:
                     temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
                 temp_list.clear()
@@ -1317,15 +1316,12 @@ class L3CXProfile(LFCliBase):
         csvfile.close()
 
         #here, do column manipulations
-
-        #here, do df to final report file output
+        if compared_report is not None:
+            pass 
+        #df to final report file output
         if output_format.lower() != 'csv':
             dataframe_output = pd.read_csv(report_file)
             self.df_to_file(dataframe=dataframe_output, output_f=output_format)
-
-       
-        
-        
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
