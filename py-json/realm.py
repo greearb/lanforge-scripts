@@ -1165,6 +1165,7 @@ class L3CXProfile(LFCliBase):
     def monitor(self,
                 duration_sec=60,
                 monitor_interval_ms=1,
+                sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
                 created_cx=None,
@@ -1211,10 +1212,15 @@ class L3CXProfile(LFCliBase):
 
         #================== Step 1, set column names and header row
         layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
-        fields = ",".join(layer3_cols)
+        layer3_fields = ",".join(layer3_cols)
         header_row=layer3_cols
         header_row.insert(0,'Timestamp milliseconds')
         header_row.insert(0,'Timestamp')
+
+        if port_mgr_cols is not None:
+            port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_fields=",".join(port_mgr_cols)
+            header_row.extend(port_mgr_cols)
 
         #================== Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1232,39 +1238,49 @@ class L3CXProfile(LFCliBase):
         systeminfo = self.json_get('/')
         csvwriter.writerow(systeminfo['VersionInfo']['BuildVersion'])
         csvwriter.writerow(script_name)
-        #csvwriter.writerow(arguments)
+        #csvwriter.writerow(arguments) 
         csvwriter.writerow(header_row)
 
-        #get shelf,resource,port to json_get from /port
-        cx_a_side_list=[]
-
-        port_info_dict=self.json_get("/endp/%s?fields=eid" % (cx_a_side_list))
-
-
+        #wait 10 seconds to get proper port data
+        time.sleep(10)
+        
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
+            port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
             #get info from port manager with list of values from cx_a_side_list
-            if "endpoint" not in response or response is None:
-                print(response)
+            if "endpoint" not in layer_3_response or layer_3_response is None:
+                print(layer_3_response)
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-            if monitor:
-                if debug:
-                    print("Json response from LANforge... " + str(response)) 
+            if debug:
+                    print("Json layer_3_response from LANforge... " + str(layer_3_response))
+            if port_mgr_cols is not None:
+                if "interfaces" not in port_mgr_response or port_mgr_response is None:
+                    print(port_mgr_response)
+                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+            if debug:
+                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
             
+
             t = datetime.datetime.now()
 
             timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch= int(self.get_milliseconds(t))
             
             temp_list=[]
-            for endpoint in response["endpoint"]:
+            for endpoint in layer_3_response["endpoint"]:
                 if debug:
-                    print("Current endpoint values list... " + str(list(endpoint.values())[0]))
+                    print("Current endpoint values list... " + list(endpoint.values())[0])
                 temp_endp_values=list(endpoint.values())[0]
                 temp_list.extend([timestamp,t_to_millisec_epoch])
                 for name in header_row[2:]:
                     temp_list.append(temp_endp_values[name])
+                if port_mgr_cols is not None:
+                    
+
+                    
+                    #append to temp list
+        
             self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
             new_cx_rx_values = self.__get_rx_values()
             if debug:
@@ -3633,7 +3649,7 @@ class StationProfile:
 
         num = 0
         if debug:
-            print("== == Existing STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
+            print("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
             pprint(self.station_names)
             print("== == vs Pending STA names == ==")
             pprint(my_sta_names)
