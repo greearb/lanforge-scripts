@@ -273,8 +273,8 @@ python3 ./test_ipv4_variable_time.py
     # in new folder based in current file's directory
 
     if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':',
-                                                                                        '-') + 'test_ipv4_variable_time'  # create path name
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':',
+                                                                                        '-') + '-test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)

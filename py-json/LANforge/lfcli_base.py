@@ -593,28 +593,28 @@ class LFCliBase:
                 abgnAX : 12,
                 bgnAX  : 13
 """ 
-    def write_to_csv_file(self,new_data_list=None, num_cols=0, csvwriter=None,debug=False):
-        if num_cols == 0:
-            raise ValueError("Number of columns cannot be zero. Exiting script.")
-            exit(1)
-        if type(new_data_list) is not list:
-            raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
-            exit(1)
-        if debug:
-            print("Writing data : ")
-            print(new_data_list)
+    # def write_to_csv_file(self,new_data_list=None, num_cols=0, csvwriter=None,debug=False):
+    #     if num_cols == 0:
+    #         raise ValueError("Number of columns cannot be zero. Exiting script.")
+    #         exit(1)
+    #     if type(new_data_list) is not list:
+    #         raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
+    #         exit(1)
+    #     if debug:
+    #         print("Writing data : ")
+    #         print(new_data_list)
 
-        indiv_data_line=[]
-        col_counter_per_line=0
-        for data_value in new_data_list:
-            if col_counter_per_line >= num_cols:
-                if debug:
-                    print(indiv_data_line)
-                csvwriter.writerow(indiv_data_line)
-                col_counter_per_line=0
-                indiv_data_line.clear()
-            indiv_data_line.append(data_value)
-            col_counter_per_line += 1
+    #     indiv_data_line=[]
+    #     col_counter_per_line=0
+    #     for data_value in new_data_list:
+    #         if col_counter_per_line >= num_cols:
+    #             if debug:
+    #                 print(indiv_data_line)
+    #             csvwriter.writerow(indiv_data_line)
+    #             col_counter_per_line=0
+    #             indiv_data_line.clear()
+    #         indiv_data_line.append(data_value)
+    #         col_counter_per_line += 1
     
     #================ Pandas Dataframe Functions ======================================
     

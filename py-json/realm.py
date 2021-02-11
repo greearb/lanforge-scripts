@@ -1280,11 +1280,12 @@ class L3CXProfile(LFCliBase):
             
             temp_list=[]
             for endpoint in layer_3_response["endpoint"]:
+                
                 if debug:
-                    print("Current endpoint values list... " + list(endpoint.values())[0])
-        
-                temp_endp_values=list(endpoint.values())[0]
-                temp_list.extend([timestamp,t_to_millisec_epoch])
+                    print("Current endpoint values list... ")
+                    print(list(endpoint.values())[0])
+                temp_endp_values=list(endpoint.values())[0] #dict
+                temp_list.extend([timestamp,t_to_millisec_epoch]) 
                 current_sta = temp_endp_values['name']
                 merge={}
                 if port_mgr_cols is not None:
@@ -1294,11 +1295,11 @@ class L3CXProfile(LFCliBase):
                                 if sta_name in list(interface.keys())[0]:
                                     merge=temp_endp_values.copy()
                                     merge.update(list(interface.values())[0])
-                                    
+
                 for name in header_row[2:]:
                     temp_list.append(merge[name])
-        
-            self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
+                csvwriter.writerow(temp_list)
+                temp_list.clear()
             new_cx_rx_values = self.__get_rx_values()
             if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
