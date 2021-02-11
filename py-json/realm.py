@@ -1224,7 +1224,7 @@ class L3CXProfile(LFCliBase):
             port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
             port_mgr_cols_labelled =[]
             for col_name in port_mgr_cols:
-                port_mgr_cols_labelled.append(col_name)
+                port_mgr_cols_labelled.append("port mgr - " + col_name)
             
             port_mgr_fields=",".join(port_mgr_cols)
             header_row.extend(port_mgr_cols_labelled)
@@ -1279,7 +1279,6 @@ class L3CXProfile(LFCliBase):
             
             temp_list=[]
             for endpoint in layer_3_response["endpoint"]:
-                
                 if debug:
                     print("Current endpoint values list... ")
                     print(list(endpoint.values())[0])
@@ -1293,7 +1292,12 @@ class L3CXProfile(LFCliBase):
                             for interface in port_mgr_response["interfaces"]:
                                 if sta_name in list(interface.keys())[0]:
                                     merge=temp_endp_values.copy()
-                                    merge.update(list(interface.values())[0])
+                                    #rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
+                                    port_mgr_values_dict =list(interface.values())[0]
+                                    renamed_port_cols={}
+                                    for key in port_mgr_values_dict.keys():
+                                        renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
+                                    merge.update(renamed_port_cols)
 
                 for name in header_row[2:-3]:
                     temp_list.append(merge[name])
