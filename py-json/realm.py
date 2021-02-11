@@ -1276,7 +1276,7 @@ class L3CXProfile(LFCliBase):
                 for name in header_row[2:]:
                     temp_list.append(temp_endp_values[name])
                 if port_mgr_cols is not None:
-                    
+                    pass 
 
                     
                     #append to temp list

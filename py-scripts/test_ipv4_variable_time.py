@@ -364,7 +364,6 @@ python3 ./test_ipv4_variable_time.py
 
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
                                     sta_list=station_list,
-                                    layer3_cols=layer3_cols,
                                     port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
                                     duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
