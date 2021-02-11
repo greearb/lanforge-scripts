@@ -619,7 +619,7 @@ class LFCliBase:
     #================ Pandas Dataframe Functions ======================================
     
      #takes any dataframe and returns the specified outputfile format of it
-    def df_to_file(dataframe=None, output_f=None):
+    def df_to_file(self, dataframe=None, output_f=None):
         df = dataframe
         if output_f == 'hdf':
             return df.to_hdf(output_f, 'table', append=True)
@@ -638,8 +638,8 @@ class LFCliBase:
               # return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
-    def file_to_df(file_name=None):
-        pass
+    def file_to_df(file_name):
+        return pd.read_csv(file_name)
     
     def compare_two_df(dataframe_one=None,dataframe_two=None):
         pass

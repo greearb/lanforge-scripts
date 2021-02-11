@@ -670,7 +670,8 @@ class Realm(LFCliBase):
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_sec
 
-    def parse_time(self, time_string):
+    @staticmethod
+    def parse_time(time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
             td = pattern.match(time_string)
@@ -1163,7 +1164,7 @@ class L3CXProfile(LFCliBase):
 
     def monitor(self,
                 duration_sec=60,
-                monitor_interval=1,
+                monitor_interval_ms=1,
                 layer3_cols=None,
                 port_mgr_cols=None,
                 created_cx=None,
@@ -1179,13 +1180,13 @@ class L3CXProfile(LFCliBase):
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
-            if (duration_sec <= monitor_interval):
+            if (duration_sec <= monitor_interval_ms):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file == None:
             raise ValueError("Monitor requires an output file to be defined")
         if created_cx == None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
-        if (monitor_interval is None) or (monitor_interval < 1):
+        if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if layer3_cols is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
@@ -1278,15 +1279,15 @@ class L3CXProfile(LFCliBase):
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             old_cx_rx_values = new_cx_rx_values
-            time.sleep(monitor_interval)
+            time.sleep(monitor_interval_ms)
         csvfile.close()
 
         #here, do column manipulations
 
         #here, do df to final report file output
         if output_format.lower() != 'csv':
-            dataframe_output = self.file_to_df(file_name=report_file)
-            file_output_file = self.df_to_file(dataframe=dataframe_output, output_f=output_format)
+            dataframe_output = pd.read_csv(report_file)
+            self.df_to_file(dataframe=dataframe_output, output_f=output_format)
 
        
         

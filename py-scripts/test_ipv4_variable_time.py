@@ -28,6 +28,7 @@ from realm import Realm
 import time
 import datetime
 
+
 class IPV4VariableTime(Realm):
     def __init__(self,
                  ssid=None,
@@ -39,7 +40,7 @@ class IPV4VariableTime(Realm):
                  radio=None,
                  host="localhost",
                  port=8080,
-                 mode = 0,
+                 mode=0,
                  ap=None,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
@@ -58,8 +59,8 @@ class IPV4VariableTime(Realm):
         self.security = security
         self.password = password
         self.radio = radio
-        self.mode= mode
-        self.ap=ap
+        self.mode = mode
+        self.ap = ap
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
@@ -77,8 +78,7 @@ class IPV4VariableTime(Realm):
             self.station_profile.mode = 9
         self.station_profile.mode = mode
         if self.ap is not None:
-            self.station_profile.set_command_param("add_sta", "ap",self.ap)
-
+            self.station_profile.set_command_param("add_sta", "ap", self.ap)
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -90,7 +90,7 @@ class IPV4VariableTime(Realm):
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
-        #to-do- check here if upstream port got IP
+        # to-do- check here if upstream port got IP
         temp_stas = self.station_profile.station_names.copy()
 
         if self.wait_for_ip(temp_stas):
@@ -99,7 +99,6 @@ class IPV4VariableTime(Realm):
             self._fail("Stations failed to get IPs")
             self.exit_fail()
         self.cx_profile.start_cx()
-
 
     def stop(self):
         self.cx_profile.stop_cx()
@@ -125,21 +124,31 @@ class IPV4VariableTime(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream, sleep_time=0)
+        self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
+                               sleep_time=0)
         self._pass("PASS: Station build finished")
 
+
 def main():
-    optional=[]
-    optional.append({'name':'--mode','help':'Used to force mode of stations'})
-    optional.append({'name':'--ap','help':'Used to force a connection to a particular AP'})
-    optional.append({'name':'--output_format','help':'choose either csv or xlsx'})
-    optional.append({'name':'--report_file','help':'where you want to store results', 'default':None})
-    optional.append({'name':'--a_min','help':'--a_min bps rate minimum for side_a', 'default':256000})
-    optional.append({'name':'--b_min','help':'--b_min bps rate minimum for side_b', 'default':256000})
-    optional.append({'name':'--test_duration','help':'--test_duration sets the duration of the test', 'default':"2m"})
-    optional.append({'name':'--layer3_cols','help':'Columns wished to be monitored from layer 3 endpoint tab', 'default':['name','tx bytes','rx bytes']})
-    optional.append({'name':'--port_mgr_cols','help':'Columns wished to be monitored from port manager tab', 'default':['ap','ip','rx bytes']})
-    optional.append({'name':'--compared_report','help':'report path and file which is wished to be compared with new report', 'default':None})
+    optional = []
+    optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
+    optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
+    optional.append({'name': '--output_format', 'help': 'choose either csv or xlsx'})
+    optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
+    optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
+    optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
+    optional.append(
+        {'name': '--test_duration', 'help': '--test_duration sets the duration of the test', 'default': "2m"})
+    optional.append({'name': '--layer3_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
+                     'default': ['name', 'tx bytes', 'rx bytes']})
+    optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
+                     'default': ['ap', 'ip', 'rx bytes']})
+    optional.append(
+        {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
+         'default': None})
+    optional.append({'name': '--monitor_interval',
+                     'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                     'default': '2s'})
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -174,6 +183,7 @@ python3 ./test_ipv4_variable_time.py
     --ssid netgear
     --password admin123
     --test_duration 2m (default)
+    --monitor_interval_ms 
     --a_min 3000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
@@ -256,50 +266,53 @@ python3 ./test_ipv4_variable_time.py
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    #Create directory
+    # Create directory
 
-    #if file path with output file extension is not given... 
+    # if file path with output file extension is not given...
     # check if home/lanforge/report-data exists. if not, save 
     # in new folder based in current file's directory
 
     if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','-')+'test_ipv4_variable_time' #create path name
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':',
+                                                                                        '-') + 'test_ipv4_variable_time'  # create path name
         try:
-            path = os.path.join('/home/lanforge/report-data/',new_file_path)
+            path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
         except:
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
-            os.mkdir(path)        
+            os.mkdir(path)
 
-        if args.output_format in ['csv','json','html','hdf','stata','pickle','pdf','png','df','parquet','xlsx']:
-            report_f= str(path) + '/data.' + args.output_format
-            output=args.output_format
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
+                                  'xlsx']:
+            report_f = str(path) + '/data.' + args.output_format
+            output = args.output_format
         else:
             print('Defaulting to csv data file output type, naming it data.csv.')
-            report_f= str(path)+'/data.csv'
-            output='csv'
+            report_f = str(path) + '/data.csv'
+            output = 'csv'
         if args.debug:
             print("Saving report data in ... " + report_f)
     else:
-        report_f=args.report_file
+        report_f = args.report_file
         if args.output_format is None:
-            output=str(args.report_file).split('.')[-1]
+            output = str(args.report_file).split('.')[-1]
         else:
-            output=args.output_format
+            output = args.output_format
 
-    #Retrieve last data file
-    compared_rept=None
+    # Retrieve last data file
+    compared_rept = None
     if args.compared_report:
-        #check if last report format is same as current rpt format
+        # check if last report format is same as current rpt format
         last_report_format = args.compared_report.split('.')[-1]
         if output == last_report_format:
             compared_rept = args.compared_report
         else:
-            ValueError("Compared report format is not the same as the new report format. Please make sure they are of the same file type.")
+            ValueError(
+                "Compared report format is not the same as the new report format. Please make sure they are of the same file type.")
 
-
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000, radio=args.radio)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
+                                          radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
                                    port=args.mgr_port,
                                    number_template="0000",
@@ -326,32 +339,35 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.start(False, False)
 
     try:
-        layer3connections=','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
+        layer3connections = ','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
     except:
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
     if type(args.layer3_cols) is not list:
-        layer3_cols=list(args.layer3_cols.split(","))
-        #send col names here to file to reformat
+        layer3_cols = list(args.layer3_cols.split(","))
+        # send col names here to file to reformat
     else:
         layer3_cols = args.layer3_cols
-        #send col names here to file to reformat
+        # send col names here to file to reformat
     if type(args.port_mgr_cols) is not list:
-        port_mgr_cols=list(args.port_mgr_cols.split(","))
-        #send col names here to file to reformat
+        port_mgr_cols = list(args.port_mgr_cols.split(","))
+        # send col names here to file to reformat
     else:
-        port_mgr_cols=args.port_mgr_cols
+        port_mgr_cols = args.port_mgr_cols
     if args.debug:
         print("Layer 3 Endp column names are...")
         print(layer3_cols)
         print("Port Manager column names are...")
         print(port_mgr_cols)
 
+    monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
+
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
                                     port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
-                                    duration_sec=ip_var_test.parse_time(args.test_duration).total_seconds(),
-                                    created_cx= layer3connections,
+                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                    monitor_interval_ms=monitor_interval,
+                                    created_cx=layer3connections,
                                     output_format=output,
                                     compared_report=compared_rept,
                                     script_name='test_ipv4_variable_time',
@@ -366,6 +382,7 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.cleanup()
     if ip_var_test.passes():
         ip_var_test.exit_success()
+
 
 if __name__ == "__main__":
     main()
