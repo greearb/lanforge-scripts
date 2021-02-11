@@ -69,7 +69,7 @@ class CloudSDK:
         }
         status_response = requests.request("GET", equip_fw_url, headers=headers, data=payload)
         status_code = status_response.status_code
-        if status_code is 200:
+        if status_code == 200:
             status_data = status_response.json()
             #print(status_data)
             try:
@@ -266,7 +266,7 @@ class CloudSDK:
         }
         del_profile = requests.request("DELETE", url, headers=headers, data=payload)
         status_code = del_profile.status_code
-        if status_code is 200:
+        if status_code == 200:
             return("SUCCESS")
         else:
             return ("ERROR")

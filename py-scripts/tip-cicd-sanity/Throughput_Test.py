@@ -112,7 +112,7 @@ for key in equipment_id_dict:
         ############## Bridge Throughput Testing #################################
         ###########################################################################
         print("Testing for Bridge SSIDs")
-        logger.info("Starting Brdige SSID tput tests on " + key)
+        logger.info("Starting Bridge SSID tput tests on " + key)
         ###Set Proper AP Profile for Bridge SSID Tests
         test_profile_id = profile_info_dict[fw_model]["profile_id"]
         #print(test_profile_id)
@@ -385,7 +385,6 @@ for key in equipment_id_dict:
 
         ##Set port for LANForge
         port = vlan_upstream_port
-
         # 5G WPA2 Enterprise UDP DS/US and TCP DS/US
         ap_model = fw_model
         firmware = ap_fw
@@ -501,7 +500,7 @@ for key in equipment_id_dict:
 
         #Indicates throughput has been run for AP model
         sanity_status['sanity_status'][key] = "tput run"
-        logger.info("Trhoughput tests complete on " + key)
+        logger.info("Throughput tests complete on " + key)
 
     elif sanity_status['sanity_status'][key] == "tput run":
         print("Throughput test already run on", key)

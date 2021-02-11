@@ -239,7 +239,7 @@ parser.add_argument("-i", "--ignore", type=str, default='no', choices=['yes', 'n
                     help="Set to 'no' to ignore current running version on AP and run sanity including upgrade")
 parser.add_argument("-r", "--report", type=str, default=report_path,
                     help="Report directory path other than default - directory must already exist!")
-parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420', "wf188n"],
+parser.add_argument("-m", "--model", type=str, choices=['ea8300', 'ecw5410', 'ecw5211', 'ec420', "wf188n", "wf194c", "ex227", "ex447", "eap101", "eap102"],
                     help="AP model to be run")
 parser.add_argument("--tr_prefix", type=str, default=testRunPrefix, help="Testrail test run prefix override (default is Env variable)")
 parser.add_argument("--skip_upgrade", dest="skip_upgrade", action='store_true', help="Skip Upgrade testing")
@@ -1866,7 +1866,7 @@ with open('sanity_status.json', 'w') as json_file:
 
 # Calculate percent of tests passed for report
 for key in ap_models:
-    if report_data['fw_available'][key] is "No":
+    if report_data['fw_available'][key] == "No":
         report_data["pass_percent"][key] = "Not Run"
     else:
         # no_of_tests = len(report_data["tests"][key])
