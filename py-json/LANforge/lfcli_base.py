@@ -641,8 +641,14 @@ class LFCliBase:
     #takes any format of a file and returns a dataframe of it
     def file_to_df(self,file_name):
         return pd.read_csv(file_name)
-    
+    #get difference of all common columns in 2 dataframes. store in 
     def compare_two_df(self,dataframe_one=None,dataframe_two=None):
+        pass
+        
+        
+        
+        
+        
         pass    
         #return compared_df
 

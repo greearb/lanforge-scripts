@@ -1319,10 +1319,11 @@ class L3CXProfile(LFCliBase):
             time.sleep(monitor_interval_ms)
         csvfile.close()
 
-        #here, do column manipulations
+        #comparison to last report / report inputted
         if compared_report is not None:
-            pass 
-        #df to final report file output
+            compared_report_completed=self.compare_two_df(pd.read_csv(report_file), pd.read_csv(compared_report)) 
+
+        #df to final report file output if necessary
         if output_format.lower() != 'csv':
             dataframe_output = pd.read_csv(report_file)
             self.df_to_file(dataframe=dataframe_output, output_f=output_format)

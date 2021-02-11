@@ -142,7 +142,7 @@ def main():
     optional.append({'name': '--layer3_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
                      'default': ['name', 'tx bytes', 'rx bytes']})
     optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
-                     'default': ['ap', 'ip', 'rx bytes']})
+                     'default': ['ap', 'ip', 'parent dev']})
     optional.append(
         {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
          'default': None})
