@@ -1880,7 +1880,6 @@ Sample script 2/11/2021
     parser.add_argument('-cp' ,'--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
     parser.add_argument('-cu' ,'--cisco_user', help='--cisco_user <User-name for Cisco Controller>',default="admin")
     parser.add_argument('-cpw','--cisco_passwd', help='--cisco_passwd <Password for Cisco Controller>',default="Cisco123")
-    parser.add_argument('-cd' ,'--cisco_dfs', help='--cisco_dfs <True/False>',default=False)
     parser.add_argument('-ccs','--cisco_scheme', help='--cisco_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
     parser.add_argument('-cw' ,'--cisco_wlan', help='--cisco_wlan <wlan name> ',required=True)
     parser.add_argument('-cwi','--cisco_wlanID', help='--cisco_wlanID <wlanID> ',required=True)
