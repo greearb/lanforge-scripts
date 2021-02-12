@@ -197,10 +197,10 @@ class CreateCtlr():
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
                                     self.user, "-p", self.passwd,
                                     "-a", self.ap,"--series", self.series, "--band", self.band, "--action", "advanced"], 
-                                    capture_output=self.cap_ctl_out, check=True)
-            if self.cap_ctl_out:
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                logg.info(pss)
+                                    capture_output=True, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            logg.info(pss)
 
         except subprocess.CalledProcessError as process_error:
             logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
@@ -1727,6 +1727,7 @@ Sample script
     parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-ccp','--cisco_prompt',    type=str,help="controller prompt default WLC",default="WLC")
+    parser.add_argument('-cas','--cisco_ap_slot',    type=str,help="AP slot, default 1",default="1")
 
     parser.add_argument('-cc' ,'--cisco_ctlr', help='--cisco_ctlr <IP of Cisco Controller> default 192.168.100.178',default="192.168.100.178")
     parser.add_argument('-cp' ,'--cisco_port', help='--cisco_port <port of Cisco Controller> ssh default 22',default="22")
@@ -1854,6 +1855,9 @@ Sample script
         __cap_ctl_out = args.cap_ctl_out
     else:
         __cap_ctl_out = False
+    
+    if args.cisco_ap_slot:
+        __ap_slot = args.cisco_ap_slot
 
     ap_dict = []
     if args.ap_info:
@@ -2442,7 +2446,7 @@ Sample script
                                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                                 pss = cisco.controller_show_ap_summary()
                                                                 logg.info("controller_show_ap_summary:::  pss {}".format(pss))
-                                                                if args.series == "9800":
+                                                                if args.cisco_series == "9800":
                                                                     searchap = False
                                                                     cc_mac = ""
                                                                     cc_ch = ""
@@ -2455,7 +2459,7 @@ Sample script
                                                                             continue
                                                                         # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                                                                         if (searchap):
-                                                                            pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
+                                                                            pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(__ap_set,__ap_slot)
                                                                             m = re.search(pat, line)
                                                                             if (m != None):
                                                                                 if(m.group(2) == args.slot):
@@ -2493,7 +2497,7 @@ Sample script
                                                                             continue
                                                                         
                                                                         if (searchap):
-                                                                            pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(args.ap)
+                                                                            pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(__ap_set)
                                                                             m = re.search(pat, line)
                                                                             if (m != None):
                                                                                 cc_mac = m.group(1)
@@ -2512,7 +2516,7 @@ Sample script
                                                                                 logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                                                                                 logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
                                                                                 break
-
+                                                                exit(1)
                                                                 ######################################################
                                                                 # end of cisco controller code no change to controller
                                                                 ######################################################                                                                
