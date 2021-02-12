@@ -186,6 +186,20 @@ def main():
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PROMPT,i,egg.before,egg.after))
             egg.sendline(AP_EN) 
             sleep(1)
+            j = egg.expect_exact([AP_PASSWORD,pexpect.TIMEOUT],timeout=5)
+            if j == 0:
+                logg.info("Expect: {} i: {} j: {} before: {} after: {}".format(AP_PASSWORD,i,j,egg.before,egg.after))
+                egg.sendline(args.passwd) 
+                sleep(1)
+                k = egg.expect_exact([AP_HASH,pexpect.TIMEOUT],timeout=5)
+                if k == 0:
+                    logg.info("Expect: {} i: {} j: {} k: {} before: {} after: {}".format(AP_PASSWORD,i,j,k,egg.before,egg.after))
+                    logged_in = True
+                if k == 1:
+                    logg.info("Expect: {} i: {} j: {} k: {} before: {} after: {}".format("Timeout",i,j,k,egg.before,egg.after))
+            if j == 1:
+                logg.info("Expect: {} i: {} j: {} before: {} after: {}".format("Timeout",i,j,egg.before,egg.after))
+
         if i == 2:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_HASH,i,egg.before,egg.after))
             logged_in = True 

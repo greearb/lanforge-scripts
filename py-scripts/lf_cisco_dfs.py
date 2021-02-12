@@ -2379,7 +2379,7 @@ Sample script
                                                                         logg.info("DFS 5ghz channel {} being set wait CAC time 60, 2.4 ghz: {} : ".format(__chan_5ghz_set, __chan_24ghz_set))
                                                                         # read AP to verify CAC timer set
                                                                         # will need to use time to verify CAC from AP - need in results
-                                                                        cac_sleeptime = "5" # 65
+                                                                        cac_sleeptime = "65" # 65
                                                                         logg.info("CAC start sleeptime: {}".format(cac_sleeptime))
                                                                         time.sleep(int(cac_sleeptime))
                                                                         logg.info("CAC done  sleeptime: {}".format(cac_sleeptime))
@@ -2425,8 +2425,7 @@ Sample script
                                                                                     __dfs_channel = m.group(1)
                                                                                     logg.info("__dfs_channel: {}".format(__dfs_channel))
                                                                                     logg.info("__dfs_channel line: {}".format(line))
-                                                                                else:
-                                                                                    logg.info("__dfs_channel COULD NOT FIND LINE")
+                                                                                    break
                                                                     else:
                                                                         logg.info("Non-DFS 5ghz channel {} being set sleep 30, 2.4 ghz: {} ".format(__chan_5ghz_set, __chan_24ghz_set))
                                                                         time.sleep(30)
