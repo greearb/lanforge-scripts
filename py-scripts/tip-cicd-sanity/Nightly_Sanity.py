@@ -90,7 +90,7 @@ testRunPrefix = os.getenv('TEST_RUN_PREFIX')
 
 ##LANForge Information
 lanforge_ip = lab_ap_info.lanforge_ip
-lanforge_prefix = lab_ap_info.lanforge_prefix
+#lanforge_prefix = lab_ap_info.lanforge_prefix
 
 ##Jfrog credentials
 jfrog_user = os.getenv('JFROG_USER')
@@ -146,7 +146,7 @@ class GetBuild:
 
 ###Class for Tests
 class RunTest:
-    def Single_Client_Connectivity(self, port, radio, ssid_name, ssid_psk, security, station, test_case, rid):
+    def Single_Client_Connectivity(self, port, radio, prefix, ssid_name, ssid_psk, security, station, test_case, rid):
         '''SINGLE CLIENT CONNECTIVITY using test_connect2.py'''
         staConnect = StaConnect2(lanforge_ip, 8080, debug_=False)
         staConnect.sta_mode = 0
@@ -158,7 +158,7 @@ class RunTest:
         staConnect.dut_passwd = ssid_psk
         staConnect.dut_security = security
         staConnect.station_names = station
-        staConnect.sta_prefix = lanforge_prefix
+        staConnect.sta_prefix = prefix
         staConnect.runtime_secs = 10
         staConnect.bringup_time_sec = 60
         staConnect.cleanup_on_exit = True
@@ -185,7 +185,7 @@ class RunTest:
             logger.warning("Client connectivity to " + ssid_name + " FAILED")
             return ("failed")
 
-    def Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type, identity, ttls_password, test_case,
+    def Single_Client_EAP(port, sta_list, ssid_name, radio, sta_prefix, security, eap_type, identity, ttls_password, test_case,
                           rid):
         eap_connect = EAPConnect(lanforge_ip, 8080, _debug_on=False)
         eap_connect.upstream_resource = 1
@@ -193,7 +193,7 @@ class RunTest:
         eap_connect.security = security
         eap_connect.sta_list = sta_list
         eap_connect.station_names = sta_list
-        eap_connect.sta_prefix = lanforge_prefix
+        eap_connect.sta_prefix = sta_prefix
         eap_connect.ssid = ssid_name
         eap_connect.radio = radio
         eap_connect.eap = eap_type
@@ -981,12 +981,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["2g_eap_bridge"]
                 radio = lab_ap_info.lanforge_2dot4g
-                sta_list = [lanforge_prefix + "5214"]
+                #sta_list = [lanforge_prefix + "5214"]
+                sta_list = [lab_ap_info.lanforge_2dot4g_station]
+                prefix = lab_ap_info.lanforge_2dot4g_prefix
                 ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1002,12 +1004,14 @@ for key in equipment_ids:
             # TC - 2.4 GHz WPA2
             test_case = test_cases["2g_wpa2_bridge"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "2237"]
+            #station = [lanforge_prefix + "2237"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model]["twoFourG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1020,12 +1024,14 @@ for key in equipment_ids:
             # TC - 2.4 GHz WPA
             test_case = test_cases["2g_wpa_bridge"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "2420"]
+            #station = [lanforge_prefix + "2420"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model]["twoFourG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model]["twoFourG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1039,12 +1045,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["5g_eap_bridge"]
                 radio = lab_ap_info.lanforge_5g
-                sta_list = [lanforge_prefix + "5215"]
+                #sta_list = [lanforge_prefix + "5215"]
+                sta_list = [lab_ap_info.lanforge_5g_station]
+                prefix = lab_ap_info.lanforge_5g_prefix
                 ssid_name = profile_info_dict[fw_model]["fiveG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1059,12 +1067,14 @@ for key in equipment_ids:
             # TC 5 GHz WPA2
             test_case = test_cases["5g_wpa2_bridge"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "2236"]
+            #station = [lanforge_prefix + "2236"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model]["fiveG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1077,12 +1087,14 @@ for key in equipment_ids:
             # TC - 5 GHz WPA
             test_case = test_cases["5g_wpa_bridge"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "2419"]
+            #station = [lanforge_prefix + "2419"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model]["fiveG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1343,12 +1355,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["2g_eap_nat"]
                 radio = lab_ap_info.lanforge_2dot4g
-                sta_list = [lanforge_prefix + "5216"]
+                #sta_list = [lanforge_prefix + "5216"]
+                sta_list = [lab_ap_info.lanforge_2dot4g_station]
+                prefix = lab_ap_info.lanforge_2dot4g_prefix
                 ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1363,12 +1377,14 @@ for key in equipment_ids:
             # TC - 2.4 GHz WPA2 NAT
             test_case = test_cases["2g_wpa2_nat"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "4325"]
+            #station = [lanforge_prefix + "4325"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1381,12 +1397,14 @@ for key in equipment_ids:
             # TC - 2.4 GHz WPA NAT
             test_case = test_cases["2g_wpa_nat"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "4323"]
+            #station = [lanforge_prefix + "4323"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case, rid)
             except:
                 test_result = "error"
@@ -1399,12 +1417,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["5g_eap_nat"]
                 radio = lab_ap_info.lanforge_5g
-                sta_list = [lanforge_prefix + "5217"]
+                #sta_list = [lanforge_prefix + "5217"]
+                sta_list = [lab_ap_info.lanforge_5g_station]
+                prefix = lab_ap_info.lanforge_5g_prefix
                 ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1417,12 +1437,14 @@ for key in equipment_ids:
             # TC - 5 GHz WPA2 NAT
             test_case = test_cases["5g_wpa2_nat"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "4326"]
+            #station = [lanforge_prefix + "4326"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1435,12 +1457,14 @@ for key in equipment_ids:
             # TC - 5 GHz WPA NAT
             test_case = test_cases["5g_wpa_nat"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "4324"]
+            #station = [lanforge_prefix + "4324"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model + '_nat']["fiveG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1702,12 +1726,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["2g_eap_vlan"]
                 radio = lab_ap_info.lanforge_2dot4g
-                sta_list = [lanforge_prefix + "5253"]
+                #sta_list = [lanforge_prefix + "5253"]
+                sta_list = [lab_ap_info.lanforge_2dot4g_station]
+                prefix = lab_ap_info.lanforge_2dot4g_prefix
                 ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1721,12 +1747,14 @@ for key in equipment_ids:
             # TC - 2.4 GHz WPA2 VLAN
             test_case = test_cases["2g_wpa2_vlan"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "5251"]
+            #station = [lanforge_prefix + "5251"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1739,12 +1767,14 @@ for key in equipment_ids:
             # TC 4323 - 2.4 GHz WPA VLAN
             test_case = test_cases["2g_wpa_vlan"]
             radio = lab_ap_info.lanforge_2dot4g
-            station = [lanforge_prefix + "5252"]
+            #station = [lanforge_prefix + "5252"]
+            station = [lab_ap_info.lanforge_2dot4g_station]
+            prefix = lab_ap_info.lanforge_2dot4g_prefix
             ssid_name = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case, rid)
             except:
                 test_result = "error"
@@ -1757,12 +1787,14 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 test_case = test_cases["5g_eap_vlan"]
                 radio = lab_ap_info.lanforge_5g
-                sta_list = [lanforge_prefix + "5250"]
+                #sta_list = [lanforge_prefix + "5250"]
+                sta_list = [lab_ap_info.lanforge_5g_station]
+                prefix = lab_ap_info.lanforge_5g_prefix
                 ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2-EAP_SSID"]
                 security = "wpa2"
                 eap_type = "TTLS"
                 try:
-                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, security, eap_type,
+                    test_result = RunTest.Single_Client_EAP(port, sta_list, ssid_name, radio, prefix, security, eap_type,
                                                             identity,
                                                             ttls_password, test_case, rid)
                 except:
@@ -1777,12 +1809,14 @@ for key in equipment_ids:
             # TC - 5 GHz WPA2 VLAN
             test_case = test_cases["5g_wpa2_vlan"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "5248"]
+            #station = [lanforge_prefix + "5248"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA2_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA2_PSK"]
             security = "wpa2"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
@@ -1795,12 +1829,14 @@ for key in equipment_ids:
             # TC 4324 - 5 GHz WPA VLAN
             test_case = test_cases["5g_wpa_vlan"]
             radio = lab_ap_info.lanforge_5g
-            station = [lanforge_prefix + "5249"]
+            #station = [lanforge_prefix + "5249"]
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
             ssid_name = profile_info_dict[fw_model + '_vlan']["fiveG_WPA_SSID"]
             ssid_psk = profile_info_dict[fw_model]["fiveG_WPA_PSK"]
             security = "wpa"
             try:
-                test_result = Test.Single_Client_Connectivity(port, radio, ssid_name, ssid_psk, security, station,
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, ssid_name, ssid_psk, security, station,
                                                               test_case,
                                                               rid)
             except:
