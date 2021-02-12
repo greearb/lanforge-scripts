@@ -1430,7 +1430,11 @@ class L3VariableTime(Realm):
         width_ = "1"
         interval_ = "1428"
         count_ = "18"
-        frequency_ = "5260000"
+        frequency_ = "5260000"  # channel 52
+        sweep_time_ = "1000"
+        if_gain_ = "40"
+        bb_gain_ = "20"
+
 
         logg.info("dfs_send_radar")
 
@@ -1443,7 +1447,7 @@ class L3VariableTime(Realm):
 
         child.expect(r'\$')
 
-        command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
+        command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_)
         print("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
@@ -1452,6 +1456,7 @@ class L3VariableTime(Realm):
         child.expect('lanforge:')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('lanforge')
+        time.sleep(2)
         child.expect('>>>')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('s')
