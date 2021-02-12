@@ -98,8 +98,7 @@ class IPv6Test(LFCliBase):
                         not sta_status['interface']['ipv6 address'].startswith('fe80') \
                         and sta_status['interface']['ipv6 address'] != 'AUTO':
                     if self.debug:
-
-                        print("IP", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
+                        print("IPv6 address:", sta_name, sta_status['interface']['ap'], sta_status['interface']['ipv6 address'])
                     ip_map[sta_name] = 1
             if (len(sta_list) == len(ip_map)) and (len(sta_list) == len(associated_map)):
                 break
