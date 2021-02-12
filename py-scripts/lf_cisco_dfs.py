@@ -1187,12 +1187,14 @@ class L3VariableTime(Realm):
             csv_result_row_data.append(test_id)
 
             # Todo pass or fail
-            if max_tp_mbps == expected_tp_mbps:
+            # Todo have a pass_fail for channel
+            # have pass_fail for data
+            '''if max_tp_mbps == expected_tp_mbps:
                 csv_rx_row_data.append("pass")
                 csv_result_row_data.append("pass")
             else:
                 csv_rx_row_data.append("fail")
-                csv_result_row_data.append("fail")
+                csv_result_row_data.append("fail")'''
 
             csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
             csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
@@ -1474,6 +1476,8 @@ class L3VariableTime(Realm):
             frequency = "5680000"
         elif channel == "140":
             frequency = "5700000"
+        elif channel == "144":
+            frequency = "5720000"
         elif channel == "149":
             frequency = "5745000"
         elif channel == "153":
@@ -1627,9 +1631,18 @@ class L3VariableTime(Realm):
         logg.info("# FINAL CHANNEL : {}".format(final_channel))
         logg.info("###########################################")
 
+        dfs_channel_bw20_values = [52, 56, 60, 64, 68, 96, 100, 104, 108, 112, 116, 120, 124 ,128, 132, 136, 140, 144, 149, 153, 157, 161, 165, 169, 173]
+
+        pass_fail = "pass"
+        if int(final_channel) in dfs_channel_bw20_values:
+            logg.info("The DFS channel did not change or initial channel was not DFS")
+            pass_fail = "fail"
+
         best_csv_rx_row_data.append(final_channel)
+        best_csv_rx_row_data.append(pass_fail)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
 
+        # TO DO check to see if the data is still being transmitted
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
@@ -1650,7 +1663,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','monitor','pass_fail'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -1661,7 +1674,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','final chan'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','final_channel','pass_fail'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
