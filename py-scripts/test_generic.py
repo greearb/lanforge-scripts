@@ -91,7 +91,19 @@ class GenTest(LFCliBase):
                             return False, v['name']
 
     def choose_lfcurl_command(self):
-        return False, ''
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if self.debug:
+            print(gen_results)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] != '':
+                        results = v['last results'].split()
+                        if 'Finished' in v['last results']:
+                            if results[1][:-1] == results[2]:
+                                return True, v['name']
+                            else:
+                                return False, v['name']
 
     def choose_iperf3_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -289,7 +301,6 @@ python3 ./test_generic.py
     if not generic_test.passes():
         print(generic_test.get_fail_message())
         generic_test.exit_fail()
-    exit(1)
     generic_test.start()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
