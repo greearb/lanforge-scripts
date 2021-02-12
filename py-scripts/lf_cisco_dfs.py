@@ -1449,9 +1449,9 @@ class L3VariableTime(Realm):
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
         print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
 
-        #child.expect('password for user:')
-        #print(child.before.decode('utf-8', 'ignore'))
-        #child.sendline('user123')
+        child.expect('lanforge:')
+        print(child.before.decode('utf-8', 'ignore'))
+        child.sendline('lanforge')
         child.expect('>>>')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('s')
