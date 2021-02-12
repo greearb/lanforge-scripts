@@ -1165,6 +1165,7 @@ class L3CXProfile(LFCliBase):
     def monitor(self,
                 duration_sec=60,
                 monitor_interval_ms=1,
+                sta_list=None,
                 layer3_cols=None,
                 port_mgr_cols=None,
                 created_cx=None,
@@ -1195,6 +1196,7 @@ class L3CXProfile(LFCliBase):
                 raise ValueError('Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
+       
 
         #default save to csv first
         if report_file.split('.')[-1] != 'csv':
@@ -1211,10 +1213,29 @@ class L3CXProfile(LFCliBase):
 
         #================== Step 1, set column names and header row
         layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
-        fields = ",".join(layer3_cols)
+        layer3_fields = ",".join(layer3_cols)
         header_row=layer3_cols
         header_row.insert(0,'Timestamp milliseconds')
         header_row.insert(0,'Timestamp')
+      
+        #csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
+
+        if port_mgr_cols is not None:
+            port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled =[]
+            for col_name in port_mgr_cols:
+                port_mgr_cols_labelled.append("port mgr - " + col_name)
+            
+            port_mgr_fields=",".join(port_mgr_cols)
+            header_row.extend(port_mgr_cols_labelled)
+        #add sys info to header row
+        systeminfo = self.json_get('/')
+        header_row.extend([str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']), str("Script Name: " + script_name), str("Argument input: " + str(arguments))])
+        sta_list_edit=[]
+        if sta_list is not None:
+            for sta in sta_list:
+                sta_list_edit.append(sta[4:])
+            sta_list=",".join(sta_list_edit)
 
         #================== Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -1226,46 +1247,62 @@ class L3CXProfile(LFCliBase):
 
         #instantiate csv file here, add specified column headers 
         csvfile=open(str(report_file),'w')
-        csvwriter = csv.writer(csvfile,delimiter=",")
-
-        #write system info to csv
-        systeminfo = self.json_get('/')
-        csvwriter.writerow(systeminfo['VersionInfo']['BuildVersion'])
-        csvwriter.writerow(script_name)
-        #csvwriter.writerow(arguments)
+        csvwriter = csv.writer(csvfile,delimiter=",")      
         csvwriter.writerow(header_row)
 
-        #get shelf,resource,port to json_get from /port
-        cx_a_side_list=[]
-
-        port_info_dict=self.json_get("/endp/%s?fields=eid" % (cx_a_side_list))
-
-
+        #wait 10 seconds to get proper port data
+        time.sleep(10)
+        
         # for x in range(0,int(round(iterations,0))):
         while datetime.datetime.now() < end_time:
-            response = self.json_get("/endp/%s?fields=%s" % (created_cx, fields))
+            layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
+            if port_mgr_cols is not None:
+                port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
             #get info from port manager with list of values from cx_a_side_list
-            if "endpoint" not in response or response is None:
-                print(response)
+            if "endpoint" not in layer_3_response or layer_3_response is None:
+                print(layer_3_response)
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-            if monitor:
-                if debug:
-                    print("Json response from LANforge... " + str(response)) 
+            if debug:
+                    print("Json layer_3_response from LANforge... " + str(layer_3_response))
+            if port_mgr_cols is not None:
+                if "interfaces" not in port_mgr_response or port_mgr_response is None:
+                    print(port_mgr_response)
+                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+            if debug:
+                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
             
+
             t = datetime.datetime.now()
 
             timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch= int(self.get_milliseconds(t))
             
             temp_list=[]
-            for endpoint in response["endpoint"]:
+            for endpoint in layer_3_response["endpoint"]:
                 if debug:
-                    print("Current endpoint values list... " + str(list(endpoint.values())[0]))
-                temp_endp_values=list(endpoint.values())[0]
-                temp_list.extend([timestamp,t_to_millisec_epoch])
-                for name in header_row[2:]:
-                    temp_list.append(temp_endp_values[name])
-            self.write_to_csv_file(new_data_list=temp_list,num_cols=len(header_row),csvwriter=csvwriter,debug=debug)
+                    print("Current endpoint values list... ")
+                    print(list(endpoint.values())[0])
+                temp_endp_values=list(endpoint.values())[0] #dict
+                temp_list.extend([timestamp,t_to_millisec_epoch]) 
+                current_sta = temp_endp_values['name']
+                merge={}
+                if port_mgr_cols is not None:
+                    for sta_name in sta_list_edit:
+                        if sta_name in current_sta:
+                            for interface in port_mgr_response["interfaces"]:
+                                if sta_name in list(interface.keys())[0]:
+                                    merge=temp_endp_values.copy()
+                                    #rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
+                                    port_mgr_values_dict =list(interface.values())[0]
+                                    renamed_port_cols={}
+                                    for key in port_mgr_values_dict.keys():
+                                        renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
+                                    merge.update(renamed_port_cols)
+
+                for name in header_row[2:-3]:
+                    temp_list.append(merge[name])
+                csvwriter.writerow(temp_list)
+                temp_list.clear()
             new_cx_rx_values = self.__get_rx_values()
             if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
@@ -1283,15 +1320,12 @@ class L3CXProfile(LFCliBase):
         csvfile.close()
 
         #here, do column manipulations
-
-        #here, do df to final report file output
+        if compared_report is not None:
+            pass 
+        #df to final report file output
         if output_format.lower() != 'csv':
             dataframe_output = pd.read_csv(report_file)
             self.df_to_file(dataframe=dataframe_output, output_f=output_format)
-
-       
-        
-        
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
@@ -1848,7 +1882,7 @@ class GenCXProfile(LFCliBase):
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
         elif self.type == "lfcurl":
             if self.file_output is not None:
-                self.cmd = "./scripts/lf_curl.sh  -p %s -o %s -n %s -d %s" % \
+                self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
                 raise ValueError("Please ensure file_output has been set correctly")
@@ -3633,7 +3667,7 @@ class StationProfile:
 
         num = 0
         if debug:
-            print("== == Existing STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
+            print("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
             pprint(self.station_names)
             print("== == vs Pending STA names == ==")
             pprint(my_sta_names)

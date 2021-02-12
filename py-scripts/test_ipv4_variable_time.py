@@ -273,8 +273,8 @@ python3 ./test_ipv4_variable_time.py
     # in new folder based in current file's directory
 
     if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':',
-                                                                                        '-') + 'test_ipv4_variable_time'  # create path name
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':',
+                                                                                        '-') + '-test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
@@ -363,6 +363,7 @@ python3 ./test_ipv4_variable_time.py
     monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
 
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
+                                    sta_list=station_list,
                                     port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
                                     duration_sec=Realm.parse_time(args.test_duration).total_seconds(),

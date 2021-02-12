@@ -15,6 +15,7 @@ from LANforge.LFUtils import *
 from LANforge import LFRequest
 import LANforge.LFRequest
 import csv
+import pandas as pd
 
 class LFCliBase:
 
@@ -593,32 +594,32 @@ class LFCliBase:
                 abgnAX : 12,
                 bgnAX  : 13
 """ 
-    def write_to_csv_file(self,new_data_list=None, num_cols=0, csvwriter=None,debug=False):
-        if num_cols == 0:
-            raise ValueError("Number of columns cannot be zero. Exiting script.")
-            exit(1)
-        if type(new_data_list) is not list:
-            raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
-            exit(1)
-        if debug:
-            print("Writing data : ")
-            print(new_data_list)
+    # def write_to_csv_file(self,new_data_list=None, num_cols=0, csvwriter=None,debug=False):
+    #     if num_cols == 0:
+    #         raise ValueError("Number of columns cannot be zero. Exiting script.")
+    #         exit(1)
+    #     if type(new_data_list) is not list:
+    #         raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
+    #         exit(1)
+    #     if debug:
+    #         print("Writing data : ")
+    #         print(new_data_list)
 
-        indiv_data_line=[]
-        col_counter_per_line=0
-        for data_value in new_data_list:
-            if col_counter_per_line >= num_cols:
-                if debug:
-                    print(indiv_data_line)
-                csvwriter.writerow(indiv_data_line)
-                col_counter_per_line=0
-                indiv_data_line.clear()
-            indiv_data_line.append(data_value)
-            col_counter_per_line += 1
+    #     indiv_data_line=[]
+    #     col_counter_per_line=0
+    #     for data_value in new_data_list:
+    #         if col_counter_per_line >= num_cols:
+    #             if debug:
+    #                 print(indiv_data_line)
+    #             csvwriter.writerow(indiv_data_line)
+    #             col_counter_per_line=0
+    #             indiv_data_line.clear()
+    #         indiv_data_line.append(data_value)
+    #         col_counter_per_line += 1
     
     #================ Pandas Dataframe Functions ======================================
     
-     #takes any dataframe and returns the specified outputfile format of it
+     #takes any dataframe and returns the specified file extension of it
     def df_to_file(self, dataframe=None, output_f=None):
         df = dataframe
         if output_f == 'hdf':
@@ -638,13 +639,14 @@ class LFCliBase:
               # return exec('df.to_' + x + '("'+file_name'")')
     
     #takes any format of a file and returns a dataframe of it
-    def file_to_df(file_name):
+    def file_to_df(self,file_name):
         return pd.read_csv(file_name)
     
-    def compare_two_df(dataframe_one=None,dataframe_two=None):
-        pass
+    def compare_two_df(self,dataframe_one=None,dataframe_two=None):
+        pass    
+        #return compared_df
 
-    def append_df_to_file(dataframe, file_name):
+    def append_df_to_file(self,dataframe, file_name):
         pass
 
 # ~class
