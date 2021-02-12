@@ -262,7 +262,7 @@ class CreateCtlr():
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.scheme,
                 self.ctlr,self.port,self.prompt,self.user,
-                self.passwd,self.ap,self.series,self.band,"--wlan", self.wlan,"disable_wlan"))
+                self.passwd,self.ap,self.series,self.band,self.wlan,"disable_wlan"))
 
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
                                     self.user, "-p", self.passwd,
@@ -586,7 +586,7 @@ class CreateCtlr():
         try:
             logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} wlan: {} action: {}".format(self.scheme,
                 self.ctlr,self.port,self.prompt,self.user,self.passwd, self.ap, self.series, 
-                self.band,"--wlan", self.wlan,"enable_wlan"))
+                self.band, self.wlan,"enable_wlan"))
             ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
                                     self.user, "-p", self.passwd,
                                     "-a", self.ap,"--series", self.series, "--band", self.band, "--wlan", self.wlan,
@@ -1424,9 +1424,76 @@ class L3VariableTime(Realm):
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
-        return cc_ch            
+        return cc_ch    
 
-    def dfs_send_radar(self):
+    def dfs_get_frequency(self,channel):
+        # possibly have a dictionary
+
+        if   channel == "36":
+            frequency = "5180000"
+        elif channel == "38":
+            frequency = "5190000"
+        elif channel == "40":
+            frequency = "5200000"
+        elif channel == "42":
+            frequency = "5210000"
+        elif channel == "44":
+            frequency = "5220000"
+        elif channel == "46":
+            frequency = "5230000"
+        elif channel == "48":
+            frequency = "5240000"
+        # DFS Channels US
+        elif channel == "52":
+            frequency = "5260000"
+        elif channel == "56":
+            frequency = "5280000"
+        elif channel == "60":
+            frequency = "5300000"
+        elif channel == "64":
+            frequency = "5320000"
+        elif channel == "100":
+            frequency = "5500000"
+        elif channel == "104":
+            frequency = "5520000"
+        elif channel == "108":
+            frequency = "5540000"
+        elif channel == "112":
+            frequency = "5560000"
+        elif channel == "116":
+            frequency = "5580000"
+        elif channel == "120":
+            frequency = "5600000"
+        elif channel == "124":
+            frequency = "5620000"
+        elif channel == "128":
+            frequency = "5640000"
+        elif channel == "132":
+            frequency = "5660000"
+        elif channel == "136":
+            frequency = "5680000"
+        elif channel == "140":
+            frequency = "5700000"
+        elif channel == "149":
+            frequency = "5745000"
+        elif channel == "153":
+            frequency = "5765000"
+        elif channel == "157":
+            frequency = "5785000"
+        elif channel == "161":
+            frequency = "5805000"
+        elif channel == "165":
+            frequency = "5825000"
+        elif channel == "169":
+            frequency = "5845000"
+        elif channel == "173":
+            frequency = "5865000"
+        else:
+            logg.info("Invalid Channel")
+            exit(1)
+
+    def dfs_send_radar(self,channel):
+        # Hard coded to FCC0 - need to support others
         width_ = "1"
         interval_ = "1428"
         count_ = "18"
@@ -1437,8 +1504,9 @@ class L3VariableTime(Realm):
         bb_gain_ = "20"
         gain_ = "0"
 
+        frequency_ = self.dfs_get_frequency(channel)
 
-        logg.info("dfs_send_radar")
+        logg.info("dfs_send_radar channel: {}  frequency: {}".format(channel, frequency_))
 
         # for testing on bash
         child = pexpect.spawn('bash')
@@ -1512,7 +1580,7 @@ class L3VariableTime(Realm):
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
                 if((cur_time > dfs_time) and dfs_radar_sent == False):
-                    self.dfs_send_radar()
+                    self.dfs_send_radar(current_channel)
                     dfs_radar_sent = True
                 time.sleep(1)
             
