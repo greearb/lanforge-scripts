@@ -1882,7 +1882,7 @@ class GenCXProfile(LFCliBase):
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
         elif self.type == "lfcurl":
             if self.file_output is not None:
-                self.cmd = "./scripts/lf_curl.sh  -p %s -o %s -n %s -d %s" % \
+                self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
                 raise ValueError("Please ensure file_output has been set correctly")
