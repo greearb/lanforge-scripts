@@ -1443,30 +1443,23 @@ class L3VariableTime(Realm):
 
         child.expect(r'\$')
         child.close()
-        #exit(1)
 
+        command_hackRF = "sudo ./lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
+        print("hackrf command {}".format(command_hackRF))
+        child.sendline(command_hackRF)
+        child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
+        print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
 
-    '''#command_hackRF = "./lf_hackrf3.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
-    #command_hackRF = "./lf_hackrf.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
-    command_hackRF = "sudo ./lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
-    print("hackrf command {}".format(command_hackRF))
-    #command_hackRF = "sudo python lf_hackrf.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
-    #command_hackRF = str(command_hackRF)
-    #ch = pexpect.spawn(command_hackRF)
-    child.sendline(command_hackRF)
-    child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
-    print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
-
-    #ch.expect('password for user:')
-    #print(ch.before.decode('utf-8', 'ignore'))
-    #ch.sendline('user123')
-    child.expect('>>>')
-    print(child.before.decode('utf-8', 'ignore'))
-    child.sendline('s')
-    child.expect('>>>')
-    print(child.before.decode('utf-8', 'ignore'))
-    child.sendline('q')
-    time.sleep(1)'''
+        #child.expect('password for user:')
+        #print(child.before.decode('utf-8', 'ignore'))
+        #child.sendline('user123')
+        child.expect('>>>')
+        print(child.before.decode('utf-8', 'ignore'))
+        child.sendline('s')
+        child.expect('>>>')
+        print(child.before.decode('utf-8', 'ignore'))
+        child.sendline('q')
+        time.sleep(1)
 
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
