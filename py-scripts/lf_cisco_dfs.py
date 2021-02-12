@@ -856,7 +856,9 @@ class CreateCtlr():
 
 class L3VariableTime(Realm):
     def __init__(self, 
-                args, 
+                args,
+                _dfs,
+                _dfs_time, 
                 _scheme,
                 _port,
                 _series,
@@ -865,6 +867,7 @@ class L3VariableTime(Realm):
                 _user,
                 _passwd,
                 _ap,
+                _ap_slot,
                 _band,
                 _chan_5ghz,
                 _chan_24ghz,
@@ -921,7 +924,8 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
-        
+        self.dfs = _dfs
+        self.dfs_time = _dfs_time
         self.scheme = _scheme
         self.port   = _port
         self.series = _series
@@ -930,14 +934,15 @@ class L3VariableTime(Realm):
         self.user   = _user
         self.passwd = _passwd
         self.ap     = _ap
+        self.ap_slot = _ap_slot
         self.band   = _band
         self.chan_5ghz  = _chan_5ghz
         self.chan_24ghz = _chan_24ghz
         self.chan_width = _chan_width
         self.ap_mode = _ap_mode
         self.tx_power = _tx_power
-        self.client_density = _client_density
         self.cap_ctl_out = _cap_ctl_out
+        self.client_density = _client_density
         self.tos = tos.split()
         self.endp_type = endp_type
         self.side_b = side_b
@@ -1325,10 +1330,32 @@ class L3VariableTime(Realm):
         
         return client_density
 
-    '''def read_channel(self):
-        pss = cisco.controller_show_ap_summary()
+    def read_channel(self):
+
+        logg.info("read_channel: cisco_wifi_ctl.py action advanced")
+        pss = ""
+        try:
+            logg.info("\
+                scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.scheme,
+                self.ctlr,self.port,self.prompt,self.user,
+                self.passwd,self.ap,self.series,self.band,"advanced"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
+                                    self.user, "-p", self.passwd,
+                                    "-a", self.ap,"--series", self.series, "--band", self.band, "--action", "advanced"], 
+                                    capture_output=True, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            logg.info(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
         logg.info("controller_show_ap_summary:::  pss {}".format(pss))
-        if args.cisco_series == "9800":
+        if self.series == "9800":
             searchap = False
             cc_mac = ""
             cc_ch = ""
@@ -1341,10 +1368,10 @@ class L3VariableTime(Realm):
                     continue
                 # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                 if (searchap):
-                    pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(__ap_set,__ap_slot)
+                    pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(self.ap,self.ap_slot)
                     m = re.search(pat, line)
                     if (m != None):
-                        if(m.group(2) == args.slot):
+                        if(m.group(2) == self.ap_slot):
                             cc_mac = m.group(1)
                             cc_slot = m.group(2)
                             cc_ch = m.group(6);  # (132,136,140,144)
@@ -1354,7 +1381,7 @@ class L3VariableTime(Realm):
                             cc_dbm = cc_dbm.replace("(","")
                             cc_ch_count = cc_ch.count(",") + 1
                             cc_bw = m.group(3)
-                            logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)
+                            logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
                             logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
                             logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
                             logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
@@ -1377,14 +1404,14 @@ class L3VariableTime(Realm):
                     continue
                 
                 if (searchap):
-                    pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(__ap_set)
+                    pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(self.ap)
                     m = re.search(pat, line)
                     if (m != None):
                         cc_mac = m.group(1)
                         cc_ch = m.group(2);  # (132,136,140,144)
                         cc_power = m.group(3)
                         cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
-                        cc_dbm = m.group(4
+                        cc_dbm = m.group(4)
                         ch_count = cc_ch.count(",")
                         cc_bw = 20 * (ch_count + 1)
                         
@@ -1395,7 +1422,7 @@ class L3VariableTime(Realm):
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
-                    #### STOP'''
+        return cc_ch            
 
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
@@ -1404,8 +1431,15 @@ class L3VariableTime(Realm):
         csv_rx_row_data = " "
         Result = False
 
+        # verify controller channel , see if a DFS channel
+        current_channel = self.read_channel()
+
+        logg.info("###########################################")
+        logg.info("# INITIAL CHANNEL  : {}".format(current_channel))
+        logg.info("###########################################")
+
         time.sleep(30)
-        #cisco.verify_controller(client_density) 
+        
         logg.info("Starting multicast traffic (if any configured)")
         self.multicast_profile.start_mc(debug_=self.debug)
         self.multicast_profile.refresh_mc(debug_=self.debug)
@@ -1462,7 +1496,17 @@ class L3VariableTime(Realm):
             #self.__record_rx_dropped_percent(rx_drop_percent)
 
             cur_time = datetime.datetime.now()
+
+
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
+
+
+        current_channel = self.read_channel()
+
+        logg.info("###########################################")
+        logg.info("# FINAL CHANNEL : {}".format(current_channel))
+        logg.info("###########################################")
+
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
@@ -1800,7 +1844,7 @@ Eventual Realm at Cisco
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
        
-Sample script
+Sample script 2/11/2021
 
    ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
     
@@ -1826,7 +1870,7 @@ Sample script
     parser.add_argument('-ctd','--cisco_directions', help='--cisco_directions <upstream downstream both> default: upstream downstream ',default="upstream downstream" )
     parser.add_argument('-ccd','--cisco_client_density', help='--cisco_client_density List of client densities <1 10 20 50 100 200> default 1 ',
                             default="1" )
-
+    #TODO set str for ones that are str
     parser.add_argument('-cde','--cisco_data_encryption', help='--cisco_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--cisco_series', help='--cisco_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-ccp','--cisco_prompt',    type=str,help="controller prompt default WLC",default="WLC")
@@ -1844,6 +1888,8 @@ Sample script
 
     parser.add_argument('-ctp','--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
+    parser.add_argument('-dfs','--cisco_dfs',  help='--cisco_dfs, switch to enable dfs testing', action='store_true')
+    parser.add_argument('-dft','--cisco_dfs_time',  help='--cisco_dfs_time, time to wait prior to sending radar signal default 30 sec', default="30")
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the cisco controller output will be captured', action='store_true')
                             
 
@@ -1961,6 +2007,14 @@ Sample script
     
     if args.cisco_ap_slot:
         __ap_slot = args.cisco_ap_slot
+
+    if args.cisco_dfs:
+        __dfs = args.cisco_dfs
+    else:
+        __dfs = False
+
+    if args.cisco_dfs_time:
+        __dfs_time = args.cisco_dfs_time
 
     ap_dict = []
     if args.ap_info:
@@ -2564,7 +2618,7 @@ Sample script
                                                                             pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(__ap_set,__ap_slot)
                                                                             m = re.search(pat, line)
                                                                             if (m != None):
-                                                                                if(m.group(2) == args.slot):
+                                                                                if(m.group(2) == __ap_slot):
                                                                                     cc_mac = m.group(1)
                                                                                     cc_slot = m.group(2)
                                                                                     cc_ch = m.group(6);  # (132,136,140,144)
@@ -2709,6 +2763,8 @@ Sample script
                                                                 # current default is to have a values
                                                                 ip_var_test = L3VariableTime(
                                                                                                 args=args,
+                                                                                                _dfs=__dfs,
+                                                                                                _dfs_time=__dfs_time,
                                                                                                 _scheme=__scheme,
                                                                                                 _port=__port,
                                                                                                 _series=__series,
@@ -2717,6 +2773,7 @@ Sample script
                                                                                                 _user=__user,
                                                                                                 _passwd=__passwd,
                                                                                                 _ap=__ap_set,
+                                                                                                _ap_slot=__ap_slot,
                                                                                                 _band=__band_set,
                                                                                                 _chan_5ghz=__chan_5ghz_set,
                                                                                                 _chan_24ghz=__chan_24ghz_set,
@@ -2767,7 +2824,7 @@ Sample script
                                                                     logg.info(ip_var_test.get_fail_message())
                                                                     exit(1) 
                                                                 client_density = ip_var_test.station_bringup()    
-                                                                cisco.verify_controller(client_density)
+                                                                #cisco.verify_controller(client_density)
                                                                 ip_var_test.start(False, False)
                                                                 ip_var_test.stop()
                                                                 if not ip_var_test.passes():
