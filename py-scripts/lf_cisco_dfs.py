@@ -1505,14 +1505,16 @@ class L3VariableTime(Realm):
 
         logg.info("dfs_time_seconds {}".format(self.dfs_time_seconds))
         dfs_time = cur_time + datetime.timedelta(seconds=self.dfs_time_seconds)
+        dfs_radar_sent = False
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
 
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
-                if(cur_time > dfs_time):
+                if((cur_time > dfs_time) and dfs_radar_sent == False):
                     self.dfs_send_radar()
+                    dfs_radar_sent = True
                 time.sleep(1)
             
             self.epoch_time = int(time.time())
