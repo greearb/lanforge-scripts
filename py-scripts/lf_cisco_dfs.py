@@ -1491,6 +1491,8 @@ class L3VariableTime(Realm):
         else:
             logg.info("Invalid Channel")
             exit(1)
+        return frequency
+        
 
     def dfs_send_radar(self,channel):
         # Hard coded to FCC0 - need to support others
@@ -1505,6 +1507,9 @@ class L3VariableTime(Realm):
         gain_ = "0"
 
         frequency_ = self.dfs_get_frequency(channel)
+        if frequency_ == None:
+            logg.info("frequency_ is : {}".format(frequency_))
+            exit(1)
 
         logg.info("dfs_send_radar channel: {}  frequency: {}".format(channel, frequency_))
 
