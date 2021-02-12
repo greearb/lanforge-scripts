@@ -1442,9 +1442,8 @@ class L3VariableTime(Realm):
         print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
 
         child.expect(r'\$')
-        child.close()
 
-        command_hackRF = "sudo ./lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
+        command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
         print("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
