@@ -857,7 +857,22 @@ class CreateCtlr():
 class L3VariableTime(Realm):
     def __init__(self, 
                 args, 
-                ctlr,
+                _scheme,
+                _port,
+                _series,
+                _ctlr,
+                _prompt,
+                _user,
+                _passwd,
+                _ap,
+                _band,
+                _chan_5ghz,
+                _chan_24ghz,
+                _chan_width,
+                _ap_mode,
+                _tx_power,
+                _client_density,
+                _cap_ctl_out,
                 endp_type, 
                 tos, 
                 side_b, 
@@ -906,7 +921,23 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
-        self.ctlr = ctlr
+        
+        self.scheme = _scheme
+        self.port   = _port
+        self.series = _series
+        self.ctlr   = _ctlr
+        self.prompt = _prompt
+        self.user   = _user
+        self.passwd = _passwd
+        self.ap     = _ap
+        self.band   = _band
+        self.chan_5ghz  = _chan_5ghz
+        self.chan_24ghz = _chan_24ghz
+        self.chan_width = _chan_width
+        self.ap_mode = _ap_mode
+        self.tx_power = _tx_power
+        self.client_density = _client_density
+        self.cap_ctl_out = _cap_ctl_out
         self.tos = tos.split()
         self.endp_type = endp_type
         self.side_b = side_b
@@ -1293,6 +1324,78 @@ class L3VariableTime(Realm):
             exit(1) # why continue
         
         return client_density
+
+    '''def read_channel(self):
+        pss = cisco.controller_show_ap_summary()
+        logg.info("controller_show_ap_summary:::  pss {}".format(pss))
+        if args.cisco_series == "9800":
+            searchap = False
+            cc_mac = ""
+            cc_ch = ""
+            cc_bw = ""
+            cc_power = ""
+            cc_dbm = ""
+            for line in pss.splitlines():
+                if (line.startswith("---------")):
+                    searchap = True
+                    continue
+                # if the pattern changes save the output of the advanced command and re parse https://regex101.com
+                if (searchap):
+                    pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(__ap_set,__ap_slot)
+                    m = re.search(pat, line)
+                    if (m != None):
+                        if(m.group(2) == args.slot):
+                            cc_mac = m.group(1)
+                            cc_slot = m.group(2)
+                            cc_ch = m.group(6);  # (132,136,140,144)
+                            cc_power = m.group(4)
+                            cc_power = cc_power.replace("/", " of ") # spread-sheets turn 1/8 into a date
+                            cc_dbm = m.group(5)
+                            cc_dbm = cc_dbm.replace("(","")
+                            cc_ch_count = cc_ch.count(",") + 1
+                            cc_bw = m.group(3)
+                            logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)
+                            logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                            logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                            logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                            logg.info("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                            logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
+                            logg.info("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                            logg.info("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                            break
+        else:
+            searchap = False
+            cc_mac = ""
+            cc_ch = ""
+            cc_bw = ""
+            cc_power = ""
+            cc_dbm = ""
+            ch_count = ""
+            for line in pss.splitlines():
+                if (line.startswith("---------")):
+                    searchap = True
+                    continue
+                
+                if (searchap):
+                    pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(__ap_set)
+                    m = re.search(pat, line)
+                    if (m != None):
+                        cc_mac = m.group(1)
+                        cc_ch = m.group(2);  # (132,136,140,144)
+                        cc_power = m.group(3)
+                        cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
+                        cc_dbm = m.group(4
+                        ch_count = cc_ch.count(",")
+                        cc_bw = 20 * (ch_count + 1)
+                        
+                        logg.info("3504 test_parameters cc_mac: read : {}".format(cc_mac))
+                        logg.info("3504 test_parameters cc_count: read : {}".format(ch_count))
+                        logg.info("3504 test_parameters cc_bw: read : {}".format(cc_bw))
+                        logg.info("3504 test_parameters cc_power: read : {}".format(cc_power))
+                        logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                        logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
+
+                    #### STOP'''
 
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
@@ -2294,7 +2397,8 @@ Sample script
                                                                                     _ap_mode=__ap_mode_set,
                                                                                     _tx_power=__tx_power_set,
                                                                                     _client_density=__client_density,
-                                                                                    _cap_ctl_out=__cap_ctl_out)
+                                                                                    _cap_ctl_out=__cap_ctl_out
+                                                                                    )
                                                                     #Disable AP
                                                                     #
                                                                     # Controller Configuration
@@ -2335,7 +2439,7 @@ Sample script
                                                                             logg.info("cisco_ap_ctl.py: clear log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],capture_output=False, check=True)#stdout=subprocess.PIPE)
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],capture_output=True, check=True)#stdout=subprocess.PIPE)
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2355,7 +2459,7 @@ Sample script
                                                                             logg.info("cisco_ap_ctl.py: show log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=False, check=True) #stdout=subprocess.PIPE
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True) #stdout=subprocess.PIPE
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2399,7 +2503,7 @@ Sample script
                                                                                 logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                                                                                 # TODO remove position dependence if in tree 
                                                                                 ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
+                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "cac_expiry_evt"],capture_output=True, check=True)
                                                                                 try:
                                                                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                                 except:
@@ -2605,7 +2709,22 @@ Sample script
                                                                 # current default is to have a values
                                                                 ip_var_test = L3VariableTime(
                                                                                                 args=args,
-                                                                                                ctlr=__ctlr,
+                                                                                                _scheme=__scheme,
+                                                                                                _port=__port,
+                                                                                                _series=__series,
+                                                                                                _ctlr=__ctlr,
+                                                                                                _prompt=__prompt,
+                                                                                                _user=__user,
+                                                                                                _passwd=__passwd,
+                                                                                                _ap=__ap_set,
+                                                                                                _band=__band_set,
+                                                                                                _chan_5ghz=__chan_5ghz_set,
+                                                                                                _chan_24ghz=__chan_24ghz_set,
+                                                                                                _chan_width=__chan_width_set,
+                                                                                                _ap_mode=__ap_mode_set,
+                                                                                                _tx_power=__tx_power_set,
+                                                                                                _client_density=__client_density,
+                                                                                                _cap_ctl_out=__cap_ctl_out,
                                                                                                 endp_type=cisco_packet_type,
                                                                                                 tos=args.tos,
                                                                                                 side_b=side_b,

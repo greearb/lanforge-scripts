@@ -263,6 +263,15 @@ def main():
         # allow for normal logout below
         # show log | g DOT11_DRV
 
+    # CAC_EXPIRY_EVT: CAC finished on DFS channel 52
+    elif (args.action == "cac_expiry_evt"):
+        logg.info("execute: show log | g CAC_EXPIRY_EVT")    
+        egg.sendline('show log | g CAC_EXPIRY_EVT')
+        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this for it allows for subprocess to see output
+        print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
+        egg.sendline('r')
+
     else: # no other command at this time so send the same power command
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         logg.info("no action")
