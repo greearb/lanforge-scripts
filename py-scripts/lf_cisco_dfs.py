@@ -1699,7 +1699,7 @@ Eventual Realm at Cisco
        
 Sample script
 
-   ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
+   ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
     
        
         ''')
@@ -2424,6 +2424,8 @@ Sample script
                                                                                     logg.info("__dfs_channel line: {}".format(line))
                                                                                 else:
                                                                                     logg.info("__dfs_channel COULD NOT FIND LINE")
+
+                                                                            exit(1)
                                                                                     
 
                                                                     else:
@@ -2432,8 +2434,6 @@ Sample script
                                                                     ##########################################
                                                                     # end of cisco controller code 
                                                                     ##########################################   
-                                                                    exit(1)                                                             
-
                                                                     
                                                                 else:
                                                                     logg.info("###############################################")

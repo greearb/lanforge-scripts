@@ -176,42 +176,42 @@ def main():
         if i == 0:
             logg.info("Expect: {} i: {} loop_count: {}before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
             egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
-            sleep(0.2)
+            sleep(0.4)
         if i == 1:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PROMPT,i,egg.before,egg.after))
             egg.sendline(AP_EN) 
-            sleep(0.2)
+            sleep(0.4)
         if i == 2:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_HASH,i,egg.before,egg.after))
             logged_in = True 
-            sleep(0.2)
+            sleep(0.4)
         if i == 3:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_USERNAME,i,egg.before,egg.after))
             egg.sendline(args.user) 
-            sleep(0.2)
+            sleep(0.4)
         if i == 4:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PASSWORD,i,egg.before,egg.after))
             egg.sendline(args.passwd) 
-            sleep(0.2)
+            sleep(0.4)
         if i == 5:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))
             if (scheme == "serial"):
                 egg.sendline("r")
             else:
                 egg.sendcontrol('c')
-            sleep(0.2)
+            sleep(0.4)
         # for Testing serial connection using Lanforge
         if i == 6:
             logg.info("Expect: {} i: {} before: {} after: {}".format(LF_PROMPT,i,egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
             if (loop_count < 3):
                 egg.send("ls -lrt")
-                sleep(0.2)
+                sleep(0.4)
             if (loop_count > 4):
                 logged_in = True # basically a test mode using lanforge serial
         if i == 7:
             logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
             egg.sendline(CR) 
-            sleep(0.2)
+            sleep(0.4)
 
 
     if (args.action == "powercfg"):
@@ -247,18 +247,19 @@ def main():
     else: # no other command at this time so send the same power command
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         logg.info("no action so execute: show log")
-        egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
+        egg.sendline('show log')
         egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this allows for subprocess to see output
 
-        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=2)
         # s
         if i == 0:
-            egg.sendcontrol('c')
+            if (scheme != "serial"):
+                egg.sendcontrol('c')
         if i == 1:
-            logg.info("send cntl c anyway, received timeout")
-            egg.sendcontrol('c')
-            exit(1)
+            if (scheme != "serial"):
+                logg.info("send cntl c anyway, received timeout")
+                egg.sendcontrol('c')
 
     i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
     if i == 0:
