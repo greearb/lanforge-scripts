@@ -2,6 +2,7 @@
 
 import sys
 import os
+import pexpect
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -926,6 +927,7 @@ class L3VariableTime(Realm):
                          _capture_signal_list=_capture_signal_list)
         self.dfs = _dfs
         self.dfs_time = _dfs_time
+        self.dfs_time_seconds = self.duration_time_to_seconds(_dfs_time)
         self.scheme = _scheme
         self.port   = _port
         self.series = _series
@@ -1171,7 +1173,7 @@ class L3VariableTime(Realm):
             csv_result_row_data.append(max_tp_mbps)
 
             #To do  needs to be read or passed in based on test type
-            expected_tp_mbps = max_tp_mbps
+            expected_tp_mbps = max_tp_mbps  
             csv_rx_row_data.append(expected_tp_mbps)
             csv_result_row_data.append(expected_tp_mbps)
 
@@ -1424,6 +1426,48 @@ class L3VariableTime(Realm):
 
         return cc_ch            
 
+    def dfs_send_radar(self):
+        width_ = "1"
+        interval_ = "1428"
+        count_ = "18"
+        frequency_ = "5260000"
+
+        logg.info("dfs_send_radar")
+
+        # for testing on bash
+        child = pexpect.spawn('bash')
+        child.expect(r'\$')
+        child.sendline('ls -lrt')
+        child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
+        print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+
+        child.expect(r'\$')
+        child.close()
+        #exit(1)
+
+
+    '''#command_hackRF = "./lf_hackrf3.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
+    #command_hackRF = "./lf_hackrf.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
+    command_hackRF = "sudo ./lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {}".format(width_,interval_,count_,"1000",frequency_)
+    print("hackrf command {}".format(command_hackRF))
+    #command_hackRF = "sudo python lf_hackrf.py --pulse_width " + width_ + " --pulse_interval " + interval_ + " --pulse_count " + count_ + " --sweep_time 1000 --freq " + frequency_
+    #command_hackRF = str(command_hackRF)
+    #ch = pexpect.spawn(command_hackRF)
+    child.sendline(command_hackRF)
+    child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
+    print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+
+    #ch.expect('password for user:')
+    #print(ch.before.decode('utf-8', 'ignore'))
+    #ch.sendline('user123')
+    child.expect('>>>')
+    print(child.before.decode('utf-8', 'ignore'))
+    child.sendline('s')
+    child.expect('>>>')
+    print(child.before.decode('utf-8', 'ignore'))
+    child.sendline('q')
+    time.sleep(1)'''
+
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
         best_csv_rx_row_data = " "
@@ -1459,11 +1503,16 @@ class L3VariableTime(Realm):
         expected_passes = 0
         logg.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
+        logg.info("dfs_time_seconds {}".format(self.dfs_time_seconds))
+        dfs_time = cur_time + datetime.timedelta(seconds=self.dfs_time_seconds)
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
+
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
+                if(cur_time > dfs_time):
+                    self.dfs_send_radar()
                 time.sleep(1)
             
             self.epoch_time = int(time.time())
@@ -1498,14 +1547,14 @@ class L3VariableTime(Realm):
             cur_time = datetime.datetime.now()
 
 
+        final_channel = self.read_channel()
+
+        logg.info("###########################################")
+        logg.info("# FINAL CHANNEL : {}".format(final_channel))
+        logg.info("###########################################")
+
+        best_csv_rx_row_data.append(final_channel)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
-
-
-        current_channel = self.read_channel()
-
-        logg.info("###########################################")
-        logg.info("# FINAL CHANNEL : {}".format(current_channel))
-        logg.info("###########################################")
 
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
@@ -1538,7 +1587,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','final chan'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -1888,7 +1937,7 @@ Sample script 2/11/2021
     parser.add_argument('-ctp','--cisco_tx_power', help='--cisco_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
     parser.add_argument('-dfs','--cisco_dfs',  help='--cisco_dfs, switch to enable dfs testing', action='store_true')
-    parser.add_argument('-dft','--cisco_dfs_time',  help='--cisco_dfs_time, time to wait prior to sending radar signal default 30 sec', default="30")
+    parser.add_argument('-dft','--cisco_dfs_time',  help='--cisco_dfs_time, time to wait prior to sending radar signal default 30s', default='30s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the cisco controller output will be captured', action='store_true')
                             
 
