@@ -1431,7 +1431,8 @@ class L3VariableTime(Realm):
         interval_ = "1428"
         count_ = "18"
         frequency_ = "5260000"  # channel 52
-        sweep_time_ = "1000"
+        #sweep_time_ = "1000"
+        sweep_time_ = "0"
         if_gain_ = "40"
         bb_gain_ = "20"
 
@@ -1456,7 +1457,7 @@ class L3VariableTime(Realm):
         child.expect('lanforge:')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('lanforge')
-        time.sleep(2)
+        time.sleep(5)
         child.expect('>>>')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('s')
