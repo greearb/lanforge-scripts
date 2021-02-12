@@ -84,6 +84,16 @@ class FileAdapter(object):
 def main():
 
     global logfile
+
+    AP_ESCAPE       = "Escape character is '^]'."
+    AP_USERNAME     = "Username:"
+    AP_PASSWORD     = "Password:"
+    AP_EN           = "en"
+    AP_MORE         = "--More--"
+    AP_EXIT         = "exit"
+    LF_PROMPT       = "$"
+    CR = "\r\n"
+
     
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
     parser.add_argument("-a", "--prompt",  type=str, help="ap prompt")
@@ -135,6 +145,9 @@ def main():
             egg = SerialSpawn(ser)
             egg.logfile = FileAdapter(logg)
             time.sleep(1)
+            egg.sendline(CR)
+            time.sleep(1)
+
         elif (scheme == "ssh"):
             if (port is None):
                 port = 22
@@ -159,14 +172,6 @@ def main():
     
     AP_PROMPT       = "{}>".format(args.prompt)
     AP_HASH         = "{}#".format(args.prompt)
-    AP_ESCAPE       = "Escape character is '^]'."
-    AP_USERNAME     = "Username:"
-    AP_PASSWORD     = "Password:"
-    AP_EN           = "en"
-    AP_MORE         = "--More--"
-    AP_EXIT         = "exit"
-    LF_PROMPT       = "$"
-    CR = "\r\n"
     time.sleep(0.1)
     logged_in  = False
     loop_count = 0
@@ -174,44 +179,44 @@ def main():
         loop_count += 1
         i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,pexpect.TIMEOUT],timeout=5)
         if i == 0:
-            logg.info("Expect: {} i: {} loop_count: {}before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
+            logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
             egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
-            sleep(0.4)
+            sleep(1)
         if i == 1:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PROMPT,i,egg.before,egg.after))
             egg.sendline(AP_EN) 
-            sleep(0.4)
+            sleep(1)
         if i == 2:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_HASH,i,egg.before,egg.after))
             logged_in = True 
-            sleep(0.4)
+            sleep(1)
         if i == 3:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_USERNAME,i,egg.before,egg.after))
             egg.sendline(args.user) 
-            sleep(0.4)
+            sleep(1)
         if i == 4:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PASSWORD,i,egg.before,egg.after))
             egg.sendline(args.passwd) 
-            sleep(0.4)
+            sleep(1)
         if i == 5:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))
             if (scheme == "serial"):
                 egg.sendline("r")
             else:
                 egg.sendcontrol('c')
-            sleep(0.4)
+            sleep(1)
         # for Testing serial connection using Lanforge
         if i == 6:
             logg.info("Expect: {} i: {} before: {} after: {}".format(LF_PROMPT,i,egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
             if (loop_count < 3):
                 egg.send("ls -lrt")
-                sleep(0.4)
+                sleep(1)
             if (loop_count > 4):
                 logged_in = True # basically a test mode using lanforge serial
         if i == 7:
             logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
             egg.sendline(CR) 
-            sleep(0.4)
+            sleep(1)
 
 
     if (args.action == "powercfg"):
@@ -246,8 +251,8 @@ def main():
 
     else: # no other command at this time so send the same power command
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
-        logg.info("no action so execute: show log")
-        egg.sendline('show log')
+        logg.info("no action")
+        '''egg.sendline('show log')
         egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this allows for subprocess to see output
 
@@ -259,7 +264,7 @@ def main():
         if i == 1:
             if (scheme != "serial"):
                 logg.info("send cntl c anyway, received timeout")
-                egg.sendcontrol('c')
+                egg.sendcontrol('c')'''
 
     i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
     if i == 0:

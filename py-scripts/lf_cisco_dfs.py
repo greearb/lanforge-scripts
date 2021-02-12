@@ -2335,7 +2335,7 @@ Sample script
                                                                             logg.info("cisco_ap_ctl.py: clear log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],stdout=subprocess.PIPE)
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],capture_output=False, check=True)#stdout=subprocess.PIPE)
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2355,7 +2355,7 @@ Sample script
                                                                             logg.info("cisco_ap_ctl.py: show log")
                                                                             # TODO remove position dependence if in tree 
                                                                             ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=False, check=True) #stdout=subprocess.PIPE
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                             except:
@@ -2369,7 +2369,6 @@ Sample script
                                                                             logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
                                                                             logg.info("####################################################################################################") 
                                                                         logg.info(pss)
-                                                                        exit(1)
 
                                                                     cisco.controller_enable_ap()
                                                                     # need to actually check the CAC timer 
@@ -2380,7 +2379,7 @@ Sample script
                                                                         logg.info("DFS 5ghz channel {} being set wait CAC time 60, 2.4 ghz: {} : ".format(__chan_5ghz_set, __chan_24ghz_set))
                                                                         # read AP to verify CAC timer set
                                                                         # will need to use time to verify CAC from AP - need in results
-                                                                        cac_sleeptime = "65"
+                                                                        cac_sleeptime = "5" # 65
                                                                         logg.info("CAC start sleeptime: {}".format(cac_sleeptime))
                                                                         time.sleep(int(cac_sleeptime))
                                                                         logg.info("CAC done  sleeptime: {}".format(cac_sleeptime))
@@ -2400,7 +2399,7 @@ Sample script
                                                                                 logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                                                                                 # TODO remove position dependence if in tree 
                                                                                 ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],stdout=subprocess.PIPE)
+                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
                                                                                 try:
                                                                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                                 except:
@@ -2516,7 +2515,6 @@ Sample script
                                                                                 logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                                                                                 logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
                                                                                 break
-                                                                exit(1)
                                                                 ######################################################
                                                                 # end of cisco controller code no change to controller
                                                                 ######################################################                                                                
@@ -2652,7 +2650,6 @@ Sample script
                                                                     exit(1) 
                                                                 client_density = ip_var_test.station_bringup()    
                                                                 cisco.verify_controller(client_density)
-
                                                                 ip_var_test.start(False, False)
                                                                 ip_var_test.stop()
                                                                 if not ip_var_test.passes():
