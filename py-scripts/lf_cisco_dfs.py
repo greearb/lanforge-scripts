@@ -1699,7 +1699,7 @@ Eventual Realm at Cisco
        
 Sample script
 
-   ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.EF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
+   ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
     
        
         ''')
@@ -2377,9 +2377,9 @@ Sample script
                                                                         # read AP to verify CAC timer set
                                                                         # will need to use time to verify CAC from AP - need in results
                                                                         cac_sleeptime = "65"
-                                                                        logg.info("CAC sleep time start {}".format(cac_sleeptime))
+                                                                        logg.info("CAC start sleeptime: {}".format(cac_sleeptime))
                                                                         time.sleep(int(cac_sleeptime))
-                                                                        logg.info("CAC sleeptime complete: {}".format(cac_sleeptime))
+                                                                        logg.info("CAC done  sleeptime: {}".format(cac_sleeptime))
                                                                         if(bool(ap_dict)):
                                                                             # will need to verify that timer has timed out on AP - need in results
                                                                             logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}".format(__chan_5ghz_set, __chan_24ghz_set))
@@ -2424,10 +2424,6 @@ Sample script
                                                                                     logg.info("__dfs_channel line: {}".format(line))
                                                                                 else:
                                                                                     logg.info("__dfs_channel COULD NOT FIND LINE")
-
-                                                                            exit(1)
-                                                                                    
-
                                                                     else:
                                                                         logg.info("Non-DFS 5ghz channel {} being set sleep 30, 2.4 ghz: {} ".format(__chan_5ghz_set, __chan_24ghz_set))
                                                                         time.sleep(30)
@@ -2445,7 +2441,78 @@ Sample script
                                                                         .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                                 logg.info("cisco_wifi_mode {}".format(cisco_wifimode))
                                                                 pss = cisco.controller_show_ap_summary()
-                                                                logg.info("pss {}".format(pss))
+                                                                logg.info("controller_show_ap_summary:::  pss {}".format(pss))
+                                                                if args.series == "9800":
+                                                                    searchap = False
+                                                                    cc_mac = ""
+                                                                    cc_ch = ""
+                                                                    cc_bw = ""
+                                                                    cc_power = ""
+                                                                    cc_dbm = ""
+                                                                    for line in pss.splitlines():
+                                                                        if (line.startswith("---------")):
+                                                                            searchap = True
+                                                                            continue
+                                                                        # if the pattern changes save the output of the advanced command and re parse https://regex101.com
+                                                                        if (searchap):
+                                                                            pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s"%(args.ap,args.slot)
+                                                                            m = re.search(pat, line)
+                                                                            if (m != None):
+                                                                                if(m.group(2) == args.slot):
+                                                                                    cc_mac = m.group(1)
+                                                                                    cc_slot = m.group(2)
+                                                                                    cc_ch = m.group(6);  # (132,136,140,144)
+                                                                                    cc_power = m.group(4)
+                                                                                    cc_power = cc_power.replace("/", " of ") # spread-sheets turn 1/8 into a date
+                                                                                    cc_dbm = m.group(5)
+                                                                                    cc_dbm = cc_dbm.replace("(","")
+                                          
+                                                                                    cc_ch_count = cc_ch.count(",") + 1
+                                                                                    cc_bw = m.group(3)
+                                                                                    logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6)))
+                                          
+                                                                                    logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
+                                                                                    logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                                                                    logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
+                                                                                    logg.info("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                                                                    logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
+                                                                                    logg.info("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                                                                    logg.info("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                                                                    break
+                                                                else:
+                                                                    searchap = False
+                                                                    cc_mac = ""
+                                                                    cc_ch = ""
+                                                                    cc_bw = ""
+                                                                    cc_power = ""
+                                                                    cc_dbm = ""
+                                                                    ch_count = ""
+                                                                    for line in pss.splitlines():
+                                                                        if (line.startswith("---------")):
+                                                                            searchap = True
+                                                                            continue
+                                                                        
+                                                                        if (searchap):
+                                                                            pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm"%(args.ap)
+                                                                            m = re.search(pat, line)
+                                                                            if (m != None):
+                                                                                cc_mac = m.group(1)
+                                                                                cc_ch = m.group(2);  # (132,136,140,144)
+                                                                                cc_power = m.group(3)
+                                                                                cc_power = cc_power.replace("/", " of ", 1) # spread-sheets turn 1/8 into a date
+                                                                                cc_dbm = m.group(4)
+                                             
+                                                                                ch_count = cc_ch.count(",")
+                                                                                cc_bw = 20 * (ch_count + 1)
+                                                                                
+                                                                                logg.info("3504 test_parameters cc_mac: read : {}".format(cc_mac))
+                                                                                logg.info("3504 test_parameters cc_count: read : {}".format(ch_count))
+                                                                                logg.info("3504 test_parameters cc_bw: read : {}".format(cc_bw))
+                                                                                logg.info("3504 test_parameters cc_power: read : {}".format(cc_power))
+                                                                                logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
+                                                                                logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
+                                                                                break
+
                                                                 ######################################################
                                                                 # end of cisco controller code no change to controller
                                                                 ######################################################                                                                
