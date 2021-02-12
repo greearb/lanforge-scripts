@@ -291,14 +291,14 @@ python3 ./test_ipv4_variable_time.py
             print('Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
-        if args.debug:
-            print("Saving report data in ... " + report_f)
+            
     else:
         report_f = args.report_file
         if args.output_format is None:
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
+    print("Saving report data in ... " + report_f)
 
     # Retrieve last data file
     compared_rept = None
