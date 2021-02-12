@@ -2,7 +2,7 @@
 '''
 
   This Script Loads the Existing Scenario and Run the Simultaenous Throughput over time and Generate Report and Plot the Graph
-  This Scrip has three classes :
+  This Script has three classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
           2. FindPorts : Fetch the L3CX Throughput and VAP Throughput
           3. Login_DUT : This class is specifically used to test the Linux based DUT that has SSH Server. It is used to read the CPU Core temperature during testing
@@ -45,7 +45,7 @@ import realm
 from realm import Realm
 import logging
 
-import paramiko as pm
+import paramiko as pmgo
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
 from bokeh.io import output_file, show

@@ -1073,15 +1073,15 @@ Summary :
 ----------
 create stations, create traffic between upstream port and stations,  run traffic. 
 The traffic on the stations will be checked once per minute to verify that traffic is transmitted
-and recieved.
+and received.
 
 Generic command layout:
 -----------------------
 python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
-        --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
+        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
-generiic command with controller setting channel and channel width test duration 5 min
+generic command with controller setting channel and channel width test duration 5 min
 python3 test_l3_longevity.py --cisco_ctlr <IP> --cisco_dfs True/False --mgr <Lanforge IP> 
     --cisco_channel <channel> --cisco_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open>" 
