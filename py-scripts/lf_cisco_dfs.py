@@ -1552,10 +1552,10 @@ class L3VariableTime(Realm):
         Result = False
 
         # verify controller channel , see if a DFS channel
-        current_channel = self.read_channel()
+        initial_channel = self.read_channel()
 
         logg.info("###########################################")
-        logg.info("# INITIAL CHANNEL  : {}".format(current_channel))
+        logg.info("# INITIAL CHANNEL  : {}".format(initial_channel))
         logg.info("###########################################")
 
         time.sleep(30)
@@ -1589,7 +1589,7 @@ class L3VariableTime(Realm):
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
                 if((cur_time > dfs_time) and dfs_radar_sent == False):
-                    self.dfs_send_radar(current_channel)
+                    self.dfs_send_radar(initial_channel)
                     dfs_radar_sent = True
                 time.sleep(1)
             
@@ -1638,6 +1638,8 @@ class L3VariableTime(Realm):
             logg.info("The DFS channel did not change or initial channel was not DFS")
             pass_fail = "fail"
 
+
+        best_csv_rx_row_data.append(initial_channel)
         best_csv_rx_row_data.append(final_channel)
         best_csv_rx_row_data.append(pass_fail)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
@@ -1674,7 +1676,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','final_channel','pass_fail'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -2977,7 +2979,7 @@ Sample script 2/11/2021
                                                                     pass
                                                                 else:
                                                                     ip_var_test.passes()
-                                                                    logg.info("Full test passed, all connections increased rx bytes")
+                                                                    logg.info("Test Complete")
 
 if __name__ == "__main__":
     main()
