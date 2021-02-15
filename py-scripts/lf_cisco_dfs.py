@@ -896,6 +896,8 @@ class L3VariableTime(Realm):
         self.results = results
         self.csv_started = csv_started
         self.epoch_time = int(time.time())
+        self.dfs_epoch_start  = 0
+        self.dfs_epoch_detect = 0
         self.debug = debug_on
         self.wait_timeout = wait_timeout
         self.test_keys = test_keys
@@ -1441,16 +1443,20 @@ class L3VariableTime(Realm):
 
         logg.info("dfs_send_radar channel: {}  frequency: {}".format(channel, frequency_))
 
-        # for testing on bash
+        # spawn bash for lf_hackrf.py
         child = pexpect.spawn('bash')
-        child.expect(r'\$')
+
+        # for testing bash
+        '''child.expect(r'\$')
         child.sendline('ls -lrt')
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
         print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
 
         child.expect(r'\$')
+        '''
 
-        command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
+        # no timeouts
+        '''command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
         print("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
@@ -1466,7 +1472,32 @@ class L3VariableTime(Realm):
         child.expect('>>>')
         print(child.before.decode('utf-8', 'ignore'))
         child.sendline('q')
-        time.sleep(1)
+        time.sleep(1)'''
+
+        # with timeouts
+        command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
+        logg.info("hackrf command {}".format(command_hackRF))
+        child.sendline(command_hackRF)
+        i = child.expect(['lanforge:',pexpect.TIMEOUT], timeout=2) 
+        if i == 0:
+            logg.info("lanforge prompt received i: {} before {} after {}".format(i,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
+            child.sendline('lanforge')
+            self.dfs_epoch_start = int(time.time())
+            j = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
+            if j == 0:
+                logg.info(">>> prompt received i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
+                child.sendline('s')
+                k = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
+                if k == 0:
+                    logg.info(">>> prompt received i: {} j: {} k: {} before {} after {}".format(i,j,k,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
+                    child.sendline('q')
+                    time.sleep(1)
+                if k == 1:
+                    logg.info("TIMEOUT hackrf >>> prompt i: {} j: {} k: {} before {} after {}".format(i,j,k,child.before.decode('utf-8', 'ignore'),child.after))
+            if j == 1:
+                logg.info("TIMEOUT hackrf >>> prompt i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after))
+        if i == 1:
+            logg.info("TIMEOUT lanforge password prompt i: {} before {} after {}".format(i,child.before.decode('utf-8', 'ignore'),child.after))
 
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
