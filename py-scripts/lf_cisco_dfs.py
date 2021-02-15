@@ -1555,8 +1555,13 @@ class L3VariableTime(Realm):
         initial_channel = self.read_channel()
 
         logg.info("###########################################")
-        logg.info("# INITIAL CHANNEL  : {}".format(initial_channel))
+        logg.info("# INITIAL CHANNEL: {}".format(initial_channel))
         logg.info("###########################################")
+
+        if (initial_channel != self.chan_5ghz):
+            logg.warn("##################################################################")
+            logg.warn("# DFS LOCKOUT?  COMMAND LINE CHANNEL: {} NOT EQUAL INITIAL CONTROLLER CHANNEL: {}".format(self.chan_5ghz,initial_channel))
+            logg.warn("##################################################################")
 
         time.sleep(30)
         
@@ -1635,9 +1640,12 @@ class L3VariableTime(Realm):
 
         pass_fail = "pass"
         if int(final_channel) in dfs_channel_bw20_values:
-            logg.info("The DFS channel did not change or initial channel was not DFS")
+            logg.info("FAIL: The DFS channel did not change or initial channel was not DFS")
             pass_fail = "fail"
 
+        if (initial_channel != self.chan_5ghz):
+            logg.info("FAIL: channel set on command line: {} not configured in controller: {} is there a DFS lockout condition".format(self.chan_5ghz,initial_channel))
+            pass_fail = "fail"
 
         best_csv_rx_row_data.append(initial_channel)
         best_csv_rx_row_data.append(final_channel)
@@ -2809,6 +2817,9 @@ Sample script 2/11/2021
                                                                                 logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                                                                                 logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
                                                                                 break
+
+                                                                if(cc_ch != cisco_chan_5ghz):
+                                                                    logg.info("configured channel {} not equal controller channel {}".format(cisco_chan_5ghz,cc_ch))
                                                                 ######################################################
                                                                 # end of cisco controller code no change to controller
                                                                 ######################################################                                                                
