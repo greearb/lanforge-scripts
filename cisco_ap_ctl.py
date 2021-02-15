@@ -260,6 +260,13 @@ def main():
         sleep(0.4)
         egg.expect([pexpect.TIMEOUT], timeout=2)  # do not delete this for it allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=4)
+        if i == 0:
+            egg.sendline('r')
+            egg.expect([pexpect.TIMEOUT], timeout=4)  # do not delete this for it allows for subprocess to see output
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        if i == 1:
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         # allow for normal logout below
         # show log | g DOT11_DRV
 
@@ -267,27 +274,20 @@ def main():
     elif (args.action == "cac_expiry_evt"):
         logg.info("execute: show log | g CAC_EXPIRY_EVT")    
         egg.sendline('show log | g CAC_EXPIRY_EVT')
-        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this for it allows for subprocess to see output
+        sleep(0.4)
+        egg.expect([pexpect.TIMEOUT], timeout=2)  # do not delete this for it allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
-        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
-        egg.sendline('r')
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=4)
+        if i == 0:
+            egg.sendline('r')
+            egg.expect([pexpect.TIMEOUT], timeout=4)  # do not delete this for it allows for subprocess to see output
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        if i == 1:
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
 
     else: # no other command at this time so send the same power command
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
         logg.info("no action")
-        '''egg.sendline('show log')
-        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this allows for subprocess to see output
-        print(egg.before.decode('utf-8', 'ignore')) # do not delete this allows for subprocess to see output
-
-        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=2)
-        # s
-        if i == 0:
-            if (scheme != "serial"):
-                egg.sendcontrol('c')
-        if i == 1:
-            if (scheme != "serial"):
-                logg.info("send cntl c anyway, received timeout")
-                egg.sendcontrol('c')'''
 
     i = egg.expect_exact([AP_PROMPT,AP_HASH,pexpect.TIMEOUT],timeout=1)
     if i == 0:
