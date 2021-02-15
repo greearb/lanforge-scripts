@@ -389,13 +389,21 @@ for key in equipment_ids:
     except:
         ap_cli_info = "ERROR"
         print("Cannot Reach AP CLI, will not test this variant")
+        report_data["pass_percent"][key] = "AP offline"
         continue
 
     fw_model = ap_cli_fw.partition("-")[0]
     print('Current Active AP FW from CLI:', ap_cli_fw)
 
-    ###Find Latest FW for Current AP Model and Get FW ID
+    if ap_cli_info['state'] != "active":
+        print('Manager Status not Active. Skipping AP Model!')
+        report_data["pass_percent"][key] = "AP offline"
+        continue
 
+    else:
+       print('Manager Status Active. Proceed with tests...')
+    ###Find Latest FW for Current AP Model and Get FW ID
+    time.sleep(30)
     ##Compare Latest and Current AP FW and Upgrade
     latest_ap_image = ap_latest_dict[fw_model]
 
