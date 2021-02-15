@@ -91,7 +91,8 @@ equipment_id_dict = {
     "ecw5410": "116",
     "ecw5211": "117",
     "ec420": "27",
-    "wf188n": "135"
+    "wf188n": "135",
+    "ex227": "148"
 }
 
 equipment_ip_dict = {
@@ -100,7 +101,8 @@ equipment_ip_dict = {
     "ec420": "10.10.10.104",
     "ecw5211": "10.10.10.102",
     "wf188n": "10.10.10.179",
-    "wf194c": "10.10.10.177"
+    "wf194c": "10.10.10.177",
+    "ex227": "10.10.10.182"
 }
 
 eqiupment_credentials_dict = {
@@ -109,7 +111,11 @@ eqiupment_credentials_dict = {
     "ec420": "openwifi",
     "ecw5211": "admin123",
     "wf188n": "openwifi",
-    "wf194c": "openwifi"
+    "wf194c": "openwifi",
+    "ex227": "openwifi",
+    "ex447": "openwifi",
+    "eap101": "openwifi",
+    "eap102": "openwifi"
 }
 
 ##Test Case information - Maps a generic TC name to TestRail TC numbers
