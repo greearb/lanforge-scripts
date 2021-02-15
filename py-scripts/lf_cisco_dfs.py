@@ -42,17 +42,6 @@ class FileAdapter(object):
         pass  # leave it to logging to flush properly
 
 
-class hack_rf_():
-    def __init__(self, args):
-        self.args = args
-    
-    def lf_hackrf_enable(self):
-        pass
-
-    def lf_hackrf_disable(self):
-        pass
-
-
 ################################################################################
 # cisco controller class :This class will be left in this file to allow for the
 # Scaling and Performance to be self contained and not impact other tests
@@ -780,72 +769,7 @@ class CreateCtlr():
         logg.info("configure ap {} channel {} chan_width {}".format(self.ap,self.channel,self.chan_width))
         # Verify channel and channel width. 
 
-##########################################        
-# DFS Begin
-##########################################
-    def verify_cac_on_ap(self):
-        pass
-        # Do this after you get the configuration Verify CAC
-        # use pySerial to check if the AP is configured:
-        # 1. You can grep for "DFS CAC timer enabled time 60" 
-        # 2. and "changed to DFS channel 52, running CAC for 60 seconds
-        # Wait for 60 sec and check for this log "CAC_EXPIRY_EVT: CAC finished on DFS channel 52"
-        #"make a note of the time and check the CAC timer expired in 60-61 seconds."
 
-        # After CAC expires Verify Traffic. (the loop should start up may want some special detection)
-
-    def lf_hackrf_enable(self):
-        # hard coded for now
-        # need json and update to realm
-        #if os.path.isfile(self.args.hackrf):
-        #    print("hack rf file found {}".format(self.args.hackrf))
-        #else:
-        #    print("WARNING: hack rf file not found at {}".format(self.args.hackrf))
-
-        # look for lf_hackrf.py in local directory the look for in 
-        pass
-
-    def verify_radar_detected_on_ap(self):
-        pass
-        #You will see logs as below in the AP:(show logging will help you getting this info)
-
-        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: radar detected
-        #[*07/07/2020 23:44:27.7630] wcp/dfs :: RadarDetection: sending packet out to capwapd, slotId=1, msgLen=386, chanCnt=1 -100
-        #[*07/07/2020 23:44:27.7900] DOT11_DRV[1]: DFS CAC timer disabled time 0
-        #[*07/07/2020 23:44:27.7960] Enabling Channel and channel width Switch Announcement on current channel 
-        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
-        #[*07/07/2020 23:44:27.8620] DOT11_DRV[1]: DFS CAC timer enabled time 60
-
-    def verify_black_list_time_ap(self):
-        # This will be an advanced functionality
-        pass
-
-    def lf_hackrf_disable(self):
-        pass
-        #need to save the process id
-
-    # dfs dynamic frequency selection
-    def dfs(self):
-        print("testing dfs")
-        self.verify_cac_on_ap()                 
-        self.lf_hackrf_enable()
-        self.verify_radar_detected_on_ap()
-        self.verify_black_list_time_ap()
-        self.lf_hackrf_disable()
-
-        # For Testing  only - since hackrf not causing channel changes
-        self.controller_disable_ap()
-        self.controller_set_channel_ap_36()
-        #self.dfs_set_chan_width_ap()
-        self.controller_enable_ap()
-        #check the AP for 52 is configured or not ,  check the CAC timer 
-        # verify the clien can connect back to the AP once the CAC expires (check all connections)
-
-
-
-##########################################        
-# DFS End
-##########################################
 
 ##########################################        
 # End of cisco controller class
@@ -2994,3 +2918,13 @@ Sample script 2/11/2021
 
 if __name__ == "__main__":
     main()
+
+
+''' 
+SAMPLE Command 2/15/2021
+./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52 56 60 64 68 96 100 104 108 112 116 120 124 128 132 136 140 144" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+
+SAMPLE Command with AP
+ ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
+'''
+
