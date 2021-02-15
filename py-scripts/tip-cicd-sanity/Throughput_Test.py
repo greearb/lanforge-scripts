@@ -11,6 +11,7 @@ import single_client_throughput
 import cloudsdk
 from cloudsdk import CloudSDK
 import lab_ap_info
+import throughput_profiles
 
 cloudSDK_url=os.getenv('CLOUD_SDK_URL')
 station = ["tput5000"]
@@ -108,13 +109,17 @@ for key in equipment_id_dict:
         ##add current FW to dictionary
         ap_firmware_dict[fw_model] = ap_fw
 
+        # Create Profiles for Testing
+        profiles = throughput_profiles.main(fw_model, cloudSDK_url, cloud_type, customer_id)
+        print("AP Profile List: ",profiles[1])
+
         ###########################################################################
         ############## Bridge Throughput Testing #################################
         ###########################################################################
         print("Testing for Bridge SSIDs")
         logger.info("Starting Bridge SSID tput tests on " + key)
         ###Set Proper AP Profile for Bridge SSID Tests
-        test_profile_id = profile_info_dict[fw_model]["profile_id"]
+        test_profile_id = profiles[1]['bridge_profile']
         #print(test_profile_id)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
         ### Wait for Profile Push
@@ -243,7 +248,7 @@ for key in equipment_id_dict:
         print('Testing for NAT SSIDs')
         logger.info("Starting NAT SSID tput tests on " + key)
         ###Set Proper AP Profile for NAT SSID Tests
-        test_profile_id = profile_info_dict[fw_model + '_nat']["profile_id"]
+        test_profile_id = profiles[1]['nat_profile']
         print(test_profile_id)
         bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
@@ -373,8 +378,8 @@ for key in equipment_id_dict:
         ###########################################################################
         print('Testing for Custom VLAN SSIDs')
         logger.info("Starting Custom VLAN SSID tput tests on " + key)
-        ###Set Proper AP Profile for NAT SSID Tests
-        test_profile_id = profile_info_dict[fw_model + '_vlan']["profile_id"]
+        ###Set Proper AP Profile for VLAN SSID Tests
+        test_profile_id = profiles[1]['vlan_profile']
         print(test_profile_id)
         bearer = CloudSDK.get_bearer(cloudSDK_url, cloud_type)
         ap_profile = CloudSDK.set_ap_profile(equipment_id, test_profile_id, cloudSDK_url, bearer)
@@ -500,7 +505,18 @@ for key in equipment_id_dict:
 
         #Indicates throughput has been run for AP model
         sanity_status['sanity_status'][key] = "tput run"
+        with open('sanity_status.json', 'w') as json_file:
+            json.dump(sanity_status, json_file)
+
         logger.info("Throughput tests complete on " + key)
+
+        # Delete profiles created for test
+        for x in profiles[0]:
+            delete_profile = CloudSDK.delete_profile(cloudSDK_url, bearer, str(x))
+            if delete_profile == "SUCCESS":
+                print("profile", x, "delete successful")
+            else:
+                print("Error deleting profile")
 
     elif sanity_status['sanity_status'][key] == "tput run":
         print("Throughput test already run on", key)
