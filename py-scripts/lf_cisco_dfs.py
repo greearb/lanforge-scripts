@@ -1445,9 +1445,15 @@ class L3VariableTime(Realm):
 
         # spawn bash for lf_hackrf.py
         child = pexpect.spawn('bash')
+        time.sleep(0.4)
 
         # for testing bash
-        '''child.expect(r'\$')
+        i = child.expect([r'\$',pexpect.TIMEOUT],timeout=2)
+        if i == 0:
+            logg.info("i: {} received bash prompt for hackrf command".format(i))
+        if i == 1:
+            logg.info("i: {} TIMEOUT in bash prompt".format(i))
+        '''
         child.sendline('ls -lrt')
         child.expect([pexpect.TIMEOUT], timeout=1)  # do not delete this for it allows for subprocess to see output
         print(child.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
@@ -1478,15 +1484,18 @@ class L3VariableTime(Realm):
         command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
         logg.info("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
+        time.sleep(0.4)
         i = child.expect(['lanforge:',pexpect.TIMEOUT], timeout=2) 
         if i == 0:
             logg.info("lanforge prompt received i: {} before {} after {}".format(i,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
             child.sendline('lanforge')
+            time.sleep(0.4)
             self.dfs_epoch_start = int(time.time())
             j = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
             if j == 0:
                 logg.info(">>> prompt received i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
                 child.sendline('s')
+                time.sleep(0.4)
                 k = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
                 if k == 0:
                     logg.info(">>> prompt received i: {} j: {} k: {} before {} after {}".format(i,j,k,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
