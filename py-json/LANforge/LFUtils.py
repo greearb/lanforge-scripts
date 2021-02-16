@@ -488,7 +488,9 @@ def name_to_eid(input):
     info = []
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
-    
+    if type(input) is not str:
+        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list")
+
     info = input.split('.')
     if len(info) == 1:
         rv[2] = info[0]; # just port name
