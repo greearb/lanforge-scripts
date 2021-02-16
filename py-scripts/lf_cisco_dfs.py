@@ -1509,6 +1509,8 @@ class L3VariableTime(Realm):
                 logg.info("TIMEOUT hackrf >>> prompt i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after))
         if i == 1:
             logg.info("TIMEOUT lanforge password prompt i: {} before {} after {}".format(i,child.before.decode('utf-8', 'ignore'),child.after))
+        
+        time.sleep(2)
 
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
