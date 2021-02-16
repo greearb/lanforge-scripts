@@ -509,6 +509,10 @@ for key in equipment_id_dict:
             json.dump(sanity_status, json_file)
 
         logger.info("Throughput tests complete on " + key)
+        # Move AP off profile in use
+        ap_profile = CloudSDK.set_ap_profile(equipment_id, profile_info_dict[fw_model]["profile_id"], cloudSDK_url,
+                                             bearer)
+        time.sleep(5)
 
         # Delete profiles created for test
         for x in profiles[0]:
