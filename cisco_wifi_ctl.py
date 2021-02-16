@@ -113,7 +113,7 @@ def main():
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "debug_disable_all","no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
       "cmd", "txPower", "bandwidth", "manual", "auto","no_wlan","show_wlan_summary",
-      "ap_channel", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
+      "ap_channel", "auto_rf","channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
       "disable_network_5ghz","disable_network_24ghz","enable_network_5ghz","enable_network_24ghz",
       "wireless_tag_policy","no_wlan_wireless_tag_policy","delete_wlan"])
    parser.add_argument("--value",       type=str, help="set value")
@@ -953,6 +953,12 @@ def main():
             command = "show ap dot11 24ghz summary"
       else:
          command = "show advanced 802.11%s summary"%(band)
+
+   if ((args.action == "auto_rf") and ((args.ap is None))):
+      raise  Exception("auto_rf requires AP name")
+
+   if ((args.action == "auto_rf") and ((args.ap is None))):
+      command = "show ap auto-rf 802.11a %s"%(args.ap)
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
       raise  Exception("ap_country requires country and AP name")

@@ -1363,6 +1363,31 @@ class L3VariableTime(Realm):
 
         return cc_ch    
 
+    def read_auto_rf(self):
+
+        logg.info("read_channel: cisco_wifi_ctl.py action advanced")
+        pss = ""
+        try:
+            logg.info("\
+                scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.scheme,
+                self.ctlr,self.port,self.prompt,self.user,
+                self.passwd,self.ap,self.series,self.band,"advanced"))
+
+            ctl_output = subprocess.run(["../cisco_wifi_ctl.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
+                                    self.user, "-p", self.passwd,
+                                    "-a", self.ap,"--series", self.series, "--band", self.band, "--action", "auto_rf"], 
+                                    capture_output=True, check=True)
+
+            pss = ctl_output.stdout.decode('utf-8', 'ignore')
+            logg.info(pss)
+
+        except subprocess.CalledProcessError as process_error:
+            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
+                format(process_error.returncode, process_error.output))
+            time.sleep(1) 
+            exit(1)
+
+
     def dfs_get_frequency(self,channel):
         # possibly have a dictionary
 
@@ -1524,12 +1549,13 @@ class L3VariableTime(Realm):
 
     def ap_cac_verify(self):
         if(bool(self.ap_dict)):
+            pss = ""
             # will need to verify that timer has timed out on AP - need in results
             logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}".format(self.chan_5ghz, self.chan_24ghz))
-            logg.info("####################################################################################################") 
+            logg.info("##################################################################") 
             logg.info("# READ changed to DFS channel {}, running CAC for 60 seconds.".format(self.chan_5ghz))
             logg.info("# READ AP CAC_EXPIRY_EVT:  CAC finished on DFS channel <channel>") 
-            logg.info("########################################################################################")
+            logg.info("##################################################################")
             logg.info("ap_dict {}".format(self.ap_dict))
             logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {} ap_baud: {}".format("show_log",self.ap_dict['ap_scheme'],self.ap_dict['ap_ip'],self.ap_dict["ap_port"],
                     self.ap_dict['ap_user'],self.ap_dict['ap_pw'],self.ap_dict['ap_tty'],self.ap_dict['ap_baud']))
@@ -1544,11 +1570,11 @@ class L3VariableTime(Realm):
                     logg.info("ap_info was of type NoneType will set pss empty")
             
             except subprocess.CalledProcessError as process_error:
-                logg.info("####################################################################################################") 
+                logg.info("###################################################") 
                 logg.info("# CHECK IF AP HAS CONNECTION ALREADY ACTIVE") 
-                logg.info("####################################################################################################") 
+                logg.info("###################################################") 
                 logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
-                logg.info("#####################################################################################################")
+                logg.info("###################################################")
             logg.info(pss)
             # fine CAC_TIMER 
             for line in pss.splitlines():
@@ -1689,6 +1715,9 @@ class L3VariableTime(Realm):
         if (initial_channel != self.chan_5ghz):
             logg.info("FAIL: channel set on command line: {} not configured in controller: {} is there a DFS lockout condition".format(self.chan_5ghz,initial_channel))
             pass_fail = "fail"
+
+        #if self.dfs
+
 
         best_csv_rx_row_data.append(initial_channel)
         best_csv_rx_row_data.append(final_channel)
