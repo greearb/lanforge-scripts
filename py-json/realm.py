@@ -545,8 +545,9 @@ class Realm(LFCliBase):
 
         return matched_map
 
-    def name_to_eid(self, eid):
-        self.logg(level="debug", mesg="name_to_eid: "+str(eid))
+    def name_to_eid(self, eid,debug=False):
+        if debug:
+            self.logg(level="debug", mesg="name_to_eid: "+str(eid))
         if (type(eid) is list) or (type(eid) is tuple):
             return eid
         return LFUtils.name_to_eid(eid)
@@ -1206,6 +1207,7 @@ class L3CXProfile(LFCliBase):
         #default save to csv first
         if report_file.split('.')[-1] != 'csv':
             report_file = report_file.replace(str(output_format),'csv',1)
+            print("Saving rolling data into..." + str(report_file))
 
         #retrieve compared report if specified - turn into dataframe === under construction ===
         if compared_report is not None:
@@ -1330,10 +1332,7 @@ class L3CXProfile(LFCliBase):
 
         #df to final report file output if necessary
         if output_format.lower() != 'csv':
-            dataframe_output = pd.read_csv(report_file)
-            final_file = self.df_to_file(dataframe=dataframe_output, output_f=output_format)
-            #save final file output
-            #print(report_file)
+            self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file.replace('csv',output_format,1))
 
 
     def refresh_cx(self):
@@ -1408,7 +1407,7 @@ class L3CXProfile(LFCliBase):
             side_b_resource = side_b_info[1]
 
             for port_name in side_a:
-                side_a_info = self.local_realm.name_to_eid(port_name)
+                side_a_info = self.local_realm.name_to_eid(port_name,debug=debug_)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
                 if port_name.find('.') < 0:
@@ -1491,14 +1490,14 @@ class L3CXProfile(LFCliBase):
                 })
 
         elif type(side_b) == list and type(side_a) != list:
-            side_a_info = self.local_realm.name_to_eid(side_a)
+            side_a_info = self.local_realm.name_to_eid(side_a,debug=debug_)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
             # side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
-                side_b_info = self.local_realm.name_to_eid(port_name)
+                side_b_info = self.local_realm.name_to_eid(port_name,debug=debug_)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
                 side_b_name = side_b_info[2]
