@@ -1,4 +1,5 @@
 from realm import BaseProfile
+import time
 
 class VRProfile(BaseProfile):
     """
@@ -147,6 +148,18 @@ class VRProfile(BaseProfile):
             "shelf": 1,
             "resource": self.vr_eid[1]
         }, debug_=debug)
+        time.sleep(1)
+        self.json_post("/cli-json/nc_show_vr", {
+            "shelf": 1,
+            "resource": self.vr_eid[1],
+            "router": "all"
+        }, debug_=debug)
+        self.json_post("/cli-json/nc_show_vrcx", {
+            "shelf": 1,
+            "resource": self.vr_eid[1],
+            "cx_name": "all"
+        }, debug_=debug)
+
 
         # # Create 1 rdd pair
         # self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
