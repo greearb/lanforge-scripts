@@ -53,12 +53,7 @@ class CreateVR(Realm):
         if (self.vr_profile.vr_eid is not None) \
             and (self.vr_profile.vr_eid[1] is not None) \
             and (self.vr_profile.vr_eid[2] is not None):
-            data = {
-                "shelf": 1,
-                "resource": self.vr_profile.vr_eid[1],
-                "router_name": self.vr_profile.vr_eid[2]
-            }
-            self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+            self.vr_profile.cleanup(debug=self.debug)
 
         if (self.vr_name is not None) \
             and (self.vr_name[1] is not None) \
