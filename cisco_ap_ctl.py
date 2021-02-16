@@ -303,6 +303,65 @@ def main():
 
 ''' NOTES for AP DFS
 
+#############################
+
+1. Do "show AP summary" on the controller to see the list of AP's connected.
+2. Now, check the channel configured on the AP using the commend "show ap  channel <AP-Name>"
+
+3. Check for the current channel and Channel width for Slot id 1. See the output of this command.
+
+4. Before making any changes, please connect at least 1 client to this AP in 5GHz radio. 
+Keep running the ping traffic to the default gateway of the AP.
+
+4. Now, configure dfs channel for this AP with 20MHz as channel width.
+
+6. After CAC Expiry, Client should connect back - Verify the pings are passing through or not.
+Note time:  
+"show logging" in the AP will show the CAC timer details. You can grep for "DFS CAC timer enabled time 60" and "changed to DFS channel 52, running CAC for 60 seconds.
+Wait for 60 sec and check for this log "CAC_EXPIRY_EVT: CAC finished on DFS channel 52"
+
+[*07/07/2020 23:37:48.1460] changed to DFS channel 52, running CAC for 60 seconds.
+[*07/07/2020 23:38:48.7240] CAC_EXPIRY_EVT: CAC finished on DFS channel 52
+
+"make a note of the time and check the CAC timer expired in 60-61 seconds.
+
+7. Now, trigger the radar on Channel 52. AP should move to another channel.
+ Also, When the radar is triggered, capture the CSA frames and verify the CSA count is set to 10 or not.
+
+ 8. Now, verify the black-list time of the channel for this AP.  : show ap auto-rf 802.11a <AP-Name>
+ In the controller, give the command "show ap auto-rf 802.11a <AP-Name>" under Radar information you should see the "Detected Channels and Blacklist Times" . 
+Black list time will be 1800 seconds which is 30 minutes.
+
+Radar Information
+    DFS stats on serving radio................... 0
+    DFS stats on RHL radio....................... 0
+    DFS stats triggered.......................... 0
+    Cumulative stats on serving radio............ 0
+    Cumulative stats on RHL radio................ 0
+    Cumulative stats triggered................... 0
+    Detected Channels
+      Channel 100................................    5 seconds ago
+    Blacklist Times
+      Channel 100................................ 1795 seconds remaining
+
+(Cisco Controller) >show ap channel APA453.0E7B.CF9C
+
+  Slot Id ..................................... 0
+  802.11b/g Current Channel ..................... 11*
+  Allowed Channel List........................... 1,2,3,4,5,6,7,8,9,10,11
+
+  Slot Id ..................................... 1
+  802.11a Current Channel ....................... (36,40)  40MHz / Cap 160MHz 
+  Allowed Channel List........................... 36,40,44,48,52,56,60,64,100,
+                      ........................... 104,108,112,116,120,124,128,
+                      ........................... 132,136,140,144,149,153,157,
+                      ........................... 161,165
+
+
+
+
+###########################
+
 Password: [*02/09/2021 14:30:04.2290] Radio [1] Admininstrative state ENABLED  change to DISABLED 
 [*02/09/2021 14:30:04.2300] DOT11_DRV[1]: Stop Radio1
 [*02/09/2021 14:30:04.2520] DOT11_DRV[1]: DFS CAC timer enabled time 60

@@ -801,6 +801,7 @@ class L3VariableTime(Realm):
                 _tx_power,
                 _client_density,
                 _cap_ctl_out,
+                _ap_dict,
                 endp_type, 
                 tos, 
                 side_b, 
@@ -868,6 +869,7 @@ class L3VariableTime(Realm):
         self.ap_mode = _ap_mode
         self.tx_power = _tx_power
         self.cap_ctl_out = _cap_ctl_out
+        self.ap_dict = _ap_dict
         self.client_density = _client_density
         self.tos = tos.split()
         self.endp_type = endp_type
@@ -898,6 +900,13 @@ class L3VariableTime(Realm):
         self.epoch_time = int(time.time())
         self.dfs_epoch_start  = 0
         self.dfs_epoch_detect = 0
+        #[*07/07/2020 23:37:48.1460] changed to DFS channel 52, running CAC for 60 seconds.
+        self.CAC_TIMER = ""
+        #[*07/07/2020 23:38:48.7240] CAC_EXPIRY_EVT: CAC finished on DFS channel 52
+        self.CAC_EXPIRY_EVT = ""
+        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
+        self.CSA_COUNT = ""
+        self.BLACK_LIST = ""
         self.debug = debug_on
         self.wait_timeout = wait_timeout
         self.test_keys = test_keys
@@ -1430,8 +1439,8 @@ class L3VariableTime(Realm):
         interval_ = "1428"
         count_ = "18"
         frequency_ = "5260000"  # channel 52
-        #sweep_time_ = "1000"
-        sweep_time_ = "0"
+        sweep_time_ = "1000"
+        #sweep_time_ = "0"
         if_gain_ = "40"
         bb_gain_ = "20"
         gain_ = "0"
@@ -1501,6 +1510,7 @@ class L3VariableTime(Realm):
                 k = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
                 if k == 0:
                     logg.info(">>> prompt received i: {} j: {} k: {} before {} after {}".format(i,j,k,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
+                    logg.info("send q - for quit")
                     child.sendline('q')
                     time.sleep(1)
                 if k == 1:
@@ -1512,12 +1522,71 @@ class L3VariableTime(Realm):
         
         time.sleep(2)
 
+    def ap_cac_verify(self):
+        if(bool(self.ap_dict)):
+            # will need to verify that timer has timed out on AP - need in results
+            logg.info("DFS channel 5ghz {} done waiting CAC time, 2.4 ghz: {}".format(self.chan_5ghz, self.chan_24ghz))
+            logg.info("####################################################################################################") 
+            logg.info("# READ changed to DFS channel {}, running CAC for 60 seconds.".format(self.chan_5ghz))
+            logg.info("# READ AP CAC_EXPIRY_EVT:  CAC finished on DFS channel <channel>") 
+            logg.info("########################################################################################")
+            logg.info("ap_dict {}".format(self.ap_dict))
+            logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {} ap_baud: {}".format("show_log",self.ap_dict['ap_scheme'],self.ap_dict['ap_ip'],self.ap_dict["ap_port"],
+                    self.ap_dict['ap_user'],self.ap_dict['ap_pw'],self.ap_dict['ap_tty'],self.ap_dict['ap_baud']))
+            try:
+                logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
+                # TODO remove position dependence if in tree 
+                ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", self.ap_dict['ap_scheme'], "--prompt", self.ap_dict['ap_prompt'],"--dest", self.ap_dict['ap_ip'], "--port", self.ap_dict["ap_port"],
+                                          "--user", self.ap_dict['ap_user'], "--passwd", self.ap_dict['ap_pw'],"--tty", self.ap_dict['ap_tty'],"--baud", self.ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
+                try:
+                    pss = ap_info.stdout.decode('utf-8', 'ignore')
+                except:
+                    logg.info("ap_info was of type NoneType will set pss empty")
+            
+            except subprocess.CalledProcessError as process_error:
+                logg.info("####################################################################################################") 
+                logg.info("# CHECK IF AP HAS CONNECTION ALREADY ACTIVE") 
+                logg.info("####################################################################################################") 
+                logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output)) 
+                logg.info("#####################################################################################################")
+            logg.info(pss)
+            # fine CAC_TIMER 
+            for line in pss.splitlines():
+                logg.info("ap: CAC_EXPIRY_EVT {}".format(line))
+                pat = 'changed to DFS channel\s+(\S+),\s+\S+\s+\S+\s+\S+\s+(\S+)'
+                m = re.search(pat, line)
+                if (m != None):
+                    dfs_channel = m.group(1)
+                    cac_time = m.group(2)
+                    logg.info("dfs_channel: {} cac_time: {}".format(dfs_channel,cac_time))
+                    logg.info("dfs_cac line: {}".format(line))
+                    self.CAC_TIMER = line
+                    break
+
+            # find CAC_EXPIRY_EVT
+            for line in pss.splitlines():
+                logg.info("ap: CAC_EXPIRY_EVT {}".format(line))
+                pat = 'CAC_EXPIRY_EVT:\s+\S+\s+\S+\s+\S+\s\S+\s\S+\s(\S+)'
+                m = re.search(pat, line)
+                if (m != None):
+                    dfs_channel = m.group(1)
+                    logg.info("dfs_channel: {}".format(dfs_channel))
+                    logg.info("dfs_channel line: {}".format(line))
+                    self.CAC_EXPIRY_EVT = line
+        else:
+            logg.info("ap_dict not set")
+
     def start(self, print_pass=False, print_fail=False):  
         best_max_tp_mbps = 0
         best_csv_rx_row_data = " "
         max_tp_mbps = 0
         csv_rx_row_data = " "
         Result = False
+
+
+
+        # verify the AP CAC timer and experation
+        self.ap_cac_verify()
 
         # verify controller channel , see if a DFS channel
         initial_channel = self.read_channel()
@@ -1562,8 +1631,14 @@ class L3VariableTime(Realm):
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
                 if((cur_time > dfs_time) and dfs_radar_sent == False):
-                    self.dfs_send_radar(initial_channel)
-                    dfs_radar_sent = True
+                    if(self.dfs):
+                        self.dfs_send_radar(initial_channel)
+                        dfs_radar_sent = True
+                    else:
+                        logg.info("################################################################")
+                        logg.info("# DFS IS NOT ENABLED FROM THE COMMAND LINE NO RADAR SENT")
+                        logg.info("################################################################")
+
                 time.sleep(1)
             
             self.epoch_time = int(time.time())
@@ -1618,6 +1693,8 @@ class L3VariableTime(Realm):
         best_csv_rx_row_data.append(initial_channel)
         best_csv_rx_row_data.append(final_channel)
         best_csv_rx_row_data.append(pass_fail)
+        best_csv_rx_row_data.append(self.CAC_TIMER)
+        best_csv_rx_row_data.append(self.CAC_EXPIRY_EVT)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
 
         # TO DO check to see if the data is still being transmitted
@@ -1652,7 +1729,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail','cac_timer','cac_expiry_evt'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -2669,8 +2746,11 @@ Sample script 2/11/2021
                                                                             try:
                                                                                 logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                                                                                 # TODO remove position dependence if in tree 
+                                                                                #ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                #                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "cac_expiry_evt"],capture_output=True, check=True)
                                                                                 ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "cac_expiry_evt"],capture_output=True, check=True)
+                                                                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
+
                                                                                 try:
                                                                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                                                                 except:
@@ -2898,6 +2978,7 @@ Sample script 2/11/2021
                                                                                                 _tx_power=__tx_power_set,
                                                                                                 _client_density=__client_density,
                                                                                                 _cap_ctl_out=__cap_ctl_out,
+                                                                                                _ap_dict = ap_dict,
                                                                                                 endp_type=cisco_packet_type,
                                                                                                 tos=args.tos,
                                                                                                 side_b=side_b,
