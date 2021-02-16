@@ -1366,7 +1366,7 @@ class L3VariableTime(Realm):
 
         return cc_ch    
 
-    def read_auto_rf(self,initial_channel):
+    def read_auto_rf(self):
 
         logg.info("read_channel: cisco_wifi_ctl.py action auto-rf")
         pss = ""
@@ -1391,11 +1391,11 @@ class L3VariableTime(Realm):
             exit(1)
         blacklist_time = ""
         for line in pss.splitlines():
-            pat = 'Channel\s+%s\S+\s+(\S+)\s+\S+\s+remaining'%(initial_channel)
+            pat = 'Channel\s+%s\S+\s+(\S+)\s+\S+\s+remaining'%(self.chan_5ghz)  
             m = re.search(pat, line)
             if ( m != None ):
                 blacklist_time = m.group(1)
-                logg.info("dfs_channel: {} blacklist_time: {}".format(initial_channel,blacklist_time))
+                logg.info("dfs_channel: {} blacklist_time: {}".format(self.chan_5ghz,blacklist_time))
 
         return blacklist_time
 
@@ -1730,7 +1730,7 @@ class L3VariableTime(Realm):
             logg.info("FAIL: channel set on command line: {} not configured in controller: {} is there a DFS lockout condition".format(self.chan_5ghz,initial_channel))
             pass_fail = "fail"
 
-        blacklist_time = self.read_auto_rf(initial_channel)
+        blacklist_time = self.read_auto_rf()
 
 
         best_csv_rx_row_data.append(initial_channel)
