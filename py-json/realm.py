@@ -546,6 +546,9 @@ class Realm(LFCliBase):
         return matched_map
 
     def name_to_eid(self, eid):
+        self.logg(level="debug", mesg="name_to_eid: "+str(eid))
+        if (type(eid) is list) or (type(eid) is tuple):
+            return eid
         return LFUtils.name_to_eid(eid)
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60, debug=False):
@@ -888,6 +891,8 @@ class BaseProfile:
     def wait_until_cxs_appear(self, these_cx, debug=False):
         return self.parent_realm.wait_until_cxs_appear(these_cx, debug=False)
 
+    def logg(self, message=None):
+        self.parent_realm.logg(message)
 
 class MULTICASTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
