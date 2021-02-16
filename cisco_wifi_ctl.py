@@ -957,7 +957,7 @@ def main():
    if ((args.action == "auto_rf") and ((args.ap is None))):
       raise  Exception("auto_rf requires AP name")
 
-   if ((args.action == "auto_rf") and ((args.ap is None))):
+   if (args.action == "auto_rf"):
       command = "show ap auto-rf 802.11a %s"%(args.ap)
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
