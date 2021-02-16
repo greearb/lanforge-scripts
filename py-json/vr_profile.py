@@ -173,8 +173,38 @@ class VRProfile(BaseProfile):
         #                  nexthop=local_nexthop,
         #                  flags=1, suppress_related_commands_=suppress_related_commands_, debug_=debug)
 
-    def cleanup(self, resource, delay=0.03):
+    def cleanup(self, resource=0, vr_id=0, delay=0.3, debug=False):
+        debug |= self.debug
+        if self.vr_eid is None:
+            return
+        if resource == 0:
+            resource = self.vr_eid[1]
+        if vr_id == 0:
+            vr_id = self.vr_eid[2]
 
-        pass
+        data = {
+            "shelf": 1,
+            "resource": resource,
+            "router_name": vr_id
+        }
+        self.json_post("/cli-json/rm_vr", data, debug_=debug)
+        time.sleep(delay)
+        self.refresh(resource, debug)
 
+    def refresh_gui(self, resource=0, delay=0.03, debug=False):
+        debug |= self.debug
+        self.json_post("/cli-json/nc_show_vr", {
+            "shelf": 1,
+            "resource": resource,
+            "router": "all"
+        }, debug_=debug)
+        self.json_post("/cli-json/nc_show_vrcx", {
+            "shelf": 1,
+            "resource": resource,
+            "cx_name": "all"
+        }, debug_=debug)
+        time.sleep(delay)
+        self.json_post("/vr/1/%s/%s" % (resource, 0), {
+            "action":"refresh"
+        }, debug)
 #
