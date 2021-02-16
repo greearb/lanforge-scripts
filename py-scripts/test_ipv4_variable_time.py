@@ -63,6 +63,13 @@ class IPV4VariableTime(Realm):
         self.ap = ap
         self.number_template = number_template
         self.debug = _debug_on
+        # self.json_post("/cli-json/set_resource", {
+        #     "shelf":1,
+        #     "resource":all,
+        #     "max_staged_bringup": 30,
+        #     "max_trying_ifup": 15,
+        #     "max_station_bringup": 6
+        # })
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.station_profile = self.new_station_profile()
@@ -73,6 +80,7 @@ class IPV4VariableTime(Realm):
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.debug = self.debug
+
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
