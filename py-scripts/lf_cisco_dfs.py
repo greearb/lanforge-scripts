@@ -1366,9 +1366,9 @@ class L3VariableTime(Realm):
 
         return cc_ch    
 
-    def read_auto_rf(self):
+    def read_auto_rf(self,initial_channel):
 
-        logg.info("read_channel: cisco_wifi_ctl.py action advanced")
+        logg.info("read_channel: cisco_wifi_ctl.py action auto-rf")
         pss = ""
         try:
             logg.info("\
@@ -1389,6 +1389,17 @@ class L3VariableTime(Realm):
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
+        blacklist_time = ""
+        for line in pss.splitlines():
+            pat = 'Channel\s+%s\S+\s+(\S+)\s+\S+\s+remaining'%(initial_channel)
+            m = re.search(pat, line)
+            if ( m != None ):
+                blacklist_time = m.group(1)
+                logg.info("dfs_channel: {} blacklist_time: {}".format(initial_channel,blacklist_time))
+
+        return blacklist_time
+
+
 
 
     def dfs_get_frequency(self,channel):
@@ -1719,7 +1730,7 @@ class L3VariableTime(Realm):
             logg.info("FAIL: channel set on command line: {} not configured in controller: {} is there a DFS lockout condition".format(self.chan_5ghz,initial_channel))
             pass_fail = "fail"
 
-        #if self.dfs
+        blacklist_time = self.read_auto_rf(initial_channel)
 
 
         best_csv_rx_row_data.append(initial_channel)
@@ -1727,6 +1738,7 @@ class L3VariableTime(Realm):
         best_csv_rx_row_data.append(pass_fail)
         best_csv_rx_row_data.append(self.CAC_TIMER)
         best_csv_rx_row_data.append(self.CAC_EXPIRY_EVT)
+        best_csv_rx_row_data.append(blacklist_time)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
 
         # TO DO check to see if the data is still being transmitted
@@ -1761,7 +1773,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail','cac_timer','cac_expiry_evt'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail','cac_timer','cac_expiry_evt','blacklist_time'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
