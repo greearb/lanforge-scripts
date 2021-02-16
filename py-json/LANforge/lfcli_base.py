@@ -456,6 +456,10 @@ class LFCliBase:
         #     print("lfclibase::self.proxy: ")
         #     pprint.pprint(self.proxy)
 
+    def logg(self, level="debug", mesg=None):
+        if (mesg is None) or (mesg == ""):
+            return
+        print("[{level}]: {msg}".format(level=level, msg=mesg))
 
     # This style of Action subclass for argparse can't do much unless we incorporate
     # our argparse as a member of LFCliBase. Then we can do something like automatically
