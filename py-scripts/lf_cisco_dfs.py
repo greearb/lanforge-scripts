@@ -3098,7 +3098,7 @@ if __name__ == "__main__":
 SAMPLE Command 2/15/2021
 ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52 56 60 64 68 96 100 104 108 112 116 120 124 128 132 136 140 144" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
 
-SAMPLE Command with AP
- ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
+SAMPLE Command with AP (need root if using serial)
+sudo ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "56" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600" --cisco_dfs 
 '''
 
