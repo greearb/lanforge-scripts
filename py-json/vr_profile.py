@@ -1,6 +1,3 @@
-import realm
-from realm import Realm
-import random
 from realm import BaseProfile
 
 class VRProfile(BaseProfile):
@@ -118,11 +115,11 @@ class VRProfile(BaseProfile):
 
     def create(self,
                vr_name=None,
-               upstream_port=None,
-               upstream_subnets=[],
-               upstream_nexthop=None,
-               local_subnets=[],
-               local_nexthop=None,
+               # upstream_port=None,
+               # upstream_subnets=[],
+               # upstream_nexthop=None,
+               # local_subnets=[],
+               # local_nexthop=None,
                debug=False,
                suppress_related_commands_=True):
         # Create vr
@@ -130,22 +127,27 @@ class VRProfile(BaseProfile):
             debug = True
         if vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
+
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
         from random import randint
-        x = randint(100, 200)
-        y = randint(100, 200)
+        x = randint(200, 300)
+        y = randint(200, 300)
         self.add_vr_data = {
             "alias": self.vr_eid[2],
             "shelf": 1,
             "resource": self.vr_eid[1],
             "x": x,
             "y": y,
-            "width": 250,
+            "width": 50,
             "height": 250,
             "flags": 0
         }
+        self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
+        self.json_post("/cli-json/apply_vr_cfg", {
+            "shelf": 1,
+            "resource": self.vr_eid[1]
+        }, debug_=debug)
 
-        self.json_post("/cli-json/add_vr", self.add_vr_data)
         # # Create 1 rdd pair
         # self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
         #                 netmask=rdd_netmask)  # rdd0, rdd1; rdd0 gateway, rdd1 connected to network
@@ -159,7 +161,7 @@ class VRProfile(BaseProfile):
         #                  flags=1, suppress_related_commands_=suppress_related_commands_, debug_=debug)
 
     def cleanup(self, resource, delay=0.03):
-        # TODO: Cleanup for VRProfile
+
         pass
 
 #
