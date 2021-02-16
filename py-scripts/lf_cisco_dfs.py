@@ -1636,9 +1636,9 @@ class L3VariableTime(Realm):
         logg.info("###########################################")
 
         if (initial_channel != self.chan_5ghz):
-            logg.warn("##################################################################")
-            logg.warn("# DFS LOCKOUT?  COMMAND LINE CHANNEL: {} NOT EQUAL INITIAL CONTROLLER CHANNEL: {}".format(self.chan_5ghz,initial_channel))
-            logg.warn("##################################################################")
+            logg.info("##################################################################")
+            logg.info("# DFS LOCKOUT?  COMMAND LINE CHANNEL: {} NOT EQUAL INITIAL CONTROLLER CHANNEL: {}".format(self.chan_5ghz,initial_channel))
+            logg.info("##################################################################")
 
         time.sleep(30)
         
