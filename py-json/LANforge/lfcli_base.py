@@ -637,17 +637,21 @@ class LFCliBase:
             return df.to_excel(output_f, index=False)
         if output_f == 'df':
             return df
-        supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-        #for format in supported_formats:
-          # if output_file_type.lower() == format:
-              # return exec('df.to_' + x + '("'+file_name'")')
-    
+        if output_f == 'json':
+            return df.to_json(output_f)
+        if output_f == 'stata':
+            return df.to_stata(output_f)
+        if output_f == 'pickle':
+            return df.to_pickle(output_f)
+        if output_f == 'html':
+            return df.to_html(output_f)
+          
     #takes any format of a file and returns a dataframe of it
     def file_to_df(self,file_name):
         return pd.read_csv(file_name)
     #get difference of all common columns in 2 dataframes. store in 
     def compare_two_df(self,dataframe_one=None,dataframe_two=None):
-        pass
+        #get the columns to be compared
         
         
         

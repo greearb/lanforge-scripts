@@ -1331,7 +1331,10 @@ class L3CXProfile(LFCliBase):
         #df to final report file output if necessary
         if output_format.lower() != 'csv':
             dataframe_output = pd.read_csv(report_file)
-            self.df_to_file(dataframe=dataframe_output, output_f=output_format)
+            final_file = self.df_to_file(dataframe=dataframe_output, output_f=output_format)
+            #save final file output
+            #print(report_file)
+
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
