@@ -783,7 +783,8 @@ class L3VariableTime(Realm):
     def __init__(self, 
                 args,
                 _dfs,
-                _dfs_time, 
+                _dfs_time,
+                _radar_duration, 
                 _scheme,
                 _port,
                 _series,
@@ -852,6 +853,8 @@ class L3VariableTime(Realm):
                          _capture_signal_list=_capture_signal_list)
         self.dfs = _dfs
         self.dfs_time = _dfs_time
+        self.radar_duration = _radar_duration
+        self.radar_duration_seconds = self.duration_time_to_seconds(_radar_duration)
         self.dfs_time_seconds = self.duration_time_to_seconds(_dfs_time)
         self.scheme = _scheme
         self.port   = _port
@@ -1528,8 +1531,8 @@ class L3VariableTime(Realm):
             j = child.expect(['>>>',pexpect.TIMEOUT], timeout=5) 
             if j == 0:
                 logg.info(">>> prompt received i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
-                logg.info("Let the radar run for 5 sec")
-                time.sleep(5)
+                logg.info("Let the radar run for {}".format(self.radar_duration_seconds))
+                time.sleep(self.radar_duration_seconds)
                 child.sendline('s') # stop
                 time.sleep(0.4)
                 k = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
@@ -2109,6 +2112,7 @@ Sample script 2/11/2021
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
     parser.add_argument('-dfs','--cisco_dfs',  help='--cisco_dfs, switch to enable dfs testing', action='store_true')
     parser.add_argument('-dft','--cisco_dfs_time',  help='--cisco_dfs_time, time to wait prior to sending radar signal default 30s', default='30s')
+    parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the cisco controller output will be captured', action='store_true')
                             
 
@@ -2234,6 +2238,9 @@ Sample script 2/11/2021
 
     if args.cisco_dfs_time:
         __dfs_time = args.cisco_dfs_time
+
+    if args.radar_duration:
+        __radar_duration = args.radar_duration
 
     ap_dict = []
     if args.ap_info:
@@ -2990,6 +2997,7 @@ Sample script 2/11/2021
                                                                                                 args=args,
                                                                                                 _dfs=__dfs,
                                                                                                 _dfs_time=__dfs_time,
+                                                                                                _radar_duration=__radar_duration,
                                                                                                 _scheme=__scheme,
                                                                                                 _port=__port,
                                                                                                 _series=__series,
