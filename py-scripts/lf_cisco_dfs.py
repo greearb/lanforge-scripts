@@ -1491,10 +1491,12 @@ class L3VariableTime(Realm):
             child.sendline('lanforge')
             time.sleep(0.4)
             self.dfs_epoch_start = int(time.time())
-            j = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
+            j = child.expect(['>>>',pexpect.TIMEOUT], timeout=5) 
             if j == 0:
                 logg.info(">>> prompt received i: {} j: {} before {} after {}".format(i,j,child.before.decode('utf-8', 'ignore'),child.after.decode('utf-8', 'ignore')))
-                child.sendline('s')
+                logg.info("Let the radar run for 5 sec")
+                time.sleep(5)
+                child.sendline('s') # stop
                 time.sleep(0.4)
                 k = child.expect(['>>>',pexpect.TIMEOUT], timeout=2) 
                 if k == 0:
