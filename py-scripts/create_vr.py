@@ -46,24 +46,39 @@ class CreateVR(Realm):
         self.vr_profile = self.new_vr_profile()
 
     def clean(self):
-        if (self.vr_profile.vr_eid is None) or (self.vr_profile.vr_eid) == "":
+        if (self.vr_name is None) or (self.vr_profile.vr_eid is None) and (self.vr_profile.vr_eid) == "":
+            print("No vr_eid to clean")
             return
 
-        data = {
-            "self": 1,
-            "resource": self.vr_profile.vr_eid[1],
-            "name": self.vr_profile.vr_eid[2]
-        }
-        self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+        if (self.vr_profile.vr_eid is not None) \
+            and (self.vr_profile.vr_eid[1] is not None) \
+            and (self.vr_profile.vr_eid[2] is not None):
+            data = {
+                "shelf": 1,
+                "resource": self.vr_profile.vr_eid[1],
+                "router_name": self.vr_profile.vr_eid[2]
+            }
+            self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+
+        if (self.vr_name is not None) \
+            and (self.vr_name[1] is not None) \
+            and (self.vr_name[2] is not None):
+            data = {
+                "shelf": 1,
+                "resource": self.vr_name[1],
+                "router_name": self.vr_name[2]
+            }
+            self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+
 
     def build(self):
         self.vr_profile.create(
-            vr_name="1.1.vr9",
-            upstream_port="up0",
-            upstream_subnets="10.0.0.0/24",
-            upstream_nexthop="10.0.0.1",
-            local_nexthop="10.1.0.1",
-            local_subnets="10.1.0.0/24",
+            vr_name=self.vr_name,
+            # upstream_port="up0",
+            # upstream_subnets="10.0.0.0/24",
+            # upstream_nexthop="10.0.0.1",
+            # local_nexthop="10.1.0.1",
+            # local_subnets="10.1.0.0/24",
             debug=self.debug)
 
 
@@ -101,7 +116,7 @@ Command example:
                          _halt_on_error=True,
                          _exit_on_error=True,
                          _exit_on_fail=True)
-    # create_vr.clean()
+    create_vr.clean()
     create_vr.build()
     # create_vr.start()
     # create_vr.monitor()
