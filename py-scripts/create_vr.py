@@ -15,7 +15,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 from LANforge.lfcli_base import LFCliBase
 from realm import Realm
-
+import time
 
 class CreateVR(Realm):
     def __init__(self,
@@ -69,6 +69,18 @@ class CreateVR(Realm):
                 "router_name": self.vr_name[2]
             }
             self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+            time.sleep(1)
+            self.json_post("/cli-json/nc_show_vr", {
+                "shelf": 1,
+                "resource": self.vr_name[1],
+                "router": "all"
+            }, debug_=self.debug)
+            self.json_post("/cli-json/nc_show_vrcx", {
+                "shelf": 1,
+                "resource": self.vr_name[1],
+                "cx_name": "all"
+            }, debug_=self.debug)
+
 
 
     def build(self):
