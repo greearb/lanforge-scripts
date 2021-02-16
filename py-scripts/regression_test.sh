@@ -22,44 +22,44 @@ BASE_DIR="/home/lanforge/Documents/lanforge-scripts"
 
 #Test array
 testCommands=(
-    "./$BASE_DIR/cpu_stats.py --duration 15"
-    "./$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug"
-    "./$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2 --debug"
-    "./$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug"
-    "./$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
-    "./$BASE_DIR/py-scripts/sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
+    ".$BASE_DIR/cpu_stats.py --duration 15"
+    ".$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug"
+    ".$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $SSID_USED --radio $RADIO_USED --security wpa2 --debug"
+    ".$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug"
+    ".$BASE_DIR/py-scripts/example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
+    ".$BASE_DIR/py-scripts/sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
     #"./$BASE_DIR/py-scripts/test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
-    "./$BASE_DIR/py-scripts/test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/testgroup.py --group_name group1 --add_group --list_groups --debug"
-    "./$BASE_DIR/py-scripts/testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug"
-    "./$BASE_DIR/py-scripts/test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --debug"
-    "./$BASE_DIR/py-scripts/test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
-    "./$BASE_DIR/py-scripts/test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
+    ".$BASE_DIR/py-scripts/test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/testgroup.py --group_name group1 --add_group --list_groups --debug"
+    ".$BASE_DIR/py-scripts/testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug"
+    ".$BASE_DIR/py-scripts/test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --debug"
+    ".$BASE_DIR/py-scripts/test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
+    ".$BASE_DIR/py-scripts/test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
     --radio \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
     --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
-    "./$BASE_DIR/py-scripts/test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/test_l3_scenario_throughput.py -t 15 -sc BLANK"
-    "./$BASE_DIR/py-scripts/test_status_msg.py --debug " #this is all which is needed to run
+    ".$BASE_DIR/py-scripts/test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/test_l3_scenario_throughput.py -t 15 -sc BLANK"
+    ".$BASE_DIR/py-scripts/test_status_msg.py --debug " #this is all which is needed to run
     #"./test_wanlink.py --debug"
-    #"./$BASE_DIR/py-scripts/ws_generic_monitor_test.py"
-    "../$BASE_DIR/py-json/ws-sta-monitor.py --debug"
-    "./$BASE_DIR/py-scripts/create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
-    "./$BASE_DIR/py-scripts/create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
-    "./$BASE_DIR/py-scripts/create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
-    "./$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes"
-    "./$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"
+    #".$BASE_DIR/py-scripts/ws_generic_monitor_test.py"
+    ".$BASE_DIR/py-json/ws-sta-monitor.py --debug"
+    ".$BASE_DIR/py-scripts/create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
+    ".$BASE_DIR/py-scripts/create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
+    ".$BASE_DIR/py-scripts/create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+    ".$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
+    ".$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes"
+    ".$BASE_DIR/py-scripts/wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"
 )
 declare -A name_to_num
 name_to_num=(
@@ -109,7 +109,7 @@ URL="../report-data/${NOW}"
 mkdir "$TEST_DIR"
 function run_test() {
     for i in "${testCommands[@]}"; do
-        ./$BASE_DIR/py-scripts/scenario.py --load BLANK
+        .$BASE_DIR/py-scripts/scenario.py --load BLANK
         NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
