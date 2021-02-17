@@ -297,8 +297,6 @@ def main():
          manager = args.manager
       if (args.scenario is not None):
          scenario = args.scenario
-      if (args.duration is not None):
-         duration = (args.duration * 60)/5
       if (args.report_name is not None):
          report_name = args.report_name
       if (args.duration is None):
