@@ -45,7 +45,7 @@ testCommands=(
     --radio \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
     --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./test_l3_scenario_throughput.py -t 15 -sc test_l3_scenario_throughput"
+    "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
     "./test_status_msg.py --debug " #this is all which is needed to run
     #"./test_wanlink.py --debug"
     #"./ws_generic_monitor_test.py"
@@ -197,7 +197,7 @@ function html_generator() {
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
-    rm "/home/lanforge/html_reports/latest.html" || true
+    unlink "/home/lanforge/html_reports/latest.html" || true
     ln -s "${fname}" "/home/lanforge/html-reports/latest.html"
 }
 

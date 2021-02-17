@@ -322,7 +322,7 @@ def main():
     Scenario_2 = LoadScenario(manager, 8080, scenario)
     #Wait for Sometime
     time.sleep(10)
-    duration_sec=Realm.parse_time(args.duration).total_minutes()
+    duration_sec=Realm.parse_time(args.duration).total_seconds() * 60
 
     # Port Utility function for reading CX and VAP
     PortUtility(manager,8080, duration_sec, report_name, scenario, test_detail)
