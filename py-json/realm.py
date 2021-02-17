@@ -1214,8 +1214,7 @@ class L3CXProfile(LFCliBase):
             supported_formats = ['csv', 'json', 'stata', 'pickle','html']
             for format in supported_formats:
                 if compared_report.lower() == format:
-                    #exec('df.to_' + x + '("' + report_file + '",index=False' + ')')
-                    #previous_data_df= read_csv()
+ 
                     pass
 
         #================== Step 1, set column names and header row
@@ -1305,7 +1304,6 @@ class L3CXProfile(LFCliBase):
                                     for key in port_mgr_values_dict.keys():
                                         renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
                                     merge.update(renamed_port_cols)
-
                 for name in header_row[2:-3]:
                     temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
@@ -1332,7 +1330,7 @@ class L3CXProfile(LFCliBase):
 
         #df to final report file output if necessary
         if output_format.lower() != 'csv':
-            self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file.replace('csv',output_format,1))
+            self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
 
 
     def refresh_cx(self):

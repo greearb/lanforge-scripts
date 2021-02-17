@@ -291,7 +291,7 @@ python3 ./test_ipv4_variable_time.py
             path = os.path.join(curr_dir_path, new_file_path)
             os.mkdir(path)
 
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
+        if args.output_format in ['csv', 'json', 'html', 'hdf','stata', 'pickle', 'pdf', 'png', 'parquet',
                                   'xlsx']:
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format

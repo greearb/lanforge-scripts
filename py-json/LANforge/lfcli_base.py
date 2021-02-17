@@ -16,6 +16,8 @@ from LANforge import LFRequest
 import LANforge.LFRequest
 import csv
 import pandas as pd
+import tables
+import pyarrow as pa
 #import xlsxwriter
 
 class LFCliBase:
@@ -599,55 +601,28 @@ class LFCliBase:
                 abgnAX : 12,
                 bgnAX  : 13
 """ 
-    # def write_to_csv_file(self,new_data_list=None, num_cols=0, csvwriter=None,debug=False):
-    #     if num_cols == 0:
-    #         raise ValueError("Number of columns cannot be zero. Exiting script.")
-    #         exit(1)
-    #     if type(new_data_list) is not list:
-    #         raise ValueError("Data type passed to write into CSV is not a list. Exiting script.")
-    #         exit(1)
-    #     if debug:
-    #         print("Writing data : ")
-    #         print(new_data_list)
 
-    #     indiv_data_line=[]
-    #     col_counter_per_line=0
-    #     for data_value in new_data_list:
-    #         if col_counter_per_line >= num_cols:
-    #             if debug:
-    #                 print(indiv_data_line)
-    #             csvwriter.writerow(indiv_data_line)
-    #             col_counter_per_line=0
-    #             indiv_data_line.clear()
-    #         indiv_data_line.append(data_value)
-    #         col_counter_per_line += 1
-    
     #================ Pandas Dataframe Functions ======================================
     
      #takes any dataframe and returns the specified file extension of it
     def df_to_file(self, output_f=None,dataframe=None, save_path=None):
-        df = dataframe
-        #pd.set_option("display.max_rows", None, "display.max_columns", None)
-        #print(df)
-        if output_f.lower() == 'hdf':
-            df.to_hdf(save_path, 'table', append=True)
+        if output_f.lower() == 'hdf': 
+            dataframe.to_hdf(save_path.replace('csv','h5',1), 'table', append=True)
         if output_f.lower() == 'parquet':
-            df.to_parquet(save_path, engine='pyarrow')
+            dataframe.to_parquet(save_path.replace('csv','parquet',1), engine='pyarrow')
         if output_f.lower() == 'png':
-            fig = df.plot().get_figure()
-            fig.savefig(save_path)
+            fig = dataframe.plot().get_figure()
+            fig.savefig(save_path.replace('csv','png',1))
         if output_f.lower() == 'xlsx':
-            df.to_excel(save_path)
-        if output_f.lower() == 'df':
-            df
+            dataframe.to_excel(save_path.replace('csv','xlsx',1))
         if output_f.lower() == 'json':
-            df.to_json(save_path)
+            dataframe.to_json(save_path.replace('csv','json',1))
         if output_f.lower() == 'stata':
-            df.to_stata(save_path)
+            dataframe.to_stata(save_path.replace('csv','dta',1))
         if output_f.lower() == 'pickle':
-            df.to_pickle(save_path)
+            dataframe.to_pickle(save_path.replace('csv','pkl',1))
         if output_f.lower() == 'html':
-            df.to_html(save_path)
+            dataframe.to_html(save_path.replace('csv','html',1))
           
     #takes any format of a file and returns a dataframe of it
     def file_to_df(self,file_name):
