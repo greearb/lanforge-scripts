@@ -311,14 +311,12 @@ python3 ./test_ipv4_variable_time.py
     # Retrieve last data file
     compared_rept = None
     if args.compared_report:
-        # check if last report format is same as current rpt format
-        last_report_format = args.compared_report.split('.')[-1]
-        if output == last_report_format:
-            compared_rept = args.compared_report
-        else:
-            ValueError(
-                "Compared report format is not the same as the new report format. Please make sure they are of the same file type.")
-
+        compared_report_format=args.compared_report.split('.')[-1]
+        #if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+        if compared_report_format != 'csv':
+            ValueError("Cannot process this file type. Please select a different file and re-run script.")
+            exit(1)
+            
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
@@ -362,6 +360,7 @@ python3 ./test_ipv4_variable_time.py
         # send col names here to file to reformat
     else:
         port_mgr_cols = args.port_mgr_cols
+        # send col names here to file to reformat
     if args.debug:
         print("Layer 3 Endp column names are...")
         print(layer3_cols)

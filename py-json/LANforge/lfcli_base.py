@@ -580,6 +580,10 @@ class LFCliBase:
     def get_milliseconds(self,
                          timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
+    def get_seconds(self,
+                    timestamp):
+        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
+
 
     def replace_special_char(self,
                              str):
@@ -626,15 +630,11 @@ class LFCliBase:
           
     #takes any format of a file and returns a dataframe of it
     def file_to_df(self,file_name):
-        return pd.read_csv(file_name)
-    #get difference of all common columns in 2 dataframes. store in 
+        if file_name.split('.')[-1] == 'csv':
+            return pd.read_csv(file_name)
+        
+   
     def compare_two_df(self,dataframe_one=None,dataframe_two=None):
-        #get the columns to be compared
-        
-        
-        
-        
-        
         pass    
         #return compared_df
 

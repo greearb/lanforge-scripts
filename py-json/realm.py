@@ -1209,20 +1209,13 @@ class L3CXProfile(LFCliBase):
             report_file = report_file.replace(str(output_format),'csv',1)
             print("Saving rolling data into..." + str(report_file))
 
-        #retrieve compared report if specified - turn into dataframe === under construction ===
-        if compared_report is not None:
-            supported_formats = ['csv', 'json', 'stata', 'pickle','html']
-            for format in supported_formats:
-                if compared_report.lower() == format:
- 
-                    pass
-
         #================== Step 1, set column names and header row
         layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
         layer3_fields = ",".join(layer3_cols)
-        header_row=layer3_cols
-        header_row.insert(0,'Timestamp milliseconds')
-        header_row.insert(0,'Timestamp')
+        default_cols=['Timestamp','Timestamp milliseconds epoch','Duration elapsed']
+        default_cols.extend(layer3_cols)
+        header_row=default_cols
+
       
         #csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
 
@@ -1260,7 +1253,13 @@ class L3CXProfile(LFCliBase):
         time.sleep(10)
         
         # for x in range(0,int(round(iterations,0))):
+        initial_starttime= datetime.datetime.now()
         while datetime.datetime.now() < end_time:
+            t = datetime.datetime.now()
+            timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
+            t_to_millisec_epoch= int(self.get_milliseconds(t))
+            time_elapsed=int(self.get_seconds(t))-int(self.get_seconds(initial_starttime))
+        
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
             if port_mgr_cols is not None:
                 port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
@@ -1278,18 +1277,14 @@ class L3CXProfile(LFCliBase):
                     print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
             
 
-            t = datetime.datetime.now()
-
-            timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
-            t_to_millisec_epoch= int(self.get_milliseconds(t))
-            
+         
             temp_list=[]
             for endpoint in layer_3_response["endpoint"]:
                 if debug:
                     print("Current endpoint values list... ")
                     print(list(endpoint.values())[0])
                 temp_endp_values=list(endpoint.values())[0] #dict
-                temp_list.extend([timestamp,t_to_millisec_epoch]) 
+                temp_list.extend([timestamp,t_to_millisec_epoch,time_elapsed]) 
                 current_sta = temp_endp_values['name']
                 merge={}
                 if port_mgr_cols is not None:
@@ -1304,7 +1299,8 @@ class L3CXProfile(LFCliBase):
                                     for key in port_mgr_values_dict.keys():
                                         renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
                                     merge.update(renamed_port_cols)
-                for name in header_row[2:-3]:
+                print(header_row[3:-3])
+                for name in header_row[3:-3]:
                     temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
                 temp_list.clear()
@@ -1326,11 +1322,13 @@ class L3CXProfile(LFCliBase):
 
         #comparison to last report / report inputted
         if compared_report is not None:
-            compared_report_completed=self.compare_two_df(pd.read_csv(report_file), pd.read_csv(compared_report)) 
-
-        #df to final report file output if necessary
-        if output_format.lower() != 'csv':
-            self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file), dataframe_two=self.file_to_df(compared_report))
+            #append compared df to created one
+            if output_format.lower() != 'csv':
+                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+        else:
+            if output_format.lower() != 'csv':
+                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
 
 
     def refresh_cx(self):
