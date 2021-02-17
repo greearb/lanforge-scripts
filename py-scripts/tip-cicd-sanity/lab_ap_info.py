@@ -52,8 +52,8 @@ mimo_5g = {
     "wf194c": "8x8",
     "ex227": "",
     "ex447": "",
-    "eap101": "",
-    "eap102": ""
+    "eap101": "2x2",
+    "eap102": "4x4"
 }
 
 mimo_2dot4g = {
@@ -65,8 +65,8 @@ mimo_2dot4g = {
     "wf194c": "4x4",
     "ex227": "",
     "ex447": "",
-    "eap101": "",
-    "eap102": ""
+    "eap101": "2x2",
+    "eap102": "4x4"
 }
 
 sanity_status = {
@@ -92,7 +92,9 @@ equipment_id_dict = {
     "ecw5211": "117",
     "ec420": "27",
     "wf188n": "135",
-    "ex227": "148"
+    "ex227": "148",
+    "eap102": "147",
+    "wf194c": "152"
 }
 
 equipment_ip_dict = {
@@ -101,8 +103,9 @@ equipment_ip_dict = {
     "ec420": "10.10.10.104",
     "ecw5211": "10.10.10.102",
     "wf188n": "10.10.10.179",
-    "wf194c": "10.10.10.177",
-    "ex227": "10.10.10.182"
+    "wf194c": "10.10.10.184",
+    "ex227": "10.10.10.182",
+    "eap102": "10.10.10.183"
 }
 
 eqiupment_credentials_dict = {
@@ -901,7 +904,7 @@ profile_info_dict = {
             5055,
             5056
         ],
-        "fiveG_WPA2_SSID": "EAP101_5G_WPA2_NAT",
+        "fiveG_WPA2_SSID": "EAP102_5G_WPA2_NAT",
         "fiveG_WPA2_PSK": "Connectus123$",
         "fiveG_WPA_SSID": "EAP102_5G_WPA_NAT",
         "fiveG_WPA_PSK": "Connectus123$",

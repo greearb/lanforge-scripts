@@ -931,7 +931,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 ssid_config = profile_info_dict[key]["ssid_list"]
             else:
-                ssid_config = [x for x in profile_info_dict[key]["ssid_list"] if "EAP" not in x]
+                ssid_config = [x for x in profile_info_dict[key]["ssid_list"] if "-EAP" not in x]
             try:
                 print("SSIDs in AP Profile:", ssid_config)
 
@@ -1305,7 +1305,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 ssid_config = profile_info_dict[fw_model + '_nat']["ssid_list"]
             else:
-                ssid_config = [x for x in profile_info_dict[fw_model + '_nat']["ssid_list"] if "EAP" not in x]
+                ssid_config = [x for x in profile_info_dict[fw_model + '_nat']["ssid_list"] if "-EAP" not in x]
             try:
                 print("SSIDs in AP Profile:", ssid_config)
 
@@ -1675,7 +1675,7 @@ for key in equipment_ids:
             if args.skip_eap != True:
                 ssid_config = profile_info_dict[fw_model + '_vlan']["ssid_list"]
             else:
-                ssid_config = [x for x in profile_info_dict[fw_model + '_vlan']["ssid_list"] if "EAP" not in x]
+                ssid_config = [x for x in profile_info_dict[fw_model + '_vlan']["ssid_list"] if "-EAP" not in x]
 
             try:
                 print("SSIDs in AP Profile:", ssid_config)
