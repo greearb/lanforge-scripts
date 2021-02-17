@@ -1399,8 +1399,57 @@ class L3VariableTime(Realm):
 
         return blacklist_time
 
-
-
+    def dfs_fcc(self,fcc):
+        # 1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16
+        # "FCCO" , "FCC1" , "FCC2" , "FCC3", "FCC4", "FCC5", "ETSI1", "ETSI2", "ETSI3", "ETSI4", "ETSI5", "ETSI6"
+        if fcc == "FCCO":
+            width = "1"
+            interval = "1428"
+            count = "18"
+        elif fcc == "FCC1":
+            width = "1"
+            interval = "1163"
+            count = "18"
+        elif fcc == "FCC2":
+            width = "2"
+            interval = "208"
+            count = "28"
+        elif fcc == "FCC3":
+            width = "7"
+            interval = "365"
+            count = "16"
+        elif fcc == "FCC4":
+            width = "16"
+            interval = "271"
+            count = "12"
+        elif fcc == "FCC5":
+            width = "70"
+            interval = "1975"
+            count = "3"
+        elif fcc == "ETSI1":
+            width = "5"
+            interval = "342"
+            count = "10"
+        elif fcc == "ETSI2":
+            width = "2"
+            interval = "1271"
+            count = "15"
+        elif fcc == "ETSI3":
+            width = "15"
+            interval = "3280"
+            count = "25"
+        elif fcc == "ETSI4":
+            width = "24"
+            interval = "2477"
+            count = "20"
+        elif fcc == "ETSI5":
+            width = "1"
+            interval = "356"
+            count = "10"
+        elif fcc == "ETSI6":
+            width = "2"
+            interval = "1091"
+            count = "15"
 
     def dfs_get_frequency(self,channel):
         # possibly have a dictionary
