@@ -65,7 +65,7 @@ class Login_DUT:
       self.host=HOST
       self.USERNAME = "lanforge"
       self.PASSWORD = "lanforge"
-      self.CLIENT= pm.SSHClient()
+      self.CLIENT= pmgo.SSHClient()
       self.LF1= self.Connect()
       self.data_core1=[]
       self.data_core2=[]
@@ -83,7 +83,7 @@ class Login_DUT:
 
     def Connect(self):
         self.CLIENT.load_system_host_keys()
-        self.CLIENT.set_missing_host_key_policy(pm.AutoAddPolicy())
+        self.CLIENT.set_missing_host_key_policy(pmgo.AutoAddPolicy())
         try:
             self.CLIENT.connect(self.host, username=self.USERNAME, password=self.PASSWORD,timeout=10)
             return None
@@ -282,7 +282,7 @@ def main():
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
 
-    parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)")
+    parser.add_argument("-t", "--duration", type=str, help="Enter the Time for which you want to run test")
     parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
     parser.add_argument("-td", "--test_detail", type=str, help="Enter the Test Detail in Quotes ")
 
@@ -324,9 +324,10 @@ def main():
     Scenario_2 = LoadScenario(manager, 8080, scenario)
     #Wait for Sometime
     time.sleep(10)
+    duration_sec=Realm.parse_time(args.duration).total_minutes()
 
     # Port Utility function for reading CX and VAP
-    PortUtility(manager,8080, duration, report_name, scenario, test_detail)
+    PortUtility(manager,8080, duration_sec, report_name, scenario, test_detail)
 
 
 

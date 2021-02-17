@@ -91,7 +91,6 @@ def main():
 --------------------
 Command example:
 ./create_station.py
-    --upstream_port eth1
     --radio wiphy0
     --num_stations 3
     --security open
