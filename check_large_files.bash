@@ -180,8 +180,9 @@ kernel_to_relnum() {
     #set -euxv
     local hunks=()
     # 1>&2 echo "KERNEL RELNUM:[$1]"
-    local my1="${1/*[^0-9+]-/}" # Dang, this is not intuitive to a PCRE user
+    local my1="${1/*[^0-9]-/}" # Dang, this is not intuitive to a PCRE user
     #1>&2 echo "KERNEL [$1] REGEX:[$my1]"
+    my1="${my1//\+/}"
     if [[ $my1 =~ ^[^0-9] ]]; then
         1>&2 echo "BAD SERIES: [$1]"
         exit 1
@@ -216,7 +217,7 @@ clean_old_kernels() {
     if (( ${#removable_packages[@]} > 0 )); then
         for f in "${removable_packages[@]}"; do
             echo "$f\*"
-        done | xargs /usr/bin/rpm -hve
+        done | xargs /usr/bin/rpm --nodeps -hve
     fi
     if (( ${#removable_kernels[@]} > 0 )); then
         for f in "${removable_kernels[@]}"; do
@@ -311,10 +312,11 @@ clean_dnf_cache() {
 }
 
 clean_mnt_lf_files() {
-    note "clean mnt lf files WIP"
+    note "cleaning mnt lf files..."
     if (( $verbose > 0 )); then
         printf "%s\n" "${mnt_lf_files[@]}"
     fi
+    rm -f  "${mnt_lf_files[@]}"
 }
 
 compress_report_data() {
@@ -356,6 +358,7 @@ survey_kernel_files() {
     unset kernel_sort_serial
     unset pkg_sort_names
     unset libmod_sort_names
+    declare -A kernel_sort_serial=()
     declare -A kernel_sort_names=()
     declare -A pkg_sort_names=()
     declare -A libmod_sort_names=()
@@ -373,9 +376,10 @@ survey_kernel_files() {
     local file
     local fiile
     for file in "${kernel_files[@]}"; do
-        # echo "kernel_file [$file]"
+        echo "kernel_file [$file]"
         [[ $file =~ /boot/initramfs* ]] && continue
         [[ $file =~ *.fc*.x86_64 ]] && continue
+        [[ $file = *initrd-plymouth.img ]] && continue
         fiile=$( basename $file )
         fiile=${fiile%.img}
 
@@ -582,7 +586,7 @@ mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
     debug "Surveying mnt lf"
-    mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem 2>/dev/null)
+    mapfile -t mnt_lf_files < <(find /mnt/lf -xdev -type f 2>/dev/null)
     totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[m]} = x ]] && totals[m]=0
 }
@@ -610,7 +614,7 @@ survey_report_data() {
     cd /home/lanforge
     # set -veux
     local fsiz=0
-    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null ||: | wc -l )
+    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null | wc -l  ||:)
     # if (( $verbose > 0 )); then
         # hr
         # find -type f -a -name '*.csv' 2>/dev/null ||:
