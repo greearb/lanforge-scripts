@@ -152,7 +152,7 @@ function check_args() {
 function html_generator() {
     header="<html>
 		<head>
-		<title>Test All Scripts Results $NOW</title>
+		<title>Regression Test Results $NOW</title>
 		<style>
 		.success {
 			background-color:green;
