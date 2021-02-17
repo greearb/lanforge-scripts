@@ -16,6 +16,7 @@ from LANforge import LFRequest
 import LANforge.LFRequest
 import csv
 import pandas as pd
+#import xlsxwriter
 
 class LFCliBase:
 
@@ -624,27 +625,29 @@ class LFCliBase:
     #================ Pandas Dataframe Functions ======================================
     
      #takes any dataframe and returns the specified file extension of it
-    def df_to_file(self, dataframe=None, output_f=None):
+    def df_to_file(self, output_f=None,dataframe=None, save_path=None):
         df = dataframe
-        if output_f == 'hdf':
-            return df.to_hdf(output_f, 'table', append=True)
-        if output_f == 'parquet':
-            return df.to_parquet(output_f, engine='pyarrow')
-        if output_f == 'png':
+        #pd.set_option("display.max_rows", None, "display.max_columns", None)
+        #print(df)
+        if output_f.lower() == 'hdf':
+            df.to_hdf(save_path, 'table', append=True)
+        if output_f.lower() == 'parquet':
+            df.to_parquet(save_path, engine='pyarrow')
+        if output_f.lower() == 'png':
             fig = df.plot().get_figure()
-            return fig.savefig(output_f)
-        if output_f.lower() in ['excel', 'xlsx']:
-            return df.to_excel(output_f, index=False)
-        if output_f == 'df':
-            return df
-        if output_f == 'json':
-            return df.to_json(output_f)
-        if output_f == 'stata':
-            return df.to_stata(output_f)
-        if output_f == 'pickle':
-            return df.to_pickle(output_f)
-        if output_f == 'html':
-            return df.to_html(output_f)
+            fig.savefig(save_path)
+        if output_f.lower() == 'xlsx':
+            df.to_excel(save_path)
+        if output_f.lower() == 'df':
+            df
+        if output_f.lower() == 'json':
+            df.to_json(save_path)
+        if output_f.lower() == 'stata':
+            df.to_stata(save_path)
+        if output_f.lower() == 'pickle':
+            df.to_pickle(save_path)
+        if output_f.lower() == 'html':
+            df.to_html(save_path)
           
     #takes any format of a file and returns a dataframe of it
     def file_to_df(self,file_name):

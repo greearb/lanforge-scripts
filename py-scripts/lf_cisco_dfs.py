@@ -1368,7 +1368,7 @@ class L3VariableTime(Realm):
 
     def read_auto_rf(self):
 
-        logg.info("read_channel: cisco_wifi_ctl.py action advanced")
+        logg.info("read_channel: cisco_wifi_ctl.py action auto-rf")
         pss = ""
         try:
             logg.info("\
@@ -1389,6 +1389,17 @@ class L3VariableTime(Realm):
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
+        blacklist_time = ""
+        for line in pss.splitlines():
+            pat = 'Channel\s+%s\S+\s+(\S+)\s+\S+\s+remaining'%(self.chan_5ghz)  
+            m = re.search(pat, line)
+            if ( m != None ):
+                blacklist_time = m.group(1)
+                logg.info("dfs_channel: {} blacklist_time: {}".format(self.chan_5ghz,blacklist_time))
+
+        return blacklist_time
+
+
 
 
     def dfs_get_frequency(self,channel):
@@ -1467,8 +1478,8 @@ class L3VariableTime(Realm):
         interval_ = "1428"
         count_ = "18"
         frequency_ = "5260000"  # channel 52
-        sweep_time_ = "1000"
-        #sweep_time_ = "0"
+        #sweep_time_ = "1000"
+        sweep_time_ = "0"
         if_gain_ = "40"
         bb_gain_ = "20"
         gain_ = "0"
@@ -1625,9 +1636,9 @@ class L3VariableTime(Realm):
         logg.info("###########################################")
 
         if (initial_channel != self.chan_5ghz):
-            logg.warn("##################################################################")
-            logg.warn("# DFS LOCKOUT?  COMMAND LINE CHANNEL: {} NOT EQUAL INITIAL CONTROLLER CHANNEL: {}".format(self.chan_5ghz,initial_channel))
-            logg.warn("##################################################################")
+            logg.info("##################################################################")
+            logg.info("# DFS LOCKOUT?  COMMAND LINE CHANNEL: {} NOT EQUAL INITIAL CONTROLLER CHANNEL: {}".format(self.chan_5ghz,initial_channel))
+            logg.info("##################################################################")
 
         time.sleep(30)
         
@@ -1719,7 +1730,7 @@ class L3VariableTime(Realm):
             logg.info("FAIL: channel set on command line: {} not configured in controller: {} is there a DFS lockout condition".format(self.chan_5ghz,initial_channel))
             pass_fail = "fail"
 
-        #if self.dfs
+        blacklist_time = self.read_auto_rf()
 
 
         best_csv_rx_row_data.append(initial_channel)
@@ -1727,6 +1738,7 @@ class L3VariableTime(Realm):
         best_csv_rx_row_data.append(pass_fail)
         best_csv_rx_row_data.append(self.CAC_TIMER)
         best_csv_rx_row_data.append(self.CAC_EXPIRY_EVT)
+        best_csv_rx_row_data.append(blacklist_time)
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
 
         # TO DO check to see if the data is still being transmitted
@@ -1761,7 +1773,7 @@ class L3VariableTime(Realm):
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail','cac_timer','cac_expiry_evt'])
+        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','epoch_time','time','initial_channel','final_channel','pass_fail','cac_timer','cac_expiry_evt','blacklist_time_sec_remaining'])
         '''for i in range(1,6):
             csv_rx_headers.append("least_rx_data {}".format(i))
         for i in range(1,6):
@@ -3086,7 +3098,7 @@ if __name__ == "__main__":
 SAMPLE Command 2/15/2021
 ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52 56 60 64 68 96 100 104 108 112 116 120 124 128 132 136 140 144" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
 
-SAMPLE Command with AP
- ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "52" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600"
+SAMPLE Command with AP (need root if using serial)
+sudo ./lf_cisco_dfs.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -ccf "a" -cwm "auto" -cc5 "56" -ccw "20" -ccd "1" -cs "3504" --endp_type 'lf_udp' --upstream_port eth2  --cisco_wlan "test_candela" --cisco_wlanID 1 --cisco_wlanSSID "test_candela" --cisco_directions "upstream" --cisco_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --ap_info "ap_scheme==serial ap_prompt==APA453.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2 ap_baud==9600" --cisco_dfs 
 '''
 

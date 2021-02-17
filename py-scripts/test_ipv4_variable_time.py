@@ -281,7 +281,7 @@ python3 ./test_ipv4_variable_time.py
     # in new folder based in current file's directory
 
     if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':',
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
                                                                                         '-') + '-test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
@@ -296,7 +296,7 @@ python3 ./test_ipv4_variable_time.py
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format
         else:
-            print('Defaulting to csv data file output type, naming it data.csv.')
+            print('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
             
@@ -306,7 +306,7 @@ python3 ./test_ipv4_variable_time.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
-    print("Saving report data in ... " + report_f)
+    print("Saving final report data in ... " + report_f)
 
     # Retrieve last data file
     compared_rept = None

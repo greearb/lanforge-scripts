@@ -959,6 +959,21 @@ def main():
 
    if (args.action == "auto_rf"):
       command = "show ap auto-rf 802.11a %s"%(args.ap)
+      egg.sendline(command)
+      command_done = False
+      loop_count = 0
+      while command_done == False and loop_count <= 10 :
+         i = egg.expect_exact(["--More--",CCP,pexpect.TIMEOUT],timeout=2)
+         if i == 0:
+            print(egg.before.decode('utf-8', 'ignore'))
+            egg.sendline(NL)
+         if i == 1:
+            print(egg.before.decode('utf-8', 'ignore'))
+            command_done = True
+         if i == 2:
+            print(egg.before.decode('utf-8', 'ignore'))
+            command_done = True
+      command = None # so additional command will not be sent
 
    if ((args.action == "ap_country") and ((args.value is None) or (args.ap is None))):
       raise  Exception("ap_country requires country and AP name")
