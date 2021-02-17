@@ -38,10 +38,10 @@ testCommands=(
     "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug"
     "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug"
-    "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --test_duration 15s --debug"
+    "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
     "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
-    "./test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
+    "./test_l3_longevity.py --test_duration 4m --upstream_port eth1
     --radio \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
     --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
@@ -96,16 +96,11 @@ function blank_db() {
     ./scenario.py --load BLANK >>~/test_all_output_file.txt
     #check_blank.py
 }
+
 function echo_print() {
     echo "Beginning $CURR_TEST_NAME test..." >>~/test_all_output_file.txt
 }
-results=()
-detailedresults=()
-NOW=$(date +"%Y-%m-%d-%H-%M")
-NOW="${NOW/:/-}"
-TEST_DIR="/home/lanforge/report-data/${NOW}"
-URL="../report-data/${NOW}"
-mkdir "$TEST_DIR"
+
 function run_test() {
     for i in "${testCommands[@]}"; do
         ./scenario.py --load BLANK
@@ -143,6 +138,7 @@ function run_test() {
     done
     echo $results
 }
+
 function check_args() {
     if [ ! -z $1 ]; then
         START_NUM=$1
@@ -151,6 +147,7 @@ function check_args() {
         STOP_NUM=$2
     fi
 }
+
 function html_generator() {
     header="<html>
 		<head>
@@ -199,8 +196,25 @@ function html_generator() {
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
+    rm "/home/lanforge/html_reports/latest.html" || true
     ln -s "${fname}" "/home/lanforge/html-reports/latest.html"
 }
+
+function is_file_empty() {
+  if [ -z "$1" ]; then echo "no filename provided"; return 1; fi
+  if [ ! -e "$1" ]; then echo "file not found"; return 1; fi
+  if [ ! -s "$1" ]; then echo "file empty"; return 0; fi
+  local lines=$(grep -v '^\s*$' k | wc -l)
+  (( $lines < 1 )) && echo "file empty" && return 0; fi
+}
+results=()
+detailedresults=()
+NOW=$(date +"%Y-%m-%d-%H-%M")
+NOW="${NOW/:/-}"
+TEST_DIR="/home/lanforge/report-data/${NOW}"
+URL="../report-data/${NOW}"
+mkdir "$TEST_DIR"
+
 
 #true >~/test_all_output_file.txt
 check_args $1 $2
