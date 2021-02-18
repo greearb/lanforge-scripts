@@ -180,6 +180,13 @@ class APIClient:
             {'name': name, 'case_ids': case_ids, 'milestone_id': milestone_id, 'description': description, 'include_all': False})
         print("result in post", result)
 
+    def update_testrun(self, runid, description):
+        result = client.send_post(
+            'update_run/%s' % (runid),
+            {'description': description})
+        print("result in post", result)
+
+
 client: APIClient = APIClient(os.getenv('TR_URL'))
 
 
