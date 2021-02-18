@@ -32,7 +32,7 @@ testCommands=(
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type generic --debug"
-    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug"
     "./testgroup.py --group_name group1 --add_group --list_groups --debug"
     "./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups --debug"
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
@@ -48,7 +48,7 @@ testCommands=(
     --radio \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
     --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-    "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
+    #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
     "./test_status_msg.py --debug " #this is all which is needed to run
     #"./test_wanlink.py --debug"
     #"./ws_generic_monitor_test.py"
