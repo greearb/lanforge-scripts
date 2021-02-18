@@ -129,16 +129,22 @@ function run_test() {
             retval=$?
             grep -i fail "${TEST_DIR}/${NAME}.txt" && retval=1
             chmod 664 "${TEST_DIR}/${NAME}.txt"
+            stdoutlength=expr length "${URL}/${NAME}.txt"
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td></td>
+                          <td>${stdoutlength}</td>
                           <td></td></tr>")
             else
+                stderrlength=expr length "${URL}/${NAME}.txt"
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td>
+                          <td>${stdoutlength}</td>
+                          <td>${stderrlength}</td></tr>"
 
             fi
         fi
@@ -184,7 +190,7 @@ function html_generator() {
 		<script src=\"sortabletable.js\"></script>
 		</head>
 		<body>
-		<h1>Test All Scripts Results</h1>
+		<h1>Regression Results</h1>
 		<h4>$NOW</h4>
 		<table border ='1' id='myTable2'>
 		<tr>
@@ -193,6 +199,8 @@ function html_generator() {
         <th onclick=\"sortTable(2)\">Status</th>
         <th onclick=\"sortTable(3)\">STDOUT</th>
         <th onclick=\"sortTable(4)\">STDERR</th>
+        <th onclick=\"sortTable(3)\">STDOUT length</th>
+        <th onclick=\"sortTable(4)\">STDERR length</th>
     </tr>
 		"
     tail="</body>
