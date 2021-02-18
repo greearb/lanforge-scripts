@@ -16,9 +16,7 @@ from LANforge import LFRequest
 import LANforge.LFRequest
 import csv
 import pandas as pd
-import tables
-import pyarrow as pa
-#import xlsxwriter
+
 
 class LFCliBase:
 
@@ -611,8 +609,10 @@ class LFCliBase:
      #takes any dataframe and returns the specified file extension of it
     def df_to_file(self, output_f=None,dataframe=None, save_path=None):
         if output_f.lower() == 'hdf': 
+            import tables
             dataframe.to_hdf(save_path.replace('csv','h5',1), 'table', append=True)
         if output_f.lower() == 'parquet':
+            import pyarrow as pa
             dataframe.to_parquet(save_path.replace('csv','parquet',1), engine='pyarrow')
         if output_f.lower() == 'png':
             fig = dataframe.plot().get_figure()
@@ -635,6 +635,23 @@ class LFCliBase:
         
    
     def compare_two_df(self,dataframe_one=None,dataframe_two=None):
+        pd.set_option("display.max_rows", None, "display.max_columns", None)
+        #get all of common columns besides Timestamp, Timestamp milliseconds 
+        common_cols = set(dataframe_one.columns).intersection(set(dataframe_two.columns))
+        if common_cols is not None:
+            cols_to_remove=['Timestamp milliseconds epoch','Timestamp','LANforge GUI Build: 5.4.3']
+            #drop unwanted cols from df
+            dataframe_one = dataframe_one.drop(list(cols_to_remove), axis=1)
+            dataframe_two = dataframe_two.drop(list(cols_to_remove), axis=1)
+            #for time elapsed section and endpoint name combo
+            #
+            print(dataframe_one)
+            print(dataframe_two)
+    
+        
+        #take those columns and separate those columns from others in DF.
+
+
         pass    
         #return compared_df
 

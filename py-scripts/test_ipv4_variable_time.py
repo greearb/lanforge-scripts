@@ -314,8 +314,10 @@ python3 ./test_ipv4_variable_time.py
         compared_report_format=args.compared_report.split('.')[-1]
         #if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
         if compared_report_format != 'csv':
-            ValueError("Cannot process this file type. Please select a different file and re-run script.")
+            print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
             exit(1)
+        else:
+            compared_rept=args.compared_report
             
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)

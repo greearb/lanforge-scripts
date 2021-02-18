@@ -1299,7 +1299,6 @@ class L3CXProfile(LFCliBase):
                                     for key in port_mgr_values_dict.keys():
                                         renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
                                     merge.update(renamed_port_cols)
-                print(header_row[3:-3])
                 for name in header_row[3:-3]:
                     temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
@@ -1323,6 +1322,7 @@ class L3CXProfile(LFCliBase):
         #comparison to last report / report inputted
         if compared_report is not None:
             compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file), dataframe_two=self.file_to_df(compared_report))
+            exit(1)
             #append compared df to created one
             if output_format.lower() != 'csv':
                 self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
