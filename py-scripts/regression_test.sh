@@ -28,8 +28,11 @@ testCommands=(
     "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
     "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
     #".test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
-    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --security $SECURITY --debug"
-    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type generic --debug"
+    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --debug"
     "./testgroup.py --group_name group1 --add_group --list_groups --debug"
     "./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups --debug"
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
@@ -59,8 +62,10 @@ testCommands=(
     "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
     "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes"
     "./wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"
+    "./new_script.py --flags"
 )
 #declare -A name_to_num
+#if you want to run just one test as part of regression_test, you can call one test by calling its name_to_num identifier.
 name_to_num=(
     ["example_security_connection"]=1
     ["test_ipv4_connection"]=2
@@ -85,11 +90,12 @@ name_to_num=(
     ["test_l3_scenario_throughput"]=21
     ["test_status_msg"]=22
     ["test_wanlink"]=23
-    ["..`1`/py-json/wlan_theoretical_sta"]=24
+    ["wlan_theoretical_sta"]=24
     ["ws_generic_monitor_test"]=25
     ["sta_connect2"]=26
     ["wlan_capacity_calculator"]=27
     ["test_generic"]=28
+    ["new_script"]=29
 )
 
 function blank_db() {
@@ -197,17 +203,10 @@ function html_generator() {
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
-    unlink "/home/lanforge/html_reports/latest.html" || true
+    unlink "/home/lanforge/html-reports/latest.html" || true
     ln -s "${fname}" "/home/lanforge/html-reports/latest.html"
 }
 
-function is_file_empty() {
-  if [ -z "$1" ]; then echo "no filename provided"; return 1; fi
-  if [ ! -e "$1" ]; then echo "file not found"; return 1; fi
-  if [ ! -s "$1" ]; then echo "file empty"; return 0; fi
-  local lines=$(grep -v '^\s*$' k | wc -l)
-  (( $lines < 1 )) && echo "file empty" && return 0; fi
-}
 results=()
 detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
