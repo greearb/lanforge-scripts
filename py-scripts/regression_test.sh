@@ -126,26 +126,19 @@ function run_test() {
             echo_print
             echo "$i"
             $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
-            retval=$?
-            grep -i fail "${TEST_DIR}/${NAME}.txt" && retval=1
+            locallines==$(grep -v '^\s*$' "${TEST_DIR}/${NAME}_stderr.txt" | wc -l)
             chmod 664 "${TEST_DIR}/${NAME}.txt"
-            stdoutlength=$(wc -c "${URL}/${NAME}.txt")
-            if (( $retval == 0 )); then
+            if (( $locallines > 1 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td></td>
-                          <td>${stdoutlength}</td>
                           <td></td></tr>")
             else
                 stderrlength=$(wc -c "${URL}/${NAME}_stderr.txt")
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td>
-                          <td>${stdoutlength}</td>
-                          <td>${stderrlength}</td></tr>")
-
+                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
             fi
         fi
     done
@@ -190,8 +183,6 @@ function html_generator() {
         <th onclick=\"sortTable(2)\">Status</th>
         <th onclick=\"sortTable(3)\">STDOUT</th>
         <th onclick=\"sortTable(4)\">STDERR</th>
-        <th onclick=\"sortTable(3)\">STDOUT length</th>
-        <th onclick=\"sortTable(4)\">STDERR length</th>
     </tr>"
     tail="</body>
 		</html>"
