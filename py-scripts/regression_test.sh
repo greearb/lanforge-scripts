@@ -129,7 +129,7 @@ function run_test() {
             retval=$?
             grep -i fail "${TEST_DIR}/${NAME}.txt" && retval=1
             chmod 664 "${TEST_DIR}/${NAME}.txt"
-            stdoutlength=expr length "${URL}/${NAME}.txt"
+            stdoutlength=$(wc -c "${URL}/${NAME}.txt")
             if (( $retval == 0 )); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
@@ -138,27 +138,18 @@ function run_test() {
                           <td>${stdoutlength}</td>
                           <td></td></tr>")
             else
-                stderrlength=expr length "${URL}/${NAME}.txt"
+                stderrlength=$(wc -c "${URL}/${NAME}_stderr.txt")
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                           <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td>
                           <td>${stdoutlength}</td>
-                          <td>${stderrlength}</td></tr>"
+                          <td>${stderrlength}</td></tr>")
 
             fi
         fi
     done
     echo $results
-}
-
-function check_args() {
-    if [ ! -z $1 ]; then
-        START_NUM=$1
-    fi
-    if [ ! -z $2 ]; then
-        STOP_NUM=$2
-    fi
 }
 
 function html_generator() {
@@ -201,8 +192,7 @@ function html_generator() {
         <th onclick=\"sortTable(4)\">STDERR</th>
         <th onclick=\"sortTable(3)\">STDOUT length</th>
         <th onclick=\"sortTable(4)\">STDERR length</th>
-    </tr>
-		"
+    </tr>"
     tail="</body>
 		</html>"
 
