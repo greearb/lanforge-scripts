@@ -518,7 +518,12 @@ for key in equipment_ids:
         with open(report_path + today + '/report_data.json', 'w') as report_json_file:
             json.dump(report_data, report_json_file)
 
-        ###Test Create Firmware Version
+        # Update TR Testrun with CloudSDK info for use in QA portal
+        sdk_description = cloudsdk_cluster_info["date"]+"(Commit ID: "+cloudsdk_cluster_info["commitId"]
+        update_test = client.update_testrun(rid,sdk_description)
+        print(update_test)
+
+        # Test Create Firmware Version
         test_id_fw = test_cases["create_fw"]
         latest_image = ap_latest_dict[key]
         cloudModel = cloud_sdk_models[key]

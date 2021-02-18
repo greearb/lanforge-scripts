@@ -65,7 +65,9 @@ mimo_2dot4g = {
     "wf194c": "4x4",
     "ex227": "",
     "ex447": "",
-    "eap101": "2x2",
+    "eap101": "2x2"
+              ""
+              "",
     "eap102": "4x4"
 }
 
@@ -87,14 +89,14 @@ customer_id = "2"
 
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
-    "ea8300": "115",
-    "ecw5410": "116",
-    "ecw5211": "117",
-    "ec420": "27",
-    "wf188n": "135",
-    "ex227": "148",
-    "eap102": "147",
-    "wf194c": "152"
+    "ea8300": "3",
+    "ecw5410": "5",
+    "ecw5211": "2",
+    "ec420": "11",
+    "wf188n": "1",
+    "ex227": "8",
+    "eap102": "7",
+    "wf194c": "4"
 }
 
 equipment_ip_dict = {
@@ -178,13 +180,13 @@ test_cases = {
 }
 
 ## Other profiles
-radius_profile = 4159
+radius_profile = 1234
 rf_profile = 10
 
 ###Testing AP Profile Information
 profile_info_dict = {
     "ecw5410": {
-        "profile_id": "2",
+        "profile_id": "6",
         "childProfileIds": [
             3647,
             10,
@@ -223,7 +225,7 @@ profile_info_dict = {
     },
 
     "ea8300": {
-        "profile_id": "153",
+        "profile_id": "6",
         "childProfileIds": [
             17,
             18,
@@ -266,7 +268,7 @@ profile_info_dict = {
     },
 
     "ec420": {
-        "profile_id": "20",
+        "profile_id": "6",
         "childProfileIds": [
             209,
             210,
@@ -305,7 +307,7 @@ profile_info_dict = {
     },
 
     "ecw5211": {
-        "profile_id": "27",
+        "profile_id": "6",
         "childProfileIds": [
             32,
             10,
@@ -344,7 +346,7 @@ profile_info_dict = {
     },
 
     "wf188n": {
-        "profile_id": "3724",
+        "profile_id": "6",
         "childProfileIds": [
             3718,
             3719,
@@ -383,7 +385,7 @@ profile_info_dict = {
     },
 
     "wf194c": {
-        "profile_id": "4306",
+        "profile_id": "6",
         "childProfileIds": [
             4307,
             4308,
@@ -422,7 +424,7 @@ profile_info_dict = {
     },
 
     "ex227": {
-        "profile_id": "4964",
+        "profile_id": "6",
         "childProfileIds": [
             4958,
             4959,
@@ -461,7 +463,7 @@ profile_info_dict = {
     },
 
     "ex447": {
-        "profile_id": "5008",
+        "profile_id": "6",
         "childProfileIds": [
             5002,
             5003,
@@ -500,7 +502,7 @@ profile_info_dict = {
     },
 
     "eap101": {
-        "profile_id": "5029",
+        "profile_id": "6",
         "childProfileIds": [
             5023,
             5024,
@@ -539,7 +541,7 @@ profile_info_dict = {
     },
 
     "eap102": {
-        "profile_id": "5050",
+        "profile_id": "6",
         "childProfileIds": [
             5044,
             5045,
