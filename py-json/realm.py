@@ -59,7 +59,6 @@ class Realm(LFCliBase):
                  halt_on_error_=False, # remove me
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 # _local_realm=None,
                  _proxy_str=None,
                  _capture_signal_list=[]):
         super().__init__(_lfjson_host=lfclient_host,
@@ -68,16 +67,6 @@ class Realm(LFCliBase):
                          _halt_on_error=halt_on_error_,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
-                         _proxy_str=_proxy_str,
-                         _capture_signal_list=_capture_signal_list)
-        # self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
-        super().__init__(lfclient_host,
-                         lfclient_port,
-                         _debug=debug_,
-                         _halt_on_error=halt_on_error_,
-                         _exit_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail,
-                         # _local_realm=self,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
 
