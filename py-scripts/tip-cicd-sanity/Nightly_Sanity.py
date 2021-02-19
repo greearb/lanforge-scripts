@@ -403,7 +403,6 @@ for key in equipment_ids:
     else:
        print('Manager Status Active. Proceed with tests...')
     ###Find Latest FW for Current AP Model and Get FW ID
-    time.sleep(30)
     ##Compare Latest and Current AP FW and Upgrade
     latest_ap_image = ap_latest_dict[fw_model]
 
@@ -519,7 +518,7 @@ for key in equipment_ids:
             json.dump(report_data, report_json_file)
 
         # Update TR Testrun with CloudSDK info for use in QA portal
-        sdk_description = cloudsdk_cluster_info["date"]+"(Commit ID: "+cloudsdk_cluster_info["commitId"]
+        sdk_description = cloudsdk_cluster_info["date"]+" (Commit ID: "+cloudsdk_cluster_info["commitId"]+")"
         update_test = client.update_testrun(rid,sdk_description)
         print(update_test)
 
@@ -1117,6 +1116,33 @@ for key in equipment_ids:
             report_data['tests'][key][int(test_case)] = test_result
             time.sleep(10)
 
+            # Update SSID Profile
+            update_profile_id = str(fiveG_wpa)
+            update_ssid = key+"_Updated_SSID"
+            update_auth = "wpa2OnlyPSK"
+            update_security = "wpa2"
+            update_psk = "12345678"
+            update_profile = CloudSDK.update_ssid_profile(cloudSDK_url, bearer, update_profile_id, update_ssid, update_auth, update_psk)
+            print(update_profile)
+            time.sleep(90)
+
+            # TC - Update Bridge SSID profile
+            test_case = test_cases["bridge_ssid_update"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, update_ssid, update_psk,
+                                                              update_security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, update_ssid)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            time.sleep(5)
+
             print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "Bridge Mode SSIDs Complete")
             with open(report_path + today + '/report_data.json', 'w') as report_json_file:
@@ -1486,6 +1512,34 @@ for key in equipment_ids:
                 pass
             report_data['tests'][key][int(test_case)] = test_result
             time.sleep(10)
+
+            # Update SSID Profile
+            update_profile_id = str(fiveG_wpa2)
+            update_ssid = key + "_Updated_SSID_NAT"
+            update_auth = "wpaPSK"
+            update_security = "wpa"
+            update_psk = "12345678"
+            update_profile = CloudSDK.update_ssid_profile(cloudSDK_url, bearer, update_profile_id, update_ssid,
+                                                          update_auth, update_psk)
+            print(update_profile)
+            time.sleep(90)
+
+            # TC - Update NAT SSID profile
+            test_case = test_cases["nat_ssid_update"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, update_ssid, update_psk,
+                                                              update_security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, update_ssid)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            time.sleep(5)
 
             print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "NAT Mode SSIDs Complete")
@@ -1858,6 +1912,34 @@ for key in equipment_ids:
                 pass
             report_data['tests'][key][int(test_case)] = test_result
             time.sleep(10)
+
+            # Update SSID Profile
+            update_profile_id = str(fiveG_wpa)
+            update_ssid = key + "_Updated_SSID_NAT"
+            update_auth = "open"
+            update_security = "open"
+            update_psk = ""
+            update_profile = CloudSDK.update_ssid_profile(cloudSDK_url, bearer, update_profile_id, update_ssid,
+                                                          update_auth, update_psk)
+            print(update_profile)
+            time.sleep(90)
+
+            # TC - Updated VLAN SSID profile
+            test_case = test_cases["vlan_ssid_update"]
+            radio = lab_ap_info.lanforge_5g
+            station = [lab_ap_info.lanforge_5g_station]
+            prefix = lab_ap_info.lanforge_5g_prefix
+            try:
+                test_result = Test.Single_Client_Connectivity(port, radio, prefix, update_ssid, update_psk,
+                                                              update_security, station,
+                                                              test_case,
+                                                              rid)
+            except:
+                test_result = "error"
+                Test.testrail_retest(test_case, rid, update_ssid)
+                pass
+            report_data['tests'][key][int(test_case)] = test_result
+            time.sleep(5)
 
             print(report_data['tests'][key])
             logger.info("Testing for " + fw_model + "Custom VLAN SSIDs Complete")

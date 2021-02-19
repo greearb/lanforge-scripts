@@ -93,7 +93,7 @@ equipment_id_dict = {
     "ecw5410": "5",
     "ecw5211": "2",
     "ec420": "11",
-    "wf188n": "1",
+    "wf188n": "14",
     "ex227": "8",
     "eap102": "7",
     "wf194c": "4"
@@ -176,7 +176,10 @@ test_cases = {
     "ssid_5g_eap_vlan": 5659,
     "ssid_5g_wpa2_vlan": 5660,
     "ssid_5g_wpa_vlan": 5661,
-    "radius_profile": 5808
+    "radius_profile": 5808,
+    "bridge_ssid_update": 8742,
+    "nat_ssid_update": 8743,
+    "vlan_ssid_update": 8744
 }
 
 ## Other profiles

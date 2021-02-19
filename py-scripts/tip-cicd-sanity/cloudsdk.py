@@ -270,3 +270,30 @@ class CloudSDK:
             return("SUCCESS")
         else:
             return ("ERROR")
+
+    def update_ssid_profile(cloudSDK_url, bearer, profile_id, new_ssid, new_secure_mode, new_psk):
+        get_profile_url = cloudSDK_url + "/portal/profile?profileId="+profile_id
+
+        payload = {}
+        headers = headers = {
+            'Authorization': 'Bearer ' + bearer
+        }
+
+        response = requests.request("GET", get_profile_url, headers=headers, data=payload)
+        original_profile = response.json()
+        print(original_profile)
+
+        original_profile['details']['ssid'] = new_ssid
+        original_profile['details']['secureMode'] = new_secure_mode
+        original_profile['details']['keyStr'] = new_psk
+
+        put_profile_url = cloudSDK_url + "/portal/profile"
+        payload = original_profile
+        headers = headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + bearer
+        }
+        response = requests.request("PUT", put_profile_url, headers=headers, json=payload)
+        print(response)
+        updated_profile = response.json()
+        return updated_profile
