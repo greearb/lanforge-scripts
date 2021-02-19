@@ -605,7 +605,7 @@ class LFCliBase:
 """ 
 
     #================ Pandas Dataframe Functions ======================================
-    import datatable as dt
+    
      #takes any dataframe and returns the specified file extension of it
     def df_to_file(self, output_f=None,dataframe=None, save_path=None):
         if output_f.lower() == 'hdf': 
@@ -629,7 +629,6 @@ class LFCliBase:
             dataframe.to_html(save_path.replace('csv','html',1))
           
     #takes any format of a file and returns a dataframe of it
-    #here, use datables fread
     def file_to_df(self,file_name):
         if file_name.split('.')[-1] == 'csv':
             return pd.read_csv(file_name)
