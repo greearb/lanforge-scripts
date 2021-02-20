@@ -684,7 +684,7 @@ class Realm(LFCliBase):
                 else:
                     duration_time = datetime.timedelta(seconds=dur_time)
             else:
-                raise ValueError("Unknown value for time_string: %s" % time_string)
+                raise ValueError("Cannot compute time string provided: %s" % time_string)
         else:
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_time

@@ -645,8 +645,8 @@ class LFCliBase:
             dataframe_two = dataframe_two.drop(list(cols_to_remove), axis=1)
             #for time elapsed section and endpoint name combo
             #
-            print(dataframe_one)
-            print(dataframe_two)
+            #print(dataframe_one)
+            #print(dataframe_two)
     
         
         #take those columns and separate those columns from others in DF.

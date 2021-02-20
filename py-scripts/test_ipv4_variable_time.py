@@ -344,7 +344,7 @@ python3 ./test_ipv4_variable_time.py
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
-    ip_var_test.start(False, False)
+    
 
     try:
         layer3connections = ','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
@@ -368,9 +368,13 @@ python3 ./test_ipv4_variable_time.py
         print(layer3_cols)
         print("Port Manager column names are...")
         print(port_mgr_cols)
-
-    monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
-
+    try:
+        monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
+    except ValueError as error:
+        print(str(error))
+        print(ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+        exit(1)
+    ip_var_test.start(False, False)
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
                                     sta_list=station_list,
                                     port_mgr_cols=port_mgr_cols,
