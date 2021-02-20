@@ -8,13 +8,13 @@ cloud_type = "v1"
 
 ##LANForge Info
 lanforge_ip = "10.10.10.201"
-lanforge_2dot4g = "wiphy6"
-lanforge_5g = "wiphy6"
+lanforge_2dot4g = "wiphy0"
+lanforge_5g = "wiphy3"
 # For single client connectivity use cases, use full station name for prefix to only read traffic from client under test
-lanforge_2dot4g_prefix = "wlan6"
-lanforge_5g_prefix = "wlan6"
-lanforge_2dot4g_station = "wlan6"
-lanforge_5g_station = "wlan6"
+lanforge_2dot4g_prefix = "test"
+lanforge_5g_prefix = "test"
+lanforge_2dot4g_station = "test1234"
+lanforge_5g_station = "test1234"
 
 ##RADIUS Info
 radius_info = {
@@ -65,9 +65,7 @@ mimo_2dot4g = {
     "wf194c": "4x4",
     "ex227": "",
     "ex447": "",
-    "eap101": "2x2"
-              ""
-              "",
+    "eap101": "2x2",
     "eap102": "4x4"
 }
 
@@ -94,9 +92,9 @@ equipment_id_dict = {
     "ecw5211": "2",
     "ec420": "11",
     "wf188n": "14",
-    "ex227": "8",
+    "ex227": "18",
     "eap102": "7",
-    "wf194c": "4"
+    "wf194c": "15"
 }
 
 equipment_ip_dict = {
@@ -106,7 +104,7 @@ equipment_ip_dict = {
     "ecw5211": "10.10.10.102",
     "wf188n": "10.10.10.179",
     "wf194c": "10.10.10.184",
-    "ex227": "10.10.10.182",
+    "ex227": "10.10.10.185",
     "eap102": "10.10.10.183"
 }
 
