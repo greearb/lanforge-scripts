@@ -1,11 +1,15 @@
-""" This script will create one station run layer3 then again create next station create layer3 and will continue doing same until Ap stops admiting client
+""" This script will create one station at a time and generate downstream traffic at 5Mbps  then again create next station create layer3 and will continue doing same until Ap stops admiting client
     This script can be used for for client admission test for particular AP
 
-    arguements = >python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1
+    arguements = >python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1 
+    note - you can provide num_sta manually or by creating arguement parser for future reference
+    -Nikita Yadav
+    -date: 23-02-2021
 """
 import sys
 import argparse
 import time
+
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
@@ -15,15 +19,17 @@ from LANforge.LFUtils import *
 import realm
 from realm import Realm
 
-class LoadLayer3(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, ssid, paswd, security, radio, name_prefix="L3", upstream="eth2"):
-        super().__init__(lfclient_host, lfclient_port)
+
+class LoadLayer3(Realm):
+    def __init__(self, lfclient_host, lfclient_port, ssid, paswd, security, radio, num_sta, name_prefix="L3", upstream="eth2"):
+
         self.host = lfclient_host
         self.port = lfclient_port
         self.ssid = ssid
         self.paswd = paswd
         self.security = security
         self.radio = radio
+        self.num_sta = num_sta
 
         self.name_prefix = name_prefix
         self.upstream = upstream
@@ -42,9 +48,8 @@ class LoadLayer3(LFCliBase):
         self.cx_profile.side_b_min_bps = 0
         self.cx_profile.side_b_max_bps = 0
 
-
-    def precleanup(self):
-        num_sta = 60
+    def precleanup(self, num_sta):
+        num_sta = self.num_sta
         station_list = LFUtils.port_name_series(prefix="sta",
                                                 start_id=0,
                                                 end_id=num_sta - 1,
@@ -52,33 +57,30 @@ class LoadLayer3(LFCliBase):
                                                 radio=self.radio)
         self.cx_profile.cleanup_prefix()
 
-
-
         for sta in station_list:
             self.local_realm.rm_port(sta, check_exists=True)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                               port_list=station_list,
-                                               debug=self.debug)
+        LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url, port_list=station_list,
+                                           debug=self.local_realm.debug)
         time.sleep(1)
-
 
     def build(self, sta_name):
         self.station_profile.use_security(self.security, self.ssid, self.paswd)
-        self.station_profile.create(radio=self.radio,  sta_names_=[sta_name], debug=self.debug)
+        self.station_profile.create(radio=self.radio, sta_names_=[sta_name], debug=self.local_realm.debug)
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip([sta_name]):
-            self._pass("All stations got IPs")
+            self.local_realm._pass("All stations got IPs", print_=True)
+
             self.cx_profile.create(endp_type="lf_udp", side_a=self.upstream, side_b=[sta_name],
                                    sleep_time=0)
             self.cx_profile.start_cx()
 
             return 1
         else:
-            self._fail("Stations failed to get IPs")
+            self.local_realm._fail("Stations failed to get IPs", print_=True)
             return 0
 
-    def start(self):
-        num_sta = 1
+    def start(self, num_sta):
+        num_sta = self.num_sta
         station_list = LFUtils.port_name_series(prefix="sta",
                                                 start_id=0,
                                                 end_id=num_sta - 1,
@@ -86,19 +88,18 @@ class LoadLayer3(LFCliBase):
                                                 radio=self.radio)
 
         for i in station_list:
-            #self.build(i)
+            # self.build(i)
             if self.build(i) == 0:
                 print("station not created")
-
                 break
             else:
                 print("station created")
-                time.sleep(20)
-                self.__get_rx_values()
+
     def stop(self):
         # Bring stations down
         self.station_profile.admin_down()
         self.cx_profile.stop_cx()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Netgear AP DFS Test Script")
@@ -107,17 +108,16 @@ def main():
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')
     parser.add_argument('-sec', '--security', type=str, help='security')
     parser.add_argument('-rad', '--radio', type=str, help='radio at which client will be connected')
-    #parser.add_argument()
+    parser.add_argument('-num_sta', '--num_sta', type=int, help='provide number of stations you want to create', default=60)
+    # parser.add_argument()
     args = parser.parse_args()
-    """num_sta = 1
-    station_list = LFUtils.port_name_series(prefix="sta",
-                                            start_id=0,
-                                            end_id=num_sta - 1,
-                                            padding_number=100,
-                                            radio=args.radio)"""
-    obj = LoadLayer3(lfclient_host= args.host, lfclient_port=8080, ssid=args.ssid , paswd=args.passwd, security=args.security, radio=args.radio)
-    obj.precleanup()
 
-    obj.start()
+    obj = LoadLayer3(lfclient_host=args.host, lfclient_port=8080, ssid=args.ssid, paswd=args.passwd,
+                     security=args.security, radio=args.radio, num_sta=args.num_sta)
+    obj.precleanup(num_sta=args.num_sta)
+
+    obj.start(num_sta=args.num_sta)
+
+
 if __name__ == '__main__':
     main()
