@@ -1,8 +1,7 @@
 """ This script will create one station at a time and generate downstream traffic at 5Mbps  then again create next station create layer3 and will continue doing same until Ap stops admiting client
     This script can be used for for client admission test for particular AP
 
-    arguements = >python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1 
-    note - you can provide num_sta manually or by creating arguement parser for future reference
+    arguements = >python3 load_21.py -hst 192.168.200.13 -s Nikita -pwd [BLANK] -sec open -rad wiphy1 --num_sta 60
     -Nikita Yadav
     -date: 23-02-2021
 """
@@ -102,7 +101,7 @@ class LoadLayer3(Realm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Netgear AP DFS Test Script")
+    parser = argparse.ArgumentParser(description="Client Admission Test Script")
     parser.add_argument('-hst', '--host', type=str, help='host name')
     parser.add_argument('-s', '--ssid', type=str, help='ssid for client')
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')
