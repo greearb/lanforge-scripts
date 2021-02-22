@@ -159,7 +159,7 @@ class VRProfile(BaseProfile):
             "resource": self.vr_eid[1],
             "cx_name": "all"
         }, debug_=debug)
-
+        self.refresh_gui(self.vr_eid[1], debug)
 
         # # Create 1 rdd pair
         # self.create_rdd(resource=resource, ip_addr=rdd_ip, gateway=rdd_gateway,
@@ -189,7 +189,7 @@ class VRProfile(BaseProfile):
         }
         self.json_post("/cli-json/rm_vr", data, debug_=debug)
         time.sleep(delay)
-        self.refresh(resource, debug)
+        self.refresh_gui(resource, debug)
 
     def refresh_gui(self, resource=0, delay=0.03, debug=False):
         debug |= self.debug
@@ -198,13 +198,14 @@ class VRProfile(BaseProfile):
             "resource": resource,
             "router": "all"
         }, debug_=debug)
+        time.sleep(delay)
         self.json_post("/cli-json/nc_show_vrcx", {
             "shelf": 1,
             "resource": resource,
             "cx_name": "all"
         }, debug_=debug)
-        time.sleep(delay)
+        time.sleep(delay * 2)
         self.json_post("/vr/1/%s/%s" % (resource, 0), {
             "action":"refresh"
-        }, debug)
+        }, debug_=True)
 #
