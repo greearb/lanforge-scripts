@@ -8,13 +8,13 @@ cloud_type = "v1"
 
 ##LANForge Info
 lanforge_ip = "10.10.10.201"
-lanforge_2dot4g = "wiphy0"
-lanforge_5g = "wiphy3"
+lanforge_2dot4g = "wiphy6"
+lanforge_5g = "wiphy6"
 # For single client connectivity use cases, use full station name for prefix to only read traffic from client under test
-lanforge_2dot4g_prefix = "test"
-lanforge_5g_prefix = "test"
-lanforge_2dot4g_station = "test1234"
-lanforge_5g_station = "test1234"
+lanforge_2dot4g_prefix = "wlan6"
+lanforge_5g_prefix = "wlan6"
+lanforge_2dot4g_station = "wlan6"
+lanforge_5g_station = "wlan6"
 
 ##RADIUS Info
 radius_info = {
@@ -41,6 +41,19 @@ cloud_sdk_models = {
     "ex447": "EX447",
     "eap101": "EAP101",
     "eap102": "EAP102"
+}
+
+ap_spec = {
+    "ec420": "wifi5",
+    "ea8300": "wifi5",
+    "ecw5211": "wifi5",
+    "ecw5410": "wifi5",
+    "wf188n": "wifi6",
+    "wf194c": "wifi6",
+    "ex227": "wifi6",
+    "ex447": "wifi6",
+    "eap101": "wifi6",
+    "eap102": "wifi6"
 }
 
 mimo_5g = {
@@ -87,10 +100,10 @@ customer_id = "2"
 
 ##Equipment IDs for Lab APs under test
 equipment_id_dict = {
-    "ea8300": "3",
-    "ecw5410": "5",
-    "ecw5211": "2",
-    "ec420": "11",
+    #"ea8300": "3",
+    #"ecw5410": "5",
+    "ecw5211": "22",
+    #"ec420": "11",
     "wf188n": "14",
     "ex227": "18",
     "eap102": "7",
@@ -101,18 +114,18 @@ equipment_ip_dict = {
     "ea8300": "10.10.10.103",
     "ecw5410": "10.10.10.105",
     "ec420": "10.10.10.104",
-    "ecw5211": "10.10.10.102",
+    "ecw5211": "10.10.10.187",
     "wf188n": "10.10.10.179",
     "wf194c": "10.10.10.184",
     "ex227": "10.10.10.185",
-    "eap102": "10.10.10.183"
+    "eap102": "10.10.10.186"
 }
 
 eqiupment_credentials_dict = {
     "ea8300": "openwifi",
     "ecw5410": "openwifi",
     "ec420": "openwifi",
-    "ecw5211": "admin123",
+    "ecw5211": "openwifi",
     "wf188n": "openwifi",
     "wf194c": "openwifi",
     "ex227": "openwifi",
@@ -181,8 +194,9 @@ test_cases = {
 }
 
 ## Other profiles
-radius_profile = 1234
-rf_profile = 10
+radius_profile = 9
+rf_profile_wifi5 = 10
+rf_profile_wifi6 = 762
 
 ###Testing AP Profile Information
 profile_info_dict = {

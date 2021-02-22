@@ -754,6 +754,18 @@ for key in equipment_ids:
                 report_data['tests'][key][test_cases["radius_profile"]] = "failed"
         else:
             print("Skipped creating RADIUS profile based on skip_eap argument")
+
+        # Set RF Profile Id depending on AP capability
+        if lab_ap_info.ap_spec[key] == "wifi5":
+            rfProfileId = lab_ap_info.rf_profile_wifi5
+            print("using Wi-Fi5 profile Id")
+        elif lab_ap_info.ap_spec[key] == "wifi6":
+            rfProfileId = lab_ap_info.rf_profile_wifi6
+            print("using Wi-Fi6 profile Id")
+        else:
+            rfProfileId = 10
+            print("Unknown AP radio spec, using default RF profile")
+
         ###########################################################################
         ############## Bridge Mode Client Connectivity ############################
         ###########################################################################
@@ -895,7 +907,7 @@ for key in equipment_ids:
                 twoFourG_wpa = profile_info_dict[fw_model]["twoFourG_WPA_profile"]
 
             ### Create AP Bridge Profile
-            rfProfileId = lab_ap_info.rf_profile
+            #rfProfileId = lab_ap_info.rf_profile
             if args.skip_eap != True:
                 child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa,
                                   rfProfileId]
@@ -1296,7 +1308,7 @@ for key in equipment_ids:
                 twoFourG_wpa = profile_info_dict[fw_model + '_nat']["twoFourG_WPA_profile"]
 
             ### Create AP NAT Profile
-            rfProfileId = lab_ap_info.rf_profile
+            #rfProfileId = lab_ap_info.rf_profile
             if args.skip_eap != True:
                 radiusProfileId = radius_profile
                 child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa,
@@ -1695,7 +1707,7 @@ for key in equipment_ids:
                 twoFourG_wpa = profile_info_dict[fw_model + '_vlan']["twoFourG_WPA_profile"]
 
             ### Create AP VLAN Profile
-            rfProfileId = lab_ap_info.rf_profile
+            #rfProfileId = lab_ap_info.rf_profile
             if args.skip_eap != True:
                 child_profiles = [fiveG_eap, fiveG_wpa2, fiveG_wpa, twoFourG_eap, twoFourG_wpa2, twoFourG_wpa,
                                   rfProfileId]
