@@ -101,7 +101,6 @@ class CreateCtlr():
             time.sleep(1)
             exit(1)
     
-
         # Find our station count
         searchap = False
         for line in pss.splitlines():
@@ -437,7 +436,6 @@ class CreateCtlr():
             time.sleep(1) 
             exit(1)
 
-
     #set channel [36, 64, 100]
     #./cisco_wifi_ctl.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action channel  --value 36 --series 9800
     # 9800 : ap name <AP> dot11 [5ghz | 24ghz] channel <channel>
@@ -489,7 +487,6 @@ class CreateCtlr():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-
 
 
     #set bandwidth [20 40 80 160]
@@ -1182,7 +1179,6 @@ class L3VariableTime(Realm):
             print("new-list:",new_list)
             return False, None, None # check to see if this is valid
 
-
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
@@ -1399,57 +1395,59 @@ class L3VariableTime(Realm):
 
         return blacklist_time
 
-    def dfs_fcc(self,fcc):
+    def dfs_waveforms(self,waveform):
         # 1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16
         # "FCCO" , "FCC1" , "FCC2" , "FCC3", "FCC4", "FCC5", "ETSI1", "ETSI2", "ETSI3", "ETSI4", "ETSI5", "ETSI6"
-        if fcc == "FCCO":
+        if waveform == "FCCO":
             width = "1"
             interval = "1428"
             count = "18"
-        elif fcc == "FCC1":
+        elif waveform == "FCC1":
             width = "1"
             interval = "1163"
             count = "18"
-        elif fcc == "FCC2":
+        elif waveform == "FCC2":
             width = "2"
             interval = "208"
             count = "28"
-        elif fcc == "FCC3":
+        elif waveform == "FCC3":
             width = "7"
             interval = "365"
             count = "16"
-        elif fcc == "FCC4":
+        elif waveform == "FCC4":
             width = "16"
             interval = "271"
             count = "12"
-        elif fcc == "FCC5":
+        elif waveform == "FCC5":
             width = "70"
             interval = "1975"
             count = "3"
-        elif fcc == "ETSI1":
+        elif waveform == "ETSI1":
             width = "5"
             interval = "342"
             count = "10"
-        elif fcc == "ETSI2":
+        elif waveform == "ETSI2":
             width = "2"
             interval = "1271"
             count = "15"
-        elif fcc == "ETSI3":
+        elif waveform == "ETSI3":
             width = "15"
             interval = "3280"
             count = "25"
-        elif fcc == "ETSI4":
+        elif waveform == "ETSI4":
             width = "24"
             interval = "2477"
             count = "20"
-        elif fcc == "ETSI5":
+        elif waveform == "ETSI5":
             width = "1"
             interval = "356"
             count = "10"
-        elif fcc == "ETSI6":
+        elif waveform == "ETSI6":
             width = "2"
             interval = "1091"
             count = "15"
+
+        return width, interval, count
 
     def dfs_get_frequency(self,channel):
         # possibly have a dictionary
@@ -1558,7 +1556,9 @@ class L3VariableTime(Realm):
         child.expect(r'\$')
         '''
 
-        # no timeouts
+        #################################
+        # No timeouts - this would hang
+        #################################
         '''command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
         print("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
@@ -1577,7 +1577,9 @@ class L3VariableTime(Realm):
         child.sendline('q')
         time.sleep(1)'''
 
-        # with timeouts
+        #################################
+        # With timeouts
+        #################################
         command_hackRF = "sudo python lf_hackrf.py --pulse_width {} --pulse_interval {} --pulse_count {} --sweep_time {} --freq {} --if_gain {} --bb_gain {} --gain {}".format(width_,interval_,count_,sweep_time_,frequency_,if_gain_,bb_gain_,gain_)
         logg.info("hackrf command {}".format(command_hackRF))
         child.sendline(command_hackRF)
@@ -2089,44 +2091,6 @@ cisco_wifimode == "an" or cisco_wifimode == "anAC":
         radios = radio_ath10K_9984_an_AC_dict[cisco_client_density]
 
 
-############################################
-Eventual Realm at Cisco
-############################################
-
-1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz 
-1.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
-
-2.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn 
-
-3.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-3.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-
-4.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-4.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-
-5.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-5.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-
-6.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy1  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy2  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy3  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy4  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
-6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
-
        
 Sample script 2/11/2021
 
@@ -2137,9 +2101,6 @@ Sample script 2/11/2021
 
     # reorder to follow looping
 
-    parser.add_argument('-ca'  ,'--cisco_all', help='--cisco_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct'  ,'--cisco_test', help='--cisco_test flag present default to subset tests',action="store_true")
-    parser.add_argument('-ct2' ,'--cisco_test2', help='--cisco_test2 flag present default to subset tests',action="store_true")
     parser.add_argument('-cca' ,'--cisco_ap', help='--cisco_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf' ,'--cisco_band', help='--cisco_band <a | b | abgn> default a',default="a")
     # cisco wanted 11ax , 11ac, 11n, 11gb
@@ -2369,6 +2330,8 @@ Sample script 2/11/2021
 
     dfs_channel_bw20_values = [52, 56, 60, 64, 68, 96, 100, 104, 108, 112, 116, 120, 124 ,128, 132, 136, 140, 144]
 
+
+
         
     cisco_aps             = args.cisco_ap.split()
     cisco_bands           = args.cisco_band.split()
@@ -2426,7 +2389,6 @@ Sample script 2/11/2021
     __cac_timer_time  = 0
     __dfs_chan_switch_to = None
 
-    
     for cisco_ap in cisco_aps:
         for cisco_band in cisco_bands:  # frequency
             for cisco_wifimode in cisco_wifimodes:
