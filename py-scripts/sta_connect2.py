@@ -251,6 +251,7 @@ class StaConnect2(LFCliBase):
                 "probe_flags": 1
             }
             self.json_post("/cli-json/nc_show_ports", data)
+        LFUtils.wait_until_ports_appear()
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
