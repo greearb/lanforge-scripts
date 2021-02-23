@@ -13,7 +13,7 @@ $ pip3 install pexpect-serial
 
 $ sudo pip3 install pexpect-serial
 
-./cisco_ap_ctl.py 
+./ap_ctl.py 
 '''
 
 
@@ -78,9 +78,9 @@ class FileAdapter(object):
         pass  # leave it to logging to flush properly
 
 # Test command if lanforge connected ttyUSB0
-# sudo ./cisco_ap_ctl.py -a lanforge -d 0 -o 0 -u "lanforge" -p "lanforge" -s "serial" -t "/dev/ttyUSB0"
+# sudo ./ap_ctl.py -a lanforge -d 0 -o 0 -u "lanforge" -p "lanforge" -s "serial" -t "/dev/ttyUSB0"
 # sample for lanforge 192.168.100.178
-# sudo ./cisco_ap_ctl.py -a APA53.0E7B.EF9C -d 0 -o 0 -u "admin" -p "Admin123" -s "serial" -t "/dev/ttyUSB2" -z "show_log"
+# sudo ./ap_ctl.py -a APA53.0E7B.EF9C -d 0 -o 0 -u "admin" -p "Admin123" -s "serial" -t "/dev/ttyUSB2" -z "show_log"
 def main():
 
     global logfile

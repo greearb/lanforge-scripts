@@ -1625,9 +1625,9 @@ class L3VariableTime(Realm):
             logg.info("Read AP action: {} ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {} ap_tty: {} ap_baud: {}".format("show_log",self.ap_dict['ap_scheme'],self.ap_dict['ap_ip'],self.ap_dict["ap_port"],
                     self.ap_dict['ap_user'],self.ap_dict['ap_pw'],self.ap_dict['ap_tty'],self.ap_dict['ap_baud']))
             try:
-                logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
+                logg.info("ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                 # TODO remove position dependence if in tree 
-                ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", self.ap_dict['ap_scheme'], "--prompt", self.ap_dict['ap_prompt'],"--dest", self.ap_dict['ap_ip'], "--port", self.ap_dict["ap_port"],
+                ap_info= subprocess.run(["./../ap_ctl.py", "--scheme", self.ap_dict['ap_scheme'], "--prompt", self.ap_dict['ap_prompt'],"--dest", self.ap_dict['ap_ip'], "--port", self.ap_dict["ap_port"],
                                           "--user", self.ap_dict['ap_user'], "--passwd", self.ap_dict['ap_pw'],"--tty", self.ap_dict['ap_tty'],"--baud", self.ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
                 try:
                     pss = ap_info.stdout.decode('utf-8', 'ignore')
@@ -2499,9 +2499,9 @@ Sample script 2/11/2021
 
                                                                         # clear log  (AP)
                                                                         try:
-                                                                            logg.info("cisco_ap_ctl.py: clear log")
+                                                                            logg.info("ap_ctl.py: clear log")
                                                                             # TODO remove position dependence if in tree 
-                                                                            ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                            ap_info= subprocess.run(["./../ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                                                                       "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "clear_log"],capture_output=True, check=True)#stdout=subprocess.PIPE)
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
@@ -2519,9 +2519,9 @@ Sample script 2/11/2021
 
                                                                         # show log  (AP)
                                                                         try:
-                                                                            logg.info("cisco_ap_ctl.py: show log")
+                                                                            logg.info("ap_ctl.py: show log")
                                                                             # TODO remove position dependence if in tree 
-                                                                            ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                            ap_info= subprocess.run(["./../ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                                                                       "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True) #stdout=subprocess.PIPE
                                                                             try:
                                                                                 pss = ap_info.stdout.decode('utf-8', 'ignore')
@@ -2563,11 +2563,11 @@ Sample script 2/11/2021
                                                                                     ap_dict['ap_user'],ap_dict['ap_pw'],ap_dict['ap_tty'],ap_dict['ap_baud'],))
 
                                                                             try:
-                                                                                logg.info("cisco_ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
+                                                                                logg.info("ap_ctl.py: read for CAC timer and CAC_EXPIRY_EVT")
                                                                                 # TODO remove position dependence if in tree 
-                                                                                #ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                #ap_info= subprocess.run(["./../ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                                                 #                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "cac_expiry_evt"],capture_output=True, check=True)
-                                                                                ap_info= subprocess.run(["./../cisco_ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                                                ap_info= subprocess.run(["./../ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                                                                           "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--tty", ap_dict['ap_tty'],"--baud", ap_dict['ap_baud'],"--action", "show_log"],capture_output=True, check=True)
 
                                                                                 try:
