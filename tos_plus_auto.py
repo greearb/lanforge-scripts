@@ -101,37 +101,37 @@ def main():
    wlan = 'wlan_open'
    wlanID = '6'
 
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "wlan"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "wlan_security"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "wlan_qos", "--value", "platinum"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "enable_wlan"], capture_output=True)
-   output01 = subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "--action", "show", 
+   output01 = subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "--action", "show", 
                   "--value", "wlan summary"], capture_output=True)
    #pss = output01.stdout.decode('utf-8', 'ignore');
    #print(pss)
    print(output01)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "b", "--action", 
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "b", "--action", 
                   "disable"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
                   "disable"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
                   "channel", "--value", "149"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
                   "bandwidth", "--value", "80"], capture_output=True)
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-b", "a", "--action", 
                   "enable"], capture_output=True)
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w %s -i %s --action wlan"%(dest, port, ap, user, passwd, wlan, wlanID))
-   #subprocess.run("./cisco_wifi_ctl.py", "-d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w %s -i %s --action wlan_qos --value platinum"%(dest, port, ap, user, passwd, wlan, wlanID))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s --action show --value \"wlan summary\""%(dest, port, ap, user, passwd))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b b --action disable"%(dest, port, ap, user, passwd))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action disable"%(dest, port, ap, user, passwd))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action channel --value 149"%(dest, port, ap, user, passwd))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action bandwidth --value 80"%(dest, port, ap, user, passwd))
-   #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action enable"%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w %s -i %s --action wlan"%(dest, port, ap, user, passwd, wlan, wlanID))
+   #subprocess.run("./wifi_ctl_9800_3504.py", "-d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w %s -i %s --action wlan_qos --value platinum"%(dest, port, ap, user, passwd, wlan, wlanID))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s --action show --value \"wlan summary\""%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b b --action disable"%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action disable"%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action channel --value 149"%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action bandwidth --value 80"%(dest, port, ap, user, passwd))
+   #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -b a --action enable"%(dest, port, ap, user, passwd))
 
    #Clear Stormbreaker stats on AP
    subprocess.run(["./cisco_ap.py", "-d", dest, "-o", port_ap, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "--action", "clear_counter"], capture_output=True)
@@ -263,9 +263,9 @@ def main():
 
 
    #Clear config on WLAN
-   subprocess.run(["./cisco_wifi_ctl.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
+   subprocess.run(["./wifi_ctl_9800_3504.py", "-d", dest, "-o", port, "-s", "telnet", "-l", "stdout", "-a", ap, "-u", "cisco", "-p", "Cisco123", "-w", wlan, "-i", wlanID,
                   "--action", "delete_wlan"], capture_output=True)
-     #subprocess.run("python3 cisco_wifi_ctl.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w wlan_open -i 6 --action delete_wlan"%(dest, port, ap, user, passwd))
+     #subprocess.run("python3 wifi_ctl_9800_3504.py -d %s  -o %s -s telnet -l stdout -a %s -u %s -p %s -w wlan_open -i 6 --action delete_wlan"%(dest, port, ap, user, passwd))
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':

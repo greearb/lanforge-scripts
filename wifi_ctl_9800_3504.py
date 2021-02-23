@@ -11,11 +11,11 @@ $ sudo yum install python3-pexpect
 You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 
-./cisco_wifi_ctl.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet
+./wifi_ctl_9800_3504.py -d 172.19.27.95 -o 2013 -l stdout -a AxelMain -u cisco -p Cisco123 -s telnet
 
 # For LANforge lab system.
-./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action cmd --value "show ap config general APA453.0E7B.CF9C" --prompt "(Cisco Controller)"
-./cisco_wifi_ctl.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action summary --prompt "(Cisco Controller)"
+./wifi_ctl_9800_3504.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action cmd --value "show ap config general APA453.0E7B.CF9C" --prompt "(Cisco Controller)"
+./wifi_ctl_9800_3504.py --scheme ssh -d 192.168.100.112 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C  --series 3504  --action summary --prompt "(Cisco Controller)"
 
 
 
