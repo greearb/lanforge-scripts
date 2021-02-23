@@ -31,10 +31,9 @@ testCommands=(
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
-    "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type generic --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug"
     "./testgroup.py --group_name group1 --add_group --list_groups --debug"
-    "./scenario.py --load test_l3_scenario_throughput && ./testgroup.py --group_name group1 --add_group --add_cx sta0000,sta0001,sta0002 --remove_cx sta0003 --list_groups --debug"
+    "./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx sta0000,sta0001,sta0002 --remove_cx sta0003 --list_groups --debug"
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
     "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
@@ -44,7 +43,9 @@ testCommands=(
     "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
     "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
-    "./test_l3_longevity.py --test_duration 4m --upstream_port eth1 --radio 'radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio 'radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY'"
+    "./test_l3_longevity.py --test_duration 4m --upstream_port eth1 --radio
+    \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
+    --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
     "./test_status_msg.py --debug " #this is all which is needed to run
@@ -108,7 +109,7 @@ function echo_print() {
 
 function run_test() {
     for i in "${testCommands[@]}"; do
-        ./scenario.py --load BLANK
+        ./scenario.py --load FACTORY_DFLT
         NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
@@ -124,20 +125,18 @@ function run_test() {
             echo_print
             echo "$i"
             $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
-            retval=$?
-            grep -i fail "${TEST_DIR}/${NAME}.txt" && retval=1
             chmod 664 "${TEST_DIR}/${NAME}.txt"
-            if (( $retval == 0 )); then
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
-                          <td class='success'>Success</td>
-                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td></td></tr>")
-            else
+            FILESIZE=$(stat -c%s "{TEST_DIR}/${NAME}_stderr.txt") || 0
+            if (( $FILESIZE > 0)); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                           <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
-
+            else
+                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+                          <td class='success'>Success</td>
+                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td></td></tr>")
             fi
         fi
     done
