@@ -1096,7 +1096,6 @@ class L3CXProfile(LFCliBase):
         :param debug_:
         """
         super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
-        self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm
         self.side_a_min_pdu = side_a_min_pdu
@@ -1112,8 +1111,6 @@ class L3CXProfile(LFCliBase):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
-        self.lfclient_port = lfclient_port
-        self.lfclient_host = lfclient_host
 
     def get_cx_names(self):
         return self.created_cx.keys()
