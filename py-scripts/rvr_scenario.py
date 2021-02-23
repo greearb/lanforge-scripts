@@ -100,10 +100,11 @@ class RunCvScenario(LFCliBase):
             "cv click test_ref Start",
             "sleep 1",
             "cv click test_ref 'Another Iteration'",
-            "sleep 400", #sleep for test duration 
+            "sleep 400", #sleep for test duration for however long 1 test time x num iterations takes
             #"cv click test_ref 'Pause'", #pause for test
             #"sleep 5",
-            "cv click test_ref 'Pause'", #unpause test
+            "cv click test_ref 'Another Iteration'", #unselect Another Iteration
+            "cv click test_ref 'Pause'", #pause test
             #"sleep 100",
             #"cv click test_ref 'Start'",
             #"sleep 30",
