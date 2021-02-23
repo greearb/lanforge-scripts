@@ -20,9 +20,8 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
+    
 import argparse
-from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 from realm import Realm
 import time
@@ -157,7 +156,7 @@ def main():
     optional.append({'name': '--monitor_interval',
                      'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      'default': '2s'})
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
