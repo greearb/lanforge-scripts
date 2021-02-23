@@ -15,7 +15,7 @@ EPILOG = '''\
 Sample script to run create station, wlan and talk to ap 1/26/2021 run on 9800
 carriage returns specifically left out
 ##############################################################################
-./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "52 100 104" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
+./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "52 100 104" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
 
 
 
@@ -23,7 +23,7 @@ carriage returns specifically left out
 Sample to test pf_ignore_offset switch 1/27/2021 run on 9800
 carriage returns specifically left out
 #############################################################
-./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "36 52 100 104 161" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --pf_ignore_offset "35"
+./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet --ap 9120_Candela --bandwidth "20" --channel "36 52 100 104 161" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose  --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --pf_ignore_offset "35"
 
 
 ##############################################################################################
@@ -52,7 +52,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # read AP for powercfg values using : show controllers dot11Radio 1 powercfg | g T1'
 ##############################################################################################
 
-./lf_cisco_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
+./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
     --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
     --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
     --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose \
@@ -64,7 +64,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # send email and or text on --exit_on_fail
 ##############################################################################################
 
-./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178 \
+./lf_tx_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178 \
     --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a \
     --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] \
     --security open -l out_file2  -D 14 --exit_on_fail \
@@ -76,7 +76,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # Long duration test -- need to create the ---wlanID 1 --wlan open-wlan --wlanSSID open-wlan 
 ##############################################################################################
 
-./lf_cisco_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
+./lf_tx_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \ 
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
     --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
@@ -87,7 +87,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # Per-channel path-loss example station present
 ##############################################################################################
 
-./lf_cisco_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
+./lf_tx_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
   --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --antenna_gain 5 --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
   --band a --upstream_port eth2 --lfresource2 2 --verbose
 
@@ -95,7 +95,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # To create a station run test against station create open-wlan
 ##############################################################################################
 
-./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
+./lf_tx_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open --verbose
@@ -104,7 +104,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # station already present
 ##############################################################################################
 
-./lf_cisco_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
+./lf_tx_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
 --upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --verbose
 
