@@ -19,6 +19,14 @@ DATA_DIR="${TEST_DIR}"
 REPORT_DIR="/home/lanforge/html-reports"
 #set -vex
 
+function run_l3_longevity {
+  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
+}
+
+function testgroup {
+  `./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug`
+}
+
 #Test array
 testCommands=(
     #"../cpu_stats.py --duration 15"
@@ -33,7 +41,7 @@ testCommands=(
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug"
     "./testgroup.py --group_name group1 --add_group --list_groups --debug"
-    "./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx sta0000,sta0001,sta0002 --remove_cx sta0003 --list_groups --debug"
+    testgroup
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
     "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
@@ -43,9 +51,7 @@ testCommands=(
     "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
     "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
-    "./test_l3_longevity.py --test_duration 4m --upstream_port eth1 --radio
-    \"radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\"
-    --radio \"radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY\""
+    run_l3_longevity
     "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
     "./test_status_msg.py --debug " #this is all which is needed to run
@@ -127,7 +133,7 @@ function run_test() {
             $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
             chmod 664 "${TEST_DIR}/${NAME}.txt"
             FILESIZE=$(stat -c%s "{TEST_DIR}/${NAME}_stderr.txt") || 0
-            if (( $FILESIZE > 0)); then
+            if (( ${FILESIZE} > 0)); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
                           <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
@@ -204,7 +210,6 @@ mkdir "$TEST_DIR"
 
 
 #true >~/test_all_output_file.txt
-check_args $1 $2
 run_test
 echo "${detailedresults}"
 html_generator
