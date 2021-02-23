@@ -1817,12 +1817,6 @@ class L4CXProfile(LFCliBase):
 
         systeminfo = ast.literal_eval(requests.get('http://'+str(self.lfclient_host)+':'+str(self.lfclient_port)).text)
 
-        df['LFGUI Release'] = systeminfo['VersionInfo']['BuildVersion']
-        df['Script Name'] = script_name
-        df['Arguments'] = arguments
-
-        for x in ['LFGUI Release', 'Script Name', 'Arguments']:
-            df[x][1:] = ''
         if output_format == 'hdf':
             df.to_hdf(report_file, 'table', append=True)
         if output_format == 'parquet':
