@@ -90,29 +90,31 @@ class RunCvScenario(LFCliBase):
             "sleep 2",
             "cv sync",
             "sleep 1",
-            "cv create '%s' test_ref" % self.cv_test,
+            "cv load '%s' test_ref" % self.cv_test,
+            #"cv create '%s' test_ref" % self.cv_test,
             "sleep 4",
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 2",
             "cv click test_ref 'Auto Save Report'",
             "sleep 4",
             "cv click test_ref Start",
-            "sleep 60",
+            "sleep 1",
             "cv click test_ref 'Another Iteration'",
+            "sleep 400", #sleep for test duration 
+            #"cv click test_ref 'Pause'", #pause for test
+            #"sleep 5",
+            "cv click test_ref 'Pause'", #unpause test
+            #"sleep 100",
+            #"cv click test_ref 'Start'",
+            #"sleep 30",
+            "cv get test_ref 'Report Location:'",
+            "sleep 5",
+            "cv click test_ref 'Save HTML'",
+            "cv click test_ref 'Close'",
             "sleep 1",
-            "cv click test_ref 'Pause'",
+            "cv click test_ref Cancel",
             "sleep 1",
-#            "cv click test_ref 'Pause'",
-#            "sleep 1",
-#            "cv click test_ref Start",
-#            "cv get test_ref 'Report Location:'",
-#            "sleep 5",
-#            #"cv click test_ref 'Save HTML'",
-#            "cv click test_ref 'Close'",
-#            "sleep 1",
-#            "cv click test_ref Cancel",
-#            "sleep 1",
-#            "exit"
+            "exit"
         ]
         response_json = []
         for command in commands:
