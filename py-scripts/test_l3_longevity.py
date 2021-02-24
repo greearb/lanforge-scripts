@@ -1199,7 +1199,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
+    parser.add_argument('-o','--report_file', help="--report_file <report_file>")
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
     #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
@@ -1232,11 +1232,23 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     if args.radio:
         radios = args.radio
 
-    if args.csv_outfile != None:
-        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
-        print("csv output file : {}".format(csv_outfile))
-        
+    time_now = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':','_')
+    new_file_path = time_now + '_test_l3_longevity' #create path name
+    try:
+        path = os.path.join('/home/lanforge/report-data/',new_file_path)
+        os.mkdir(path)
+    except:
+        curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(curr_dir_path, new_file_path)
+        os.mkdir(path)  
+
+    if args.report_file != None:
+        print('Defaulting to csv data file output type, naming it {}_{}.csv.'.format(time_now,args.report_file))
+        report_file= str(path)+'/{}_{}.csv'.format(time_now,args.report_file)
+    else:
+        print('Defaulting to csv data file output type, naming it {}_{}.csv.'.format(time_now,args.report_file))
+        report_file= str(path)+'/{}_test_l3_longevity.csv'.format(time_now)
+            
 
     MAX_NUMBER_OF_STATIONS = 1000
     
@@ -1324,7 +1336,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     side_a_min_rate=256000, 
                                     side_b_min_rate=256000, 
                                     debug=debug, 
-                                    outfile=csv_outfile)
+                                    outfile=report_file)
 
     ip_var_test.pre_cleanup()
 
@@ -1340,11 +1352,11 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         print(ip_var_test.get_fail_message())
          
     try: 
-        sub_output = subprocess.run(["./csv_processor.py", "--infile",csv_outfile],capture_output=True, check=True)
+        sub_output = subprocess.run(["./csv_processor.py", "--infile",report_file],capture_output=True, check=True)
         pss = sub_output.stdout.decode('utf-8', 'ignore')
         print(pss)
     except Exception as e:
-        print("Exception: {} failed creating summary and raw for {}, are all packages installed , pandas?".format(e,csv_outfile))
+        print("Exception: {} failed creating summary and raw for {}, are all packages installed , pandas?".format(e,report_file))
 
     print("Pausing {} seconds after run for manual inspection before we clean up.".format(args.wait))
     time.sleep(int(args.wait))
