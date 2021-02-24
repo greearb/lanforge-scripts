@@ -17,6 +17,8 @@ from LANforge import LFUtils
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from realm import Realm
+import pprint
+from pprint import pprint
 
 """
     cvScenario.lanforge_db = args.lanforge_db
@@ -66,7 +68,7 @@ class RunCvScenario(LFCliBase):
 
         if (port_counter != 0) and (attempts == 0):
             print("There appears to be a vAP in this database, quitting.")
-            pprint(alias_map);
+            pprint(alias_map)
             exit(1)
 
         data = {
@@ -76,38 +78,33 @@ class RunCvScenario(LFCliBase):
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", data)
-        sleep(1)
+        sleep(5)
         self._pass("Loaded scenario %s" % self.lanforge_db, True)
         return True
 
     def start(self, debug_=False):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
-            "cv apply '%s'" % self.cv_scenario,
+            #"cv apply '%s'" % self.cv_scenario,
             "sleep 5",
             "cv build",
+            "sleep 5",
             "cv is_built",
             "sleep 2",
             "cv sync",
             "sleep 1",
-            "cv load '%s' test_ref" % self.cv_test,
-            #"cv create '%s' test_ref" % self.cv_test,
-            "sleep 4",
+            "cv create '%s' test_ref" % self.cv_test,
+            "sleep 5",
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 2",
             "cv click test_ref 'Auto Save Report'",
             "sleep 4",
             "cv click test_ref Start",
-            "sleep 1",
+            "sleep 2",
             "cv click test_ref 'Another Iteration'",
-            "sleep 400", #sleep for test duration for however long 1 test time x num iterations takes
-            #"cv click test_ref 'Pause'", #pause for test
-            #"sleep 5",
-            "cv click test_ref 'Another Iteration'", #unselect Another Iteration
-            "cv click test_ref 'Pause'", #pause test
-            #"sleep 100",
-            #"cv click test_ref 'Start'",
-            #"sleep 30",
+            "sleep 240", #sleep for (test duration for 1 time test takes  x num iterations requested) - this example is 2 iterations
+            "cv click test_ref 'Another Iteration'", #unselect Another Iteration before test ends
+            "sleep 50" #finish test
             "cv get test_ref 'Report Location:'",
             "sleep 5",
             "cv click test_ref 'Save HTML'",
