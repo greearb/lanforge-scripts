@@ -23,10 +23,15 @@ function run_l3_longevity {
   ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
 }
 
-function testgroup {
+function testgroup_list_groups {
   ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug
 }
-
+function testgroup_list_connections {
+  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug
+}
+function testgroup_delete_group {
+  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --del_group group1 --debug
+}
 #Test array
 testCommands=(
     #"../cpu_stats.py --duration 15"
@@ -41,7 +46,9 @@ testCommands=(
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
     "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug"
     "./testgroup.py --group_name group1 --add_group --list_groups --debug"
-    testgroup
+    testgroup_list_groups
+    testgroup_list_connections
+    testgroup_delete_group
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
     "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
