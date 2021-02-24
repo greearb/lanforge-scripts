@@ -16,6 +16,7 @@ from LANforge import LFRequest
 import LANforge.LFRequest
 import csv
 import pandas as pd
+import os
 
 
 class LFCliBase:
@@ -369,6 +370,7 @@ class LFCliBase:
         if duration >= 300:
             print("Could not connect to LANforge GUI")
             sys.exit(1)
+
     #return ALL messages in list form
     def get_result_list(self):
         return self.test_results
@@ -457,10 +459,37 @@ class LFCliBase:
         #     print("lfclibase::self.proxy: ")
         #     pprint.pprint(self.proxy)
 
-    def logg(self, level="debug", mesg=None):
+
+    def logg2(self, level="debug", mesg=None):
         if (mesg is None) or (mesg == ""):
             return
         print("[{level}]: {msg}".format(level=level, msg=mesg))
+
+    def logg(self,
+              level=None,
+              mesg=None,
+              filename=None,
+              scriptname=None):
+        if (mesg is None) or (mesg == "") or (level is None):
+            return
+        userhome=os.path.expanduser('~')
+        session = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
+        if filename == None:
+            try:
+                os.mkdir("%s/report-data/%s" % (userhome, session))
+            except:
+                pass
+            filename = ("%s/report-data/%s/%s.log" % (userhome,session,scriptname))
+        import logging
+        logging.basicConfig(filename=filename, level=logging.DEBUG)
+        if level == "debug":
+            logging.debug(mesg)
+        elif level == "info":
+            logging.info(mesg)
+        elif level == "warning":
+            logging.warning(mesg)
+        elif level == "error":
+            logging.error(mesg)
 
     # This style of Action subclass for argparse can't do much unless we incorporate
     # our argparse as a member of LFCliBase. Then we can do something like automatically
