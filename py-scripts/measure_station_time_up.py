@@ -88,6 +88,8 @@ class MeasureTimeUp(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+
+    def station_up(self):
         if self.up:
             self.station_profile.admin_up()
         self._pass("PASS: Station build finished")
@@ -175,15 +177,18 @@ Command example:
             start=datetime.datetime.now()
             create_station.build()
             built=datetime.datetime.now()
+            create_station.station_up()
+            stationsup=datetime.datetime.now()
             create_station.wait_for_ip(station_list,timeout_sec=400)
             end=datetime.datetime.now()
-            dictionary[num_sta]=[start,built,end]
+            dictionary[num_sta]=[start,built,stationsup,end]
         except:
             pass
     df=pd.DataFrame.from_dict(dictionary).transpose()
-    df.columns=['Start','Built','End']
+    df.columns=['Start','Built','Stations Up','End']
     df['built duration']=df['Built']-df['Start']
-    df['IP Addresses']=df['End']-df['Built']
+    df['Up Stations']=df['Stations Up']-df['Built']
+    df['IP Addresses']=df['End']-df['Stations Up']
     df['duration']=df['End']-df['Start']
     for variable in ['built duration','IP Addresses','duration']:
         df[variable]=[x.total_seconds() for x in df[variable]]
