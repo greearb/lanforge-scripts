@@ -197,7 +197,7 @@ python3 ./test_ipv4_variable_time.py
     --output_format csv
     --report_file ~/Documents/results.csv                       (Example of csv file output  - please use another extension for other file formats)
     --compared_report ~/Documents/results_prev.csv              (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
-    --layer3_cols'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
+    --layer3_cols 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --port_mgr_cols 'ap','ip'                                    (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --debug
 ===============================================================================
