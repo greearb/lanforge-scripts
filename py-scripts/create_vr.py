@@ -76,8 +76,6 @@ class CreateVR(Realm):
                 "cx_name": "all"
             }, debug_=self.debug)
 
-
-
     def build(self):
         self.vr_profile.create(
             vr_name=self.vr_name,
@@ -102,7 +100,7 @@ Command example:
     --debug
 """.format(f=__file__))
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--vr_name', '--vr_names', default="1.1.vr0", required=False,
+    required.add_argument('--vr_name', '--vr_names', required=True,
                           help='EID of virtual router, like 1.2.vr0')
 
     optional = parser.add_argument_group('optional arguments')
