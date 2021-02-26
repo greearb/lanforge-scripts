@@ -765,9 +765,6 @@ class CreateCtlr():
         
         logg.info("configure ap {} channel {} chan_width {}".format(self.ap,self.channel,self.chan_width))
         # Verify channel and channel width. 
-
-
-
 ##########################################        
 # End of controller controller class
 ##########################################
@@ -2365,7 +2362,6 @@ Sample script 2/11/2021
     logg.info(controller_chan_24ghzs)
     logg.info(controller_chan_widths)
     logg.info(controller_ap_modes)
-    logg.info(controller_client_densities)
     logg.info(controller_packet_types)
     logg.info(controller_packet_sizes)
     logg.info(controller_client_densities)
