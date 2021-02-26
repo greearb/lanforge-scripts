@@ -365,6 +365,36 @@ def port_list_to_alias_map(json_list, debug_=False):
 
     return reverse_map
 
+def list_to_alias_map(json_list=None, from_element=None, debug_=False):
+    reverse_map = {}
+    if (json_list is None) or (len(json_list) < 1):
+        if debug_:
+            print("port_list_to_alias_map: no json_list provided")
+            raise ValueError("port_list_to_alias_map: no json_list provided")
+        return reverse_map
+
+    json_interfaces = json_list
+    if from_element in json_list:
+        json_interfaces = json_list[from_element]
+
+    for record in json_interfaces:
+        if len(record.keys()) < 1:
+            continue
+        record_keys = record.keys()
+        k2 = ""
+        # we expect one key in record keys, but we can't expect [0] to be populated
+        json_entry = None
+        for k in record_keys:
+            k2 = k
+            json_entry = record[k]
+        # skip uninitialized port records
+        if k2.find("Unknown") >= 0:
+            continue
+        port_json = record[k2]
+        reverse_map[k2] = json_entry
+
+    return reverse_map
+
 
 def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(), debug=False):
     return find_port_eids(resource_id=resource_id, base_url=base_url, port_names=port_names, debug=debug)
