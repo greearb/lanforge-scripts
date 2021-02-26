@@ -1,4 +1,7 @@
 from realm import BaseProfile
+from geometry import rect
+from geometry import Rect
+
 import time
 
 class VRProfile(BaseProfile):
@@ -38,6 +41,60 @@ class VRProfile(BaseProfile):
         #     "netmask": None,
         #     "gateway": None
         # }
+
+    """
+        https://unihd-cag.github.io/simple-geometry/reference/rect.html
+    """
+
+    def get_netsmith_bounds(self):
+        pass
+
+    def get_all_vrcx_bounds(self):
+        pass
+
+    def to_rect(self, x=0, y=0, width=10, height=10):
+        rect = Rect(x=x, y=y, width=width, height=height);
+        return rect
+
+    def get_occupied_points(self,
+                            resource=1,
+                            debug=False):
+        debug |= self.debug
+        if (resource is None) or (resource == 0) or ("" == resource):
+            raise ValueError("resource needs to be a number greater than 1")
+
+        router_list = self.router_list(resource=resource, debug=debug)
+        vrcx_list = self.vrcx_list(resource=resource, debug=debug)
+
+        resulting_union_rect = None
+
+        from pprint import pprint
+        pprint(router_list)
+        pprint(vrcx_list)
+
+        exit(1)
+
+    def vrcx_list(self, resource=None, debug=False):
+        debug |= self.debug
+        list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=eid,x,y,height,width"%resource,
+                                     debug_=debug)
+        from LANforge import LFUtils
+        mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
+                                                from_element="router-connections",
+                                                debug_=debug)
+        return mapped_vrcx
+
+    def router_list(self,
+                    resource=None,
+                    debug=False):
+        debug |= self.debug
+        list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
+                                        debug_=debug)
+        from LANforge import LFUtils
+        mapped_routers = LFUtils.list_to_alias_map(json_list=list_of_routers,
+                                                   from_element="virtual-routers",
+                                                   debug_=debug)
+        return mapped_routers
 
     def create_rdd(self,
                    resource=1,
@@ -128,6 +185,9 @@ class VRProfile(BaseProfile):
             debug = True
         if vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
+
+        # determine a free area to place a router
+        used_vrcx_area = self.get_occupied_points()
 
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
         from random import randint
