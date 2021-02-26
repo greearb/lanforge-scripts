@@ -1,8 +1,11 @@
-from realm import BaseProfile
-from geometry import rect
+import time
+from pprint import pprint
+from random import randint
 from geometry import Rect
 
-import time
+from LANforge import LFUtils
+from realm import BaseProfile
+
 
 class VRProfile(BaseProfile):
     """
@@ -52,8 +55,14 @@ class VRProfile(BaseProfile):
     def get_all_vrcx_bounds(self):
         pass
 
+    def vr_to_rect(self, vr_dict=None):
+        return self.to_rect(x=int(vr_dict["x"]),
+                            y=int(vr_dict["y"]),
+                            width=int(vr_dict["width"]),
+                            height=int(vr_dict["height"]))
+
     def to_rect(self, x=0, y=0, width=10, height=10):
-        rect = Rect(x=x, y=y, width=width, height=height);
+        rect = Rect(x=int(x), y=int(y), width=int(width), height=int(height));
         return rect
 
     def get_occupied_points(self,
@@ -63,22 +72,31 @@ class VRProfile(BaseProfile):
         if (resource is None) or (resource == 0) or ("" == resource):
             raise ValueError("resource needs to be a number greater than 1")
 
-        router_list = self.router_list(resource=resource, debug=debug)
-        vrcx_list = self.vrcx_list(resource=resource, debug=debug)
+        router_map = self.router_list(resource=resource, debug=debug)
+        vrcx_map = self.vrcx_list(resource=resource, debug=debug)
 
-        resulting_union_rect = None
+        rect_list = []
+        for eid,item in router_map.items():
+            rect_list.append(self.vr_to_rect(item))
+        for eid,item in vrcx_map.items():
+            rect_list.append(self.vr_to_rect(item))
+        if len(rect_list) < 1:
+            return None
+        bounding_rect = rect_list[0]
+        for item in rect_list:
+            if debug:
+                pprint(("item:", item))
+            bounding_rect.union(item)
+        if debug:
+            pprint(("bounding:", bounding_rect))
+            time.sleep(5)
 
-        from pprint import pprint
-        pprint(router_list)
-        pprint(vrcx_list)
-
-        exit(1)
+        return bounding_rect
 
     def vrcx_list(self, resource=None, debug=False):
         debug |= self.debug
         list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=eid,x,y,height,width"%resource,
                                      debug_=debug)
-        from LANforge import LFUtils
         mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
                                                 from_element="router-connections",
                                                 debug_=debug)
@@ -90,7 +108,7 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
                                         debug_=debug)
-        from LANforge import LFUtils
+
         mapped_routers = LFUtils.list_to_alias_map(json_list=list_of_routers,
                                                    from_element="virtual-routers",
                                                    debug_=debug)
@@ -186,11 +204,14 @@ class VRProfile(BaseProfile):
         if vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
 
-        # determine a free area to place a router
-        used_vrcx_area = self.get_occupied_points()
 
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
-        from random import randint
+
+        # determine a free area to place a router
+        used_vrcx_area = self.get_occupied_points(resource=self.vr_eid[1],
+                                                  debug=debug)
+        exit(1)
+
         x = randint(200, 300)
         y = randint(200, 300)
         self.add_vr_data = {
