@@ -5,6 +5,7 @@ use warnings;
 use diagnostics;
 use Carp;
 use Data::Dumper;
+use File::Temp qw(tempfile tempdir);
 my $Q='"';
 my $q="'";
 my @idhunks = split(' ', `id`);
@@ -13,6 +14,10 @@ die ("Must be root to use this")
    unless( $hunks[0] eq "uid=0(root)" );
 @idhunks = undef;
 @hunks = undef;
+my $start_time = `date +%Y%m%d-%H%M%S`;
+chomp($start_time);
+# print( "start time: [$start_time]\n");
+
 my $MgrHostname = `cat /etc/hostname`;
 chomp($MgrHostname);
 print "Will be setting hostname to $MgrHostname\n";
@@ -52,9 +57,12 @@ print "ip: $ip\n";
 # This must be kept in sync with similar code in lf_kinstall.
 my $found_localhost = 0;
 my $fname = "/etc/hosts";
+my $backup = "/etc/.hosts.$start_time";
+`cp $fname $backup`;
+my ($fh, $editfile) = tempfile( "t_hosts_XXXX", DIR=>'/tmp', SUFFIX=>'.txt');
 if (-f "$fname") {
   my @lines = `cat $fname`;
-  open(FILE, ">$fname") or die "Couldn't open file: $fname for writing: $!\n\n";
+  #open(FILE, ">$fname") or die "Couldn't open file: $fname for writing: $!\n\n";
   my $foundit = 0;
   my $i;
   # chomp is way to simplistic if we need to weed out \r\n characters as well
@@ -107,8 +115,8 @@ if (-f "$fname") {
     print "\nLN[$ln]\n" if ($debug);
     next if ($ln =~ /^\s*$/);
     next if ($ln =~ /^\s*#/);
-    next if ($ln =~ /^###-LF-HOSTAME-NEXT-###/); # old typo
-    next if ($ln =~ /^###-LF-HOSTNAME-NEXT-###/);
+    next if ($ln =~ /LF-HOSTAME-NEXT/); # old typo
+    next if ($ln =~ /LF-HOSTNAME-NEXT/);
     my $comment = undef;
     print "PARSING IPv4 ln[$ln]\n" if ($debug);
     if ($ln =~ /#/) {
@@ -132,6 +140,10 @@ if (-f "$fname") {
       next if ($hunk =~ /^lanforge\.local(domain|net)$/);
       next if ($hunk =~ /^extra6?-\d+/);
 
+      if ($hunk =~ /^\s*$/) {
+        next;
+      }
+
       if ($hunk =~ /^$ip$/) {
          $linehasip++;
          $lfhostname++;
@@ -140,6 +152,8 @@ if (-f "$fname") {
          $lfhostname++;
          $prevname = $hunk;
       }
+
+      $previp = "" if (!defined($previp));
 
       if (($hunk =~ /^127\.0\.0\.1/)
          || ($hunk =~ /^192\.168\.1\.101/)
@@ -163,7 +177,10 @@ if (-f "$fname") {
            print " hunk($hunk)prev($prevname)" if ($debug);
            $address_map{$hunk} .= " $prevname"
              if ($address_map{$hunk} !~ /\s*$prevname\s*/);
-           $host_map{$prevname} .= " $hunk";
+           # $host_map{$prevname} .= " $hunk";
+           if ($host_map{$prevname} !~ /\b$hunk\b/) {
+             $host_map{$prevname} .= " $hunk";
+           }
          }
          $previp = $hunk;
       }
@@ -175,17 +192,23 @@ if (-f "$fname") {
             $address_map{$previp} .= " $hunk"
                if ($address_map{$previp} !~ /\b$hunk\b/);
             $prevname = $hunk;
-            $host_map{$prevname} .= " $previp";
+            if ($host_map{$prevname} !~ /\b$hunk\b/) {
+                $host_map{$prevname} .= " $previp";
+            }
          }
          elsif ($linehasip) {
-            print " prev($previp $hunk)" if ($debug);
+            print " prev($previp) hunk($hunk)" if ($debug);
             $address_map{$previp} .= " $hunk"
                if ($address_map{$previp} !~ /\s*$hunk\s*/);
-            $host_map{$hunk} .= " $previp";
+            if ((defined $prevname) && (exists $host_map{$prevname}) && ($host_map{$prevname} !~ /\b$hunk\b/)) {
+               $host_map{$hunk} .= " $previp";
+            }
          }
          elsif ($lfhostname) {
             $more_hostnames{$hunk} = 1;
-            $host_map{$hunk} .= " $previp";
+            if ($host_map{$prevname} !~ /\b$hunk\b/) {
+               $host_map{$hunk} .= " $previp";
+            }
          }
          else { # strange word
             if ("" eq $previp) {
@@ -194,7 +217,9 @@ if (-f "$fname") {
             }
             elsif ($address_map{$previp} !~ /\s*$hunk\s*/) {
                $address_map{$previp} .= " $hunk";
-               $host_map{$hunk} .= " $previp";
+               if ($host_map{$prevname} !~ /\b$hunk\b/) {
+                  $host_map{$hunk} .= " $previp";
+               }
             }
          }
       }
@@ -209,15 +234,17 @@ if (-f "$fname") {
       }
       elsif ($address_map{$previp} !~ /\s*$hunk\s*/) { # is hostname and not an ip
          $address_map{$previp} .= " $hunk";
-         $host_map{$hunk} .= " $previp";
+         if ($host_map{$prevname} !~ /\b$hunk\b/) {
+            $host_map{$hunk} .= " $previp";
+         }
       }
     } # ~foreach hunk
   } # ~foreach line
 
   if (($host_map{$MgrHostname} !~ /^\s*$/) && ($host_map{$MgrHostname} =~ /\S+\s+\S+/)) {
-    print("Multiple IPs for this hostname: ".$host_map{$MgrHostname}."\n");
+    print("Multiple IPs for this hostname: ".$host_map{$MgrHostname}."\n") if ($debug);
     my @iphunks = split(/\s+/, $host_map{$MgrHostname});
-    print "WARNING changing $MgrHostname for to $ip; line was <<$host_map{$MgrHostname}>> addrmap: <<$address_map{$ip}>>\n"
+    print "Changing $MgrHostname for to $ip; line was <<$host_map{$MgrHostname}>> addrmap: <<$address_map{$ip}>>\n"
       if ($debug);
     $host_map{$MgrHostname} = $ip;
   }
@@ -231,9 +258,14 @@ if (-f "$fname") {
   unshift(@newlines, "127.0.0.1  ".$address_map{"127.0.0.1"});
   unshift(@newlines, "::1  ".$address_map{"::1"});
 
+  my %used_addresses=();
+
   delete($address_map{"192.168.1.101"});
+  $used_addresses{"192.168.1.101"}=1;
   delete($address_map{"127.0.0.1"});
+  $used_addresses{"127.0.0.1"}=1;
   delete($address_map{"::1"});
+  $used_addresses{"::1"}=1;
 
   if ($debug) {
      print "# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
@@ -244,6 +276,7 @@ if (-f "$fname") {
      print "# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----\n";
      sleep 2;
   }
+
   # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
   # we want to maintain the original line ordering as faithfully as possible
   # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -251,6 +284,8 @@ if (-f "$fname") {
     $ln = "" if (!(defined $ln));
     print "OLD[$ln]\n" if ($debug);
     # if we are comments or blank lines, preserve them
+    next if ($ln =~ /LF-HOSTNAME-NEXT/);
+    next if ($ln =~ /^$host_map{$MgrHostname}\s+/);
     if (($ln =~ /^\s*$/) || ($ln =~ /^\s*#/)) {
        push(@newlines, $ln);
        next;
@@ -258,7 +293,8 @@ if (-f "$fname") {
     @hunks = split(/\s+/, $ln);
 
     if (exists $address_map{$hunks[0]}) {
-       if (exists $address_marker_map{$hunks[0]}) {
+       if ((exists $address_marker_map{$hunks[0]})
+            || (exists $used_addresses{$hunks[0]})) {
           print "already printed $hunks[0]\n" if ($debug);
           next;
        }
@@ -270,8 +306,10 @@ if (-f "$fname") {
        $address_marker_map{$hunks[0]} = 1;
        next;
     }
-    else {
-       die("unknown IP $hunks[0]");
+    if (!(exists $used_addresses{$hunks[0]} )) {
+       warn("untracked IP <<$hunks[0]>> Used addresses:\n");
+       print Dumper(\%address_marker_map);
+       print Dumper(\%used_addresses);
     }
   }
   if ($debug) {
@@ -297,11 +335,25 @@ if (-f "$fname") {
      sleep 5;
   }
   for my $ln (@newlines) {
-    print FILE "$ln\n";
+    print $fh "$ln\n";
   }
 
-  print FILE "\n";
-  close FILE;
+  #print  "\n";
+  close $fh;
+  my $wc_edit_file = `wc -l < $editfile`;
+  chomp($wc_edit_file);
+  my $wc_orig_file = `wc -l < $backup`;
+  if ( $wc_edit_file == 0) {
+    print "Abandoning $editfile, it was blank.\n";
+    exit;
+  }
+  if ( $wc_orig_file > $wc_edit_file ) {
+    warn( "Original /etc/hosts file backed up to $backup\n");
+    warn( "The new /etc/hosts file has ".($wc_orig_file - $wc_edit_file)."lines.\n");
+    warn( "Press Ctrl-C to exit now.\n");
+    sleep(2);
+  }
+  `cp $editfile /etc/hosts`;
 } # ~if found file
 
 my $local_crt ="";
