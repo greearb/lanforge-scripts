@@ -220,6 +220,9 @@ class VRProfile(BaseProfile):
                             y=used_vrcx_area.top+15,
                             width=50,
                             height=250)
+        # pprint(("next_rh_area", next_rh_area))
+        # exit(1)
+
         self.add_vr_data = {
             "alias": self.vr_eid[2],
             "shelf": 1,
