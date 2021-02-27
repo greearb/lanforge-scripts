@@ -1,7 +1,7 @@
 import time
 from pprint import pprint
 from random import randint
-from geometry import Rect
+from geometry import Rect, Group
 
 from LANforge import LFUtils
 from realm import BaseProfile
@@ -65,9 +65,9 @@ class VRProfile(BaseProfile):
         rect = Rect(x=int(x), y=int(y), width=int(width), height=int(height));
         return rect
 
-    def get_occupied_points(self,
-                            resource=1,
-                            debug=False):
+    def get_bounding_rect(self,
+                          resource=1,
+                          debug=False):
         debug |= self.debug
         if (resource is None) or (resource == 0) or ("" == resource):
             raise ValueError("resource needs to be a number greater than 1")
@@ -82,16 +82,20 @@ class VRProfile(BaseProfile):
             rect_list.append(self.vr_to_rect(item))
         if len(rect_list) < 1:
             return None
-        bounding_rect = rect_list[0]
+        bounding_group = Group()
         for item in rect_list:
-            if debug:
-                pprint(("item:", item))
-            bounding_rect.union(item)
-        if debug:
-            pprint(("bounding:", bounding_rect))
-            time.sleep(5)
+            #if debug:
+            #    pprint(("item:", item))
+            bounding_group.append(item)
+        bounding_group.update()
+        #if debug:
+        #    pprint(("bounding:", bounding_group))
+        #    time.sleep(5)
 
-        return bounding_rect
+        return Rect(x=bounding_group.x,
+                    y=bounding_group.y,
+                    width=bounding_group.width,
+                    height=bounding_group.height)
 
     def vrcx_list(self, resource=None, debug=False):
         debug |= self.debug
@@ -208,18 +212,20 @@ class VRProfile(BaseProfile):
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
 
         # determine a free area to place a router
-        used_vrcx_area = self.get_occupied_points(resource=self.vr_eid[1],
-                                                  debug=debug)
-        exit(1)
+        used_vrcx_area = self.get_bounding_rect(resource=self.vr_eid[1],
+                                                debug=debug)
+        pprint(("used_vrcx_area:", used_vrcx_area))
 
-        x = randint(200, 300)
-        y = randint(200, 300)
+        next_rh_area = Rect(x=used_vrcx_area.right+15,
+                            y=used_vrcx_area.top+15,
+                            width=50,
+                            height=250)
         self.add_vr_data = {
             "alias": self.vr_eid[2],
             "shelf": 1,
             "resource": self.vr_eid[1],
-            "x": x,
-            "y": y,
+            "x":  next_rh_area.x,
+            "y":  next_rh_area.y,
             "width": 50,
             "height": 250,
             "flags": 0
