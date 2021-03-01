@@ -884,7 +884,11 @@ class BaseProfile:
     def wait_until_cxs_appear(self, these_cx, debug=False):
         return self.parent_realm.wait_until_cxs_appear(these_cx, debug=False)
 
-    def logg(self, message=None):
+    def logg(self, message=None, audit_list=None):
+        if audit_list is None:
+            self.parent_realm.logg(message)
+        for item in audit_list:
+            message += ("\n" + pprint.pformat(item, indent=4))
         self.parent_realm.logg(message)
 
 class MULTICASTProfile(LFCliBase):
