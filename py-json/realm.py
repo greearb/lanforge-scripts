@@ -14,7 +14,7 @@ from LANforge.lfcli_base import LFCliBase
 #from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
-import LANforge.l3_cxprofile
+from l3_cxprofile import L3CXProfile
 import os
 import datetime
 import base64

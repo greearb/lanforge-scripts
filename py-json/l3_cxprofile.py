@@ -3,7 +3,7 @@
 import re
 import time
 import pprint
-import LANforge.base_profile
+from base_profile import BaseProfile
 import csv
 import pandas as pd
 import os
