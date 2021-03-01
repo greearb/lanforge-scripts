@@ -8,6 +8,10 @@ from realm import BaseProfile
 
 
 class VRProfile(BaseProfile):
+    Default_Margin = 15 # margin between routers and router connections
+    Default_VR_height = 250
+    Default_VR_width = 50
+
     """
     Virtual Router profile
     """
@@ -65,7 +69,7 @@ class VRProfile(BaseProfile):
         rect = Rect(x=int(x), y=int(y), width=int(width), height=int(height));
         return rect
 
-    def get_bounding_rect(self,
+    def get_occupied_area(self,
                           resource=1,
                           debug=False):
         debug |= self.debug
@@ -193,6 +197,74 @@ class VRProfile(BaseProfile):
         else:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
 
+    def find_position(self, eid=None, target_group=None, debug=False):
+        debug |= self.debug
+        """
+        get rectangular coordinates of VR or VRCX
+        :param eid:
+        :param target_group:
+        :return:
+        """
+        pass
+
+    def next_available_area(self,
+                            go_right=True,
+                            go_down=False,
+                            debug=False,
+                            height=Default_VR_height,
+                            width=Default_VR_width):
+        """
+        Returns a coordinate adjacent to the right or bottom of the presently occupied area with a 15px margin.
+        :param go_right: look to right
+        :param go_down: look to bottom
+        :param debug:
+        :return: rectangle that that next next VR could occupy
+        """
+        debug |= self.debug
+
+        # pprint(("used_vrcx_area:", used_vrcx_area))
+        # print("used x %s, y %s" % (used_vrcx_area.right+15, used_vrcx_area.top+15 ))
+
+        if not (go_right or go_down):
+            raise ValueError("Either go right or go down")
+
+        used_vrcx_area = self.get_occupied_area(resource=self.vr_eid[1], debug=debug)
+        next_area = None
+        if (go_right):
+            next_area = Rect(x=used_vrcx_area.right+15,
+                            y=15,
+                            width=50,
+                            height=250)
+        elif (go_down):
+            next_area = Rect(x=15,
+                            y=used_vrcx_area.bottom+15,
+                            width=50,
+                            height=250)
+        else:
+            raise ValueError("Unexpected positioning")
+
+        # pprint(("next_rh_area", next_area))
+        # print("next_rh_area: right %s, top %s" % (next_area.right, next_area.top ))
+        # print("next_rh_area: x %s, y %s" % (next_area.x, next_area.y ))
+        return next_area
+
+    def move_vrcx(self, debug=False):
+        debug |= self.debug
+
+
+    def move_vr(self, eid=None, go_right=True, go_down=False, upper_left_x=None, upper_left_y=None, debug=False):
+        """
+
+        :param edit: virtual router EID
+        :param go_right: select next area to the right of things
+        :param go_down: select next area below all things
+        :param upper_left_x: integer value for specific x
+        :param upper_left_y: integer value for specific y
+        :return:
+        """
+        debug |= self.debug
+        used_vrcx_area = self.get_occupied_area(resource=self.vr_eid[1], debug=debug)
+
     def create(self,
                vr_name=None,
                # upstream_port=None,
@@ -203,32 +275,21 @@ class VRProfile(BaseProfile):
                debug=False,
                suppress_related_commands_=True):
         # Create vr
-        if self.debug:
-            debug = True
+        debug |= self.debug
+
         if vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
-
 
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
 
         # determine a free area to place a router
-        used_vrcx_area = self.get_bounding_rect(resource=self.vr_eid[1],
-                                                debug=debug)
-        pprint(("used_vrcx_area:", used_vrcx_area))
-
-        next_rh_area = Rect(x=used_vrcx_area.right+15,
-                            y=used_vrcx_area.top+15,
-                            width=50,
-                            height=250)
-        # pprint(("next_rh_area", next_rh_area))
-        # exit(1)
-
+        next_area = self.next_available_area(go_right=True)
         self.add_vr_data = {
             "alias": self.vr_eid[2],
             "shelf": 1,
             "resource": self.vr_eid[1],
-            "x":  next_rh_area.x,
-            "y":  next_rh_area.y,
+            "x":  int(next_area.x),
+            "y":  15,
             "width": 50,
             "height": 250,
             "flags": 0
@@ -262,6 +323,37 @@ class VRProfile(BaseProfile):
         # self.create_vrcx(resource=resource, local_dev="rdd0", remote_dev="rdd1", subnets=local_subnets,
         #                  nexthop=local_nexthop,
         #                  flags=1, suppress_related_commands_=suppress_related_commands_, debug_=debug)
+
+        # move a
+
+    def remove_vr(self, eid=None,
+                  refresh=True,
+                  debug=False,
+                  delay=0.05,
+                  die_on_error=False):
+
+        if (eid is None) or (eid[1] is None) or (eid[2] is None):
+            self.logg("remove_vr: invalid eid: ", audit_list=[eid])
+            if (die_on_error):
+                raise ValueError("remove_vr: invalid eid: "+eid)
+        data = {
+            "shelf": 1,
+            "resource": eid[1],
+            "router_name": eid[2]
+        }
+        self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+        time.sleep(delay)
+        if (refresh):
+            self.json_post("/cli-json/nc_show_vr", {
+                "shelf": 1,
+                "resource": eid[1],
+                "router": "all"
+            }, debug_=self.debug)
+            self.json_post("/cli-json/nc_show_vrcx", {
+                "shelf": 1,
+                "resource": eid[1],
+                "cx_name": "all"
+            }, debug_=self.debug)
 
     def cleanup(self, resource=0, vr_id=0, delay=0.3, debug=False):
         debug |= self.debug
