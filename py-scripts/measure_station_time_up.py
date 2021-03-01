@@ -97,7 +97,7 @@ class MeasureTimeUp(Realm):
     def station_up(self):
         if self.up:
             self.station_profile.admin_up()
-        self.wait_for_ip(station_list=self.station_profile.station_names())
+        self.wait_for_ip(station_list=self.station_profile.station_names)
         self._pass("PASS: Station build finished")
 
     def scenario(self):
