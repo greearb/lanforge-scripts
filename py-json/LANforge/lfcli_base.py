@@ -416,7 +416,7 @@ class LFCliBase:
         return False
 
     #EXIT script with a fail
-    def exit_fail(self,message="%d out of %d tests failed. Exiting script with script failure."):
+    def exit_fail(self, message="%d out of %d tests failed. Exiting script with script failure."):
         total_len=len(self.get_result_list())
         fail_len=len(self.get_failed_result_list())
         print(message %(fail_len,total_len))
