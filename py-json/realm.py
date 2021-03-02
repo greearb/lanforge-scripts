@@ -7,7 +7,6 @@ from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
-
 from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
@@ -812,10 +811,10 @@ class Realm(LFCliBase):
         return vap_prof
 
     def new_vr_profile(self):
-        vap_prof = VRProfile(lfclient_host=self.lfclient_host,
-                             lfclient_port=self.lfclient_port,
-                             local_realm=self,
-                             debug_=self.debug)
+        import vr_profile
+        from vr_profile import VRProfile
+        vap_prof = VRProfile(local_realm=self,
+                             debug=self.debug)
         return vap_prof
 
     def new_http_profile(self):
@@ -1131,6 +1130,9 @@ class L4CXProfile(LFCliBase):
         endp_list = self.json_get("layer4/list?fields=urls/s")
         expected_passes = 0
         passes = 0
+        # TODO: this might raise a nameerror lower down
+        #  if self.target_requests_per_ten is None:
+        #    raise NameError("check request rate: missing self.target_requests_per_ten")
         if endp_list is not None and endp_list['endpoint'] is not None:
             endp_list = endp_list['endpoint']
             for item in endp_list:
@@ -1215,7 +1217,7 @@ class L4CXProfile(LFCliBase):
                 iterations=0,
                 debug=False):
         try:
-            duration_sec = self.parse_time(duration_sec).seconds
+            duration_sec = Realm.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L4CXProfile::monitor wants duration_sec > 1 second")
