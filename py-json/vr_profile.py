@@ -21,9 +21,10 @@ class VRProfile(BaseProfile):
         super().__init__(local_realm=local_realm,
                          debug=debug)
         self.vr_eid = None
-        self.created_rdds = []
-        self.created_vrcxs = []
-        self.cached_routers = []
+        self.vr_name = None
+        # self.created_rdds = []
+        self.cached_vrcx = {}
+        self.cached_routers = {}
 
         # self.vrcx_data = {
         #     'shelf': 1,
@@ -99,7 +100,7 @@ class VRProfile(BaseProfile):
                             height=int(vr_dict["height"]))
 
     def to_rect(self, x=0, y=0, width=10, height=10):
-        rect = Rect(x=int(x), y=int(y), width=int(width), height=int(height));
+        rect = Rect(x=int(x), y=int(y), width=int(width), height=int(height))
         return rect
 
     def get_occupied_area(self,
@@ -138,18 +139,20 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         if (resource is None) or (resource is ""):
             raise ValueError(__name__+ ": resource cannot be blank")
-
-        pprint(("resource", resource))
-        self.json_post("/vr/1/%s/all"%resource, {"action":"refresh"})
-        list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=eid,x,y,height,width"%resource,
-                                     debug_=debug)
-        mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
-                                                from_element="router-connections",
-                                                debug_=debug)
-        return mapped_vrcx
+        if do_refresh or (self.cached_vrcx is None) or (len(self.cached_vrcx) < 1):
+            self.json_post("/vr/1/%s/all" % resource,
+                           {"action": "refresh"})
+            list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=eid,x,y,height,width" % resource,
+                                         debug_=debug)
+            mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
+                                                    from_element="router-connections",
+                                                    debug_=debug)
+            self.cached_vrcx = mapped_vrcx
+        return self.cached_vrcx
 
     def router_list(self,
                     resource=None,
+                    do_refresh=True,
                     debug=False):
         """
         Provides an updated list of routers, and caches the results to self.cached_routers.
@@ -161,16 +164,16 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         if resource is None or resource is "":
             raise ValueError(__name__+"; router_list needs valid resource parameter")
-        list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
-                                        debug_=debug)
-
-        mapped_routers = LFUtils.list_to_alias_map(json_list=list_of_routers,
-                                                   from_element="virtual-routers",
-                                                   debug_=debug)
-        self.cached_routers = mapped_routers
+        if do_refresh or (self.cached_routers is None) or (len(self.cached_routers) < 1):
+            list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
+                                            debug_=debug)
+            mapped_routers = LFUtils.list_to_alias_map(json_list=list_of_routers,
+                                                       from_element="virtual-routers",
+                                                       debug_=debug)
+            self.cached_routers = mapped_routers
         if debug:
             pprint(("cached_routers: ", self.cached_routers))
-        return mapped_routers
+        return self.cached_routers
 
     def create_rdd(self,
                    resource=1,
@@ -232,20 +235,21 @@ class VRProfile(BaseProfile):
                     flags=0,
                     suppress_related_commands_=True,
                     debug_=False):
-        if self.vr_name is not None:
-            self.vrcx_data["resource"] = resource
-            self.vrcx_data["vr_name"] = self.vr_name
-            self.vrcx_data["local_dev"] = local_dev
-            self.vrcx_data["remote_dev"] = remote_dev
-            self.vrcx_data["subnets"] = subnets
-            self.vrcx_data["nexthop"] = nexthop
-            self.vrcx_data["flags"] = flags
-            self.json_post("/cli-json/add_vrcx",
-                           self.vrcx_data,
-                           suppress_related_commands_=suppress_related_commands_,
-                           debug_=debug_)
-        else:
+        if self.vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % self.vr_name)
+
+        vrcx_data = {}
+        vrcx_data["resource"] = resource
+        vrcx_data["vr_name"] = self.vr_name
+        vrcx_data["local_dev"] = local_dev
+        vrcx_data["remote_dev"] = remote_dev
+        vrcx_data["subnets"] = subnets
+        vrcx_data["nexthop"] = nexthop
+        vrcx_data["flags"] = flags
+        self.json_post("/cli-json/add_vrcx",
+                       vrcx_data,
+                       suppress_related_commands_=suppress_related_commands_,
+                       debug_=debug_)
 
     def find_position(self, eid=None, target_group=None, debug=False):
         debug |= self.debug
@@ -327,18 +331,18 @@ class VRProfile(BaseProfile):
                     return True
         return False
 
-    def find_cached_router(self, resource_id=0, router_name=None, debug=False):
+    def find_cached_router(self, resource=0, router_name=None, debug=False):
         debug |= self.debug
-        if (resource_id is None) or (resource_id == 0):
+        if (resource is None) or (resource == 0):
             raise ValueError(__name__+": find_cached_router needs resource_id")
         if (router_name is None) or (router_name is ""):
             raise ValueError(__name__+": find_cached_router needs router_name")
 
-        temp_eid_str = "1.%s.1.65535.%s" % (resource_id, router_name)
+        temp_eid_str = "1.%s.1.65535.%s" % (resource, router_name)
         if temp_eid_str in self.cached_routers.keys():
             return self.cached_routers[temp_eid_str]
 
-        temp_eid_str = "1.%s." % resource_id
+        temp_eid_str = "1.%s." % resource
         for router in self.cached_routers.keys():
             if debug:
                 pprint(("cached_router: ", router))
@@ -346,7 +350,7 @@ class VRProfile(BaseProfile):
                 return self.cached_routers[router]
         if self.exit_on_error:
             raise ValueError("Unable to find cached router %s"%temp_eid_str)
-            exit(1)
+            # exit(1)
         return None
 
     def move_vrcx(self, vrcx_name=None, vr_eid=None, debug=False):
@@ -362,15 +366,17 @@ class VRProfile(BaseProfile):
             raise ValueError(__name__+"empty vrcx_name")
         if (vr_eid is None) or (vr_eid is ""):
             raise ValueError(__name__+"empty vr_eid")
-
+        if (vrcx_name.index(".") > 0):
+            hunks = vrcx_name.split(".")
+            vrcx_name = hunks[-1]
         if debug:
             pprint([("move_vrcx: vr_eid:", vr_eid),
                    ("vrcx_name:", vrcx_name),
                     ("self.cached_routers, check vr_eid:", self.cached_routers)])
-        router_val = self.find_cached_router(resource_id=vr_eid[1], router_name=vr_eid[2])
+        router_val = self.find_cached_router(resource=vr_eid[1], router_name=vr_eid[2])
         if router_val is None:
             self.router_list(resource=vr_eid[1], debug=debug)
-            router_val = self.find_cached_router(resource_id=vr_eid[1], router_name=vr_eid[2])
+            router_val = self.find_cached_router(resource=vr_eid[1], router_name=vr_eid[2])
         if router_val is None:
             raise ValueError(__name__+": move_vrcx: No router matches %s"%vr_eid)
         new_bounds = self.vr_to_rect(vr_dict=router_val, debug=self.debug)
@@ -388,7 +394,7 @@ class VRProfile(BaseProfile):
     def move_vr(self, eid=None, go_right=True, go_down=False, upper_left_x=None, upper_left_y=None, debug=False):
         """
 
-        :param edit: virtual router EID
+        :param eid: virtual router EID
         :param go_right: select next area to the right of things
         :param go_down: select next area below all things
         :param upper_left_x: integer value for specific x
@@ -467,7 +473,7 @@ class VRProfile(BaseProfile):
         if (eid is None) or (eid[1] is None) or (eid[2] is None):
             self.logg("remove_vr: invalid eid: ", audit_list=[eid])
             if (die_on_error):
-                raise ValueError("remove_vr: invalid eid: "+eid)
+                raise ValueError("remove_vr: invalid eid")
         data = {
             "shelf": 1,
             "resource": eid[1],
@@ -539,7 +545,7 @@ class VRProfile(BaseProfile):
             my_list = connection_name_list
         if debug:
             pprint(("my_list was:", my_list))
-            time.sleep(2)
+            time.sleep(1)
         # for vrcx_name in my_list:
         my_list[:] = ["1.%s.%s"%(vr_eid[1], x) if (not x.startswith("1.")) else None for x in my_list]
 
