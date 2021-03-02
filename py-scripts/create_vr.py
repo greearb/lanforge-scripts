@@ -116,10 +116,13 @@ class CreateVR(Realm):
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
+        full_router = self.json_get("/vr/1/%s/%s" %(self.vr_name[1], self.vr_name[2]))
+        pprint(("full router: ", router))
+
         if router is None:
             self._fail("Unable to find router after vrcx move "+self.vr_name)
             self.exit_fail()
-        pprint(("router connections", router["router-connections"]))
+
     def stop(self):
         pass
 
