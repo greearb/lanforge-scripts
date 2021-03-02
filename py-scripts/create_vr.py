@@ -77,15 +77,30 @@ class CreateVR(Realm):
             }, debug_=self.debug)
 
     def build(self):
-        self.vr_profile.create(
-            vr_name=self.vr_name,
-            # upstream_port="up0",
-            # upstream_subnets="10.0.0.0/24",
-            # upstream_nexthop="10.0.0.1",
-            # local_nexthop="10.1.0.1",
-            # local_subnets="10.1.0.0/24",
-            debug=self.debug)
+        # self.redirect_profile
+        self.json_post("/cli-json/add_rdd", {
+            "shelf": 1,
+            "resource": self.vr_name[1],
+            "port": "rd90a",
+            "peer_ifname": "rd90b",
+            "report_timer": "3000"
+        })
+        self.json_post("/cli-json/add_rdd", {
+            "shelf": 1,
+            "resource": self.vr_name[1],
+            "port": "rd90b",
+            "peer_ifname": "rd90a",
+            "report_timer": "3000"
+        })
+        self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
 
+    def start(self):
+        """
+        Move a vrcx into a router and then movie it out
+        :return:
+        """
+        # move rd90a into router
+        self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd0a", debug=True)
 
 def main():
     parser = LFCliBase.create_bare_argparse(
@@ -123,7 +138,7 @@ Command example:
                          _exit_on_fail=True)
     create_vr.clean()
     create_vr.build()
-    # create_vr.start()
+    create_vr.start()
     # create_vr.monitor()
     # create_vr.stop()
     # create_vr.clean()
