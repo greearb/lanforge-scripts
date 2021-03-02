@@ -7,7 +7,7 @@ from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
-from 
+
 from LANforge import add_dut
 from LANforge import lfcli_base
 from LANforge import add_vap
