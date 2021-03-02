@@ -53,11 +53,39 @@ class VRProfile(BaseProfile):
         https://unihd-cag.github.io/simple-geometry/reference/rect.html
     """
 
-    def get_netsmith_bounds(self):
-        pass
+    def get_netsmith_bounds(self, resource=None, debug=False):
+        if (resource is None) or (resource < 1):
+            raise ValueError("get_netsmith_bounds wants resource id")
+        debug |= self.debug
 
-    def get_all_vrcx_bounds(self):
-        pass
+        occupied_area = self.get_occupied_area(resource=resource, debug=debug)
+        return Rect(x=0, y=0, height=occupied_area.height, width=occupied_area.width)
+
+    def get_all_vrcx_bounds(self, resource=None, debug=False):
+        """
+        Computes bounds of all free vrcx ports but omits Virtual Routers
+        :param resource:
+        :param debug:
+        :return: rectangle encompasing all free vrcx ports or None
+        """
+        if (resource is None) or (resource < 1):
+            raise ValueError("get_netsmith_bounds wants resource id")
+        vrcx_map = self.vrcx_list(resource=resource, debug=debug)
+        rect_list = []
+        for eid,item in vrcx_map.items():
+            rect_list.append(self.vr_to_rect(item))
+        if len(rect_list) < 1:
+            return None
+        bounding_group = Group()
+        for item in rect_list:
+            bounding_group.append(item)
+
+        bounding_group.update()
+
+        return Rect(x=bounding_group.x,
+                    y=bounding_group.y,
+                    width=bounding_group.width,
+                    height=bounding_group.height)
 
     def vr_to_rect(self, vr_dict=None):
         return self.to_rect(x=int(vr_dict["x"]),
@@ -248,9 +276,51 @@ class VRProfile(BaseProfile):
         # print("next_rh_area: x %s, y %s" % (next_area.x, next_area.y ))
         return next_area
 
-    def move_vrcx(self, debug=False):
-        debug |= self.debug
+    def is_inside_virtual_router(self, resource=None, vrcx_rect=None, vr_eid=None, debug=False):
+        """
 
+        :param resource: resource id
+        :param vrcx_rect: port rectangle, probably 10px x 10px
+        :param vr_eid: 'all' or router_eid, None is not acceptable
+        :param debug:
+        :return: True if area is inside listed virtual router(s)
+        """
+        debug |= self.debug
+        if (resource is None) or (resource == 0) or ("" == resource):
+            raise ValueError("resource needs to be a number greater than 1")
+        if (vrcx_rect is None) or type(vrcx_rect ) or ("" == resource):
+            raise ValueError("resource needs to be a number greater than 1")
+        router_list = self.router_list(resource=resource, debug=debug)
+        #router_list = self.json_get("/vr/1/%s/%s?fields=eid,x,y,height,width")
+        if (router_list is None) or (len(router_list) < 1):
+            return False
+
+        for router in router_list:
+            rect = self.vr_to_rect(router)
+            if (vr_eid is 'all'):
+                if (vrcx_rect.is_inside_of(rect)):
+                    return True
+            else:
+                if (vr_eid == router["eid"]) and (vrcx_rect.is_inside_of(rect)):
+                    return True
+        return False
+
+    def move_vrcx(self, vrcx_name=None, vr_eid=None, debug=False):
+        debug |= self.debug
+        if (vrcx_name is None) or (vrcx_name is ""):
+            raise ValueError(__name__+"empty vrcx_name")
+        if (vr_eid is None) or (vr_eid is ""):
+            raise ValueError(__name__+"empty vr_eid")
+        new_bounds = self.vr_to_rect(self.router_list().get(vr_eid))
+        new_location = self.vrcx_landing_spot(bounds=new_bounds, debug=debug)
+        self.json_post("/cli-json/add_vrcx", {
+            "shelf": 1,
+            "resource": vr_eid[1],
+            "vr-name": vr_eid[2],
+            "local_dev": vrcx_name,
+            "X": new_location[0],
+            "Y": new_location[1],
+        }, debug_=debug)
 
     def move_vr(self, eid=None, go_right=True, go_down=False, upper_left_x=None, upper_left_y=None, debug=False):
         """
@@ -267,13 +337,8 @@ class VRProfile(BaseProfile):
 
     def create(self,
                vr_name=None,
-               # upstream_port=None,
-               # upstream_subnets=[],
-               # upstream_nexthop=None,
-               # local_subnets=[],
-               # local_nexthop=None,
                debug=False,
-               suppress_related_commands_=True):
+               suppress_related_commands=True):
         # Create vr
         debug |= self.debug
 
@@ -294,22 +359,25 @@ class VRProfile(BaseProfile):
             "height": 250,
             "flags": 0
         }
-        self.json_post("/cli-json/add_vr", self.add_vr_data, debug_=debug)
+        self.json_post("/cli-json/add_vr",
+                       self.add_vr_data,
+                       suppress_related_commands_=suppress_related_commands,
+                       debug_=debug)
         self.json_post("/cli-json/apply_vr_cfg", {
             "shelf": 1,
             "resource": self.vr_eid[1]
-        }, debug_=debug)
+        }, debug_=debug, suppress_related_commands_=suppress_related_commands)
         time.sleep(1)
         self.json_post("/cli-json/nc_show_vr", {
             "shelf": 1,
             "resource": self.vr_eid[1],
             "router": "all"
-        }, debug_=debug)
+        }, debug_=debug, suppress_related_commands_=suppress_related_commands)
         self.json_post("/cli-json/nc_show_vrcx", {
             "shelf": 1,
             "resource": self.vr_eid[1],
             "cx_name": "all"
-        }, debug_=debug)
+        }, debug_=debug, suppress_related_commands_=suppress_related_commands)
         self.refresh_gui(self.vr_eid[1], debug)
 
         # # Create 1 rdd pair
@@ -330,7 +398,8 @@ class VRProfile(BaseProfile):
                   refresh=True,
                   debug=False,
                   delay=0.05,
-                  die_on_error=False):
+                  die_on_error=False,
+                  suppress_related_commands=True):
 
         if (eid is None) or (eid[1] is None) or (eid[2] is None):
             self.logg("remove_vr: invalid eid: ", audit_list=[eid])
@@ -341,19 +410,19 @@ class VRProfile(BaseProfile):
             "resource": eid[1],
             "router_name": eid[2]
         }
-        self.json_post("/cli-json/rm_vr", data, debug_=self.debug)
+        self.json_post("/cli-json/rm_vr", data, debug_=debug, suppress_related_commands_=suppress_related_commands)
         time.sleep(delay)
         if (refresh):
             self.json_post("/cli-json/nc_show_vr", {
                 "shelf": 1,
                 "resource": eid[1],
                 "router": "all"
-            }, debug_=self.debug)
+            }, debug_=debug, suppress_related_commands_=suppress_related_commands)
             self.json_post("/cli-json/nc_show_vrcx", {
                 "shelf": 1,
                 "resource": eid[1],
                 "cx_name": "all"
-            }, debug_=self.debug)
+            }, debug_=debug, suppress_related_commands_=suppress_related_commands)
 
     def cleanup(self, resource=0, vr_id=0, delay=0.3, debug=False):
         debug |= self.debug
@@ -369,7 +438,7 @@ class VRProfile(BaseProfile):
             "resource": resource,
             "router_name": vr_id
         }
-        self.json_post("/cli-json/rm_vr", data, debug_=debug)
+        self.json_post("/cli-json/rm_vr", data, debug_=debug, suppress_related_commands_=True)
         time.sleep(delay)
         self.refresh_gui(resource, debug)
 
@@ -390,4 +459,48 @@ class VRProfile(BaseProfile):
         self.json_post("/vr/1/%s/%s" % (resource, 0), {
             "action":"refresh"
         }, debug_=True)
-#
+
+    def add_vrcx(self, vr_eid=None, connection_name_list=None, debug=False):
+        if (vr_eid is None) or (vr_eid == ""):
+            raise ValueError("")
+        my_list = []
+        if type(connection_name_list) == str:
+            my_list.append(connection_name_list)
+        else:
+            my_list = connection_name_list
+
+        check_list = 0;
+        existing_list = self.vrcx_list()
+        for vrcx_name in my_list:
+            if vrcx_name in existing_list:
+                check_list += 1
+                continue
+            self.logg(__name__+": vrcx not in existing list: "+vrcx_name)
+        if check_list < len(my_list):
+            raise ValueError("Some vrcx don't exist in this netsmith instance, make sure they are not already inside routers")
+
+        # at this point move the vrcx into the vr
+        for vrcx_name in my_list:
+            old_coords = self.vr_to_rect( existing_list.get(vrcx_name))
+            if old_coords is None:
+                raise ValueError("old coordinates for vrcx disappeared")
+            self.move_vrcx(vrcx_name=vrcx_name, vr_eid=vr_eid)
+            print("coordinates were %s and will become %s ")
+
+    def vrcx_landing_spot(self, bounds=None, debug=False):
+        """
+
+        :param bounds: Rect we will select position within a 15px margin inside
+        :param debug:
+        :return: tuple (new_x, new_y) within bounds
+        """
+        if (bounds is None):
+            raise ValueError(__name__+": missing bounds to land vrcx")
+        if not isinstance(bounds, Rect):
+            raise ValueError(__name__+": bounds not of type Rect")
+        new_x = randint(bounds.x+15, bounds.width-15)
+        new_y = randint(bounds.y+15, bounds.height-15)
+        return (new_x, new_y)
+###
+###
+###
