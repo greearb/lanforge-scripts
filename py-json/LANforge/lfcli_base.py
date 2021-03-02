@@ -590,31 +590,31 @@ class LFCliBase:
         }
         self.json_post("/cli-json/add_event", data, debug_=debug_)
 
-    def read_file(self,
-                  filename):
-        #Convert file contents to a list
-        filename = open(filename, 'r')
-        return [line.split(',') for line in filename.readlines()]
+    # def read_file(self,
+    #               filename):
+    #     #Convert file contents to a list
+    #     filename = open(filename, 'r')
+    #     return [line.split(',') for line in filename.readlines()]
 
-    def random_chars(self,
-                     size,
-                     chars=None):
-        #Create random characters made of letters
-        if chars is None:
-            chars = string.ascii_letters
-        return ''.join(random.choice(chars) for x in range(size))
+    # def random_chars(self,
+    #                  size,
+    #                  chars=None):
+    #     #Create random characters made of letters
+    #     if chars is None:
+    #         chars = string.ascii_letters
+    #     return ''.join(random.choice(chars) for x in range(size))
 
-    def get_milliseconds(self,
-                         timestamp):
-        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
-    def get_seconds(self,
-                    timestamp):
-        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
+    # def get_milliseconds(self,
+    #                      timestamp):
+    #     return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
+    # def get_seconds(self,
+    #                 timestamp):
+    #     return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
 
 
-    def replace_special_char(self,
-                             str):
-        return str.replace('+', ' ').replace('_', ' ').strip(' ')
+    # def replace_special_char(self,
+    #                          str):
+    #     return str.replace('+', ' ').replace('_', ' ').strip(' ')
 
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,

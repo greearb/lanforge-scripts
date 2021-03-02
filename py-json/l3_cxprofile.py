@@ -3,8 +3,7 @@
 import re
 import time
 import pprint
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
+from base_profile import BaseProfile
 import csv
 import pandas as pd
 import os
@@ -14,7 +13,7 @@ import random
 import string
 import datetime
 
-class L3CXProfile(LFCliBase):
+class L3CXProfile(BaseProfile):
     def __init__(self,
                  lfclient_host,
                  lfclient_port,
@@ -47,7 +46,7 @@ class L3CXProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(local_realm, debug = debug_)
         self.debug = debug_
         self.local_realm = local_realm
         self.side_a_min_pdu = side_a_min_pdu
