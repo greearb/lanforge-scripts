@@ -16,6 +16,7 @@ if 'py-json' not in sys.path:
 from LANforge.lfcli_base import LFCliBase
 from realm import Realm
 import time
+from pprint import pprint
 
 class CreateVR(Realm):
     def __init__(self,
@@ -92,15 +93,24 @@ class CreateVR(Realm):
             "peer_ifname": "rd90a",
             "report_timer": "3000"
         })
+        self.json_post("/cli-json/nc_show_ports", {
+            "shelf":1,
+            "resource":self.vr_name[1],
+            "port": "all"
+        })
+        self.vr_profile.vrcx_list(resource=self.vr_name[1], )
         self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
+        self._pass("created router")
 
     def start(self):
         """
         Move a vrcx into a router and then movie it out
-        :return:
+        :return: void
         """
         # move rd90a into router
-        self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd0a", debug=True)
+        if self.debug:
+            pprint(("vr_eid", self.vr_name))
+        self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd90a", debug=True)
 
 def main():
     parser = LFCliBase.create_bare_argparse(
