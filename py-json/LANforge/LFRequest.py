@@ -10,6 +10,7 @@ if sys.version_info[0] != 3:
 import pprint
 import urllib
 import time
+import traceback
 from urllib import request
 from urllib import error
 from urllib import parse
@@ -220,6 +221,7 @@ class LFRequest:
                     LFUtils.debug_printer.pprint(responses[0].reason)
                 print("------------------------------------------------------------------------")
             if die_on_error_ or (error.code != 404):
+                traceback.print_stack(limit=15)
                 exit(1)
         except urllib.error.URLError as uerror:
             if show_error:
@@ -227,6 +229,7 @@ class LFRequest:
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if (die_on_error_ == True) or (self.die_on_error == True):
+                    traceback.print_stack(limit=15)
                     exit(1)
         return None
 
@@ -276,19 +279,17 @@ class LFRequest:
                     print("Request Accept:", myrequest.get_header('Accept'))
                     print("Request Data:")
                     LFUtils.debug_printer.pprint(myrequest.data)
-
                 if error.headers:
                     # the HTTPError is of type HTTPMessage a subclass of email.message
                     # print(type(error.keys()))
                     for headername in sorted(error.headers.keys()):
                         print ("Response %s: %s "%(headername, error.headers.get(headername)))
-
                 if len(myresponses) > 0:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
                 if die_on_error_ == True:
-                    # print("--------------------------------------------- s.doe %s v doe %s ---------------------------" % (self.die_on_error, die_on_error_))
+                    traceback.print_stack(limit=15)
                     exit(1)
         except urllib.error.URLError as uerror:
             if debug:
@@ -296,6 +297,7 @@ class LFRequest:
                 print("Reason: %s; URL: %s"%(uerror.reason, myrequest.get_full_url()))
                 print("------------------------------------------------------------------------")
                 if die_on_error_ == True:
+                    traceback.print_stack(limit=15)
                     exit(1)
         return None
 
