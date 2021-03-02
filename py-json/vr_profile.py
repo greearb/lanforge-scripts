@@ -532,31 +532,31 @@ class VRProfile(BaseProfile):
     def add_vrcx(self, vr_eid=None, connection_name_list=None, debug=False):
         if (vr_eid is None) or (vr_eid == ""):
             raise ValueError(__name__+": add_vrcx wants router EID")
-        existing_list = self.vrcx_list(resource=vr_eid[1])
+        existing_list = self.vrcx_list(resource=vr_eid[1], do_refresh=True)
         if (debug):
             pprint([ ("vr_eid", vr_eid),
                      ("connect_names", connection_name_list),
                      ("existing_list", existing_list)
             ])
-        my_list = []
+        edited_connection_list = []
         if type(connection_name_list) == str:
-            my_list.append(connection_name_list)
+            edited_connection_list.append(connection_name_list)
         else:
-            my_list = connection_name_list
+            edited_connection_list = connection_name_list
         if debug:
-            pprint(("my_list was:", my_list))
+            pprint(("my_list was:", edited_connection_list))
             time.sleep(1)
         # for vrcx_name in my_list:
-        my_list[:] = ["1.%s.%s"%(vr_eid[1], x) if (not x.startswith("1.")) else None for x in my_list]
+        edited_connection_list[:] = ["1.%s.%s"%(vr_eid[1], x) if (not x.startswith("1.")) else None for x in edited_connection_list]
 
         if debug:
-            pprint(("my list is now:", my_list))
+            pprint(("my list is now:", edited_connection_list))
 
         # at this point move the vrcx into the vr
-        for vrcx_name in my_list:
+        for vrcx_name in edited_connection_list:
             print ("Looking for old coordinates of %s"%vrcx_name)
             pprint([("vrcx_name:", vrcx_name),
-                    ("existing_list",existing_list.get(vrcx_name))])
+                    ("existing_list", existing_list.get(vrcx_name))])
             if existing_list.get(vrcx_name) is None:
                 pprint(("existing_list:", existing_list))
                 raise ValueError("Is vrcx mis-named?")
