@@ -3,7 +3,8 @@
 import re
 import time
 import pprint
-from base_profile import BaseProfile
+from LANforge import lfcli_base
+from LANforge.lfcli_base import LFCliBase
 import csv
 import pandas as pd
 import os
@@ -13,7 +14,7 @@ import random
 import string
 import datetime
 
-class L3CXProfile(BaseProfile):
+class L3CXProfile(LFCliBase):
     def __init__(self,
                  lfclient_host,
                  lfclient_port,
