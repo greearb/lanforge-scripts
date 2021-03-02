@@ -98,7 +98,7 @@ class CreateVR(Realm):
             "resource":self.vr_name[1],
             "port": "all"
         })
-        self.vr_profile.vrcx_list(resource=self.vr_name[1], )
+        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
         self._pass("created router")
 
@@ -111,6 +111,18 @@ class CreateVR(Realm):
         if self.debug:
             pprint(("vr_eid", self.vr_name))
         self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd90a", debug=True)
+        self.vr_profile.refresh_gui(resource=self.vr_name[1], debug=self.debug)
+        # test to make sure that vrcx is inside vr we expect
+        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
+        vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
+        router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
+        if router is None:
+            self._fail("Unable to find router after vrcx move "+self.vr_name)
+            self.exit_fail()
+        pprint(("router connections", router["router-connections"]))
+    def stop(self):
+        pass
+
 
 def main():
     parser = LFCliBase.create_bare_argparse(
@@ -150,8 +162,8 @@ Command example:
     create_vr.build()
     create_vr.start()
     # create_vr.monitor()
-    # create_vr.stop()
-    # create_vr.clean()
+    create_vr.stop()
+    create_vr.clean()
     print('Created Virtual Router')
 
 if __name__ == "__main__":
