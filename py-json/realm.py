@@ -14,9 +14,6 @@ from LANforge.lfcli_base import LFCliBase
 #from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
-#Profile Imports
-from l3_cxprofile import L3CXProfile
-from l3_cxprofile2 import L3CXProfile2
 import os
 import datetime
 import base64
@@ -25,6 +22,10 @@ import pandas as pd
 import requests
 import ast
 import csv
+#Profile Imports
+from l3_cxprofile import L3CXProfile
+from l3_cxprofile2 import L3CXProfile2
+
 
 
 
