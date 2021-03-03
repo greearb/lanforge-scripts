@@ -1958,12 +1958,12 @@ Eventual Realm at controller
                                     '50' : radio_ath10K_9984_an_AC_list_050,
                                     '200': radio_ath10K_9984_an_AC_list_200}
 
-    ####################################################
+    #############################################################
     #
-    #  Static dictionaries for radios on 191.168.100.178
+    #  Static dictionaries for radios on 191.168.100.178  Test 2
     #  Static Configuration Candela Tech Realm ()
     #
-    ####################################################
+    #############################################################
     #iwlwifi(AX200) 521
     radio_AX200_abgn_ax_list_001_wiphy2  = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
@@ -1984,19 +1984,41 @@ Eventual Realm at controller
     radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_020    = [['radio==1.wiphy0 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_050    = [['radio==1.wiphy0 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_an_AC_list_200     = [['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_list_001_wiphy0  = [['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010_wiphy0  = [['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
+    radio_ath10K_9984_an_AC_dict_test_wiphy0  = {'1'  : radio_ath10K_9984_an_AC_list_001_wiphy0,
+                                                '10'  : radio_ath10K_9984_an_AC_list_010_wiphy0}
 
     radio_ath10K_9984_an_AC_dict_test   = {'1'  : radio_ath10K_9984_an_AC_list_001,
                                           '10'  : radio_ath10K_9984_an_AC_list_010,
-                                          '50'  : radio_ath10K_9984_an_AC_list_050,
-                                          '200' : radio_ath9K_9984_an_AC_list_200}
+                                          '50'  : radio_ath10K_9984_an_AC_list_050}
+
+
+
+    radio_ath9K_9984_abgn_list_001     = [['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_abgn_list_010     = [['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_abgn_list_020     = [['radio==1.wiphy1 stations==20 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_abgn_list_050     = [['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath9K_9984_abgn_list_200     = [['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+
+
+    radio_ath9K_9984_abgn_dict_test     = {'1'  : radio_ath9K_9984_abgn_list_001,
+                                           '10' : radio_ath9K_9984_abgn_list_010,
+                                           '20' : radio_ath9K_9984_abgn_list_020,
+                                           '50' : radio_ath9K_9984_abgn_list_050,
+                                           '200': radio_ath9K_9984_abgn_list_200 }
     
-    radio_ath10K_9984_an_AC_dict_test_wiphy0  = {'1'  : radio_ath10K_9984_an_AC_list_001_wiphy0,
-                                                '10'  : radio_ath10K_9984_an_AC_list_010_wiphy0}
+
+    # Test to only use teh ath9K
+
+    ####################################################################
+    #
+    # End Test #2
+    #
+    ####################################################################
+
 
     MAX_NUMBER_OF_STATIONS = 200
     
@@ -2108,7 +2130,9 @@ Eventual Realm at controller
         controller_side_b_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
-        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test_wiphy0
+        radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
+        #radio_ath10K_9984_an_AC_dict = radio_ath9K_9984_abgn_dict_test
+
 
     else:    
         controller_aps             = args.controller_ap.split()
