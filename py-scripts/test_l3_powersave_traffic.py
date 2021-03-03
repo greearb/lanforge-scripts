@@ -14,6 +14,7 @@ import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
+import l3_cxprofile
 import realm
 import time
 import datetime
@@ -38,14 +39,14 @@ class L3PowersaveTraffic(LFCliBase):
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False,
                                        halt_on_error_=True)
         # upload
-        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
                                                 side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
                                                 side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
                                                 side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
                                                 side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
 
         # download
-        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
                                                   side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
                                                   side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
                                                   side_a_min_pdu=0, side_a_max_pdu=0,
