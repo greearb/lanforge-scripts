@@ -220,7 +220,7 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(responses[0].reason)
                 print("------------------------------------------------------------------------")
-            if die_on_error_ or (error.code != 404):
+            if die_on_error_:
                 traceback.print_stack(limit=15)
                 exit(1)
         except urllib.error.URLError as uerror:
