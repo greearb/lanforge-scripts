@@ -7,13 +7,14 @@ import csv
 import datetime
 import random
 import string
+import pprint
 from pprint import pprint
 #from LANforge.lfcriteria import LFCriteria
 
 class BaseProfile:
     def __init__(self, local_realm, debug=False):
         self.parent_realm = local_realm
-        self.halt_on_error = False
+        #self.halt_on_error = False
         self.exit_on_error = False
         self.debug = debug or local_realm.debug
         self.profiles = []
@@ -55,36 +56,34 @@ class BaseProfile:
     def wait_until_cxs_appear(self, these_cx, debug=False):
         return self.parent_realm.wait_until_cxs_appear(these_cx, debug=False)
 
-    def logg(self, message=None):
+    def logg(self, message=None, audit_list=None):
+        if audit_list is None:
+            self.parent_realm.logg(message)
+        for item in audit_list:
+            message += ("\n" + pprint.pformat(item, indent=4))
         self.parent_realm.logg(message)
-    
 
-    def replace_special_char(self,
-                             str):
+    def replace_special_char(self, str):
         return str.replace('+', ' ').replace('_', ' ').strip(' ')
     
-    def get_milliseconds(self,
-                         timestamp):
+    def get_milliseconds(self, timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
-    def get_seconds(self,
-                    timestamp):
+
+    def get_seconds(self, timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
-    def read_file(self,
-                  filename):
-        #Convert file contents to a list
+
+    def read_file(self, filename):
         filename = open(filename, 'r')
         return [line.split(',') for line in filename.readlines()]
 
-    def random_chars(self,
-                     size,
-                     chars=None):
-        #Create random characters made of letters
+    #Function to create random characters made of letters
+    def random_chars(self, size, chars=None):
         if chars is None:
             chars = string.ascii_letters
         return ''.join(random.choice(chars) for x in range(size))
 
 
-
+    #--------------- create file path / find file path code - to be put into functions
     # #Find file path to save data/csv to:
     #     if args.report_file is None:
     #         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
