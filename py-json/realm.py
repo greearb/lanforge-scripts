@@ -22,11 +22,6 @@ import pandas as pd
 import requests
 import ast
 import csv
-#Profile Imports
-from l3_cxprofile import L3CXProfile
-from l3_cxprofile2 import L3CXProfile2
-
-
 
 
 def wpa_ent_list():
@@ -765,21 +760,41 @@ class Realm(LFCliBase):
         link = self.lfclient_url + link
         info = ()
 
-    def new_station_profile(self):
-        station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
+    def new_station_profile(self, ver = 1):
+        if ver == 1:
+            #import station_profile
+            station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
+        #elif ver == 2:
+            # import station_profile2
+            # station_prof = station_profile2.StationProfile2(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
         return station_prof
 
-    def new_multicast_profile(self):
-        multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
+    def new_multicast_profile(self, ver = 1):
+        if ver == 1:
+            #import multicast_profile
+            multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
                                       local_realm=self, debug_=self.debug, report_timer_=3000)
+        #elif ver == 2:
+            # import multicast_profile2
+            # multi_prof = multicast_profile2.MULTICASTProfile2(self.lfclient_host, self.lfclient_port,
+            #                           local_realm=self, debug_=self.debug, report_timer_=3000)
         return multi_prof
 
-    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
-        wifi_mon_prof = WifiMonitor(self.lfclient_url,
+    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False, ver = 1):
+        if ver == 1:
+            #import wifi_monitor_profile
+            wifi_mon_prof = WifiMonitor(self.lfclient_url,
                                     local_realm=self,
                                     resource_=resource_,
                                     up=up_,
                                     debug_=(self.debug or debug_))
+        #elif ver == 2:
+            # import wifi_monitor_profile2
+            # wifi_mon_prof = wifi_monitor_profile2.WifiMonitor2(self.lfclient_url,
+            #                         local_realm=self,
+            #                         resource_=resource_,
+            #                         up=up_,
+            #                         debug_=(self.debug or debug_))
         return wifi_mon_prof
 
     def new_l3_cx_profile(self, ver = 1):
@@ -799,57 +814,117 @@ class Realm(LFCliBase):
                               report_timer_=3000)
         return cx_prof
 
-    def new_l4_cx_profile(self):
-        cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_l4_cx_profile(self, ver = 1):
+        if ver == 1 :
+            #import l4_cxprofile
+            cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        #elif ver == 2:
+            # import l4_cxprofile2
+            # cx_prof = l4_cxprofile2.L4CXProfile2(self.lfclient_host,
+            #                   self.lfclient_port,
+            #                   local_realm=self,
+            #                   debug_=self.debug,
+            #                   report_timer_=3000)
         return cx_prof
 
-    def new_generic_endp_profile(self):
-        endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_generic_endp_profile(self, ver = 1):
+        if ver == 1 :
+            #import gen_cxprofile
+            endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        #elif ver == 2:
+            # import gen_cxprofile2
+            # endp_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
+            #                   self.lfclient_port,
+            #                   local_realm=self,
+            #                   debug_=self.debug,
+            #                   report_timer_=3000)
         return endp_prof
 
-    def new_generic_cx_profile(self):
+    def new_generic_cx_profile(self, ver = 1):
         """
         @deprecated
         :return: new GenCXProfile
         """
-        cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        if ver == 1:
+            #import gen_cxprofile
+            cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        #elif ver == 2:
+            # import gen_cxprofile2
+            # cx_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
+            #                   self.lfclient_port,
+            #                   local_realm=self,
+            #                   debug_=self.debug,
+            #                   report_timer_=3000)
         return cx_prof
 
-    def new_vap_profile(self):
-        vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+    def new_vap_profile(self, ver = 1):
+        if ver == 1:
+            #import vap_profile
+            vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
                               debug_=self.debug)
+        # elif ver == 2:
+        #     import vap_profile2
+        #     vap_prof = vap_profile2.VAPProfile2(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+        #                       debug_=self.debug)
         return vap_prof
 
-    def new_vr_profile(self):
-        import vr_profile
-        from vr_profile import VRProfile
-        vap_prof = VRProfile(local_realm=self,
+    def new_vr_profile(self, ver = 1):
+        if ver == 1:
+            import vr_profile
+            from vr_profile import VRProfile
+            vap_prof = vr_profile.VRProfile(local_realm=self,
                              debug=self.debug)
+        # elif ver == 2:
+        #     import vr_profile2
+        #     from vr_profile2 import VRProfile2
+        #     vap_prof = vr_profile2.VRProfile2(local_realm=self,
+        #                      debug=self.debug)                       
         return vap_prof
 
-    def new_http_profile(self):
-        http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_http_profile(self, ver = 1):
+        if ver == 1:
+            #import http_profile
+            http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        # elif ver == 2:
+        #     import http_profile2
+        #     http_prof = http_profile2.HTTPProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return http_prof
 
-    def new_fio_endp_profile(self):
-        cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_fio_endp_profile(self, ver = 1):
+        if ver == 1:
+            #import fio_endp_profile
+            cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        # elif ver == 2:
+        #     import fio_endp_profile2
+        #     cx_prof = fio_endp_profile2.FIOEndpProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
-    def new_dut_profile(self):
-        return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_dut_profile(self, ver = 1):
+        if ver == 1:
+            #import dut_profile
+            dut_profile = dut_profile.DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        # elif ver == 2:
+        #     import dut_profile2
+        #     dut_profile = dut_profile2.DUTProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return dut_profile
 
-    def new_mvlan_profile(self):
-        return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+    def new_mvlan_profile(self, ver = 1):
+        if ver == 1:
+            #import mac_vlan_profile
+            mac_vlan_profile = MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        # elif ver == 2:
+        #     import mac_vlan_profile2
+        #     mac_vlan_profile = mac_vlan_profile2.MACVLANProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return mac_vlan_profile
 
-    def new_test_group_profile(self):
-        return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-
-    def new_vr_profile(self):
-        import vr_profile
-        from vr_profile import VRProfile
-        profile = VRProfile(local_realm=self,
-                            debug=self.debug)
-        return profile
+    def new_test_group_profile(self, ver = 1):
+        if ver == 1:
+            #import test_group_profile
+            test_group_profile = TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        # elif ver == 2:
+        #     import test_group_profile2
+        #     test_group_profile = test_group_profile2.TestGroupProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return test_group_profile
 
 class BaseProfile:
     def __init__(self, local_realm, debug=False):

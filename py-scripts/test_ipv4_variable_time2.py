@@ -22,10 +22,9 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-#from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 from realm import Realm
-from LANforge.test_base import TestBase
+from test_base import TestBase
 import time
 import datetime
 
@@ -53,7 +52,6 @@ class IPV4VariableTime(Realm, TestBase):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
 
-        self.add_to
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -75,8 +73,8 @@ class IPV4VariableTime(Realm, TestBase):
         # })
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.station_profile = self.new_station_profile(station_list=sta_list)
-        self.cx_profile = self.new_l3_cx_profile(ver=2)
+        self.station_profile = self.new_station_profile(ver = 2, station_list = sta_list)
+        self.cx_profile = self.new_l3_cx_profile(ver = 2)
 
         #station profile settings
         self.station_profile.lfclient_url = self.lfclient_url
