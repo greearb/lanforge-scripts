@@ -14,7 +14,9 @@ from LANforge.lfcli_base import LFCliBase
 #from generic_cx import GenericCx
 from LANforge import add_monitor
 from LANforge.add_monitor import *
+#Profile Imports
 from l3_cxprofile import L3CXProfile
+from l3_cxprofile2 import L3CXProfile2
 import os
 import datetime
 import base64
@@ -787,7 +789,14 @@ class Realm(LFCliBase):
                               local_realm=self,
                               debug_=self.debug,
                               report_timer_=3000)
-            return cx_prof
+        elif ver == 2:
+            import l3_cxprofile2
+            cx_prof = l3_cxprofile2.L3CXProfile2(self.lfclient_host,
+                              self.lfclient_port,
+                              local_realm=self,
+                              debug_=self.debug,
+                              report_timer_=3000)
+        return cx_prof
 
     def new_l4_cx_profile(self):
         cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
