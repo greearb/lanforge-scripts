@@ -3,25 +3,21 @@ import re
 import time
 import pprint
 from pprint import pprint
-from LANforge import LFRequest
-from LANforge import LFUtils
-from LANforge import set_port
-from LANforge import add_sta
-from LANforge import add_dut
-from LANforge import lfcli_base
-from LANforge import add_vap
-from LANforge.lfcli_base import LFCliBase
 #from lfdata import LFDataCollection
-from LANforge import add_monitor
-from LANforge.add_monitor import *
-#from LANforge.base_profile import BaseProfile
+from base_profile import BaseProfile
 import os
 import datetime
 import base64
 import csv
+from pprint import pprint
+import time
+import random
+import string
+import datetime
 
 
-class L3CXProfile2(LFCliBase):
+
+class L3CXProfile2(BaseProfile):
     def __init__(self,
                  lfclient_host,
                  lfclient_port,
