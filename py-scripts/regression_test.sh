@@ -8,13 +8,13 @@ FILESIZE1=$(echo ${#1})
 if (( $FILESIZE1 > 0 )); then
   SSID_USED=$1
   PASSWD_USED=$2
-  RADIO_USED=$3
+  SECURITY=$3
 else
   SSID_USED="jedway-wpa2-x2048-5-3"
   PASSWD_USED="jedway-wpa2-x2048-5-3"
-  RADIO_USED="wiphy0"
+  SECURITY="wpa2"
 fi
-SECURITY="wpa2"
+RADIO_USED="wiphy0"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 START_NUM=0
