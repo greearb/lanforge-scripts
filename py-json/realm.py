@@ -20,6 +20,7 @@ import pandas as pd
 import requests
 import ast
 from l3_cxprofile import L3CXProfile
+from l3_cxprofile2 import L3CXProfile2
 
 
 def wpa_ent_list():
