@@ -8,7 +8,6 @@ from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
 from LANforge import add_dut
-from LANforge import lfcli_base
 from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
 #from generic_cx import GenericCx
@@ -17,11 +16,10 @@ from LANforge.add_monitor import *
 import os
 import datetime
 import base64
-import xlsxwriter
 import pandas as pd
 import requests
 import ast
-import csv
+from l3_cxprofile import L3CXProfile
 
 
 def wpa_ent_list():
@@ -821,7 +819,7 @@ class Realm(LFCliBase):
             #                         debug_=(self.debug or debug_))
         return wifi_mon_prof
 
-    def new_l3_cx_profile(self, ver = 1):
+    def new_l3_cx_profile(self, ver=1):
         if ver == 1:
             import l3_cxprofile
             cx_prof = l3_cxprofile.L3CXProfile(self.lfclient_host,
@@ -838,7 +836,7 @@ class Realm(LFCliBase):
                               report_timer_=3000)
         return cx_prof
 
-    def new_l4_cx_profile(self, ver = 1):
+    def new_l4_cx_profile(self, ver=1):
         if ver == 1 :
             #import l4_cxprofile
             cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
