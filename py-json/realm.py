@@ -533,24 +533,44 @@ class Realm(LFCliBase):
 
         return matched_map
 
-    def name_to_eid(self, eid,debug=False):
+    def name_to_eid(self, eid, debug=False):
         if debug:
             self.logg(level="debug", mesg="name_to_eid: "+str(eid))
         if (type(eid) is list) or (type(eid) is tuple):
             return eid
         return LFUtils.name_to_eid(eid)
 
-    def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=60, debug=False):
-        print("Waiting for ips, timeout: %i..." % (timeout_sec))
+    def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=360, debug=False):
+        if not (ipv4 ^ ipv6):
+            raise ValueError("wait_for_ip: ipv4 or ipv6 must be set!")
+        if timeout_sec >= 0:
+            print("Waiting for ips, timeout: %i..." % timeout_sec)
+        else:
+            print("Determining wait time based on mean station association time of stations. "
+                  "Will not wait more that 60 seconds without single association")
+        stas_with_ips = []
+        sec_elapsed = 0
+        time_extended = False
         # print(station_list)
         waiting_states = ["0.0.0.0", "NA", ""]
-
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("wait_for_ip: expects non-empty list of ports")
-
         wait_more = True
-        while wait_more and timeout_sec != 0:
+
+        while wait_more and (sec_elapsed <= timeout_sec or timeout_sec == -1):
             wait_more = False
+
+            if not time_extended and timeout_sec == -1:
+                wait_more = True
+                num_with_ips = len(stas_with_ips)
+                if sec_elapsed >= 10 and num_with_ips > 0:
+                    time_extended = True
+                    # print(sec_elapsed, num_with_ips, int(sec_elapsed / num_with_ips), len(station_list))
+                    timeout_sec = int(sec_elapsed / num_with_ips * len(station_list))
+                    print("New timeout is %d seconds" % timeout_sec)
+                elif sec_elapsed > 60 and num_with_ips == 0:
+                    timeout_sec = 60
+                    wait_more = False
 
             for sta_eid in station_list:
                 if debug:
@@ -569,11 +589,13 @@ class Realm(LFCliBase):
 
                 if ipv4:
                     v = response['interface']
-                    if (v['ip'] in waiting_states):
+                    if v['ip'] in waiting_states:
                         wait_more = True
                         if debug:
                             print("Waiting for port %s to get IPv4 Address." % (sta_eid))
                     else:
+                        if sta_eid not in stas_with_ips:
+                            stas_with_ips.append(sta_eid)
                         if debug:
                             print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
@@ -582,6 +604,8 @@ class Realm(LFCliBase):
                     # print(v)
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                             and v['ipv6 address'] != 'AUTO':
+                        if sta_eid not in stas_with_ips:
+                            stas_with_ips.append(sta_eid)
                         if debug:
                             print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
                     else:
@@ -591,7 +615,7 @@ class Realm(LFCliBase):
 
             if wait_more:
                 time.sleep(1)
-                timeout_sec -= 1
+                sec_elapsed += 1
 
         return not wait_more
 
