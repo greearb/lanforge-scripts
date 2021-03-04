@@ -4,9 +4,16 @@
 # OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.
 #Variables
 NUM_STA=4
-SSID_USED=$1 || SSID_USED="jedway-wpa2-x2048-5-3"
-PASSWD_USED=$2 || PASSWD_USED="jedway-wpa2-x2048-5-3"
-RADIO_USED=$3 || RADIO_USED="wiphy0"
+FILESIZE1=$(echo ${#1})
+if (( $FILESIZE1 > 0 )); then
+  SSID_USED=$1
+  PASSWD_USED=$2
+  RADIO_USED=$3
+else
+  SSID_USED="jedway-wpa2-x2048-5-3"
+  PASSWD_USED="jedway-wpa2-x2048-5-3"
+  RADIO_USED="wiphy0"
+fi
 SECURITY="wpa2"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
