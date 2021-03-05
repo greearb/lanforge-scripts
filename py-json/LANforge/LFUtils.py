@@ -373,6 +373,8 @@ def list_to_alias_map(json_list=None, from_element=None, debug_=False):
             raise ValueError("port_list_to_alias_map: no json_list provided")
         return reverse_map
 
+    if debug_:
+        pprint.pprint(("json_list: ", json_list))
     json_interfaces = json_list
     if from_element in json_list:
         json_interfaces = json_list[from_element]
