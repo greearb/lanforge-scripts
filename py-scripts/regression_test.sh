@@ -8,8 +8,8 @@ HOMEPATH=$(realpath ~)
 NUM_STA=4
 FILESIZE1=$(echo ${#1})
 FILESIZE2=$(echo ${#2})
-if (( $FILESIZE1 > 0 )); then
-  if (( $FILESIZE2 > 0 )); then
+if (( $FILESIZE1>0 )); then
+  if (( $FILESIZE2>0 )); then
     SSID_USED=$1
     PASSWD_USED=$2
     SECURITY=$3
@@ -92,7 +92,6 @@ if (( ${mgrlen} > 0 )); then
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
       #"./test_wanlink.py --debug --mgr $MGR"
       #"./ws_generic_monitor_test.py --mgr $MGR"
-      "../py-json/ws-sta-monitor.py --debug --mgr $MGR"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
@@ -196,7 +195,7 @@ function echo_print() {
 
 function run_test() {
     for i in "${testCommands[@]}"; do
-        if (( ${mgrlen} > 0 )); then
+        if (( ${mgrlen}>0 )); then
           ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
         else
           ./scenario.py --load FACTORY_DFLT
