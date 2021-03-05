@@ -3,6 +3,8 @@
 # OPTION ONE: ./test_all_scripts.sh : this command runs all the scripts in the array "testCommands"
 # OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.
 #Variables
+
+HOMEPATH=$(realpath ~)
 NUM_STA=4
 FILESIZE1=$(echo ${#1})
 FILESIZE2=$(echo ${#2})
@@ -31,7 +33,7 @@ CURR_TEST_NAME="BLANK"
 STOP_NUM=9
 
 DATA_DIR="${TEST_DIR}"
-REPORT_DIR="~/html-reports"
+REPORT_DIR="${HOMEPATH}/html-reports"
 #set -vex
 
 function run_l3_longevity {
@@ -183,19 +185,18 @@ name_to_num=(
 )
 
 function blank_db() {
-    echo "Loading blank scenario..." >>~/test_all_output_file.txt
-    ./scenario.py --load BLANK >>~/test_all_output_file.txt
+    echo "Loading blank scenario..." >>${HOMEPATH}/test_all_output_file.txt
+    ./scenario.py --load BLANK >>${HOMEPATH}/test_all_output_file.txt
     #check_blank.py
 }
 
 function echo_print() {
-    echo "Beginning $CURR_TEST_NAME test..." >>~/test_all_output_file.txt
+    echo "Beginning $CURR_TEST_NAME test..." >>${HOMEPATH}/test_all_output_file.txt
 }
 
 function run_test() {
     for i in "${testCommands[@]}"; do
         if (( ${mgrlen} > 0 )); then
-          echo "scenario"
           ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
         else
           ./scenario.py --load FACTORY_DFLT
@@ -275,27 +276,25 @@ function html_generator() {
     tail="</body>
 		</html>"
 
-    fname="~/html-reports/test_all_output_file-${NOW}.html"
+    fname="${HOMEPATH}/html-reports/test_all_output_file-${NOW}.html"
     echo "$header"  >> $fname
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
-    unlink "~/html-reports/latest.html" || true
-    ln -s "${fname}" "~/html-reports/latest.html"
+    unlink "${HOMEPATH}/html-reports/latest.html" || true
+    ln -s "${fname}" "${HOMEPATH}/html-reports/latest.html"
 }
 
 results=()
 detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
-HOMEPATH=$(realpath ~)
 TEST_DIR="${HOMEPATH}/report-data/${NOW}"
 URL="${HOMEPATH}/report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo ${TEST_DIR}
 
 
-#true >~/test_all_output_file.txt
 run_test
 echo "${detailedresults}"
 html_generator
