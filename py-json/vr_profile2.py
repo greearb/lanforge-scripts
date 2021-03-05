@@ -4,8 +4,7 @@ from random import randint
 from geometry import Rect, Group
 
 from LANforge import LFUtils
-from realm import BaseProfile
-
+from base_profile import BaseProfile
 
 class VRProfile(BaseProfile):
     Default_Margin = 15 # margin between routers and router connections
