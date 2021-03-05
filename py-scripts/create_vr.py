@@ -108,17 +108,21 @@ class CreateVR(Realm):
         :return: void
         """
         # move rd90a into router
+        self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         if self.debug:
             pprint(("vr_eid", self.vr_name))
         self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd90a", debug=True)
-        self.vr_profile.refresh_gui(resource=self.vr_name[1], debug=self.debug)
+        self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         # test to make sure that vrcx is inside vr we expect
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
-        full_router = self.json_get("/vr/1/%s/%s" %(self.vr_name[1], self.vr_name[2]))
-        pprint(("full router: ", router))
-
+        pprint(("cached router: ", router))
+        time.sleep(5)
+        full_router = self.json_get("/vr/1/%s/%s/%s" %(router, self.vr_name[2]),
+                                    debug_=True)
+        pprint(("full router: ", full_router))
+        time.sleep(5)
         if router is None:
             self._fail("Unable to find router after vrcx move "+self.vr_name)
             self.exit_fail()
