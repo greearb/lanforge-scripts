@@ -227,6 +227,9 @@ python3 ./testgroup2.py
     --group_name group0
     --add_group
     --debug
+    
+    ./testgroup2.py --num_stations 4 --ssid lanforge --passwd password --security wpa2 --radio wiphy0 --group_name group0 --add_group
+
             ''')
 
     required_args = None

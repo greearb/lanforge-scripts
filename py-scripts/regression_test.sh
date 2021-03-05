@@ -56,6 +56,7 @@ testCommands=(
     testgroup_list_groups
     testgroup_list_connections
     testgroup_delete_group
+    "./testgroup2.py --num_stations 4 --mgr 192.168.1.10 --ssid lanforge --passwd password --security wpa2 --radio wiphy0 --group_name group0 --add_group"
     "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
     "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug"
     "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
