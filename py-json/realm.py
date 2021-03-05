@@ -850,7 +850,7 @@ class Realm(LFCliBase):
             #                   report_timer_=3000)
         return cx_prof
 
-    def new_generic_endp_profile(self, ver = 1):
+    def new_generic_endp_profile(self, ver=1):
         if ver == 1 :
             #import gen_cxprofile
             endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
@@ -863,7 +863,7 @@ class Realm(LFCliBase):
             #                   report_timer_=3000)
         return endp_prof
 
-    def new_generic_cx_profile(self, ver = 1):
+    def new_generic_cx_profile(self, ver=1):
         """
         @deprecated
         :return: new GenCXProfile
@@ -880,7 +880,7 @@ class Realm(LFCliBase):
             #                   report_timer_=3000)
         return cx_prof
 
-    def new_vap_profile(self, ver = 1):
+    def new_vap_profile(self, ver=1):
         if ver == 1:
             #import vap_profile
             vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
@@ -891,17 +891,11 @@ class Realm(LFCliBase):
         #                       debug_=self.debug)
         return vap_prof
 
-    def new_vr_profile(self, ver = 1):
-        if ver == 1:
-            import vr_profile
-            from vr_profile import VRProfile
-            vap_prof = vr_profile.VRProfile(local_realm=self,
-                             debug=self.debug)
-        # elif ver == 2:
-        #     import vr_profile2
-        #     from vr_profile2 import VRProfile2
-        #     vap_prof = vr_profile2.VRProfile2(local_realm=self,
-        #                      debug=self.debug)                       
+    def new_vr_profile(self, ver=2):
+        if ver == 2:
+            from vr_profile2 import VRProfile
+            vap_prof = VRProfile(local_realm=self,
+                                 debug=self.debug)
         return vap_prof
 
     def new_http_profile(self, ver = 1):
