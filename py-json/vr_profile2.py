@@ -125,9 +125,9 @@ class VRProfile(BaseProfile):
             #    pprint(("item:", item))
             bounding_group.append(item)
         bounding_group.update()
-        #if debug:
-        #    pprint(("bounding:", bounding_group))
-        #    time.sleep(5)
+        if debug:
+            pprint(("get_occupied_area: bounding_group:", bounding_group))
+            time.sleep(5)
 
         return Rect(x=bounding_group.x,
                     y=bounding_group.y,
@@ -136,7 +136,7 @@ class VRProfile(BaseProfile):
 
     def vrcx_list(self, resource=None, do_refresh=False, debug=False):
         debug |= self.debug
-        if (resource is None) or (resource is ""):
+        if (resource is None) or (resource == ""):
             raise ValueError(__name__+ ": resource cannot be blank")
         if do_refresh or (self.cached_vrcx is None) or (len(self.cached_vrcx) < 1):
             self.json_post("/vr/1/%s/all" % resource,
@@ -161,7 +161,7 @@ class VRProfile(BaseProfile):
         :return: list of routers provided by /vr/1/{resource}?fields=eid,x,y,height,width
         """
         debug |= self.debug
-        if resource is None or resource is "":
+        if (resource is None) or (resource == ""):
             raise ValueError(__name__+"; router_list needs valid resource parameter")
         if do_refresh or (self.cached_routers is None) or (len(self.cached_routers) < 1):
             list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
@@ -322,7 +322,7 @@ class VRProfile(BaseProfile):
 
         for router in router_list:
             rect = self.vr_to_rect(router)
-            if (vr_eid is 'all'):
+            if (vr_eid == "all"):
                 if (vrcx_rect.is_inside_of(rect)):
                     return True
             else:
@@ -334,7 +334,7 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         if (resource is None) or (resource == 0):
             raise ValueError(__name__+": find_cached_router needs resource_id")
-        if (router_name is None) or (router_name is ""):
+        if (router_name is None) or (router_name == ""):
             raise ValueError(__name__+": find_cached_router needs router_name")
 
         temp_eid_str = "1.%s.1.65535.%s" % (resource, router_name)
@@ -361,9 +361,9 @@ class VRProfile(BaseProfile):
         :return: new coordinates tuple
         """
         debug |= self.debug
-        if (vrcx_name is None) or (vrcx_name is ""):
+        if (vrcx_name is None) or (vrcx_name == ""):
             raise ValueError(__name__+"empty vrcx_name")
-        if (vr_eid is None) or (vr_eid is ""):
+        if (vr_eid is None) or (vr_eid == ""):
             raise ValueError(__name__+"empty vr_eid")
         if (vrcx_name.index(".") > 0):
             hunks = vrcx_name.split(".")
@@ -414,9 +414,11 @@ class VRProfile(BaseProfile):
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
 
         self.vr_eid = self.parent_realm.name_to_eid(vr_name)
+        if debug:
+            pprint(("self.vr_eid:", self.vr_eid))
 
         # determine a free area to place a router
-        next_area = self.next_available_area(go_right=True)
+        next_area = self.next_available_area(go_right=True, debug=debug)
         self.add_vr_data = {
             "alias": self.vr_eid[2],
             "shelf": 1,
