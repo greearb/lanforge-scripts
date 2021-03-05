@@ -12,6 +12,8 @@ if (( $FILESIZE1 > 0 )); then
     PASSWD_USED=$2
     SECURITY=$3
     MGR=$4
+    FILENAME=$5
+    mgrlen=$(echo ${#MGR})
   else
     source $1
   fi
@@ -29,7 +31,7 @@ CURR_TEST_NAME="BLANK"
 STOP_NUM=9
 
 DATA_DIR="${TEST_DIR}"
-REPORT_DIR="/home/lanforge/html-reports"
+REPORT_DIR="~/html-reports"
 #set -vex
 
 function run_l3_longevity {
@@ -46,19 +48,28 @@ function testgroup_delete_group {
   ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug
 }
 #Test array
-if (( $MGR > 0 )); then
+if (( ${mgrlen} > 0 )); then
+  function run_l3_longevity {
+    ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
+  }
+
+  function testgroup_list_groups {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr $MGR
+  }
+  function testgroup_list_connections {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr $MGR
+  }
+  function testgroup_delete_group {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr $MGR
+  }
   testCommands=(
-      #"../cpu_stats.py --duration 15"
-      "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug --mgr $MGR"
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
-      "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug --mgr $MGR"
-      "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug --mgr $MGR"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --mgr $MGR"
       "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --mgr $MGR" # Better tested on Kelly, where VRF is turned off
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug --mgr $MGR"
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug --mgr $MGR"
       testgroup_list_groups
       testgroup_list_connections
@@ -103,7 +114,7 @@ else
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output /home/lanforge/Documents/lfcurl_output.txt --debug"
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug"
       testgroup_list_groups
       testgroup_list_connections
@@ -183,7 +194,12 @@ function echo_print() {
 
 function run_test() {
     for i in "${testCommands[@]}"; do
-        ./scenario.py --load FACTORY_DFLT
+        if (( ${mgrlen} > 0 )); then
+          echo "scenario"
+          ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
+        else
+          ./scenario.py --load FACTORY_DFLT
+        fi
         NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
@@ -259,22 +275,24 @@ function html_generator() {
     tail="</body>
 		</html>"
 
-    fname="/home/lanforge/html-reports/test_all_output_file-${NOW}.html"
+    fname="~/html-reports/test_all_output_file-${NOW}.html"
     echo "$header"  >> $fname
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
-    unlink "/home/lanforge/html-reports/latest.html" || true
-    ln -s "${fname}" "/home/lanforge/html-reports/latest.html"
+    unlink "~/html-reports/latest.html" || true
+    ln -s "${fname}" "~/html-reports/latest.html"
 }
 
 results=()
 detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
-TEST_DIR="/home/lanforge/report-data/${NOW}"
-URL="../report-data/${NOW}"
-mkdir "$TEST_DIR"
+HOMEPATH=$(realpath ~)
+TEST_DIR="${HOMEPATH}/report-data/${NOW}"
+URL="${HOMEPATH}/report-data/${NOW}"
+mkdir "${TEST_DIR}"
+echo ${TEST_DIR}
 
 
 #true >~/test_all_output_file.txt
