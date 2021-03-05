@@ -8,8 +8,8 @@ HOMEPATH=$(realpath ~)
 NUM_STA=4
 FILESIZE1=$(echo ${#1})
 FILESIZE2=$(echo ${#2})
-if (( $FILESIZE1>0 )); then
-  if (( $FILESIZE2>0 )); then
+if [[ $FILESIZE1 -gt 0 ]]; then
+  if [[ $FILESIZE2 -gt 0 ]]; then
     SSID_USED=$1
     PASSWD_USED=$2
     SECURITY=$3
@@ -195,7 +195,7 @@ function echo_print() {
 
 function run_test() {
     for i in "${testCommands[@]}"; do
-        if (( ${mgrlen}>0 )); then
+        if [[ $mgrlen -gt 0 ]]; then
           ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
         else
           ./scenario.py --load FACTORY_DFLT
