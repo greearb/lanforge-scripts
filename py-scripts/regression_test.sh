@@ -50,7 +50,7 @@ function testgroup_delete_group {
   ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug
 }
 #Test array
-if (( ${mgrlen} > 0 )); then
+if [[ $mgrlen -gt 0 ]]; then
   function run_l3_longevity {
     ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
   }
