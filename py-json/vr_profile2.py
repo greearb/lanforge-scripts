@@ -403,6 +403,16 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         used_vrcx_area = self.get_occupied_area(resource=self.vr_eid[1], debug=debug)
 
+    def refresh_netsmith(self, resource=0, debug=False):
+        debug |= self.debug
+        if (resource is None) or (resource < 1):
+            raise ValueError("refresh_netsmith requires resource > 0")
+
+        self.json_post("/cli-json/apply_vr_cfg", {
+            "shelf": 1,
+            "resource": resource
+        }, debug_=debug, suppress_related_commands_=True)
+
     def create(self,
                vr_name=None,
                debug=False,
