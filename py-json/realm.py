@@ -1,24 +1,9 @@
 #!/usr/bin/env python3
-import re
-import time
-import pprint
-from pprint import pprint
+# ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 from LANforge import LFRequest
 from LANforge import LFUtils
-from LANforge import set_port
-from LANforge import add_sta
-from LANforge import add_dut
-from LANforge import add_vap
 from LANforge.lfcli_base import LFCliBase
-from LANforge import add_monitor
-from LANforge.add_monitor import *
-from port_utils import PortUtils
-import os
-import datetime
-import base64
-import pandas as pd
-import requests
-import ast
+# ---- ---- ---- ---- Profile Imports ---- ---- ---- ----
 from l3_cxprofile import L3CXProfile
 from l3_cxprofile2 import L3CXProfile2
 from l4_cxprofile import L4CXProfile
@@ -32,6 +17,12 @@ from vap_profile import VAPProfile
 from mac_vlan_profile import MACVLANProfile
 from wifi_monitor_profile import WifiMonitor
 from gen_cxprofile import GenCXProfile
+from port_utils import PortUtils
+# ---- ---- ---- ---- Other Imports ---- ---- ---- ----
+import re
+import time
+import pprint
+from pprint import pprint
 
 
 def wpa_ent_list():
