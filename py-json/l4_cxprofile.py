@@ -3,9 +3,12 @@
 import re
 from LANforge.lfcli_base import LFCliBase
 from pprint import pprint
+import requests
 import pprint
+import pandas as pd
 import time
 import datetime
+import ast
 import csv
 import os
 
@@ -158,7 +161,7 @@ class L4CXProfile(LFCliBase):
                 iterations=0,
                 debug=False):
         try:
-            duration_sec = Realm.parse_time(duration_sec).seconds
+            duration_sec = LFCliBase.parse_time(duration_sec).seconds
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L4CXProfile::monitor wants duration_sec > 1 second")

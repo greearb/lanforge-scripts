@@ -1,18 +1,15 @@
 
 
 #!/usr/bin/env python3
-import re
-import time
-import pprint
+
+
+
 from LANforge.lfcli_base import LFCliBase
-import csv
-import pandas as pd
-import os
 from pprint import pprint
-import time
-import random
-import string
-import datetime
+import pprint
+
+
+
 
 
 class MULTICASTProfile(LFCliBase):
