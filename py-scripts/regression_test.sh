@@ -6,24 +6,22 @@
 
 HOMEPATH=$(realpath ~)
 NUM_STA=4
-FILESIZE1=$(echo ${#1})
-FILESIZE2=$(echo ${#2})
-if [[ $FILESIZE1 -gt 0 ]]; then
-  if [[ $FILESIZE2 -gt 0 ]]; then
+if [[ ${#1} -gt 0 ]]; then
+  if [[ ${#2} -gt 0 ]]; then
     SSID_USED=$1
     PASSWD_USED=$2
     SECURITY=$3
     MGR=$4
     FILENAME=$5
-    mgrlen=$(echo ${#MGR})
-  else
+  elif [ -f "$1" ]; then
     source $1
   fi
-else
+else # these are jedway lab defaults
   SSID_USED="jedway-wpa2-x2048-5-3"
   PASSWD_USED="jedway-wpa2-x2048-5-3"
   SECURITY="wpa2"
 fi
+mgrlen=$(echo ${#MGR})
 RADIO_USED="wiphy0"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
