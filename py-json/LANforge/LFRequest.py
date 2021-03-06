@@ -288,7 +288,7 @@ class LFRequest:
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
                 print("------------------------------------------------------------------------")
-                if die_on_error_ == True:
+                if (error.code != 404) and (die_on_error_ == True):
                     traceback.print_stack(limit=15)
                     exit(1)
         except urllib.error.URLError as uerror:
