@@ -178,6 +178,8 @@ class Realm(LFCliBase):
                                         debug=debug_)
 
     def rm_port(self, port_eid, check_exists=True, debug_=False):
+        if port_eid is None:
+            raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
         debug_ |= self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
