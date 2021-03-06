@@ -20,7 +20,7 @@ import pandas as pd
 import requests
 import ast
 from l3_cxprofile import L3CXProfile
-from l3_cxprofile2 import L3CXProfile
+from l3_cxprofile2 import L3CXProfile2
 from l4_cxprofile import L4CXProfile
 from multicast_profile import MULTICASTProfile
 from http_profile import HTTPProfile
