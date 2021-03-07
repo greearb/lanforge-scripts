@@ -12,9 +12,13 @@ if [[ ${#1} -gt 0 ]]; then
     PASSWD_USED=$2
     SECURITY=$3
     MGR=$4
-    FILENAME=$5
+    # FILENAME=$5 # this appears unused
   elif [ -f "$1" ]; then
     source $1
+  elif [ -f ./regression_test.rc ]; then
+    source ./regression_test.rc # this version is a better unix name
+  elif [ -f ./regression_test.txt ]; then
+    source ./regression_test.txt # this less unixy name was discussed earlier
   fi
 else # these are jedway lab defaults
   SSID_USED="jedway-wpa2-x2048-5-3"
@@ -32,6 +36,16 @@ STOP_NUM=9
 
 DATA_DIR="${TEST_DIR}"
 REPORT_DIR="${HOMEPATH}/html-reports"
+if [ ! -d "$REPORT_DIR" ]; then
+    echo "Report directory [$REPORT_DIR] not found, bye."
+    exit 1
+fi
+REPORT_DATA="${HOMEPATH}/report-data"
+if [ ! -d "${REPORT_DATA}" ]; then
+    echo "Data directory [$REPORT_DATA] not found, bye."
+    exit 1
+fi
+TEST_DIR="${REPORT_DATA}/${NOW}"
 #set -vex
 
 function run_l3_longevity {
@@ -286,11 +300,10 @@ results=()
 detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
-TEST_DIR="${HOMEPATH}/report-data/${NOW}"
-URL="${HOMEPATH}/report-data/${NOW}"
+TEST_DIR="${REPORT_DATA}/${NOW}"
+URL="${TEST_DIR}"
 mkdir "${TEST_DIR}"
-echo ${TEST_DIR}
-
+echo "Recording data to ${TEST_DIR}"
 
 run_test
 echo "${detailedresults}"
