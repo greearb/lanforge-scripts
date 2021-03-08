@@ -5,12 +5,9 @@ from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
 from LANforge import add_sta
-
+import pprint
 from pprint import pprint
 import time
-import pprint
-
-
 
 
 # use the station profile to set the combination of features you want on your stations
@@ -436,7 +433,7 @@ class StationProfile:
                 pprint(add_sta_r.requested_url)
                 pprint(add_sta_r.proxies)
                 pprint(self.add_sta_data)
-                pprint(self.set_port_data)
+                print(self.set_port_data)
                 print("- ~3254 - - - - - - - - - - - - - - - - - - - ")
             if dry_run:
                 print("dry run: not creating " + eidn)

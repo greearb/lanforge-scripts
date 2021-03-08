@@ -3,9 +3,8 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge import add_monitor
 from LANforge.add_monitor import *
 from LANforge import LFUtils
-
-from pprint import pprint
 import pprint
+from pprint import pprint
 import time
 
 

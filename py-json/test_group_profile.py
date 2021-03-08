@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
-
+import pprint
 from pprint import pprint
 import time
-import pprint
+
 
 class TestGroupProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):

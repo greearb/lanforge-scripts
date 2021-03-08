@@ -1,10 +1,9 @@
 
 #!/usr/bin/env python3
-import re
 from LANforge.lfcli_base import LFCliBase
+import pprint
 from pprint import pprint
 import requests
-import pprint
 import pandas as pd
 import time
 import datetime
