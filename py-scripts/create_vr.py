@@ -14,6 +14,7 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 from LANforge.lfcli_base import LFCliBase
+from LANforge import LFUtils
 from realm import Realm
 import time
 from pprint import pprint
@@ -76,6 +77,8 @@ class CreateVR(Realm):
                 "resource": self.vr_name[1],
                 "cx_name": "all"
             }, debug_=self.debug)
+            self.rm_port("1.1.rd90a", debug_=self.debug)
+            self.rm_port("1.1.rd90b", debug_=self.debug)
 
     def build(self):
         # self.redirect_profile
@@ -117,11 +120,13 @@ class CreateVR(Realm):
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
-        pprint(("cached router: ", router))
+        pprint(("cached router 120: ", router))
+        router_eid = LFUtils.name_to_eid(router)
+        pprint(("router eid 122: ", router_eid))
         time.sleep(5)
-        full_router = self.json_get("/vr/1/%s/%s/%s" %(router, self.vr_name[2]),
-                                    debug_=True)
+        full_router = self.json_get("/vr/1/%s/%s/%s" %(router_eid[0], router_eid[1], self.vr_name[2]),  debug_=True)
         pprint(("full router: ", full_router))
+
         time.sleep(5)
         if router is None:
             self._fail("Unable to find router after vrcx move "+self.vr_name)

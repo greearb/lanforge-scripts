@@ -180,6 +180,8 @@ class Realm(LFCliBase):
                                         debug=debug_)
 
     def rm_port(self, port_eid, check_exists=True, debug_=False):
+        if port_eid is None:
+            raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
         debug_ |= self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
@@ -542,14 +544,14 @@ class Realm(LFCliBase):
         return LFUtils.name_to_eid(eid)
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=360, debug=False):
-        if not (ipv4 ^ ipv6):
-            raise ValueError("wait_for_ip: ipv4 or ipv6 must be set!")
+        if not (ipv4 or ipv6):
+            raise ValueError("wait_for_ip: ipv4 and/or ipv6 must be set!")
         if timeout_sec >= 0:
             print("Waiting for ips, timeout: %i..." % timeout_sec)
         else:
             print("Determining wait time based on mean station association time of stations. "
                   "Will not wait more that 60 seconds without single association")
-        stas_with_ips = []
+        stas_with_ips = {}
         sec_elapsed = 0
         time_extended = False
         # print(station_list)
@@ -596,7 +598,7 @@ class Realm(LFCliBase):
                             print("Waiting for port %s to get IPv4 Address." % (sta_eid))
                     else:
                         if sta_eid not in stas_with_ips:
-                            stas_with_ips.append(sta_eid)
+                            stas_with_ips[sta_eid] = {'ipv4': v['ip']}
                         if debug:
                             print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
@@ -606,7 +608,7 @@ class Realm(LFCliBase):
                     if v['ipv6 address'] != 'DELETED' and not v['ipv6 address'].startswith('fe80') \
                             and v['ipv6 address'] != 'AUTO':
                         if sta_eid not in stas_with_ips:
-                            stas_with_ips.append(sta_eid)
+                            stas_with_ips[sta_eid] = {'ipv6': v['ip']}
                         if debug:
                             print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
                     else:
