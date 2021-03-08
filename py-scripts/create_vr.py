@@ -28,7 +28,6 @@ class CreateVR(Realm):
                  vr_name=None,
                  ports_list=(),
                  services_list=(),
-                 _halt_on_error=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
@@ -167,7 +166,6 @@ Command example:
                          ports_list=args.ports,
                          services_list=args.services,
                          debug=args.debug,
-                         _halt_on_error=True,
                          _exit_on_error=True,
                          _exit_on_fail=True)
     create_vr.clean()
