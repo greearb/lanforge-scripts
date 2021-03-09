@@ -65,10 +65,12 @@ class BaseProfile:
 
     def replace_special_char(self, str):
         return str.replace('+', ' ').replace('_', ' ').strip(' ')
-    
+
+    # @deprecate me
     def get_milliseconds(self, timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
 
+    # @deprecate me
     def get_seconds(self, timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
 
