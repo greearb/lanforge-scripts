@@ -380,6 +380,8 @@ def list_to_alias_map(json_list=None, from_element=None, debug_=False):
         json_interfaces = json_list[from_element]
 
     for record in json_interfaces:
+        if debug_:
+            pprint.pprint(("interfaces record:", record))
         if len(record.keys()) < 1:
             continue
         record_keys = record.keys()
@@ -477,30 +479,56 @@ def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=[], debu
     wait_until_ports_disappear(base_url, port_list, debug)
 
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], debug=False):
-    print("Waiting until ports disappear...")
+    if (port_list is None) or (len(port_list) < 1):
+        if debug:
+            print("LFUtils: wait_until_ports_disappear: empty list, zipping back")
+        return
+
+    print("LFUtils: Waiting until %s ports disappear..." % len(port_list))
     url = "/port/1"
     if isinstance(port_list, list):
         found_stations = port_list.copy()
     else:
         found_stations = [port_list]
 
+    temp_names_by_resource = {1:[]}
+    temp_query_by_resource = {1:""}
+    for port_eid in port_list:
+        eid = name_to_eid(port_eid)
+        # shelf = eid[0]
+        resource_id = eid[1]
+        if resource_id == 0:
+            continue
+        if resource_id not in temp_names_by_resource.keys():
+            temp_names_by_resource[resource_id] = []
+        port_name = eid[2]
+        temp_names_by_resource[resource_id].append(port_name)
+        temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (url, resource_id, ",".join(temp_names_by_resource[resource_id]))
+    if debug:
+        pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
     while len(found_stations) > 0:
         found_stations = []
-        for port_eid in port_list:
-            eid = name_to_eid(port_eid)
-            shelf = eid[0]
-            resource_id = eid[1]
-            port_name = eid[2]
-
-            check_url = "%s/%s/%s" % (url, resource_id, port_name)
+        for (resource, check_url) in temp_query_by_resource.items():
             if debug:
-                print("checking:" + check_url)
-            lf_r = LFRequest.LFRequest(base_url, check_url)
-            json_response = lf_r.get_as_json(debug_=debug)
-            if (json_response != None):
-                found_stations.append(port_name)
+                pprint.pprint([
+                    ("base_url", base_url),
+                    ("check_url", check_url),
+                ])
+            lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
+            json_response = lf_r.get_as_json(debug_=debug, die_on_error_=False)
+            if (json_response == None):
+                print("Request returned None")
+            else:
+                if debug:
+                    pprint.pprint(("wait_until_ports_disappear json_response:", json_response))
+                if "interface" in json_response:
+                    found_stations.append(json_response["interface"])
+                elif "interfaces" in json_response:
+                    mapped_list = list_to_alias_map(json_response, from_element="interfaces", debug_=debug)
+                    found_stations.extend(mapped_list.keys())
         if len(found_stations) > 0:
-            sleep(1)
+            if debug:
+                pprint.pprint(("wait_until_ports_disappear found_stations:", ",".join(found_stations)))
     sleep(1) # safety
     return
 
@@ -521,7 +549,7 @@ def name_to_eid(input):
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
     if type(input) is not str:
-        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list")
+        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(input))
 
     info = input.split('.')
     if len(info) == 1:
