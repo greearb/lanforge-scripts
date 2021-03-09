@@ -5,7 +5,7 @@
 #Variables
 
 HOMEPATH=$(realpath ~)
-NUM_STA=4
+
 if [[ ${#1} -gt 0 ]]; then
   if [[ ${#2} -gt 0 ]]; then
     SSID_USED=$1
@@ -25,6 +25,8 @@ else # these are jedway lab defaults
   PASSWD_USED="jedway-wpa2-x2048-5-3"
   SECURITY="wpa2"
 fi
+NUM_STA=${NUM_STA:-4}
+TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
 mgrlen=$(echo ${#MGR})
 RADIO_USED="wiphy0"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
@@ -79,11 +81,12 @@ if [[ $mgrlen -gt 0 ]]; then
   testCommands=(
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --mgr $MGR"
-      "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --mgr $MGR" # Better tested on Kelly, where VRF is turned off
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug --mgr $MGR"
+      # want if [[ $DO_FILEIO = 1 ]]
+      # "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --mgr $MGR" # Better tested on Kelly, where VRF is turned off
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest $TEST_HTTP_IP --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug --mgr $MGR"
       testgroup_list_groups
       testgroup_list_connections
@@ -123,11 +126,12 @@ else
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
-      "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest 10.40.0.1 --debug"
+      # want if [[ $DO_FILEIO = 1 ]]
+      #"./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest 10.40.0.1 --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug"
+      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest $TEST_HTTP_IP --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug"
       testgroup_list_groups
       testgroup_list_connections
@@ -292,7 +296,9 @@ function html_generator() {
     echo "${results[@]}"  >> $fname
     echo "</table>" >> $fname
     echo "$tail" >> $fname
-    unlink "${HOMEPATH}/html-reports/latest.html" || true
+    if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
+        rm -f "${HOMEPATH}/html-reports/latest.html"
+    fi
     ln -s "${fname}" "${HOMEPATH}/html-reports/latest.html"
 }
 
