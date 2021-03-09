@@ -236,17 +236,17 @@ function run_test() {
             if (( ${FILESIZE} > 0)); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${HOMEPATH}/${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${HOMEPATH}/${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+                          <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${HOMEPATH}/${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                           <td></td></tr>")
             fi
         fi
     done
-    echo $results
+    echo ${results}
 }
 
 function html_generator() {
