@@ -180,11 +180,12 @@ class LFRequest:
         try:
             resp = request.urlopen(myrequest)
             resp_data = resp.read().decode('utf-8')
-            if (debug):
+            if (debug and die_on_error_):
                 print("----- LFRequest::json_post:128 debug: --------------------------------------------")
                 print("URL: %s :%d "% (self.requested_url, resp.status))
-                LFUtils.debug_printer.pprint(resp.getheaders())
-                print("----- resp_data -------------------------------------------------")
+                if resp.status != 200:
+                    LFUtils.debug_printer.pprint(resp.getheaders())
+                print("----- resp_data:128 -------------------------------------------------")
                 print(resp_data)
                 print("-------------------------------------------------")
             responses.append(resp)
@@ -262,32 +263,32 @@ class LFRequest:
         myrequest = request.Request(url=self.requested_url,
                                    headers=self.default_headers,
                                    method=method_)
-
-
         myresponses = []
         try:
             myresponses.append(request.urlopen(myrequest))
             return myresponses[0]
         except urllib.error.HTTPError as error:
             if debug:
-                print("----- LFRequest::get:181 HTTPError: --------------------------------------------")
-                print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
-                if error.code != 404:
+                if error.code == 404:
+                    print("HTTP 404: <%s>" % myrequest.get_full_url())
+                else:
+                    print("----- LFRequest::get:181 HTTPError: --------------------------------------------")
+                    print("<%s> HTTP %s: %s"%(myrequest.get_full_url(), error.code, error.reason, ))
                     print("Error: ", sys.exc_info()[0])
-                    print("Request URL:", myrequest.get_full_url())
-                    print("Request Content-type:", myrequest.get_header('Content-type'))
-                    print("Request Accept:", myrequest.get_header('Accept'))
-                    print("Request Data:")
+                    print("E Request URL:", myrequest.get_full_url())
+                    print("E Request Content-type:", myrequest.get_header('Content-type'))
+                    print("E Request Accept:", myrequest.get_header('Accept'))
+                    print("E Request Data:")
                     LFUtils.debug_printer.pprint(myrequest.data)
-                if error.headers:
+                if (error.code != 404) and error.headers:
                     # the HTTPError is of type HTTPMessage a subclass of email.message
                     # print(type(error.keys()))
                     for headername in sorted(error.headers.keys()):
-                        print ("Response %s: %s "%(headername, error.headers.get(headername)))
-                if len(myresponses) > 0:
+                        print ("H Response %s: %s "%(headername, error.headers.get(headername)))
+                if (error.code != 404) and (len(myresponses) > 0):
                     print("----- Response: --------------------------------------------------------")
                     LFUtils.debug_printer.pprint(myresponses[0].reason)
-                print("------------------------------------------------------------------------")
+                    print("------------------------------------------------------------------------")
                 if (error.code != 404) and (die_on_error_ == True):
                     traceback.print_stack(limit=15)
                     exit(1)
