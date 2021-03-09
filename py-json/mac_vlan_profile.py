@@ -4,9 +4,8 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge import set_port
-
-from pprint import pprint
 import pprint
+from pprint import pprint
 import time
 
 

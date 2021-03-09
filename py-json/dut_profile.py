@@ -2,10 +2,9 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
 from LANforge import add_dut
-
+import pprint
 from pprint import pprint
 import time
-import pprint
 import base64
 
 

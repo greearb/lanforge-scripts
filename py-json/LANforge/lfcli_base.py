@@ -490,6 +490,32 @@ class LFCliBase:
             logging.warning(mesg)
         elif level == "error":
             logging.error(mesg)
+    
+    @staticmethod
+    def parse_time(time_string):
+        if isinstance(time_string, str):
+            pattern = re.compile("^(\d+)([dhms]$)")
+            td = pattern.match(time_string)
+            if td is not None:
+                dur_time = int(td.group(1))
+                dur_measure = str(td.group(2))
+                if dur_measure == "d":
+                    duration_time = datetime.timedelta(days=dur_time)
+                elif dur_measure == "h":
+                    duration_time = datetime.timedelta(hours=dur_time)
+                elif dur_measure == "m":
+                    duration_time = datetime.timedelta(minutes=dur_time)
+                elif dur_measure == "ms":
+                    duration_time = datetime.timedelta(milliseconds=dur_time)
+                elif dur_measure == "w":
+                    duration_time = datetime.timedelta(weeks=dur_time)
+                else:
+                    duration_time = datetime.timedelta(seconds=dur_time)
+            else:
+                raise ValueError("Cannot compute time string provided: %s" % time_string)
+        else:
+            raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
+        return duration_time
 
     # This style of Action subclass for argparse can't do much unless we incorporate
     # our argparse as a member of LFCliBase. Then we can do something like automatically

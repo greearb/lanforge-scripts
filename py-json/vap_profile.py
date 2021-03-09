@@ -5,9 +5,8 @@ from LANforge import LFRequest
 from LANforge import add_vap
 from LANforge import set_port
 from LANforge import LFUtils
-
+import pprint
 from pprint import pprint
-
 import time
 
 
