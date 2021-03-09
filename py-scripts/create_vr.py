@@ -50,6 +50,10 @@ class CreateVR(Realm):
         if (self.vr_name is None) or (self.vr_profile.vr_eid is None) and (self.vr_profile.vr_eid) == "":
             print("No vr_eid to clean")
             return
+        self.rm_port("1.1.rd90a", debug_=self.debug)
+        self.rm_port("1.1.rd90b", debug_=self.debug)
+        self.wait_until_ports_disappear(sta_list=["1.1.rd90a", "1.1.rd90b"],
+                                        debug_=self.debug)
 
         if (self.vr_profile.vr_eid is not None) \
             and (self.vr_profile.vr_eid[1] is not None) \
@@ -76,11 +80,10 @@ class CreateVR(Realm):
                 "resource": self.vr_name[1],
                 "cx_name": "all"
             }, debug_=self.debug)
-            self.rm_port("1.1.rd90a", debug_=self.debug)
-            self.rm_port("1.1.rd90b", debug_=self.debug)
+
 
     def build(self):
-        # self.redirect_profile
+        self.vr_profile.refresh_netsmith(self.vr_name[1])
         self.json_post("/cli-json/add_rdd", {
             "shelf": 1,
             "resource": self.vr_name[1],
@@ -102,6 +105,7 @@ class CreateVR(Realm):
         })
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
+        self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         self._pass("created router")
 
     def start(self):
@@ -113,19 +117,19 @@ class CreateVR(Realm):
         self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         if self.debug:
             pprint(("vr_eid", self.vr_name))
+        self.vr_profile.wait_until_vrcx_appear(resource=self.vr_name[1], name_list=["rd90a", "rd90b"])
         self.vr_profile.add_vrcx(vr_eid=self.vr_name, connection_name_list="rd90a", debug=True)
+
         self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         # test to make sure that vrcx is inside vr we expect
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
         vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
         pprint(("cached router 120: ", router))
-        router_eid = LFUtils.name_to_eid(router)
+        router_eid = LFUtils.name_to_eid(router["eid"])
         pprint(("router eid 122: ", router_eid))
-        time.sleep(5)
         full_router = self.json_get("/vr/1/%s/%s/%s" %(router_eid[0], router_eid[1], self.vr_name[2]),  debug_=True)
         pprint(("full router: ", full_router))
-
         time.sleep(5)
         if router is None:
             self._fail("Unable to find router after vrcx move "+self.vr_name)
