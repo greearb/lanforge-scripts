@@ -27,7 +27,6 @@ else # these are jedway lab defaults
 fi
 mgrlen=$(echo ${#MGR})
 RADIO_USED="wiphy0"
-UPSTREAM_PORT="eth1"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 START_NUM=0
@@ -50,7 +49,7 @@ TEST_DIR="${REPORT_DATA}/${NOW}"
 #set -vex
 
 function run_l3_longevity {
-  ./test_l3_longevity.py --test_duration 15s --upstream_port $UPSTREAM_PORT --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
+  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
 }
 
 function testgroup_list_groups {
@@ -65,7 +64,7 @@ function testgroup_delete_group {
 #Test array
 if [[ $mgrlen -gt 0 ]]; then
   function run_l3_longevity {
-    ./test_l3_longevity.py --test_duration 15s --upstream_port $UPSTREAM_PORT --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
+    ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
   }
 
   function testgroup_list_groups {
@@ -89,14 +88,14 @@ if [[ $mgrlen -gt 0 ]]; then
       testgroup_list_groups
       testgroup_list_connections
       testgroup_delete_group
-      #"./testgroup2.py --num_stations 4 --ssid lanforge --passwd password --security wpa2 --radio wiphy0 --group_name group0 --add_group --mgr $MGR"
+      "./testgroup2.py --num_stations 4 --ssid lanforge --passwd password --security wpa2 --radio wiphy0 --group_name group0 --add_group --mgr $MGR"
       "./test_ipv4_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ipv4_l4_urls_per_ten.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --num_tests 1 --requests_per_ten 600 --target_per_ten 600 --debug --mgr $MGR"
       "./test_ipv4_l4_wifi.py --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug --mgr $MGR"
       "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug --mgr $MGR"
       "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR"
       "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR"
-      "./test_ipv4_l4_ftp_upload.py --upstream_port $UPSTREAM_PORT --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug --mgr $MGR"
+      "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug --mgr $MGR"
       "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug --mgr $MGR"
       run_l3_longevity
@@ -105,10 +104,10 @@ if [[ $mgrlen -gt 0 ]]; then
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
       #"./test_wanlink.py --debug --mgr $MGR"
       #"./ws_generic_monitor_test.py --mgr $MGR"
-      "./create_bridge.py --radio wiphy1 --upstream_port $UPSTREAM_PORT --target_device sta0000 --debug --mgr $MGR"
+      "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_macvlan.py --radio wiphy1 --macvlan_parent $UPSTREAM_PORT --debug --mgr $MGR"
+      "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug --mgr $MGR"
       "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes --mgr $MGR"
@@ -140,7 +139,7 @@ else
       "./test_ipv4_l4.py --radio $RADIO_USED --num_stations 4 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
       "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug"
       "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug"
-      "./test_ipv4_l4_ftp_upload.py --upstream_port $UPSTREAM_PORT --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
+      "./test_ipv4_l4_ftp_upload.py --upstream_port eth1 --radio $RADIO_USED --num_stations $NUM_STA --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --test_duration 15s --debug"
       "./test_ipv6_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
       run_l3_longevity
@@ -150,10 +149,10 @@ else
       #"./test_wanlink.py --debug"
       #"./ws_generic_monitor_test.py"
       "../py-json/ws-sta-monitor.py --debug"
-      "./create_bridge.py --radio wiphy1 --upstream_port $UPSTREAM_PORT --target_device sta0000 --debug"
+      "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      "./create_macvlan.py --radio wiphy1 --macvlan_parent $UPSTREAM_PORT --debug"
+      "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
       "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
@@ -233,12 +232,12 @@ function run_test() {
             if (( ${FILESIZE} > 0)); then
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='failure'>Failure</td>
-                          <td><a href=\"${URL1}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${URL1}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
             else
                 results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                           <td class='success'>Success</td>
-                          <td><a href=\"${URL1}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                          <td><a href=\"${URL}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                           <td></td></tr>")
             fi
         fi
@@ -303,7 +302,6 @@ NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
 URL="${TEST_DIR}"
-URL1="report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo "Recording data to ${TEST_DIR}"
 
