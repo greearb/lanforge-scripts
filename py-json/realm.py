@@ -179,6 +179,15 @@ class Realm(LFCliBase):
                                         port_list=sta_list,
                                         debug=debug_)
 
+    def wait_until_ports_disappear(self, sta_list=None, debug_=False):
+        if (sta_list is None) or (len(sta_list) < 1):
+            print("realm.wait_until_ports_appear: no stations provided")
+            return
+
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                        port_list=sta_list,
+                                        debug=debug_)
+
     def rm_port(self, port_eid, check_exists=True, debug_=False):
         if port_eid is None:
             raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
