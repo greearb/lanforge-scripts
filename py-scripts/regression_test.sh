@@ -50,25 +50,11 @@ fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
 #set -vex
 
-function run_l3_longevity {
-  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
-}
-
-function testgroup_list_groups {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug
-}
-function testgroup_list_connections {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug
-}
-function testgroup_delete_group {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug
-}
 #Test array
 if [[ $mgrlen -gt 0 ]]; then
   function run_l3_longevity {
     ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
   }
-
   function testgroup_list_groups {
     ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr $MGR
   }
@@ -82,7 +68,7 @@ if [[ $mgrlen -gt 0 ]]; then
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --mgr $MGR"
       # want if [[ $DO_FILEIO = 1 ]]
-      # "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --mgr $MGR" # Better tested on Kelly, where VRF is turned off
+      "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --mgr $MGR" # Better tested on Kelly, where VRF is turned off
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
@@ -103,10 +89,10 @@ if [[ $mgrlen -gt 0 ]]; then
       "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug --mgr $MGR"
       run_l3_longevity
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput --mgr $MGR"
+      "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput --mgr $MGR"
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
-      #"./test_wanlink.py --debug --mgr $MGR"
-      #"./ws_generic_monitor_test.py --mgr $MGR"
+      "./test_wanlink.py --debug --mgr $MGR"
+      "./ws_generic_monitor_test.py --mgr $MGR"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
@@ -119,6 +105,19 @@ if [[ $mgrlen -gt 0 ]]; then
       "./new_script.py --flags --mgr $MGR"
   )
 else
+  function run_l3_longevity {
+  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
+}
+  function testgroup_list_groups {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug
+  }
+  function testgroup_list_connections {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug
+  }
+  function testgroup_delete_group {
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug
+  }
+
   testCommands=(
       #"../cpu_stats.py --duration 15"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug"
@@ -127,7 +126,7 @@ else
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
       # want if [[ $DO_FILEIO = 1 ]]
-      #"./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
+      "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug"
@@ -148,10 +147,10 @@ else
       "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
       run_l3_longevity
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
+      "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
       "./test_status_msg.py --debug " #this is all which is needed to run
-      #"./test_wanlink.py --debug"
-      #"./ws_generic_monitor_test.py"
+      "./test_wanlink.py --debug"
+      "./ws_generic_monitor_test.py"
       "../py-json/ws-sta-monitor.py --debug"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
@@ -230,7 +229,7 @@ function run_test() {
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
-            $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+            timeout 300 $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
             chmod 664 "${TEST_DIR}/${NAME}.txt"
             FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
             if (( ${FILESIZE} > 0)); then
