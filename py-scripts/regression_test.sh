@@ -308,7 +308,7 @@ NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
 URL="${TEST_DIR}"
-URL2="report-data/${NOW}"
+URL2="/report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo "Recording data to ${TEST_DIR}"
 
