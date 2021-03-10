@@ -208,7 +208,7 @@ function echo_print() {
     echo "Beginning $CURR_TEST_NAME test..." >>${HOMEPATH}/test_all_output_file.txt
 }
 
-function run_test() {
+function run_test()nano r e  {
     for i in "${testCommands[@]}"; do
         if [[ $mgrlen -gt 0 ]]; then
           ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
@@ -229,7 +229,7 @@ function run_test() {
         if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
             echo_print
             echo "$i"
-            timeout 300 $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+            $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
             chmod 664 "${TEST_DIR}/${NAME}.txt"
             FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
             if (( ${FILESIZE} > 0)); then
