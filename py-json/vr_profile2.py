@@ -354,6 +354,25 @@ class VRProfile(BaseProfile):
 
     def move_vrcx(self, vrcx_name=None, vr_eid=None, debug=False):
         """
+        This is the Java psuedocode:
+            def moveConnection:
+               found_router = findRouter(x, y)
+
+               if connection.getRouter() is None:
+                  if found_router.addConnection():
+                     free_vrxc.remove(connection)
+                     connection.setPosition(x, y)
+                  return
+
+               if found_router is not None:
+                  router.remove(connection)
+                  free_vrcx.add(connection)
+               else:
+                  if found_router != router:
+                     router.remove(connection)
+                     found_router.add(connection)
+
+               connection.setPosition(x, y)
 
         :param vrcx_name:
         :param vr_eid:
