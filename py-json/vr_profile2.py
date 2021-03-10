@@ -352,7 +352,7 @@ class VRProfile(BaseProfile):
             # exit(1)
         return None
 
-    def move_vrcx(self, vrcx_name=None, vr_eid=None, debug=False):
+    def add_vrcx_to_router(self, vrcx_name=None, vr_eid=None, debug=False):
         """
         This is the Java psuedocode:
             def moveConnection:
@@ -408,8 +408,12 @@ class VRProfile(BaseProfile):
             "y": new_location[1],
         }, debug_=debug)
         if debug:
-            print("===== MOVED VRCX %s to %s,%s ====" % (
-                vrcx_name, new_location[0], new_location[1]))
+            self.logg("Moved connection %s to %s,%s in router %s ====" % (
+                vrcx_name,
+                new_location[0],
+                new_location[1],
+                router_val["name"]
+            ))
         return new_location
 
     def move_vr(self, eid=None, go_right=True, go_down=False, upper_left_x=None, upper_left_y=None, debug=False):
@@ -611,7 +615,7 @@ class VRProfile(BaseProfile):
             old_coords = self.vr_to_rect( existing_list.get(vrcx_name))
             if old_coords is None:
                 raise ValueError("old coordinates for vrcx disappeared")
-            new_coords = self.move_vrcx(vrcx_name=vrcx_name, vr_eid=vr_eid, debug=debug)
+            new_coords = self.add_vrcx_to_router(vrcx_name=vrcx_name, vr_eid=vr_eid, debug=debug)
             if debug:
                 print("coordinates were %s and will become %s "%(old_coords, new_coords))
 
