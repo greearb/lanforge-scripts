@@ -83,7 +83,7 @@ class CreateVR(Realm):
 
 
     def build(self):
-        self.vr_profile.refresh_netsmith(self.vr_name[1])
+        self.vr_profile.apply_netsmith(self.vr_name[1], delay=5, debug=self.debug)
         self.json_post("/cli-json/add_rdd", {
             "shelf": 1,
             "resource": self.vr_name[1],
@@ -98,14 +98,10 @@ class CreateVR(Realm):
             "peer_ifname": "rd90a",
             "report_timer": "3000"
         })
-        self.json_post("/cli-json/nc_show_ports", {
-            "shelf":1,
-            "resource":self.vr_name[1],
-            "port": "all"
-        })
-        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
+        self.wait_until_ports_appear(sta_list=["1.1.rd90a", "1.1.rd90b"], debug_=self.debug)
+        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True) # do_sync
         self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
-        self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
+        self.vr_profile.sync_netsmith(resource=self.vr_name[1], debug=self.debug)
         self._pass("created router")
 
     def start(self):
@@ -122,7 +118,7 @@ class CreateVR(Realm):
 
         self.vr_profile.refresh_netsmith(resource=self.vr_name[1], debug=self.debug)
         # test to make sure that vrcx is inside vr we expect
-        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_refresh=True)
+        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
         vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(resource=self.vr_name[1], router_name=self.vr_name[2])
         pprint(("cached router 120: ", router))
