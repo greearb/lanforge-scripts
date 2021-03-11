@@ -1,10 +1,12 @@
 import time
 from pprint import pprint
 from random import randint
+
 from geometry import Rect, Group
 
 from LANforge import LFUtils
 from base_profile import BaseProfile
+
 
 class VRProfile(BaseProfile):
     Default_Margin = 15 # margin between routers and router connections
@@ -88,11 +90,32 @@ class VRProfile(BaseProfile):
                     width=bounding_group.width,
                     height=bounding_group.height)
 
+    def vr_eid_to_url(self, eid_str=None, debug=False):
+        debug |= self.debug
+        if (eid_str is None) or ("" == eid_str) or (eid_str.index(".") < 1):
+            raise ValueError("vr_eid_to_url cannot read eid[%s]" % eid_str)
+        hunks = eid_str.split(".")
+        if len(hunks) > 3:
+            return "/vr/1/%s/%s" % (hunks[1], hunks[2])
+        if len(hunks) > 2:
+            return "/vr/1/%s/%s" % (hunks[1], hunks[2])
+        return "/vr/1/%s/%s" % (hunks[0], hunks[1]) # probably a short eid
+
+
     def vr_to_rect(self, vr_dict=None, debug=False):
+        debug |= self.debug
         if vr_dict is None:
             raise ValueError(__name__+": vr_dict should not be none")
         if debug:
             pprint(("vr_dict: ", vr_dict))
+        if "x" not in vr_dict:
+            if "eid" not in vr_dict:
+                raise ValueError("vr_to_rect: Unable to determine eid of rectangle to query")
+            router_url = self.vr_eid_to_url(vr_dict["eid"])
+            expanded_router_j = self.json_get(router_url, debug_=debug)
+            if expanded_router_j is None:
+                raise ValueError("vr_to_rect: unable to determine vr using url [%s]"%router_url)
+            vr_dict = expanded_router_j
         return self.to_rect(x=int(vr_dict["x"]),
                             y=int(vr_dict["y"]),
                             width=int(vr_dict["width"]),
@@ -134,24 +157,41 @@ class VRProfile(BaseProfile):
                     width=bounding_group.width,
                     height=bounding_group.height)
 
-    def vrcx_list(self, resource=None, do_refresh=False, debug=False):
+    def vrcx_list(self, resource=None,
+                  do_sync=False,
+                  fields=["eid","x","y","height","width"],
+                  debug=False):
+        """
+
+        :param resource:
+        :param do_sync:
+        :param debug:
+        :return:
+        """
         debug |= self.debug
         if (resource is None) or (resource == ""):
             raise ValueError(__name__+ ": resource cannot be blank")
-        if do_refresh or (self.cached_vrcx is None) or (len(self.cached_vrcx) < 1):
-            self.json_post("/vr/1/%s/all" % resource,
-                           {"action": "refresh"})
-            list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=eid,x,y,height,width" % resource,
-                                         debug_=debug)
-            mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
-                                                    from_element="router-connections",
-                                                    debug_=debug)
-            self.cached_vrcx = mapped_vrcx
+        if do_sync or (self.cached_vrcx is None) or (len(self.cached_vrcx) < 1):
+            self.sync_netsmith(resource=resource, debug=debug)
+        fields_str = ",".join(fields)
+        if debug:
+            pprint([
+                ("vrcx_list: fields", fields_str),
+                ("fields_str", fields_str)
+            ])
+            time.sleep(5)
+        list_of_vrcx = self.json_get("/vrcx/1/%s/list?fields=%s" % (resource, fields_str),
+                                     debug_=debug)
+        mapped_vrcx = LFUtils.list_to_alias_map(json_list=list_of_vrcx,
+                                                from_element="router-connections",
+                                                debug_=debug)
+        self.cached_vrcx = mapped_vrcx
         return self.cached_vrcx
 
     def router_list(self,
                     resource=None,
                     do_refresh=True,
+                    fields=("eid", "x", "y", "height", "width"),
                     debug=False):
         """
         Provides an updated list of routers, and caches the results to self.cached_routers.
@@ -161,10 +201,11 @@ class VRProfile(BaseProfile):
         :return: list of routers provided by /vr/1/{resource}?fields=eid,x,y,height,width
         """
         debug |= self.debug
+        fields_str = ",".join(fields)
         if (resource is None) or (resource == ""):
             raise ValueError(__name__+"; router_list needs valid resource parameter")
         if do_refresh or (self.cached_routers is None) or (len(self.cached_routers) < 1):
-            list_of_routers = self.json_get("/vr/1/%s/list?fields=eid,x,y,height,width"%resource,
+            list_of_routers = self.json_get("/vr/1/%s/list?%s" % (resource, fields_str),
                                             debug_=debug)
             mapped_routers = LFUtils.list_to_alias_map(json_list=list_of_routers,
                                                        from_element="virtual-routers",
@@ -380,16 +421,22 @@ class VRProfile(BaseProfile):
         :return: new coordinates tuple
         """
         debug |= self.debug
+        if debug:
+            pprint([("move_vrcx: vr_eid:", vr_eid),
+                   ("vrcx_name:", vrcx_name),
+                    ("self.cached_routers, check vr_eid:", self.cached_routers)])
+            time.sleep(5)
         if (vrcx_name is None) or (vrcx_name == ""):
             raise ValueError(__name__+"empty vrcx_name")
         if (vr_eid is None) or (vr_eid == ""):
             raise ValueError(__name__+"empty vr_eid")
+        my_vrcx_name = vrcx_name
         if (vrcx_name.index(".") > 0):
             hunks = vrcx_name.split(".")
-            vrcx_name = hunks[-1]
+            my_vrcx_name = hunks[-1]
         if debug:
             pprint([("move_vrcx: vr_eid:", vr_eid),
-                   ("vrcx_name:", vrcx_name),
+                   ("vrcx_name:", my_vrcx_name),
                     ("self.cached_routers, check vr_eid:", self.cached_routers)])
         router_val = self.find_cached_router(resource=vr_eid[1], router_name=vr_eid[2])
         if router_val is None:
@@ -403,17 +450,18 @@ class VRProfile(BaseProfile):
             "shelf": 1,
             "resource": vr_eid[1],
             "vr_name": vr_eid[2],
-            "local_dev": vrcx_name,
+            "local_dev": my_vrcx_name,
             "x": new_location[0],
             "y": new_location[1],
         }, debug_=debug)
         if debug:
-            self.logg("Moved connection %s to %s,%s in router %s ====" % (
-                vrcx_name,
-                new_location[0],
-                new_location[1],
-                router_val["name"]
-            ))
+            pprint([
+                ("router_val", router_val),
+                ("new_bounds", new_bounds),
+                ("new_location", new_location),
+                ("my_vrcx_name",my_vrcx_name),
+                ("router_val",router_val)
+            ])
         return new_location
 
     def move_vr(self, eid=None, go_right=True, go_down=False, upper_left_x=None, upper_left_y=None, debug=False):
@@ -429,29 +477,121 @@ class VRProfile(BaseProfile):
         debug |= self.debug
         used_vrcx_area = self.get_occupied_area(resource=self.vr_eid[1], debug=debug)
 
-    def refresh_netsmith(self, resource=0, delay=0.03, debug=False):
+    def sync_netsmith(self, resource=0, delay=0.1, debug=False):
+        """
+        This syncs the netsmith window. Doing a sync could destroy any move changes you just did.
+        :param resource:
+        :param delay:
+        :param debug:
+        :return:
+        """
         debug |= self.debug
-        self.json_post("/cli-json/nc_show_vr", {
+        if (resource is None) or (resource < 1):
+            raise ValueError("sync_netsmith: resource must be > 0")
+
+        self.json_post("/vr/1/%s/0" % resource, { "action": "sync" }, debug_=True)
+        time.sleep(delay)
+
+    def apply_netsmith(self, resource=0, delay=2, timeout=30, debug=False):
+        debug |= self.debug
+        if resource is None or resource < 1:
+            raise ValueError("refresh_netsmith: resource must be > 0")
+
+        self.json_post("/vr/1/%s/0" % resource, { "action":"apply" }, debug_=debug)
+        # now poll vrcx to check state
+        state = "UNSET"
+        cur_time = int(time.time())
+        end_time = int(time.time()) + (1000 * timeout)
+        while (cur_time < end_time) and (state != "OK"):
+            time.sleep(delay)
+            state = "UNSET"
+            connection_list = self.vrcx_list(resource=resource,
+                                             do_sync=True,
+                                             fields=["eid", "netsmith-state"],
+                                             debug=debug)
+            vrcx_list_keys = list(connection_list.keys())
+            if debug:
+                pprint([
+                    ("vrcx_list", connection_list),
+                    ("keys", vrcx_list_keys)])
+                time.sleep(5)
+            if (connection_list is not None) and (len(vrcx_list_keys) > 0):
+                if (vrcx_list_keys[0] is not None) and ("netsmith-state" in connection_list[vrcx_list_keys[0]]):
+                    item = connection_list[vrcx_list_keys[0]]
+                    if debug:
+                        pprint(("item zero", item))
+                        state = item["netsmith-state"]
+                else:
+                    self.logg("apply_netsmith: no vrcx list?")
+
+            if (state != "UNSET"):
+                continue
+
+            vr_list = self.router_list(resource=resource,
+                                       fields=("eid", "netsmith-state"),
+                                       debug=debug)
+            if (vr_list is not None) or (len(vr_list) > 0):
+                if (vr_list[0] is not None) and ("netsmith-state" in vr_list[0]):
+                    state = vr_list[0]["netsmith-state"]
+                else:
+                    self.logg("apply_netsmith: no vr_list?")
+
+        return state
+
+
+    def refresh_netsmith(self, resource=0, delay=0.03, debug=False):
+        """
+        This does not do a netsmith->Apply.
+        This does not do a netsmith sync. Doing a sync could destroy any move changes you just did.
+        This is VirtualRouterPanel.privDoUpdate:
+            for vr in virtual_routers:
+                vr.ensurePortsCreated()
+            for connection in free_router_connections:
+                connection.ensurePortsCreated()
+            for vr in virtual_routers:
+                ... remove connections that are unbound
+            for vr in virtual_routers:
+                remove vr that cannot be found
+            for connections in vrcx:
+                remove connection not found or remove endpoint from free list
+            for router in virtual_routers:
+                update vr
+            for connection in free_connections:
+                update connection
+            apply_vr_cfg
+            show_card
+            show_vr
+            show_vrcx
+
+        :param resource:
+        :param delay:
+        :param debug:
+        :return:
+        """
+        debug |= self.debug
+        if resource is None or resource < 1:
+            raise ValueError("refresh_netsmith: resource must be > 0")
+
+        self.json_post("/cli-json/apply_vr_cfg", {
+            "shelf": 1,
+            "resource": resource
+        }, debug_=debug, suppress_related_commands_=True)
+        self.json_post("/cli-json/show_resources", {
+            "shelf": 1,
+            "resource": resource
+        }, debug_=debug)
+        time.sleep(delay)
+        self.json_post("/cli-json/show_vr", {
             "shelf": 1,
             "resource": resource,
             "router": "all"
         }, debug_=debug)
-        time.sleep(delay)
-        self.json_post("/cli-json/nc_show_vrcx", {
+        self.json_post("/cli-json/show_vrcx", {
             "shelf": 1,
             "resource": resource,
             "cx_name": "all"
         }, debug_=debug)
         time.sleep(delay * 2)
-        self.json_post("/vr/1/%s/%s" % (resource, 0), {
-            "action":"refresh"
-        }, debug_=True)
-        time.sleep(delay * 20)
-        self.json_post("/cli-json/apply_vr_cfg", {
-            "shelf": 1,
-            "resource": resource
-        }, debug_=debug, suppress_related_commands_=True)
-        time.sleep(delay * 200)
 
     def create(self,
                vr_name=None,
@@ -487,8 +627,8 @@ class VRProfile(BaseProfile):
             "shelf": 1,
             "resource": self.vr_eid[1]
         }, debug_=debug, suppress_related_commands_=suppress_related_commands)
-        time.sleep(3)
-        self.refresh_netsmith(resource=self.vr_eid[1], debug=debug)
+        time.sleep(1)
+        self.apply_netsmith(resource=self.vr_eid[1], debug=debug)
 
     def wait_until_vrcx_appear(self, resource=0, name_list=None, timeout_sec=120, debug=False):
         debug |= self.debug
@@ -499,6 +639,7 @@ class VRProfile(BaseProfile):
         import time
         cur_time = int(time.time())
         end_time = cur_time + timeout_sec
+        sync_time = 10
         while (num_found < num_expected) and (cur_time <= end_time):
             time.sleep(1)
             cur_time = int(time.time())
@@ -519,7 +660,13 @@ class VRProfile(BaseProfile):
                     num_found += 1
             if num_found == len(name_list):
                 return True
-            self.refresh_netsmith(resource=resource, debug=debug)
+            # this is should not be done yet
+            # self.refresh_netsmith(resource=resource, debug=debug)
+            if ((end_time - cur_time) % sync_time) == 0:
+                self.sync_netsmith(resource=resource, debug=debug)
+                time.sleep(1)
+                if (num_found > 0) and (num_found < num_expected):
+                    self.refresh_netsmith(resource=resource, debug=debug)
             if debug:
                 pprint([("response", response),
                         ("list", vrcx_list),
@@ -580,7 +727,7 @@ class VRProfile(BaseProfile):
     def add_vrcx(self, vr_eid=None, connection_name_list=None, debug=False):
         if (vr_eid is None) or (vr_eid == ""):
             raise ValueError(__name__+": add_vrcx wants router EID")
-        existing_list = self.vrcx_list(resource=vr_eid[1], do_refresh=True)
+        existing_list = self.vrcx_list(resource=vr_eid[1], do_sync=True)
         if debug:
             pprint([
                 ("vr_eid", vr_eid),
