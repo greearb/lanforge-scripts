@@ -374,15 +374,17 @@ def list_to_alias_map(json_list=None, from_element=None, debug_=False):
         return reverse_map
 
     if debug_:
-        pprint.pprint(("json_list: ", json_list))
+        pprint.pprint(("list_to_alias_map:json_list: ", json_list))
     json_interfaces = json_list
     if from_element in json_list:
         json_interfaces = json_list[from_element]
 
     for record in json_interfaces:
         if debug_:
-            pprint.pprint(("interfaces record:", record))
+            pprint.pprint(("list_to_alias_map: %s record:" % from_element, record))
         if len(record.keys()) < 1:
+            if debug_:
+                print("list_to_alias_map: no record.keys")
             continue
         record_keys = record.keys()
         k2 = ""
@@ -396,7 +398,8 @@ def list_to_alias_map(json_list=None, from_element=None, debug_=False):
             continue
         port_json = record[k2]
         reverse_map[k2] = json_entry
-
+    if debug_:
+        pprint.pprint(("list_to_alias_map: reverse_map", reverse_map))
     return reverse_map
 
 
@@ -526,9 +529,12 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], d
                 elif "interfaces" in json_response:
                     mapped_list = list_to_alias_map(json_response, from_element="interfaces", debug_=debug)
                     found_stations.extend(mapped_list.keys())
+            if debug:
+                pprint.pprint([("port_list", port_list),
+                               ("found_stations", found_stations)])
         if len(found_stations) > 0:
             if debug:
-                pprint.pprint(("wait_until_ports_disappear found_stations:", ",".join(found_stations)))
+                pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
     sleep(1) # safety
     return
 
