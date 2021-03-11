@@ -208,7 +208,7 @@ function echo_print() {
     echo "Beginning $CURR_TEST_NAME test..." >>${HOMEPATH}/test_all_output_file.txt
 }
 
-function run_test()nano r e  {
+function run_test()  {
     for i in "${testCommands[@]}"; do
         if [[ $mgrlen -gt 0 ]]; then
           ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
@@ -226,24 +226,24 @@ function run_test()nano r e  {
         echo ""
         echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
 
-        if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
-            echo_print
-            echo "$i"
-            $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
-            chmod 664 "${TEST_DIR}/${NAME}.txt"
-            FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
-            if (( ${FILESIZE} > 0)); then
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
-                          <td class='failure'>Failure</td>
-                          <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
-            else
-                results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
-                          <td class='success'>Success</td>
-                          <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                          <td></td></tr>")
-            fi
+        #if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
+        echo_print
+        echo "$i"
+        $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+        chmod 664 "${TEST_DIR}/${NAME}.txt"
+        FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
+        if (( ${FILESIZE} > 0)); then
+            results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+                      <td class='failure'>Failure</td>
+                      <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                      <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+        else
+            results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+                      <td class='success'>Success</td>
+                      <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                      <td></td></tr>")
         fi
+        #fi
     done
     echo ${results}
 }
