@@ -185,8 +185,8 @@ class Realm(LFCliBase):
             return
 
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                        port_list=sta_list,
-                                        debug=debug_)
+                                           port_list=sta_list,
+                                           debug=debug_)
 
     def rm_port(self, port_eid, check_exists=True, debug_=False):
         if port_eid is None:
