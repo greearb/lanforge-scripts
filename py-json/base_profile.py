@@ -60,6 +60,8 @@ class BaseProfile:
         if audit_list is None:
             self.parent_realm.logg(message)
         for item in audit_list:
+            if (item is None):
+                continue
             message += ("\n" + pprint.pformat(item, indent=4))
         self.parent_realm.logg(message)
 
