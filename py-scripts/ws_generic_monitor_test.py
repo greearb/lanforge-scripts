@@ -11,6 +11,7 @@ import json
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from ws_generic_monitor import WS_Listener
+from realm import Realm
 
 reference = "test_ipv4_connection.py"
 
@@ -35,7 +36,7 @@ class GenericMonitorTest(Realm):
         pass
 
 def main():
-    WS_Listener(lfclient_host="localhost", _scriptname=reference, _callback=TestRun)
+    WS_Listener(lfclient_host="localhost", _scriptname=reference)#, _callback=TestRun)
 
 
 if __name__ == "__main__":
