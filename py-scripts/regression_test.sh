@@ -4,6 +4,12 @@
 # OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.
 #Variables
 
+FILE="/tmp/gui-update.lock"
+if test -f "$FILE"; then
+  echo "Finish updating your GUI"
+  exit 0
+fi
+
 HOMEPATH=$(realpath ~)
 
 if [[ ${#1} -gt 0 ]]; then

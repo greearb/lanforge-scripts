@@ -160,15 +160,15 @@ pgrep java &>/dev/null && killall -9 java
 sleep 1
 
 #-daemon
-touch "$D_MODE"
-start_gui
-python3 ${scripts}/connectTest.py &> $CTLH
+#touch "$D_MODE"
+#start_gui
+#python3 ${scripts}/connectTest.py &> $CTLH#
 
-echo "== HEADLESS =============================================" >> $ST
-head $CTLH >> $ST
-echo "===============================================" >> $ST
-rm -f "$D_MODE"
-pgrep java &>/dev/null && killall -9 java
+#echo "== HEADLESS =============================================" >> $ST
+#head $CTLH >> $ST
+#echo "===============================================" >> $ST
+#rm -f "$D_MODE"
+#pgrep java &>/dev/null && killall -9 java
 start_gui
 connect_fail=0
 wait_8080 || connect_fail=1
