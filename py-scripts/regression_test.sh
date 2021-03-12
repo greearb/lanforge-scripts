@@ -14,7 +14,7 @@ if [[ ${#1} -gt 0 ]]; then
     MGR=$4
     # FILENAME=$5 # this appears unused
   elif [ -f "$1" ]; then
-    source $1
+    source "$1"
   elif [ -f ./regression_test.rc ]; then
     source ./regression_test.rc # this version is a better unix name
   elif [ -f ./regression_test.txt ]; then
@@ -27,16 +27,15 @@ else # these are jedway lab defaults
 fi
 NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
-mgrlen=$(echo ${#MGR})
+mgrlen="$(${#MGR})"
 RADIO_USED="wiphy0"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
-START_NUM=0
+#START_NUM=0
 CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
-STOP_NUM=9
+#STOP_NUM=9
 
-DATA_DIR="${TEST_DIR}"
 REPORT_DIR="${HOMEPATH}/html-reports"
 if [ ! -d "$REPORT_DIR" ]; then
     echo "Report directory [$REPORT_DIR] not found, bye."
@@ -53,16 +52,16 @@ TEST_DIR="${REPORT_DATA}/${NOW}"
 #Test array
 if [[ $mgrlen -gt 0 ]]; then
   function run_l3_longevity {
-    ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr $MGR
+    ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
   }
   function testgroup_list_groups {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr $MGR
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
   }
   function testgroup_list_connections {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr $MGR
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
   }
   function testgroup_delete_group {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr $MGR
+    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
   }
   testCommands=(
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
@@ -92,7 +91,7 @@ if [[ $mgrlen -gt 0 ]]; then
       "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput --mgr $MGR"
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
       "./test_wanlink.py --debug --mgr $MGR"
-      "./ws_generic_monitor_test.py --mgr $MGR"
+      #"./ws_generic_monitor_test.py --mgr $MGR"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
@@ -148,9 +147,9 @@ else
       run_l3_longevity
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput" #always hangs the regression
-      "./test_status_msg.py --debug " #this is all which is needed to run
+      "./test_status_msg.py --action run_test " #this is all which is needed to run
       "./test_wanlink.py --debug"
-      "./ws_generic_monitor_test.py"
+      #"./ws_generic_monitor_test.py"
       #"../py-json/ws-sta-monitor.py --debug"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
@@ -199,23 +198,23 @@ name_to_num=(
 )
 
 function blank_db() {
-    echo "Loading blank scenario..." >>${HOMEPATH}/test_all_output_file.txt
-    ./scenario.py --load BLANK >>${HOMEPATH}/test_all_output_file.txt
+    echo "Loading blank scenario..." >>"${HOMEPATH}/test_all_output_file.txt"
+    ./scenario.py --load BLANK >>"${HOMEPATH}/test_all_output_file.txt"
     #check_blank.py
 }
 
 function echo_print() {
-    echo "Beginning $CURR_TEST_NAME test..." >>${HOMEPATH}/test_all_output_file.txt
+    echo "Beginning $CURR_TEST_NAME test..." >>"${HOMEPATH}/test_all_output_file.txt"
 }
 
 function run_test()  {
     for i in "${testCommands[@]}"; do
         if [[ $mgrlen -gt 0 ]]; then
-          ./scenario.py --load FACTORY_DFLT --mgr ${MGR}
+          ./scenario.py --load FACTORY_DFLT --mgr "${MGR}"
         else
           ./scenario.py --load FACTORY_DFLT
         fi
-        NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
@@ -232,7 +231,7 @@ function run_test()  {
         $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
         chmod 664 "${TEST_DIR}/${NAME}.txt"
         FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
-        if (( ${FILESIZE} > 0)); then
+        if (( FILESIZE > 0)); then
             results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                       <td class='failure'>Failure</td>
                       <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
@@ -245,7 +244,6 @@ function run_test()  {
         fi
         #fi
     done
-    echo ${results}
 }
 
 function html_generator() {
@@ -291,10 +289,10 @@ function html_generator() {
 		</html>"
 
     fname="${HOMEPATH}/html-reports/test_all_output_file-${NOW}.html"
-    echo "$header"  >> $fname
-    echo "${results[@]}"  >> $fname
-    echo "</table>" >> $fname
-    echo "$tail" >> $fname
+    echo "$header"  >> "$fname"
+    echo "${results[@]}"  >> "$fname"
+    echo "</table>" >> "$fname"
+    echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
         rm -f "${HOMEPATH}/html-reports/latest.html"
     fi
@@ -302,16 +300,13 @@ function html_generator() {
 }
 
 results=()
-detailedresults=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
-URL="${TEST_DIR}"
 URL2="/report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo "Recording data to ${TEST_DIR}"
 
 run_test
-echo "${detailedresults}"
 html_generator
 #test generic and fileio are for macvlans
