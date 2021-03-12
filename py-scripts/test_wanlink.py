@@ -14,6 +14,7 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from realm import Realm
 import time
+import create_wanlink
 
 class LANtoWAN(Realm):
     def __init__(self, host, port, ssid, security, password,
@@ -59,8 +60,8 @@ class LANtoWAN(Realm):
         data = {
             "shelf": shelf,
             "resource": resource,
-            "port": "rdd0",
-            "peer_ifname": "rdd1"
+            "port": "rd0a",
+            "peer_ifname": "rd1a"
         }
         self.json_post(url, data)
 
@@ -68,8 +69,8 @@ class LANtoWAN(Realm):
         data = {
             "shelf": shelf,
             "resource": resource,
-            "port": "rdd1",
-            "peer_ifname": "rdd0"
+            "port": "rd1a",
+            "peer_ifname": "rd0a"
         }
         self.json_post(url, data)
         time.sleep(.05)
@@ -80,7 +81,7 @@ class LANtoWAN(Realm):
             "alias": "wlan0",
             "shelf": shelf,
             "resource": resource,
-            "port": "rdd0",
+            "port": "rd0a",
             "latency": latency,
             "max_rate": max_rate
         }
@@ -91,15 +92,16 @@ class LANtoWAN(Realm):
             "alias": "wlan1",
             "shelf": shelf,
             "resource": resource,
-            "port": "rdd1",
+            "port": "rd1a",
             "latency": latency,
             "max_rate": max_rate
         }
         self.json_post(url, data)
+        create_wanlink.main(base_url='http://'+self.host+':8080')
         time.sleep(.05)
 
     def run(self):
-        self.cx_profile.use_wpa2(True, self.ssid, self.password)
+        #self.cx_profile.use_wpa2(True, self.ssid, self.password)
         self.station_profile.create(radio="wiphy0", num_stations=3, debug=False)
 
     def cleanup(self): pass
@@ -141,7 +143,7 @@ def main():
                  lan_port=args.lanport,
                  wan_port=args.wanport)
     ltw.create_wanlinks()
-    ltw.run()
+    #ltw.run()
     ltw.cleanup()
 
 if __name__ == "__main__":
