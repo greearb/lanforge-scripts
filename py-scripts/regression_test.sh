@@ -147,11 +147,11 @@ else
       "./test_ipv6_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --cx_type tcp6 --debug"
       run_l3_longevity
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput"
+      #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput" #always hangs the regression
       "./test_status_msg.py --debug " #this is all which is needed to run
       "./test_wanlink.py --debug"
       "./ws_generic_monitor_test.py"
-      "../py-json/ws-sta-monitor.py --debug"
+      #"../py-json/ws-sta-monitor.py --debug"
       "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
       "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
