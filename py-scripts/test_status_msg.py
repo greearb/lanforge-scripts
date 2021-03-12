@@ -12,7 +12,7 @@ if 'py-json' not in sys.path:
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
-import time
+# import time
 from uuid import uuid1
 import pprint
 from pprint import pprint
@@ -275,9 +275,9 @@ Actions can be:
         if args.session is not None:
             status_messages.json_put("/status-msg/"+args.session, {})
         else:
-            u = uuid1()
-            status_messages.json_put("/status-msg/"+u, {})
-            print("created session /status-msg/"+u)
+            a_uuid = uuid1()
+            status_messages.json_put("/status-msg/"+str(a_uuid), {})
+            print("created session /status-msg/"+str(a_uuid))
         return
 
     if args.action == "update":
