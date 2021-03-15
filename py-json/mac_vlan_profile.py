@@ -127,16 +127,16 @@ class MACVLANProfile(LFCliBase):
             self.ip_list = LFUtils.gen_ip_series(ip_addr=self.first_ip_addr, netmask=self.netmask,
                                                  num_ips=self.num_macvlans)
 
+        if self.dhcp:
+            print("Using DHCP")
+            self.desired_set_port_current_flags.append("use_dhcp")
+            self.desired_set_port_interest_flags.append("dhcp")
+
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
-
-        if self.dhcp:
-            print("Using DHCP")
-            self.desired_set_port_current_flags.append("use_dhcp")
-            self.desired_set_port_interest_flags.append("dhcp")
 
         for i in range(len(self.desired_macvlans)):
             data = {
@@ -145,6 +145,7 @@ class MACVLANProfile(LFCliBase):
                 "mac": "xx:xx:xx:*:*:xx",
                 "port": self.local_realm.name_to_eid(self.macvlan_parent)[2],
                 "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:]),
+                #"dhcp": self.dhcp,
                 "flags": None
             }
             if admin_down:
