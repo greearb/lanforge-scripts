@@ -126,7 +126,6 @@ sudo rm -f /tmp/*.txt
 sudo rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
 
 touch "$NO_AUTO"
-pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
 touch $ST
 if [ ! -z "$SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
@@ -150,6 +149,7 @@ else
 fi
 sleep 1
 rm -f "$NO_AUTO"
+pgrep java &>/dev/null && killall -9 java
 start_gui
 echo "Doing connectTest.py > $CTLGUI"
 python3 ${scripts}/connectTest.py &> $CTLGUI
