@@ -24,7 +24,7 @@ class GenCXProfile(LFCliBase):
         self.file_output = "/dev/null"
         self.loop_count = 1
 
-    def parse_command(self, sta_name):
+    def parse_command(self, sta_name, gen_name):
         if self.type == "lfping":
             if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
@@ -39,6 +39,9 @@ class GenCXProfile(LFCliBase):
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
+        elif self.type == "iperf3_serv" and self.dest is not None:
+            self.cmd = "iperf3 --forceflush --format k --precision 4 -s --bind_dev %s -i 1 " \
+                       "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (sta_name, gen_name)
         elif self.type == "lfcurl":
             if self.file_output is not None:
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
@@ -161,7 +164,7 @@ class GenCXProfile(LFCliBase):
             name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
             # gen_name_b  = endp_tpl[4]
-            self.parse_command(name)
+            self.parse_command(name, gen_name_a)
             self.set_cmd(gen_name_a, self.cmd)
         time.sleep(sleep_time)
 
