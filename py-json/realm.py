@@ -659,7 +659,7 @@ class Realm(LFCliBase):
                 else:
                     if debug:
                         print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                        print("Incmenting stations with IP addresses found")
+                        print("Incrementing stations with IP addresses found")
                         num_sta_with_ips += 1
                     else:
                         num_sta_with_ips += 1
