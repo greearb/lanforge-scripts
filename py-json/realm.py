@@ -17,6 +17,7 @@ from vap_profile import VAPProfile
 from mac_vlan_profile import MACVLANProfile
 from wifi_monitor_profile import WifiMonitor
 from gen_cxprofile import GenCXProfile
+from qvlan_profile import QVLANProfile
 from port_utils import PortUtils
 # ---- ---- ---- ---- Other Imports ---- ---- ---- ----
 import re
@@ -658,7 +659,7 @@ class Realm(LFCliBase):
                 else:
                     if debug:
                         print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                        print("Incrementing stations with IP addresses found")
+                        print("Incmenting stations with IP addresses found")
                         num_sta_with_ips += 1
                     else:
                         num_sta_with_ips += 1
@@ -910,6 +911,9 @@ class Realm(LFCliBase):
         #     import mac_vlan_profile2
         #     mac_vlan_profile = mac_vlan_profile2.MACVLANProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return mac_vlan_profile
+
+    def new_qvlan_profile(self):
+        return QVLANProfile(self.host, self.port, local_realm=self, debug_=self.debug)
 
     def new_test_group_profile(self, ver = 1):
         if ver == 1:
