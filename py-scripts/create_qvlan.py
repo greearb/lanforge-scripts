@@ -94,7 +94,7 @@ def main():
         "cxs": None
     }
     # update_group_args['name'] =
-    if args.first_qvlan_ip.lower() == "dhcp":
+    if args.first_qvlan_ip in ["dhcp", "DHCP"]:
         dhcp = True
     else:
         dhcp = False
@@ -143,10 +143,6 @@ def main():
             if len(port_list) != len(ip_list):
                 raise ValueError(temp_list, " ports must have matching ip addresses!")
 
-    if args.first_qvlan_ip.lower() == "dhcp":
-        dhcp = True
-    else:
-        dhcp = False
     print(port_list)
     print(ip_list)
     create_qvlan = CreateQVlan(args.mgr,
