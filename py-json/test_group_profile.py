@@ -7,7 +7,7 @@ import time
 
 class TestGroupProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, test_group_name=None, debug_=False):
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(lfclient_host, lfclient_port, debug_)
         self.local_realm = local_realm
         self.group_name = test_group_name
         self.cx_list = []

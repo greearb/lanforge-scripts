@@ -26,8 +26,8 @@ class L3PowersaveTraffic(LFCliBase):
     def __init__(self, host, port, ssid, security, password, station_list, side_a_min_rate=56, side_b_min_rate=56,
                  side_a_max_rate=0,
                  side_b_max_rate=0, pdu_size=1000, prefix="00000", test_duration="5m",
-                 _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+                 _debug_on=False, _exit_on_fail=False):
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -162,7 +162,7 @@ def main():
                                            password="[BLANK]", station_list=station_list, side_a_min_rate=2000,
                                            side_b_min_rate=2000, side_a_max_rate=0,
                                            side_b_max_rate=0, prefix="00000", test_duration="30s",
-                                           _debug_on=False, _exit_on_error=True, _exit_on_fail=True)
+                                           _debug_on=False, _exit_on_fail=True)
     ip_powersave_test.cleanup()
     ip_powersave_test.build()
     ip_powersave_test.start()

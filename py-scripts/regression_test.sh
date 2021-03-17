@@ -33,7 +33,7 @@ else # these are jedway lab defaults
 fi
 NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
-mgrlen="$(${#MGR})"
+MGRLEN="$(${#MGR})"
 RADIO_USED="wiphy0"
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
@@ -54,9 +54,9 @@ if [ ! -d "${REPORT_DATA}" ]; then
 fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
 #set -vex
-
+echo $MGRLEN
 #Test array
-if [[ $mgrlen -gt 0 ]]; then
+if [[ $MGRLEN -gt 0 ]]; then
   function run_l3_longevity {
     ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
   }
@@ -215,7 +215,7 @@ function echo_print() {
 
 function run_test()  {
     for i in "${testCommands[@]}"; do
-        if [[ $mgrlen -gt 0 ]]; then
+        if [[ $MGRLEN -gt 0 ]]; then
           ./scenario.py --load FACTORY_DFLT --mgr "${MGR}"
         else
           ./scenario.py --load FACTORY_DFLT

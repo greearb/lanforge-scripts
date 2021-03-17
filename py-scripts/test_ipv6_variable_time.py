@@ -49,17 +49,14 @@ class IPV6VariableTime(LFCliBase):
                  _use_ht160=False,
                  _cx_type=None,
                  _debug_on=False,
-                 _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(_host,
                          _port,
                          _local_realm=realm.Realm(lfclient_host=_host,
                                                   lfclient_port=_port,
                                                   debug_=_debug_on,
-                                                  _exit_on_error=_exit_on_error,
                                                   _exit_on_fail=_exit_on_fail),
                          _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.upstream = _upstream
         self.ssid = _ssid
