@@ -31,6 +31,7 @@ class CreateQVlan(Realm):
                  gateway=None,
                  port_list=[],
                  ip_list=[],
+                 exit_on_error=False,
                  debug=False):
         super().__init__(host, port)
         self.host = host

@@ -32,6 +32,7 @@ class CreateL4(Realm):
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000",  use_ht160=False,
                  _debug_on=False,
+                 _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port)
         self.upstream = upstream

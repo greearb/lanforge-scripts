@@ -34,6 +34,7 @@ class CreateStation(Realm):
                  _proxy_str=None,
                  _debug_on=False,
                  _up=True,
+                 _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(_host,
                          _port)
