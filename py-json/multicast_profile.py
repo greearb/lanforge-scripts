@@ -17,7 +17,7 @@ class MULTICASTProfile(LFCliBase):
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(lfclient_host, lfclient_port, debug_)
         self.lfclient_url = "http://%s:%s" % (lfclient_host, lfclient_port)
         self.debug = debug_
         self.local_realm = local_realm

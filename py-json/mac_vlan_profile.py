@@ -20,7 +20,7 @@ class MACVLANProfile(LFCliBase):
                  admin_down=False,
                  dhcp=False,
                  debug_=False):
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True)
+        super().__init__(lfclient_host, lfclient_port, debug_)
         self.local_realm = local_realm
         self.num_macvlans = num_macvlans
         self.macvlan_parent = macvlan_parent
