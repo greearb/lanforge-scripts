@@ -29,7 +29,6 @@ import csv
 class LFDataCollection:
     def __init__(self, local_realm, debug=False):
         self.parent_realm = local_realm
-        self.halt_on_error = False
         self.exit_on_error = False
         self.debug = debug or local_realm.debug
 

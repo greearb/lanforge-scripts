@@ -31,7 +31,6 @@ class CreateQVlan(Realm):
                  gateway=None,
                  port_list=[],
                  ip_list=[],
-                 halt_on_error=False,
                  exit_on_error=False,
                  debug=False):
         super().__init__(host, port)
@@ -41,7 +40,6 @@ class CreateQVlan(Realm):
         self.debug = debug
         self.port_list = port_list
         self.ip_list = ip_list
-        self.halt_on_error = halt_on_error
         self.exit_on_error = exit_on_error
 
         self.qvlan_profile = self.new_qvlan_profile()

@@ -23,7 +23,7 @@ class TestStatusMessage(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.deep_clean = _deep_clean
         self.check_connect()
 
@@ -167,7 +167,6 @@ class TestStatusMessage(LFCliBase):
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
             self.exit_on_error=False
-            self.halt_on_error=False
             message_response = self.json_delete(self.session_url, debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
@@ -195,7 +194,6 @@ class TestStatusMessage(LFCliBase):
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
             self.exit_on_error=False
-            self.halt_on_error=False
             message_response = self.json_delete(self.session_url+"/this", debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")

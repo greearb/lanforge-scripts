@@ -30,7 +30,6 @@ class LFCliBase:
     # very confused.
     def __init__(self, _lfjson_host, _lfjson_port,
                  _debug=False,
-                 _halt_on_error=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _local_realm=None,
@@ -53,7 +52,6 @@ class LFCliBase:
         #     print("LFCliBase._proxy_str: %s" % _proxy_str)
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
-        self.halt_on_error = _halt_on_error
         self.exit_on_error = _exit_on_error
         self.exit_on_fail = _exit_on_fail
         self.capture_signals = _capture_signal_list
@@ -211,12 +209,12 @@ class LFCliBase:
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
         except Exception as x:
-            if debug_ or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.exit_on_error:
                 print("json_post posted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            if self.halt_on_error or self.exit_on_error:
+            if self.exit_on_error:
                 exit(1)
         return json_response
 
@@ -249,12 +247,12 @@ class LFCliBase:
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
         except Exception as x:
-            if debug_ or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.exit_on_error:
                 print("json_put submitted to %s" % _req_url)
                 pprint.pprint(_data)
                 print("Exception %s:" % x)
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            if self.halt_on_error or self.exit_on_error:
+            if self.exit_on_error:
                 exit(1)
         return json_response
 
@@ -272,17 +270,17 @@ class LFCliBase:
                                        proxies_=self.proxy,
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
-            json_response = lf_r.get_as_json(debug_=debug_, die_on_error_=self.halt_on_error)
+            json_response = lf_r.get_as_json(debug_=debug_, die_on_error_=False)
             #debug_printer.pprint(json_response)
             if (json_response is None) and debug_:
                 print("LFCliBase.json_get: no entity/response, probabily status 404")
                 return None
         except ValueError as ve:
-            if debug_ or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.exit_on_error:
                 print("jsonGet asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
-            if self.halt_on_error or self.exit_on_error:
+            if self.exit_on_error:
                 sys.exit(1)
 
         return json_response
@@ -299,18 +297,18 @@ class LFCliBase:
                                        proxies_=self.proxy,
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
-            json_response = lf_r.json_delete(debug=debug_, die_on_error_=self.halt_on_error)
+            json_response = lf_r.json_delete(debug=debug_, die_on_error_=False)
             print(json_response)
             #debug_printer.pprint(json_response)
             if (json_response is None) and debug_:
                 print("LFCliBase.json_delete: no entity/response, probabily status 404")
                 return None
         except ValueError as ve:
-            if debug_ or self.halt_on_error or self.exit_on_error:
+            if debug_ or self.exit_on_error:
                 print("json_delete asked for " + _req_url)
                 print("Exception %s:" % ve)
                 traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
-            if self.halt_on_error or self.exit_on_error:
+            if self.exit_on_error:
                 sys.exit(1)
         # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         return json_response
@@ -350,11 +348,6 @@ class LFCliBase:
         # print("lfcli_base error: %s" % exception)
         pprint.pprint(exception)
         traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
-        if self.halt_on_error:
-            print("halting on error")
-            sys.exit(1)
-        # else:
-        #    print("continuing...")
 
     def check_connect(self):
         if self.debug:
