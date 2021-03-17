@@ -57,7 +57,6 @@ class Realm(LFCliBase):
                  lfclient_host="localhost",
                  lfclient_port=8080,
                  debug_=False,
-                 halt_on_error_=False, # remove me
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
@@ -65,7 +64,6 @@ class Realm(LFCliBase):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port,
                          _debug=debug_,
-                         _halt_on_error=halt_on_error_,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
