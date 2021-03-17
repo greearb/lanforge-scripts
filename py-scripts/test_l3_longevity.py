@@ -49,14 +49,12 @@ class L3VariableTime(Realm):
                  lfclient_host="localhost", 
                  lfclient_port=8080, 
                  debug=False,
-                 _halt_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
-                         halt_on_error_=_halt_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)

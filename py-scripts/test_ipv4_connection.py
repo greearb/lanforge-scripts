@@ -53,7 +53,6 @@ class IPv4Test(LFCliBase):
                                                   _proxy_str=_proxy_str,
                                                   debug_=_debug_on),
                          _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.host = _host
         self.port = _port

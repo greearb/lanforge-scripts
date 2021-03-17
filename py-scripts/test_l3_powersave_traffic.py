@@ -36,8 +36,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.sta_list = station_list
         self.prefix = prefix
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False,
-                                       halt_on_error_=True)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
         # upload
         self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
                                                 side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
