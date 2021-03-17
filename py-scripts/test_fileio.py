@@ -712,9 +712,14 @@ Generic command layout:
             dhcp = False
     else:
         dhcp = True
-    # print(port_list)
+    if 'nfs' in args.fs_type:
+        if [[ $(mount -l | grep nfs) ]]; then
+            pass
+        else:
+            raise ValueError("No nfs share is mounted")
+    else:
+        exit(1)
 
-    # exit(1)
     ip_test = FileIOTest(args.mgr,
                          args.mgr_port,
                          ssid=args.ssid,
