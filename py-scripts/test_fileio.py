@@ -35,6 +35,7 @@ import realm
 import time
 import datetime
 import pprint
+import os
 
 
 class FileIOTest(LFCliBase):
@@ -713,8 +714,8 @@ Generic command layout:
     else:
         dhcp = True
     if 'nfs' in args.fs_type:
-        if [[ $(mount -l | grep nfs) ]]; then
-            pass
+        if len(os.popen('mount -l | grep nfs').read()) > 0:
+            print('Success')
         else:
             raise ValueError("No nfs share is mounted")
     else:
@@ -730,7 +731,6 @@ Generic command layout:
                          test_duration=args.test_duration,
                          upstream_port=args.upstream_port,
                          _debug_on=args.debug,
-
                          macvlan_parent=args.macvlan_parent,
                          use_macvlans=args.use_macvlans,
                          first_mvlan_ip=args.first_mvlan_ip,
