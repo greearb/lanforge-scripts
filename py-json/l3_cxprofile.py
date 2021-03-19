@@ -149,7 +149,8 @@ class L3CXProfile(LFCliBase):
         layer3_fields = ",".join(layer3_cols)
         default_cols=['Timestamp','Timestamp milliseconds epoch','Timestamp seconds epoch','Duration elapsed']
         default_cols.extend(layer3_cols)
-        default_cols.extend(port_mgr_cols)
+        if port_mgr_cols is not None:
+            default_cols.extend(port_mgr_cols)
         header_row=default_cols
 
       
