@@ -149,6 +149,7 @@ class L3CXProfile(LFCliBase):
         layer3_fields = ",".join(layer3_cols)
         default_cols=['Timestamp','Timestamp milliseconds epoch','Timestamp seconds epoch','Duration elapsed']
         default_cols.extend(layer3_cols)
+        default_cols.extend(port_mgr_cols)
         header_row=default_cols
 
       
@@ -198,11 +199,40 @@ class L3CXProfile(LFCliBase):
         
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
 
+            if port_mgr_cols is not None:
+                port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
+            #get info from port manager with list of values from cx_a_side_list
+            if "endpoint" not in layer_3_response or layer_3_response is None:
+                print(layer_3_response)
+                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+                if debug:
+                    print("Json layer_3_response from LANforge... " + str(layer_3_response))
+            if port_mgr_cols is not None:
+                if "interfaces" not in port_mgr_response or port_mgr_response is None:
+                    print(port_mgr_response)
+                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+                if debug:
+                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
+
             for endpoint in layer_3_response["endpoint"]: #each endpoint is a dictionary
                 endp_values=list(endpoint.values())[0]
                 temp_list=basecolumns
                 for columnname in header_row[len(basecolumns):]:
                     temp_list.append(endp_values[columnname])
+                    if port_mgr_cols is not None:
+                        for sta_name in sta_list_edit:
+                            if sta_name in current_sta:
+                                for interface in port_mgr_response["interfaces"]:
+                                    if sta_name in list(interface.keys())[0]:
+                                        merge=temp_endp_values.copy()
+                                        #rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
+                                        port_mgr_values_dict =list(interface.values())[0]
+                                        renamed_port_cols={}
+                                        for key in port_mgr_values_dict.keys():
+                                            renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
+                                        merge.update(renamed_port_cols)
+                                        for name in port_mgr_cols:
+                                            temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
 
             new_cx_rx_values = self.__get_rx_values()
