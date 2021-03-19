@@ -291,6 +291,7 @@ python3 ./test_ipv4_variable_time.py
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
             os.mkdir(path)
+        systeminfopath=str(path)+'/systeminfo.txt'
 
         if args.output_format in ['csv', 'json', 'html', 'hdf','stata', 'pickle', 'pdf', 'png', 'parquet',
                                   'xlsx']:
@@ -378,8 +379,9 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.start(False, False)
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
                                     sta_list=station_list,
-                                    port_mgr_cols=port_mgr_cols,
+                                    #port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
+                                    systeminfopath=systeminfopath,
                                     duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
                                     monitor_interval_ms=monitor_interval,
                                     created_cx=layer3connections,

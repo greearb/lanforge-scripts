@@ -109,6 +109,7 @@ class L3CXProfile(LFCliBase):
                 created_cx=None,
                 monitor=True,
                 report_file=None,
+                systeminfopath=None,
                 output_format=None,
                 script_name=None,
                 arguments=None,
@@ -123,6 +124,8 @@ class L3CXProfile(LFCliBase):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file == None:
             raise ValueError("Monitor requires an output file to be defined")
+        if systeminfopath == None:
+            raise ValueError("Monitor requires a system info path to be defined")
         if created_cx == None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
@@ -144,7 +147,7 @@ class L3CXProfile(LFCliBase):
         #================== Step 1, set column names and header row
         layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
         layer3_fields = ",".join(layer3_cols)
-        default_cols=['Timestamp','Timestamp milliseconds epoch','Duration elapsed']
+        default_cols=['Timestamp','Timestamp milliseconds epoch','Timestamp seconds epoch','Duration elapsed']
         default_cols.extend(layer3_cols)
         header_row=default_cols
 
@@ -159,14 +162,13 @@ class L3CXProfile(LFCliBase):
             
             port_mgr_fields=",".join(port_mgr_cols)
             header_row.extend(port_mgr_cols_labelled)
-        #add sys info to header row
+        #create sys info file
         systeminfo = self.json_get('/')
-        header_row.extend([str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']), str("Script Name: " + script_name), str("Argument input: " + str(arguments))])
-        sta_list_edit=[]
-        if sta_list is not None:
-            for sta in sta_list:
-                sta_list_edit.append(sta[4:])
-            sta_list=",".join(sta_list_edit)
+        sysinfo=[str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']), str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
+        with open(systeminfopath,'w') as filehandle:
+            for listitem in sysinfo:
+                filehandle.write('%s\n' % listitem)
+
 
         #================== Step 2, monitor columns
         start_time = datetime.datetime.now()
@@ -190,51 +192,19 @@ class L3CXProfile(LFCliBase):
             t = datetime.datetime.now()
             timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch= int(self.get_milliseconds(t))
+            t_to_sec_epoch= int(self.get_seconds(t))
             time_elapsed=int(self.get_seconds(t))-int(self.get_seconds(initial_starttime))
+            basecolumns=[timestamp,t_to_millisec_epoch,t_to_sec_epoch,time_elapsed]
         
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
-            if port_mgr_cols is not None:
-                port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
-            #get info from port manager with list of values from cx_a_side_list
-            if "endpoint" not in layer_3_response or layer_3_response is None:
-                print(layer_3_response)
-                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-            if debug:
-                    print("Json layer_3_response from LANforge... " + str(layer_3_response))
-            if port_mgr_cols is not None:
-                if "interfaces" not in port_mgr_response or port_mgr_response is None:
-                    print(port_mgr_response)
-                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-            if debug:
-                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
-            
 
-         
-            temp_list=[]
-            for endpoint in layer_3_response["endpoint"]:
-                if debug:
-                    print("Current endpoint values list... ")
-                    print(list(endpoint.values())[0])
-                temp_endp_values=list(endpoint.values())[0] #dict
-                temp_list.extend([timestamp,t_to_millisec_epoch,time_elapsed]) 
-                current_sta = temp_endp_values['name']
-                merge={}
-                if port_mgr_cols is not None:
-                    for sta_name in sta_list_edit:
-                        if sta_name in current_sta:
-                            for interface in port_mgr_response["interfaces"]:
-                                if sta_name in list(interface.keys())[0]:
-                                    merge=temp_endp_values.copy()
-                                    #rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
-                                    port_mgr_values_dict =list(interface.values())[0]
-                                    renamed_port_cols={}
-                                    for key in port_mgr_values_dict.keys():
-                                        renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
-                                    merge.update(renamed_port_cols)
-                for name in header_row[3:-3]:
-                    temp_list.append(merge[name])
+            for endpoint in layer_3_response["endpoint"]: #each endpoint is a dictionary
+                endp_values=list(endpoint.values())[0]
+                temp_list=basecolumns
+                for columnname in header_row[len(basecolumns):]:
+                    temp_list.append(endp_values[columnname])
                 csvwriter.writerow(temp_list)
-                temp_list.clear()
+
             new_cx_rx_values = self.__get_rx_values()
             if debug:
                 print(old_cx_rx_values, new_cx_rx_values)
