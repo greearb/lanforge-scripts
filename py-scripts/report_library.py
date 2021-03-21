@@ -14,6 +14,7 @@ class report_library():
                 _dataframe="",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
+                _obj = "",
                 _date="1/1/2-21 00:00(UTC)",
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf"):
@@ -28,6 +29,7 @@ class report_library():
             self.graph_titles=""
             self.html = ""
             self.custom_html = ""
+            self.objective = _obj
     
 
     def set_title(self,_title):
@@ -44,6 +46,9 @@ class report_library():
 
     def set_custom_html(self,_custom_html):
         self.custom_html = _custom_html
+
+    def set_obj_html(self,_obj):
+        self.objective = _obj
 
     def write_html(self): 
             # dataframe_html = self.dataframe.to_html(index=False)  # have the index be able to be passed in.
@@ -81,7 +86,7 @@ class report_library():
 
                 <title>BANNER </title></head>
                 <body>
-                <div class='Section report_banner-1000x205' style='background-image:url("report_banner-1000x205.jpg");background-repeat:no-repeat;padding:0;margin:0;min-width:1000px; min-height:205px;width:1000px; height:205px;max-width:1000px; max-height:205px;'>
+                <div class='Section report_banner-1000x205' style='background-image:url(banner.png");background-repeat:no-repeat;padding:0;margin:0;min-width:1000px; min-height:205px;width:1000px; height:205px;max-width:1000px; max-height:205px;'>
                 <br>
                 <img align='right' style='padding:25;margin:5;width:200px;' src="CandelaLogo2-90dpi-200x90-trans.png" border='0' />
 
@@ -116,7 +121,15 @@ class report_library():
     def build_custom(self):
         self.html += self.custom_html
 
-            
+    def build_objective(self):
+        self.obj_html = """
+                    <!-- Test Objective -->
+                    <h3 align='left'>Objective</h3> 
+                    <p align='left' width='900'>""" + str(self.objective) + """</p>
+                    <br>
+                    """
+        self.html += self.obj_html
+
 
 # Unit Test
 if __name__ == "__main__":
