@@ -8,6 +8,16 @@ use warnings;
 # Un-buffer output
 $| = 1;
 use Cwd qw(getcwd);
+
+# this is pedantic necessity for the following use statements
+use if (-e "/home/lanforge/scripts"), lib => "/home/lanforge/scripts";
+use lib "../";
+use lib "./";
+
+use PeerConn;
+use Packet;
+use Getopt::Long;
+
 my $cwd = getcwd();
 if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
   use diagnostics;
@@ -15,21 +25,6 @@ if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
   $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 }
-# this is pedantic necessity for the following use statements
-use lib '/home/lanforge/scripts';
-if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
-  use lib '/home/lanforge/scripts/LANforge';
-  use lib '/home/lanforge/scripts/wifi_diag';
-} else {
-  if ( -d "wifi_diag" ) {
-    use lib '.';
-  } else {
-    use lib '.';
-  }
-}
-use PeerConn;
-use Packet;
-use Getopt::Long;
 
 my %peer_conns = ();
 
@@ -69,7 +64,7 @@ my $ampdu_pkt_count_total_rx = 0;
 my $wmm_info = "";
 
 my $dut = "";
-our $report_prefix = "wifi-diag-";
+our $report_prefix = "wifi-diag-results";
 my $non_dut_frames = 0;
 my $show_help = 0;
 my $gen_report = 0;
@@ -103,8 +98,10 @@ if ($show_help) {
   print $usage;
   exit 0
 }
+
 $::report_prefix .= "/"
   if ($report_prefix !~ m{/$});
+
 my $glb_ba_tx_fname = $::report_prefix . "glb-ba-tx-rpt.txt";
 my $glb_ba_rx_fname = $::report_prefix . "glb-ba-rx-rpt.txt";
 my $glb_mcs_ps_fname = $::report_prefix . "glb-mcs-ps-rpt.txt";
@@ -118,6 +115,8 @@ if ($gen_report) {
   saveHtmlReport();
   exit 0;
 }
+
+system("mkdir -p " . $::report_prefix);
 
 open($glb_fh_ba_tx,  ">", $glb_ba_tx_fname) or die("Can't open $glb_ba_tx_fname for writing: $!\n");
 open($glb_fh_ba_rx,  ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname for writing: $!\n");

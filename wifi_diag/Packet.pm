@@ -167,7 +167,7 @@ sub append {
     $self->{payload_type} = $1;
   }
   elsif (($ln =~ /^\s+\[Data Rate: (.*)\]/) ||
-	 ($ln =~ /^\s*Data Rate: (.*)/)) {
+	 ($ln =~ /^\s*Data [rR]ate: (.*)/)) {
     my $dr = $1;
     if ($dr =~ /(\S+) Mb/) {
       $self->{datarate} = $1;
