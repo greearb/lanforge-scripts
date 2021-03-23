@@ -80,6 +80,7 @@ def main():
    parser.add_argument("--duration",     type=float, help="Duration to sniff, in minutes")
    parser.add_argument("--moni_flags",   type=str, help="Monitor port flags, see LANforge CLI help for set_wifi_monitor.  Default enables 160Mhz")
    parser.add_argument("--upstreams",    type=str, help="Upstream ports to sniff (1.eth1 ...)")
+   parser.add_argument("--moni_idx", type=str, help="Optional monitor number", default=None)
    
    args = None
    try:
@@ -213,11 +214,13 @@ def main():
                                     "--show_port", "Port"], stdout=PIPE, stderr=PIPE);
        pss = port_stats.stdout.decode('utf-8', 'ignore');
 
-       moni_idx = "0"
-       for line in pss.splitlines():
-           m = re.search('Port:\s+(.*)', line)
-           if (m != None):
-               moni_idx = m.group(1)
+
+       moni_idx = args.moni_idx
+       if args.moni_idx is None:
+           for line in pss.splitlines():
+               m = re.search('Port:\s+(.*)', line)
+               if (m != None):
+                   moni_idx = m.group(1)
 
        # Create monitor interface
        mname = "moni%sa"%(moni_idx);
@@ -259,7 +262,7 @@ def main():
        
        print("Starting sniffer on port %s.%s for %s seconds, saving to file %s.pcap on resource %s\n"%(r, m, dur, m, r))
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
-                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, int(dur))]);
+                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(r, m, sflags, m, float(dur))]);
        idx = idx + 1
 
    # Start sniffing on all upstream ports
@@ -273,7 +276,7 @@ def main():
            
        print("Starting sniffer on upstream port %s.%s for %s seconds, saving to file %s.pcap on resource %s\n"%(u_resource, u_name, dur, u_name, u_resource))
        subprocess.run(["./lf_portmod.pl", "--manager", lfmgr,
-                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(u_resource, u_name, sflags, u_name, int(dur))]);
+                       "--cli_cmd", "sniff_port 1 %s %s NA %s %s.pcap %i"%(u_resource, u_name, sflags, u_name, float(dur))]);
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
