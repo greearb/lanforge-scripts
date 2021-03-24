@@ -22,6 +22,7 @@ from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 import realm
 from realm import Realm
+import time
 
 OPEN="open"
 WEP="wep"
@@ -38,7 +39,7 @@ class StaConnect(LFCliBase):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
-        super().__init__(host, port, _debug=_debugOn, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debugOn, _exit_on_fail=_exit_on_fail)
         self.debugOn = _debugOn
         self.dut_security = ""
         self.dut_ssid = _dut_ssid

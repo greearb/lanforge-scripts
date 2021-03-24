@@ -131,6 +131,7 @@ else
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa3-1 --passwd jedway-wpa3-1 --radio $RADIO_USED --security wpa3 --debug"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY"
+      "./sta_connect_example.py"
       # want if [[ $DO_FILEIO = 1 ]]
       "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --test_duration 30s --gateway 192.168.92.1" # Better tested on Kelly, where VRF is turned off
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug"
@@ -203,6 +204,7 @@ name_to_num=(
     ["wlan_capacity_calculator"]=27
     ["test_generic"]=28
     ["new_script"]=29
+    ["sta_connect_example.py"]=30
 )
 
 function blank_db() {

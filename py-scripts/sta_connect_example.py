@@ -14,23 +14,52 @@ if 'py-json' not in sys.path:
 import sta_connect
 from sta_connect import StaConnect
 import time
+import argparse
+from LANforge.lfcli_base import LFCliBase
 
 def main():
+    parser = LFCliBase.create_basic_argparse(
+        prog='sta_connect_example.py',
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    required_args=None
+    for group in parser._action_groups:
+        if group.title == "required arguments":
+            required_args=group
+            break;
+
+    optional_args=None
+    for group in parser._action_groups:
+        if group.title == "optional arguments":
+            optional_args=group
+            break;
+
+    args = parser.parse_args()
+    if args.upstream_port is None:
+        args.upstream_port = "eth2"
+    if args.ssid is None:
+        args.ssid = "Default-SSID-2g"
+    if args.passwd is None:
+        args.passwd = "12345678"
+    if args.security is None:
+        args.security = sta_connect.WPA2
+    if args.radio is None:
+        args.radio = "wiphy0"
     staConnect = StaConnect("localhost", 8080, _debugOn=False)
     staConnect.sta_mode = 0
     staConnect.upstream_resource = 1
-    staConnect.upstream_port = "eth2"
-    staConnect.radio = "wiphy0"
+    staConnect.upstream_port = args.upstream_port
+    staConnect.radio = args.radio
     staConnect.resource = 1
-    staConnect.dut_security = sta_connect.WPA2
-    staConnect.dut_ssid = "Default-SSID-2g"
-    staConnect.dut_passwd = "12345678"
+    staConnect.dut_security = args.security
+    staConnect.dut_ssid = args.ssid
+    staConnect.dut_passwd = args.passwd
     staConnect.station_names = [ "sta000" ]
     staConnect.setup()
     staConnect.start()
     time.sleep(20)
     staConnect.stop()
-    staConnect.finish()
+    #staConnect.finish()
     staConnect.cleanup()
     is_passing = staConnect.passes()
     if is_passing == False:
