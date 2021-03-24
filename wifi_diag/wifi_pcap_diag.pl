@@ -46,6 +46,8 @@ my $glb_fh_mcs_tx;
 my $glb_fh_mcs_rx;
 my $glb_fh_rtx_tx;
 my $glb_fh_rtx_rx;
+my $glb_fh_color_tx;
+my $glb_fh_color_rx;
 
 my $tx_no_ack_found_big = 0;
 my $rx_no_ack_found_big = 0;
@@ -109,6 +111,8 @@ my $glb_mcs_tx_fname = $::report_prefix . "glb-mcs-tx-rpt.txt";
 my $glb_mcs_rx_fname = $::report_prefix . "glb-mcs-rx-rpt.txt";
 my $glb_rtx_tx_fname = $::report_prefix . "glb-rtx-tx-rpt.txt";
 my $glb_rtx_rx_fname = $::report_prefix . "glb-rtx-rx-rpt.txt";
+my $glb_color_rx_fname = $::report_prefix . "glb-color-rx-rpt.txt";
+my $glb_color_tx_fname = $::report_prefix . "glb-color-tx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -125,6 +129,8 @@ open($glb_fh_mcs_tx, ">", $glb_mcs_tx_fname) or die("Can't open $glb_mcs_tx_fnam
 open($glb_fh_mcs_rx, ">", $glb_mcs_rx_fname) or die("Can't open $glb_mcs_rx_fname for writing: $!\n");
 open($glb_fh_rtx_tx, ">", $glb_rtx_tx_fname) or die("Can't open $glb_rtx_tx_fname for writing: $!\n");
 open($glb_fh_rtx_rx, ">", $glb_rtx_rx_fname) or die("Can't open $glb_rtx_rx_fname for writing: $!\n");
+open($glb_fh_color_rx, ">", $glb_color_rx_fname) or die("Can't open $glb_color_rx_fname for writing: $!\n");
+open($glb_fh_color_tx, ">", $glb_color_tx_fname) or die("Can't open $glb_color_tx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
   "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
@@ -409,8 +415,11 @@ sub htmlMcsHistogram {
   $html .= "<h4>RX Packet Type histogram</h4>\n
 <table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort keys %glb_pkt_type_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                     $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / ($rx_pkts + $dummy_rx_pkts));
   }
+  $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                   $dummy_rx_pkts, ($dummy_rx_pkts * 100.0) / ($rx_pkts + $dummy_rx_pkts));
   $html .= "</table><P>\n";
 
   if ($ampdu_chain_tx_count) {
@@ -459,6 +468,9 @@ sub genGlobalReports {
   $html .= doTimeGraph("TX-amsdu-pps", "TX AMSDU per sec", "1:12", $glb_mcs_ps_fname, "glb-mcs-tx-amsdu-ps.png");
   $html .= doTimeGraph("TX-retrans-amsdu-pps", "TX Retrans AMSDU per sec", "1:13", $glb_mcs_ps_fname, "glb-mcs-tx-rtx-amsdu-ps.png");
   $html .= doTimeGraph("TX-dummy pps", "TX Dummy Packets per sec", "1:14", $glb_mcs_ps_fname, "glb-mcs-tx-dummy-pps.png");
+
+  $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
+  $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
@@ -725,6 +737,10 @@ sub processPkt {
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
     print $glb_fh_mcs_rx $ln;
+    if ($pkt->{bss_color_known}) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
+       print $glb_fh_color_rx $ln;
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_rx $ln;
@@ -773,6 +789,10 @@ sub processPkt {
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
     print $glb_fh_mcs_tx $ln;
+    if ($pkt->{bss_color_known}) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
+       print $glb_fh_color_tx $ln;
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_tx $ln;

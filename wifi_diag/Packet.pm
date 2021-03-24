@@ -41,6 +41,8 @@ sub new {
 	      ssi_sig_found => 0,
               ba_bitmap => "0000000000000000", # empty bitmap
               ba_starting_seq => 0, # needs to be initialized
+              bss_color => 0,
+              bss_color_known => 0,
 	     };
 
   bless($self, $class);
@@ -104,6 +106,12 @@ sub append {
   elsif ($ln =~ /^.* = This is the last subframe of this A-MPDU: True/) {
     $self->{is_last_ampdu} = 1;
   }
+  elsif ($ln =~ /^.* = BSS Color known: Known/) {
+    $self->{bss_color_known} = 1;
+  }
+  elsif ($ln =~ /^.* = BSS Color: (\S+)/) {
+    $self->{bss_color} = hex($1);
+  }
   elsif ($ln =~ /^.* = Priority: (.*) \(.*/) {
     $self->{priority} = " $1";
   }
@@ -129,6 +137,10 @@ sub append {
   }
   elsif ($ln =~ /^\s*Type\/Subtype: (.*)/) {
     $self->{type_subtype} = $1;
+  }
+  elsif ($ln =~ /.* = (Trigger Type: .*)/) {
+     # Differentiate some special subtypes.
+     $self->{type_subtype} = $1;
   }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
     $self->{ba_starting_seq} = $1;
