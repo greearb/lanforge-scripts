@@ -50,6 +50,8 @@ my $glb_fh_color_tx;
 my $glb_fh_color_rx;
 my $glb_fh_ru_alloc_tx;
 my $glb_fh_ru_alloc_rx;
+my $glb_fh_trig_type_tx;
+my $glb_fh_trig_type_rx;
 
 my $tx_no_ack_found_big = 0;
 my $rx_no_ack_found_big = 0;
@@ -117,6 +119,8 @@ my $glb_color_rx_fname = $::report_prefix . "glb-color-rx-rpt.txt";
 my $glb_color_tx_fname = $::report_prefix . "glb-color-tx-rpt.txt";
 my $glb_ru_alloc_rx_fname = $::report_prefix . "glb-ru-alloc-rx-rpt.txt";
 my $glb_ru_alloc_tx_fname = $::report_prefix . "glb-ru-alloc-tx-rpt.txt";
+my $glb_trig_type_rx_fname = $::report_prefix . "glb-trig-type-rx-rpt.txt";
+my $glb_trig_type_tx_fname = $::report_prefix . "glb-trig-type-tx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -137,6 +141,8 @@ open($glb_fh_color_rx, ">", $glb_color_rx_fname) or die("Can't open $glb_color_r
 open($glb_fh_color_tx, ">", $glb_color_tx_fname) or die("Can't open $glb_color_tx_fname for writing: $!\n");
 open($glb_fh_ru_alloc_rx, ">", $glb_ru_alloc_rx_fname) or die("Can't open $glb_ru_alloc_rx_fname for writing: $!\n");
 open($glb_fh_ru_alloc_tx, ">", $glb_ru_alloc_tx_fname) or die("Can't open $glb_ru_alloc_tx_fname for writing: $!\n");
+open($glb_fh_trig_type_rx, ">", $glb_trig_type_rx_fname) or die("Can't open $glb_trig_type_rx_fname for writing: $!\n");
+open($glb_fh_trig_type_tx, ">", $glb_trig_type_tx_fname) or die("Can't open $glb_trig_type_tx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
   "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
@@ -304,7 +310,7 @@ sub genTimeGnuplot {
   my $text =qq(#!/usr/bin/gnuplot
 # auto-generated gnuplot script
 reset
-set terminal png
+set terminal png size 1024,480
 
 set xdata time
 set timefmt '\%s'
@@ -480,6 +486,9 @@ sub genGlobalReports {
 
   $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
   $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
+
+  $html .= doTimeGraph("Trigger Type", "RX Trigger Type over time", "1:2", $glb_trig_type_rx_fname, "glb-trig-type-rx.png");
+  $html .= doTimeGraph("Trigger Type", "TX Trigger Type over time", "1:2", $glb_trig_type_tx_fname, "glb-trig-type-tx.png");
 
   $html .= doTimeGraph("Basic Trigger RU Alloc", "RX RU Alloc over time", "1:2", $glb_ru_alloc_rx_fname, "glb-ru-alloc-rx.png");
   $html .= doTimeGraph("Basic Trigger RU Alloc", "TX RU Alloc over time", "1:2", $glb_ru_alloc_tx_fname, "glb-ru-alloc-tx.png");
@@ -766,6 +775,10 @@ sub processPkt {
           }
        }
     }
+    if ($pkt->{trigger_type_num} >= 0) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{trigger_type_num} . "\n";
+       print $glb_fh_trig_type_rx $ln;
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_rx $ln;
@@ -831,6 +844,10 @@ sub processPkt {
              print $glb_fh_ru_alloc_tx $ln;
           }
        }
+    }
+    if ($pkt->{trigger_type_num} >= 0) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{trigger_type_num} . "\n";
+       print $glb_fh_trig_type_tx $ln;
     }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
