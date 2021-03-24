@@ -43,6 +43,9 @@ sub new {
               ba_starting_seq => 0, # needs to be initialized
               bss_color => 0,
               bss_color_known => 0,
+              trigger_type_basic => 0, # basic trigger type relates to OFDMA
+              trigger_user_aid => "",
+              trigger_user_ru_alloc => "",
 	     };
 
   bless($self, $class);
@@ -141,6 +144,26 @@ sub append {
   elsif ($ln =~ /.* = (Trigger Type: .*)/) {
      # Differentiate some special subtypes.
      $self->{type_subtype} = $1;
+     if ($1 =~ /Trigger Type: Basic \(0\)/) {
+        $self->{trigger_type_basic} = 1;
+     }
+  }
+  elsif ($ln =~ /.* = AID12: (\S+)/) {
+     if ($self->{trigger_type_basic}) {
+        if ($self->{trigger_user_aid} ne "") {
+           $self->{trigger_user_aid} .= ",";
+        }
+        $self->{trigger_user_aid} .= $1;
+     }
+  }
+  elsif ($ln =~ /.* = RU Allocation: (.*)/) {
+     if ($self->{trigger_type_basic}) {
+        if ($self->{trigger_user_ru_alloc} ne "") {
+           $self->{trigger_user_ru_alloc} .= ",";
+        }
+        $self->{trigger_user_ru_alloc} .= $1;
+        print("ru-alloc: " . $self->{trigger_user_ru_alloc} . "\n");
+     }
   }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
     $self->{ba_starting_seq} = $1;

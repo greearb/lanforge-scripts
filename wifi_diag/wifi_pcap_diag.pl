@@ -48,6 +48,8 @@ my $glb_fh_rtx_tx;
 my $glb_fh_rtx_rx;
 my $glb_fh_color_tx;
 my $glb_fh_color_rx;
+my $glb_fh_ru_alloc_tx;
+my $glb_fh_ru_alloc_rx;
 
 my $tx_no_ack_found_big = 0;
 my $rx_no_ack_found_big = 0;
@@ -113,6 +115,8 @@ my $glb_rtx_tx_fname = $::report_prefix . "glb-rtx-tx-rpt.txt";
 my $glb_rtx_rx_fname = $::report_prefix . "glb-rtx-rx-rpt.txt";
 my $glb_color_rx_fname = $::report_prefix . "glb-color-rx-rpt.txt";
 my $glb_color_tx_fname = $::report_prefix . "glb-color-tx-rpt.txt";
+my $glb_ru_alloc_rx_fname = $::report_prefix . "glb-ru-alloc-rx-rpt.txt";
+my $glb_ru_alloc_tx_fname = $::report_prefix . "glb-ru-alloc-tx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -131,6 +135,8 @@ open($glb_fh_rtx_tx, ">", $glb_rtx_tx_fname) or die("Can't open $glb_rtx_tx_fnam
 open($glb_fh_rtx_rx, ">", $glb_rtx_rx_fname) or die("Can't open $glb_rtx_rx_fname for writing: $!\n");
 open($glb_fh_color_rx, ">", $glb_color_rx_fname) or die("Can't open $glb_color_rx_fname for writing: $!\n");
 open($glb_fh_color_tx, ">", $glb_color_tx_fname) or die("Can't open $glb_color_tx_fname for writing: $!\n");
+open($glb_fh_ru_alloc_rx, ">", $glb_ru_alloc_rx_fname) or die("Can't open $glb_ru_alloc_rx_fname for writing: $!\n");
+open($glb_fh_ru_alloc_tx, ">", $glb_ru_alloc_tx_fname) or die("Can't open $glb_ru_alloc_tx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
   "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
@@ -408,8 +414,11 @@ sub htmlMcsHistogram {
   $html .= "<h4>TX Packet Type histogram</h4>\n
 <table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
   foreach my $name (sort keys %glb_pkt_type_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                     $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / ($tx_pkts + $dummy_tx_pkts));
   }
+  $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                   $dummy_tx_pkts, ($dummy_tx_pkts * 100.0) / ($tx_pkts + $dummy_tx_pkts));
   $html .= "</table>\n";
 
   $html .= "<h4>RX Packet Type histogram</h4>\n
@@ -471,6 +480,9 @@ sub genGlobalReports {
 
   $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
   $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
+
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "RX RU Alloc over time", "1:2", $glb_ru_alloc_rx_fname, "glb-ru-alloc-rx.png");
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "TX RU Alloc over time", "1:2", $glb_ru_alloc_tx_fname, "glb-ru-alloc-tx.png");
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
@@ -741,11 +753,25 @@ sub processPkt {
        $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
        print $glb_fh_color_rx $ln;
     }
+    if ($pkt->{trigger_type_basic}) {
+       # We may have multiple, split them out.
+       my @toks = split(/,/, $pkt->{trigger_user_ru_alloc});
+       my $ti;
+       for ($ti = 0; $ti<@toks; $ti++) {
+          my $tok = $toks[$ti];
+          # tok looks like: 55 (106 tones)
+          if ($tok =~ /\s*(\d+)\s+.*/) {
+             $ln = "" . $pkt->timestamp() . "\t" . $1 . "\n";
+             print $glb_fh_ru_alloc_rx $ln;
+          }
+       }
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_rx $ln;
     }
   } else {
+    # else is tx
     if ($delta != -1) {
       $delta_time_tx_count++;
       $delta_time_tx += $delta;
@@ -792,6 +818,19 @@ sub processPkt {
     if ($pkt->{bss_color_known}) {
        $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
        print $glb_fh_color_tx $ln;
+    }
+    if ($pkt->{trigger_type_basic}) {
+       # We may have multiple, split them out.
+       my @toks = split(/,/, $pkt->{trigger_user_ru_alloc});
+       my $ti;
+       for ($ti = 0; $ti<@toks; $ti++) {
+          my $tok = $toks[$ti];
+          # tok looks like: 55 (106 tones)
+          if ($tok =~ /\s*(\d+)\s+.*/) {
+             $ln = "" . $pkt->timestamp() . "\t" . $1 . "\n";
+             print $glb_fh_ru_alloc_tx $ln;
+          }
+       }
     }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
