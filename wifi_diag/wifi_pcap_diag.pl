@@ -52,6 +52,7 @@ my $glb_fh_ru_alloc_tx;
 my $glb_fh_ru_alloc_rx;
 my $glb_fh_trig_type_tx;
 my $glb_fh_trig_type_rx;
+my $glb_fh_ps_tx;
 
 my $tx_no_ack_found_big = 0;
 my $rx_no_ack_found_big = 0;
@@ -121,6 +122,7 @@ my $glb_ru_alloc_rx_fname = $::report_prefix . "glb-ru-alloc-rx-rpt.txt";
 my $glb_ru_alloc_tx_fname = $::report_prefix . "glb-ru-alloc-tx-rpt.txt";
 my $glb_trig_type_rx_fname = $::report_prefix . "glb-trig-type-rx-rpt.txt";
 my $glb_trig_type_tx_fname = $::report_prefix . "glb-trig-type-tx-rpt.txt";
+my $glb_ps_tx_fname = $::report_prefix . "glb-ps-tx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
@@ -143,6 +145,7 @@ open($glb_fh_ru_alloc_rx, ">", $glb_ru_alloc_rx_fname) or die("Can't open $glb_r
 open($glb_fh_ru_alloc_tx, ">", $glb_ru_alloc_tx_fname) or die("Can't open $glb_ru_alloc_tx_fname for writing: $!\n");
 open($glb_fh_trig_type_rx, ">", $glb_trig_type_rx_fname) or die("Can't open $glb_trig_type_rx_fname for writing: $!\n");
 open($glb_fh_trig_type_tx, ">", $glb_trig_type_tx_fname) or die("Can't open $glb_trig_type_tx_fname for writing: $!\n");
+open($glb_fh_ps_tx, ">", $glb_ps_tx_fname) or die("Can't open $glb_ps_tx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
   "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
@@ -306,6 +309,12 @@ sub genTimeGnuplot {
   my $title = shift;
   my $cols = shift;
   my $graph_data = shift;
+  my $extra_gp = shift;
+
+  my $extra = "";
+  if (defined($extra_gp)) {
+     $extra = $extra_gp;
+  }
 
   my $text =qq(#!/usr/bin/gnuplot
 # auto-generated gnuplot script
@@ -322,6 +331,9 @@ set ylabel '$ylabel'
 set title '$title'
 set key below
 set grid
+
+$extra
+
 plot '$graph_data' using $cols title '$title'
 );
   return $text;
@@ -333,10 +345,11 @@ sub doTimeGraph {
   my $cols = shift;
   my $data_file = shift;
   my $out_file = shift;
+  my $extra = shift;
 
   my $html = "";
 
-  my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file);
+  my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file, $extra);
   my $png_fname = "$::report_prefix/$out_file";
   $png_fname =~ s{//}{/}g;
   my $tmp = $report_prefix . "_gnuplot_tmp_script.txt";
@@ -483,6 +496,9 @@ sub genGlobalReports {
   $html .= doTimeGraph("TX-amsdu-pps", "TX AMSDU per sec", "1:12", $glb_mcs_ps_fname, "glb-mcs-tx-amsdu-ps.png");
   $html .= doTimeGraph("TX-retrans-amsdu-pps", "TX Retrans AMSDU per sec", "1:13", $glb_mcs_ps_fname, "glb-mcs-tx-rtx-amsdu-ps.png");
   $html .= doTimeGraph("TX-dummy pps", "TX Dummy Packets per sec", "1:14", $glb_mcs_ps_fname, "glb-mcs-tx-dummy-pps.png");
+
+  $html .= doTimeGraph("Power Save", "TX Power Save Awake (1) or Sleep(0), over time", "1:2", $glb_ps_tx_fname, "glb-ps-tx.png",
+                       "set yrange [-1:2]");
 
   $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
   $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
@@ -831,6 +847,10 @@ sub processPkt {
     if ($pkt->{bss_color_known}) {
        $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
        print $glb_fh_color_tx $ln;
+    }
+    if ($pkt->{ps_awake} != -1) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{ps_awake} . "\n";
+       print $glb_fh_ps_tx $ln;
     }
     if ($pkt->{trigger_type_basic}) {
        # We may have multiple, split them out.

@@ -47,6 +47,7 @@ sub new {
               trigger_type_num => -1,
               trigger_user_aid => "",
               trigger_user_ru_alloc => "",
+              ps_awake => -1,
 	     };
 
   bless($self, $class);
@@ -168,6 +169,14 @@ sub append {
         }
         $self->{trigger_user_ru_alloc} .= $1;
         #print("ru-alloc: " . $self->{trigger_user_ru_alloc} . "\n");
+     }
+  }
+  elsif ($ln =~ /.*(\d) \.\.\.\. = PWR MGT:.*/) {
+     if ($1 eq "0") {
+        $self->{ps_awake} = 1;
+     }
+     else {
+        $self->{ps_awake} = 0;
      }
   }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
