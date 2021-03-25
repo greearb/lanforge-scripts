@@ -236,6 +236,21 @@ for my $conn (values %peer_conns) {
   $rx_no_ack_found_all += $conn->rx_no_ack_found_all();
 }
 
+close($glb_fh_ba_tx);
+close($glb_fh_ba_rx);
+close($glb_fh_mcs_ps);
+close($glb_fh_mcs_tx);
+close($glb_fh_mcs_rx);
+close($glb_fh_rtx_tx);
+close($glb_fh_rtx_rx);
+close($glb_fh_color_tx);
+close($glb_fh_color_rx);
+close($glb_fh_ru_alloc_tx);
+close($glb_fh_ru_alloc_rx);
+close($glb_fh_trig_type_tx);
+close($glb_fh_trig_type_rx);
+close($glb_fh_ps_tx);
+
 $report_html .= genGlobalReports();
 
 # Print out all peer-conns we found
@@ -346,8 +361,19 @@ sub doTimeGraph {
   my $data_file = shift;
   my $out_file = shift;
   my $extra = shift;
+  my $pre_html = shift;
+
+  my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+      $atime,$mtime,$ctime,$blksize,$blocks) = stat($data_file);
+  if ($size < 4) {
+     print("time-graph, skipping $data_file, size: $size\n");
+     return "";
+  }
 
   my $html = "";
+  if (defined($pre_html)) {
+     $html .= $pre_html;
+  }
 
   my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file, $extra);
   my $png_fname = "$::report_prefix/$out_file";
@@ -503,11 +529,14 @@ sub genGlobalReports {
   $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
   $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
 
-  $html .= doTimeGraph("Trigger Type", "RX Trigger Type over time", "1:2", $glb_trig_type_rx_fname, "glb-trig-type-rx.png");
-  $html .= doTimeGraph("Trigger Type", "TX Trigger Type over time", "1:2", $glb_trig_type_tx_fname, "glb-trig-type-tx.png");
+  my $tt_desc = "<P>Basic Type (Indicates OFDMA): 0, Beamforming Report Poll (BRP, indicates MU-MIMO): 1, Multi-User Block Ack Request (MU-BAR): 2,<br>\n" .
+     " Multi-User Request To Send (MU-RTS): 3, Buffer Status Report Poll (BSRP): 4, Group Case Retries (GCR MU-BAR): 5<br>\n" .
+     " Bandwidth Query Report Poll (BQRP): 6, NDP Feedback Report Poll (NFRP): 7\n";
+  $html .= doTimeGraph("Trigger Type", "RX Trigger Type over time.", "1:2", $glb_trig_type_rx_fname, "glb-trig-type-rx.png", "", $tt_desc);
+  $html .= doTimeGraph("Trigger Type", "TX Trigger Type over time.", "1:2", $glb_trig_type_tx_fname, "glb-trig-type-tx.png", "", $tt_desc);
 
-  $html .= doTimeGraph("Basic Trigger RU Alloc", "RX RU Alloc over time", "1:2", $glb_ru_alloc_rx_fname, "glb-ru-alloc-rx.png");
-  $html .= doTimeGraph("Basic Trigger RU Alloc", "TX RU Alloc over time", "1:2", $glb_ru_alloc_tx_fname, "glb-ru-alloc-tx.png");
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "RX RU Alloc over time.", "1:2", $glb_ru_alloc_rx_fname, "glb-ru-alloc-rx.png");
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "TX RU Alloc over time.", "1:2", $glb_ru_alloc_tx_fname, "glb-ru-alloc-tx.png");
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
