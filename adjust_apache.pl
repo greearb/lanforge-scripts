@@ -405,14 +405,18 @@ if (-f "$fname") {
             . "Displaying difference...\n";
         info($msg);
         sleep(2);
-        open(my $diff_in, "-|", "diff -y /etc/hosts $editfile");
+        my $diffcmd = "diff -y /etc/hosts $editfile";
+        if ( -x "/usr/bin/colordiff" ) {
+           $diffcmd = "colordiff -y /etc/hosts $editfile";
+        }
+        open(my $diff_in, "-|", $diffcmd);
         my ($diff_out, $diff_file) = tempfile( "diff_hosts_XXXX", DIR=>"/tmp" );
         my @diff_lines = <$diff_in>;
         close($diff_in);
         print $diff_out join("", @diff_lines);
         close($diff_out);
-        system("/bin/less -N $diff_file");
-        print "/bin/less -dN $diff_file\n" if ($debug);
+        system("/bin/less -Nr $diff_file");
+        print "/bin/less -dNr $diff_file\n" if ($debug);
         # prompt to exit
         print "Press Enter to continue, [ctrl-c] to quit >";
         my $i = <STDIN>;
