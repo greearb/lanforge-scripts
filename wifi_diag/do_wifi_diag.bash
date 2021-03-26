@@ -20,9 +20,9 @@ present=(
 )
 killcommand=0
 for i in "${present[@]}"; do
-  $present=$(rpm -qa | grep i)
+  present=$(expr length "$(rpm -qa | grep $i)")
   if [[ $present -gt 0 ]]; then
-    pass
+    :
   else
     killcommand=1
     echo "Please install $i on your system"
@@ -32,7 +32,7 @@ done
 if [[ $killcommand -gt 0 ]]; then
   exit 1
 else
-  pass
+  :
 fi
 
 output_dir=diag_report
