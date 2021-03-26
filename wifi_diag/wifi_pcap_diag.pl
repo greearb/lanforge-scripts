@@ -65,6 +65,8 @@ my %glb_pkt_type_tx_hash = ();
 my %glb_pkt_type_rx_hash = ();
 my %glb_ampdu_pkt_count_rx_hash = ();
 my %glb_ampdu_pkt_count_tx_hash = ();
+my %glb_encoding_type_tx_hash = ();
+my %glb_encoding_type_rx_hash = ();
 
 my $ampdu_pkt_count_total_tx = 0;
 my $ampdu_pkt_count_total_rx = 0;
@@ -454,6 +456,24 @@ sub htmlMcsHistogram {
   foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
     $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
   }
+  $html .= "</table><P>\n";
+
+  $html .= "<h4>TX PPDU Format histogram.</h4>\n
+<table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_encoding_type_tx_hash) {
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                     $name, $glb_encoding_type_tx_hash{$name}, ($glb_encoding_type_tx_hash{$name} * 100.0) / $tx_pkts);
+  }
+  $html .= "</table><P>\n";
+
+  $html .= "<h4>RX PPDU Format histogram.</h4>\n
+<table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
+  foreach my $name (sort keys %glb_encoding_type_rx_hash) {
+    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                     $name, $glb_encoding_type_rx_hash{$name}, ($glb_encoding_type_rx_hash{$name} * 100.0) / $rx_pkts);
+  }
+  $html .= "</table><P>\n";
+
   $html .= "</table>\n";
 
   $html .= "<h4>TX Packet Type histogram</h4>\n
@@ -781,6 +801,14 @@ sub processPkt {
     } else {
       $glb_mcs_rx_hash{$dr} = 1;
     }
+
+    $dr = $pkt->{ppdu_format};
+    if (exists $glb_encoding_type_rx_hash{$dr}) {
+      $glb_encoding_type_rx_hash{$dr}++;
+    } else {
+      $glb_encoding_type_rx_hash{$dr} = 1;
+    }
+
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_rx_hash{$dr}) {
       $glb_pkt_type_rx_hash{$dr}++;
@@ -852,6 +880,14 @@ sub processPkt {
     } else {
       $glb_mcs_tx_hash{$dr} = 1;
     }
+
+    $dr = $pkt->{ppdu_format};
+    if (exists $glb_encoding_type_tx_hash{$dr}) {
+      $glb_encoding_type_tx_hash{$dr}++;
+    } else {
+      $glb_encoding_type_tx_hash{$dr} = 1;
+    }
+
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_tx_hash{$dr}) {
       $glb_pkt_type_tx_hash{$dr}++;

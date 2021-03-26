@@ -5,7 +5,6 @@ use strict;
 
 use bignum;
 use bigint;
-
 our $d_counter = 0;
 
 sub new {
@@ -26,6 +25,7 @@ sub new {
 	      seen_ip => 0,
 	      timestamp => 0,
 	      datarate => 0,
+              ppdu_format => "UNKNOWN",
 	      dummy_tx_pkts => 0,
 	      dummy_rx_pkts => 0,
 	      is_last_ampdu => 0,
@@ -125,6 +125,15 @@ sub append {
   }
   elsif ($ln =~ /^.* = Payload Type: MSDU/) {
     $self->{is_msdu} = 1;
+  }
+  elsif ($ln =~ /^.* = PPDU Format: (.*)/) {
+    $self->{ppdu_format} = $1;
+  }
+  elsif ($ln =~ /^\s+PHY type: \S+\s+\((\S+)\)/) {
+     # The PPDU Format matches first, so don't over-ride that if we found something already.
+     if ($self->{ppdu_format} eq "UNKNOWN") {
+        $self->{ppdu_format} = $1; # OFDM etc
+     }
   }
   elsif ($ln =~ /^\s*\[Time delta from previous captured frame:\s+(\S+)/) {
     $self->{timedelta} = $1;
