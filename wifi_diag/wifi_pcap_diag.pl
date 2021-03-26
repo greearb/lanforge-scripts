@@ -444,74 +444,89 @@ sub htmlMcsHistogram {
     $html .= "WMM Info from DUT Beacon<br><pre>\n$wmm_info</pre>";
   }
 
-  $html .= "<h4>TX Encoding rate histogram.</h4>\n
+  if ($tx_pkts) {
+     $html .= "<h4>TX Encoding rate histogram.</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+     foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
 
-  $html .= "<h4>RX Encoding rate histogram</h4>\n
+  if ($rx_pkts) {
+     $html .= "<h4>RX Encoding rate histogram</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+     foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
 
-  $html .= "<h4>TX PPDU Format histogram.</h4>\n
+  if ($tx_pkts) {
+     $html .= "<h4>TX PPDU Format histogram.</h4>\n
 <table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_encoding_type_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
-                     $name, $glb_encoding_type_tx_hash{$name}, ($glb_encoding_type_tx_hash{$name} * 100.0) / $tx_pkts);
+     foreach my $name (sort keys %glb_encoding_type_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_encoding_type_tx_hash{$name}, ($glb_encoding_type_tx_hash{$name} * 100.0) / $tx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
 
-  $html .= "<h4>RX PPDU Format histogram.</h4>\n
+  if ($rx_pkts) {
+     $html .= "<h4>RX PPDU Format histogram.</h4>\n
 <table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_encoding_type_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
-                     $name, $glb_encoding_type_rx_hash{$name}, ($glb_encoding_type_rx_hash{$name} * 100.0) / $rx_pkts);
+     foreach my $name (sort keys %glb_encoding_type_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_encoding_type_rx_hash{$name}, ($glb_encoding_type_rx_hash{$name} * 100.0) / $rx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
 
-  $html .= "</table>\n";
-
-  $html .= "<h4>TX Packet Type histogram</h4>\n
+  if ($tx_pkts + $dummy_tx_pkts) {
+     $html .= "<h4>TX Packet Type histogram</h4>\n
 <table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
-                     $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / ($tx_pkts + $dummy_tx_pkts));
-  }
-  $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
-                   $dummy_tx_pkts, ($dummy_tx_pkts * 100.0) / ($tx_pkts + $dummy_tx_pkts));
-  $html .= "</table>\n";
+     foreach my $name (sort keys %glb_pkt_type_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / ($tx_pkts + $dummy_tx_pkts));
+     }
 
-  $html .= "<h4>RX Packet Type histogram</h4>\n
-<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
-                     $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / ($rx_pkts + $dummy_rx_pkts));
+     $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                      $dummy_tx_pkts, ($dummy_tx_pkts * 100.0) / ($tx_pkts + $dummy_tx_pkts));
+     $html .= "</table><P>\n";
   }
-  $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
-                   $dummy_rx_pkts, ($dummy_rx_pkts * 100.0) / ($rx_pkts + $dummy_rx_pkts));
-  $html .= "</table><P>\n";
+
+  if ($rx_pkts + $dummy_rx_pkts) {
+     $html .= "<h4>RX Packet Type histogram</h4>\n
+<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+     foreach my $name (sort keys %glb_pkt_type_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / ($rx_pkts + $dummy_rx_pkts));
+     }
+     $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                      $dummy_rx_pkts, ($dummy_rx_pkts * 100.0) / ($rx_pkts + $dummy_rx_pkts));
+     $html .= "</table><P>\n";
+  }
 
   if ($ampdu_chain_tx_count) {
     $html .= "<h4>TX AMPDU chain count histogram<h4>Average: " . $ampdu_pkt_count_total_tx / $ampdu_chain_tx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
-      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                       $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
     }
-    $html .= "</table>\n";
+    $html .= "</table><P>\n";
   }
 
   if ($ampdu_chain_rx_count) {
     $html .= "<h4>RX AMPDU chain count histogram</h4> Average: " . $ampdu_pkt_count_total_rx / $ampdu_chain_rx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
-      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                       $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
     }
-    $html .= "</table>\n";
+    $html .= "</table><P>\n";
   }
 
   return $html;
