@@ -199,9 +199,14 @@ sub append {
     $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
-    #print "ba-bitmap: $1\n"; # this bitmap needs to be 16 bytes
-    warn("ba_bitmap only ".length($1)." bytes: ".$1) if (length($1) != 16);
-    $self->{ba_bitmap} = $1;
+    #print "ba-bitmap: $1\n"; # this bitmap needs to be at least 16 bytes
+     if (length($1) != 16) {
+        print("WARNING:  input-line: $.:  ba_bitmap is " . length($1) . " bytes instead of expected 16: " . $1);
+        $self->{ba_bitmap} = "0000000000000000";  # default to something somewhat sane.
+     }
+     else {
+        $self->{ba_bitmap} = $1;
+     }
   }
   elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
     $self->{retrans} = 1;
