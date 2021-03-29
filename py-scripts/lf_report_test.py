@@ -5,7 +5,7 @@ import matplotlib as mpl
 import numpy as np 
 import pandas as pd
 import pdfkit
-from report_library import report_library
+from lf_report import lf_report
 
 # Unit Test
 if __name__ == "__main__":
@@ -28,8 +28,8 @@ if __name__ == "__main__":
     })
 
 
-    #report = report_library(_dataframe=dataframe)
-    report = report_library()
+    #report = lf_report(_dataframe=dataframe)
+    report = lf_report()
     report.set_title("Banner Title One")
     report.build_banner()
     #report.set_title("Banner Title Two")
@@ -51,6 +51,6 @@ if __name__ == "__main__":
     #report.build_all()
 
     html_file = report.write_html() 
-    print("returned file ")
+    print("returned file {}".format(html_file))
     print(html_file)
     report.write_pdf()

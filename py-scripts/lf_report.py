@@ -10,7 +10,7 @@ import math
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
 # base report class
-class report_library():
+class lf_report():
     def __init__(self,
                 _dataframe="",
                 _title="LANForge Test Run Heading",
@@ -195,8 +195,8 @@ if __name__ == "__main__":
     })
 
 
-    #report = report_library(_dataframe=dataframe)
-    report = report_library()
+    #report = lf_report(_dataframe=dataframe)
+    report = lf_report()
     report.set_title("Banner Title One")
     report.build_banner()
     #report.set_title("Banner Title Two")
