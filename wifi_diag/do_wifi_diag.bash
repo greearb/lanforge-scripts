@@ -17,10 +17,11 @@
 present=(
   gnuplot
   wkhtmltopdf
+  tshark
 )
 killcommand=0
 for i in "${present[@]}"; do
-  present=$(expr length "$(rpm -qa | grep $i)")
+  present=$(expr length "$(which $i)")
   if [[ $present -gt 0 ]]; then
     :
   else
