@@ -144,7 +144,7 @@ class lf_report():
 
 
 
-        fig = plt.subplots(figsize=(12, 8))
+        fig = plt.subplots(figsize=(10, 5))
         i = 0
         for set in data_set:
             if i > 0:
