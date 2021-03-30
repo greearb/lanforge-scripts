@@ -21,7 +21,7 @@ present=(
 )
 killcommand=0
 for i in "${present[@]}"; do
-  present=$(expr length "$(which $i)")
+  present=`which $i | awk '{ print length }'`
   if [[ $present -gt 0 ]]; then
     :
   else
