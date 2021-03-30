@@ -15,6 +15,7 @@ class lf_report():
                 _dataframe="",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
+                _graph_title="LANForge Graph Title",
                 _obj = "",
                 _obj_title = "",
                 _date="1/1/2-21 00:00(UTC)",
@@ -24,11 +25,13 @@ class lf_report():
             self.dataframe=_dataframe
             self.title=_title
             self.table_title=_table_title
+            self.graph_title=_graph_title
             self.date=_date
             self.output_html=_output_html
             self.output_pdf=_output_pdf
             self.banner_html = ""
             self.graph_titles=""
+            self.graph_image=""
             self.html = ""
             self.custom_html = ""
             self.objective = _obj
@@ -40,6 +43,9 @@ class lf_report():
 
     def set_table_title(self,_table_title):
         self.table_title = _table_title
+
+    def set_graph_title(self,_graph_title):
+        self.graph_title = _graph_title
 
     def set_date(self,_date):
         self.date = _date
@@ -53,6 +59,9 @@ class lf_report():
     def set_obj_html(self,_obj_title, _obj ):
         self.objective = _obj
         self.obj_title = _obj_title
+
+    def set_graph_image(self,_graph_image):
+        self.graph_image = _graph_image
 
     def write_html(self): 
             # dataframe_html = self.dataframe.to_html(index=False)  # have the index be able to be passed in.
@@ -71,6 +80,11 @@ class lf_report():
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
             options = {"enable-local-file-access" : None}  # prevent eerror Blocked access to file
             pdfkit.from_file(self.output_html, self.output_pdf, options=options)
+
+
+    def generate_report(self):
+        self.write_html()            
+        self.write_pdf()
 
     # only use is pass all data in constructor, no graph output
     def build_all(self):
@@ -132,46 +146,26 @@ class lf_report():
                     """
         self.html += self.obj_html
 
-    def build_bar_graph(self, data_set, xaxis_name, yaxis_name, xaxis_categories, graph_image_name, label,color=None):
-        barWidth = 0.25
-        color_name = ['lightcoral','darkgrey','r','g','b','y']
-        if color is None:
-            i = 0
-            color = []
-            for col in data_set:
-                color.append(color_name[i])
-                i = i+1
+    def build_graph_title(self):
+        self.table_graph_html = """
+                <html lang='en'>
+                <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1' />
+                <div class='HeaderStyle'>
+                <h2 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.graph_title) + """</h2>
+                """
+        self.html += self.table_graph_html
 
-
-
-        fig = plt.subplots(figsize=(10, 5))
-        i = 0
-        for set in data_set:
-            if i > 0:
-                br = br1
-                br2 = [x + barWidth for x in br]
-                plt.bar(br2, data_set[i], color=color[i], width=barWidth,
-                        edgecolor='grey', label=label[i])
-                br1 = br2
-                i = i+1
-            else:
-                br1 = np.arange(len(data_set[i]))
-                plt.bar(br1, data_set[i], color=color[i], width=barWidth,
-                        edgecolor='grey', label=label[i])
-                i=i+1
-        plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
-        plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
-        plt.xticks([r + barWidth for r in range(len(data_set[0]))],
-                   xaxis_categories)
-        plt.legend()
-
-        fig = plt.gcf()
-        plt.savefig("%s.png"% (graph_image_name), dpi=96)
+    def build_graph(self):
         self.graph_html_obj = """
-              <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s.png" % (graph_image_name) + """ border='1' />
+              <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (self.graph_image) + """ border='1' />
             <br><br>
             """
         self.html +=self.graph_html_obj
+
+
+
 
 
 # Unit Test
@@ -213,12 +207,6 @@ if __name__ == "__main__":
 
     report.set_dataframe(dataframe2)
     report.build_table()
-    dataset = [[30,55,69,37],[45,67,34,22],[22,45,12,34]]
-    x_axis_values = [1,2,3,4]
-    report.build_bar_graph(dataset, "stations", "Throughput (Mbps)", x_axis_values,
-                           "Bi-single_radio_2.4GHz",
-                           ["bi-downlink", "bi-uplink",'uplink'], None)
-
 
     #report.build_all()
 

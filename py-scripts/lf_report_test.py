@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pdfkit
 from lf_report import lf_report
+from lf_graph import lf_bar_graph
 
 # Unit Test
 if __name__ == "__main__":
@@ -47,6 +48,29 @@ if __name__ == "__main__":
     report.set_dataframe(dataframe2)
     report.build_table()
 
+    # test lf_graph in report
+    dataset = [[45,67,34,22],[22,45,12,34],[30,55,69,37]]
+    x_axis_values = [1,2,3,4]
+
+    report.set_graph_title("Graph Title")
+    report.build_graph_title()
+    graph = lf_bar_graph(_data_set=dataset, 
+                        _xaxis_name="stations", 
+                        _yaxis_name="Throughput 2 (Mbps)", 
+                        _xaxis_categories=x_axis_values,
+                        _graph_image_name="Bi-single_radio_2.4GHz",
+                        _label=["bi-downlink", "bi-uplink",'uplink'], 
+                        _color=None,
+                        _color_edge='red')
+
+
+    graph_png = graph.build_bar_graph()
+
+    print("graph name {}".format(graph_png))
+
+    report.set_graph_image(graph_png)
+
+    report.build_graph()
 
     #report.build_all()
 
@@ -54,3 +78,5 @@ if __name__ == "__main__":
     print("returned file {}".format(html_file))
     print(html_file)
     report.write_pdf()
+
+    report.generate_report()
