@@ -73,7 +73,8 @@ class MULTICASTProfile(LFCliBase):
         for endp_name in self.get_mc_names():
             self.local_realm.rm_endp(endp_name, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-    def create_mc_tx(self, endp_type, side_tx, suppress_related_commands=None, debug_=False):
+    def create_mc_tx(self, endp_type, side_tx,  mcast_group="224.9.9.9", mcast_dest_port=9999,
+                    suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_ = True
 
@@ -109,12 +110,11 @@ class MULTICASTProfile(LFCliBase):
         url = "/cli-json/add_endp"
         self.local_realm.json_post(url, json_data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-        # set_mc_endp mcast-xmit-sta 32 224.9.9.9 9999 No  # critical
         json_data = {
             'name': side_tx_name,
             'ttl': 32,
-            'mcast_group': '224.9.9.9',
-            'mcast_dest_port': 9999,
+            'mcast_group': mcast_group,
+            'mcast_dest_port': mcast_dest_port,
             'rcv_mcast': 'No'
         }
 
@@ -126,7 +126,8 @@ class MULTICASTProfile(LFCliBase):
         these_endp = [side_tx_name]
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
-    def create_mc_rx(self, endp_type, side_rx, suppress_related_commands=None, debug_=False):
+    def create_mc_rx(self, endp_type, side_rx,  mcast_group="224.9.9.9", mcast_dest_port=9999,
+                    suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_ = True
 
@@ -166,8 +167,8 @@ class MULTICASTProfile(LFCliBase):
             json_data = {
                 'name': side_rx_name,
                 'ttl': 32,
-                'mcast_group': '224.9.9.9',
-                'mcast_dest_port': 9999,
+                'mcast_group': mcast_group,
+                'mcast_dest_port': mcast_dest_port,
                 'rcv_mcast': 'Yes'
             }
             url = "cli-json/set_mc_endp"
