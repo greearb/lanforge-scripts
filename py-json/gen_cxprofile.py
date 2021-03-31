@@ -107,6 +107,176 @@ class GenCXProfile(LFCliBase):
         }
         self.json_post("cli-json/set_gen_cmd", data, debug_=self.debug)
 
+    # added this parse_command_gen taking reference from existing function parse_command with addded parameters
+    def parse_command_gen(self, sta_name, dest):
+        if self.type == "lfping":
+            if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
+                self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, dest)
+                # print(self.cmd)
+            else:
+                raise ValueError("Please ensure dest and interval have been set correctly")
+        elif self.type == "generic":
+            if self.cmd == "":
+                raise ValueError("Please ensure cmd has been set correctly")
+        elif self.type == "speedtest":
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+        elif self.type == "iperf3" and self.dest is not None:
+            self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
+                       "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
+        elif self.type == "lfcurl":
+            if self.file_output is not None:
+                self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
+                           (sta_name, self.file_output, self.loop_count, self.dest)
+            else:
+                raise ValueError("Please ensure file_output has been set correctly")
+        else:
+            raise ValueError("Unknown command type")
+
+    # added this function(create_gen) taking reference from existing function (create) with added parameters with the requirement of script scenario
+    def create_gen(self, sta_port, dest, add, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if self.debug:
+            debug_ = True
+        post_data = []
+        endp_tpls = []
+
+        if type(sta_port) == str:
+            if sta_port != "1.1.eth1":
+                count = 5
+            else:
+                count = 40
+            for i in range(0, count):
+                port_info = self.local_realm.name_to_eid(sta_port)
+                if len(port_info) == 2:
+                    resource = 1
+                    shelf = port_info[0]
+                    name = port_info[-1]
+                elif len(port_info) == 3:
+                    resource = port_info[0]
+                    shelf = port_info[1]
+                    name = port_info[-1]
+                else:
+                    raise ValueError("Unexpected name for port_name %s" % sta_port)
+
+                gen_name_a = "%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
+                gen_name_b = "D_%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
+                endp_tpls.append((shelf, resource, name, gen_name_a, gen_name_b))
+
+            print(endp_tpls)
+        elif type(sta_port) == list:
+            for port_name in sta_port:
+                print("hello............", sta_port)
+                for i in range(0, 5):
+                    port_info = self.local_realm.name_to_eid(port_name)
+                    if len(port_info) == 2:
+                        resource = 1
+                        shelf = port_info[0]
+                        name = port_info[-1]
+                    elif len(port_info) == 3:
+                        resource = port_info[0]
+                        shelf = port_info[1]
+                        name = port_info[-1]
+                    else:
+                        raise ValueError("Unexpected name for port_name %s" % port_name)
+
+                    # this naming convention follows what you see when you use
+                    # lf_firemod.pl --action list_endp after creating a generic endpoint
+                    gen_name_a = "%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
+                    gen_name_b = "D_%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
+                    endp_tpls.append((shelf, resource, name, gen_name_a, gen_name_b))
+
+        # exit(1)
+        print(endp_tpls)
+
+        for endp_tpl in endp_tpls:
+            shelf = endp_tpl[0]
+            resource = endp_tpl[1]
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            # gen_name_b  = endp_tpl[3]
+            # (self, alias=None, shelf=1, resource=1, port=None, type=None)
+
+            data = {
+                "alias": gen_name_a,
+                "shelf": shelf,
+                "resource": resource,
+                "port": name,
+                "type": "gen_generic"
+            }
+            pprint(data)
+            if self.debug:
+                pprint(data)
+
+            self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
+
+        self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        time.sleep(sleep_time)
+
+        for endp_tpl in endp_tpls:
+            gen_name_a = endp_tpl[3]
+            gen_name_b = endp_tpl[4]
+            self.set_flags(gen_name_a, "ClearPortOnStart", 1)
+        time.sleep(sleep_time)
+
+        if type(dest) == str:
+            for endp_tpl in endp_tpls:
+                name = endp_tpl[2]
+                gen_name_a = endp_tpl[3]
+                # gen_name_b  = endp_tpl[4]
+                self.parse_command_gen(name, dest)
+                self.set_cmd(gen_name_a, self.cmd)
+            time.sleep(sleep_time)
+
+        elif type(dest) == list:
+            mm = 0
+            for endp_tpl in endp_tpls:
+                name = endp_tpl[2]
+                gen_name_a = endp_tpl[3]
+                # gen_name_b  = endp_tpl[4]
+                self.parse_command_gen(name, dest[mm])
+                self.set_cmd(gen_name_a, self.cmd)
+                mm = mm + 1
+                if mm == 8:
+                    mm = 0
+            time.sleep(sleep_time)
+
+        j = 0
+        for endp_tpl in endp_tpls:
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            gen_name_b = endp_tpl[4]
+            cx_name = "CX_%s-%s" % (self.name_prefix, name) + "_" + str(j) + add
+            j = j + 1
+            data = {
+                "alias": cx_name,
+                "test_mgr": "default_tm",
+                "tx_endp": gen_name_a,
+                "rx_endp": gen_name_b
+            }
+            post_data.append(data)
+            # self.created_cx = []
+            self.created_cx.append(cx_name)
+            # self.created_endp = []
+            self.created_endp.append(gen_name_a)
+            self.created_endp.append(gen_name_b)
+        time.sleep(sleep_time)
+
+        print(self.created_cx)
+
+        for data in post_data:
+            url = "/cli-json/add_cx"
+            pprint(data)
+            if self.debug:
+                pprint(data)
+            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            time.sleep(2)
+        time.sleep(sleep_time)
+        for data in post_data:
+            self.local_realm.json_post("/cli-json/show_cx", {
+                "test_mgr": "default_tm",
+                "cross_connect": data["alias"]
+            })
+        time.sleep(sleep_time)
+
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         if self.debug:
             debug_ = True
