@@ -93,7 +93,7 @@ class HTTPProfile(LFCliBase):
                 self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
-               user=None, passwd=None, source=None):
+               user=None, passwd=None, source=None,ftp_ip=None,upload_name=None):
         cx_post_data = []
         self.map_sta_ips(ports)
         for i in range(len(list(self.ip_map))):
@@ -115,12 +115,17 @@ class HTTPProfile(LFCliBase):
             else:
                 raise ValueError("Unexpected name for port_name %s" % port_name)
 
+            if upload_name != None:  
+                name = upload_name
+
             if http:
                 self.port_util.set_http(port_name=name, resource=resource, on=True)
                 url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
             if ftp:
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
+                    if ftp_ip is not None: 
+                        ip_addr=ftp_ip
                     url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
                 else:
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
@@ -130,17 +135,30 @@ class HTTPProfile(LFCliBase):
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
 
-            endp_data = {
-                "alias": name + "_l4",
-                "shelf": shelf,
-                "resource": resource,
-                "port": name,
-                "type": "l4_generic",
-                "timeout": 10,
-                "url_rate": self.requests_per_ten,
-                "url": url,
-                "proxy_auth_type": 0x200
-            }
+            if upload_name ==None:
+                endp_data = {
+                    "alias": name + "_l4",
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": name,
+                    "type": "l4_generic",
+                    "timeout": 10,
+                    "url_rate": self.requests_per_ten,
+                    "url": url,
+                    "proxy_auth_type": 0x200
+                }
+            else:
+                endp_data = {
+                    "alias": name + "_l4",
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": ports[0],
+                    "type": "l4_generic",
+                    "timeout": 10,
+                    "url_rate": self.requests_per_ten,
+                    "url": url,
+                    "proxy_auth_type": 0x200
+                }
             url = "cli-json/add_l4_endp"
             self.local_realm.json_post(url, endp_data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
