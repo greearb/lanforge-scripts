@@ -161,7 +161,220 @@ class L3CXProfile2(BaseProfile):
                     if self.debug:
                         print("Cleaning endpoint: %s"%(ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
-        
+
+    # added this function create_cx by taking reference from the existing function (def create()) to pass the arguments with the script requirement
+    def create_cx(self, endp_type, side_a, side_b, count, sleep_time=0.03, suppress_related_commands=None, debug_=False,
+                  tos=None):
+        if self.debug:
+            debug_ = True
+
+        cx_post_data = []
+        timer_post_data = []
+        these_endp = []
+        these_cx = []
+
+        # print(self.side_a_min_rate, self.side_a_max_rate)
+        # print(self.side_b_min_rate, self.side_b_max_rate)
+        if (self.side_a_min_bps is None) \
+                or (self.side_a_max_bps is None) \
+                or (self.side_b_min_bps is None) \
+                or (self.side_b_max_bps is None):
+            raise ValueError(
+                "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
+
+        if type(side_a) != list and type(side_b) != list:
+            side_b_info = self.local_realm.name_to_eid(side_b)
+            side_b_shelf = side_b_info[0]
+            side_b_resource = side_b_info[1]
+
+            for i in range(count):
+                side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
+                side_a_shelf = side_a_info[0]
+                side_a_resource = side_a_info[1]
+                if side_a.find('.') < 0:
+                    port_name = "%d.%s" % (side_a_info[1], side_a)
+
+                cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx)) + str(i)
+
+                endp_a_name = cx_name + "-A"
+                endp_b_name = cx_name + "-B"
+                self.created_cx[cx_name] = [endp_a_name, endp_b_name]
+                self.created_endp[endp_a_name] = endp_a_name
+                self.created_endp[endp_b_name] = endp_b_name
+                these_cx.append(cx_name)
+                these_endp.append(endp_a_name)
+                these_endp.append(endp_b_name)
+                endp_side_a = {
+                    "alias": endp_a_name,
+                    "shelf": side_a_shelf,
+                    "resource": side_a_resource,
+                    "port": side_a_info[2],
+                    "type": endp_type,
+                    "min_rate": self.side_a_min_bps,
+                    "max_rate": self.side_a_max_bps,
+                    "min_pkt": self.side_a_min_pdu,
+                    "max_pkt": self.side_a_max_pdu,
+                    "ip_port": -1
+                }
+                endp_side_b = {
+                    "alias": endp_b_name,
+                    "shelf": side_b_shelf,
+                    "resource": side_b_resource,
+                    "port": side_b_info[2],
+                    "type": endp_type,
+                    "min_rate": self.side_b_min_bps,
+                    "max_rate": self.side_b_max_bps,
+                    "min_pkt": self.side_b_min_pdu,
+                    "max_pkt": self.side_b_max_pdu,
+                    "ip_port": -1
+                }
+
+                url = "/cli-json/add_endp"
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                # print("napping %f sec"%sleep_time)
+                time.sleep(sleep_time)
+
+                url = "cli-json/set_endp_flag"
+                data = {
+                    "name": endp_a_name,
+                    "flag": "AutoHelper",
+                    "val": 1
+                }
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                data["name"] = endp_b_name
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+
+                if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
+                    data["name"] = endp_a_name
+                    data["flag"] = "UseAutoNAT"
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    data["name"] = endp_b_name
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+
+                if tos != None:
+                    self.local_realm.set_endp_tos(endp_a_name, tos)
+                    self.local_realm.set_endp_tos(endp_b_name, tos)
+
+                data = {
+                    "alias": cx_name,
+                    "test_mgr": "default_tm",
+                    "tx_endp": endp_a_name,
+                    "rx_endp": endp_b_name,
+                }
+                # pprint(data)
+                cx_post_data.append(data)
+                timer_post_data.append({
+                    "test_mgr": "default_tm",
+                    "cx_name": cx_name,
+                    "milliseconds": self.report_timer
+                })
+
+        elif type(side_b) == list and type(side_a) != list:
+            side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
+            side_a_shelf = side_a_info[0]
+            side_a_resource = side_a_info[1]
+            # side_a_name = side_a_info[2]
+
+            for port_name in side_b:
+                for inc in range(count):
+                    # print(side_b)
+                    side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
+                    side_b_shelf = side_b_info[0]
+                    side_b_resource = side_b_info[1]
+                    side_b_name = side_b_info[2]
+
+                    cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx)) + str(inc)
+                    endp_a_name = cx_name + "-A"
+                    endp_b_name = cx_name + "-B"
+                    self.created_cx[cx_name] = [endp_a_name, endp_b_name]
+                    self.created_endp[endp_a_name] = endp_a_name
+                    self.created_endp[endp_b_name] = endp_b_name
+                    these_cx.append(cx_name)
+                    these_endp.append(endp_a_name)
+                    these_endp.append(endp_b_name)
+                    endp_side_a = {
+                        "alias": endp_a_name,
+                        "shelf": side_a_shelf,
+                        "resource": side_a_resource,
+                        "port": side_a_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_a_min_bps,
+                        "max_rate": self.side_a_max_bps,
+                        "min_pkt": self.side_a_min_pdu,
+                        "max_pkt": self.side_a_max_pdu,
+                        "ip_port": -1
+                    }
+                    endp_side_b = {
+                        "alias": endp_b_name,
+                        "shelf": side_b_shelf,
+                        "resource": side_b_resource,
+                        "port": side_b_info[2],
+                        "type": endp_type,
+                        "min_rate": self.side_b_min_bps,
+                        "max_rate": self.side_b_max_bps,
+                        "min_pkt": self.side_b_min_pdu,
+                        "max_pkt": self.side_b_max_pdu,
+                        "ip_port": -1
+                    }
+
+                    url = "/cli-json/add_endp"
+                    self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    # print("napping %f sec" %sleep_time )
+                    time.sleep(sleep_time)
+
+                    url = "cli-json/set_endp_flag"
+                    data = {
+                        "name": endp_a_name,
+                        "flag": "autohelper",
+                        "val": 1
+                    }
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+
+                    url = "cli-json/set_endp_flag"
+                    data = {
+                        "name": endp_b_name,
+                        "flag": "autohelper",
+                        "val": 1
+                    }
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
+                    # print("CXNAME451: %s" % cx_name)
+                    data = {
+                        "alias": cx_name,
+                        "test_mgr": "default_tm",
+                        "tx_endp": endp_a_name,
+                        "rx_endp": endp_b_name,
+                    }
+                    cx_post_data.append(data)
+                    timer_post_data.append({
+                        "test_mgr": "default_tm",
+                        "cx_name": cx_name,
+                        "milliseconds": self.report_timer
+                    })
+        else:
+            raise ValueError(
+                "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
+                    type(side_a), type(side_b)))
+        print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp, debug_))
+        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
+
+        for data in cx_post_data:
+            url = "/cli-json/add_cx"
+            self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+            time.sleep(0.01)
+
+        self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
                tos=None):
