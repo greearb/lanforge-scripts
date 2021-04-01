@@ -107,7 +107,6 @@ class GenCXProfile(LFCliBase):
         }
         self.json_post("cli-json/set_gen_cmd", data, debug_=self.debug)
 
-    # added this parse_command_gen taking reference from existing function parse_command with addded parameters
     def parse_command_gen(self, sta_name, dest):
         if self.type == "lfping":
             if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
@@ -132,7 +131,6 @@ class GenCXProfile(LFCliBase):
         else:
             raise ValueError("Unknown command type")
 
-    # added this function(create_gen) taking reference from existing function (create) with added parameters with the requirement of script scenario
     def create_gen(self, sta_port, dest, add, sleep_time=.5, debug_=False, suppress_related_commands_=None):
         if self.debug:
             debug_ = True
