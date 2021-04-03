@@ -96,6 +96,8 @@ class HTTPProfile(LFCliBase):
                user=None, passwd=None, source=None,ftp_ip=None,upload_name=None):
         cx_post_data = []
         self.map_sta_ips(ports)
+        print("Create CXs...")
+
         for i in range(len(list(self.ip_map))):
             url = None
             if i != len(list(self.ip_map)) - 1:
@@ -127,6 +129,7 @@ class HTTPProfile(LFCliBase):
                     if ftp_ip is not None: 
                         ip_addr=ftp_ip
                     url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
+                    print("###### url:{}".format(url))
                 else:
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
             if not http and not ftp:
