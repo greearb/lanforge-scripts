@@ -35,9 +35,9 @@ my $usage = "$0 :
 
 ";
 GetOptions(
-    "-h|--help"             => \$do_help,
-    "-d|--debug"            => \$debug,
-    "-a|--auto|--automatic" => \$do_automatic,
+    "h|help"           => \$do_help,
+    "d|debug"          => \$debug,
+    "a|auto|automatic" => \$do_automatic,
 ) || die($usage);
 
 if ($do_help) {
