@@ -21,8 +21,9 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from LANforge.lfcli_base import LFCliBase
-from influx import Influx
+from influx import RecordInflux
 import argparse
+
 
 def main():
     parser = LFCliBase.create_bare_argparse(
@@ -40,24 +41,28 @@ def main():
         --stations \\
         --longevity 5h'''
     )
+    target_kpi = ['bps rx', 'rx bytes', 'pps rx', 'rx pkts', 'rx drop']
     parser.add_argument('--influx_user', help='Username for your Influx database', required=True)
     parser.add_argument('--influx_passwd', help='Password for your Influx database', required=True)
     parser.add_argument('--influx_db', help='Name of your Influx database', required=True)
     parser.add_argument('--longevity', help='How long you want to gather data', default='4h')
     parser.add_argument('--device', help='Device to monitor', action='append', required=True)
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
+    parser.add_argument('--target_kpi', help='Monitor only selected columns', action='append', default=target_kpi)
     args = parser.parse_args()
-    monitor_interval=LFCliBase.parse_time(args.monitor_interval).total_seconds()
-    longevity=LFCliBase.parse_time(args.longevity).total_seconds()
-    grapher=Influx(_host=args.mgr,
-                      _port=args.mgr_port,
-                      _influx_db=args.influx_db,
-                      _influx_user=args.influx_user,
-                      _influx_passwd=args.influx_passwd,
-                      _longevity=longevity,
-                      _devices=args.device,
-                      _monitor_interval=monitor_interval)
+    monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
+    longevity = LFCliBase.parse_time(args.longevity).total_seconds()
+    grapher = RecordInflux(_host=args.mgr,
+                           _port=args.mgr_port,
+                           _influx_db=args.influx_db,
+                           _influx_user=args.influx_user,
+                           _influx_passwd=args.influx_passwd,
+                           _longevity=longevity,
+                           _devices=args.device,
+                           _monitor_interval=monitor_interval,
+                           _target_kpi=args.target_kpi)
     grapher.getdata()
+
 
 if __name__ == "__main__":
     main()
