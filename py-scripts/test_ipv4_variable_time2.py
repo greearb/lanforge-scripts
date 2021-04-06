@@ -89,8 +89,6 @@ class IPV4VariableTime(Realm, TestBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.use_ht160 = use_ht160
-        if self.station_profile.use_ht160:
-            self.station_profile.mode = 9
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
