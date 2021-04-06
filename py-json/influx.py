@@ -59,7 +59,7 @@ class RecordInflux(LFCliBase):
         client.write_points(json_body)
 
     def getdata(self):
-        url = 'http://192.168.1.32:8080/port/1/1/'
+        url = 'http://'+self.host+':8080/port/1/1/'
         client = InfluxDBClient(self.host,
                                 8086,
                                 self.influx_user,
