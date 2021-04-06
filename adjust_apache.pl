@@ -340,7 +340,9 @@ if (-f "$fname") {
         print "old[$ln]\n" if ($debug);
         # if we are comments or blank lines, preserve them
         next if ($ln =~ /LF-HOSTNAME-NEXT/);
-        next if ($ln =~ /^$host_map{$MgrHostname}\s+/);
+        next if ($ln =~ /\b$MgrHostname\b/); # skip our mgt hostname
+        next if ($ln =~ /^$host_map{$MgrHostname}\s+/); # line starts with present IP addr
+
         if (($ln =~ /^\s*$/) || ($ln =~ /^\s*#/)) {
             push(@newlines, $ln);
             next;
