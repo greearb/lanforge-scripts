@@ -30,7 +30,7 @@ class CSVParcer():
 
         dataframe.index.name = 'Step Index' 
         dataframe = dataframe.replace('Mbps','',regex=True) 
-        dataframe = dataframe.rename(columns={'Atten':'Attenuation [dB]','Rotation':'Position [Deg]','Rx-Bps':'Traffic Pair 1 Throughtput [Mbps]'})
+        dataframe = dataframe.rename(columns={'Atten':'Attenuation [dB]','Rotation':'Position [Deg]','Rx-Bps':'Traffic Pair 1 Throughput [Mbps]'})
 
         #print('{}'.format(self.csv_infile))
         #print("dataframe {}".format(dataframe))
