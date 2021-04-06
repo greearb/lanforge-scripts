@@ -217,6 +217,16 @@ class StaConnect2(LFCliBase):
             self.station_profile.admin_up()
             LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
+        if self.influx_db is not None:
+            grapher = RecordInflux(_influx_host=self.influx_host,
+                                   _influx_db=self.influx_db,
+                                   _influx_user=self.influx_user,
+                                   _influx_passwd=self.influx_passwd,
+                                   _longevity=1,
+                                   _devices=self.station_names,
+                                   _monitor_interval=1,
+                                   _target_kpi=['bps rx'])
+
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
         maxTime = self.bringup_time_sec
@@ -256,14 +266,6 @@ class StaConnect2(LFCliBase):
             }
             self.json_post("/cli-json/nc_show_ports", data)
             if self.influx_db is not None:
-                grapher = RecordInflux(_influx_host=self.influx_host,
-                                       _influx_db=self.influx_db,
-                                       _influx_user=self.influx_user,
-                                       _influx_passwd=self.influx_passwd,
-                                       _longevity=1,
-                                       _devices=self.station_names,
-                                       _monitor_interval=1,
-                                       _target_kpi=['bps rx'])
                 grapher.getdata()
         LFUtils.wait_until_ports_appear()
 
