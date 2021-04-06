@@ -40,12 +40,10 @@ class CSVParcer():
             csv_summary = self.csv_outfile
             csv_summary = os.path.splitext(csv_summary)[0] + '.csv'
 
-
         dataframe.to_csv(csv_summary, index = True, header=True)
-        
         xlsx_summary = os.path.splitext(csv_summary)[0] + '.xlsx'
-
         dataframe.to_excel(xlsx_summary, index = True, header=True)
+        print("INFILE: {}  OUTFILE(xlsx): {}  OUTFILE(csv): {}".format(csv_infile,xlsx_summary,csv_summary))
 
 
 def main():
