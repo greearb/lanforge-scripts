@@ -15,15 +15,12 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 
 import argparse
-import LANforge
 from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
 from realm import Realm
 import pprint
+from influx import RecordInflux
 
 OPEN="open"
 WEP="wep"
@@ -389,6 +386,11 @@ Example:
     parser.add_argument("--debug", type=str, help="enable debugging")
     parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
     parser.add_argument("--bringup_time", type=int, help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
+    parser.add_argument('--influx_user', help='Username for your Influx database', default=None)
+    parser.add_argument('--influx_passwd', help='Password for your Influx database', default=None)
+    parser.add_argument('--influx_db', help='Name of your Influx database', default=None)
+    parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
+
     args = parser.parse_args()
     if args.dest is not None:
         lfjson_host = args.dest
@@ -405,6 +407,7 @@ Example:
                              debug_=True,
                              _exit_on_fail=True,
                              _exit_on_error=False)
+
     if args.user is not None:
         staConnect.user = args.user
     if args.passwd is not None:
@@ -431,6 +434,18 @@ Example:
         staConnect.sta_prefix = args.prefix
     staConnect.station_names = [ "%s0000"%args.prefix ]
     staConnect.bringup_time_sec = args.bringup_time
+
+    if args.influx_db is not None:
+        longevity=staConnect.runtime_secs+30
+        monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
+        grapher = RecordInflux(_influx_db=args.influx_db,
+                               _influx_user=args.influx_user,
+                               _influx_passwd=args.influx_passwd,
+                               _longevity=longevity,
+                               _devices=staConnect.station_names,
+                               _monitor_interval=monitor_interval,
+                               _target_kpi=['bps rx'])
+        grapher.getdata()
 
    # staConnect.cleanup()
     staConnect.setup()
