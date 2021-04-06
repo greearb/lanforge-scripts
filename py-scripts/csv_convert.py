@@ -34,11 +34,8 @@ class CSVParcer():
 
         #print('{}'.format(self.csv_infile))
         #print("dataframe {}".format(dataframe))
-        if self.csv_outfile == None:
-            csv_summary = self.csv_infile.replace('candela','comcast')
-        else:
-            csv_summary = self.csv_outfile
-            csv_summary = os.path.splitext(csv_summary)[0] + '.csv'
+        csv_summary = self.csv_outfile
+        csv_summary = os.path.splitext(csv_summary)[0] + '.csv'
 
         dataframe.to_csv(csv_summary, index = True, header=True)
         xlsx_summary = os.path.splitext(csv_summary)[0] + '.xlsx'
@@ -64,7 +61,7 @@ csv_convert.py:
 
     # for testing parser.add_argument('-i','--infile', help="input file of csv data", default='text-csv-0-candela.csv')
     parser.add_argument('-i','--infile', help="input file of csv data", required=True)
-    parser.add_argument('-o','--outfile', help="output file of csv, xlsx data", default=None)
+    parser.add_argument('-o','--outfile', help="output file of csv, xlsx data , default: outfile.xlsx outfile.csv", default='outfile')
 
 
     args = parser.parse_args()
