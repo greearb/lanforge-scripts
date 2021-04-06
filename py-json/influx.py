@@ -16,7 +16,7 @@ import time
 
 class RecordInflux(LFCliBase):
     def __init__(self,
-                 _host="localhost",
+                 _influx_host="localhost",
                  _port=8080,
                  _influx_user=None,
                  _influx_passwd=None,
@@ -28,11 +28,11 @@ class RecordInflux(LFCliBase):
                  _debug_on=False,
                  _exit_on_fail=False
                  ):
-        super().__init__(_host,
+        super().__init__(_influx_host,
                          _port,
                          _debug=_debug_on,
                          _exit_on_fail=_exit_on_fail)
-        self.host = _host
+        self.host = _influx_host
         self.port = _port
         self.influx_user = _influx_user
         self.influx_passwd = _influx_passwd

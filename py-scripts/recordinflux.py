@@ -52,7 +52,7 @@ def main():
     args = parser.parse_args()
     monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
     longevity = LFCliBase.parse_time(args.longevity).total_seconds()
-    grapher = RecordInflux(_host=args.mgr,
+    grapher = RecordInflux(_influx_host=args.mgr,
                            _port=args.mgr_port,
                            _influx_db=args.influx_db,
                            _influx_user=args.influx_user,

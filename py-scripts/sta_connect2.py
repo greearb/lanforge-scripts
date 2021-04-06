@@ -21,6 +21,7 @@ from LANforge.LFUtils import *
 from realm import Realm
 import pprint
 from influx import RecordInflux
+import time
 
 OPEN="open"
 WEP="wep"
@@ -31,6 +32,8 @@ MODE_AUTO=0
 class StaConnect2(LFCliBase):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
+                 _influx_host=None, _influx_db=None, _influx_user=None,
+                 _influx_passwd=None,
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, _sta_prefix='sta', _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
@@ -68,6 +71,10 @@ class StaConnect2(LFCliBase):
         self.station_profile = None
         self.l3_udp_profile = None
         self.l3_tcp_profile = None
+        self.influx_host = _influx_host
+        self.influx_db = _influx_db
+        self.influx_user = _influx_user
+        self.influx_passwd = _influx_passwd
 
     # def get_realm(self) -> Realm: # py > 3.6
     def get_realm(self):
@@ -248,6 +255,16 @@ class StaConnect2(LFCliBase):
                 "probe_flags": 1
             }
             self.json_post("/cli-json/nc_show_ports", data)
+            if self.influx_db is not None:
+                grapher = RecordInflux(_influx_host=self.influx_host,
+                                       _influx_db=self.influx_db,
+                                       _influx_user=self.influx_user,
+                                       _influx_passwd=self.influx_passwd,
+                                       _longevity=1,
+                                       _devices=self.station_names,
+                                       _monitor_interval=1,
+                                       _target_kpi=['bps rx'])
+                grapher.getdata()
         LFUtils.wait_until_ports_appear()
 
         for sta_name in self.station_names:
@@ -389,6 +406,7 @@ Example:
     parser.add_argument('--influx_user', help='Username for your Influx database', default=None)
     parser.add_argument('--influx_passwd', help='Password for your Influx database', default=None)
     parser.add_argument('--influx_db', help='Name of your Influx database', default=None)
+    parser.add_argument('--influx_host', help='Host of your influx database if different from the system you are running on', default='localhost')
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
@@ -405,6 +423,10 @@ Example:
 
     staConnect = StaConnect2(lfjson_host, lfjson_port,
                              debug_=True,
+                             _influx_db = args.influx_db,
+                             _influx_passwd = args.influx_passwd,
+                             _influx_user = args.influx_user,
+                             _influx_host = args.influx_host,
                              _exit_on_fail=True,
                              _exit_on_error=False)
 
@@ -435,22 +457,11 @@ Example:
     staConnect.station_names = [ "%s0000"%args.prefix ]
     staConnect.bringup_time_sec = args.bringup_time
 
-    if args.influx_db is not None:
-        longevity=staConnect.runtime_secs+30
-        monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
-        grapher = RecordInflux(_influx_db=args.influx_db,
-                               _influx_user=args.influx_user,
-                               _influx_passwd=args.influx_passwd,
-                               _longevity=longevity,
-                               _devices=staConnect.station_names,
-                               _monitor_interval=monitor_interval,
-                               _target_kpi=['bps rx'])
-        grapher.getdata()
-
    # staConnect.cleanup()
     staConnect.setup()
     staConnect.start()
     print("napping %f sec" % staConnect.runtime_secs)
+
     time.sleep(staConnect.runtime_secs)
     staConnect.stop()
     run_results = staConnect.get_result_list()
