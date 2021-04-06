@@ -32,8 +32,8 @@ class CSVParcer():
         dataframe = dataframe.replace('Mbps','',regex=True) 
         dataframe = dataframe.rename(columns={'Atten':'Attenuation [dB]','Rotation':'Position [Deg]','Rx-Bps':'Traffic Pair 1 Throughtput [Mbps]'})
 
-        print('{}'.format(self.csv_infile))
-        print("dataframe {}".format(dataframe))
+        #print('{}'.format(self.csv_infile))
+        #print("dataframe {}".format(dataframe))
         if self.csv_outfile == None:
             csv_summary = self.csv_infile.replace('candela','comcast')
         else:
