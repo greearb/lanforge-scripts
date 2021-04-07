@@ -265,9 +265,9 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--monitor_interval',
                      help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      default='10s')
-    parser.add_argument('--influx_user', help='Username for your Influx database', required=True)
-    parser.add_argument('--influx_passwd', help='Password for your Influx database', required=True)
-    parser.add_argument('--influx_db', help='Name of your Influx database', required=True)
+    parser.add_argument('--influx_user', help='Username for your Influx database')
+    parser.add_argument('--influx_passwd', help='Password for your Influx database')
+    parser.add_argument('--influx_db', help='Name of your Influx database')
 
     args = parser.parse_args()
 
