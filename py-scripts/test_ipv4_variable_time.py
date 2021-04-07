@@ -401,7 +401,7 @@ python3 ./test_ipv4_variable_time.py
     if ip_var_test.passes():
         ip_var_test.exit_success()
 
-    print("IPv4 Test Report Data: {}".format(report_f))
+    print("IPv4 Variable Time Test Report Data: {}".format(report_f))
 
 
 if __name__ == "__main__":
