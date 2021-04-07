@@ -33,7 +33,7 @@ class RecordInflux(LFCliBase):
         self.influx_passwd = _influx_passwd
         self.influx_db = _influx_db
 
-    def posttoinflux(self,station,key,response,client):
+    def posttoinflux(self,station,key,value,client):
         json_body = [
             {
                 "measurement": station + ' ' + key,
@@ -43,7 +43,7 @@ class RecordInflux(LFCliBase):
                 },
                 "time": str(datetime.datetime.utcnow().isoformat()),
                 "fields": {
-                    "value": response['interface'][key]
+                    "value": value
                 }
             }
         ]
@@ -67,11 +67,11 @@ class RecordInflux(LFCliBase):
                 response = json.loads(requests.get(url1).text)
                 if target_kpi is None:
                     for key in response['interface'].keys():
-                        self.posttoinflux(station, key, response, client)
+                        self.posttoinflux(station, key, response['interface'][key], client)
                 else:
                     targets = target_kpi+['ip','ipv6 address','alias','mac']
                     response['interface']={your_key: response['interface'][your_key] for your_key in targets}
                     for key in  response['interface'].keys():
-                        self.posttoinflux(station, key, response, client)
+                        self.posttoinflux(station, key, response['interface'][key], client)
 
             time.sleep(monitor_interval)
