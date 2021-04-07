@@ -149,7 +149,7 @@ def main():
     optional.append(
         {'name': '--test_duration', 'help': '--test_duration sets the duration of the test', 'default': "2m"})
     optional.append({'name': '--layer3_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
-                     'default': ['name', 'tx bytes', 'rx bytes']})
+                     'default': ['name', 'tx bytes', 'rx bytes','tx rate','rx rate']})
     optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
                      'default': ['ap', 'ip', 'parent dev']})
     optional.append(
@@ -157,7 +157,7 @@ def main():
          'default': None})
     optional.append({'name': '--monitor_interval',
                      'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
-                     'default': '2s'})
+                     'default': '10s'})
     parser = Realm.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -371,6 +371,12 @@ python3 ./test_ipv4_variable_time.py
         print(layer3_cols)
         print("Port Manager column names are...")
         print(port_mgr_cols)
+
+    print("Layer 3 Endp column names are...")
+    print(layer3_cols)
+    print("Port Manager column names are...")
+    print(port_mgr_cols)
+
     try:
         monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     except ValueError as error:
