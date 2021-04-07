@@ -430,6 +430,11 @@ class LFCliBase:
         print(message %(num_passing,num_total))
         sys.exit(0)
 
+    def success(self,message="%d out of %d tests passed successfully."):
+        num_total=len(self.get_result_list())
+        num_passing=len(self.get_passed_result_list())
+        print(message %(num_passing,num_total))
+
     # use this inside the class to log a pass result and print if wished.
     def _pass(self, message, print_=False):
         self.test_results.append(self.pass_pref + message)
