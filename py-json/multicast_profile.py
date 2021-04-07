@@ -26,6 +26,12 @@ class MULTICASTProfile(LFCliBase):
         self.name_prefix = name_prefix_
         self.number_template = number_template_
 
+    def clean_mc_lists(self):
+        # Clean out our local lists, this by itself does NOT remove anything from LANforge manager.
+        # but, if you are trying to modify existing connections, then clearing these arrays and
+        # re-calling 'create' will do the trick.
+        created_mc = {}
+
     def get_mc_names(self):
         return self.created_mc.keys()
 
