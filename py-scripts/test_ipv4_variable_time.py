@@ -283,7 +283,7 @@ python3 ./test_ipv4_variable_time.py
 
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
-                                                                                        '-') + '-test_ipv4_variable_time'  # create path name
+                                                                                        '-') + '_test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
@@ -309,7 +309,7 @@ python3 ./test_ipv4_variable_time.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
-    print("Saving final report data in ... " + report_f)
+    print("IPv4 Test Report Data: {}".format(report_f))
 
     # Retrieve last data file
     compared_rept = None
@@ -400,6 +400,8 @@ python3 ./test_ipv4_variable_time.py
     ip_var_test.cleanup()
     if ip_var_test.passes():
         ip_var_test.exit_success()
+
+    print("IPv4 Test Report Data: {}".format(report_f))
 
 
 if __name__ == "__main__":
