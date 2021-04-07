@@ -20,7 +20,7 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-    
+
 import argparse
 from LANforge import LFUtils
 from realm import Realm
@@ -139,25 +139,6 @@ class IPV4VariableTime(Realm):
 
 
 def main():
-    optional = []
-    optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
-    optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
-    optional.append({'name': '--output_format', 'help': 'choose either csv or xlsx'})
-    optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
-    optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
-    optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
-    optional.append(
-        {'name': '--test_duration', 'help': '--test_duration sets the duration of the test', 'default': "2m"})
-    optional.append({'name': '--layer3_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
-                     'default': ['name', 'tx bytes', 'rx bytes','tx rate','rx rate']})
-    optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
-                     'default': ['ap', 'ip', 'parent dev']})
-    optional.append(
-        {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
-         'default': None})
-    optional.append({'name': '--monitor_interval',
-                     'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
-                     'default': '10s'})
     parser = Realm.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -266,8 +247,27 @@ python3 ./test_ipv4_variable_time.py
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
-            ''',
-        more_optional=optional)
+            ''')
+
+    parser.add_argument('--mode', help='Used to force mode of stations')
+    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument('--output_format', help='choose either csv or xlsx')
+    parser.add_argument('--report_file', help='where you want to store results', default=None)
+    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+    parser.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
+                     default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
+    parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
+                     default=['ap', 'ip', 'parent dev'])
+    parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
+                        default=None)
+    parser.add_argument('--monitor_interval',
+                     help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                     default='10s')
+    parser.add_argument('--influx_user', help='Username for your Influx database', required=True)
+    parser.add_argument('--influx_passwd', help='Password for your Influx database', required=True)
+    parser.add_argument('--influx_db', help='Name of your Influx database', required=True)
 
     args = parser.parse_args()
 
@@ -283,7 +283,7 @@ python3 ./test_ipv4_variable_time.py
 
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
-                                                                                        '-') + '_test_ipv4_variable_time'  # create path name
+                                                                                                 '-') + '_test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
@@ -291,14 +291,15 @@ python3 ./test_ipv4_variable_time.py
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
             os.mkdir(path)
-        systeminfopath=str(path)+'/systeminfo.txt'
+        systeminfopath = str(path) + '/systeminfo.txt'
 
-        if args.output_format in ['csv', 'json', 'html', 'hdf','stata', 'pickle', 'pdf', 'png', 'parquet',
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
                                   'xlsx']:
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format
         else:
-            print('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
+            print(
+                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
 
@@ -314,14 +315,14 @@ python3 ./test_ipv4_variable_time.py
     # Retrieve last data file
     compared_rept = None
     if args.compared_report:
-        compared_report_format=args.compared_report.split('.')[-1]
-        #if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+        compared_report_format = args.compared_report.split('.')[-1]
+        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
         if compared_report_format != 'csv':
             print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
             exit(1)
         else:
-            compared_rept=args.compared_report
-            
+            compared_rept = args.compared_report
+
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
     ip_var_test = IPV4VariableTime(host=args.mgr,
@@ -347,7 +348,6 @@ python3 ./test_ipv4_variable_time.py
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
-    
 
     try:
         layer3connections = ','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
@@ -381,12 +381,13 @@ python3 ./test_ipv4_variable_time.py
         monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     except ValueError as error:
         print(str(error))
-        print(ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+        print(ValueError(
+            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
         exit(1)
     ip_var_test.start(False, False)
     ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
                                     sta_list=station_list,
-                                    #port_mgr_cols=port_mgr_cols,
+                                    # port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
                                     systeminfopath=systeminfopath,
                                     duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
@@ -403,6 +404,18 @@ python3 ./test_ipv4_variable_time.py
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
     time.sleep(30)
+    if args.influx_db is not None:
+        from influx import RecordInflux
+        grapher = RecordInflux(_influx_host=args.mgr,
+                               _port=args.mgr_port,
+                               _influx_db=args.influx_db,
+                               _influx_user=args.influx_user,
+                               _influx_passwd=args.influx_passwd)
+        devices=[station.split('.')[-1] for station in station_list]
+        grapher.getdata(longevity=5,
+                        devices=devices,
+                        monitor_interval=2,
+                        target_kpi=['bps rx'])
     ip_var_test.cleanup()
     if ip_var_test.passes():
         ip_var_test.success()

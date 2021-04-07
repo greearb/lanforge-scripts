@@ -56,12 +56,11 @@ def main():
                            _port=args.mgr_port,
                            _influx_db=args.influx_db,
                            _influx_user=args.influx_user,
-                           _influx_passwd=args.influx_passwd,
-                           _longevity=longevity,
-                           _devices=args.device,
-                           _monitor_interval=monitor_interval,
-                           _target_kpi=args.target_kpi)
-    grapher.getdata()
+                           _influx_passwd=args.influx_passwd)
+    grapher.getdata(longevity=longevity,
+                    devices=args.device,
+                    monitor_interval=monitor_interval,
+                    target_kpi=args.target_kpi)
 
 
 if __name__ == "__main__":
