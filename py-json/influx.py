@@ -32,8 +32,13 @@ class RecordInflux(LFCliBase):
         self.influx_user = _influx_user
         self.influx_passwd = _influx_passwd
         self.influx_db = _influx_db
+        self.client = InfluxDBClient(self.host,
+                                     8086,
+                                     self.influx_user,
+                                     self.influx_passwd,
+                                     self.influx_db)
 
-    def posttoinflux(self,station,key,value,client):
+    def posttoinflux(self, station, key, value):
         json_body = [
             {
                 "measurement": station + ' ' + key,
@@ -47,19 +52,14 @@ class RecordInflux(LFCliBase):
                 }
             }
         ]
-        client.write_points(json_body)
+        self.client.write_points(json_body)
 
     def getdata(self,
                 devices=None,
                 target_kpi=None,
                 longevity=None,
                 monitor_interval=None):
-        url = 'http://'+self.host+':8080/port/1/1/'
-        client = InfluxDBClient(self.host,
-                                8086,
-                                self.influx_user,
-                                self.influx_passwd,
-                                self.influx_db)
+        url = 'http://' + self.host + ':8080/port/1/1/'
         end = datetime.datetime.now() + datetime.timedelta(0, longevity)
         while datetime.datetime.now() < end:
             for station in devices:
@@ -67,11 +67,11 @@ class RecordInflux(LFCliBase):
                 response = json.loads(requests.get(url1).text)
                 if target_kpi is None:
                     for key in response['interface'].keys():
-                        self.posttoinflux(station, key, response['interface'][key], client)
+                        self.posttoinflux(station, key, response['interface'][key])
                 else:
-                    targets = target_kpi+['ip','ipv6 address','alias','mac']
-                    response['interface']={your_key: response['interface'][your_key] for your_key in targets}
-                    for key in  response['interface'].keys():
-                        self.posttoinflux(station, key, response['interface'][key], client)
+                    targets = target_kpi + ['ip', 'ipv6 address', 'alias', 'mac']
+                    response['interface'] = {your_key: response['interface'][your_key] for your_key in targets}
+                    for key in response['interface'].keys():
+                        self.posttoinflux(station, key, response['interface'][key])
 
             time.sleep(monitor_interval)
