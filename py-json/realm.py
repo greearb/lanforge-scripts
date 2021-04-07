@@ -19,6 +19,7 @@ from wifi_monitor_profile import WifiMonitor
 from gen_cxprofile import GenCXProfile
 from qvlan_profile import QVLANProfile
 from port_utils import PortUtils
+from lfdata import LFDataCollection
 # ---- ---- ---- ---- Other Imports ---- ---- ---- ----
 import re
 import time
@@ -920,6 +921,9 @@ class Realm(LFCliBase):
         #     import test_group_profile2
         #     test_group_profile = test_group_profile2.TestGroupProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return test_group_profile
+
+    def new_lf_data_collection(self):
+        return LFDataCollection(local_realm=self)
 
 class PacketFilter():
 
