@@ -301,8 +301,9 @@ python3 ./test_ipv4_variable_time.py
             print('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
-            
+
     else:
+        systeminfopath = str(args.report_file).split('/')[-1]
         report_f = args.report_file
         if args.output_format is None:
             output = str(args.report_file).split('.')[-1]
