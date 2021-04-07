@@ -14,34 +14,53 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 class CSVParcer():
-    def __init__(self,csv_infile=None,csv_outfile=None):
+    def __init__(self,csv_infile=None,csv_outfile=None,ddb=False):
 
-        # Grab the appropriate columns from Candela csv and place in the Comcast csv
-        include_summary = ['Atten','Rotation','Rx-Bps']
-        self.csv_infile = csv_infile
-        self.csv_outfile = csv_outfile
+        idx = 0
+        i_atten = -1
+        i_rotation = -1
+        i_rxbps = -1
+        fpo = open(csv_outfile, "w")
+        with open(csv_infile) as fp:
+            line = fp.readline()
+            if not line:
+                exit(1)
+            x = line.split(",")
+            cni = 0
+            for cn in x:
+                if (cn == "Atten"):
+                    i_atten = cni
+                if (cn == "Rotation"):
+                    i_rotation = cni
+                if (cn == "Rx-Bps"):
+                    i_rxbps = cni
+                cni += 1
 
-        try: 
-            #dataframe = pd.read_csv(self.csv_infile,header = 0, usecols = lambda column : any(substr in column for substr in include_summary ))
-            dataframe = pd.read_csv(self.csv_infile,header = 0, usecols = lambda column : column in include_summary )
-        except:
-            print("Input file not accessible, please check for presence of input file")
-            exit(1)
+            # Write out out header
+            fpo.write("Step Index,Attenuation [dB],Position [Deg],Traffic Pair 1 Throughput [Mbps]\n")
 
-        dataframe.index.name = 'Step Index' 
-        dataframe = dataframe.replace('Mbps','',regex=True) 
-        dataframe = dataframe.rename(columns={'Atten':'Attenuation [dB]','Rotation':'Position [Deg]','Rx-Bps':'Traffic Pair 1 Throughput [Mbps]'})
+            line = fp.readline()
 
-        #print('{}'.format(self.csv_infile))
-        #print("dataframe {}".format(dataframe))
-        csv_summary = self.csv_outfile
-        csv_summary = os.path.splitext(csv_summary)[0] + '.csv'
+            step_i = 0
+            while line:
+                x = line.split(",")
+                mbps_data = x[i_rxbps]
+                mbps_array = mbps_data.split(" ")
+                mbps_val = float(mbps_array[0])
+                if (mbps_array[1] == "Gbps"):
+                    mbps_val *= 1000
+                if (mbps_array[1] == "Kbps"):
+                    mbps_val /= 1000
+                if (mbps_array[1] == "bps"):
+                    mbps_val /= 1000000
 
-        dataframe.to_csv(csv_summary, index = True, header=True)
-        xlsx_summary = os.path.splitext(csv_summary)[0] + '.xlsx'
-        dataframe.to_excel(xlsx_summary, index = True, header=True)
-        print("INFILE: {}  OUTFILE(xlsx): {}  OUTFILE(csv): {}".format(csv_infile,xlsx_summary,csv_summary))
-
+                attenv = int(x[i_atten])
+                if ddb:
+                    attenv /= 10
+                    
+                fpo.write("%s,%s,%s,%s\n" % (step_i, attenv, x[i_rotation], mbps_val))
+                line = fp.readline()
+                step_i += 1
 
 def main():
 
@@ -61,7 +80,9 @@ csv_convert.py:
 
     # for testing parser.add_argument('-i','--infile', help="input file of csv data", default='text-csv-0-candela.csv')
     parser.add_argument('-i','--infile', help="input file of csv data", required=True)
-    parser.add_argument('-o','--outfile', help="output file of csv, xlsx data , default: outfile.xlsx outfile.csv", default='outfile')
+    parser.add_argument('-d','--ddb', help="Specify attenuation units are in ddb in source file",
+                        action='store_true', default=False)
+    parser.add_argument('-o','--outfile', help="output file in .csv format", default='outfile.csv')
 
 
     args = parser.parse_args()
@@ -72,7 +93,7 @@ csv_convert.py:
     if args.outfile:
         csv_outfile_name = args.outfile
 
-    CSVParcer(csv_infile_name,csv_outfile_name)
+    CSVParcer(csv_infile_name, csv_outfile_name, args.ddb)
 
 if __name__ == "__main__":
     main()
