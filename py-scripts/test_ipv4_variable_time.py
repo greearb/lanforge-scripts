@@ -399,7 +399,7 @@ python3 ./test_ipv4_variable_time.py
     time.sleep(30)
     ip_var_test.cleanup()
     if ip_var_test.passes():
-        ip_var_test.exit_success()
+        ip_var_test.success()
 
     print("IPv4 Variable Time Test Report Data: {}".format(report_f))
 
