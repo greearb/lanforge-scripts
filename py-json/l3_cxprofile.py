@@ -58,6 +58,9 @@ class L3CXProfile(LFCliBase):
         self.name_prefix = name_prefix_
         self.number_template = number_template_
 
+    def get_cx_count(self):
+        return len(self.created_cx.keys())
+
     def get_cx_names(self):
         return self.created_cx.keys()
 

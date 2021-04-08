@@ -3,6 +3,12 @@
 # Supports creating user-specified amount stations on multiple radios
 # Supports configuring upload and download requested rates and PDU sizes.
 # Supports generating KPI data for storing in influxdb (used by Graphana)
+# Supports generating connections with different ToS values.
+# Supports generating tcp and/or UDP traffic types.
+
+# Supports iterating over different PDU sizes
+# Supports iterating over different requested tx rates (configurable as total or per-connection value)
+# Supports iterating over attenuation values.
 #
 # Example config
 #
@@ -62,6 +68,7 @@ class L3VariableTime(Realm):
                  side_a_max_pdu=[0],
                  side_b_min_pdu=["MTU"],
                  side_b_max_pdu=[0],
+                 rates_are_totals=False,
                  attenuators=[],
                  atten_vals=[],
                  number_template="00", 
@@ -119,6 +126,10 @@ class L3VariableTime(Realm):
         self.side_a_max_pdu = side_a_max_pdu
         self.side_b_min_pdu = side_b_min_pdu
         self.side_b_max_pdu = side_b_max_pdu
+
+        self.rates_are_totals = rates_are_totals
+        self.cx_count = 0
+        self.station_count = 0
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
@@ -495,22 +506,28 @@ class L3VariableTime(Realm):
     # only update connections/endpoints.
     def build(self, rebuild=False):
         index = 0
+        self.station_count = 0
+
+        if rebuild:
+            # if we are just re-applying new cx values, then no need to rebuild
+            # stations, so allow skipping it.
+            # Do clean cx lists so that when we re-apply them we get same endp name
+            # as we had previously
+            self.cx_profile.clean_cx_lists()
+            self.multicast_profile.clean_mc_lists()
+
         for station_profile in self.station_profiles:
-            if rebuild:
-                # if we are just re-applying new cx values, then no need to rebuild
-                # stations, so allow skipping it.
-                # Do clean cx lists so that when we re-apply them we get same endp name
-                # as we had previously
-                self.cx_profile.clean_cx_lists()
-                self.multicast_profile.clean_mc_lists()
-            else:
+            if not rebuild:
                 station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
                 station_profile.set_number_template(station_profile.number_template)
-                print("Creating stations")
+                print("Creating stations on radio %s"%(self.radio_name_list[index]))
 
                 station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
                 index += 1
 
+            self.station_count += len(station_profile.station_names)
+
+            # Build/update connection types
             for etype in self.endp_types:
                 if etype == "mc_udp" or etype == "mc_udp6":
                     print("Creating Multicast connections for endpoint type: %s"%(etype))
@@ -520,7 +537,10 @@ class L3VariableTime(Realm):
                     for _tos in self.tos:
                         print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
                         self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
-        self._pass("PASS: Stations build finished")        
+
+        self.cx_count = self.cx_profile.get_cx_count()
+
+        self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
 
     # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
@@ -553,6 +573,11 @@ class L3VariableTime(Realm):
             for ul_pdu in self.side_a_min_pdu:
                 dl_pdu = self.side_b_min_pdu[pdu_idx]
                 pdu_idx += 1
+
+                # Adjust rate to take into account the number of connections we have.
+                if self.cx_count > 1 and self.rates_are_totals:
+                    ul = int(ul / self.cx_count)
+                    dl = int(dl / self.cx_count)
 
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
@@ -865,16 +890,22 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" '\
-                        , required=True)
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ',
+                        required=True)
 
-    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 256000', default="256000")
-    parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default="MTU")
-    parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default="256000")
-    parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default="MTU")
+    parser.add_argument('-amr','--side_a_min_bps',
+                        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k', default="256000")
+    parser.add_argument('-amp','--side_a_min_pdu',
+                        help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU', default="MTU")
+    parser.add_argument('-bmr','--side_b_min_bps',
+                        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000', default="256000")
+    parser.add_argument('-bmp','--side_b_min_pdu',
+                        help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU', default="MTU")
+    parser.add_argument("--rates_are_totals", default=False,
+                        help="Treat configured rates as totals instead of using the un-modified rate for every connection.", action='store_true')
 
-    parser.add_argument('--attenuators',   help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
-    parser.add_argument('--atten_vals',     help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
+    parser.add_argument('--attenuators', help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
+    parser.add_argument('--atten_vals', help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
 
     parser.add_argument('--influx_host', help='Hostname for the Influx database')
     parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
@@ -1029,6 +1060,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     side_b_min_rate=dl_rates,
                                     side_a_min_pdu=ul_pdus,
                                     side_b_min_pdu=dl_pdus,
+                                    rates_are_totals=args.rates_are_totals,
                                     attenuators=attenuators,
                                     atten_vals=atten_vals,
                                     debug=debug,
