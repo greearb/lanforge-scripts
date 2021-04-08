@@ -50,29 +50,14 @@ class RecordInflux(LFCliBase):
         data["fields"] = dict()
         data["fields"]["value"] = value
         data1 = [data]
-        print(data1)
-
-        #json_body = [
-        #    {
-        #        "measurement": key,
-        #        "tags": {
-        #            "host": self.influx_host,
-        #            "region": "us-west"
-        #        },
-        #        "time": str(datetime.datetime.utcnow().isoformat()),
-        #        "fields": {
-        #            "value": value
-        #        }
-        #    }
-        #]
-        #print(json_body)
         self.client.write_points(data1)
 
     # Don't use this unless you are sure you want to.
     # More likely you would want to generate KPI in the
     # individual test cases and poke those relatively small bits of
     # info into influxdb.
-    # This will not return until the 'longevity' timer has expired.
+    # This will not end until the 'longevity' timer has expired.
+    # This function pushes data directly into the Influx database and defaults to all columns.
     def monitor_port_data(self,
                           lanforge_host="localhost",
                           devices=None,

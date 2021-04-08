@@ -629,6 +629,7 @@ class L3VariableTime(Realm):
         for key, value in valuemap.items():
             tags = dict()
             tags["region"] = 'us-west'
+            tags["script"] = 'test_l3_longevity'
             self.influxdb.post_to_influx(key, value, tags)
 
         #self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
