@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
+# This program is used to read in a LANforge Dataplane CSV file and output
+# a csv file that works with a customer's RvRvO visualization tool.
+#
+# Example use case:
+#
+# Read in ~/text-csv-0-candela.csv, output is stored at outfile.csv
+# ./py-scripts/csv_convert.py -i ~/text-csv-0-candela.csv
+
 import sys
 import os
 
 import argparse
-import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -25,6 +32,8 @@ class CSVParcer():
             line = fp.readline()
             if not line:
                 exit(1)
+            # Read in initial line, this is the CSV headers.  Parse it to find the column indices for
+            # the columns we care about.
             x = line.split(",")
             cni = 0
             for cn in x:
@@ -36,9 +45,11 @@ class CSVParcer():
                     i_rxbps = cni
                 cni += 1
 
-            # Write out out header
+            # Write out out header for the new file.
             fpo.write("Step Index,Attenuation [dB],Position [Deg],Traffic Pair 1 Throughput [Mbps]\n")
 
+            # Read rest of the input lines, processing one at a time.  Covert the columns as
+            # needed, and write out new data to the output file.
             line = fp.readline()
 
             step_i = 0
