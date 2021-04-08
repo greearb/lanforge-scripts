@@ -620,21 +620,6 @@ class L3VariableTime(Realm):
         if self.influxdb == None:
             return
 
-        class MyKvPair:
-            key = ""
-            val = ""
-
-        #tags = [MyKvPair] * 5
-        #tags[0].key = "requested-ul-bps"
-        #tags[0].val = ul
-        #tags[1].key = "requested-dl-bps"
-        #tags[1].val = dl
-        #tags[2].key = "ul-pdu-size"
-        #tags[2].val = ul_pdu
-        #tags[3].key = "dl-pdu-size"
-        #tags[3].val = dl_pdu
-        #tags[4].key = "station-count"
-        #tags[4].val = sta_count
         valuemap=dict()
         valuemap['requested-ul-bps'] = ul
         valuemap['requested-ul-bps'] = dl
@@ -642,7 +627,9 @@ class L3VariableTime(Realm):
         valuemap['dl-pdu-size'] = dl_pdu
         valuemap['station-count'] = sta_count
         for key, value in valuemap.items():
-            self.influxdb.post_to_influx(key, value)
+            tags = dict()
+            tags["region"] = 'us-west'
+            self.influxdb.post_to_influx(key, value, tags)
 
         #self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
         #self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
@@ -877,7 +864,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default="MTU")
 
     parser.add_argument('--influx_host', help='Hostname for the Influx database')
-    parser.add_argument('--influx_port', help='IP Port for the Influx database')
+    parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
     parser.add_argument('--influx_user', help='Username for the Influx database')
     parser.add_argument('--influx_passwd', help='Password for the Influx database')
     parser.add_argument('--influx_db', help='Name of the Influx database')
@@ -922,7 +909,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                 _influx_port=args.influx_port,
                                 _influx_db=args.influx_db,
                                 _influx_user=args.influx_user,
-                                _influx_passwd=args.influx_passwd)        
+                                _influx_passwd=args.influx_passwd)
 
 
     MAX_NUMBER_OF_STATIONS = 1000

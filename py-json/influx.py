@@ -41,32 +41,31 @@ class RecordInflux(LFCliBase):
                                      self.influx_passwd,
                                      self.influx_db)
 
-    def post_to_influx(self, key, value):
+    def post_to_influx(self, key, value, tags):
         data = dict()
         data["measurement"] = key
-        data["tags"] = dict()
-        data["tags"]["host"] = self.influx_host
-        data["tags"]["region"] = 'us-west'
+        tags["host"] = self.influx_host
+        data["tags"] = tags
         data["time"] = str(datetime.datetime.utcnow().isoformat())
         data["fields"] = dict()
         data["fields"]["value"] = value
         data1 = [data]
         print(data1)
 
-        json_body = [
-            {
-                "measurement": key,
-                "tags": {
-                    "host": self.influx_host,
-                    "region": "us-west"
-                },
-                "time": str(datetime.datetime.utcnow().isoformat()),
-                "fields": {
-                    "value": value
-                }
-            }
-        ]
-        print(json_body)
+        #json_body = [
+        #    {
+        #        "measurement": key,
+        #        "tags": {
+        #            "host": self.influx_host,
+        #            "region": "us-west"
+        #        },
+        #        "time": str(datetime.datetime.utcnow().isoformat()),
+        #        "fields": {
+        #            "value": value
+        #        }
+        #    }
+        #]
+        #print(json_body)
         self.client.write_points(data1)
 
     # Don't use this unless you are sure you want to.
@@ -88,6 +87,8 @@ class RecordInflux(LFCliBase):
 
                 # Poke everything into influx db
                 for key in response['interface'].keys():
-                    self.posttoinflux("%s-%s" % (station, key), response['interface'][key])
+                    tags = dict()
+                    tags["region"] = 'us-west'
+                    self.posttoinflux("%s-%s" % (station, key), response['interface'][key], tags)
 
             time.sleep(monitor_interval)
