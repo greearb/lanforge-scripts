@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+# Supports creating user-specified amount stations on multiple radios
+# Supports configuring upload and download requested rates and PDU sizes.
+# Supports generating KPI data for storing in influxdb (used by Graphana)
+#
+# Example config
+#
+# 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
+# Configured to submit KPI info to influxdb.
+# ./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
+#    --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+#    --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+#    --test_duration 30s --influx_host localhost --influx_port 8086 --influx_user lanforge \
+#    --influx_passwd lanforge --influx_db ben
+
 import sys
 import os
 
@@ -22,6 +36,7 @@ import re
 import csv
 import random
 
+# This class handles running the test and generating reports.
 class L3VariableTime(Realm):
     def __init__(self, 
                  endp_types, 
@@ -149,6 +164,8 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+    # Query all endpoints to generate rx and other stats, returned
+    # as an array of objects.
     def __get_rx_values(self):
         endp_list = self.json_get("endp?fields=name,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
         endp_rx_drop_map = {}
@@ -182,9 +199,11 @@ class L3VariableTime(Realm):
 
         return endp_rx_map, endp_rx_drop_map, total_dl, total_ul
 
+    # Common code to generate timestamp for CSV files.
     def time_stamp(self):
         return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
 
+    # Generate rx-dropped csv data
     def __record_rx_dropped_percent(self,rx_drop_percent):
 
         csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent',
@@ -194,6 +213,7 @@ class L3VariableTime(Realm):
                                     self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
                                     ]
 
+        # Honestly, I don't understand this code. --Ben
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
@@ -214,6 +234,8 @@ class L3VariableTime(Realm):
 
         self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
 
+    # Compare last stats report with current stats report.  Generate CSV data lines
+    # for the various csv output files this test supports.
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
@@ -312,6 +334,9 @@ class L3VariableTime(Realm):
             print("new-list:",new_list)
             return False
 
+    # Verify communication to cisco controller is as expected.
+    # Can add support for different controllers by editing this
+    # or creating similar methods for different controllers.
     def verify_controller(self):
         if self.args == None:
             return
@@ -411,7 +436,9 @@ class L3VariableTime(Realm):
         print("configure ap {} channel {} chan_width {}".format(self.args.cisco_ap,self.args.cisco_channel,self.args.cisco_chan_width))
         # Verify channel and channel width. 
 
-    
+
+    # This script supports resetting ports, allowing one to test AP/controller under data load
+    # while bouncing wifi stations.  Check here to see if we should reset ports.
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
@@ -432,6 +459,7 @@ class L3VariableTime(Realm):
                         print("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
                         self.reset_port(station_profile.station_names[port_to_reset])
 
+    # Cleanup any older config that a previous run of this test may have created.
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
@@ -455,6 +483,8 @@ class L3VariableTime(Realm):
             count += 1
             time.sleep(5)
 
+    # Create stations and connections/endpoints.  If rebuild is true, then
+    # only update connections/endpoints.
     def build(self, rebuild=False):
         index = 0
         for station_profile in self.station_profiles:
@@ -483,7 +513,8 @@ class L3VariableTime(Realm):
                         print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
                         self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
         self._pass("PASS: Stations build finished")        
-        
+
+    # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
         self.admin_up(self.side_b) 
@@ -503,16 +534,19 @@ class L3VariableTime(Realm):
             # TODO:  Allow fail and abort at this point.
             print("print failed to get IP's")
 
+        # For each rate
         rate_idx = 0
         for ul in self.side_a_min_rate:
             dl = self.side_b_min_rate[rate_idx]
             rate_idx += 1
 
+            # For each pdu size
             pdu_idx = 0
             for ul_pdu in self.side_a_min_pdu:
                 dl_pdu = self.side_b_min_pdu[pdu_idx]
                 pdu_idx += 1
 
+                # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
                 self.cx_profile.side_a_max_bps = ul
                 self.cx_profile.side_b_min_bps = dl
@@ -523,6 +557,7 @@ class L3VariableTime(Realm):
                 self.cx_profile.side_b_min_pdu = dl_pdu
                 self.cx_profile.side_b_max_pdu = dl_pdu
 
+                # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
                 self.verify_controller()
@@ -541,6 +576,7 @@ class L3VariableTime(Realm):
 
                 print("Monitoring throughput for duration: %s"%(self.test_duration))
 
+                # Monitor test for the interval duration.
                 passes = 0
                 expected_passes = 0
                 total_dl_bps = 0
@@ -567,8 +603,10 @@ class L3VariableTime(Realm):
 
                     self.__record_rx_dropped_percent(rx_drop_percent)
 
+                # At end of test step, record KPI information.
                 self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps)
 
+                # Stop connections.
                 self.cx_profile.stop_cx();
                 self.multicast_profile.stop_mc();
 
@@ -577,6 +615,7 @@ class L3VariableTime(Realm):
                 if passes == expected_passes:
                         self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
+    # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps):
         if self.influxdb == None:
             return
@@ -585,6 +624,7 @@ class L3VariableTime(Realm):
             key = ""
             val = ""
 
+        # Meta-data for the KPI values.
         tags = [MyKvPair] * 5
         tags[0].key = "requested-ul-bps"
         tags[0].val = ul
@@ -597,10 +637,12 @@ class L3VariableTime(Realm):
         tags[4].key = "station-count"
         tags[4].val = sta_count
 
+        # Provide data points to influxdb.
         self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
         self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
         self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
 
+    # Stop traffic and admin down stations.
     def stop(self):
         self.cx_profile.stop_cx()
         self.multicast_profile.stop_mc()
@@ -608,12 +650,14 @@ class L3VariableTime(Realm):
             for station_name in station_list:
                 self.admin_down(station_name)
 
+    # Remove traffic connections and stations.
     def cleanup(self):
         self.cx_profile.cleanup()
         self.multicast_profile.cleanup()
         for station_profile in self.station_profiles:
             station_profile.cleanup()
-                                        
+
+    # CSV column headers.
     def csv_generate_column_headers(self):
         csv_rx_headers = ['Time epoch','Time','Monitor',
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
@@ -626,6 +670,7 @@ class L3VariableTime(Realm):
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
+    # Write initial headers to csv file.
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
@@ -641,6 +686,9 @@ class L3VariableTime(Realm):
             writer.writerow(row)
             csv_file.flush()
 
+    # End of the main class.
+
+# Check some input values.
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split()
     for endp_type in etypes:
@@ -650,6 +698,8 @@ def valid_endp_types(_endp_type):
             exit(1)
     return _endp_type
 
+
+# Starting point for running this from cmd line.
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
