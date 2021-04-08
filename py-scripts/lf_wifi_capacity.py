@@ -14,7 +14,7 @@ if 'py-json' not in sys.path:
 
 from cv_test_manager import cv_test as cvtest
 from chamberview import chamberview as cv
-from cvtest_reports import lanforge_reports as lf_rpt
+from cv_test_reports import lanforge_reports as lf_rpt
 
 def main():
     config_name = "WFC_scenario1"  # Test Config Name (new)
