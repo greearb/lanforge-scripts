@@ -41,32 +41,33 @@ class RecordInflux(LFCliBase):
                                      self.influx_passwd,
                                      self.influx_db)
 
-    def post_to_influx(self, key, value, tags):
-        data = {}
-        data['measurement'] = key
-        data['tags'] = {}
-        for t in tags:
-             data['tags'][t.key] = t.val
-        data['time'] = str(datetime.datetime.utcnow().isoformat())
-        data['fields'] = {}
-        data['fields']['value'] = value
+    def post_to_influx(self, key, value):
+        data = dict()
+        data["measurement"] = key
+        data["tags"] = dict()
+        data["tags"]["host"] = self.influx_host
+        data["tags"]["region"] = 'us-west'
+        data["time"] = str(datetime.datetime.utcnow().isoformat())
+        data["fields"] = dict()
+        data["fields"]["value"] = value
+        data1 = [data]
+        print(data1)
 
-#        json_body = json.dumps(data)
-
-#        json_body = [
-#            {
-#                "measurement": key,
-#                "tags": {
-#                    "host": self.host,
-#                    "region": "us-west"
-#                },
-#                "time": str(datetime.datetime.utcnow().isoformat()),
-#                "fields": {
-#                    "value": value
-#                }
-#            }
-#        ]
-        self.client.write_points(data)
+        json_body = [
+            {
+                "measurement": key,
+                "tags": {
+                    "host": self.influx_host,
+                    "region": "us-west"
+                },
+                "time": str(datetime.datetime.utcnow().isoformat()),
+                "fields": {
+                    "value": value
+                }
+            }
+        ]
+        print(json_body)
+        self.client.write_points(data1)
 
     # Don't use this unless you are sure you want to.
     # More likely you would want to generate KPI in the
@@ -87,6 +88,6 @@ class RecordInflux(LFCliBase):
 
                 # Poke everything into influx db
                 for key in response['interface'].keys():
-                    self.posttoinflux("%s-%s"%(station, key), response['interface'][key])
+                    self.posttoinflux("%s-%s" % (station, key), response['interface'][key])
 
             time.sleep(monitor_interval)

@@ -624,23 +624,29 @@ class L3VariableTime(Realm):
             key = ""
             val = ""
 
-        # Meta-data for the KPI values.
-        tags = [MyKvPair] * 5
-        tags[0].key = "requested-ul-bps"
-        tags[0].val = ul
-        tags[1].key = "requested-dl-bps"
-        tags[1].val = dl
-        tags[2].key = "ul-pdu-size"
-        tags[2].val = ul_pdu
-        tags[3].key = "dl-pdu-size"
-        tags[3].val = dl_pdu
-        tags[4].key = "station-count"
-        tags[4].val = sta_count
+        #tags = [MyKvPair] * 5
+        #tags[0].key = "requested-ul-bps"
+        #tags[0].val = ul
+        #tags[1].key = "requested-dl-bps"
+        #tags[1].val = dl
+        #tags[2].key = "ul-pdu-size"
+        #tags[2].val = ul_pdu
+        #tags[3].key = "dl-pdu-size"
+        #tags[3].val = dl_pdu
+        #tags[4].key = "station-count"
+        #tags[4].val = sta_count
+        valuemap=dict()
+        valuemap['requested-ul-bps'] = ul
+        valuemap['requested-ul-bps'] = dl
+        valuemap['ul-pdu-size'] = ul_pdu
+        valuemap['dl-pdu-size'] = dl_pdu
+        valuemap['station-count'] = sta_count
+        for key, value in valuemap.items():
+            self.influxdb.post_to_influx(key, value)
 
-        # Provide data points to influxdb.
-        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
-        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
-        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
+        #self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
+        #self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
+        #self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
 
     # Stop traffic and admin down stations.
     def stop(self):
