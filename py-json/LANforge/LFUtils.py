@@ -549,8 +549,8 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def name_to_eid(input):
-    rv = [1, 1, ""]
+def name_to_eid(input, non_port=False):
+    rv = [1, 1, "", ""]
     info = []
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
@@ -582,6 +582,15 @@ def name_to_eid(input):
         rv[2] = info[1]+"."+info[2]
         return rv
 
+    if non_port:
+        # Maybe attenuator or similar shelf.card.atten.index
+        rv[0] = int(info[0])
+        rv[1] = int(info[1])
+        rv[2] = int(info[2])
+        if (len(info) >= 4):
+            rv[3] = int(info[3])
+        return rv
+        
     if len(info) == 4: # shelf.resource.port-name.qvlan
         rv[0] = int(info[0])
         rv[1] = int(info[1])

@@ -62,6 +62,8 @@ class L3VariableTime(Realm):
                  side_a_max_pdu=[0],
                  side_b_min_pdu=["MTU"],
                  side_b_max_pdu=[0],
+                 attenuators=[],
+                 atten_vals=[],
                  number_template="00", 
                  test_duration="256s",
                  polling_interval="60s",
@@ -117,6 +119,12 @@ class L3VariableTime(Realm):
         self.side_a_max_pdu = side_a_max_pdu
         self.side_b_min_pdu = side_b_min_pdu
         self.side_b_max_pdu = side_b_max_pdu
+
+        self.attenuators = attenuators
+        self.atten_vals = atten_vals
+        if ((len(self.atten_vals) > 0) and (len(self.attenuators) == 0)):
+            print("ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
+            exit(1)
 
         self.cx_profile.side_a_min_bps = side_a_min_rate[0]
         self.cx_profile.side_a_max_bps = side_a_max_rate[0]
@@ -560,81 +568,82 @@ class L3VariableTime(Realm):
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
-                self.verify_controller()
-                print("Starting multicast traffic (if any configured)")
-                self.multicast_profile.start_mc(debug_=self.debug)
-                self.multicast_profile.refresh_mc(debug_=self.debug)
-                print("Starting layer-3 traffic (if any configured)")
-                self.cx_profile.start_cx()
-                self.cx_profile.refresh_cx()
+                for atten_val in self.atten_vals:
+                    if atten_val != -1:
+                        for atten_idx in self.attenuators:
+                            self.set_atten(atten_idx, atten_val)
 
-                cur_time = datetime.datetime.now()
-                print("Getting initial values.")
-                old_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                    self.verify_controller()
+                    print("Starting multicast traffic (if any configured)")
+                    self.multicast_profile.start_mc(debug_=self.debug)
+                    self.multicast_profile.refresh_mc(debug_=self.debug)
+                    print("Starting layer-3 traffic (if any configured)")
+                    self.cx_profile.start_cx()
+                    self.cx_profile.refresh_cx()
 
-                end_time = self.parse_time(self.test_duration) + cur_time
+                    cur_time = datetime.datetime.now()
+                    print("Getting initial values.")
+                    old_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
-                print("Monitoring throughput for duration: %s"%(self.test_duration))
+                    end_time = self.parse_time(self.test_duration) + cur_time
 
-                # Monitor test for the interval duration.
-                passes = 0
-                expected_passes = 0
-                total_dl_bps = 0
-                total_ul_bps = 0
-                while cur_time < end_time:
-                    #interval_time = cur_time + datetime.timedelta(seconds=5)
-                    interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-                    #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
-                    while cur_time < interval_time:
-                        cur_time = datetime.datetime.now()
-                        self.reset_port_check()
-                        time.sleep(1)
+                    print("Monitoring throughput for duration: %s"%(self.test_duration))
 
-                    self.epoch_time = int(time.time())
-                    new_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                    # Monitor test for the interval duration.
+                    passes = 0
+                    expected_passes = 0
+                    total_dl_bps = 0
+                    total_ul_bps = 0
+                    while cur_time < end_time:
+                        #interval_time = cur_time + datetime.timedelta(seconds=5)
+                        interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
+                        #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        while cur_time < interval_time:
+                            cur_time = datetime.datetime.now()
+                            self.reset_port_check()
+                            time.sleep(1)
 
-                    expected_passes += 1
-                    if self.__compare_vals(old_rx_values, new_rx_values):
-                        passes += 1
-                    else:
-                        fail_msg = "FAIL: TIME: {} EPOCH: {} Not all stations increased traffic".format(cur_time, self.epoch_time) 
-                        self._fail(fail_msg, print_fail)
-                    old_rx_values = new_rx_values
+                        self.epoch_time = int(time.time())
+                        new_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
-                    self.__record_rx_dropped_percent(rx_drop_percent)
+                        expected_passes += 1
+                        if self.__compare_vals(old_rx_values, new_rx_values):
+                            passes += 1
+                        else:
+                            fail_msg = "FAIL: TIME: {} EPOCH: {} Not all stations increased traffic".format(cur_time, self.epoch_time) 
+                            self._fail(fail_msg, print_fail)
+                        old_rx_values = new_rx_values
 
-                # At end of test step, record KPI information.
-                self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps)
+                        self.__record_rx_dropped_percent(rx_drop_percent)
 
-                # Stop connections.
-                self.cx_profile.stop_cx();
-                self.multicast_profile.stop_mc();
+                    # At end of test step, record KPI information.
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps)
 
-                cur_time = datetime.datetime.now()
+                    # Stop connections.
+                    self.cx_profile.stop_cx();
+                    self.multicast_profile.stop_mc();
 
-                if passes == expected_passes:
-                        self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
+                    cur_time = datetime.datetime.now()
+
+                    if passes == expected_passes:
+                            self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
     # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps):
         if self.influxdb == None:
             return
 
-        valuemap=dict()
-        valuemap['requested-ul-bps'] = ul
-        valuemap['requested-ul-bps'] = dl
-        valuemap['ul-pdu-size'] = ul_pdu
-        valuemap['dl-pdu-size'] = dl_pdu
-        valuemap['station-count'] = sta_count
-        for key, value in valuemap.items():
-            tags = dict()
-            tags["region"] = 'us-west'
-            tags["script"] = 'test_l3_longevity'
-            self.influxdb.post_to_influx(key, value, tags)
+        tags=dict()
+        tags['requested-ul-bps'] = ul
+        tags['requested-ul-bps'] = dl
+        tags['ul-pdu-size'] = ul_pdu
+        tags['dl-pdu-size'] = dl_pdu
+        tags['station-count'] = sta_count
+        tags["script"] = 'test_l3_longevity'
 
-        #self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
-        #self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
-        #self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
+        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
+        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
+        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
 
     # Stop traffic and admin down stations.
     def stop(self):
@@ -864,6 +873,9 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default="256000")
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default="MTU")
 
+    parser.add_argument('--attenuators',   help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
+    parser.add_argument('--atten_vals',     help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
+
     parser.add_argument('--influx_host', help='Hostname for the Influx database')
     parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
     parser.add_argument('--influx_user', help='Username for the Influx database')
@@ -979,6 +991,14 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     dl_rates = args.side_b_min_bps.split(",")
     ul_pdus = args.side_a_min_pdu.split(",")
     dl_pdus = args.side_b_min_pdu.split(",")
+    if args.attenuators == "":
+        attenuators = []
+    else:
+        attenuators = args.attenuators.split(",")
+    if (args.atten_vals == ""):
+        atten_vals = []
+    else:
+        atten_vals = args.atten_vals.split(",")
 
     if (len(ul_rates) != len(dl_rates)):
         print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %(len(ul_rates), len(dl_rates)))
@@ -1009,6 +1029,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     side_b_min_rate=dl_rates,
                                     side_a_min_pdu=ul_pdus,
                                     side_b_min_pdu=dl_pdus,
+                                    attenuators=attenuators,
+                                    atten_vals=atten_vals,
                                     debug=debug,
                                     outfile=csv_outfile,
                                     influxdb=influxdb)
