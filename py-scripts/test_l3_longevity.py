@@ -122,7 +122,7 @@ class L3VariableTime(Realm):
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
-        if ((len(self.atten_vals) > 0) and (len(self.attenuators) == 0)):
+        if ((len(self.atten_vals) > 0) and (self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
             print("ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
             exit(1)
 
@@ -996,7 +996,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     else:
         attenuators = args.attenuators.split(",")
     if (args.atten_vals == ""):
-        atten_vals = []
+        atten_vals = [-1]
     else:
         atten_vals = args.atten_vals.split(",")
 
