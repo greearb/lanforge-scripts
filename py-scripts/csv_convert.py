@@ -46,7 +46,7 @@ class CSVParcer():
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write("Step Index,Attenuation [dB],Position [Deg],Traffic Pair 1 Throughput [Mbps]\n")
+            fpo.write("Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n")
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
@@ -65,11 +65,11 @@ class CSVParcer():
                 if (mbps_array[1] == "bps"):
                     mbps_val /= 1000000
 
-                attenv = int(x[i_atten])
+                attenv = float(x[i_atten])
                 if ddb:
                     attenv /= 10
                     
-                fpo.write("%s,%s,%s,%s\n" % (step_i, attenv, x[i_rotation], mbps_val))
+                fpo.write("%s,%s,%s,%s\n" % (step_i, x[i_rotation], attenv, mbps_val))
                 line = fp.readline()
                 step_i += 1
 
@@ -103,6 +103,8 @@ csv_convert.py:
         csv_infile_name = args.infile
     if args.outfile:
         csv_outfile_name = args.outfile
+
+    print("infile: %s  outfile: %s  convert-ddb: %s"%(csv_infile_name, csv_outfile_name, args.ddb))
 
     CSVParcer(csv_infile_name, csv_outfile_name, args.ddb)
 
