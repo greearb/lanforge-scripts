@@ -13,12 +13,15 @@
 # Example config
 #
 # 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
-# Configured to submit KPI info to influxdb.
-# ./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-#    --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-#    --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-#    --test_duration 30s --influx_host localhost --influx_port 8086 --influx_user lanforge \
-#    --influx_passwd lanforge --influx_db ben
+# Configured to submit KPI info to influxdb-version2.
+#./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
+#  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+#  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+#  --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+#  --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+#  --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
+#  --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
+
 
 import sys
 import os
@@ -226,12 +229,14 @@ class L3VariableTime(Realm):
                                 endp_rx_drop_map[item] = value_rx_drop
                         for value_name, value_rx_bps in value.items():
                             if value_name == 'rx rate':
-                                # This hack breaks for mcast
+                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                #print("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value_rx_bps)
                                 else:
                                     total_ul += int(value_rx_bps)
 
+        #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, total_dl, total_ul
 
     # Common code to generate timestamp for CSV files.
@@ -670,6 +675,8 @@ class L3VariableTime(Realm):
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
+                        #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
+
                         expected_passes += 1
                         if self.__compare_vals(old_rx_values, new_rx_values):
                             passes += 1
@@ -1013,9 +1020,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='longevity_results')
+    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
-    #parser.add_argument('-c','--csv_output', help="Generate csv output", default=False) 
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ',
@@ -1073,10 +1079,12 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     if args.radio:
         radios = args.radio
 
-    if args.csv_outfile != None:
+    if args.csv_outfile == "":
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_outfile = "longevity_{}.csv".format(current_time)
         print("csv output file : {}".format(csv_outfile))
+    else:
+        csv_outfile = args.csv_outfile
 
     influxdb = None
     if args.influx_bucket is not None:
