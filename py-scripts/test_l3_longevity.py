@@ -68,6 +68,7 @@ class L3VariableTime(Realm):
                  side_a_max_pdu=[0],
                  side_b_min_pdu=["MTU"],
                  side_b_max_pdu=[0],
+                 user_tags=[],
                  rates_are_totals=False,
                  mconn=1,
                  attenuators=[],
@@ -120,6 +121,7 @@ class L3VariableTime(Realm):
         self.debug = debug
         self.show_least_most_csv = show_least_most_csv
         self.mconn = mconn
+        self.user_tags = user_tags
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -656,7 +658,7 @@ class L3VariableTime(Realm):
                         self.__record_rx_dropped_percent(rx_drop_percent)
 
                     # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps)
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, atten_val, total_dl_bps, total_ul_bps)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -668,7 +670,7 @@ class L3VariableTime(Realm):
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
     # Submit data to the influx db if configured to do so.
-    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, total_dl_bps, total_ul_bps):
+    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
         if self.influxdb == None:
             return
 
@@ -678,7 +680,12 @@ class L3VariableTime(Realm):
         tags['ul-pdu-size'] = ul_pdu
         tags['dl-pdu-size'] = dl_pdu
         tags['station-count'] = sta_count
+        tags['attenuation'] = atten
         tags["script"] = 'test_l3_longevity'
+
+        # Add user specified tags
+        for k in self.user_tags:
+            tags[k[0]] = k[1]
 
         time = str(datetime.datetime.utcnow().isoformat())
 
@@ -934,6 +941,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--influx_org', help='Organization for the Influx database')
     parser.add_argument('--influx_token', help='Token for the Influx database')
     parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
+    parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
+
 
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out, switch the cisco controller output will be captured", action='store_true')
     parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
@@ -1088,6 +1097,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     mconn=args.multiconn,
                                     attenuators=attenuators,
                                     atten_vals=atten_vals,
+                                    user_tags=args.influx_tag,
                                     debug=debug,
                                     outfile=csv_outfile,
                                     show_least_most_csv=args.show_least_most_csv,
