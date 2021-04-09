@@ -516,6 +516,7 @@ class L3VariableTime(Realm):
             # stations, so allow skipping it.
             # Do clean cx lists so that when we re-apply them we get same endp name
             # as we had previously
+            #print("rebuild: Clearing cx profile lists.\n")
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
@@ -538,7 +539,7 @@ class L3VariableTime(Realm):
                     self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                 else:
                     for _tos in self.tos:
-                        print("Creating connections for endpoint type: %s TOS: %s"%(etype, _tos))
+                        print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
                         self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
 
         self.cx_count = self.cx_profile.get_cx_count()
@@ -583,6 +584,12 @@ class L3VariableTime(Realm):
                     # as that is what the cx_profile wants.
                     ul = str(int(int(ul) / self.cx_count))
                     dl = str(int(int(dl) / self.cx_count))
+
+                if (ul_pdu == "AUTO" or ul_pdu == "MTU"):
+                    ul_pdu = "-1"
+
+                if (dl_pdu == "AUTO" or dl_pdu == "MTU"):
+                    dl_pdu = "-1"
 
                 print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n"%(ul, dl, self.cx_count, self.rates_are_totals))
                 
