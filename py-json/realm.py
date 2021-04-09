@@ -194,26 +194,20 @@ class Realm(LFCliBase):
         debug_ |= self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
-        do_rm = True
         if check_exists:
             if not self.port_exists(port_eid):
-                do_rm = False
-        if do_rm:
-            data = {
-                "shelf": eid[0],
-                "resource": eid[1],
-                "port": eid[2]
+                return False
+
+        data = {
+            "shelf": eid[0],
+            "resource": eid[1],
+            "port": eid[2]
             }
-            rsp = self.json_post(req_url, data, debug_=debug_)
-            return True
-        return False
+        rsp = self.json_post(req_url, data, debug_=debug_)
+        return True
 
     def port_exists(self, port_eid):
-        data = {}
         eid = self.name_to_eid(port_eid)
-        data["shelf"] = eid[0]
-        data["resource"] = eid[1]
-        data["port"] = eid[2]
         current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
         if not current_stations is None:
             return True
@@ -449,6 +443,17 @@ class Realm(LFCliBase):
                     sta_list.append(response['interfaces'][x])
         del response
         return sta_list
+
+    # Returns list of all ports
+    def port_list(self):
+        sta_list = []
+        response = super().json_get("/port/list?fields=all")
+        if (response is None) or ("interfaces" not in response):
+            print("port_list: incomplete response:")
+            pprint(response)
+            return None
+
+        return response['interfaces']
 
     # Returns list of all VAPs with "vap" in their name
     def vap_list(self):

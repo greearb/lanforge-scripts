@@ -22,6 +22,7 @@
 
 import sys
 import os
+from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -148,6 +149,10 @@ class L3VariableTime(Realm):
         self.cx_profile.side_a_max_bps = side_a_max_rate[0]
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
+
+        # Lookup key is port-eid name
+        self.port_csv_files = {}
+        self.port_csv_writers = {}
 
         dur = self.duration_time_to_seconds(self.test_duration)
                                                             
@@ -314,8 +319,11 @@ class L3VariableTime(Realm):
             if not self.csv_started:
                 csv_header = self.csv_generate_column_headers()
                 csv_header += csv_rx_headers
-                print(csv_header)
+                #print(csv_header)
                 self.csv_add_column_headers(csv_header)
+                port_eids = self.gather_port_eids()
+                for eid_name in port_eids:
+                    self.csv_add_port_column_headers(eid_name, self.csv_generate_port_column_headers())
                 self.csv_started = True
 
             # need to generate list first to determine worst and best
@@ -507,6 +515,14 @@ class L3VariableTime(Realm):
             count += 1
             time.sleep(5)
 
+    def gather_port_eids(self):
+        rv = [self.side_b]
+        
+        for station_profile in self.station_profiles:
+            rv = rv + station_profile.station_names
+
+        return rv;
+
     # Create stations and connections/endpoints.  If rebuild is true, then
     # only update connections/endpoints.
     def build(self, rebuild=False):
@@ -587,6 +603,9 @@ class L3VariableTime(Realm):
                     ul = str(int(int(ul) / self.cx_count))
                     dl = str(int(int(dl) / self.cx_count))
 
+                dl_pdu_str = dl_pdu
+                ul_pdu_str = ul_pdu
+
                 if (ul_pdu == "AUTO" or ul_pdu == "MTU"):
                     ul_pdu = "-1"
 
@@ -658,7 +677,22 @@ class L3VariableTime(Realm):
                         self.__record_rx_dropped_percent(rx_drop_percent)
 
                     # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu, dl_pdu, atten_val, total_dl_bps, total_ul_bps)
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+
+                    # Query all of our ports
+                    port_eids = self.gather_port_eids()
+                    for eid_name in port_eids:
+                        eid = self.name_to_eid(eid_name)
+                        url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                        response = self.json_get(url)
+                        if (response is None) or ("interface" not in response):
+                            print("query-port: %s: incomplete response:"%(url))
+                            pprint(response)
+                        else:
+                            p = response['interface']
+                            # p is map of key/values for this port
+                            #print("port: ", p)
+                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -669,6 +703,22 @@ class L3VariableTime(Realm):
                     if passes == expected_passes:
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data):
+        row = [self.epoch_time, self.time_stamp(), sta_count,
+               ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
+               atten, eid_name
+               ]
+
+        row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
+                     port_data['signal'], port_data['ap'], port_data['mode']]
+
+        # TODO:  Add in info queried from AP.
+
+        writer = self.port_csv_writers[eid_name]
+        writer.writerow(row)
+        self.port_csv_files[eid_name].flush()
+
+
     # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
         if self.influxdb == None:
@@ -676,7 +726,7 @@ class L3VariableTime(Realm):
 
         tags=dict()
         tags['requested-ul-bps'] = ul
-        tags['requested-ul-bps'] = dl
+        tags['requested-dl-bps'] = dl
         tags['ul-pdu-size'] = ul_pdu
         tags['dl-pdu-size'] = dl_pdu
         tags['station-count'] = sta_count
@@ -710,7 +760,6 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             station_profile.cleanup()
 
-    # CSV column headers.
     def csv_generate_column_headers(self):
         csv_rx_headers = ['Time epoch','Time','Monitor',
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
@@ -725,11 +774,32 @@ class L3VariableTime(Realm):
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
+    def csv_generate_port_column_headers(self):
+        csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
+                          'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
+                          'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
+                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode'
+                          ]
+        return csv_rx_headers
+
     # Write initial headers to csv file.
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
             self.csv_file.flush()
+
+    # Write initial headers to port csv file.
+    def csv_add_port_column_headers(self, eid_name, headers):
+        if self.csv_file is not None:
+            fname = self.outfile[:-4]  # Strip '.csv' from file name
+            fname = fname + "-" + eid_name + ".csv"
+            pfile = open(fname, "w")
+            port_csv_writer = csv.writer(pfile, delimiter=",")
+            self.port_csv_files[eid_name] = pfile
+            self.port_csv_writers[eid_name] = port_csv_writer
+            
+            port_csv_writer.writerow(headers)
+            pfile.flush()
 
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
