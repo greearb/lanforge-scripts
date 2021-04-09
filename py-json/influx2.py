@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# pip3 install influxdb
+# pip3 install influxdb-client
+
+# Version 2.0 influx DB Client
 
 import sys
 
@@ -10,7 +12,8 @@ if sys.version_info[0] != 3:
 
 import requests
 import json
-from influxdb import InfluxDBClient
+import influxdb_client
+from influxdb_client.client.write_api import SYNCHRONOUS
 import datetime
 from LANforge.lfcli_base import LFCliBase
 import time
@@ -22,9 +25,9 @@ class RecordInflux(LFCliBase):
                  _lfjson_port=8080,
                  _influx_host="localhost",
                  _influx_port=8086,
-                 _influx_user=None,
-                 _influx_passwd=None,
-                 _influx_db=None,
+                 _influx_org=None,
+                 _influx_token=None,
+                 _influx_bucket=None,
                  _debug_on=False,
                  _exit_on_fail=False):
         super().__init__(_lfjson_host, _lfjson_port,
@@ -32,24 +35,27 @@ class RecordInflux(LFCliBase):
                          _exit_on_fail=_exit_on_fail)
         self.influx_host = _influx_host
         self.influx_port = _influx_port
-        self.influx_user = _influx_user
-        self.influx_passwd = _influx_passwd
-        self.influx_db = _influx_db
-        self.client = InfluxDBClient(self.influx_host,
-                                     self.influx_port,
-                                     self.influx_user,
-                                     self.influx_passwd,
-                                     self.influx_db)
+        self.influx_org = _influx_org
+        self.influx_token = _influx_token
+        self.influx_bucket = _influx_bucket
+        url = "http://%s:%s"%(self.influx_host, self.influx_port)
+        self.client = influxdb_client.InfluxDBClient(url=url, token=self.influx_token, org=self.influx_org)
+        self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
+        #print("org: ", self.influx_org)
+        #print("token: ", self.influx_token)
+        #print("bucket: ", self.influx_bucket)
+        #exit(0)
 
-    def post_to_influx(self, key, value, tags):
-        data = dict()
-        data["measurement"] = key
-        data["tags"] = tags
-        data["time"] = str(datetime.datetime.utcnow().isoformat())
-        data["fields"] = dict()
-        data["fields"]["value"] = value
-        data1 = [data]
-        self.client.write_points(data1)
+    def post_to_influx(self, key, value, tags, time):
+        p = influxdb_client.Point(key)
+        for tag_key, tag_value in tags.items():
+            p.tag(tag_key, tag_value)
+        p.time(time)
+        p.field("value", value)
+        self.write_api.write(bucket=self.influx_bucket, org=self.influx_org, record=p)
+
+    def set_bucket(self, b):
+        self.influx_bucket = b
 
     # Don't use this unless you are sure you want to.
     # More likely you would want to generate KPI in the
@@ -61,7 +67,9 @@ class RecordInflux(LFCliBase):
                           lanforge_host="localhost",
                           devices=None,
                           longevity=None,
-                          monitor_interval=None):
+                          monitor_interval=None,
+                          bucket=None,
+                          tags=None):  # dict
         url = 'http://' + lanforge_host + ':8080/port/1/1/'
         end = datetime.datetime.now() + datetime.timedelta(0, longevity)
         while datetime.datetime.now() < end:
@@ -69,10 +77,10 @@ class RecordInflux(LFCliBase):
                 url1 = url + station
                 response = json.loads(requests.get(url1).text)
 
+                time = str(datetime.datetime.utcnow().isoformat())
+
                 # Poke everything into influx db
                 for key in response['interface'].keys():
-                    tags = dict()
-                    tags["region"] = 'us-west'
-                    self.posttoinflux("%s-%s" % (station, key), response['interface'][key], tags)
+                    self.posttoinflux(bucket, "%s-%s" % (station, key), response['interface'][key], tags, time)
 
             time.sleep(monitor_interval)

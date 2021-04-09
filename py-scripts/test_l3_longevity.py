@@ -666,9 +666,11 @@ class L3VariableTime(Realm):
         tags['station-count'] = sta_count
         tags["script"] = 'test_l3_longevity'
 
-        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags)
-        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags)
-        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags)
+        time = str(datetime.datetime.utcnow().isoformat())
+
+        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, time)
+        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, time)
+        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, time)
 
     # Stop traffic and admin down stations.
     def stop(self):
@@ -909,9 +911,9 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
 
     parser.add_argument('--influx_host', help='Hostname for the Influx database')
     parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
-    parser.add_argument('--influx_user', help='Username for the Influx database')
-    parser.add_argument('--influx_passwd', help='Password for the Influx database')
-    parser.add_argument('--influx_db', help='Name of the Influx database')
+    parser.add_argument('--influx_org', help='Organization for the Influx database')
+    parser.add_argument('--influx_token', help='Token for the Influx database')
+    parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
 
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
     parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
@@ -945,15 +947,15 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         print("csv output file : {}".format(csv_outfile))
 
     influxdb = None
-    if args.influx_db is not None:
-        from influx import RecordInflux
+    if args.influx_bucket is not None:
+        from influx2 import RecordInflux
         influxdb = RecordInflux(_lfjson_host=lfjson_host,
                                 _lfjson_port=lfjson_port,
                                 _influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
-                                _influx_db=args.influx_db,
-                                _influx_user=args.influx_user,
-                                _influx_passwd=args.influx_passwd)
+                                _influx_org=args.influx_org,
+                                _influx_token=args.influx_token,
+                                _influx_bucket=args.influx_bucket)
 
 
     MAX_NUMBER_OF_STATIONS = 1000
