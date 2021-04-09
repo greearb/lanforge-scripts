@@ -81,6 +81,7 @@ class L3VariableTime(Realm):
                  _exit_on_fail=False,
                  _proxy_str=None,
                  influxdb=None,
+                 show_least_most_csv=False,
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
@@ -116,6 +117,7 @@ class L3VariableTime(Realm):
         self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug
+        self.show_least_most_csv = show_least_most_csv
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -225,12 +227,7 @@ class L3VariableTime(Realm):
     # Generate rx-dropped csv data
     def __record_rx_dropped_percent(self,rx_drop_percent):
 
-        csv_rx_drop_percent_data = [self.epoch_time, self.time_stamp(),'rx_drop_percent',
-                                    self.cx_profile.side_a_min_bps, self.cx_profile.side_a_max_bps,
-                                    self.cx_profile.side_b_min_bps, self.cx_profile.side_b_max_bps,
-                                    self.cx_profile.side_a_min_pdu, self.cx_profile.side_a_max_pdu,
-                                    self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
-                                    ]
+        csv_rx_drop_percent_data = self.get_row_data_start('rx_drop_percent')
 
         # Honestly, I don't understand this code. --Ben
         for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
@@ -238,12 +235,13 @@ class L3VariableTime(Realm):
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
         average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
-        csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
-        for i in range(5):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
+        if self.show_least_most_csv:
+            csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
+            csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
+            for i in range(5):
+                csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
+            for i in range(-1,-6,-1):
+                csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
 
         csv_rx_drop_percent_data.append(average_rx_drop_percent)
 
@@ -251,8 +249,16 @@ class L3VariableTime(Realm):
             #print(item, "rx drop percent: ", rx_drop_percent[item])
             csv_rx_drop_percent_data.append(rx_drop_percent[item])
 
-        self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
+        self.csv_add_row(csv_rx_drop_percent_data, self.csv_writer, self.csv_file)
 
+    def get_row_data_start(self, third_row):
+        return [self.epoch_time, self.time_stamp(), third_row,
+                self.cx_profile.side_a_min_bps, self.cx_profile.side_a_max_bps,
+                self.cx_profile.side_b_min_bps, self.cx_profile.side_b_max_bps,
+                self.cx_profile.side_a_min_pdu, self.cx_profile.side_a_max_pdu,
+                self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
+            ]
+        
     # Compare last stats report with current stats report.  Generate CSV data lines
     # for the various csv output files this test supports.
     def __compare_vals(self, old_list, new_list):
@@ -263,18 +269,9 @@ class L3VariableTime(Realm):
         csv_rx_delta_dict = {}
 
         # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = [self.epoch_time, self.time_stamp(),'rx',
-                           self.cx_profile.side_a_min_bps, self.cx_profile.side_a_max_bps,
-                           self.cx_profile.side_b_min_bps, self.cx_profile.side_b_max_bps,
-                           self.cx_profile.side_a_min_pdu, self.cx_profile.side_a_max_pdu,
-                           self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
-                           ]
-        csv_rx_delta_row_data = [self.epoch_time, self.time_stamp(),'rx_delta',
-                                 self.cx_profile.side_a_min_bps, self.cx_profile.side_a_max_bps,
-                                 self.cx_profile.side_b_min_bps, self.cx_profile.side_b_max_bps,
-                                 self.cx_profile.side_a_min_pdu, self.cx_profile.side_a_max_pdu,
-                                 self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
-                                 ]
+        csv_rx_row_data = self.get_row_data_start("rx")
+        
+        csv_rx_delta_row_data = self.get_row_data_start("rx_delta")
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
@@ -282,12 +279,13 @@ class L3VariableTime(Realm):
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
-        csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_values=self.csv_validate_list(csv_performance_values,5)
-        for i in range(5):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
+        if self.show_least_most_csv:
+            csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
+            csv_performance_values=self.csv_validate_list(csv_performance_values,5)
+            for i in range(5):
+                csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
+            for i in range(-1,-6,-1):
+                csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
 
@@ -318,12 +316,13 @@ class L3VariableTime(Realm):
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
             average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
-            csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
-            csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
-            for i in range(5):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-            for i in range(-1,-6,-1):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
+            if self.show_least_most_csv:
+                csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
+                csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
+                for i in range(5):
+                    csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
+                for i in range(-1,-6,-1):
+                    csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
             
@@ -668,6 +667,8 @@ class L3VariableTime(Realm):
 
         time = str(datetime.datetime.utcnow().isoformat())
 
+        print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n"%(total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
+
         self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, time)
         self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, time)
         self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, time)
@@ -693,10 +694,12 @@ class L3VariableTime(Realm):
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU',
                           ]
-        for i in range(1,6):
-            csv_rx_headers.append("least_rx_data_bytes_{}".format(i))
-        for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_bytes_{}".format(i))
+        if self.show_least_most_csv:
+            for i in range(1,6):
+                csv_rx_headers.append("least_rx_data_bytes_{}".format(i))
+            for i in range(1,6):
+                csv_rx_headers.append("most_rx_data_bytes_{}".format(i))
+
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
@@ -915,8 +918,10 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--influx_token', help='Token for the Influx database')
     parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
 
-    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out , switch the cisco controller output will be captured", action='store_true')
+    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out, switch the cisco controller output will be captured", action='store_true')
     parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
+
+    parser.add_argument("--show_least_most_csv",  help="Should we show the least/most csv column data in reports?", action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -1067,6 +1072,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     atten_vals=atten_vals,
                                     debug=debug,
                                     outfile=csv_outfile,
+                                    show_least_most_csv=args.show_least_most_csv,
                                     influxdb=influxdb)
 
     ip_var_test.pre_cleanup()
