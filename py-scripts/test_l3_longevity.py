@@ -172,6 +172,10 @@ class L3VariableTime(Realm):
         if self.outfile is not None:
             self.csv_file = open(self.outfile, "w") 
             self.csv_writer = csv.writer(self.csv_file, delimiter=",")
+            kpi = self.outfile[:-4]
+            kpi = kpi + "-kpi.csv"
+            self.csv_kpi_file = open(kpi, "w")
+            self.csv_kpi_writer = csv.writer(self.csv_kpi_file, delimiter=",")
         
         for (radio_, ssid_, ssid_password_, ssid_security_,\
             reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
@@ -745,6 +749,19 @@ class L3VariableTime(Realm):
         self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, time)
         self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, time)
 
+        if self.csv_kpi_file:
+            row = [self.epoch_time, self.time_stamp(), sta_count,
+                   ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
+                   atten,
+                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)
+                   ]
+            # Add values for any user specified tags
+            for k in self.user_tags:
+                row.append(k[1])
+
+            self.csv_kpi_writer.writerow(row)
+            self.csv_kpi_file.flush()
+
     # Stop traffic and admin down stations.
     def stop(self):
         self.cx_profile.stop_cx()
@@ -782,11 +799,25 @@ class L3VariableTime(Realm):
                           ]
         return csv_rx_headers
 
+    def csv_generate_kpi_column_headers(self):
+        csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
+                          'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
+                          'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
+                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps'
+                          ]
+        for k in self.user_tags:
+            csv_rx_headers.append(k[0])
+
+        return csv_rx_headers
+
     # Write initial headers to csv file.
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
             self.csv_file.flush()
+        if self.csv_kpi_file is not None:
+            self.csv_kpi_writer.writerow(self.csv_generate_kpi_column_headers())
+            self.csv_kpi_file.flush()
 
     # Write initial headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
@@ -807,7 +838,7 @@ class L3VariableTime(Realm):
         return csv_list
 
     def csv_add_row(self,row,writer,csv_file):
-        if self.csv_file is not None:
+        if csv_file is not None:
             writer.writerow(row)
             csv_file.flush()
 
