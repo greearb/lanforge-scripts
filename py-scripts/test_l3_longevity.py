@@ -69,6 +69,7 @@ class L3VariableTime(Realm):
                  side_b_min_pdu=["MTU"],
                  side_b_max_pdu=[0],
                  rates_are_totals=False,
+                 mconn=1,
                  attenuators=[],
                  atten_vals=[],
                  number_template="00", 
@@ -118,6 +119,7 @@ class L3VariableTime(Realm):
         self.epoch_time = int(time.time())
         self.debug = debug
         self.show_least_most_csv = show_least_most_csv
+        self.mconn = mconn
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -139,6 +141,7 @@ class L3VariableTime(Realm):
             print("ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
             exit(1)
 
+        self.cx_profile.mconn = mconn
         self.cx_profile.side_a_min_bps = side_a_min_rate[0]
         self.cx_profile.side_a_max_bps = side_a_max_rate[0]
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
@@ -261,6 +264,7 @@ class L3VariableTime(Realm):
         
     # Compare last stats report with current stats report.  Generate CSV data lines
     # for the various csv output files this test supports.
+    # old-list and new list holds 'rx-bytes' counters.
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
@@ -269,9 +273,9 @@ class L3VariableTime(Realm):
         csv_rx_delta_dict = {}
 
         # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = self.get_row_data_start("rx")
+        csv_rx_row_data = self.get_row_data_start("rx-bytes")
         
-        csv_rx_delta_row_data = self.get_row_data_start("rx_delta")
+        csv_rx_delta_row_data = self.get_row_data_start("rx-bytes_delta")
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
@@ -301,7 +305,7 @@ class L3VariableTime(Realm):
                     fail_msg = "Failed to increase rx data: station: {} rx_new: {} rx_old: {}".format(item, new_list[item], old_list[item])
                     self._fail(fail_msg, True)
                 if not self.csv_started:
-                    csv_rx_headers.append(item)
+                    csv_rx_headers.append(item) # column header is endp name
                 csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
                 
 
@@ -575,9 +579,13 @@ class L3VariableTime(Realm):
 
                 # Adjust rate to take into account the number of connections we have.
                 if self.cx_count > 1 and self.rates_are_totals:
-                    ul = int(ul / self.cx_count)
-                    dl = int(dl / self.cx_count)
+                    # Convert from string to int to do math, then back to string
+                    # as that is what the cx_profile wants.
+                    ul = str(int(int(ul) / self.cx_count))
+                    dl = str(int(int(dl) / self.cx_count))
 
+                print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n"%(ul, dl, self.cx_count, self.rates_are_totals))
+                
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
                 self.cx_profile.side_a_max_bps = ul
@@ -908,6 +916,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                         help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU', default="MTU")
     parser.add_argument("--rates_are_totals", default=False,
                         help="Treat configured rates as totals instead of using the un-modified rate for every connection.", action='store_true')
+    parser.add_argument("--multiconn", default=1,
+                        help="Configure multi-conn setting for endpoints.  Default is 1 (auto-helper is enabled by default as well).")
 
     parser.add_argument('--attenuators', help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
     parser.add_argument('--atten_vals', help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
@@ -1068,6 +1078,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                                     side_a_min_pdu=ul_pdus,
                                     side_b_min_pdu=dl_pdus,
                                     rates_are_totals=args.rates_are_totals,
+                                    mconn=args.multiconn,
                                     attenuators=attenuators,
                                     atten_vals=atten_vals,
                                     debug=debug,

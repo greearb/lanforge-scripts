@@ -24,6 +24,7 @@ class L3CXProfile(LFCliBase):
                  report_timer_=3000,
                  name_prefix_="Unset",
                  number_template_="00000",
+                 mconn=0,
                  debug_=False):
         """
         :param lfclient_host:
@@ -39,6 +40,7 @@ class L3CXProfile(LFCliBase):
         :param side_b_max_pdu:
         :param name_prefix_: prefix string for connection
         :param number_template_: how many zeros wide we padd, possibly a starting integer with left padding
+        :param mconn:  Multi-conn setting for this connection.
         :param debug_:
         """
         super().__init__(lfclient_host, lfclient_port, _debug = debug_)
@@ -57,6 +59,7 @@ class L3CXProfile(LFCliBase):
         self.created_endp = {}
         self.name_prefix = name_prefix_
         self.number_template = number_template_
+        self.mconn = mconn
 
     def get_cx_count(self):
         return len(self.created_cx.keys())
@@ -364,6 +367,9 @@ class L3CXProfile(LFCliBase):
                 these_cx.append(cx_name)
                 these_endp.append(endp_a_name)
                 these_endp.append(endp_b_name)
+                mconn_b = self.mconn
+                if mconn_b > 1:
+                    mconn_b = 1
                 endp_side_a = {
                     "alias": endp_a_name,
                     "shelf": side_a_shelf,
@@ -374,7 +380,8 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_a_max_bps,
                     "min_pkt": self.side_a_min_pdu,
                     "max_pkt": self.side_a_max_pdu,
-                    "ip_port": -1
+                    "ip_port": -1,
+                    "multi_conn": self.mconn,
                 }
                 endp_side_b = {
                     "alias": endp_b_name,
@@ -386,8 +393,11 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_b_max_bps,
                     "min_pkt": self.side_b_min_pdu,
                     "max_pkt": self.side_b_max_pdu,
-                    "ip_port": -1
+                    "ip_port": -1,
+                    "multi_conn": mconn_b,
                 }
+
+                #print("1: endp-side-b: ", endp_side_b)
 
                 url = "/cli-json/add_endp"
                 self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
@@ -452,6 +462,9 @@ class L3CXProfile(LFCliBase):
                 these_cx.append(cx_name)
                 these_endp.append(endp_a_name)
                 these_endp.append(endp_b_name)
+                mconn_b = self.mconn
+                if mconn_b > 1:
+                    mconn_b = 1
                 endp_side_a = {
                     "alias": endp_a_name,
                     "shelf": side_a_shelf,
@@ -462,7 +475,8 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_a_max_bps,
                     "min_pkt": self.side_a_min_pdu,
                     "max_pkt": self.side_a_max_pdu,
-                    "ip_port": -1
+                    "ip_port": -1,
+                    "multi_conn": self.mconn,
                 }
                 endp_side_b = {
                     "alias": endp_b_name,
@@ -474,8 +488,11 @@ class L3CXProfile(LFCliBase):
                     "max_rate": self.side_b_max_bps,
                     "min_pkt": self.side_b_min_pdu,
                     "max_pkt": self.side_b_max_pdu,
-                    "ip_port": -1
+                    "ip_port": -1,
+                    "multi_conn": mconn_b,
                 }
+
+                #print("2: endp-side-b: ", endp_side_b)
 
                 url = "/cli-json/add_endp"
                 self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
