@@ -93,7 +93,7 @@ class HTTPProfile(LFCliBase):
                 self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
-               user=None, passwd=None, source=None,ftp_ip=None,upload_name=None):
+               user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None):
         cx_post_data = []
         self.map_sta_ips(ports)
         print("Create CXs...")
@@ -121,8 +121,12 @@ class HTTPProfile(LFCliBase):
                 name = upload_name
 
             if http:
-                self.port_util.set_http(port_name=name, resource=resource, on=True)
-                url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+                if http_ip is not None:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s http://%s %s" % (self.direction, http_ip, self.dest)
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
             if ftp:
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
