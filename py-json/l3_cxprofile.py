@@ -323,8 +323,8 @@ class L3CXProfile(LFCliBase):
         # Clean out our local lists, this by itself does NOT remove anything from LANforge manager.
         # but, if you are trying to modify existing connections, then clearing these arrays and
         # re-calling 'create' will do the trick.
-        created_cx = {}
-        created_endp = {}
+        self.created_cx.clear()
+        self.created_endp.clear()
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
                tos=None):
