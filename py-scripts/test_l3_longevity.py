@@ -202,13 +202,46 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+    # Find avg latency, jitter for connections using specified port.
+    def get_endp_stats_for_port(self, eid_name, endps):
+        lat = 0
+        jit = 0
+        count = 0
+
+        #print("endp-stats-for-port, port-eid: ", eid_name)
+        eid = self.name_to_eid(eid_name)
+
+        # Convert all eid elements to strings
+        eid[0] = str(eid[0])
+        eid[1] = str(eid[1])
+        eid[2] = str(eid[2])
+
+        for e in endps:
+            #pprint(e)
+            eid_endp = e["eid"].split(".")
+            print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
+            if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
+                lat += int(e["delay"])
+                jit += int(e["jitter"])
+                count += 1
+                print("matched: ")
+            else:
+                print("Did not match")
+
+        if count > 1:
+            lat = int(lat / count)
+            jit = int(jit / count)
+
+        return lat, jit
+
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
+        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
+        endps = []
 
         total_ul = 0
         total_dl = 0
@@ -221,23 +254,25 @@ class L3VariableTime(Realm):
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, value in endp_name.items():
                     if item in our_endps:
-                        for value_name, value_rx in value.items():
+                        endps.append(value)
+                        print("endpoint: ", item, " value:\n")
+                        pprint(value)
+                    
+                        for value_name, value in value.items():
                             if value_name == 'rx bytes':
-                                endp_rx_map[item] = value_rx
-                        for value_name, value_rx_drop in value.items():
+                                endp_rx_map[item] = value
                             if value_name == 'rx drop %':
-                                endp_rx_drop_map[item] = value_rx_drop
-                        for value_name, value_rx_bps in value.items():
+                                endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
                                 #print("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
-                                    total_dl += int(value_rx_bps)
+                                    total_dl += int(value)
                                 else:
-                                    total_ul += int(value_rx_bps)
+                                    total_ul += int(value)
 
         #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
-        return endp_rx_map, endp_rx_drop_map, total_dl, total_ul
+        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
@@ -537,6 +572,8 @@ class L3VariableTime(Realm):
     def build(self, rebuild=False):
         index = 0
         self.station_count = 0
+        self.udp_endps = []
+        self.tcp_endps = []
 
         if rebuild:
             # if we are just re-applying new cx values, then no need to rebuild
@@ -567,7 +604,12 @@ class L3VariableTime(Realm):
                 else:
                     for _tos in self.tos:
                         print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
-                        self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
+                        these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
+                                                                      side_b=self.side_b, sleep_time=0, tos=_tos)
+                        if (etype == "lf_udp" or etype == "lf_udp6"):
+                            self.udp_endps = self.udp_endps + these_endp;
+                        else:
+                            self.tcp_endps = self.tcp_endps + these_endp;
 
         self.cx_count = self.cx_profile.get_cx_count()
 
@@ -652,7 +694,7 @@ class L3VariableTime(Realm):
 
                     cur_time = datetime.datetime.now()
                     print("Getting initial values.")
-                    old_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
@@ -663,6 +705,8 @@ class L3VariableTime(Realm):
                     expected_passes = 0
                     total_dl_bps = 0
                     total_ul_bps = 0
+                    endps = []
+
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
@@ -673,7 +717,7 @@ class L3VariableTime(Realm):
                             time.sleep(1)
 
                         self.epoch_time = int(time.time())
-                        new_rx_values, rx_drop_percent, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
                         #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
@@ -702,8 +746,13 @@ class L3VariableTime(Realm):
                         else:
                             p = response['interface']
                             # p is map of key/values for this port
-                            #print("port: ", p)
-                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p)
+                            print("port: ")
+                            pprint(p)
+
+                            # Find latency, jitter for connections using this port.
+                            latency, jitter = self.get_endp_stats_for_port(p["port"], endps)
+                            
+                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p, latency, jitter)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -714,14 +763,14 @@ class L3VariableTime(Realm):
                     if passes == expected_passes:
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data):
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode']]
+                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter]
 
         # TODO:  Add in info queried from AP.
 
@@ -802,7 +851,8 @@ class L3VariableTime(Realm):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
-                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode'
+                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
+                          'Rx-Latency', 'Rx-Jitter'
                           ]
         return csv_rx_headers
 

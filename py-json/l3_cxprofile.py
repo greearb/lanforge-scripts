@@ -542,6 +542,8 @@ class L3CXProfile(LFCliBase):
 
         self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
 
+        return these_cx, these_endp
+
     def to_string(self):
         pprint.pprint(self)
 
