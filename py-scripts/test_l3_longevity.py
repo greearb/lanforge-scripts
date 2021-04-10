@@ -206,6 +206,7 @@ class L3VariableTime(Realm):
     def get_endp_stats_for_port(self, eid_name, endps):
         lat = 0
         jit = 0
+        tput = 0
         count = 0
 
         #print("endp-stats-for-port, port-eid: ", eid_name)
@@ -223,6 +224,7 @@ class L3VariableTime(Realm):
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
                 lat += int(e["delay"])
                 jit += int(e["jitter"])
+                tput += int(e["rx rate"])
                 count += 1
                 print("matched: ")
             else:
@@ -232,7 +234,7 @@ class L3VariableTime(Realm):
             lat = int(lat / count)
             jit = int(jit / count)
 
-        return lat, jit
+        return lat, jit, tput
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
@@ -750,9 +752,9 @@ class L3VariableTime(Realm):
                             pprint(p)
 
                             # Find latency, jitter for connections using this port.
-                            latency, jitter = self.get_endp_stats_for_port(p["port"], endps)
+                            latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
                             
-                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p, latency, jitter)
+                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p, latency, jitter, tput)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -763,14 +765,14 @@ class L3VariableTime(Realm):
                     if passes == expected_passes:
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter):
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter]
+                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
 
         # TODO:  Add in info queried from AP.
 
@@ -852,7 +854,7 @@ class L3VariableTime(Realm):
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
                           'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter'
+                          'Rx-Latency', 'Rx-Jitter', 'Rx-Goodput-Bps'
                           ]
         return csv_rx_headers
 
