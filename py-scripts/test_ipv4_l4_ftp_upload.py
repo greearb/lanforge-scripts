@@ -53,6 +53,7 @@ class IPV4L4(LFCliBase):
         self.cx_profile = self.local_realm.new_l4_cx_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
+        print("##### station_profile.lfclient_url: {}".format(self.station_profile.lfclient_url))
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security

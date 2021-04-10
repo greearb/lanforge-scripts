@@ -68,7 +68,7 @@ class ftp_test(LFCliBase):
             elif self.file_size == "1000MB":
                 self.duration = self.convert_min_in_time(1) # 50
             else:
-                self.duration = self.convert_min_in_time(1) # 10
+                self.duration = self.convert_min_in_time(10) # 10
         elif self.band == "2.4G":
             self.radio = ["wiphy0"] # need to pass in the radios
             if self.file_size == "2MB":
@@ -78,7 +78,7 @@ class ftp_test(LFCliBase):
             elif self.file_size == "1000MB":
                 self.duration = self.convert_min_in_time(1) # 80
             else:
-                 self.duration = self.convert_min_in_time(1) # 10
+                 self.duration = self.convert_min_in_time(10) # 10
         elif self.band == "Both":
             self.radio = ["wiphy2", "wiphy0"]  # need to pass in the radios
 
@@ -92,7 +92,7 @@ class ftp_test(LFCliBase):
             elif self.file_size == "1000MB":
                 self.duration = self.convert_min_in_time(1) # 80
             else:
-                 self.duration = self.convert_min_in_time(1) # 10
+                 self.duration = self.convert_min_in_time(10) # 10
          
         self.file_size_bytes=int(self.convert_file_size_in_Bytes(self.file_size))
     
@@ -216,10 +216,11 @@ class ftp_test(LFCliBase):
 
                 #create layer for connection for upload
                 for client_num in range(len(self.station_list)):
-                    self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test.txt", sleep_time=.5,
+                    self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test_upload.txt", sleep_time=.5,
                                            debug_=self.debug, suppress_related_commands_=True, ftp=True,
                                            user="lanforge", passwd="lanforge",
                                            source="", upload_name=client_list[client_num])
+
 
             #check Both band present then build stations with another station list
             if self.count == 2:
@@ -298,6 +299,10 @@ class ftp_test(LFCliBase):
 
         for i in range(self.num_sta):
             list_of_time.append(0)
+
+        print("list_of_time: {}".format(list_of_time))
+
+        num_sta_finished = 0
         while list_of_time.count(0) != 0:
 
             #run script upto given time
@@ -308,6 +313,7 @@ class ftp_test(LFCliBase):
                 data = self.json_get("layer4/list?fields=bytes-rd")
                 #print("data from bytes-rd: {}".format(data))
 
+
                 if self.num_sta == 1:
                     #reading uc-avg data in json format
                     uc_avg= self.json_get("layer4/list?fields=uc-avg")
@@ -316,9 +322,11 @@ class ftp_test(LFCliBase):
                         data = self.json_get("layer4/list?fields=bytes-rd")
                     if data['endpoint']['bytes-rd'] >= self.file_size_bytes:
                         list1.append(i)
+                        print("list1: {} list2: {}".format(list1,list2))
                         if list1.count(i) == 1:
                             list2.append(i)
                             list1 = list2
+                            print("CX_{} list1: {} list2: {}".format(data2[0],list1,list2))
     
                             #stop station after download or upload file with particular size
                             self.json_post("/cli-json/set_cx_state", {
@@ -326,8 +334,10 @@ class ftp_test(LFCliBase):
                                 "cx_name": "CX_" + data2[0],
                                 "cx_state": "STOPPED"
                             }, debug_=self.debug)
-    
                             list_of_time[i] = round(int(uc_avg['endpoint']['uc-avg'])/1000,1)
+                            num_sta_finished += 1
+                            if num_sta_finished >= self.num_sta: 
+                                break
                 else:
                     #reading uc-avg data in json format
                     uc_avg= self.json_get("layer4/list?fields=uc-avg")
@@ -335,9 +345,12 @@ class ftp_test(LFCliBase):
                         data = self.json_get("layer4/list?fields=bytes-rd")
                     if data['endpoint'][i][data2[i]]['bytes-rd'] >= self.file_size_bytes:
                         list1.append(i)
+                        print("list1: {} list2: {}".format(list1,list2))
+
                         if list1.count(i) == 1:
                             list2.append(i)
                             list1 = list2
+                            print("CX_{} list1: {} list2: {}".format(data2[i],list1,list2))
 
                             #stop station after download or upload file with particular size
                             self.json_post("/cli-json/set_cx_state", {
@@ -348,6 +361,8 @@ class ftp_test(LFCliBase):
 
                             list_of_time[i] = round(int(uc_avg['endpoint'][i][data2[i]]['uc-avg'])/1000,1)
             time.sleep(0.5)
+            # print(".", end='')
+
 
         #return list of download/upload time in seconds
         return list_of_time
