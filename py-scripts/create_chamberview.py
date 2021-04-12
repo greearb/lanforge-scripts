@@ -4,13 +4,13 @@
 Note: Script for creating a chamberview scenario.
     Run this script to set/create a chamber view scenario.
     ex. on how to run this script:
-    create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=VLAN"
-    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=wiphy1 Uses-2=AUTO 2 Freq=-1
-        DUT=Test DUT_Radio=Radio-2 Traffic=http VLAN=VLAN"
-"""
+    ./create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name" \
+    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1 \
+        DUT=test DUT_Radio=Radio-1 Traffic=http VLAN=vlan" \
+    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy1 Uses-2=AUTO Freq=-1 \
+        DUT=test DUT_Radio=Radio-2 Traffic=http VLAN=vlan"
 
+"""            
 import sys
 import os
 import argparse
