@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
 
 """
+Note: To Run this script gui should be opened with
+
+    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+          ./lfclient.bash -cli-socket 3990
+
+
 Note: Script for creating a chamberview scenario.
     Run this script to set/create a chamber view scenario.
     ex. on how to run this script:
-    ./create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name" \
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1 \
-        DUT=test DUT_Radio=Radio-1 Traffic=http VLAN=vlan" \
-    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy1 Uses-2=AUTO Freq=-1 \
-        DUT=test DUT_Radio=Radio-2 Traffic=http VLAN=vlan"
 
-"""            
+    create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
+        DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
+    --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=wiphy1 Uses-2=AUTO 2 Freq=-1
+        DUT=Test DUT_Radio=Radio-2 Traffic=http VLAN="
+
+Output:
+    You should see build scenario with the given arguments at the end of this script.
+    To verify this:
+        open Chamber View -> Manage scenario
+
+"""
+
 import sys
 import os
 import argparse
@@ -37,9 +51,9 @@ def main():
         \n
            create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name" 
              --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1 
-                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=VLAN" 
+                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=" 
              --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=wiphy1 Uses-2=AUTO Freq=-1 
-                    DUT=Test DUT_Radio=Radio-2 Traffic=http VLAN=VLAN"
+                    DUT=Test DUT_Radio=Radio-2 Traffic=http VLAN="
            """)
     parser.add_argument("-m", "--lfmgr", type=str,
                         help="address of the LANforge GUI machine (localhost is default)")
