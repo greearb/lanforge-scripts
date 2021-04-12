@@ -1,10 +1,14 @@
-#!/usr/bin/env python3
-# ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
-from LANforge import LFRequest
-from LANforge import LFUtils
-from LANforge.lfcli_base import LFCliBase
-import datetime
+"""
+Note: This is a library file used to create a chamber view scenario.
+    import this file as showed in create_chamberview.py to create a scenario
+"""
+
 import time
+
+# !/usr/bin/env python3
+# ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
+from LANforge.lfcli_base import LFCliBase
+
 
 class chamberview(LFCliBase):
     def __init__(self,
@@ -15,11 +19,22 @@ class chamberview(LFCliBase):
                          _lfjson_port=lfclient_port)
 
     #behaves same as chamberview manage scenario
-    def manage_cv_scenario(self, scenario_name="scenario-python", profile="STA-AC", amount="1", dutname="ASUS", dutradio="Radio-1", traffic="http", uses="wiphy0"):
+    def manage_cv_scenario(self,
+                            scenario_name="Automation",
+                            Resources="1.1",
+                            Profile="STA-AC",
+                            Amount="1",
+                            DUT="DUT",
+                            Dut_Radio="Radio-1" ,
+                            Uses1="wiphy0",
+                            Uses2="AUTO",
+                            Traffic="http",
+                            Freq="-1",
+                            VLAN=""):
         req_url = "/cli-json/add_text_blob"
 
-        text_blob = "profile_link 1.1" + " " + profile + " " + amount + " " + "\'DUT:" + " " + dutname + " " + dutradio\
-                    + "\' " + traffic + " " + uses + ",AUTO -1"
+        text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT\
+                    + " " + Dut_Radio + "\' " + Traffic + " " + Uses1 + ","+Uses2 + " " + Freq + " " + VLAN
 
         print(text_blob)
         data = {
@@ -27,7 +42,7 @@ class chamberview(LFCliBase):
             "name": scenario_name,
             "text": text_blob
         }
-        print(data)
+
         rsp = self.json_post(req_url, data)
         time.sleep(2)
 
