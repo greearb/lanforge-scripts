@@ -76,7 +76,7 @@ class ftp_test(LFCliBase):
         #This method will set values according user input
 
         if self.band == "5G":
-            self.radio = ["wiphy2"] # need to pass in the radios
+            self.radio = ["wiphy0"] # need to pass in the radios
             if self.file_size == "2MB":
 
                 #providing time duration for Pass or fail criteria
@@ -98,7 +98,7 @@ class ftp_test(LFCliBase):
             else:
                  self.duration = self.convert_min_in_time(10) # 10
         elif self.band == "Both":
-            self.radio = ["wiphy2", "wiphy0"]  # need to pass in the radios
+            self.radio = ["wiphy0", "wiphy0"]  # need to pass in the radios
 
             #if Both then number of stations are half for 2.4G and half for 5G
             self.num_sta = self.num_sta // 2
@@ -119,13 +119,14 @@ class ftp_test(LFCliBase):
         self.count=0
 
         #delete everything in the GUI before starting the script
-        try:
+        '''try:
             self.local_realm.load("BLANK")
         except:
             print("Couldn't load 'BLANK' Test configurations")
+        '''
 
         for rad in self.radio:
-            if rad == "wiphy2":
+            if rad == "wiphy0":
 
                 #select mode(All stations will connects to 5G)
                 self.station_profile.mode = 10
@@ -162,13 +163,14 @@ class ftp_test(LFCliBase):
             self.station_list = LFUtils.portNameSeries(prefix_=self.sta_prefix, start_id_=self.sta_start_id,
                                                        end_id_=self.num_sta - 1, padding_number_=10000,
                                                        radio=rad)
-
+            
             #cleans stations
             self.station_profile.cleanup(self.station_list , delay=1, debug_=self.debug)
             LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
                                                port_list=self.station_list,
                                                debug=self.debug)
             time.sleep(1)
+            
 
         print("precleanup done")
 
