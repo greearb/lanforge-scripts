@@ -5,7 +5,7 @@ import datetime
 import time
 import json
 
-from chamberview import chamberview as cv
+from cv_commands import chamberview as cv
 
 
 class cv_test(LFCliBase):
