@@ -1,10 +1,10 @@
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 
 from LANforge.lfcli_base import LFCliBase
 import pprint
 from pprint import pprint
 import time
+
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
@@ -144,16 +144,9 @@ class GenCXProfile(LFCliBase):
                 count = 40
             for i in range(0, count):
                 port_info = self.local_realm.name_to_eid(sta_port)
-                if len(port_info) == 2:
-                    resource = 1
-                    shelf = port_info[0]
-                    name = port_info[-1]
-                elif len(port_info) == 3:
-                    resource = port_info[0]
-                    shelf = port_info[1]
-                    name = port_info[-1]
-                else:
-                    raise ValueError("Unexpected name for port_name %s" % sta_port)
+                resource = port_info[0]
+                shelf = port_info[1]
+                name = port_info[2]
 
                 gen_name_a = "%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
                 gen_name_b = "D_%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
@@ -165,15 +158,11 @@ class GenCXProfile(LFCliBase):
                 print("hello............", sta_port)
                 for i in range(0, 5):
                     port_info = self.local_realm.name_to_eid(port_name)
-                    if len(port_info) == 2:
-                        resource = 1
-                        shelf = port_info[0]
-                        name = port_info[-1]
-                    elif len(port_info) == 3:
+                    try:
                         resource = port_info[0]
                         shelf = port_info[1]
-                        name = port_info[-1]
-                    else:
+                        name = port_info[2]
+                    except:
                         raise ValueError("Unexpected name for port_name %s" % port_name)
 
                     # this naming convention follows what you see when you use
@@ -282,16 +271,9 @@ class GenCXProfile(LFCliBase):
         endp_tpls = []
         for port_name in ports:
             port_info = self.local_realm.name_to_eid(port_name)
-            if len(port_info) == 2:
-                resource = 1
-                shelf = port_info[0]
-                name = port_info[-1]
-            elif len(port_info) == 3:
-                resource = port_info[0]
-                shelf = port_info[1]
-                name = port_info[-1]
-            else:
-                raise ValueError("Unexpected name for port_name %s" % port_name)
+            resource = port_info[0]
+            shelf = port_info[1]
+            name = port_info[2]
 
             # this naming convention follows what you see when you use
             # lf_firemod.pl --action list_endp after creating a generic endpoint
