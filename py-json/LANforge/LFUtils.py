@@ -550,10 +550,7 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
 def name_to_eid(input, non_port=False):
-    if non_port:
-        rv = [1, 1, "", ""]
-    else:
-        rv = [1, 1, ""]
+    rv = [1, 1, "", ""]
     info = []
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
