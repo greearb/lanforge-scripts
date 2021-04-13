@@ -21,8 +21,8 @@ Note:
                 keep this as y: This will automatically add all the stations to test
                 if selected as n: Give station names in --stations argument
     --stations == if --auto_add is n, enter stations to use for wifi capacity
-
 """
+
 import sys
 import os
 import argparse
