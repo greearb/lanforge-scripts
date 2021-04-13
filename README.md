@@ -4,6 +4,16 @@ with LANforge systems. On your LANforge system, these scripts are
 typically installed into `/home/lanforge/scripts`. The `LANforge/` sub directory holds
 the perl modules (`.pm` files) that are common to the perl scripts.
 
+## LANforge CLI Users Guide:  https://www.candelatech.com/lfcli_ug.php ##
+The LANforge CLI Users Guide is a good place to start for understanding scripts
+
+## LANforge on system cli help and cli command composer ##
+The LANforge has an on system help / system query, when on LANforge browse to 
+http://local_host:8080
+
+The LANforge has an on system cli help and cli command composer 
+http://local_host:8080/help 
+
 ### Commonly Used ###
 The `lf_*.pl` scripts are typically more complete and general purpose
 scripts, though some are ancient and very specific.  In particular,
@@ -59,6 +69,25 @@ When starting to use Python, please run the update_dependencies.py script locate
 | `test_l3_scenario_throughput.py`   | Load an existing scenario and run the simultaneous throughput over time and generate report and P=plot the G=graph|
 | `test_l3_unicast_traffic_gen.py`   | Generate unicast traffic over a list of stations|
 | `tip_station_powersave.py`         | Generate and test for powersave packets within traffic run over multiple stations |
+
+
+### Python Scripts py-json/LANforge ###
+
+Core communication files to LANforge
+
+| Name | Purpose |
+|------|---------|
+| `add_dut.py`            | defined list of DUT keys, cli equivalent: https://www.candelatech.com/lfcli_ug.php#add_dut  |
+| `add_file_endp.py`      | Add a File endpoint to the LANforge Manager.  cli equivalent: add_file_endp https://www.candelatech.com/lfcli_ug.php#add_file_endp |
+| `add_l4_endp.py`        |  Add a Layer 4-7 (HTTP, FTP, TELNET, ..) endpoint to the LANforge Manager. cli equivalent: add_l4_endp https://www.candelatech.com/lfcli_ug.php#add_l4_endp |
+| `add_monitor.py`        | Add a WIFI Monitor interface. These are useful for doing low-level wifi packet capturing.  cli equivalent: add_monitor https://www.candelatech.com/lfcli_ug.php#add_monitor |
+| `add_sta.py`            | Add a WIFI Virtual Station (Virtual STA) interface. cli equivalent: add_sta https://www.candelatech.com/lfcli_ug.php#add_sta |
+| `add_vap.py`            | Add a WIFI Virtual Access Point (VAP) interface.  cli equivalent: add_vap https://www.candelatech.com/lfcli_ug.php#add_vap |
+| `set_port.py`           | This command allows you to modify attributes on an Ethernet port.  cli equivalent: set_port https://www.candelatech.com/lfcli_ug.php#set_port |
+| `lfcli_base.py`          | json communication to LANforge |
+| `LFRequest.py`          | Class holds default settings for json requests to LANforge, see: https://gist.github.com/aleiphoenix/4159510|
+| `LFUtils.py`            | Defines useful common methods |
+| `set_port.py`           | This command allows you to modify attributes on an Ethernet port. These options includes the IP address, netmask, gateway address, MAC, MTU, and TX Queue Length. cli equivalent: set_port https://www.candelatech.com/lfcli_ug.php#set_port |
 
 
 ### Perl and Shell Scripts ###
