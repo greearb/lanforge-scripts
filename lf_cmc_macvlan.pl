@@ -5,7 +5,7 @@
 
 # This script sets up connections of types:
 #   lf, lf_udp, lf_tcp, custom_ether, custom_udp, and custom_tcp
-# across 1 real port and manny macvlan ports on 2 machines.
+# across 1 real port and many macvlan ports on 2 machines.
 # It then continously starts and stops the connections.
 
 # Un-buffer output

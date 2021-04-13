@@ -1,4 +1,12 @@
 #!/usr/bin/perl -w
+
+# This program creates a UDP broadcast connection
+
+# Written by Candela Technologies Inc.
+#  Udated by:
+#
+#
+
 use strict;
 use warnings;
 use Carp;
