@@ -26,13 +26,15 @@ class cv_test(LFCliBase):
         }
 
         print("adding- " + text + " " + "to test config")
+
         rsp = self.json_post(req_url, data)
-        time.sleep(1)
+        # time.sleep(1)
 
     #create a test
     def create_test(self, test_name, instance):
         cmd = "cv create '{0}' '{1}'".format(test_name, instance)
-        self.run_cv_cmd(str(cmd))
+        return self.run_cv_cmd(str(cmd))
+
 
     #load test scenario
     def load_test_scenario(self, instance, scenario):
@@ -47,7 +49,7 @@ class cv_test(LFCliBase):
     #start the test
     def start_test(self, instance):
         cmd = "cv click '%s' Start" % instance
-        self.run_cv_cmd(cmd)
+        return self.run_cv_cmd(cmd)
 
     #close test
     def close_test(self, instance):
@@ -61,7 +63,6 @@ class cv_test(LFCliBase):
 
     # Send chamber view commands
     def run_cv_cmd(self, command):
-        print(command)
         response_json = []
         req_url = "/gui-json/cmd"
         data = {
@@ -90,26 +91,32 @@ class cv_test(LFCliBase):
     #close the test instance
     def close_instance(self, instance):
         cmd = "cv click %s 'Close'" % instance
-        print(cmd)
         self.run_cv_cmd(cmd)
 
     #To cancel instance
     def cancel_instance(self, instance):
         cmd = "cv click %s 'Cancel'" % instance
-        print(cmd)
         self.run_cv_cmd(cmd)
 
     #Check total ports
-    def check_ports(self):
+    def get_ports(self):
         response = self.json_get("/ports/")
         return response
 
-    def show_changes(self, config_name):
+    def show_text_blob(self, config_name, blob_test_name):
         req_url = "/cli-json/show_text_blob"
         data = {
             "type": "Plugin-Settings",
-            "name": config_name,  # config name
+            "name":  str(blob_test_name + config_name),  # config name
             "brief": "brief"
         }
         rsp = self.json_post(req_url, data)
-        print(rsp)
+
+
+    def rm_text_blob(self, config_name, blob_test_name):
+        req_url = "/cli-json/rm_text_blob"
+        data = {
+            "type": "Plugin-Settings",
+            "name": str(blob_test_name + config_name),  # config name
+        }
+        rsp = self.json_post(req_url, data)

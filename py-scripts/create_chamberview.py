@@ -7,6 +7,8 @@ Note: To Run this script gui should be opened with
           pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
           ./lfclient.bash -cli-socket 3990
 
+Note: Scenario names should be different, for each run of this script.
+    in case of same scenario name scenario will be appended to the same name.
 
 Note: Script for creating a chamberview scenario.
     Run this script to set/create a chamber view scenario.
