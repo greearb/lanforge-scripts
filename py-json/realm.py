@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+
+# The Realm Class is inherited by most python tests.  Realm Class inherites from LFCliBase.
+# The Realm Class contains the configurable components for LANforge,  
+# For example L3 / L4 cross connects, stations.  Also contains helper methods
+# http://www.candelatech.com/cookbook.php?vol=cli&book=Python_Create_Test_Scripts_With_the_Realm_Class
+# 
+
+# Written by Candela Technologies Inc.
+#  Updated by:
+#
+
+
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 from LANforge import LFRequest
 from LANforge import LFUtils

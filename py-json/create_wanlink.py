@@ -1,8 +1,10 @@
 #!/usr/bin/python3
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# example of how to create a WAN Link using JSON                              -
-#                                                                             -
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python
+
+# Written by Candela Technologies Inc.
+# Updated by:
+
 import sys
 import urllib
 
