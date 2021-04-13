@@ -6,15 +6,16 @@ Note: This script is working as library for chamberview tests.
 import time
 
 from LANforge.lfcli_base import LFCliBase
+from realm import Realm
 
 
-class cv_test(LFCliBase):
+class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
                  ):
-        super().__init__(_lfjson_host=lfclient_host,
-                         _lfjson_port=lfclient_port)
+        super().__init__(lfclient_host=lfclient_host,
+                         lfclient_port=lfclient_port)
 
     #To create a test config
     def create_test_config(self, config_name, blob_test_name, text):
@@ -98,7 +99,7 @@ class cv_test(LFCliBase):
         cmd = "cv click %s 'Cancel'" % instance
         self.run_cv_cmd(cmd)
 
-    #Check total ports
+    #Get port listing
     def get_ports(self):
         response = self.json_get("/ports/")
         return response

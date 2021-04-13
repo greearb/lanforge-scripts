@@ -412,6 +412,7 @@ class Realm(LFCliBase):
         return not wait_more
 
     # Returns map of all stations with port+type == WIFI-STATION
+    # Key is the EID, value is the map of key/values for the port values.
     def station_map(self):
         response = super().json_get("/port/list?fields=port,_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):

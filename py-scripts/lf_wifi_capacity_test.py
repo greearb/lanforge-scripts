@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Note: To Run this script gui should be opened with
 
@@ -7,20 +9,15 @@ Note: To Run this script gui should be opened with
 
 Note: This is a test file which will run a wifi capacity test.
     ex. on how to run this script:
-    ./lf_wifi_capacity.py --lfmgr "localhost" --port 8080 --lf_usr lanforge --lf_pswd lanforge
-    --instance_name "this_inst" --config_name "test_con" --upstream eth1 --batch_size 1 --loop_iter 1
-    --protocol "UDP-IPv4" --duration 6000 --pull_report y --auto_add n --stations sta0000
+    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+    --instance_name this_inst --config_name test_con --upstream 1.1.eth1 --batch_size 1 --loop_iter 1
+    --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0002
 
 Note:
-    --pull_report == keep it to y, if you want wifi capacity reports at end of the test.
-                    This will pull reports from lanforge to your code directory,
+    --pull_report == If specified, this will pull reports from lanforge to your code directory,
                     from where you are running this code
-                    keep this to n, if you are running this from lanforge
 
-    --auto_add == if you dont want to add stations manually to wifi capacity test.
-                keep this as y: This will automatically add all the stations to test
-                if selected as n: Give station names in --stations argument
-    --stations == if --auto_add is n, enter stations to use for wifi capacity
+    --stations == Enter stations to use for wifi capacity
 """
 
 import sys
@@ -43,74 +40,56 @@ from cv_test_reports import lanforge_reports as lf_rpt
 
 
 def main():
-    global batch_size, loop_iter, protocol, duration, lf_host, lf_hostport, config_name, auto_add, upstream, stations, instance_name, pull_report, lf_usr, lf_pswd
+    global lf_host, lf_hostport, config_name, instance_name
     parser = argparse.ArgumentParser(
         description="""
-             ./lf_wifi_capacity.py --lfmgr "localhost" --port 8080 --lf_usr lanforge --lf_pswd lanforge     
-             --instance_name "instance" --config_name "wifi_config" --upstream eth1 --batch_size 1 --loop_iter 1     
-             --protocol "UDP-IPv4" --duration 6000 --pull_report y --auto_add n --stations sta0000
+             ./lf_wifi_capacity_test.py --lfgui localhost --port 8080 --lf_user lanforge --lf_password lanforge     
+             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1     
+             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001
                """)
-    parser.add_argument("-m", "--lfmgr", type=str,
+    parser.add_argument("-m", "--mgr", type=str, default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int,
+    parser.add_argument("-o", "--port", type=int, default=8080,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("-lf", "--lf_usr", type=str,
+    parser.add_argument("--lf_user", type=str, default="lanforge",
                         help="Lanforge username to pull reports")
-    parser.add_argument("-lf_pw", "--lf_pswd", type=str,
+    parser.add_argument("--lf_password", type=str, default="lanforge",
                         help="Lanforge Password to pull reports")
     parser.add_argument("-i", "--instance_name", type=str,
                         help="create test instance")
     parser.add_argument("-c", "--config_name", type=str,
                         help="Config file name")
-    parser.add_argument("-u", "--upstream", type=str,
-                        help="Upstream port for wifi capacity test ex. eth1")
-    parser.add_argument("-b", "--batch_size", type=str,
+    parser.add_argument("-u", "--upstream", type=str, default="1.1.eth1",
+                        help="Upstream port for wifi capacity test ex. 1.1.eth1")
+    parser.add_argument("-b", "--batch_size", type=str, default="1,5,10",
                         help="station increment ex. 1,2,3")
-    parser.add_argument("-l", "--loop_iter", type=str,
+    parser.add_argument("-l", "--loop_iter", type=str, default="1",
                         help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", type=str,
+    parser.add_argument("-p", "--protocol", type=str, default="TCP-IPv4",
                         help="Protocol ex.TCP-IPv4")
-    parser.add_argument("-d", "--duration", type=str,
+    parser.add_argument("-d", "--duration", type=str, default="10000",
                         help="duration in ms. ex. 5000")
-    parser.add_argument("-r", "--pull_report", type=str,
-                        help="Enter y if test reports are need to be pulled from lanforge after test")
-    parser.add_argument("-a", "--auto_add", type=str,
-                        help="Enter y if all available stations are needs to be added , "
-                             "Enter n if you want to give stations manually in stations argument")
-    parser.add_argument("-s", "--stations", type=str,
-                        help="in case if you selected n in auto_add enter stations name here ex.sta0000,sta0001")
+    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
+                        help="pull reports from lanforge (by default: False)")
+    parser.add_argument("--download_rate", type=str, default="1Gbps",
+                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
+    parser.add_argument("--upload_rate", type=str, default="10Mbps",
+                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
+    parser.add_argument("--sort", type=str, default="interleave",
+                        help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
+    parser.add_argument("-s", "--stations", type=str, default="",
+                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
 
 
     args = parser.parse_args()
 
-    if args.lfmgr is not None:
-        lf_host = args.lfmgr
-    if args.port is not None:
-        lf_hostport = args.port
+    lf_host = args.mgr
+    lf_hostport = args.port
 
-    try:
-        lf_usr = args.lf_usr
-        lf_pswd = args.lf_pswd
-        instance_name = args.instance_name
-        config_name = args.config_name
-        batch_size = args.batch_size
-        loop_iter = args.loop_iter
-        protocol = args.protocol
-        duration = args.duration
-        pull_report = args.pull_report
-        upstream = args.upstream
-        stations = args.stations
-        auto_add = args.auto_add
-    except:
-        raise Exception("Wrong argument entered")
+    instance_name = args.instance_name
+    config_name = args.config_name
 
     test_name = "WiFi Capacity"
-
-    # Test related settings
-    dict = {"batch_size": "batch_size:" + " " + str(batch_size),
-            "loop_iter": "loop_iter:" + " " + str(loop_iter),
-            "protocol": "protocol:" + " " + str(protocol),
-            "duration": "duration:" + " " + str(duration)}
 
     run_test = cvtest(lf_host, lf_hostport)
     createCV = cv(lf_host, lf_hostport);  # Create a object
@@ -119,46 +98,33 @@ def main():
     stripped_ports = []
 
     run_test.rm_text_blob(config_name, "Wifi-Capacity-")  # To delete old config with same name
-    response = run_test.get_ports();
 
-    ports = response["interfaces"]
-    d1 = {k: v for e in ports for (k, v) in e.items()}
-    all_ports = list(d1.keys())
+    # Test related settings
+    cfg_options = ["batch_size: " + str(args.batch_size),
+                   "loop_iter: " + str(args.loop_iter),
+                   "protocol: " + str(args.protocol),
+                   "duration: " + str(args.duration),
+                   "ul_rate: " + args.upload_rate,
+                   "dl_rate: " + args.download_rate,
+                   ]
 
-    if auto_add == "yes" or auto_add == "y" or auto_add == "Y":
-        for port in d1.keys():
-            if port.__contains__("sta") or port.__contains__(upstream):
-                available_ports.append(port)
-
-        for i in range(len(available_ports)):
-            add_port = "sel_port-" + str(i) + ":" + " " + available_ports[i]
-            run_test.create_test_config(config_name, "Wifi-Capacity-", add_port)
+    port_list = [args.upstream]
+    if args.stations == "":
+        stas = run_test.station_map()  # See realm
+        for eid in stas.keys():
+            port_list.append(eid)
     else:
-        available_ports = []
-        stations = stations.split(",")
-        for str_port in all_ports:
-            stripped_ports.append(str_port[4:])  # removing Resource from names
+        stas = args.stations.split(",")
+        for s in stas:
+            port_list.append(s)
 
-        if upstream in stripped_ports:
-            available_ports.append(all_ports[stripped_ports.index(upstream)])
-        else:
-            raise Exception("Could not find upstream port")
+    idx = 0
+    for eid in port_list:
+        add_port = "sel_port-" + str(idx) + ": " + eid
+        run_test.create_test_config(config_name,"Wifi-Capacity-",add_port)
+        idx += 1
 
-        for sta in range(len(stations)):
-            if stations[sta] in stripped_ports:
-                available_ports.append(all_ports[stripped_ports.index(stations[sta])])
-            else:
-                raise Exception("%s not available" % stations[sta])
-
-        if len(available_ports) == 0:
-            print("No stations are given")
-            exit(1)
-
-        for count in range(len(available_ports)):
-            add_port = "sel_port-" + str(count) + ":" + " " + available_ports[count]
-            run_test.create_test_config(config_name, "Wifi-Capacity-", add_port)
-
-    for key, value in dict.items():
+    for value in cfg_options:
         run_test.create_test_config(config_name, "Wifi-Capacity-", value)
 
     for i in range(60):
@@ -173,6 +139,14 @@ def main():
     time.sleep(2)
     run_test.load_test_config(config_name, instance_name)
     run_test.auto_save_report(instance_name)
+
+    if args.sort == 'linear':
+        cmd = "cv click '%s' 'Linear Sort'" % instance_name
+        run_test.run_cv_cmd(cmd)
+    if args.sort == 'interleave':
+        cmd = "cv click '%s' 'Interleave Sort'" % instance_name
+        run_test.run_cv_cmd(cmd)
+
 
     response = run_test.start_test(instance_name)
     d1 = {k: v for e in response for (k, v) in e.items()}
@@ -190,8 +164,8 @@ def main():
             report = lf_rpt()
             print(location)
             try:
-                if (pull_report == "yes") or (pull_report == "y") or (pull_report == "Y"):
-                    report.pull_reports(hostname=lf_host, username=lf_usr, password=lf_pswd,
+                if args.pull_report:
+                    report.pull_reports(hostname=lf_host, username=args.lf_user, password=args.lf_password,
                                         report_location=location)
             except:
                 raise Exception("Could not find Reports")
