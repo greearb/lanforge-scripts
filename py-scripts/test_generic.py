@@ -26,7 +26,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import datetime
 import json
@@ -40,7 +40,7 @@ class GenTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _local_realm=realm.Realm(host,port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _local_realm=Realm(host,port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -148,15 +148,17 @@ class GenTest(LFCliBase):
         if self.debug:
             pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
-        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True, timeout_sec=-1):
+        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
             self.exit_fail()
+
+        self.generic_endps_profile.start_cx()
+
         cur_time = datetime.datetime.now()
         passes = 0
         expected_passes = 0
-        self.generic_endps_profile.start_cx()
         time.sleep(15)
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
         print("Starting Test...")
@@ -212,6 +214,24 @@ class GenTest(LFCliBase):
 
 
 def main():
+    optional = []
+    optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
+    optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
+    optional.append({'name': '--output_format', 'help': 'choose either csv or xlsx'})
+    optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
+    optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
+    optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
+    optional.append({'name': '--gen_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
+                     'default': ['name', 'tx bytes', 'rx bytes']})
+    optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
+                     'default': ['ap', 'ip', 'parent dev']})
+    optional.append(
+        {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
+         'default': None})
+    optional.append({'name': '--monitor_interval',
+                     'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                     'default': '2s'})
+
     parser = LFCliBase.create_basic_argparse(
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -248,7 +268,8 @@ python3 ./test_generic.py
     --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
-''')
+''',
+    more_optional=optional)
 
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
@@ -267,6 +288,54 @@ python3 ./test_generic.py
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
+
+        # Create directory
+
+        # if file path with output file extension is not given...
+        # check if home/lanforge/report-data exists. if not, save
+        # in new folder based in current file's directory
+    systeminfopath = None
+    if args.report_file is None:
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
+                                                                                                 '-') + '-test_generic'  # create path name
+        try:
+            path = os.path.join('/home/lanforge/report-data/', new_file_path)
+            os.mkdir(path)
+        except:
+            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            path = os.path.join(curr_dir_path, new_file_path)
+            os.mkdir(path)
+        systeminfopath = str(path) + '/systeminfo.txt'
+
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
+                                  'xlsx']:
+            report_f = str(path) + '/data.' + args.output_format
+            output = args.output_format
+        else:
+            print(
+                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
+            report_f = str(path) + '/data.csv'
+            output = 'csv'
+
+    else:
+        systeminfopath = str(args.report_file).split('/')[-1]
+        report_f = args.report_file
+        if args.output_format is None:
+            output = str(args.report_file).split('.')[-1]
+        else:
+            output = args.output_format
+    print("Saving final report data in ... " + report_f)
+
+    # Retrieve last data file
+    compared_rept = None
+    if args.compared_report:
+        compared_report_format = args.compared_report.split('.')[-1]
+        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+        if compared_report_format != 'csv':
+            print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
+            exit(1)
+        else:
+            compared_rept = args.compared_report
 
     station_list = LFUtils.portNameSeries(radio=args.radio,
                                           prefix_="sta",
@@ -305,6 +374,49 @@ python3 ./test_generic.py
     if not generic_test.passes():
         print(generic_test.get_fail_message())
         generic_test.exit_fail()
+
+    try:
+        genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
+    except:
+        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+
+    if type(args.gen_cols) is not list:
+        generic_cols = list(args.gen_cols.split(","))
+        # send col names here to file to reformat
+    else:
+        generic_cols = args.gen_cols
+        # send col names here to file to reformat
+    if type(args.port_mgr_cols) is not list:
+        port_mgr_cols = list(args.port_mgr_cols.split(","))
+        # send col names here to file to reformat
+    else:
+        port_mgr_cols = args.port_mgr_cols
+        # send col names here to file to reformat
+    if args.debug:
+        print("Generic Endp column names are...")
+        print(generic_cols)
+        print("Port Manager column names are...")
+        print(port_mgr_cols)
+    try:
+        monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
+    except ValueError as error:
+        print(ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+        exit(1)
+    generic_test.start(False, False)
+    generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
+                                    sta_list=station_list,
+                                    #port_mgr_cols=port_mgr_cols,
+                                    report_file=report_f,
+                                    systeminfopath=systeminfopath,
+                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                    monitor_interval_ms=monitor_interval,
+                                    created_cx=genconnections,
+                                    output_format=output,
+                                    compared_report=compared_rept,
+                                    script_name='test_generic',
+                                    arguments=args,
+                                    debug=args.debug)
+
     generic_test.stop()
     time.sleep(30)
     generic_test.cleanup(station_list)
