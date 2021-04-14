@@ -44,10 +44,11 @@ class CSVtoInflux(Realm):
         self.df = df
 
     # Submit data to the influx db if configured to do so.
-    def post_to_influx(self, kpi):
-        dates = list(set(kpi['Date']))
+    def post_to_influx(self):
+        dates = list(set(self.df['Date']))
+        scriptname=self.df['test-id'][0]
         for date in dates:
-            kpi2 = self.df[self.df['Date'] == date][['Date', 'test details', 'numeric-score']]
+            kpi2 = self.df[self.df['Date'] == date][['Date', 'test details', 'numeric-score','test-id']]
             metrics = list(set(kpi2['test details']))
             targets = dict()
             for k in metrics:
@@ -55,7 +56,7 @@ class CSVtoInflux(Realm):
                 targets[k.replace(' ', '-').lower()] = targets.pop(k)
             targets
             tags = dict()
-            tags['script'] = 'WiFi Capacity'
+            tags['script'] = scriptname
             for k in targets.keys():
                 self.influxdb.post_to_influx(k, targets[k], tags, date)
 
