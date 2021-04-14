@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+import time
+import datetime
 import matplotlib.pyplot as plt 
 import matplotlib as mpl 
 import numpy as np 
@@ -12,6 +16,8 @@ import math
 # base report class
 class lf_report():
     def __init__(self,
+                _report_path = 'lanforge',
+                _output_format = 'html',  # pass in on the write functionality
                 _dataframe="",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
@@ -36,7 +42,32 @@ class lf_report():
             self.custom_html = ""
             self.objective = _obj
             self.obj_title = _obj_title
-    
+            self.systeminfopath = ""
+            self.report_path = ""
+            
+            
+
+            if _report_path == 'lanforge':
+                new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':','-') 
+                try:
+                    path = os.path.join('/home/lanforge/report-data/', new_file_path)
+                    os.mkdir(path)
+                except:
+                    curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    path = os.path.join(curr_dir_path, new_file_path)
+                    os.mkdir(path)
+                self.report_path = str(path)
+            elif _report_path == 'local': 
+                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                path = os.path.join(curr_dir_path, new_file_path)
+                self.report_path = str(path)
+            else: # for now just put local 
+                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                path = os.path.join(curr_dir_path, new_file_path)
+                os.mkdir(path)
+                self.report_path = str(path)
+
+            # move the banners and candela images to report path
 
     def set_title(self,_title):
         self.title = _title
@@ -63,11 +94,11 @@ class lf_report():
     def set_graph_image(self,_graph_image):
         self.graph_image = _graph_image
 
+    def get_path(self):
+        return self.report_path
+
     def write_html(self): 
-            # dataframe_html = self.dataframe.to_html(index=False)  # have the index be able to be passed in.
-            # self.build_banner()
-            # self.build_table_title()
-            # self.html = self.banner_html + self.table_html +  dataframe_html
+            self.output_html = str(self.report_path)+'/'+ self.output_html
             test_file = open(self.output_html, "w")
             test_file.write(self.html)
             test_file.close()
@@ -79,8 +110,8 @@ class lf_report():
             # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
             options = {"enable-local-file-access" : None}  # prevent eerror Blocked access to file
+            self.output_pdf = str(self.report_path)+'/'+ self.output_pdf
             pdfkit.from_file(self.output_html, self.output_pdf, options=options)
-
 
     def generate_report(self):
         self.write_html()            
@@ -168,6 +199,7 @@ class lf_report():
 
 
 
+
 # Unit Test
 if __name__ == "__main__":
 
@@ -190,6 +222,7 @@ if __name__ == "__main__":
 
 
     #report = lf_report(_dataframe=dataframe)
+    #report = lf_report()
     report = lf_report()
     report.set_title("Banner Title One")
     report.build_banner()
@@ -214,3 +247,5 @@ if __name__ == "__main__":
     print("returned file ")
     print(html_file)
     report.write_pdf()
+
+    print("report path {}".format(report.get_path()))
