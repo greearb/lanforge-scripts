@@ -32,8 +32,8 @@ class cv_test(Realm):
         # time.sleep(1)
 
     #create a test
-    def create_test(self, test_name, instance):
-        cmd = "cv create '{0}' '{1}'".format(test_name, instance)
+    def create_test(self, test_name, instance, load_old_cfg):
+        cmd = "cv create '{0}' '{1}' '{2}'".format(test_name, instance, load_old_cfg)
         return self.run_cv_cmd(str(cmd))
 
 
@@ -104,15 +104,16 @@ class cv_test(Realm):
         response = self.json_get("/ports/")
         return response
 
-    def show_text_blob(self, config_name, blob_test_name):
+    def show_text_blob(self, config_name, blob_test_name, brief):
         req_url = "/cli-json/show_text_blob"
-        data = {
-            "type": "Plugin-Settings",
-            "name":  str(blob_test_name + config_name),  # config name
-            "brief": "brief"
-        }
-        rsp = self.json_post(req_url, data)
-
+        data = {"type": "Plugin-Settings"}
+        if config_name and blob_test_name:
+            data["name"] = "%s%s"%(blob_test_name, config_name)  # config name
+        else:
+            data["name"] = "ALL"
+        if brief:
+            data["brief"] = "brief"
+        return self.json_post(req_url, data)
 
     def rm_text_blob(self, config_name, blob_test_name):
         req_url = "/cli-json/rm_text_blob"

@@ -93,7 +93,7 @@ class RunCvScenario(LFCliBase):
             "sleep 2",
             "cv sync",
             "sleep 1",
-            "cv create '%s' test_ref" % self.cv_test,
+            "cv create '%s' test_ref 'true'" % self.cv_test,
             "sleep 5",
             "cv load test_ref '%s'" % self.test_profile,
             "sleep 2",

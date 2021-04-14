@@ -71,6 +71,8 @@ def main():
                         help="duration in ms. ex. 5000")
     parser.add_argument("-r", "--pull_report", default=False, action='store_true',
                         help="pull reports from lanforge (by default: False)")
+    parser.add_argument("--load_old_cfg", default=False, action='store_true',
+                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
     parser.add_argument("--download_rate", type=str, default="1Gbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
     parser.add_argument("--upload_rate", type=str, default="10Mbps",
@@ -94,10 +96,11 @@ def main():
     run_test = cvtest(lf_host, lf_hostport)
     createCV = cv(lf_host, lf_hostport);  # Create a object
 
-    available_ports = []
-    stripped_ports = []
+    createCV.sync_cv()
+    time.sleep(2)
 
     run_test.rm_text_blob(config_name, "Wifi-Capacity-")  # To delete old config with same name
+    run_test.show_text_blob(None, None, False)
 
     # Test related settings
     cfg_options = ["batch_size: " + str(args.batch_size),
@@ -121,22 +124,32 @@ def main():
     idx = 0
     for eid in port_list:
         add_port = "sel_port-" + str(idx) + ": " + eid
-        run_test.create_test_config(config_name,"Wifi-Capacity-",add_port)
+        run_test.create_test_config(config_name, "Wifi-Capacity-",add_port)
         idx += 1
 
     for value in cfg_options:
         run_test.create_test_config(config_name, "Wifi-Capacity-", value)
 
+    # Request GUI update its text blob listing.
+    run_test.show_text_blob(config_name, "Wifi-Capacity-", False)
+
+    # Hack, not certain if the above show returns before the action has been completed
+    # or not, so we sleep here until we have better idea how to query if GUI knows about
+    # the text blob.
+    time.sleep(5)
+
+    load_old = "false"
+    if args.load_old_cfg:
+        load_old = "true"
+
     for i in range(60):
-        response = run_test.create_test(test_name, instance_name)
+        response = run_test.create_test(test_name, instance_name, load_old)
         d1 = {k: v for e in response for (k, v) in e.items()}
         if d1["LAST"]["response"] == "OK":
             break
         else:
             time.sleep(1)
 
-    createCV.sync_cv()
-    time.sleep(2)
     run_test.load_test_config(config_name, instance_name)
     run_test.auto_save_report(instance_name)
 
@@ -151,6 +164,8 @@ def main():
     response = run_test.start_test(instance_name)
     d1 = {k: v for e in response for (k, v) in e.items()}
     if d1["LAST"]["response"].__contains__("Could not find instance:"):
+        print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
+        #pprint(response)
         exit(1)
 
     while (True):
