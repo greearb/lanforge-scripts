@@ -776,9 +776,6 @@ class CreateCtlr():
 class L3VariableTime(Realm):
     def __init__(self, 
                 args,
-                _dfs,
-                _dfs_time,
-                _radar_duration, 
                 _scheme,
                 _port,
                 _series,
@@ -843,11 +840,6 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
-        self.dfs = _dfs
-        self.dfs_time = _dfs_time
-        self.radar_duration = _radar_duration
-        self.radar_duration_seconds = self.duration_time_to_seconds(_radar_duration)
-        self.dfs_time_seconds = self.duration_time_to_seconds(_dfs_time)
         self.scheme = _scheme
         self.port   = _port
         self.series = _series
@@ -893,22 +885,12 @@ class L3VariableTime(Realm):
         self.results = results
         self.csv_started = csv_started
         self.epoch_time = int(time.time())
-        self.dfs_epoch_start  = 0
-        self.dfs_epoch_detect = 0
-        #[*07/07/2020 23:37:48.1460] changed to DFS channel 52, running CAC for 60 seconds.
-        self.CAC_TIMER = ""
-        #[*07/07/2020 23:38:48.7240] CAC_EXPIRY_EVT: CAC finished on DFS channel 52
-        self.CAC_EXPIRY_EVT = ""
-        #[*07/07/2020 23:44:27.8060] DOT11_DRV[1]: set_dfs Channel set to 36/20, CSA count 10
-        self.CSA_COUNT = ""
-        self.BLACK_LIST = ""
         self.debug = debug_on
         self.wait_timeout = wait_timeout
         self.test_keys = test_keys
         self.test_config = test_config
 
         self.test_config_dict = dict(map(lambda x: x.split('=='), str(self.test_config).replace('[','').replace(']','').replace("'","").split()))
-
 
         # Full spread-sheet data
         if self.outfile is not None:
@@ -975,42 +957,6 @@ class L3VariableTime(Realm):
     def time_stamp(self):
         return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
 
-    def __record_rx_dropped_percent(self,rx_drop_percent):
-        csv_rx_drop_percent_data = []
-        print("test_keys {}".format(self.test_keys))
-        print("self.test_config_dict {}".format(self.test_config_dict))
-        for key in self.test_keys:
-            csv_rx_drop_percent_data.append(self.test_config_dict[key])
-
-        csv_rx_drop_percent_data.extend([self.epoch_time, self.time_stamp(),'rx_drop_percent'])
-        # remove multi cast since downstream only if selected
-        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
-
-        if "upstream" in self.test_config_dict.values():
-            for key in [key for key in rx_drop_percent if "-A" in key]: del rx_drop_percent[key]
-        elif "downstream" in self.test_config_dict.values():
-            for key in [key for key in rx_drop_percent if "-B" in key]: del rx_drop_percent[key]
-
-
-        filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
-        average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
-        for i in range(5):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-
-        csv_rx_drop_percent_data.append(average_rx_drop_percent)
-
-        for item, value in rx_drop_percent.items():
-            #logg.info(item, "rx drop percent: ", rx_drop_percent[item])
-            csv_rx_drop_percent_data.append(rx_drop_percent[item])
-
-        self.csv_add_row(csv_rx_drop_percent_data,self.csv_writer,self.csv_file)
-        self.csv_add_row(csv_rx_drop_percent_data,self.csv_results_writer,self.csv_results)
-
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
@@ -1021,11 +967,6 @@ class L3VariableTime(Realm):
         csv_rx_delta_row_data = []
         csv_rx_delta_dict = {}
         test_id = ""
-
-        #for key in self.test_keys:
-        #    csv_rx_row_data.append(self.test_config_dict[key])
-        #    csv_rx_delta_row_data.append(self.test_config_dict[key])
-
 
         for key in [key for key in old_list if "mtx" in key]: del old_list[key]
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
@@ -1042,16 +983,6 @@ class L3VariableTime(Realm):
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
             print("downstream in dictionary values")
-        #follow code left in for now, provides the best 5 worst 5
-        '''print("new_evaluate_list after",new_evaluate_list)
-        csv_performance_values=sorted(new_evaluate_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
-        csv_performance_values=self.csv_validate_list(csv_performance_values,5)
-        for i in range(5):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-        for i in range(-1,-6,-1):
-            csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-
-        csv_rx_row_data.append(average_rx)'''
 
         old_evaluate_list = old_list.copy()
         if "upstream" in self.test_config_dict.values():
@@ -1129,18 +1060,6 @@ class L3VariableTime(Realm):
 
             print("csv_rx_row_data {}".format(csv_rx_row_data))
             #TODO:  may want to pass in the information that needs to be in the csv file into the class
-            '''
-            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx'])
-            csv_rx_delta_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
-
-            csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
-            csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
-            for i in range(5):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-            for i in range(-1,-6,-1):
-                csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-
-            csv_rx_delta_row_data.append(average_rx_delta)'''
             
             for item, value in old_evaluate_list.items():
                 expected_passes +=1
@@ -1152,15 +1071,9 @@ class L3VariableTime(Realm):
                     print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
                     csv_rx_headers.append(item)
-                # note need to have all upstream and downstream in the csv table thus new_list and old_list
-                #csv_rx_row_data.append(new_list[item])
-                # provide delta
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
-            #self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
-
-            #self.csv_add_row(csv_rx_delta_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
                 return True, max_tp_mbps, csv_result_row_data
@@ -1313,9 +1226,6 @@ class L3VariableTime(Realm):
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
             old_rx_values = new_rx_values
-
-            #percentage dropped not needed for scaling and performance , needed for longevity
-            #self.__record_rx_dropped_percent(rx_drop_percent)
 
             cur_time = datetime.datetime.now()
         self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
@@ -1643,6 +1553,67 @@ Eventual Realm at controller
 6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
+
+LANforge information on what is displayed in the Column and how to access the value with cli or json
+
+    GUI Column Display       Layer3_cols argument to type in (to print in report)
+
+    Name                |  'name'
+    EID                 |  'eid'
+    Run                 |  'run'
+    Mng                 |  'mng'
+    Script              |  'script'
+    Tx Rate             |  'tx rate'
+    Tx Rate (1 min)     |  'tx rate (1&nbsp;min)'
+    Tx Rate (last)      |  'tx rate (last)'
+    Tx Rate LL          |  'tx rate ll'
+    Rx Rate             |  'rx rate'
+    Rx Rate (1 min)     |  'rx rate (1&nbsp;min)'
+    Rx Rate (last)      |  'rx rate (last)'
+    Rx Rate LL          |  'rx rate ll'
+    Rx Drop %           |  'rx drop %'
+    Tx PDUs             |  'tx pdus'
+    Tx Pkts LL          |  'tx pkts ll'
+    PDU/s TX            |  'pdu/s tx'
+    Pps TX LL           |  'pps tx ll'
+    Rx PDUs             |  'rx pdus'
+    Rx Pkts LL          |  'pps rx ll'
+    PDU/s RX            |  'pdu/s tx'
+    Pps RX LL           |  'pps rx ll'
+    Delay               |  'delay'
+    Dropped             |  'dropped'
+    Jitter              |  'jitter'
+    Tx Bytes            |  'tx bytes'
+    Rx Bytes            |  'rx bytes'
+    Replays             |  'replays'
+    TCP Rtx             |  'tcp rtx'
+    Dup Pkts            |  'dup pkts'
+    Rx Dup %            |  'rx dup %'
+    OOO Pkts            |  'ooo pkts'
+    Rx OOO %            |  'rx ooo %'
+    RX Wrong Dev        |  'rx wrong dev'
+    CRC Fail            |  'crc fail'
+    RX BER              |  'rx ber'
+    CX Active           |  'cx active'
+    CX Estab/s          |  'cx estab/s'
+    1st RX              |  '1st rx'
+    CX TO               |  'cx to'
+    Pattern             |  'pattern'
+    Min PDU             |  'min pdu'
+    Max PDU             |  'max pdu'
+    Min Rate            |  'min rate'
+    Max Rate            |  'max rate'
+    Send Buf            |  'send buf'
+    Rcv Buf             |  'rcv buf'
+    CWND                |  'cwnd'
+    TCP MSS             |  'tcp mss'
+    Bursty              |  'bursty'
+    A/B                 |  'a/b'
+    Elapsed             |  'elapsed'
+    Destination Addr    |  'destination addr'
+    Source Addr         |  'source addr'
+
+
         ''')
 
     # Fixed tests coded into script
@@ -1794,17 +1765,6 @@ Eventual Realm at controller
     
     if args.controller_ap_slot:
         __ap_slot = args.controller_ap_slot
-
-    if args.controller_dfs:
-        __dfs = args.controller_dfs
-    else:
-        __dfs = False
-
-    if args.controller_dfs_time:
-        __dfs_time = args.controller_dfs_time
-
-    if args.radar_duration:
-        __radar_duration = args.radar_duration
 
     ap_dict = []
     if args.ap_info:
@@ -2179,15 +2139,6 @@ Eventual Realm at controller
     __chan_24ghz_set  = None
     __csv_started     = False
 
-    # TODO these need to be deleted
-    __dfs_channel     = None
-    __cac_timer_time  = "0s"
-    __dfs_chan_switch_to = None
-    __dfs_time = "0s"
-    __dfs = False
-    __radar_duration = "0s"
-
-    
     for controller_ap in controller_aps:
         for controller_band in controller_bands:  # frequency
             for controller_wifimode in controller_wifimodes:
@@ -2394,9 +2345,6 @@ Eventual Realm at controller
                                                                 # current default is to have a values
                                                                 ip_var_test = L3VariableTime(
                                                                                                 args=args,
-                                                                                                _dfs=__dfs,
-                                                                                                _dfs_time=__dfs_time,
-                                                                                                _radar_duration=__radar_duration,
                                                                                                 _scheme=__scheme,
                                                                                                 _port=__port,
                                                                                                 _series=__series,
