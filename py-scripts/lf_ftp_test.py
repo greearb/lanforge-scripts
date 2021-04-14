@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 
-""" ftp_test.py will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection.
+""" 
+
+NAME: ftp_test.py 
+
+PURPOSE: 
+    will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection.
     find out download/upload time of each client according to file size.
     This script will monitor the bytes-rd attribute of the endpoints.
-    Use './ftp_test.py --help' to see command line usage and options
+
+USE:  './ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
+    --file_size "2MB" --num_stations
+
+INCLUDE_IN_README
+
+
     -Jitendrakumar Kushavah
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
+
+SETUP:  Create a file to be downloaded    linux:  fallocate -l <size> <name>    example fallocate -l 2M ftp_test.txt
 """
 import sys
 from ftp_html import *
@@ -34,7 +47,7 @@ class ftp_test(LFCliBase):
         print("Test is about to start")
         self.host = lfclient_host
         self.port = lfclient_port
-        #self.radio = radio
+        self.radio = radio
         self.upstream = upstream
         self.sta_prefix = sta_prefix
         self.sta_start_id = start_id
