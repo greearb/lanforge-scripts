@@ -4,6 +4,12 @@ import pprint
 from pprint import pprint
 import time
 
+# Class: FIOEndpProfile(LFCliBase) 
+# 
+
+# Written by Candela Technologies Inc.
+#  Updated by:
+#
 
 class FIOEndpProfile(LFCliBase):
     """
