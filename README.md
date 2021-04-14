@@ -59,15 +59,6 @@ Core communication files to LANforge
 | `set_port.py`           | This command allows you to modify attributes on an Ethernet port. These options includes the IP address, netmask, gateway address, MAC, MTU, and TX Queue Length. cli equivalent: set_port https://www.candelatech.com/lfcli_ug.php#set_port |
 
 
-# This program 
-# 
-
-# Written by Candela Technologies Inc.
-#  Updated by:
-#
-
-
-
 ### Python Scripts py-json/ ###
 | Name | Purpose |
 |------|---------|
