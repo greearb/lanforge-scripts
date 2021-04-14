@@ -18,6 +18,7 @@ from realm import Realm
 import datetime
 from datetime import datetime
 import time
+from time import sleep
 import pprint
 
 class EventBreaker(Realm):
@@ -38,34 +39,64 @@ class EventBreaker(Realm):
     def run(self):
 
         now = datetime.now()
+        now_ms = 0
         end_time = self.parse_time(self.test_duration) + now
+        client_time_ms = 0
+        prev_client_time_ms = 0
+        start_loop_time_ms = 0
+        loop_time_ms = 0
+        prev_loop_time_ms = 0
+        num_events = 0
+        prev_num_events = 0
         while datetime.now() < end_time:
-            print ('.', end='')
+            start_loop_time_ms = int(self.get_milliseconds(datetime.now()))
+            print ('\r♦ ', end='')
+            #prev_loop_time_ms = loop_time_ms
+            # loop_time_ms = self.get_milliseconds(datetime.now())
+            prev_client_time_ms = client_time_ms
             response = self.json_get("/events/all")
+            #pprint.pprint(response)
+
             if "events" not in response:
-                # pprint.pprint(response)
+                pprint.pprint(response)
                 raise AssertionError("no events in response")
             events = response["events"]
-            self.counter += 1
-            for record in events:
-                # pprint.pprint(record)
+            prev_num_events = num_events
+            num_events = len(events)
+            if num_events != prev_num_events:
+                print("%s events Δ%s"%(num_events, (num_events - prev_num_events)))
+            if "candela.lanforge.HttpEvents" in response:
+                client_time_ms = float(response["candela.lanforge.HttpEvents"]["duration"])
+                # print(" client_time %d"%client_time_ms)
 
+            if abs(prev_client_time_ms - client_time_ms) > 30:
+                print(" client time %d ms Δ%d"%(client_time_ms, (prev_client_time_ms - client_time_ms)),
+                      end='')
+            #self.counter += 1
+            for record in events:
+                #pprint.pprint(record)
                 for k in record.keys():
                     if record[k] is None:
-                        print ('.', end='')
+                        print (' ☠no %s☠'%k, end='')
                         continue
                     # pprint.pprint( record[k])
                     if "NA" == record[k]["event"] \
                             or "NA" == record[k]["name"] \
                             or "NA" == record[k]["type"] \
                             or "NA" == record[k]["priority"]:
-                        print( "id[%s]"%k, end='')
-            print("counter %s"%self.counter)
-
+                        print( " ☠id[%s]☠"%k, end='')
+            prev_loop_time_ms = loop_time_ms
+            now_ms = int(self.get_milliseconds(datetime.now()))
+            loop_time_ms = now_ms - start_loop_time_ms
+            if (prev_loop_time_ms - loop_time_ms) > 15:
+                print(" loop time %d ms Δ%d                                   "
+                      %(loop_time_ms, (prev_loop_time_ms - loop_time_ms)),
+                      end='')
+            if (prev_loop_time_ms - loop_time_ms) > 30:
+                print("")
 
     def cleanup(self):
         pass
-
 
 def main():
     parser = LFCliBase.create_bare_argparse(
