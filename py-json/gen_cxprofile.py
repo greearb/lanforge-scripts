@@ -1,10 +1,14 @@
-# !/usr/bin/env python3
+
+#!/usr/bin/env python3
 
 from LANforge.lfcli_base import LFCliBase
 import pprint
 from pprint import pprint
+from LANforge.lfcli_base import LFCliBase
+import csv
+import pandas as pd
 import time
-
+import datetime
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
@@ -349,3 +353,152 @@ class GenCXProfile(LFCliBase):
                 "cross_connect": data["alias"]
             })
         time.sleep(sleep_time)
+
+    def monitor(self,
+                duration_sec=60,
+                monitor_interval_ms=1,
+                sta_list=None,
+                generic_cols=None,
+                port_mgr_cols=None,
+                created_cx=None,
+                monitor=True,
+                report_file=None,
+                systeminfopath=None,
+                output_format=None,
+                script_name=None,
+                arguments=None,
+                compared_report=None,
+                debug=False):
+        try:
+            duration_sec = self.parse_time(duration_sec).seconds
+        except:
+            if (duration_sec is None) or (duration_sec <= 1):
+                raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
+            if (duration_sec <= monitor_interval_ms):
+                raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
+        if report_file is None:
+            raise ValueError("Monitor requires an output file to be defined")
+        if systeminfopath is None:
+            raise ValueError("Monitor requires a system info path to be defined")
+        if created_cx is None:
+            raise ValueError("Monitor needs a list of Layer 3 connections")
+        if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
+            raise ValueError("GenCXProfile::monitor wants monitor_interval >= 1 second")
+        if generic_cols is None:
+            raise ValueError("GenCXProfile::monitor wants a list of column names to monitor")
+        if output_format is not None:
+            if output_format.lower() != report_file.split('.')[-1]:
+                raise ValueError(
+                    'Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
+        else:
+            output_format = report_file.split('.')[-1]
+
+        # default save to csv first
+        if report_file.split('.')[-1] != 'csv':
+            report_file = report_file.replace(str(output_format), 'csv', 1)
+            print("Saving rolling data into..." + str(report_file))
+
+        # ================== Step 1, set column names and header row
+        generic_cols = [self.replace_special_char(x) for x in generic_cols]
+        generic_fields = ",".join(generic_cols)
+        default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
+        default_cols.extend(generic_cols)
+        if port_mgr_cols is not None:
+            default_cols.extend(port_mgr_cols)
+        header_row = default_cols
+
+        # csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
+
+        if port_mgr_cols is not None:
+            port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled = []
+            for col_name in port_mgr_cols:
+                port_mgr_cols_labelled.append("port mgr - " + col_name)
+
+            port_mgr_fields = ",".join(port_mgr_cols)
+            header_row.extend(port_mgr_cols_labelled)
+        # create sys info file
+        systeminfo = self.json_get('/')
+        sysinfo = [str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']),
+                   str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
+        with open(systeminfopath, 'w') as filehandle:
+            for listitem in sysinfo:
+                filehandle.write('%s\n' % listitem)
+
+        # ================== Step 2, monitor columns
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+
+        passes = 0
+        expected_passes = 0
+
+        # instantiate csv file here, add specified column headers
+        csvfile = open(str(report_file), 'w')
+        csvwriter = csv.writer(csvfile, delimiter=",")
+        csvwriter.writerow(header_row)
+
+        # wait 10 seconds to get proper port data
+        time.sleep(10)
+
+        # for x in range(0,int(round(iterations,0))):
+        initial_starttime = datetime.datetime.now()
+        while datetime.datetime.now() < end_time:
+            t = datetime.datetime.now()
+            timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
+            t_to_millisec_epoch = int(self.get_milliseconds(t))
+            t_to_sec_epoch = int(self.get_seconds(t))
+            time_elapsed = int(self.get_seconds(t)) - int(self.get_seconds(initial_starttime))
+            basecolumns = [timestamp, t_to_millisec_epoch, t_to_sec_epoch, time_elapsed]
+
+            generic_response = self.json_get("/generic/%s?fields=%s" % (created_cx, generic_fields))
+
+            if port_mgr_cols is not None:
+                port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
+            # get info from port manager with list of values from cx_a_side_list
+            if "endpoints" not in generic_response or generic_response is None:
+                print(generic_response)
+                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+                if debug:
+                    print("Json generic_response from LANforge... " + str(generic_response))
+            if port_mgr_cols is not None:
+                if "interfaces" not in port_mgr_response or port_mgr_response is None:
+                    print(port_mgr_response)
+                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+                if debug:
+                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
+
+            for endpoint in generic_response["endpoints"]:  # each endpoint is a dictionary
+                endp_values = list(endpoint.values())[0]
+                temp_list = basecolumns
+                for columnname in header_row[len(basecolumns):]:
+                    temp_list.append(endp_values[columnname])
+                    if port_mgr_cols is not None:
+                        for sta_name in sta_list_edit:
+                            if sta_name in current_sta:
+                                for interface in port_mgr_response["interfaces"]:
+                                    if sta_name in list(interface.keys())[0]:
+                                        merge = temp_endp_values.copy()
+                                        # rename keys (separate port mgr 'rx bytes' from generic 'rx bytes')
+                                        port_mgr_values_dict = list(interface.values())[0]
+                                        renamed_port_cols = {}
+                                        for key in port_mgr_values_dict.keys():
+                                            renamed_port_cols['port mgr - ' + key] = port_mgr_values_dict[key]
+                                        merge.update(renamed_port_cols)
+                                        for name in port_mgr_cols:
+                                            temp_list.append(merge[name])
+                csvwriter.writerow(temp_list)
+
+            time.sleep(monitor_interval_ms)
+        csvfile.close()
+
+        # comparison to last report / report inputted
+        if compared_report is not None:
+            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file),
+                                              dataframe_two=self.file_to_df(compared_report))
+            exit(1)
+            # append compared df to created one
+            if output_format.lower() != 'csv':
+                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+        else:
+            if output_format.lower() != 'csv':
+                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
