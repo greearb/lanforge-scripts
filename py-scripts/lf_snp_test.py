@@ -832,7 +832,6 @@ class L3VariableTime(Realm):
                 lfclient_port=8080,
                 debug=False,
                 wait_timeout=120,
-                _halt_on_error=False,
                 _exit_on_error=False,
                 _exit_on_fail=False,
                 _proxy_str=None,
@@ -840,7 +839,6 @@ class L3VariableTime(Realm):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
-                         halt_on_error_=_halt_on_error,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
@@ -1665,7 +1663,7 @@ Eventual Realm at controller
     parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect>',default="local flexconnect")
     parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
     parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1 10 20 50 100 200 ',
-                            default="1 10 20 50 100 200" )
+                            default="1 5" ) # defaults are system dependent
 
     parser.add_argument('-cde','--controller_data_encryption', help='--controller_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
