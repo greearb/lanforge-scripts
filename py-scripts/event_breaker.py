@@ -48,7 +48,9 @@ class EventBreaker(Realm):
         prev_loop_time_ms = 0
         num_events = 0
         prev_num_events = 0
+        bad_events = []
         while datetime.now() < end_time:
+            bad_events = []
             start_loop_time_ms = int(self.get_milliseconds(datetime.now()))
             print ('\r♦ ', end='')
             #prev_loop_time_ms = loop_time_ms
@@ -72,9 +74,9 @@ class EventBreaker(Realm):
             if abs(prev_client_time_ms - client_time_ms) > 30:
                 print(" client time %d ms Δ%d"%(client_time_ms, (prev_client_time_ms - client_time_ms)),
                       end='')
-            #self.counter += 1
+            event_index = 0
             for record in events:
-                #pprint.pprint(record)
+
                 for k in record.keys():
                     if record[k] is None:
                         print (' ☠no %s☠'%k, end='')
@@ -84,7 +86,14 @@ class EventBreaker(Realm):
                             or "NA" == record[k]["name"] \
                             or "NA" == record[k]["type"] \
                             or "NA" == record[k]["priority"]:
-                        print( " ☠id[%s]☠"%k, end='')
+                        bad_events.append(int(k))
+                        pprint.pprint(record[k])
+                        # print( " ☠id[%s]☠"%k, end='')
+            if len(bad_events) > 0:
+                pprint.pprint(events[event_index])
+                print( " ☠id[%s]☠"%bad_events, end='')
+                exit(1)
+            event_index += 1
             prev_loop_time_ms = loop_time_ms
             now_ms = int(self.get_milliseconds(datetime.now()))
             loop_time_ms = now_ms - start_loop_time_ms
