@@ -2169,10 +2169,15 @@ LANforge information on what is displayed in the Column and how to access the va
 
     if args.radio:
         logg.info(radios)
-    else:
+    elif args.controller_test_1 or args.controller_test_2 or args.controller_test_3:
         logg.info("radios from coded config used")
+        logg.info("##### AX200 RADIOS #####")
         logg.info(radio_AX200_abgn_ax_dict)
+        logg.info('##### ATH10K_9984 RADIOS ####')
         logg.info(radio_ath10K_9984_an_AC_dict)
+    else:
+        logg.info("No radios endered EXITING,  use --radio or --controller_test_1, --controller_test_2 or --controller_test_3")
+        exit(1)
 
     if args.print_test_config:
         logg.info("PRINT TEST CONFIG ONLY - exiting ")
