@@ -2145,7 +2145,6 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_client_densities   = args.controller_client_density.split()
         controller_packet_types       = args.endp_type.split()
         controller_directions         = args.controller_directions.split()
-        #controller_directions         = "upstream".split()
         controller_packet_sizes       = args.controller_packet_size.split()
         controller_data_encryptions   = args.controller_data_encryption.split()
 
@@ -2165,7 +2164,13 @@ LANforge information on what is displayed in the Column and how to access the va
     logg.info(controller_client_densities)
     logg.info(controller_data_encryptions)
 
+    if args.radio:
+        logg.info(radios)
+    else:
+        logg.info("radios from coded config used")
+
     if args.print_test_config:
+        logg.info("PRINT TEST CONFIG: ")
         exit(1)
 
     __ap_set          = None
@@ -2293,8 +2298,15 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                     logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
                                                                         .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                                 logg.info("controller_wifi_mode {}".format(controller_wifimode))
+
+                                                                # USE command line radios or config radios
                                                                 if args.radio:
                                                                     radios = args.radio
+                                                                    logg.info("########################################################")
+                                                                    logg.info("# radios configured from command line {}".format(radios))
+                                                                    logg.info("# controller_band: {}".format(controller_band))
+                                                                    logg.info("# controller_wifimode: {}".format(controller_wifimode))
+                                                                    logg.info("########################################################")
                                                                 elif controller_band == "a":
                                                                     if controller_wifimode == "anAX" or controller_wifimode == "abgn":
                                                                         #AX200 dual band
