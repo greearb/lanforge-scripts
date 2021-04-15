@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 This file is intended to expose concurrency
-problems in the /events/ URL handler
+problems in the /events/ URL handler by querying events rapidly.
+Please use concurrently with event_flood.py.
 """
 import sys
 
