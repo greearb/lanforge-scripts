@@ -20,6 +20,7 @@ the options and how best to input data.
       --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \
       --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \
       --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
+      --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
       --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
 
@@ -344,8 +345,10 @@ def main():
       --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 \
       --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \
       --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \
-      --enable dual_band_tput --enable basic_cx --enable skip_2 --enable skip_5 --enable skip_5b \
-      --disable tput --disable tput_multi --disable capacity --disable band_steering --disable mix_stability
+      --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
+      --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
+      --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
+      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
       """
                                      )
 
