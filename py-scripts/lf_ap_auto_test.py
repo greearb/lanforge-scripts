@@ -27,7 +27,7 @@ the options and how best to input data.
 Note:
     --enable [option] will attempt to select any checkbox of that name to true.
     --disable [option] will attempt to un-select any checkbox of that name to true.
-    --line_raw 'line contents' will add any setting to the test config.  This is
+    --raw_line 'line contents' will add any setting to the test config.  This is
         useful way to support any options not specifically enabled by the
         command options.
     --set modifications will be applied after the other config has happened,
