@@ -33,7 +33,6 @@ EXAMPLE:
 
 import sys
 import os
-import pexpect
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -991,7 +990,6 @@ class L3VariableTime(Realm):
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
-        csv_performance_values = []
         csv_rx_headers = []
         csv_rx_row_data = []
         csv_result_row_data = []
@@ -1003,9 +1001,9 @@ class L3VariableTime(Realm):
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
-        average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+        # average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
-        # only evaluate upstream or downstream 
+        # Evaluate Upstream or Downstream
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before",new_evaluate_list) 
         if "upstream" in self.test_config_dict.values():
@@ -1352,9 +1350,9 @@ lf_controller_snp.py:
 Task Description:
 ##################################################################################
 -----------------
-As we discussed, we need help in Candela SNP automation which involves controller WLC controller and Candela automation. The framework we will build now will be used for years with all our new APs being added to this testbed.
+Candela SNP automation which involves controller WLC controller and Candela automation. 
 
-Our ultimate aim is to achieve the following things:
+Our ultimate aim of this script is to achieve the following:
 
 1. 1 to 200 client SNP on 11ac (1, 50 and 200 client count tests)
       1. 5 Ghz with different channel widths
@@ -1715,14 +1713,15 @@ LANforge information on what is displayed in the Column and how to access the va
         help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
     #--ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
 
-    # Parameters that allow for testing
-    parser.add_argument('-noc','--no_controller',  help='--no_controller no configuration of the controller', action='store_true')
-    parser.add_argument('-nos','--no_stations',    help='--no_stations , no stations', action='store_true')
-    parser.add_argument('-wto','--wait_timeout',   help='--wait_timeout , time to wait for stations to get IP ', default="120")
+    # Parameters Used for testing
+    parser.add_argument('-noc','--no_controller',  help='-noc / --no_controller no configuration of the controller', action='store_true')
+    parser.add_argument('-nos','--no_stations',    help='-nos / --no_stations , no stations', action='store_true')
+    parser.add_argument('-wto','--wait_timeout',   help='-wto / --wait_timeout , time to wait for stations to get IP ', default="120")
+    parser.add_argument('-ptc','--print_test_config', help='-ptc / --print_test_config , print out the test configuration and exit', action='store_true')
 
     args = parser.parse_args()
 
-    controller_args = args
+    controller_args = args  # use args.
 
     #logg.info("args: {}".format(args))
     debug_on = args.debug
@@ -2165,6 +2164,9 @@ LANforge information on what is displayed in the Column and how to access the va
     logg.info(controller_packet_sizes)
     logg.info(controller_client_densities)
     logg.info(controller_data_encryptions)
+
+    if args.print_test_config:
+        exit(1)
 
     __ap_set          = None
     __band_set        = None
