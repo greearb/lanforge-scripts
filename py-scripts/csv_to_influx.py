@@ -32,7 +32,8 @@ class CSVtoInflux(Realm):
                  _proxy_str=None,
                  _capture_signal_list=[],
                  influxdb=None,
-                 df=None):
+                 #_influx_tag=[],
+                 target_csv=None):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -41,14 +42,18 @@ class CSVtoInflux(Realm):
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
         self.influxdb = influxdb
-        self.df = df
+        self.target_csv = target_csv
+        #self.influx_tag = _influx_tag
 
     # Submit data to the influx db if configured to do so.
     def post_to_influx(self):
-        dates = list(set(self.df['Date']))
-        scriptname=self.df['test-id'][0]
+        df = pd.read_csv(self.target_csv, sep='\t')
+        df['Date'] = pd.to_datetime(df['Date'], unit='s')
+        df['Date'] = [str(timestamp.isoformat()) for timestamp in df['Date']]
+        dates = list(set(df['Date']))
+        scriptname=df['test-id'][0]
         for date in dates:
-            kpi2 = self.df[self.df['Date'] == date][['Date', 'test details', 'numeric-score','test-id']]
+            kpi2 = df[df['Date'] == date][['Date', 'test details', 'numeric-score', 'test-id']]
             metrics = list(set(kpi2['test details']))
             targets = dict()
             for k in metrics:
@@ -57,6 +62,8 @@ class CSVtoInflux(Realm):
             targets
             tags = dict()
             tags['script'] = scriptname
+            #for item in self.influx_tag:
+                #tags[item[0]] = item[1]
             for k in targets.keys():
                 self.influxdb.post_to_influx(k, targets[k], tags, date)
 
@@ -109,6 +116,7 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
     parser.add_argument('--influx_token', help='Token for the Influx database')
     parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
     parser.add_argument('--target_csv', help='CSV file to record to influx database', required=True)
+    parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
 
     args = parser.parse_args()
 
@@ -122,12 +130,11 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
                                 _influx_org=args.influx_org,
                                 _influx_token=args.influx_token,
                                 _influx_bucket=args.influx_bucket)
-    df = pd.read_csv(args.target_csv)
+                                #_influx_tag=args.influx_tag)
 
-    csvtoinflux = CSVtoInflux(args=args,
-                              influxdb=influxdb,
-                              df=df)
-    csvtoinflux.record_kpi()
+    csvtoinflux = CSVtoInflux(influxdb=influxdb,
+                              target_csv=args.target_csv)
+    csvtoinflux.post_to_influx()
 
 
 if __name__ == "__main__":

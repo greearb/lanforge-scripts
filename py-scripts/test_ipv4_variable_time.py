@@ -269,6 +269,7 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--influx_bucket', help='Password for your Influx database')
     parser.add_argument('--influx_org', help='Name of your Influx database')
     parser.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
+    parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
 
     args = parser.parse_args()
 
@@ -386,25 +387,6 @@ python3 ./test_ipv4_variable_time.py
             "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
         exit(1)
     ip_var_test.start(False, False)
-    ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
-                                    sta_list=station_list,
-                                    # port_mgr_cols=port_mgr_cols,
-                                    report_file=report_f,
-                                    systeminfopath=systeminfopath,
-                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                    monitor_interval_ms=monitor_interval,
-                                    created_cx=layer3connections,
-                                    output_format=output,
-                                    compared_report=compared_rept,
-                                    script_name='test_ipv4_variable_time',
-                                    arguments=args,
-                                    debug=args.debug)
-
-    ip_var_test.stop()
-    if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
-        ip_var_test.exit_fail()
-    LFUtils.wait_until_ports_admin_up(port_list=station_list)
 
     if args.influx_org is not None:
         from influx2 import RecordInflux
@@ -416,10 +398,36 @@ python3 ./test_ipv4_variable_time.py
         devices=[station.split('.')[-1] for station in station_list]
         tags=dict()
         tags['script']='test_ipv4_variable_time'
-        grapher.monitor_port_data(longevity=5,
-                        devices=devices,
-                        monitor_interval=2,
-                        tags=tags)
+        try:
+            for k in args.influx_tag:
+                tags[k[0]] = k[1]
+        except:
+            pass
+        grapher.monitor_port_data(longevity=Realm.parse_time(args.test_duration).total_seconds(),
+                                  devices=devices,
+                                  monitor_interval=Realm.parse_time(args.monitor_interval).total_seconds(),
+                                  tags=tags)
+    else:
+        ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
+                                        sta_list=station_list,
+                                        # port_mgr_cols=port_mgr_cols,
+                                        report_file=report_f,
+                                        systeminfopath=systeminfopath,
+                                        duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                        monitor_interval_ms=monitor_interval,
+                                        created_cx=layer3connections,
+                                        output_format=output,
+                                        compared_report=compared_rept,
+                                        script_name='test_ipv4_variable_time',
+                                        arguments=args,
+                                        debug=args.debug)
+
+    ip_var_test.stop()
+    if not ip_var_test.passes():
+        print(ip_var_test.get_fail_message())
+        ip_var_test.exit_fail()
+    LFUtils.wait_until_ports_admin_up(port_list=station_list)
+
     ip_var_test.cleanup()
     if ip_var_test.passes():
         ip_var_test.success()
