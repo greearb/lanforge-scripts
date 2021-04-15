@@ -1387,7 +1387,7 @@ python .\\lf_controller_snp.py --test_duration <duration> --endp_type <traffic t
 Multiple radios may be entered with individual --radio switches
 
 generiic command with controller setting channel and channel width test duration 30 sec
-python3 lf_controller_snp.py --controller_ctlr <IP> --controller_dfs True/False --mgr <Lanforge IP> 
+python3 lf_controller_snp.py --controller_ctlr <IP> --mgr <Lanforge IP> 
     --controller_channel <channel> --controller_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
     --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
     --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
@@ -1423,7 +1423,6 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 --controller_prompt <Prompt for controller Controller>',default="(controller Controller) >
 --controller_ap <controller AP in question>',default="APA453.0E7B.CF9C"
     
---controller_dfs <True/False>',default=False
 --controller_channel <channel>',default=None  , no change
 --controller_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"]
 --controller_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"]
@@ -1455,7 +1454,6 @@ Example: (remove carriage returns)
 
 Example #2 using controller controller
 1.  controller controller at 192.168.100.112
-2.  controller dfs True
 3.  controller channel 52  
 4.  controller channel width 20
 5.  traffic 'lf_udp lf_tcp mc_udp'
@@ -1466,7 +1464,7 @@ Example #2 using controller controller
 10. duration 1m
 
 Example:
-./lf_snp_test.py --controller_ctlr 192.168.100.112 --controller_dfs True --mgr 192.168.100.178 
+./lf_snp_test.py --controller_ctlr 192.168.100.112  --mgr 192.168.100.178 
     --controller_channel 52 --controller_chan_width 20 --endp_type 'lf_udp lf_tcp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
@@ -1683,8 +1681,6 @@ LANforge information on what is displayed in the Column and how to access the va
 
     parser.add_argument('-ctp','--controller_tx_power', help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
-    parser.add_argument('-dfs','--controller_dfs',  help='--controller_dfs, switch to enable dfs testing', action='store_true')
-    parser.add_argument('-dft','--controller_dfs_time',  help='--controller_dfs_time, time to wait prior to sending radar signal default 30s', default='30s')
     parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
                             
