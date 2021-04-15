@@ -18,7 +18,7 @@ Hard coded test configurations take presidence to command line.
 
 EXAMPLE: 
  Using Coded Configuration:
- ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test2 \
+ ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_2 \
        --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
  Using Commandline with defaults:
@@ -1644,9 +1644,9 @@ LANforge information on what is displayed in the Column and how to access the va
         ''')
 
     # Fixed tests coded into script
-    parser.add_argument('-ca'  ,'--controller_all', help='--controller_all flag present default to all tests',action="store_true")
-    parser.add_argument('-ct'  ,'--controller_test', help='--controller_test flag present default to subset tests',action="store_true")
-    parser.add_argument('-ct2' ,'--controller_test2', help='--controller_test2 flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct1' ,'--controller_test_1', help='--controller_test_1 flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct2' ,'--controller_test_2', help='--controller_test_2 flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 flag present default to subset tests',action="store_true")
 
     # Script switches
     parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
@@ -2042,7 +2042,8 @@ LANforge information on what is displayed in the Column and how to access the va
 #     GOAL: help with command line configurations
 ###########################################################################################
     # Test configuration that may be read in , in conjunction with command line arguments
-    if args.controller_all:
+    if args.controller_test_1:
+        logg.info("USING: controller_test_1")
 #        controller_aps              = "APA453.0E7B.CF9C".split()
         controller_aps              = "vanc-e".split()
 #        controller_bands            = "a b".split()
@@ -2068,7 +2069,8 @@ LANforge information on what is displayed in the Column and how to access the va
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
 
-    elif args.controller_test:
+    elif args.controller_test_2:
+        logg.info("USING: controller_test_2")
         # Note the local system only supports 802.11-abgn , 802.11a
         controller_aps              = "APA453.0E7B.CF9C".split()
         controller_bands            = "a".split()
@@ -2095,7 +2097,8 @@ LANforge information on what is displayed in the Column and how to access the va
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
 
-    elif args.controller_test2:
+    elif args.controller_test_3:
+        logg.info("USING: controller_test_3")
         # Note the local system only supports 802.11-abgn , 802.11a
         controller_aps              = "APA453.0E7B.CF9C".split()
         controller_bands            = "a".split()
@@ -2168,9 +2171,11 @@ LANforge information on what is displayed in the Column and how to access the va
         logg.info(radios)
     else:
         logg.info("radios from coded config used")
+        logg.info(radio_AX200_abgn_ax_dict)
+        logg.info(radio_ath10K_9984_an_AC_dict)
 
     if args.print_test_config:
-        logg.info("PRINT TEST CONFIG: ")
+        logg.info("PRINT TEST CONFIG ONLY - exiting ")
         exit(1)
 
     __ap_set          = None
