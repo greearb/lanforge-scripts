@@ -38,8 +38,8 @@ class RecordInflux(LFCliBase):
         self.influx_org = _influx_org
         self.influx_token = _influx_token
         self.influx_bucket = _influx_bucket
-        url = "http://%s:%s"%(self.influx_host, self.influx_port)
-        self.client = influxdb_client.InfluxDBClient(url=url, token=self.influx_token, org=self.influx_org)
+        self.url = "http://%s:%s"%(self.influx_host, self.influx_port)
+        self.client = influxdb_client.InfluxDBClient(url=self.url, token=self.influx_token, org=self.influx_org, debug=_debug_on)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
         #print("org: ", self.influx_org)
         #print("token: ", self.influx_token)
@@ -50,8 +50,10 @@ class RecordInflux(LFCliBase):
         p = influxdb_client.Point(key)
         for tag_key, tag_value in tags.items():
             p.tag(tag_key, tag_value)
+            print(tag_key, tag_value)
         p.time(time)
         p.field("value", value)
+        print(self.influx_bucket, self.influx_org, self.url, self.influx_port)
         self.write_api.write(bucket=self.influx_bucket, org=self.influx_org, record=p)
 
     def set_bucket(self, b):
@@ -77,10 +79,10 @@ class RecordInflux(LFCliBase):
                 url1 = url + station
                 response = json.loads(requests.get(url1).text)
 
-                time = str(datetime.datetime.utcnow().isoformat())
+                current_time = str(datetime.datetime.utcnow().isoformat())
 
                 # Poke everything into influx db
                 for key in response['interface'].keys():
-                    self.posttoinflux(bucket, "%s-%s" % (station, key), response['interface'][key], tags, time)
+                    self.post_to_influx("%s-%s" % (station, key), response['interface'][key], tags, current_time)
 
             time.sleep(monitor_interval)

@@ -265,9 +265,10 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--monitor_interval',
                      help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      default='10s')
-    parser.add_argument('--influx_user', help='Username for your Influx database')
-    parser.add_argument('--influx_passwd', help='Password for your Influx database')
-    parser.add_argument('--influx_db', help='Name of your Influx database')
+    parser.add_argument('--influx_token', help='Username for your Influx database')
+    parser.add_argument('--influx_bucket', help='Password for your Influx database')
+    parser.add_argument('--influx_org', help='Name of your Influx database')
+    parser.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
 
     args = parser.parse_args()
 
@@ -403,19 +404,22 @@ python3 ./test_ipv4_variable_time.py
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
-    time.sleep(30)
-    if args.influx_db is not None:
-        from influx import RecordInflux
+    LFUtils.wait_until_ports_admin_up(port_list=station_list)
+
+    if args.influx_org is not None:
+        from influx2 import RecordInflux
         grapher = RecordInflux(_influx_host=args.mgr,
-                               _port=args.mgr_port,
-                               _influx_db=args.influx_db,
-                               _influx_user=args.influx_user,
-                               _influx_passwd=args.influx_passwd)
+                               _influx_port=args.influx_port,
+                               _influx_org=args.influx_org,
+                               _influx_token=args.influx_token,
+                               _influx_bucket=args.influx_bucket)
         devices=[station.split('.')[-1] for station in station_list]
-        grapher.getdata(longevity=5,
+        tags=dict()
+        tags['script']='test_ipv4_variable_time'
+        grapher.monitor_port_data(longevity=5,
                         devices=devices,
                         monitor_interval=2,
-                        target_kpi=['bps rx'])
+                        tags=tags)
     ip_var_test.cleanup()
     if ip_var_test.passes():
         ip_var_test.success()
