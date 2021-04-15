@@ -19,8 +19,9 @@ the options and how best to input data.
       --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 \
       --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \
       --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \
-      --enable dual_band_tput --enable basic_cx --enable skip_2 --enable skip_5 --enable skip_5b \
-      --disable tput --disable tput_multi --disable capacity --disable band_steering --disable mix_stability
+      --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
+      --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
+      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
 
 Note:
     --enable [option] will attempt to select any checkbox of that name to true.
@@ -28,6 +29,8 @@ Note:
     --line_raw 'line contents' will add any setting to the test config.  This is
         useful way to support any options not specifically enabled by the
         command options.
+    --set modifications will be applied after the other config has happened,
+        so it can be used to override any other config.
 
 Example of raw text config for ap-auto, to show other possible options:
 
@@ -195,6 +198,7 @@ class ApAutoTest(cvtest):
                  enables=[],
                  disables=[],
                  raw_lines=[],
+                 sets=[],
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -219,6 +223,7 @@ class ApAutoTest(cvtest):
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
+        self.sets = sets
 
     def setup(self):
         # Nothing to do at this time.
@@ -237,8 +242,8 @@ class ApAutoTest(cvtest):
 
         # Test related settings
         cfg_options = ["upstream_port: " + self.upstream,
-                       "dut5_0: " + self.dut5_0,
-                       "dut2_0: " + self.dut2_0,
+                       "dut5-0: " + self.dut5_0,
+                       "dut2-0: " + self.dut2_0,
                        "max_stations_2: " + str(self.max_stations_2),
                        "max_stations_5: " + str(self.max_stations_5),
                        "max_stations_dual: " + str(self.max_stations_dual),
@@ -289,6 +294,12 @@ class ApAutoTest(cvtest):
 
         self.load_test_config(self.config_name, self.instance_name)
         self.auto_save_report(self.instance_name)
+
+        # Apply 'sets'
+        for kv in self.sets:
+            cmd = "cv set '%s' '%s' '%s'" % (self.instance_name, kv[0], kv[1])
+            print("Running CV command: ", cmd)
+            self.run_cv_cmd(cmd)
 
         response = self.start_test(self.instance_name)
         d1 = {k: v for e in response for (k, v) in e.items()}
@@ -376,6 +387,8 @@ def main():
                         help="Specify options to enable (set value to 1).  Example: --enable basic_cx   See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, except: longterm")
     parser.add_argument("--disable", action='append', nargs=1, default=[],
                         help="Specify options to disable (set value to 0).  Example: --disable basic_cx   See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, so you probably want to disable most of them: basic_cx tput tput_multi dual_band_tput capacity band_steering mix_stability")
+    parser.add_argument("--set", action='append', nargs=2, default=[],
+                        help="Specify options to set values based on their label in the GUI. Example: --set 'Basic Client Connectivity' 1  May be specified multiple times.")
     parser.add_argument("--raw_line", action='append', nargs=1, default=[],
                         help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")    
     args = parser.parse_args()
@@ -394,11 +407,12 @@ def main():
                          max_stations_2 = args.max_stations_2,
                          max_stations_5 = args.max_stations_5,
                          max_stations_dual = args.max_stations_dual,
-                         radio2=args.radio2,
-                         radio5=args.radio5,
-                         enables=args.enable,
-                         disables=args.disable,
-                         raw_lines=args.raw_line,
+                         radio2 = args.radio2,
+                         radio5 = args.radio5,
+                         enables = args.enable,
+                         disables = args.disable,
+                         raw_lines = args.raw_line,
+                         sets = args.set
                          )
     CV_Test.setup()
     CV_Test.run()
