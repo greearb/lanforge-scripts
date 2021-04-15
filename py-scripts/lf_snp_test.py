@@ -1,5 +1,36 @@
 #!/usr/bin/env python3
 
+'''
+NAME: lf_snp_test.py  snp == Scaling and Performance
+
+
+PURPOSE: 
+
+This program is to configure a controller with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
+The controller will configure the AP.  
+The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
+The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
+The results will be recorded in CSV file with the following data
+AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
+unique test id, pass / fail, epoch time, and time.
+
+Hard coded test configurations take presidence to command line.
+
+EXAMPLE: 
+ Using Coded Configuration:
+ ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test2 \
+       --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
+
+ Using Commandline with defaults:
+
+ Using Commandline mostly
+
+
+
+
+
+'''
+
 import sys
 import os
 import pexpect
@@ -1417,8 +1448,8 @@ Example #1  running traffic with two radios
 5. Radio #1 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 6. Create connections with TOS of BK and VI
 
-Command: (remove carriage returns)
-python3 .\\lf_controller_snp.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1 
+Example: (remove carriage returns)
+.lf_snp_test.py --test_duration 4m --endp_type "lf_tcp lf_udp mc_udp" --tos "BK VI" --upstream_port eth1 
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
@@ -1432,14 +1463,14 @@ Example #2 using controller controller
 7.  radio #0 wiphy0 stations  3 ssid test_candela ssid_pw [BLANK] secruity Open
 8.  radio #1 wiphy1 stations 16 ssid test_candela ssid_pw [BLANK] security Open
 9.  lanforge manager at 192.168.100.178
-10. duration 5m
+10. duration 1m
 
-Command:
-python3 lf_controller_snp.py --controller_ctlr 192.168.100.112 --controller_dfs True --mgr 192.168.100.178 
-    --controller_channel 52 --controller_chan_width 20 --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port 1.eth3 
+Example:
+./lf_snp_test.py --controller_ctlr 192.168.100.112 --controller_dfs True --mgr 192.168.100.178 
+    --controller_channel 52 --controller_chan_width 20 --endp_type 'lf_udp lf_tcp' --upstream_port 1.eth3 
     --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
     --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
-    --test_duration 5m
+    --test_duration 1m
 
 ##############################################################################
 Detailed test loop description 10/9/2020 - Karthik Recommendation
@@ -1456,7 +1487,7 @@ AP {Axel, Vanc} Dynamic
                                           Packet-type {TCP, UDP} Common
                                                 Direction {Downstream, Upstream}
                                                       Packet-size { 88, 512, 1370, 1518}   Common
-                                                            Time (4 iterations of 30 sec and get the best average TP out of it) 
+                                                            Time (4 iterations of 30 sec and get the best average out of it) 
 
 Notes:
 #############################################
@@ -1668,6 +1699,7 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
+    parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upstream downstream> example --controller_directions \"upstream downstream\"  Default: upstream downstream', default='upstream downstream')
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
@@ -2010,6 +2042,11 @@ LANforge information on what is displayed in the Column and how to access the va
         "anAX"   : "14"
         }
 
+###########################################################################################
+#  Test Configurations:  Take presidence over command line arguments
+#     GOAL: help with command line configurations
+###########################################################################################
+    # Test configuration that may be read in , in conjunction with command line arguments
     if args.controller_all:
 #        controller_aps              = "APA453.0E7B.CF9C".split()
         controller_aps              = "vanc-e".split()
@@ -2091,8 +2128,11 @@ LANforge information on what is displayed in the Column and how to access the va
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
         #radio_ath10K_9984_an_AC_dict = radio_ath9K_9984_abgn_dict_test
 
-
+###########################################################################################
+#  Use Commang line arguments
+###########################################################################################
     else:    
+
         controller_aps             = args.controller_ap.split()
         controller_bands           = args.controller_band.split()
         controller_wifimodes       = args.controller_wifimode.split()
