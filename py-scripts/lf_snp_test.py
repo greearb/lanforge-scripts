@@ -18,7 +18,7 @@ Hard coded test configurations take presidence to command line.
 
 EXAMPLE: 
  Using Coded Configuration:
- ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_2 \
+ ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
        --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
  Using Commandline with defaults:
@@ -113,6 +113,7 @@ class CreateCtlr():
         self.cap_ctl_out = _cap_ctl_out
         self.client_density = 0
 
+    
     def verify_controller(self,client_density):
         self.client_density = client_density
         try:
@@ -1661,7 +1662,7 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect>',default="local flexconnect")
     parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
     parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1 10 20 50 100 200 ',
-                            default="1 5" ) # defaults are system dependent
+                            default="1" ) # defaults are system dependent
 
     parser.add_argument('-cde','--controller_data_encryption', help='--controller_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
@@ -1832,7 +1833,7 @@ LANforge information on what is displayed in the Column and how to access the va
     ####################################################
     radio_AX200_abgn_ax_list_001_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_AX200_abgn_ax_list_010_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    radio_AX200_abgn_ax_list_008_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
                                            ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
                                            ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
                                            ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -1843,16 +1844,20 @@ LANforge information on what is displayed in the Column and how to access the va
 
 
     radio_AX200_abgn_ax_dict_one = {'1'   : radio_AX200_abgn_ax_list_001_one, 
-                                    '8'   : radio_AX200_abgn_ax_list_010_one} 
+                                    '8'   : radio_AX200_abgn_ax_list_008_one} 
 
     
     radio_ath10K_9984_an_AC_list_001_one     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010_one     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_020_one     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050_one     = [['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    radio_ath10K_9984_an_AC_list_050_one     = [['radio==1.wiphy8 stations==64 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_dict_one = {'1'  : radio_ath10K_9984_an_AC_list_001_one,
                                         '10' : radio_ath10K_9984_an_AC_list_010_one,
-                                        '20' : radio_ath10K_9984_an_AC_list_020_one}
+                                        '20' : radio_ath10K_9984_an_AC_list_020_one,
+                                        '50' : radio_ath10K_9984_an_AC_list_020_one,
+                                        '65' : radio_ath10K_9984_an_AC_list_020_one}
 
 
     ####################################################
@@ -2097,7 +2102,7 @@ LANforge information on what is displayed in the Column and how to access the va
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
 
-    elif args.controller_test_3:
+    elif args.controller_test_3: #CMR_test_3
         logg.info("USING: controller_test_3")
         # Note the local system only supports 802.11-abgn , 802.11a
         controller_aps              = "APA453.0E7B.CF9C".split()
@@ -2116,7 +2121,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_directions       = "upstream downstream".split()
         #controller_packet_sizes    = "88 512 1370 1518".split()
         controller_packet_sizes     = "1518".split()
-        controller_client_densities = "1".split()
+        controller_client_densities = "500 0 2000 0  1".split()
         controller_data_encryptions = "disable".split()
 
         controller_side_a_min_bps  = 256000
@@ -2126,9 +2131,9 @@ LANforge information on what is displayed in the Column and how to access the va
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
         #radio_ath10K_9984_an_AC_dict = radio_ath9K_9984_abgn_dict_test
 
-###########################################################################################
-#  Use Commang line arguments
-###########################################################################################
+    ###########################################################################################
+    #  Use Command line arguments
+    ###########################################################################################
     else:    
 
         controller_aps             = args.controller_ap.split()
@@ -2140,7 +2145,7 @@ LANforge information on what is displayed in the Column and how to access the va
             else:
                 logg.info("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
-        controller_tx_powers          = "3".split()
+        controller_tx_powers          = "3".split() #CMR
         controller_chan_5ghzs         = args.controller_chan_5ghz.split()
         controller_chan_24ghzs        = args.controller_chan_24ghz.split()
         controller_chan_widths        = args.controller_chan_width.split()
@@ -2168,7 +2173,8 @@ LANforge information on what is displayed in the Column and how to access the va
     logg.info(controller_data_encryptions)
 
     if args.radio:
-        logg.info(radios)
+        logg.info("radios from command line used")
+        logg.info(args.radio)
     elif args.controller_test_1 or args.controller_test_2 or args.controller_test_3:
         logg.info("radios from coded config used")
         logg.info("##### AX200 RADIOS #####")
@@ -2210,6 +2216,69 @@ LANforge information on what is displayed in the Column and how to access the va
                                     for controller_data_encryption in controller_data_encryptions:
                                         for controller_ap_mode in controller_ap_modes:
                                             for controller_client_density in controller_client_densities:
+                                                radios = ""
+                                                # Validate radio configuration , if controller_client_density is not supported continue
+                                                ###########################
+                                                # USE command line radios
+                                                ###########################
+                                                if args.radio:
+                                                    radios = args.radio
+                                                    logg.info("########################################################")
+                                                    logg.info("# radios configured from command line {}".format(radios))
+                                                    logg.info("# controller_band: {}".format(controller_band))
+                                                    logg.info("# controller_wifimode: {}".format(controller_wifimode))
+                                                    logg.info("########################################################")
+                                                
+                                                #######################################
+                                                # USE radio dictionaies
+                                                #######################################
+                                                elif controller_band == "a":
+                                                    if controller_wifimode == "anAX" or controller_wifimode == "abgn":
+                                                        #AX200 dual band
+                                                        try:
+                                                            radios = radio_AX200_abgn_ax_dict[controller_client_density]
+                                                            logg.info("controller_client_density:{} radios: {}".format(controller_client_density,radios))
+                                                        except:
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(controller_client_density))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: current dictionary radio_AX200_abgn_ax_dict {}".format(radio_AX200_abgn_ax_dict))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: MOVE TO NEXT DENSITY CONTINUING TESTING")
+                                                            continue
+                                                    elif controller_wifimode == "an" or controller_wifimode == "anAC" or controller_wifimode =="auto":
+                                                        #ath10K only supports 5Ghz
+                                                        try:
+                                                            radios = radio_ath10K_9984_an_AC_dict[controller_client_density]
+                                                            logg.info("radios: {}".format(radios))
+                                                        except:
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(controller_client_density))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: current dictionary radio_AX200_abgn_ax_dict {}".format(radio_ath10K_9984_an_AC_dict))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: MOVE TO NEXT DENSITY CONTINUING TESTING")
+                                                            continue
+                                                    else:
+                                                        logg.info("##################################")
+                                                        logg.info("# INVALID COMBINATION 5ghz")
+                                                        #logg.info("# controller run settings: {}".format(test_config))
+                                                        logg.info("##################################")
+                                                        exit(1)
+
+                                                else: # controller_band == "b"
+                                                    if controller_wifimode == "an" or controller_wifimode == "anAX" or controller_wifimode == "abgn" or  controller_wifimode == "bg" or controller_wifimode == "auto":
+                                                        #AX200 dual band
+                                                        try:
+                                                            radios = radio_AX200_abgn_ax_dict[controller_client_density]
+                                                            logg.info("radios: {}".format(radios))
+                                                        except:
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(controller_client_density))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: current dictionary radio_AX200_abgn_ax_dict {}".format(radio_AX200_abgn_ax_dict))
+                                                            logg.info("CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: MOVE TO NEXT DENSITY CONTINUING TESTING")
+                                                            continue
+                                                    else:
+                                                        logg.info("##################################")
+                                                        logg.info("# INVALID COMBINATION 24 ghz")
+                                                        #logg.info("# controller run settings: {}".format(test_config))
+                                                        logg.info("##################################")
+                                                        exit(1)
+
+
                                                 for controller_packet_type in controller_packet_types:
                                                     for controller_direction in controller_directions:
                                                         for controller_packet_size in controller_packet_sizes:
@@ -2226,6 +2295,25 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                 logg.info("################################################")
                                                                 logg.info("# NO CONTROLLER SET , TEST MODE")
                                                                 logg.info("################################################")
+                                                                if( controller_ap            != __ap_set or 
+                                                                    controller_band          != __band_set or
+                                                                    controller_chan_width    != __chan_width_set or
+                                                                    controller_ap_mode       != __ap_mode_set or
+                                                                    controller_tx_power      != __tx_power_set or
+                                                                    controller_chan_5ghz     != __chan_5ghz_set or
+                                                                    controller_chan_24ghz    != __chan_24ghz_set
+                                                                    ):
+                                                                    logg.info("###############################################")
+                                                                    logg.info("# NEW CONTROLLER CONFIG")
+                                                                    logg.info("###############################################")
+                                                                    __ap_set          = controller_ap
+                                                                    __band_set        = controller_band
+                                                                    __chan_width_set  = controller_chan_width
+                                                                    __ap_mode_set     = controller_ap_mode
+                                                                    __tx_power_set    = controller_tx_power
+                                                                    __chan_5ghz_set   = controller_chan_5ghz
+                                                                    __chan_24ghz_set  = controller_chan_24ghz
+                                                                    __client_density  = controller_client_density
                                                             else:
                                                                 if( controller_ap            != __ap_set or 
                                                                     controller_band          != __band_set or
@@ -2309,38 +2397,7 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                         .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                                 logg.info("controller_wifi_mode {}".format(controller_wifimode))
 
-                                                                # USE command line radios or config radios
-                                                                if args.radio:
-                                                                    radios = args.radio
-                                                                    logg.info("########################################################")
-                                                                    logg.info("# radios configured from command line {}".format(radios))
-                                                                    logg.info("# controller_band: {}".format(controller_band))
-                                                                    logg.info("# controller_wifimode: {}".format(controller_wifimode))
-                                                                    logg.info("########################################################")
-                                                                elif controller_band == "a":
-                                                                    if controller_wifimode == "anAX" or controller_wifimode == "abgn":
-                                                                        #AX200 dual band
-                                                                        radios = radio_AX200_abgn_ax_dict[controller_client_density]
-                                                                    elif controller_wifimode == "an" or controller_wifimode == "anAC" or controller_wifimode =="auto":
-                                                                        #ath10K only supports 5Ghz
-                                                                        radios = radio_ath10K_9984_an_AC_dict[controller_client_density]
-                                                                    else:
-                                                                        logg.info("##################################")
-                                                                        logg.info("# INVALID COMBINATION 5ghz")
-                                                                        logg.info("# controller run settings: {}".format(test_config))
-                                                                        logg.info("##################################")
-                                                                        exit(1)
 
-                                                                else: # controller_band == "b"
-                                                                    if controller_wifimode == "an" or controller_wifimode == "anAX" or controller_wifimode == "abgn" or  controller_wifimode == "bg" or controller_wifimode == "auto":
-                                                                        #AX200 dual band
-                                                                        radios = radio_AX200_abgn_ax_dict[controller_client_density]
-                                                                    else:
-                                                                        logg.info("##################################")
-                                                                        logg.info("# INVALID COMBINATION 24 ghz")
-                                                                        logg.info("# controller run settings: {}".format(test_config))
-                                                                        logg.info("##################################")
-                                                                        exit(1)
 
                                                                 logg.info("radios {}".format(radios))
                                                                 for radio_ in radios:
@@ -2380,7 +2437,7 @@ LANforge information on what is displayed in the Column and how to access the va
                                                             # no stations for testing reconfiguration of the controller - 
                                                             if(args.no_stations):
                                                                 logg.info("##################################")
-                                                                logg.info("# NO STATIONS")
+                                                                logg.info("# NO STATIONS TEST MODE")
                                                                 logg.info("##################################")
                                                             else:
                                                                 index = 0
