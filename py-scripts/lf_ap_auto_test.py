@@ -174,8 +174,8 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
+from cv_test_manager import cv_add_base_parser
 from cv_commands import chamberview as cv
-from cv_test_reports import lanforge_reports as lf_rpt
 
 
 class ApAutoTest(cvtest):
@@ -242,13 +242,7 @@ class ApAutoTest(cvtest):
         self.show_text_blob(None, None, False)
 
         # Test related settings
-        cfg_options = ["upstream_port: " + self.upstream,
-                       "dut5-0: " + self.dut5_0,
-                       "dut2-0: " + self.dut2_0,
-                       "max_stations_2: " + str(self.max_stations_2),
-                       "max_stations_5: " + str(self.max_stations_5),
-                       "max_stations_dual: " + str(self.max_stations_dual),
-                       ]
+        cfg_options = []
 
         ridx = 0
         for r in self.radio2:
@@ -260,73 +254,28 @@ class ApAutoTest(cvtest):
             cfg_options.append("radio5-%i: %s"%(ridx, r[0]))
             ridx += 1
 
-        for en in self.enables:
-            cfg_options.append("%s: 1"%(en[0]))
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines)
 
-        for en in self.disables:
-            cfg_options.append("%s: 0"%(en[0]))
-
-        for r in self.raw_lines:
-            cfg_options.append(r[0])
+        # Command line args take precedence.
+        if self.upstream != "":
+            cfg_options.append("upstream_port: " + self.upstream)
+        if self.dut5_0 != "":
+            cfg_options.append("dut5-0: " + self.dut5_0)
+        if self.dut2_0 != "":
+            cfg_options.append("dut2-0: " + self.dut2_0)
+        if self.max_stations_2 != -1:
+            cfg_options.append("max_stations_2: " + str(self.max_stations_2))
+        if self.max_stations_5 != -1:
+            cfg_options.append("max_stations_5: " + str(self.max_stations_5))
+        if self.max_stations_dual != -1:
+            cfg_options.append("max_stations_dual: " + str(self.max_stations_5))
 
         # We deleted the scenario earlier, now re-build new one line at a time.
-        for value in cfg_options:
-            self.create_test_config(self.config_name, blob_test, value)
+        self.build_cfg(self.config_name, blob_test, cfg_options)
 
-        # Request GUI update its text blob listing.
-        self.show_text_blob(self.config_name, blob_test, False)
-
-        # Hack, not certain if the above show returns before the action has been completed
-        # or not, so we sleep here until we have better idea how to query if GUI knows about
-        # the text blob.
-        time.sleep(5)
-
-        load_old = "false"
-        if self.load_old_cfg:
-            load_old = "true"
-
-        for i in range(60):
-            response = self.create_test(self.test_name, self.instance_name, load_old)
-            d1 = {k: v for e in response for (k, v) in e.items()}
-            if d1["LAST"]["response"] == "OK":
-                break
-            else:
-                time.sleep(1)
-
-        self.load_test_config(self.config_name, self.instance_name)
-        self.auto_save_report(self.instance_name)
-
-        # Apply 'sets'
-        for kv in self.sets:
-            cmd = "cv set '%s' '%s' '%s'" % (self.instance_name, kv[0], kv[1])
-            print("Running CV command: ", cmd)
-            self.run_cv_cmd(cmd)
-
-        response = self.start_test(self.instance_name)
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        if d1["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
-            # pprint(response)
-            exit(1)
-
-        while (True):
-            check = self.get_report_location(self.instance_name)
-            location = json.dumps(check[0]["LAST"]["response"])
-            if location != "\"Report Location:::\"":
-                location = location.replace("Report Location:::", "")
-                self.close_instance(self.instance_name)
-                self.cancel_instance(self.instance_name)
-                location = location.strip("\"")
-                report = lf_rpt()
-                print(location)
-                try:
-                    if self.pull_report:
-                        report.pull_reports(hostname=self.lf_host, username=self.lf_user, password=self.lf_password,
-                                            report_location=location)
-                except:
-                    raise Exception("Could not find Reports")
-                break
-            time.sleep(1)
+        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
+                                 self.config_name, self.sets,
+                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -351,25 +300,10 @@ def main():
       --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
       """
                                      )
+    cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-m", "--mgr", type=str, default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("--lf_user", type=str, default="lanforge",
-                        help="LANforge username to pull reports")
-    parser.add_argument("--lf_password", type=str, default="lanforge",
-                        help="LANforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str,
-                        help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str,
-                        help="Config file name")
     parser.add_argument("-u", "--upstream", type=str, default="1.1.eth1",
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
-                        help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
-                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
     parser.add_argument("--max_stations_2", type=int, default=100,
                         help="Specify maximum 2.4Ghz stations")
@@ -386,14 +320,7 @@ def main():
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
-    parser.add_argument("--enable", action='append', nargs=1, default=[],
-                        help="Specify options to enable (set value to 1).  Example: --enable basic_cx   See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, except: longterm")
-    parser.add_argument("--disable", action='append', nargs=1, default=[],
-                        help="Specify options to disable (set value to 0).  Example: --disable basic_cx   See example raw text config for possible options.  May be specified multiple times.  Most tests are enabled by default, so you probably want to disable most of them: basic_cx tput tput_multi dual_band_tput capacity band_steering mix_stability")
-    parser.add_argument("--set", action='append', nargs=2, default=[],
-                        help="Specify options to set values based on their label in the GUI. Example: --set 'Basic Client Connectivity' 1  May be specified multiple times.")
-    parser.add_argument("--raw_line", action='append', nargs=1, default=[],
-                        help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")    
+
     args = parser.parse_args()
 
     CV_Test = ApAutoTest(lf_host = args.mgr,
