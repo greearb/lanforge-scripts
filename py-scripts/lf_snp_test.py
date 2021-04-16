@@ -1678,8 +1678,8 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-cwi','--controller_wlanID', help='--controller_wlanID <wlanID> ',required=True)
     parser.add_argument('-cws' ,'--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
 
-    parser.add_argument('-ctp','--controller_tx_power', help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',default="NA"
-                        ,choices=["1","2","3","4","5","6","7","8","NA"])
+    parser.add_argument('-ctp','--controller_tx_power', help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
+                        ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
                             
@@ -1688,8 +1688,8 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-prs','--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='2m')
-    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='30s')
+    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='20s')
+    parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
@@ -2055,7 +2055,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_bands            = "a ".split()
 #        controller_wifimodes        = "an anAX anAC abgn bg".split()
         controller_wifimodes        = "an".split()
-        controller_tx_powers        = "3"
+        controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
         controller_chan_24ghzs      = "1".split()
         controller_chan_widths      = "20".split()
@@ -2081,7 +2081,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_bands            = "a".split()
         #controller_wifimodes       = "an anAX anAC abgn bg".split()
         controller_wifimodes        = "an".split()
-        controller_tx_powers        = "3"
+        controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
         controller_chan_24ghzs      = "1".split()
         controller_chan_widths      = "20".split()
@@ -2145,7 +2145,7 @@ LANforge information on what is displayed in the Column and how to access the va
             else:
                 logg.info("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
-        controller_tx_powers          = "3".split() #CMR
+        controller_tx_powers          = args.controller_tx_powers.split() 
         controller_chan_5ghzs         = args.controller_chan_5ghz.split()
         controller_chan_24ghzs        = args.controller_chan_24ghz.split()
         controller_chan_widths        = args.controller_chan_width.split()
