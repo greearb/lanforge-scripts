@@ -48,7 +48,7 @@ class CSVtoInflux(Realm):
     # Submit data to the influx db if configured to do so.
     def post_to_influx(self):
         df = pd.read_csv(self.target_csv, sep='\t')
-        df['Date'] = pd.to_datetime(df['Date'], unit='s')
+        df['Date'] = pd.to_datetime(df['Date'], unit='ms')
         df['Date'] = [str(timestamp.isoformat()) for timestamp in df['Date']]
         dates = list(set(df['Date']))
         scriptname=df['test-id'][0]
