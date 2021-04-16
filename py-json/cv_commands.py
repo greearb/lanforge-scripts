@@ -47,18 +47,29 @@ class chamberview(LFCliBase):
         time.sleep(2)
 
 
-    def show_changes(self,scenario_name):
-        req_url = "/cli-json/show_text_blob"
-
+    def pass_raw_lines_to_cv(self,
+                            scenario_name="Automation",
+                            Rawline=""):
+        req_url = "/cli-json/add_text_blob"
         data = {
-            "type": "ALL",
-            "name": "ALL",
-            "brief": "brief"
+            "type": "Network-Connectivity",
+            "name": scenario_name,
+            "text": Rawline
         }
-
+        print("data: ",data)
         rsp = self.json_post(req_url, data)
-        print(rsp)
-        print("scenario is pushed")
+        time.sleep(2)
+
+    def show_text_blob(self, config_name, blob_test_name, brief):
+        req_url = "/cli-json/show_text_blob"
+        data = {"type": "Plugin-Settings"}
+        if config_name and blob_test_name:
+            data["name"] = "%s%s" % (blob_test_name, config_name)  # config name
+        else:
+            data["name"] = "ALL"
+        if brief:
+            data["brief"] = "brief"
+        return self.json_post(req_url, data)
 
     #This is for chamber view buttons
     def apply_cv_scenario(self, cv_scenario):
