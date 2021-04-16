@@ -53,7 +53,6 @@ class RecordInflux(LFCliBase):
             print(tag_key, tag_value)
         p.time(time)
         p.field("value", value)
-        print(self.influx_bucket, self.influx_org, self.url, self.influx_port)
         self.write_api.write(bucket=self.influx_bucket, org=self.influx_org, record=p)
 
     def set_bucket(self, b):
