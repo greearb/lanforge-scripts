@@ -20,6 +20,12 @@ Note: Script for creating a chamberview scenario.
     --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
         DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
 
+    ********************************      OR        ********************************
+
+    create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+    ----raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+    ----raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+
 Output:
     You should see build scenario with the given arguments at the end of this script.
     To verify this:
@@ -42,9 +48,126 @@ if 'py-json' not in sys.path:
 
 from cv_commands import chamberview as cv
 
-def main():
-    global Resource, Amount, DUT, DUT_Radio, Profile, Uses1, Uses2, Traffic, Freq, VLAN
+class CreateChamberview(cv):
+    def __init__(self,
+                 lfmgr="localhost",
+                 port="8080",
+                ):
+        super().__init__(
+                 lfclient_host=lfmgr,
+                 lfclient_port=port,
+        )
+        self.lfmgr = lfmgr
+        self.port = port
 
+    def setup(self,
+             create_scenario="",
+             line="",
+             raw_line=[]):
+
+        #check for any raw lines
+        print(raw_line)
+        if raw_line:
+            print(raw_line)
+            for create_lines in raw_line:
+                print("create_lines[0]: ", create_lines[0])
+                self.pass_raw_lines_to_cv(create_scenario,create_lines[0])
+
+        #check for lines
+        elif line:
+            print(line)
+            scenario_name = create_scenario
+            line = line
+            Resource = "1.1"
+            Profile = "STA-AC"
+            Amount = "1"
+            DUT = "DUT"
+            DUT_Radio = "Radio-1"
+            Uses1 = "wiphy0"
+            Uses2 = "AUTO"
+            Traffic = "http"
+            Freq = "-1"
+            VLAN = ""
+
+            for i in range(len(line)):
+                if " " in line[i][0]:
+                    line[i][0] = (re.split(' ', line[i][0]))
+                    print(line[i][0])
+                elif "," in line[i][0]:
+                    line[i][0] = (re.split(',', line[i][0]))
+                    print(line[i][0])
+                    print("in second")
+                elif ", " in line[i][0]:
+                    line[i][0] = (re.split(',', line[i][0]))
+                    print(line[i][0])
+                    print("in third")
+                elif " ," in line[i][0]:
+                    line[i][0] = (re.split(',', line[i][0]))
+                    print(line[i][0])
+                    print("in forth")
+                else:
+                    print("Wrong arguments entered !")
+                    exit(1)
+
+                for j in range(len(line[i][0])):
+                    line[i][0][j] = line[i][0][j].split("=")
+                    for k in range(len(line[i][0][j])):
+                        name = line[i][0][j][k]
+                        if str(name) == "Resource" or str(name) == "Res" or str(name) == "R":
+                            Resource = line[i][0][j][k + 1]
+                        elif str(name) == "Profile" or str(name) == "Prof" or str(name) == "P":
+                            Profile = line[i][0][j][k + 1]
+                        elif str(name) == "Amount" or str(name) == "Sta" or str(name) == "A":
+                            Amount = line[i][0][j][k + 1]
+                        elif str(name) == "Uses-1" or str(name) == "U1" or str(name) == "U-1":
+                            Uses1 = line[i][0][j][k + 1]
+                        elif str(name) == "Uses-2" or str(name) == "U2" or str(name) == "U-2":
+                            Uses2 = line[i][0][j][k + 1]
+                        elif str(name) == "Freq" or str(name) == "Freq" or str(name) == "F":
+                            Freq = line[i][0][j][k + 1]
+                        elif str(name) == "DUT" or str(name) == "dut" or str(name) == "D":
+                            DUT = line[i][0][j][k + 1]
+                        elif str(name) == "DUT_Radio" or str(name) == "dr" or str(name) == "DR":
+                            DUT_Radio = line[i][0][j][k + 1]
+                        elif str(name) == "Traffic" or str(name) == "Traf" or str(name) == "T":
+                            Traffic = line[i][0][j][k + 1]
+                        elif str(name) == "VLAN" or str(name) == "Vlan" or str(name) == "V":
+                            VLAN = line[i][0][j][k + 1]
+                        else:
+                            continue
+
+                self.manage_cv_scenario(scenario_name,
+                                            Resource,
+                                            Profile,
+                                            Amount,
+                                            DUT,
+                                            DUT_Radio,
+                                            Uses1,
+                                            Uses2,
+                                            Traffic,
+                                            Freq,
+                                            VLAN
+                                            );  # To manage scenario
+        else:
+            raise Exception("scenario sceation failed")
+            return False
+        return True
+
+    def build(self,scenario_name):
+        self.sync_cv()  # chamberview sync
+        time.sleep(2)
+        self.apply_cv_scenario(scenario_name)  # Apply scenario
+        self.show_text_blob(None, None, False)
+        # time.sleep(2)
+        # self.sync_cv()
+        # time.sleep(2)
+        self.apply_cv_scenario(scenario_name)  # Apply scenario
+        # time.sleep(2)
+        self.build_cv_scenario()  # build scenario
+        print("End")
+
+
+def main():
 
     parser = argparse.ArgumentParser(
         description="""
@@ -56,6 +179,11 @@ def main():
                     DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=" 
              --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 
                     DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
+           ********************************      OR        ********************************             
+           create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+             --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+             --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+           
            """)
     parser.add_argument("-m", "--lfmgr", type=str,
                         help="address of the LANforge GUI machine (localhost is default)")
@@ -63,99 +191,21 @@ def main():
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-cs", "--create_scenario", "--create_lf_scenario", type=str,
                         help="name of scenario to be created")
-    parser.add_argument("-l", "--line", action='append', nargs='+', type=str, required=True,
-                        help="line number")
-
+    parser.add_argument("-l", "--line", action='append', nargs='+',
+                        help="line number", default=[])
+    parser.add_argument("-rl", "--raw_line", action='append', nargs=1,
+                        help="raw lines", default=[])
     args = parser.parse_args()
 
-    if args.lfmgr is not None:
-        lfjson_host = args.lfmgr
-    if args.port is not None:
-        lfjson_port = args.port
 
-    createCV = cv(lfjson_host, lfjson_port);  # Create a object
-    scenario_name = args.create_scenario
-    line = args.line
+    Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
+                                           port=args.port,
+                                           )
+    Create_Chamberview.setup( create_scenario=args.create_scenario,
+                              line=args.line,
+                              raw_line=args.raw_line)
+    Create_Chamberview.build(args.create_scenario)
 
-    Resource = "1.1"
-    Profile = "STA-AC"
-    Amount = "1"
-    DUT = "DUT"
-    DUT_Radio = "Radio-1"
-    Uses1 = "wiphy0"
-    Uses2 = "AUTO"
-    Traffic = "http"
-    Freq = "-1"
-    VLAN = ""
-
-    for i in range(len(line)):
-        if " " in line[i][0]:
-            line[i][0] = (re.split(' ', line[i][0]))
-        elif "," in line[i][0]:
-            line[i][0] = (re.split(',', line[i][0]))
-            print("in second")
-        elif ", " in line[i][0]:
-            line[i][0] = (re.split(',', line[i][0]))
-            print("in third")
-        elif " ," in line[i][0]:
-            line[i][0] = (re.split(',', line[i][0]))
-            print("in forth")
-        else:
-            print("Wrong arguments entered !")
-            exit(1)
-
-        for j in range(len(line[i][0])):
-            line[i][0][j] = line[i][0][j].split("=")
-            for k in range(len(line[i][0][j])):
-                name = line[i][0][j][k]
-                if str(name) == "Resource" or str(name) == "Res" or str(name) == "R":
-                    Resource = line[i][0][j][k + 1]
-                elif str(name) == "Profile" or str(name) == "Prof" or str(name) == "P":
-                    Profile = line[i][0][j][k + 1]
-                elif str(name) == "Amount" or str(name) == "Sta" or str(name) == "A":
-                    Amount = line[i][0][j][k + 1]
-                elif str(name) == "Uses-1" or str(name) == "U1" or str(name) == "U-1":
-                    Uses1 = line[i][0][j][k + 1]
-                elif str(name) == "Uses-2" or str(name) == "U2" or str(name) == "U-2":
-                    Uses2 = line[i][0][j][k + 1]
-                elif str(name) == "Freq" or str(name) == "Freq" or str(name) == "F":
-                    Freq = line[i][0][j][k + 1]
-                elif str(name) == "DUT" or str(name) == "dut" or str(name) == "D":
-                    DUT = line[i][0][j][k + 1]
-                elif str(name) == "DUT_Radio" or str(name) == "dr" or str(name) == "DR":
-                    DUT_Radio = line[i][0][j][k + 1]
-                elif str(name) == "Traffic" or str(name) == "Traf" or str(name) == "T":
-                    Traffic = line[i][0][j][k + 1]
-                elif str(name) == "VLAN" or str(name) == "Vlan" or str(name) == "V":
-                    VLAN = line[i][0][j][k + 1]
-                else:
-                    continue
-
-        createCV.manage_cv_scenario(scenario_name,
-                                    Resource,
-                                    Profile,
-                                    Amount,
-                                    DUT,
-                                    DUT_Radio,
-                                    Uses1,
-                                    Uses2,
-                                    Traffic,
-                                    Freq,
-                                    VLAN
-                                    );  # To manage scenario
-
-
-    createCV.sync_cv() #chamberview sync
-    time.sleep(2)
-    createCV.apply_cv_scenario(scenario_name) #Apply scenario
-    time.sleep(2)
-    createCV.sync_cv()
-    time.sleep(2)
-    createCV.apply_cv_scenario(scenario_name)  # Apply scenario
-
-    time.sleep(2)
-    createCV.build_cv_scenario() #build scenario
-    print("End")
 
 
 if __name__ == "__main__":
