@@ -9,6 +9,7 @@ import csv
 import pandas as pd
 import time
 import datetime
+import json
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
@@ -27,6 +28,9 @@ class GenCXProfile(LFCliBase):
         self.created_endp = []
         self.file_output = "/dev/null"
         self.loop_count = 1
+        self.speedtest_min_dl = 0
+        self.speedtest_min_up = 0
+        self.speedtest_max_ping = 0
 
     def parse_command(self, sta_name, gen_name):
         if self.type == "lfping":
@@ -354,6 +358,69 @@ class GenCXProfile(LFCliBase):
             })
         time.sleep(sleep_time)
 
+    def choose_ping_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if self.debug:
+            print(gen_results)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] in self.created_endp and not v['name'].endswith('1'):
+                        if v['last results'] != "" and "Unreachable" not in v['last results']:
+                            return True, v['name']
+                        else:
+                            return False, v['name']
+
+    def choose_lfcurl_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if self.debug:
+            print(gen_results)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] != '':
+                        results = v['last results'].split()
+                        if 'Finished' in v['last results']:
+                            if results[1][:-1] == results[2]:
+                                return True, v['name']
+                            else:
+                                return False, v['name']
+
+    def choose_iperf3_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if gen_results['endpoints'] is not None:
+            pprint.pprint(gen_results['endpoints'])
+            #for name in gen_results['endpoints']:
+               # pprint.pprint(name.items)
+                #for k,v in name.items():
+        exit(1)
+
+
+    def choose_speedtest_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if gen_results['endpoints'] is not None:
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['last results'] is not None and v['name'] in self.created_endp and v['last results'] != '':
+                        last_results = json.loads(v['last results'])
+                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
+                            return False, v['name']
+                        elif last_results['download'] >= self.speedtest_min_dl and \
+                             last_results['upload'] >= self.speedtest_min_up and \
+                             last_results['ping'] <= self.speedtest_max_ping:
+                            return True, v['name']
+
+    def choose_generic_command(self):
+        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
+        if (gen_results['endpoints'] is not None):
+            for name in gen_results['endpoints']:
+                for k, v in name.items():
+                    if v['name'] in self.created_endp and not v['name'].endswith('1'):
+                        if v['last results'] != "" and "not known" not in v['last results']:
+                            return True, v['name']
+                        else:
+                            return False, v['name']
+
     def monitor(self,
                 duration_sec=60,
                 monitor_interval_ms=1,
@@ -442,7 +509,38 @@ class GenCXProfile(LFCliBase):
 
         # for x in range(0,int(round(iterations,0))):
         initial_starttime = datetime.datetime.now()
+        print("Starting Test...")
         while datetime.datetime.now() < end_time:
+
+            passes = 0
+            expected_passes = 0
+            time.sleep(15)
+            result = False
+            cur_time = datetime.datetime.now()
+            if self.type == "lfping":
+                result = self.choose_ping_command()
+            elif self.type == "generic":
+                result = self.choose_generic_command()
+            elif self.type == "lfcurl":
+                result = self.choose_lfcurl_command()
+            elif self.type == "speedtest":
+                result = self.choose_speedtest_command()
+            elif self.type == "iperf3":
+                result = self.choose_iperf3_command()
+            else:
+                continue
+            expected_passes += 1
+            if result is not None:
+                if result[0]:
+                    passes += 1
+                else:
+                    self._fail("%s Failed to ping %s " % (result[1], self.dest))
+                    break
+            time.sleep(1)
+
+            if passes == expected_passes:
+                self._pass("PASS: All tests passed")
+
             t = datetime.datetime.now()
             timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch = int(self.get_milliseconds(t))
