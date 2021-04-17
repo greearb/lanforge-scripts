@@ -22,7 +22,8 @@ the options and how best to input data.
       --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
       --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
-      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
+      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
+      --test_bed Testbed-01
 
 Note:
     --enable [option] will attempt to select any checkbox of that name to true.
@@ -174,7 +175,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
-from cv_test_manager import cv_add_base_parser
+from cv_test_manager import *
 from cv_commands import chamberview as cv
 
 
@@ -301,7 +302,8 @@ def main():
       --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
       --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
-      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0
+      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
+      --test_rig Testbed-01
       """
                                      )
     cv_add_base_parser(parser)  # see cv_test_manager.py
@@ -326,6 +328,8 @@ def main():
                         help="Specify 5Ghz radio.  May be specified multiple times.")
 
     args = parser.parse_args()
+
+    cv_base_adjust_parser(args)
 
     CV_Test = ApAutoTest(lf_host = args.mgr,
                          lf_port = args.port,
