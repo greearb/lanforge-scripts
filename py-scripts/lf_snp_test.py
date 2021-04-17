@@ -1286,23 +1286,13 @@ class L3VariableTime(Realm):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
-        '''for i in range(1,6):
-            csv_rx_headers.append("least_rx_data {}".format(i))
-        for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")'''
+        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time'])
-        '''for i in range(1,6):
-            csv_rx_headers.append("least_rx_data {}".format(i))
-        for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")'''
+        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time'])
         return csv_rx_headers
 
 
