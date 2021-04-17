@@ -1656,7 +1656,7 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-cc5','--controller_chan_5ghz', help='--controller_chan_5ghz <36 40 ...> default 36',default="36")
     parser.add_argument('-cc2','--controller_chan_24ghz', help='--controller_chan_24ghz <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20\"',default="20")
-    parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect>',default="local flexconnect")
+    parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
     parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1', default="1" ) 
