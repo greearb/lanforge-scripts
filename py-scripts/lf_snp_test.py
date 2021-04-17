@@ -17,13 +17,20 @@ unique test id, pass / fail, epoch time, and time.
 Hard coded test configurations take presidence to command line.
 
 EXAMPLE: 
- Using Coded Configuration:
- ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
-       --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
+Using Coded Configuration:
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
+    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
- Using Commandline with defaults:
+    Use --print_test_config at end of command to see test configuration
 
- Using Commandline mostly
+Using Commandline with defaults:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" \
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" \
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
+
+    Use --print_test_config at end of command to see test configuration
+
+ Using Commandline:
 
 
 
@@ -1676,9 +1683,9 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-ccs','--controller_scheme', help='--controller_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
     parser.add_argument('-cw' ,'--controller_wlan', help='--controller_wlan <wlan name> ',required=True)
     parser.add_argument('-cwi','--controller_wlanID', help='--controller_wlanID <wlanID> ',required=True)
-    parser.add_argument('-cws' ,'--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
+    parser.add_argument('-cws','--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
 
-    parser.add_argument('-ctp','--controller_tx_power', help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
+    parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
@@ -2121,7 +2128,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_directions       = "upstream downstream".split()
         #controller_packet_sizes    = "88 512 1370 1518".split()
         controller_packet_sizes     = "1518".split()
-        controller_client_densities = "500 0 2000 0  1".split()
+        controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
 
         controller_side_a_min_bps  = 256000
@@ -2157,7 +2164,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_data_encryptions   = args.controller_data_encryption.split()
 
         controller_side_a_min_bps    = args.side_a_min_bps
-        controller_side_a_min_bps    = args.side_b_min_bps
+        controller_side_b_min_bps    = args.side_b_min_bps
 
     logg.info(controller_aps)
     logg.info(controller_bands)
