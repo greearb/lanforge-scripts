@@ -120,6 +120,12 @@ class cv_test(Realm):
         location = self.run_cv_cmd(cmd)
         return location
 
+    #To get if test is running or not
+    def get_is_running(self, instance):
+        cmd = "cv get %s 'StartStop:'" % instance
+        val = self.run_cv_cmd(cmd)
+        return val[0]["LAST"]["response"] == 'Stop'
+
     #To save to html
     def save_html(self, instance):
         cmd = "cv click %s 'Save HTML'" % instance
@@ -193,7 +199,7 @@ class cv_test(Realm):
         time.sleep(5)
 
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password):
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds):
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -209,9 +215,7 @@ class cv_test(Realm):
         self.load_test_config(config_name, instance_name)
         self.auto_save_report(instance_name)
 
-        # Apply 'sets'
-        for kv in sets:
-            cmd = "cv set '%s' '%s' '%s'" % (instance_name, kv[0], kv[1])
+        for cmd in cv_cmds:
             print("Running CV command: ", cmd)
             self.run_cv_cmd(cmd)
 
@@ -222,6 +226,7 @@ class cv_test(Realm):
             # pprint(response)
             exit(1)
 
+        not_running = 0
         while (True):
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd);
@@ -233,8 +238,6 @@ class cv_test(Realm):
             location = json.dumps(check[0]["LAST"]["response"])
             if location != "\"Report Location:::\"":
                 location = location.replace("Report Location:::", "")
-                self.close_instance(instance_name)
-                self.cancel_instance(instance_name)
                 location = location.strip("\"")
                 report = lf_rpt()
                 print(location)
@@ -245,5 +248,25 @@ class cv_test(Realm):
                 except:
                     raise Exception("Could not find Reports")
                 break
+
+            # Of if test stopped for some reason and could not generate report.
+            if not self.get_is_running(instance_name):
+                print("Detected test is not running.")
+                not_running += 1
+                if not_running > 5:
+                    break;
+
             time.sleep(1)
 
+        # Ensure test is closed and cleaned up
+        self.close_instance(instance_name)
+        self.cancel_instance(instance_name)
+
+        # Clean up any remaining popups.
+        while (True):
+            dialog = self.run_cv_cmd(cmd);
+            if dialog[0]["LAST"]["response"] != "NO-DIALOG":
+                print("Popup Dialog:\n")
+                print(dialog[0]["LAST"]["response"])
+            else:
+                break

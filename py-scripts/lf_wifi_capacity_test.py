@@ -17,7 +17,7 @@ Note: This is a test file which will run a wifi capacity test.
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001
-             --create_stations --radio "wiphy0" --ssid "" --security "open" --paswd "[BLANK]"
+             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK]
 
 Note:
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
@@ -42,7 +42,7 @@ if 'py-json' not in sys.path:
 
 from cv_test_manager import cv_test as cvtest
 from cv_commands import chamberview as cv
-from cv_test_reports import lanforge_reports as lf_rpt
+from cv_test_manager import cv_add_base_parser
 
 
 class WiFiCapacityTest(cvtest):
@@ -68,7 +68,12 @@ class WiFiCapacityTest(cvtest):
                  radio="wiphy0",
                  security="open",
                  paswd="[BLANK]",
-                 ssid=""
+                 ssid="",
+                 enables=[],
+                 disables=[],
+                 raw_lines=[],
+                 raw_lines_file="",
+                 sets=[],
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -97,6 +102,11 @@ class WiFiCapacityTest(cvtest):
         self.ssid = ssid
         self.paswd = paswd
         self.radio = radio
+        self.enables = enables
+        self.disables = disables
+        self.raw_lines = raw_lines
+        self.raw_lines_file = raw_lines_file
+        self.sets = sets
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -117,14 +127,8 @@ class WiFiCapacityTest(cvtest):
         self.show_text_blob(None, None, False)
 
         # Test related settings
-        cfg_options = ["batch_size: " + str(self.batch_size),
-                       "loop_iter: " + str(self.loop_iter),
-                       "protocol: " + str(self.protocol),
-                       "duration: " + str(self.duration),
-                       "ul_rate: " + self.upload_rate,
-                       "dl_rate: " + self.download_rate,
-                       ]
-
+        cfg_options = []
+        
         port_list = [self.upstream]
         if self.stations == "":
             stas = self.station_map()  # See realm
@@ -141,63 +145,41 @@ class WiFiCapacityTest(cvtest):
             self.create_test_config(self.config_name, "Wifi-Capacity-", add_port)
             idx += 1
 
-        for value in cfg_options:
-            self.create_test_config(self.config_name, "Wifi-Capacity-", value)
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
-        # Request GUI update its text blob listing.
-        self.show_text_blob(self.config_name, "Wifi-Capacity-", False)
+        if self.batch_size != "":
+            cfg_options.append("batch_size: " + self.batch_size)
+        if self.loop_iter != "":
+            cfg_options.append("loop_iter: " + self.loop_iter)
+        if self.protocol != "":
+            cfg_options.append("protocol: " + str(self.protocol))
+        if self.duration != "":
+            cfg_options.append("duration: " + self.duration)
+        if self.upload_rate != "":
+            cfg_options.append("ul_rate: " + self.upload_rate)
+        if self.download_rate != "":
+            cfg_options.append("dl_rate: " + self.download_rate)
 
-        # Hack, not certain if the above show returns before the action has been completed
-        # or not, so we sleep here until we have better idea how to query if GUI knows about
-        # the text blob.
-        time.sleep(5)
+        blob_test = "Wifi-Capacity-"
 
-        load_old = "false"
-        if self.load_old_cfg:
-            load_old = "true"
+        # We deleted the scenario earlier, now re-build new one line at a time.
+        self.build_cfg(self.config_name, blob_test, cfg_options)
 
-        for i in range(60):
-            response = self.create_test(self.test_name, self.instance_name, load_old)
-            d1 = {k: v for e in response for (k, v) in e.items()}
-            if d1["LAST"]["response"] == "OK":
-                break
-            else:
-                time.sleep(1)
-
-        self.load_test_config(self.config_name, self.instance_name)
-        self.auto_save_report(self.instance_name)
+        cv_cmds = []
 
         if self.sort == 'linear':
             cmd = "cv click '%s' 'Linear Sort'" % self.instance_name
-            self.run_cv_cmd(cmd)
+            cv_cmds.append(cmd)
         if self.sort == 'interleave':
             cmd = "cv click '%s' 'Interleave Sort'" % self.instance_name
-            self.run_cv_cmd(cmd)
+            cv_cmds.append(cmd)
 
-        response = self.start_test(self.instance_name)
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        if d1["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
-            # pprint(response)
-            exit(1)
+        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
+                                 self.config_name, self.sets,
+                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password,
+                                 cv_cmds)
 
-        while (True):
-            check = self.get_report_location(self.instance_name)
-            location = json.dumps(check[0]["LAST"]["response"])
-            if location != "\"Report Location:::\"":
-                location = location.replace("Report Location:::", "")
-                self.close_instance(self.instance_name)
-                self.cancel_instance(self.instance_name)
-                location = location.strip("\"")
-                report = lf_rpt()
-                print(location)
-                try:
-                    if self.pull_report:
-                        report.pull_reports(hostname=self.lf_host, username=self.lf_user, password=self.lf_password,
-                                            report_location=location)
-                except:
-                    raise Exception("Could not find Reports")
-                break
+        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
         self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
 
@@ -206,37 +188,24 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="""
-             ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge     
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1     
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 
-             --create_stations --radio "wiphy0" --ssid "" --security "open" --paswd "[BLANK]"
+             ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK]
                """)
-    parser.add_argument("-m", "--mgr", type=str, default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("--lf_user", type=str, default="lanforge",
-                        help="Lanforge username to pull reports")
-    parser.add_argument("--lf_password", type=str, default="lanforge",
-                        help="Lanforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str,
-                        help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str,
-                        help="Config file name")
-    parser.add_argument("-u", "--upstream", type=str, default="1.1.eth1",
+
+    cv_add_base_parser(parser)  # see cv_test_manager.py
+
+    parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
-    parser.add_argument("-b", "--batch_size", type=str, default="1,5,10",
+    parser.add_argument("-b", "--batch_size", type=str, default="",
                         help="station increment ex. 1,2,3")
-    parser.add_argument("-l", "--loop_iter", type=str, default="1",
+    parser.add_argument("-l", "--loop_iter", type=str, default="",
                         help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", type=str, default="TCP-IPv4",
+    parser.add_argument("-p", "--protocol", type=str, default="",
                         help="Protocol ex.TCP-IPv4")
-    parser.add_argument("-d", "--duration", type=str, default="10000",
+    parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
-                        help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
-                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
     parser.add_argument("--download_rate", type=str, default="1Gbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
     parser.add_argument("--upload_rate", type=str, default="10Mbps",
@@ -278,7 +247,12 @@ def main():
                                 radio =args.radio,
                                 ssid=args.ssid,
                                 security =args.security,
-                                paswd =args.paswd ,
+                                paswd =args.paswd,
+                                enables = args.enable,
+                                disables = args.disable,
+                                raw_lines = args.raw_line,
+                                raw_lines_file = args.raw_lines_file,
+                                sets = args.set
                                 )
     WFC_Test.setup()
     WFC_Test.run()

@@ -270,14 +270,16 @@ class ApAutoTest(cvtest):
         if self.max_stations_5 != -1:
             cfg_options.append("max_stations_5: " + str(self.max_stations_5))
         if self.max_stations_dual != -1:
-            cfg_options.append("max_stations_dual: " + str(self.max_stations_5))
+            cfg_options.append("max_stations_dual: " + str(self.max_stations_dual))
 
         # We deleted the scenario earlier, now re-build new one line at a time.
         self.build_cfg(self.config_name, blob_test, cfg_options)
 
+        cv_cmds = []
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
-                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password)
+                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password,
+                                 cv_cmds)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -344,6 +346,7 @@ def main():
                          enables = args.enable,
                          disables = args.disable,
                          raw_lines = args.raw_line,
+                         raw_lines_file = args.raw_lines_file,
                          sets = args.set
                          )
     CV_Test.setup()
