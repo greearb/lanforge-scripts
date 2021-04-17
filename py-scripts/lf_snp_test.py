@@ -1657,19 +1657,19 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 flag present default to subset tests',action="store_true")
 
     # Script switches
-    parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn>',default="a b")
+    parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
+    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn>',default="a b", choices=["a","b"])
     # controller wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
+    parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: auto',default="auto",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
     parser.add_argument('-cc5','--controller_chan_5ghz', help='--controller_chan_5ghz <36 40 ...> default 36',default="36")
     parser.add_argument('-cc2','--controller_chan_24ghz', help='--controller_chan_24ghz <1 2 ...> default 1',default="1")
-    parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80")
+    parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20\"',default="20")
     parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect>',default="local flexconnect")
-    parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
-    parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1 10 20 50 100 200 ',
-                            default="1" ) # defaults are system dependent
+    parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
+        choices=["88","512","1370","1518"] )
+    parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-cde','--controller_data_encryption', help='--controller_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
