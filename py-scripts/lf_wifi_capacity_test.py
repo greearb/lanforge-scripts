@@ -9,15 +9,17 @@ Note: To Run this script gui should be opened with
 
 Note: This is a test file which will run a wifi capacity test.
     ex. on how to run this script (if stations are available in lanforge):
-    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-    --instance_name this_inst --config_name test_con --upstream 1.1.eth1 --batch_size 1 --loop_iter 1
-    --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0002
+    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+      --instance_name this_inst --config_name test_con --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+      --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0002 \
+      --test_rig Testbed-01
 
     ex. on how to run this script (to create new stations):
-    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001
-             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK]
+    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
+             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+             --test_rig Testbed-01
 
 Note:
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
@@ -455,10 +457,11 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="""
-             ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+        ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
-             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK]
+             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
+             --test_rig Testbed-01
                """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py

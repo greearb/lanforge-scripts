@@ -18,7 +18,8 @@ the options and how best to input data.
       --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' \
       --raw_line 'cust_pkt_sz: 88 1200' \
       --raw_line 'directions: DUT Transmit;DUT Receive' \
-      --raw_line 'traffic_types: UDP;TCP'
+      --raw_line 'traffic_types: UDP;TCP' \
+      --test_rig Testbed-01
 
 Note:
     --raw_line 'line contents' will add any setting to the test config.  This is
@@ -106,7 +107,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
-from cv_test_manager import cv_add_base_parser
+from cv_test_manager import *
 from cv_commands import chamberview as cv
 
 
@@ -209,6 +210,16 @@ def main():
     Open this file in an editor and read the top notes for more details.
 
     Example:
+
+    ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
+      --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 \
+      --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
+      --download_speed 85% --upload_speed 0 \
+      --raw_line 'pkts: Custom;60;142;256;512;1024;MTU' \
+      --raw_line 'cust_pkt_sz: 88 1200' \
+      --raw_line 'directions: DUT Transmit;DUT Receive' \
+      --raw_line 'traffic_types: UDP;TCP' \
+      --test_rig Testbed-01
     
       """
                                      )
@@ -230,6 +241,8 @@ def main():
                         help="Specify duration of each traffic run")
 
     args = parser.parse_args()
+
+    cv_base_adjust_parser(args)
 
     CV_Test = DataplaneTest(lf_host = args.mgr,
                             lf_port = args.port,
