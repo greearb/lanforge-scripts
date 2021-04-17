@@ -106,8 +106,8 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
+from cv_test_manager import cv_add_base_parser
 from cv_commands import chamberview as cv
-from cv_test_reports import lanforge_reports as lf_rpt
 
 
 class DataplaneTest(cvtest):
@@ -129,6 +129,7 @@ class DataplaneTest(cvtest):
                  enables=[],
                  disables=[],
                  raw_lines=[],
+                 raw_lines_file="",
                  sets=[],
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
@@ -152,6 +153,7 @@ class DataplaneTest(cvtest):
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
+        self.raw_lines_file = raw_lines_file
         self.sets = sets
 
     def setup(self):
@@ -170,82 +172,32 @@ class DataplaneTest(cvtest):
         self.show_text_blob(None, None, False)
 
         # Test related settings
-        cfg_options = ["upstream_port: " + self.upstream,
-                       "traffic_port: " + self.station,
-                       "speed: " + self.download_speed,
-                       "speed2: " + self.upload_speed,
-                       "duration: " + self.duration,
-                       "selected_dut: " + self.dut,
-                       ]
+        cfg_options = []
 
-        for en in self.enables:
-            cfg_options.append("%s: 1"%(en[0]))
+        ### HERE###
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
-        for en in self.disables:
-            cfg_options.append("%s: 0"%(en[0]))
-
-        for r in self.raw_lines:
-            cfg_options.append(r[0])
+        # cmd line args take precedence and so come last in the cfg array.
+        if self.upstream != "":
+            cfg_options.append("upstream_port: " + self.upstream)
+        if self.station != "":
+            cfg_options.append("traffic_port: " + self.station)
+        if self.download_speed != "":
+            cfg_options.append("speed: " + self.download_speed)
+        if self.upload_speed != "":
+            cfg_options.append("speed2: " + self.upload_speed)
+        if self.duration != "":
+            cfg_options.append("duration: " + self.duration)
+        if self.dut != "":
+            cfg_options.append("selected_dut: " + self.dut)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
-        for value in cfg_options:
-            self.create_test_config(self.config_name, blob_test, value)
 
-        # Request GUI update its text blob listing.
-        self.show_text_blob(self.config_name, blob_test, False)
+        self.build_cfg(self.config_name, blob_test, cfg_options)
 
-        # Hack, not certain if the above show returns before the action has been completed
-        # or not, so we sleep here until we have better idea how to query if GUI knows about
-        # the text blob.
-        time.sleep(5)
-
-        load_old = "false"
-        if self.load_old_cfg:
-            load_old = "true"
-
-        for i in range(60):
-            response = self.create_test(self.test_name, self.instance_name, load_old)
-            d1 = {k: v for e in response for (k, v) in e.items()}
-            if d1["LAST"]["response"] == "OK":
-                break
-            else:
-                time.sleep(1)
-
-        self.load_test_config(self.config_name, self.instance_name)
-        self.auto_save_report(self.instance_name)
-
-        # Apply 'sets'
-        for kv in self.sets:
-            cmd = "cv set '%s' '%s' '%s'" % (self.instance_name, kv[0], kv[1])
-            print("Running CV command: ", cmd)
-            self.run_cv_cmd(cmd)
-
-        response = self.start_test(self.instance_name)
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        if d1["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
-            # pprint(response)
-            exit(1)
-
-        while (True):
-            check = self.get_report_location(self.instance_name)
-            location = json.dumps(check[0]["LAST"]["response"])
-            if location != "\"Report Location:::\"":
-                location = location.replace("Report Location:::", "")
-                self.close_instance(self.instance_name)
-                self.cancel_instance(self.instance_name)
-                location = location.strip("\"")
-                report = lf_rpt()
-                print(location)
-                try:
-                    if self.pull_report:
-                        report.pull_reports(hostname=self.lf_host, username=self.lf_user, password=self.lf_password,
-                                            report_location=location)
-                except:
-                    raise Exception("Could not find Reports")
-                break
-            time.sleep(1)
-
+        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
+                                 self.config_name, self.sets,
+                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
@@ -259,44 +211,22 @@ def main():
       """
                                      )
 
-    parser.add_argument("-m", "--mgr", type=str, default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("--lf_user", type=str, default="lanforge",
-                        help="LANforge username to pull reports")
-    parser.add_argument("--lf_password", type=str, default="lanforge",
-                        help="LANforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str,
-                        help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str,
-                        help="Config file name")
+    cv_add_base_parser(parser)  # see cv_test_manager.py
+
     parser.add_argument("-u", "--upstream", type=str, default="1.1.eth2",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="1.1.sta01500",
                         help="Station to be used in this test, example: 1.1.sta01500")
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
-                        help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
-                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
-    parser.add_argument("--dut", default="", required=True,
+    parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
-    parser.add_argument("--download_speed", default="85%",
+    parser.add_argument("--download_speed", default="",
                         help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
-    parser.add_argument("--upload_speed", default="0",
+    parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
-    parser.add_argument("--duration", default="15s",
+    parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
 
-    parser.add_argument("--enable", action='append', nargs=1, default=[],
-                        help="Specify options to enable (set value to 1). Example:  --enable show_log  See example raw text config for possible options.  May be specified multiple times.")
-    parser.add_argument("--disable", action='append', nargs=1, default=[],
-                        help="Specify options to disable (set value to 0).  Example: --disable show_events   See example raw text config for possible options.  May be specified multiple times.")
-    parser.add_argument("--set", action='append', nargs=2, default=[],
-                        help="Specify options to set values based on their label in the GUI. Example: --set 'IP ToS:' 64  May be specified multiple times.")
-    parser.add_argument("--raw_line", action='append', nargs=1, default=[],
-                        help="Specify lines of the raw config file.  Example: --raw_line 'pkts: Custom;60;142;256;512;1024;MTU'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
     args = parser.parse_args()
 
     CV_Test = DataplaneTest(lf_host = args.mgr,
@@ -316,6 +246,7 @@ def main():
                             enables = args.enable,
                             disables = args.disable,
                             raw_lines = args.raw_line,
+                            raw_lines_file = args.raw_lines_file,
                             sets = args.set
                             )
     CV_Test.setup()

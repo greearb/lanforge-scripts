@@ -285,7 +285,7 @@ def main():
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="1.1.eth2",
+    parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
 
     parser.add_argument("--dut2", default="",
