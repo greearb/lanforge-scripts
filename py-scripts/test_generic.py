@@ -50,12 +50,6 @@ class GenTest(LFCliBase):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        if (speedtest_min_up is not None):
-            self.speedtest_min_up = float(speedtest_min_up)
-        if (speedtest_min_dl is not None):
-            self.speedtest_min_dl = float(speedtest_min_dl)
-        if (speedtest_max_ping is not None):
-            self.speedtest_max_ping = float(speedtest_max_ping)
         self.debug = _debug_on
         if (client is not None):
             self.client_name = client
@@ -76,69 +70,12 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.interval = interval
         self.generic_endps_profile.file_output= file_output
         self.generic_endps_profile.loop_count = loop_count
-
-    def choose_ping_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if self.debug:
-            print(gen_results)
-        if gen_results['endpoints'] is not None:
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
-                        if v['last results'] != "" and "Unreachable" not in v['last results']:
-                            return True, v['name']
-                        else:
-                            return False, v['name']
-
-    def choose_lfcurl_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if self.debug:
-            print(gen_results)
-        if gen_results['endpoints'] is not None:
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['name'] != '':
-                        results = v['last results'].split()
-                        if 'Finished' in v['last results']:
-                            if results[1][:-1] == results[2]:
-                                return True, v['name']
-                            else:
-                                return False, v['name']
-
-    def choose_iperf3_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
-            pprint.pprint(gen_results['endpoints'])
-            #for name in gen_results['endpoints']:
-               # pprint.pprint(name.items)
-                #for k,v in name.items():
-        exit(1)
-
-
-    def choose_speedtest_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['last results'] is not None and v['name'] in self.generic_endps_profile.created_endp and v['last results'] != '':
-                        last_results = json.loads(v['last results'])
-                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
-                            return False, v['name']
-                        elif last_results['download'] >= self.speedtest_min_dl and \
-                             last_results['upload'] >= self.speedtest_min_up and \
-                             last_results['ping'] <= self.speedtest_max_ping:
-                            return True, v['name']
-
-    def choose_generic_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if (gen_results['endpoints'] is not None):
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
-                        if v['last results'] != "" and "not known" not in v['last results']:
-                            return True, v['name']
-                        else:
-                            return False, v['name']
+        if (speedtest_min_up is not None):
+            self.generic_endps_profile.speedtest_min_up = float(speedtest_min_up)
+        if (speedtest_min_dl is not None):
+            self.generic_endps_profile.speedtest_min_dl = float(speedtest_min_dl)
+        if (speedtest_max_ping is not None):
+            self.generic_endps_profile.speedtest_max_ping = float(speedtest_max_ping)
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
@@ -155,39 +92,6 @@ class GenTest(LFCliBase):
             self.exit_fail()
 
         self.generic_endps_profile.start_cx()
-
-        cur_time = datetime.datetime.now()
-        passes = 0
-        expected_passes = 0
-        time.sleep(15)
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
-        print("Starting Test...")
-        result = False
-        while cur_time < end_time:
-            cur_time = datetime.datetime.now()
-            if self.generic_endps_profile.type == "lfping":
-                result = self.choose_ping_command()
-            elif self.generic_endps_profile.type == "generic":
-                result = self.choose_generic_command()
-            elif self.generic_endps_profile.type == "lfcurl":
-                result = self.choose_lfcurl_command()
-            elif self.generic_endps_profile.type == "speedtest":
-                result = self.choose_speedtest_command()
-            elif self.generic_endps_profile.type == "iperf3":
-                result = self.choose_iperf3_command()
-            else:
-                continue
-            expected_passes += 1
-            if result is not None:
-                if result[0]:
-                    passes += 1
-                else:
-                    self._fail("%s Failed to ping %s " % (result[1], self.generic_endps_profile.dest))
-                    break
-            time.sleep(1)
-
-        if passes == expected_passes:
-            self._pass("PASS: All tests passed")
 
     def stop(self):
         print("Stopping Test...")
