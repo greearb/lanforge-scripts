@@ -72,7 +72,6 @@ class cv_test(Realm):
         cmd = "cv create '{0}' '{1}' '{2}'".format(test_name, instance, load_old_cfg)
         return self.run_cv_cmd(str(cmd))
 
-
     # Tell LANforge chamber view to load a scenario.
     def load_test_scenario(self, instance, scenario):
         cmd = "cv load '{0}' '{1}'".format(instance, scenario)
@@ -122,24 +121,60 @@ class cv_test(Realm):
 
     #To get if test is running or not
     def get_is_running(self, instance):
-        cmd = "cv get %s 'StartStop:'" % instance
+        cmd = "cv get %s 'StartStop'" % instance
         val = self.run_cv_cmd(cmd)
-        return val[0]["LAST"]["response"] == 'Stop'
+        #pprint(val)
+        return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
     #To save to html
     def save_html(self, instance):
         cmd = "cv click %s 'Save HTML'" % instance
         self.run_cv_cmd(cmd)
 
-    #close the test instance
-    def close_instance(self, instance):
-        cmd = "cv click %s 'Close'" % instance
+    #Check if test instance exists
+    def get_exists(self, instance):
+        cmd = "cv exists %s" % instance
+        val = self.run_cv_cmd(cmd)
+        #pprint(val)
+        return val[0]["LAST"]["response"] == 'YES'
+
+    #Check if chamberview is built
+    def get_cv_is_built(self):
+        cmd = "cv is_built"
+        val = self.run_cv_cmd(cmd)
+        #pprint(val)
+        rv = val[0]["LAST"]["response"] == 'YES'
+        print("is-built: ", rv)
+        return rv
+
+    #delete the test instance
+    def delete_instance(self, instance):
+        cmd = "cv delete %s" % instance
         self.run_cv_cmd(cmd)
 
-    #To cancel instance
-    def cancel_instance(self, instance):
-        cmd = "cv click %s 'Cancel'" % instance
-        self.run_cv_cmd(cmd)
+        # It can take a while, some test rebuild the old scenario upon exit, for instance.
+        tries = 0
+        while (True):
+            if self.get_exists(instance):
+                print("Waiting %i/60 for test instance: %s to be deleted."%(tries, instance))
+                tries += 1
+                if (tries > 60):
+                    break
+                time.sleep(1)
+            else:
+                break
+
+        # And make sure chamber-view is properly re-built
+        tries = 0
+        while (True):
+            if not self.get_cv_is_built():
+                print("Waiting %i/60 for Chamber-View to be built."%(tries))
+                tries += 1
+                if (tries > 60):
+                    break
+                time.sleep(1)
+            else:
+                break
 
     #Get port listing
     def get_ports(self):
@@ -204,12 +239,17 @@ class cv_test(Realm):
         if load_old_cfg:
             load_old = "true"
 
-        for i in range(60):
+        start_try = 0
+        while (True):
             response = self.create_test(test_name, instance_name, load_old)
             d1 = {k: v for e in response for (k, v) in e.items()}
             if d1["LAST"]["response"] == "OK":
                 break
             else:
+                start_try += 1
+                if start_try > 60:
+                    print("ERROR:  Could not start within 60 tries, aborting.")
+                    exit(1)
                 time.sleep(1)
 
         self.load_test_config(config_name, instance_name)
@@ -259,8 +299,7 @@ class cv_test(Realm):
             time.sleep(1)
 
         # Ensure test is closed and cleaned up
-        self.close_instance(instance_name)
-        self.cancel_instance(instance_name)
+        self.delete_instance(instance_name)
 
         # Clean up any remaining popups.
         while (True):
