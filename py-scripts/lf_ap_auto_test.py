@@ -199,6 +199,7 @@ class ApAutoTest(cvtest):
                  enables=[],
                  disables=[],
                  raw_lines=[],
+                 raw_lines_file="",
                  sets=[],
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
@@ -224,6 +225,7 @@ class ApAutoTest(cvtest):
         self.enables = enables
         self.disables = disables
         self.raw_lines = raw_lines
+        self.raw_lines_file = raw_lines_file
         self.sets = sets
 
     def setup(self):
@@ -254,7 +256,7 @@ class ApAutoTest(cvtest):
             cfg_options.append("radio5-%i: %s"%(ridx, r[0]))
             ridx += 1
 
-        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines)
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # Command line args take precedence.
         if self.upstream != "":

@@ -40,6 +40,9 @@ def cv_add_base_parser(parser):
     parser.add_argument("--raw_line", action='append', nargs=1, default=[],
                         help="Specify lines of the raw config file.  Example: --raw_line 'test_rig: Ferndale-01-Basic'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
 
+    parser.add_argument("--raw_lines_file", default="",
+                        help="Specify a file of raw lines to apply.")
+
 
 class cv_test(Realm):
     def __init__(self,
@@ -157,7 +160,17 @@ class cv_test(Realm):
         rsp = self.json_post(req_url, data)
 
 
-    def apply_cfg_options(self, cfg_options, enables, disables, raw_lines):
+    def apply_cfg_options(self, cfg_options, enables, disables, raw_lines, raw_lines_file):
+
+        # Read in calibration data and whatever else.
+        if raw_lines_file != "":
+            with open(raw_lines_file) as fp:
+                line = fp.readline()
+                while line:
+                    cfg_options.append(line)
+                    line = fp.readline()
+            fp.close()
+
         for en in enables:
             cfg_options.append("%s: 1"%(en[0]))
 

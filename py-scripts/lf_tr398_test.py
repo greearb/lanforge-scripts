@@ -171,8 +171,8 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
+from cv_test_manager import cv_add_base_parser
 from cv_commands import chamberview as cv
-from cv_test_reports import lanforge_reports as lf_rpt
 
 
 class DataplaneTest(cvtest):
@@ -233,23 +233,7 @@ class DataplaneTest(cvtest):
         # Test related settings
         cfg_options = []
 
-        # Read in calibration data and whatever else.
-        if self.raw_lines_file != "":
-            with open(self.raw_lines_file) as fp:
-                line = fp.readline()
-                while line:
-                    cfg_options.append(line)
-                    line = fp.readline()
-            fp.close()
-
-        for en in self.enables:
-            cfg_options.append("%s: 1"%(en[0]))
-
-        for en in self.disables:
-            cfg_options.append("%s: 0"%(en[0]))
-
-        for r in self.raw_lines:
-            cfg_options.append(r[0])
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # cmd line args take precedence
         if self.upstream != "":
@@ -260,63 +244,12 @@ class DataplaneTest(cvtest):
             cfg_options.append("selected_dut2: " + self.dut2)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
-        for value in cfg_options:
-            self.create_test_config(self.config_name, blob_test, value)
 
-        # Request GUI update its text blob listing.
-        self.show_text_blob(self.config_name, blob_test, False)
+        self.build_cfg(self.config_name, blob_test, cfg_options)
 
-        # Hack, not certain if the above show returns before the action has been completed
-        # or not, so we sleep here until we have better idea how to query if GUI knows about
-        # the text blob.
-        time.sleep(5)
-
-        load_old = "false"
-        if self.load_old_cfg:
-            load_old = "true"
-
-        for i in range(60):
-            response = self.create_test(self.test_name, self.instance_name, load_old)
-            d1 = {k: v for e in response for (k, v) in e.items()}
-            if d1["LAST"]["response"] == "OK":
-                break
-            else:
-                time.sleep(1)
-
-        self.load_test_config(self.config_name, self.instance_name)
-        self.auto_save_report(self.instance_name)
-
-        # Apply 'sets'
-        for kv in self.sets:
-            cmd = "cv set '%s' '%s' '%s'" % (self.instance_name, kv[0], kv[1])
-            print("Running CV command: ", cmd)
-            self.run_cv_cmd(cmd)
-
-        response = self.start_test(self.instance_name)
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        if d1["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
-            # pprint(response)
-            exit(1)
-
-        while (True):
-            check = self.get_report_location(self.instance_name)
-            location = json.dumps(check[0]["LAST"]["response"])
-            if location != "\"Report Location:::\"":
-                location = location.replace("Report Location:::", "")
-                self.close_instance(self.instance_name)
-                self.cancel_instance(self.instance_name)
-                location = location.strip("\"")
-                report = lf_rpt()
-                print(location)
-                try:
-                    if self.pull_report:
-                        report.pull_reports(hostname=self.lf_host, username=self.lf_user, password=self.lf_password,
-                                            report_location=location)
-                except:
-                    raise Exception("Could not find Reports")
-                break
-            time.sleep(1)
+        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
+                                 self.config_name, self.sets,
+                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -350,40 +283,16 @@ def main():
       """
                                      )
 
-    parser.add_argument("-m", "--mgr", type=str, default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("--lf_user", type=str, default="lanforge",
-                        help="LANforge username to pull reports")
-    parser.add_argument("--lf_password", type=str, default="lanforge",
-                        help="LANforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str,
-                        help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str,
-                        help="Config file name")
+    cv_add_base_parser(parser)  # see cv_test_manager.py
+
     parser.add_argument("-u", "--upstream", type=str, default="1.1.eth2",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
-                        help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
-                        help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
     parser.add_argument("--dut2", default="",
                         help="Specify 2Ghz DUT used by this test, example: 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)'")
     parser.add_argument("--dut5", default="",
                         help="Specify 5Ghz DUT used by this test, example: 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)'")
 
-    parser.add_argument("--enable", action='append', nargs=1, default=[],
-                        help="Specify options to enable (set value to 1). Example:  --enable show_log  See example raw text config for possible options.  May be specified multiple times.")
-    parser.add_argument("--disable", action='append', nargs=1, default=[],
-                        help="Specify options to disable (set value to 0).  Example: --disable show_events   See example raw text config for possible options.  May be specified multiple times.")
-    parser.add_argument("--set", action='append', nargs=2, default=[],
-                        help="Specify options to set values based on their label in the GUI. Example: --set 'IP ToS:' 64  May be specified multiple times.")
-    parser.add_argument("--raw_line", action='append', nargs=1, default=[],
-                        help="Specify lines of the raw config file.  Example: --raw_line 'pkts: Custom;60;142;256;512;1024;MTU'  See example raw text config for possible options.  This is catch-all for any options not available to be specified elsewhere.  May be specified multiple times.")
-    parser.add_argument("--raw_lines_file", default="",
-                        help="Specify a file of raw lines to apply.")
     args = parser.parse_args()
 
     CV_Test = DataplaneTest(lf_host = args.mgr,
