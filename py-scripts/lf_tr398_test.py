@@ -28,7 +28,8 @@ the options and how best to input data.
       --set 'Multiple Assoc Stability' 0 \
       --set 'Downlink MU-MIMO' 0 \
       --set 'AP Coexistence' 0 \
-      --set 'Long Term Stability' 0
+      --set 'Long Term Stability' 0 \
+      --test_rig Testbed-01
 
 Note:
     --raw_line 'line contents' will add any setting to the test config.  This is
@@ -171,7 +172,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
-from cv_test_manager import cv_add_base_parser
+from cv_test_manager import *
 from cv_commands import chamberview as cv
 
 
@@ -280,7 +281,8 @@ def main():
       --set 'Multiple Assoc Stability' 0 \
       --set 'Downlink MU-MIMO' 0 \
       --set 'AP Coexistence' 0 \
-      --set 'Long Term Stability' 0
+      --set 'Long Term Stability' 0 \
+      --test_rig Testbed-01
 
       """
                                      )
@@ -296,6 +298,8 @@ def main():
                         help="Specify 5Ghz DUT used by this test, example: 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)'")
 
     args = parser.parse_args()
+
+    cv_base_adjust_parser(args)
 
     CV_Test = DataplaneTest(lf_host = args.mgr,
                             lf_port = args.port,
