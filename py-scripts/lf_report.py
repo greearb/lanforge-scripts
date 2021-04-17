@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 
-import sys
 import os
-import time
 import datetime
-import matplotlib.pyplot as plt 
-import matplotlib as mpl 
-import numpy as np 
 import pandas as pd
 import pdfkit
-import math
 
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
 # base report class
 class lf_report():
     def __init__(self,
-                _report_path = 'lanforge',
+                _path = "/home/user/git/lanforge-scripts/py-scripts/report-data",
                 _output_format = 'html',  # pass in on the write functionality
                 _dataframe="",
                 _title="LANForge Test Run Heading",
@@ -26,15 +20,28 @@ class lf_report():
                 _obj_title = "",
                 _date="1/1/2-21 00:00(UTC)",
                 _output_html="outfile.html",
-                _output_pdf="outfile.pdf"):
+                _output_pdf="outfile.pdf",
+                _path_date_time=""):
 
+                #other report paths, "/home/lanforge/html-reports/  
+
+            if _path == "local" or _path == "here" or _path == None:
+                self.path = os.path.abspath(__file__)
+                print("path set to file path: {}".format(self.path))
+            else:
+                self.path = _path
+                print("path set: {}".format(self.path))
+                
             self.dataframe=_dataframe
             self.title=_title
             self.table_title=_table_title
             self.graph_title=_graph_title
             self.date=_date
             self.output_html=_output_html
+            self.path_date_time = _path_date_time
+            self.write_output_html = ""
             self.output_pdf=_output_pdf
+            self.write_output_pdf = ""
             self.banner_html = ""
             self.graph_titles=""
             self.graph_image=""
@@ -42,32 +49,57 @@ class lf_report():
             self.custom_html = ""
             self.objective = _obj
             self.obj_title = _obj_title
-            self.systeminfopath = ""
-            self.report_path = ""
-            
-            
+            #self.systeminfopath = ""
+            self.date_time_directory = ""
+            self.banner_directory = "artifacts"
+            self.banner_file_name = "banner.png"    # does this need to be configurable
+            self.logo_directory = "artifacts"       
+            self.logo_file_name = "banner.png"      # does this need to be configurable.
 
-            if _report_path == 'lanforge':
-                new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':','-') 
-                try:
-                    path = os.path.join('/home/lanforge/report-data/', new_file_path)
-                    os.mkdir(path)
-                except:
-                    curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                    path = os.path.join(curr_dir_path, new_file_path)
-                    os.mkdir(path)
-                self.report_path = str(path)
-            elif _report_path == 'local': 
-                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                path = os.path.join(curr_dir_path, new_file_path)
-                self.report_path = str(path)
-            else: # for now just put local 
-                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                path = os.path.join(curr_dir_path, new_file_path)
-                os.mkdir(path)
-                self.report_path = str(path)
+            # create the output path for reports and move *.png files
+            self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            #self.set_path_date_time()
 
+            #self.setup_banner_logo()
+
+            #self.copy_banner()
+            #self.copy_logo()
+
+            
+            # create the output directory
+    
             # move the banners and candela images to report path
+
+    #def setup_banner_logo(self):
+
+
+    def set_path(self,_path):
+        self.path = _path
+    
+    def set_date_time_directory(self):
+        self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
+
+    #def set_date_time_directory(self,date_time_directory):
+    #    self.date_time_directory = date_time_directory
+
+
+    def set_path_date_time(self):
+        if self.date_time_directory == "":
+            self.set_date_time_directory()
+        try:
+            self.path_date_time = os.path.join(self.path, self.date_time_directory)
+            print("path_date_time {}".format(self.path_date_time))
+            if not os.path.exists(self.path_date_time):
+                os.mkdir(self.path_date_time)
+            
+        except:
+            self.path_date_time = os.path.join(self.currentpath, self.date_time_directory)
+            if not os.path.exists(self.path_date_time):
+                os.mkdir(self.path_date_time)
+        #print("report path : {}".format(self.path_date_time))    
+
+    def set_time_date(self,_time_date):
+        self.time_date
 
     def set_title(self,_title):
         self.title = _title
@@ -95,23 +127,31 @@ class lf_report():
         self.graph_image = _graph_image
 
     def get_path(self):
-        return self.report_path
+        return self.path
+
+    def get_path_date_time(self):
+        return self.path_date_time
 
     def write_html(self): 
-            self.output_html = str(self.report_path)+'/'+ self.output_html
-            test_file = open(self.output_html, "w")
+        self.write_output_html = str(self.path_date_time)+'/'+ str(self.output_html)
+        print("write_output_html: {}".format(self.write_output_html))
+        try:
+            test_file = open(self.write_output_html, "w")
             test_file.write(self.html)
             test_file.close()
-            return self.html
+        except:
+            print("write_html failed")
+        return self.write_output_html
 
     def write_pdf(self):
-            # write to pdf
             # write logic to generate pdf here
             # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
-            options = {"enable-local-file-access" : None}  # prevent eerror Blocked access to file
-            self.output_pdf = str(self.report_path)+'/'+ self.output_pdf
-            pdfkit.from_file(self.output_html, self.output_pdf, options=options)
+            
+            #options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
+            #self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
+            #pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+            pass
 
     def generate_report(self):
         self.write_html()            
@@ -161,7 +201,19 @@ class lf_report():
                 """
         self.html += self.table_title_html
 
-    # right now from data frame
+    def build_date_time(self):
+        self.date_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':','-')
+        return self.date_time
+
+    def build_path_date_time(self):
+        try: 
+            self.path_date_time = os.path.join(self.path,self.date_time)
+            os.mkdir(self.path_date_time)
+        except:
+            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      
+            self.path_date_time = os.path.join(curr_dir_path,self.date_time)
+            os.mkdir(self.path_date_time)       
+
     def build_table(self):
         self.dataframe_html = self.dataframe.to_html(index=False)  # have the index be able to be passed in.
         self.html += self.dataframe_html
@@ -196,10 +248,6 @@ class lf_report():
         self.html +=self.graph_html_obj
 
 
-
-
-
-
 # Unit Test
 if __name__ == "__main__":
 
@@ -220,14 +268,9 @@ if __name__ == "__main__":
      'time_seconds':[23,78,22,19,45,22,25]
     })
 
-
-    #report = lf_report(_dataframe=dataframe)
-    #report = lf_report()
     report = lf_report()
     report.set_title("Banner Title One")
     report.build_banner()
-    #report.set_title("Banner Title Two")
-    #report.build_banner()
 
     report.set_table_title("Title One")
     report.build_table_title()
