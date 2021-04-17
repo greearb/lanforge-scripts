@@ -17,20 +17,20 @@ unique test id, pass / fail, epoch time, and time.
 Hard coded test configurations take presidence to command line.
 
 EXAMPLE: 
- Using Coded Configuration:
- ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
-       --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
+Using Coded Configuration:
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
+    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
- Using Commandline with defaults:
+    Use --print_test_config at end of command to see test configuration
 
- Using Commandline mostly
+Using Commandline with defaults:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" \
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" \
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
 
-
-
-
+    Use --print_test_config at end of command to see test configuration
 
 '''
-
 import sys
 import os
 
@@ -42,9 +42,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-#from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-#import realm
 from realm import Realm
 import time
 import datetime
@@ -53,9 +51,6 @@ import re
 import csv
 import random
 import logging
-
-# Check for the logs channel switching time and radar detected
-
 
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
@@ -73,7 +68,7 @@ class FileAdapter(object):
 
 
 ################################################################################
-# controller class :This class will be left in this file to allow for the
+# controller class : Possibly move to another file
 # Scaling and Performance to be self contained and not impact other tests
 ################################################################################
 
@@ -93,7 +88,6 @@ class CreateCtlr():
                 _chan_width,
                 _ap_mode,
                 _tx_power,
-                _client_density,
                 _cap_ctl_out):
 
         self.scheme = _scheme
@@ -112,43 +106,6 @@ class CreateCtlr():
         self.tx_power = _tx_power
         self.cap_ctl_out = _cap_ctl_out
         self.client_density = 0
-
-    
-    def verify_controller(self,client_density):
-        self.client_density = client_density
-        try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {}".format(self.scheme,
-                self.ctlr,self.port,self.prompt,self.user,
-                self.passwd,self.ap,self.series,self.band,"summary"))
-
-            ctl_output = subprocess.run(["../wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
-                                       self.user, "-p", self.passwd,
-                                       "-a", self.ap,"--series", self.series,"--action", "summary"], capture_output=True)
-            pss = ctl_output.stdout.decode('utf-8', 'ignore')
-            logg.info(pss)
-        except subprocess.CalledProcessError as process_error:
-            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
-                 .format(process_error.returncode, process_error.output))
-            time.sleep(1)
-            exit(1)
-    
-        # Find our station count
-        searchap = False
-        for line in pss.splitlines():
-            if (line.startswith("---------")):
-                searchap = True
-                continue
-            #TODO need to test with 9800 series to chelck the values
-            if (searchap):
-                pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\["%(self.ap)
-                #logg.info("AP line: %s"%(line))
-                m = re.search(pat, line)
-                if (m != None):
-                    sta_count = m.group(1)
-                    logg.info("AP line: %s"%(line))
-                    logg.info("sta-count: %s"%(sta_count))
-                    if (int(sta_count) != int(self.client_density)):
-                        logg.info("WARNING: Controller reported %s stations, should be %s"%(sta_count, self.client_density))
 
     #show summary (to get AP) (3400/9800)
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 --action summary --series 9800 --log stdout
@@ -274,7 +231,6 @@ class CreateCtlr():
             time.sleep(1) 
             exit(1)
 
-
     #disable wlan
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_wlan --series 9800
     def controller_disable_wlan(self):
@@ -297,7 +253,6 @@ class CreateCtlr():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-
 
     #disable network 5ghz
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_5ghz --series 9800
@@ -343,7 +298,6 @@ class CreateCtlr():
                 time.sleep(1) 
                 exit(1)
 
-
     #disable network 24ghz
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action disable_network_24ghz --series 9800
     def controller_disable_network_24ghz(self):
@@ -387,8 +341,6 @@ class CreateCtlr():
                     format(process_error.returncode, process_error.output))
                 time.sleep(1) 
                 exit(1)
-
-
 
     #set manual mode - Series 9800 must be set to manual mode
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action manual --series 9800
@@ -497,29 +449,6 @@ class CreateCtlr():
             time.sleep(1) 
             exit(1)
 
-    def controller_set_bandwidth_20(self):
-        controller_chan_width_20 = "20"
-        try:
-            logg.info("scheme: {} ctlr: {} port: {} prompt: {} user: {}  passwd: {} AP: {} series: {} band: {} action: {} value {}".format(self.scheme,
-                self.ctlr,self.port,self.prompt,self.user,self.passwd, self.ap, self.series, 
-                self.band,"channel", controller_chan_width_20 ))
-            ctl_output = subprocess.run(["../wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--prompt", self.prompt, "--port", self.port, "-d", self.ctlr, "-u",
-                                    self.user, "-p", self.passwd,
-                                    "-a", self.ap,"--series", self.series, "--band", self.band, 
-                                    "--action", "channel","--value", controller_chan_width_20], 
-                                    capture_output=self.cap_ctl_out, check=True)
-
-            if self.cap_ctl_out:
-                pss = ctl_output.stdout.decode('utf-8', 'ignore')
-                logg.info(pss)
-            
-        except subprocess.CalledProcessError as process_error:
-            logg.info("Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
-            time.sleep(1) 
-            exit(1)
-
-
     #set bandwidth [20 40 80 160]
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action bandwidth  --value 40 --series 9800
     def controller_set_bandwidth(self):
@@ -542,7 +471,6 @@ class CreateCtlr():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-
 
     #create wlan
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action create_wlan  --wlan "open-wlan"  --wlanID 1 --series 9800
@@ -596,7 +524,6 @@ class CreateCtlr():
         else:
             logg.info("Check the controller_scheme used attemping 9800 series on 3504 controller: {}".format(self.scheme))
 
-
     #enable wlan
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_wlan --series 9800
     def controller_enable_wlan(self):
@@ -619,7 +546,6 @@ class CreateCtlr():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-
 
     #enable 5ghz
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_5ghz --series 9800
@@ -665,8 +591,6 @@ class CreateCtlr():
                 time.sleep(1) 
                 exit(1)
 
-
-
     #enable 24ghz
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable_network_24ghz --series 9800
     def controller_enable_network_24ghz(self):
@@ -711,8 +635,6 @@ class CreateCtlr():
                 time.sleep(1) 
                 exit(1)
 
-
-
     #enable (band a)
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action enable --series 9800
     def controller_enable_ap(self):
@@ -735,7 +657,6 @@ class CreateCtlr():
                 format(process_error.returncode, process_error.output))
             time.sleep(1) 
             exit(1)
-
 
     #advanced (showes summary)
     #./wifi_ctl_9800_3504.py --scheme ssh -d 172.19.36.168 -p <controller_pw> --port 23 -a "9120-Chamber-1" --band a --action advanced --series 9800
@@ -1002,8 +923,6 @@ class L3VariableTime(Realm):
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
-        # average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
         # Evaluate Upstream or Downstream
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before",new_evaluate_list) 
@@ -1036,7 +955,6 @@ class L3VariableTime(Realm):
                     csv_rx_headers.append(item)
                 csv_rx_delta_dict.update({item:(new_evaluate_list[item] - old_evaluate_list[item])})
                 
-
             if not self.csv_started:
                 csv_header = self.csv_generate_column_headers()
                 csv_header += csv_rx_headers
@@ -1048,7 +966,6 @@ class L3VariableTime(Realm):
                 print("###################################")
                 print(csv_results)
                 print("###################################")
-
                 self.csv_started = True
 
             # need to generate list first to determine worst and best
@@ -1067,7 +984,6 @@ class L3VariableTime(Realm):
             expected_tp_mbps = max_tp_mbps  
             csv_rx_row_data.append(expected_tp_mbps)
             csv_result_row_data.append(expected_tp_mbps)
-
 
             #Generate TestID
             for key in self.test_keys:
@@ -1095,7 +1011,6 @@ class L3VariableTime(Realm):
                 expected_passes +=1
                 if new_evaluate_list[item] > old_evaluate_list[item]:
                     passes += 1
-                    #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                     print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
                     print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
@@ -1113,7 +1028,7 @@ class L3VariableTime(Realm):
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
             print("new-list:",new_list)
-            return False, None, None # check to see if this is valid
+            return False, None, None 
 
     def reset_port_check(self):
         for station_profile in self.station_profiles:
@@ -1235,15 +1150,7 @@ class L3VariableTime(Realm):
             new_rx_values, rx_drop_percent = self.__get_rx_values()
 
             expected_passes += 1
-            '''
-            #self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
 
-
-            if passes == expected_passes:
-                return True, max_tp_mbps, csv_rx_row_data
-            else:
-                return False, max_tp_mbps, csv_rx_row_data
-            '''
             # __compare_vals - does the calculations
             Result, max_tp_mbps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
             if max_tp_mbps > best_max_tp_mbps:
@@ -1279,23 +1186,13 @@ class L3VariableTime(Realm):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
-        '''for i in range(1,6):
-            csv_rx_headers.append("least_rx_data {}".format(i))
-        for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")'''
+        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_mbps','expected_tp','test_id','pass_fail','epoch_time','time'])
-        '''for i in range(1,6):
-            csv_rx_headers.append("least_rx_data {}".format(i))
-        for i in range(1,6):
-            csv_rx_headers.append("most_rx_data_{}".format(i))
-        csv_rx_headers.append("average_rx_data")'''
+        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time'])
         return csv_rx_headers
 
 
@@ -1328,6 +1225,11 @@ def valid_endp_types(_endp_type):
             exit(1)
     return _endp_type
 
+############################################################
+#
+#  Scaling And Performance MAIN
+#
+############################################################
 def main():
     global logg
     lfjson_host = "localhost"
@@ -1438,36 +1340,19 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 #########################################
 # Examples
 # #######################################            
-Example #1  running traffic with two radios
-1. Test duration 4 minutes
-2. Traffic IPv4 TCP
-3. Upstream-port eth1
-4. Radio #0 wiphy0 has 32 stations, ssid = candelaTech-wpa2-x2048-4-1, ssid password = candelaTech-wpa2-x2048-4-1
-5. Radio #1 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
-6. Create connections with TOS of BK and VI
+EXAMPLE: 
+Using Coded Configuration:
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
+    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
-Example: (remove carriage returns)
-.lf_snp_test.py --test_duration 4m --endp_type "lf_tcp lf_udp mc_udp" --tos "BK VI" --upstream_port eth1 
---radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
---radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
+    Use --print_test_config at end of command to see test configuration
 
-Example #2 using controller controller
-1.  controller controller at 192.168.100.112
-3.  controller channel 52  
-4.  controller channel width 20
-5.  traffic 'lf_udp lf_tcp mc_udp'
-6.  upstream port eth3
-7.  radio #0 wiphy0 stations  3 ssid test_candela ssid_pw [BLANK] secruity Open
-8.  radio #1 wiphy1 stations 16 ssid test_candela ssid_pw [BLANK] security Open
-9.  lanforge manager at 192.168.100.178
-10. duration 1m
+Using Commandline with defaults:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" \
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" \
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
 
-Example:
-./lf_snp_test.py --controller_ctlr 192.168.100.112  --mgr 192.168.100.178 
-    --controller_channel 52 --controller_chan_width 20 --endp_type 'lf_udp lf_tcp' --upstream_port 1.eth3 
-    --radio "radio==1.wiphy0 stations==3 ssid==test_candela ssid_pw==[BLANK] security==open" 
-    --radio "radio==1.wiphy1 stations==16 ssid==test_candela ssid_pw==[BLANK] security==open"
-    --test_duration 1m
+    Use --print_test_config at end of command to see test configuration
 
 ##############################################################################
 Detailed test loop description 10/9/2020 - Karthik Recommendation
@@ -1544,7 +1429,7 @@ controller_wifimode == "an" or controller_wifimode == "anAC":
 
 
 ############################################
-Eventual Realm at controller
+Realm at controller
 ############################################
 
 1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
@@ -1581,9 +1466,9 @@ Eventual Realm at controller
 6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
-
+####################################################################################################
 LANforge information on what is displayed in the Column and how to access the value with cli or json
-
+####################################################################################################
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
     Name                |  'name'
@@ -1650,19 +1535,19 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 flag present default to subset tests',action="store_true")
 
     # Script switches
-    parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default:  Axel',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn>',default="a b")
+    parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
+    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn>',default="a b", choices=["a","b"])
     # controller wanted 11ax , 11ac, 11n, 11gb
-    parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: 11ax 11ac 11n 11gb',default="an anAX anAC abgn bg",
+    parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: auto',default="auto",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
     parser.add_argument('-cc5','--controller_chan_5ghz', help='--controller_chan_5ghz <36 40 ...> default 36',default="36")
     parser.add_argument('-cc2','--controller_chan_24ghz', help='--controller_chan_24ghz <1 2 ...> default 1',default="1")
-    parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20 40 80 160\"',default="20 40 80")
-    parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect>',default="local flexconnect")
-    parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes default \"88 512 1370 1518\"',default="88 512 1370 1518" )
-    parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1 10 20 50 100 200 ',
-                            default="1" ) # defaults are system dependent
+    parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20\"',default="20")
+    parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect> default local',default="local")
+    parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
+        choices=["88","512","1370","1518"] )
+    parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-cde','--controller_data_encryption', help='--controller_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
@@ -1676,9 +1561,9 @@ LANforge information on what is displayed in the Column and how to access the va
     parser.add_argument('-ccs','--controller_scheme', help='--controller_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
     parser.add_argument('-cw' ,'--controller_wlan', help='--controller_wlan <wlan name> ',required=True)
     parser.add_argument('-cwi','--controller_wlanID', help='--controller_wlanID <wlanID> ',required=True)
-    parser.add_argument('-cws' ,'--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
+    parser.add_argument('-cws','--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
 
-    parser.add_argument('-ctp','--controller_tx_power', help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
+    parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
@@ -1950,7 +1835,7 @@ LANforge information on what is displayed in the Column and how to access the va
 
     #############################################################
     #
-    #  Static dictionaries for radios on 191.168.100.178  Test 2
+    #  Static dictionaries for radios on 191.168.100.178  Test 3
     #  Static Configuration Candela Tech Realm ()
     #
     #############################################################
@@ -2005,10 +1890,9 @@ LANforge information on what is displayed in the Column and how to access the va
 
     ####################################################################
     #
-    # End Test #2
+    # End Test #3
     #
     ####################################################################
-
 
     MAX_NUMBER_OF_STATIONS = 200
     
@@ -2121,7 +2005,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_directions       = "upstream downstream".split()
         #controller_packet_sizes    = "88 512 1370 1518".split()
         controller_packet_sizes     = "1518".split()
-        controller_client_densities = "500 0 2000 0  1".split()
+        controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
 
         controller_side_a_min_bps  = 256000
@@ -2157,7 +2041,7 @@ LANforge information on what is displayed in the Column and how to access the va
         controller_data_encryptions   = args.controller_data_encryption.split()
 
         controller_side_a_min_bps    = args.side_a_min_bps
-        controller_side_a_min_bps    = args.side_b_min_bps
+        controller_side_b_min_bps    = args.side_b_min_bps
 
     logg.info(controller_aps)
     logg.info(controller_bands)
@@ -2350,7 +2234,6 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                                     _chan_width=__chan_width_set,
                                                                                     _ap_mode=__ap_mode_set,
                                                                                     _tx_power=__tx_power_set,
-                                                                                    _client_density=__client_density,
                                                                                     _cap_ctl_out=__cap_ctl_out
                                                                                     )
                                                                     #Disable AP
@@ -2396,8 +2279,6 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                     logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
                                                                         .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
                                                                 logg.info("controller_wifi_mode {}".format(controller_wifimode))
-
-
 
                                                                 logg.info("radios {}".format(radios))
                                                                 for radio_ in radios:
