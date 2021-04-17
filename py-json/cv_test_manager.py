@@ -12,6 +12,11 @@ from pprint import pprint
 import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
 
+def cv_base_adjust_parser(args):
+    if args.test_rig != "":
+        # TODO:  In future, can use TestRig once that GUI update has propagated
+        args.set.append(["Test Rig ID:", args.test_rig])
+
 def cv_add_base_parser(parser):
     parser.add_argument("-m", "--mgr", type=str, default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
@@ -42,6 +47,10 @@ def cv_add_base_parser(parser):
 
     parser.add_argument("--raw_lines_file", default="",
                         help="Specify a file of raw lines to apply.")
+
+    # Reporting info
+    parser.add_argument("--test_rig", default="",
+                        help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
 
 
 class cv_test(Realm):
@@ -254,6 +263,11 @@ class cv_test(Realm):
 
         self.load_test_config(config_name, instance_name)
         self.auto_save_report(instance_name)
+
+        for kv in sets:
+            cmd = "cv set '%s' '%s' '%s'"%(instance_name, kv[0], kv[1]);
+            print("Running CV set command: ", cmd)
+            self.run_cv_cmd(cmd)
 
         for cmd in cv_cmds:
             print("Running CV command: ", cmd)
