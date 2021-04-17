@@ -9,6 +9,7 @@
 import sys
 import os
 from pprint import pprint
+from influx2 import RecordInflux
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -20,6 +21,15 @@ if 'py-json' not in sys.path:
 import argparse
 from realm import Realm
 import datetime
+
+def influx_add_parser_args(parser):
+    parser.add_argument('--influx_host', help='Hostname for the Influx database', default="")
+    parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
+    parser.add_argument('--influx_org', help='Organization for the Influx database', default="")
+    parser.add_argument('--influx_token', help='Token for the Influx database', default="")
+    parser.add_argument('--influx_bucket', help='Name of the Influx bucket', default="")
+    parser.add_argument('--influx_tag', action='append', nargs=2,
+                        help='--influx_tag <key> <val>   Can add more than one of these.', default=[])
 
 
 class CSVtoInflux(Realm):
@@ -125,27 +135,21 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
 
         ''')
 
-    parser.add_argument('--influx_host', help='Hostname for the Influx database')
-    parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
-    parser.add_argument('--influx_org', help='Organization for the Influx database')
-    parser.add_argument('--influx_token', help='Token for the Influx database')
-    parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
-    parser.add_argument('--target_csv', help='CSV file to record to influx database', required=True)
-    parser.add_argument('--influx_tag', action='append', nargs=2,
-                        help='--influx_tag <key> <val>   Can add more than one of these.', default=[])
+    influx_add_parser_args(parser)
+
+    # This argument is specific to this script, so not part of the generic influxdb parser args
+    # method above.
+    parser.add_argument('--target_csv', help='CSV file to record to influx database', default="")
 
     args = parser.parse_args()
 
-    influxdb = None
-    if args.influx_bucket is not None:
-        from influx2 import RecordInflux
-        influxdb = RecordInflux(_lfjson_host=lfjson_host,
-                                _lfjson_port=lfjson_port,
-                                _influx_host=args.influx_host,
-                                _influx_port=args.influx_port,
-                                _influx_org=args.influx_org,
-                                _influx_token=args.influx_token,
-                                _influx_bucket=args.influx_bucket)
+    influxdb = RecordInflux(_lfjson_host=lfjson_host,
+                            _lfjson_port=lfjson_port,
+                            _influx_host=args.influx_host,
+                            _influx_port=args.influx_port,
+                            _influx_org=args.influx_org,
+                            _influx_token=args.influx_token,
+                            _influx_bucket=args.influx_bucket)
 
     csvtoinflux = CSVtoInflux(influxdb=influxdb,
                               target_csv=args.target_csv,

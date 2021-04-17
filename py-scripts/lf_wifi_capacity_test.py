@@ -9,10 +9,16 @@ Note: To Run this script gui should be opened with
 
 Note: This is a test file which will run a wifi capacity test.
     ex. on how to run this script (if stations are available in lanforge):
+    The influx part can be skipped if you are not using influx/graphana.
+
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name this_inst --config_name test_con --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
-      --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0002 \
-      --test_rig Testbed-01
+             --instance_name this_inst --config_name test_con --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
+             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0002 \
+             --test_rig Testbed-01 \
+             --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+             --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+             --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
+             --influx_tag testbed Ferndale-01
 
     ex. on how to run this script (to create new stations):
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
@@ -20,6 +26,7 @@ Note: This is a test file which will run a wifi capacity test.
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
              --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
              --test_rig Testbed-01
+
 
 Note:
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
@@ -528,6 +535,8 @@ def main():
                                 )
     WFC_Test.setup()
     WFC_Test.run()
+
+    WFC_Test.check_influx_kpi(args)
 
 
 if __name__ == "__main__":

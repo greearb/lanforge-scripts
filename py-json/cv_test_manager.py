@@ -11,6 +11,7 @@ import json
 from pprint import pprint
 import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
+from csv_to_influx import *
 
 def cv_base_adjust_parser(args):
     if args.test_rig != "":
@@ -52,6 +53,8 @@ def cv_add_base_parser(parser):
     parser.add_argument("--test_rig", default="",
                         help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
 
+    influx_add_parser_args(parser)  # csv_to_influx
+
 
 class cv_test(Realm):
     def __init__(self,
@@ -60,6 +63,7 @@ class cv_test(Realm):
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
+        self.report_dir=""
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
@@ -242,6 +246,20 @@ class cv_test(Realm):
         # the text blob.
         time.sleep(5)
 
+    # load_old_config is boolean
+    # test_name is specific to the type of test being launched (Dataplane, tr398, etc)
+    #    ChamberViewFrame.java has list of supported test names.
+    # instance_name is per-test instance, it does not matter much, just use the same name
+    #    throughout the entire run of the test.
+    # config_name what to call the text-blob that configures the test.  Does not matter much
+    #    since we (re)create it during the run.
+    # sets:  Arrany of [key,value] pairs.  The key is the widget name, typically the label
+    #    before the entry field.
+    # pull_report:  Boolean, should we download the report to current working directory.
+    # lf_host:  LANforge machine running the GUI.
+    # lf_password:  Password for LANforge machine running the GUI.
+    # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
+    #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
                             pull_report, lf_host, lf_user, lf_password, cv_cmds):
         load_old = "false"
@@ -299,6 +317,7 @@ class cv_test(Realm):
                     if pull_report:
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             report_location=location)
+                        self.report_dir=location
                 except:
                     raise Exception("Could not find Reports")
                 break
@@ -323,3 +342,30 @@ class cv_test(Realm):
                 print(dialog[0]["LAST"]["response"])
             else:
                 break
+
+
+    # Takes cmd-line args struct or something that looks like it.
+    # See csv_to_influx.py::influx_add_parser_args for options, or --help.
+    def check_influx_kpi(self, args):
+        if self.report_dir == "":
+            # Nothing to report on.
+            return
+
+        if args.influx_host == "":
+            # No influx configured, return.
+            return
+
+        # lfjson_host would be if we are reading out of LANforge or some other REST
+        # source, which we are not.  So dummy those out.
+        influxdb = RecordInflux(_lfjson_host = "",
+                                _lfjson_port = "",
+                                _influx_host = args.influx_host,
+                                _influx_port = args.influx_port,
+                                _influx_org = args.influx_org,
+                                _influx_token = args.influx_token,
+                                _influx_bucket = args.influx_bucket)
+
+        csvtoinflux = CSVtoInflux(influxdb = influxdb,
+                                  target_csv = "%s/kpi.csv"%(self.report_dir),
+                                  _influx_tag = args.influx_tag)
+        csvtoinflux.post_to_influx()

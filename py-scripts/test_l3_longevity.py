@@ -26,6 +26,7 @@
 import sys
 import os
 from pprint import pprint
+from csv_to_influx import *
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -1095,13 +1096,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('--attenuators', help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
     parser.add_argument('--atten_vals', help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
 
-    parser.add_argument('--influx_host', help='Hostname for the Influx database')
-    parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
-    parser.add_argument('--influx_org', help='Organization for the Influx database')
-    parser.add_argument('--influx_token', help='Token for the Influx database')
-    parser.add_argument('--influx_bucket', help='Name of the Influx bucket')
-    parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
-
+    influx_add_parser_args(parser)
 
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out, switch the cisco controller output will be captured", action='store_true')
     parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
