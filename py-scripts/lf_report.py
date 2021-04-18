@@ -34,9 +34,10 @@ import pdfkit
 # base report class
 class lf_report():
     def __init__(self,
-                _path = "/home/lanforge/report-data",   # /home/lanforge/report-data , /home/lanforge/html-reports/ , /home/user/git/lanforge-scripts/report-data
+                #_path the report directory under which the report directories will be created.
+                _path = "/home/lanforge/report-data",
                 _alt_path = "",
-                _output_format = 'html',  # pass in on the write functionality
+                _output_format = 'html',  # pass in on the write functionality, current not used
                 _dataframe="",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
@@ -46,14 +47,16 @@ class lf_report():
                 _date="", 
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
-                _path_date_time=""):
+                _path_date_time=""):  # this is where the final report is placed.
                 #other report paths, 
 
+            # _path is where the directory with the data time will be created
             if _path == "local" or _path == "here":
                 self.path = os.path.abspath(__file__)
                 print("path set to file path: {}".format(self.path))
             elif _alt_path != "":
                 self.path = _alt_path
+                print("path set to alt path: {}".format(self.path))
             else:
                 self.path = _path
                 print("path set: {}".format(self.path))
@@ -91,28 +94,26 @@ class lf_report():
             self.copy_banner()
             self.copy_logo()
     
-            
-
-    def copy_banner(self):
-        src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
-        dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
-        print("src_file: {}".format(src_file))
-        print("dst_file: {}".format(dst_file))
-        shutil.copy(src_file,dst_file)
-
     def copy_banner(self):
         banner_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
         banner_dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
-        print("banner src_file: {}".format(banner_src_file))
-        print("dst_file: {}".format(banner_dst_file))
+        #print("banner src_file: {}".format(banner_src_file))
+        #print("dst_file: {}".format(banner_dst_file))
         shutil.copy(banner_src_file,banner_dst_file)
 
     def copy_logo(self):
         logo_src_file = str(self.current_path)+'/'+str(self.logo_directory)+'/'+str(self.logo_file_name)
         logo_dst_file = str(self.path_date_time)+'/'+ str(self.logo_file_name)
-        print("src_file: {}".format(logo_src_file))
-        print("dst_file: {}".format(logo_dst_file))
+        #print("logo_src_file: {}".format(logo_src_file))
+        #print("logo_dst_file: {}".format(logo_dst_file))
         shutil.copy(logo_src_file,logo_dst_file)
+
+    def move_graph_image(self,):
+        graph_src_file = str(self.graph_image)
+        graph_dst_file = str(self.path_date_time)+'/'+ str(self.graph_image)
+        print("graph_src_file: {}".format(graph_src_file))
+        print("graph_dst_file: {}".format(graph_dst_file))
+        shutil.move(graph_src_file,graph_dst_file)
 
 
     def set_path(self,_path):
@@ -132,16 +133,17 @@ class lf_report():
     def build_date_time_directory(self):
         if self.date_time_directory == "":
             self.set_date_time_directory()
-        try:
-            self.path_date_time = os.path.join(self.path, self.date_time_directory)
-            print("path_date_time {}".format(self.path_date_time))
+        #try:
+        self.path_date_time = os.path.join(self.path, self.date_time_directory)
+        print("path_date_time {}".format(self.path_date_time))
+        try:        
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
         except:
             self.path_date_time = os.path.join(self.current_path, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-        #print("report path : {}".format(self.path_date_time))    
+        print("report path : {}".format(self.path_date_time))    
 
     def set_title(self,_title):
         self.title = _title
@@ -170,8 +172,11 @@ class lf_report():
 
     def get_path(self):
         return self.path
-
+    # get_path_date_time, get_report_path and need to be the same ()
     def get_path_date_time(self):
+        return self.path_date_time
+
+    def get_report_path(self):
         return self.path_date_time
 
     def write_html(self): 
