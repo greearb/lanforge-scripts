@@ -18,6 +18,12 @@ def cv_base_adjust_parser(args):
         # TODO:  In future, can use TestRig once that GUI update has propagated
         args.set.append(["Test Rig ID:", args.test_rig])
 
+    if args.influx_host != "":
+        if (not args.pull_report):
+            print("Specified influx host without pull_report, will enabled pull_request.")
+            args.pull_report = True
+
+
 def cv_add_base_parser(parser):
     parser.add_argument("-m", "--mgr", type=str, default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
@@ -349,12 +355,15 @@ class cv_test(Realm):
     def check_influx_kpi(self, args):
         if self.report_dir == "":
             # Nothing to report on.
+            print("Not submitting to influx, no report-dir.\n")
             return
 
         if args.influx_host == "":
             # No influx configured, return.
+            print("Not submitting to influx, influx_host not configured.\n")
             return
 
+        print("Creating influxdb connection.\n")
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
         influxdb = RecordInflux(_lfjson_host = "",
@@ -365,7 +374,12 @@ class cv_test(Realm):
                                 _influx_token = args.influx_token,
                                 _influx_bucket = args.influx_bucket)
 
+        path = "%s/kpi.csv"%(self.report_dir)
+        print("Attempt to submit kpi: ", path)
         csvtoinflux = CSVtoInflux(influxdb = influxdb,
-                                  target_csv = "%s/kpi.csv"%(self.report_dir),
+                                  target_csv = path,
                                   _influx_tag = args.influx_tag)
+        print("Posting to influx...\n")
         csvtoinflux.post_to_influx()
+
+        print("All done posting to influx.\n")
