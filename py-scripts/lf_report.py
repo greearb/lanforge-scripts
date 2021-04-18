@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shutil
 import datetime
 import pandas as pd
 import pdfkit
@@ -60,30 +61,46 @@ class lf_report():
             self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
 
             # create the output path for reports and move *.png files
-            self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            # self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.current_path = os.path.dirname(os.path.abspath(__file__))
 
             # pass in _date to allow to change after construction
             self.set_date_time_directory(_date)
             self.build_date_time_directory()
-
-            
 
             # set up paths on the constructor, since have all the infomation.
             #self.set_path_date_time()
 
             #self.setup_banner_logo()
 
-            #self.copy_banner()
-            #self.copy_logo()
+            self.copy_banner()
+            self.copy_logo()
 
             
             # create the output directory
     
             # move the banners and candela images to report path
 
-    #def copy_banner(self):
+    def copy_banner(self):
+        src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
+        dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
+        print("src_file: {}".format(src_file))
+        print("dst_file: {}".format(dst_file))
+        shutil.copy(src_file,dst_file)
 
-    #def copy_logo(self):
+    def copy_banner(self):
+        banner_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
+        banner_dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
+        print("banner src_file: {}".format(banner_src_file))
+        print("dst_file: {}".format(banner_dst_file))
+        shutil.copy(banner_src_file,banner_dst_file)
+
+    def copy_logo(self):
+        logo_src_file = str(self.current_path)+'/'+str(self.logo_directory)+'/'+str(self.logo_file_name)
+        logo_dst_file = str(self.path_date_time)+'/'+ str(self.logo_file_name)
+        print("src_file: {}".format(logo_src_file))
+        print("dst_file: {}".format(logo_dst_file))
+        shutil.copy(logo_src_file,logo_dst_file)
 
 
     def set_path(self,_path):
@@ -161,9 +178,9 @@ class lf_report():
             # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
             
-            #options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
-            #self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
-            #pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+            options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
+            self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
+            pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
             pass
 
     def generate_report(self):
@@ -196,6 +213,8 @@ class lf_report():
                 <br>
                 <h1 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.title) + """</h1>
                 <h3 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.date) + """</h3>
+                <br>
+                <br>
                 <br>
                 <br>
                 <br>
