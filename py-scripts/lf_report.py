@@ -1,5 +1,28 @@
 #!/usr/bin/env python3
 
+'''
+NAME: lf_report.py
+
+PURPOSE: 
+
+This program is a helper  class for reporting results for a lanforge python script.
+The class will generate an output directory based on date and time in the /home/lanforge/reports-data/ .   
+If the reports-data is not present then the date and time directory will be created in the current directory.
+The banner and Candela Technology logo will be copied in the results directory. 
+The results directory may be over written and many of the other paramaters during construction. 
+Creating the date time directory on construction was a design choice.
+
+EXAMPLE: 
+
+This is a helper class, a unit test is included at the bottom of the file.  
+To test lf_report.py and lf_graph.py together use the lf_report_test.py file
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2021 Candela Technologies Inc
+
+'''
+
 import os
 import shutil
 import datetime
@@ -11,7 +34,7 @@ import pdfkit
 # base report class
 class lf_report():
     def __init__(self,
-                _path = "/home/user/git/lanforge-scripts/report-data",
+                _path = "/home/lanforge/report-data",   # /home/lanforge/report-data , /home/lanforge/html-reports/ , /home/user/git/lanforge-scripts/report-data
                 _alt_path = "",
                 _output_format = 'html',  # pass in on the write functionality
                 _dataframe="",
@@ -24,8 +47,7 @@ class lf_report():
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
                 _path_date_time=""):
-
-                #other report paths, "/home/lanforge/html-reports/  
+                #other report paths, 
 
             if _path == "local" or _path == "here":
                 self.path = os.path.abspath(__file__)
@@ -59,27 +81,17 @@ class lf_report():
             self.banner_file_name = "banner.png"    # does this need to be configurable
             self.logo_directory = "artifacts"       
             self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
-
-            # create the output path for reports and move *.png files
-            # self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             self.current_path = os.path.dirname(os.path.abspath(__file__))
 
             # pass in _date to allow to change after construction
             self.set_date_time_directory(_date)
             self.build_date_time_directory()
 
-            # set up paths on the constructor, since have all the infomation.
-            #self.set_path_date_time()
-
-            #self.setup_banner_logo()
-
+            # move the banners and candela images to report path
             self.copy_banner()
             self.copy_logo()
-
-            
-            # create the output directory
     
-            # move the banners and candela images to report path
+            
 
     def copy_banner(self):
         src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
@@ -126,7 +138,7 @@ class lf_report():
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
         except:
-            self.path_date_time = os.path.join(self.currentpath, self.date_time_directory)
+            self.path_date_time = os.path.join(self.current_path, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
         #print("report path : {}".format(self.path_date_time))    
