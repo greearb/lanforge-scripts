@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     report.set_graph_title("Graph Title")
     report.build_graph_title()
+    
     graph = lf_bar_graph(_data_set=dataset, 
                         _xaxis_name="stations", 
                         _yaxis_name="Throughput 2 (Mbps)", 
@@ -69,6 +70,8 @@ if __name__ == "__main__":
     print("graph name {}".format(graph_png))
 
     report.set_graph_image(graph_png)
+    # need to move the graph image to the results 
+    report.move_graph_image()
 
     report.build_graph()
 

@@ -1,6 +1,30 @@
 #!/usr/bin/env python3
 
+'''
+NAME: lf_report.py
+
+PURPOSE: 
+
+This program is a helper  class for reporting results for a lanforge python script.
+The class will generate an output directory based on date and time in the /home/lanforge/reports-data/ .   
+If the reports-data is not present then the date and time directory will be created in the current directory.
+The banner and Candela Technology logo will be copied in the results directory. 
+The results directory may be over written and many of the other paramaters during construction. 
+Creating the date time directory on construction was a design choice.
+
+EXAMPLE: 
+
+This is a helper class, a unit test is included at the bottom of the file.  
+To test lf_report.py and lf_graph.py together use the lf_report_test.py file
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2021 Candela Technologies Inc
+
+'''
+
 import os
+import shutil
 import datetime
 import pandas as pd
 import pdfkit
@@ -10,24 +34,29 @@ import pdfkit
 # base report class
 class lf_report():
     def __init__(self,
-                _path = "/home/user/git/lanforge-scripts/py-scripts/report-data",
-                _output_format = 'html',  # pass in on the write functionality
+                #_path the report directory under which the report directories will be created.
+                _path = "/home/lanforge/report-data",
+                _alt_path = "",
+                _output_format = 'html',  # pass in on the write functionality, current not used
                 _dataframe="",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
                 _graph_title="LANForge Graph Title",
                 _obj = "",
                 _obj_title = "",
-                _date="1/1/2-21 00:00(UTC)",
+                _date="", 
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
-                _path_date_time=""):
+                _path_date_time=""):  # this is where the final report is placed.
+                #other report paths, 
 
-                #other report paths, "/home/lanforge/html-reports/  
-
-            if _path == "local" or _path == "here" or _path == None:
+            # _path is where the directory with the data time will be created
+            if _path == "local" or _path == "here":
                 self.path = os.path.abspath(__file__)
                 print("path set to file path: {}".format(self.path))
+            elif _alt_path != "":
+                self.path = _alt_path
+                print("path set to alt path: {}".format(self.path))
             else:
                 self.path = _path
                 print("path set: {}".format(self.path))
@@ -54,52 +83,67 @@ class lf_report():
             self.banner_directory = "artifacts"
             self.banner_file_name = "banner.png"    # does this need to be configurable
             self.logo_directory = "artifacts"       
-            self.logo_file_name = "banner.png"      # does this need to be configurable.
+            self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
+            self.current_path = os.path.dirname(os.path.abspath(__file__))
 
-            # create the output path for reports and move *.png files
-            self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            #self.set_path_date_time()
+            # pass in _date to allow to change after construction
+            self.set_date_time_directory(_date)
+            self.build_date_time_directory()
 
-            #self.setup_banner_logo()
-
-            #self.copy_banner()
-            #self.copy_logo()
-
-            
-            # create the output directory
-    
             # move the banners and candela images to report path
+            self.copy_banner()
+            self.copy_logo()
+    
+    def copy_banner(self):
+        banner_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
+        banner_dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
+        #print("banner src_file: {}".format(banner_src_file))
+        #print("dst_file: {}".format(banner_dst_file))
+        shutil.copy(banner_src_file,banner_dst_file)
 
-    #def setup_banner_logo(self):
+    def copy_logo(self):
+        logo_src_file = str(self.current_path)+'/'+str(self.logo_directory)+'/'+str(self.logo_file_name)
+        logo_dst_file = str(self.path_date_time)+'/'+ str(self.logo_file_name)
+        #print("logo_src_file: {}".format(logo_src_file))
+        #print("logo_dst_file: {}".format(logo_dst_file))
+        shutil.copy(logo_src_file,logo_dst_file)
+
+    def move_graph_image(self,):
+        graph_src_file = str(self.graph_image)
+        graph_dst_file = str(self.path_date_time)+'/'+ str(self.graph_image)
+        print("graph_src_file: {}".format(graph_src_file))
+        print("graph_dst_file: {}".format(graph_dst_file))
+        shutil.move(graph_src_file,graph_dst_file)
 
 
     def set_path(self,_path):
         self.path = _path
     
-    def set_date_time_directory(self):
-        self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
+    def set_date_time_directory(self,_date):
+        self.date = _date
+        if self.date != "":
+            self.date_time_directory = self.date
+        else:
+            self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
 
     #def set_date_time_directory(self,date_time_directory):
     #    self.date_time_directory = date_time_directory
 
 
-    def set_path_date_time(self):
+    def build_date_time_directory(self):
         if self.date_time_directory == "":
             self.set_date_time_directory()
-        try:
-            self.path_date_time = os.path.join(self.path, self.date_time_directory)
-            print("path_date_time {}".format(self.path_date_time))
+        #try:
+        self.path_date_time = os.path.join(self.path, self.date_time_directory)
+        print("path_date_time {}".format(self.path_date_time))
+        try:        
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-            
         except:
-            self.path_date_time = os.path.join(self.currentpath, self.date_time_directory)
+            self.path_date_time = os.path.join(self.current_path, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-        #print("report path : {}".format(self.path_date_time))    
-
-    def set_time_date(self,_time_date):
-        self.time_date
+        print("report path : {}".format(self.path_date_time))    
 
     def set_title(self,_title):
         self.title = _title
@@ -128,8 +172,11 @@ class lf_report():
 
     def get_path(self):
         return self.path
-
+    # get_path_date_time, get_report_path and need to be the same ()
     def get_path_date_time(self):
+        return self.path_date_time
+
+    def get_report_path(self):
         return self.path_date_time
 
     def write_html(self): 
@@ -148,9 +195,9 @@ class lf_report():
             # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
             
-            #options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
-            #self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
-            #pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+            options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
+            self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
+            pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
             pass
 
     def generate_report(self):
@@ -183,6 +230,8 @@ class lf_report():
                 <br>
                 <h1 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.title) + """</h1>
                 <h3 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.date) + """</h3>
+                <br>
+                <br>
                 <br>
                 <br>
                 <br>
