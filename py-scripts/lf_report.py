@@ -10,7 +10,8 @@ import pdfkit
 # base report class
 class lf_report():
     def __init__(self,
-                _path = "/home/user/git/lanforge-scripts/py-scripts/report-data",
+                _path = "/home/user/git/lanforge-scripts/report-data",
+                _alt_path = "",
                 _output_format = 'html',  # pass in on the write functionality
                 _dataframe="",
                 _title="LANForge Test Run Heading",
@@ -18,16 +19,18 @@ class lf_report():
                 _graph_title="LANForge Graph Title",
                 _obj = "",
                 _obj_title = "",
-                _date="1/1/2-21 00:00(UTC)",
+                _date="", 
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
                 _path_date_time=""):
 
                 #other report paths, "/home/lanforge/html-reports/  
 
-            if _path == "local" or _path == "here" or _path == None:
+            if _path == "local" or _path == "here":
                 self.path = os.path.abspath(__file__)
                 print("path set to file path: {}".format(self.path))
+            elif _alt_path != "":
+                self.path = _alt_path
             else:
                 self.path = _path
                 print("path set: {}".format(self.path))
@@ -54,10 +57,18 @@ class lf_report():
             self.banner_directory = "artifacts"
             self.banner_file_name = "banner.png"    # does this need to be configurable
             self.logo_directory = "artifacts"       
-            self.logo_file_name = "banner.png"      # does this need to be configurable.
+            self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
 
             # create the output path for reports and move *.png files
             self.current_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            # pass in _date to allow to change after construction
+            self.set_date_time_directory(_date)
+            self.build_date_time_directory()
+
+            
+
+            # set up paths on the constructor, since have all the infomation.
             #self.set_path_date_time()
 
             #self.setup_banner_logo()
@@ -70,20 +81,26 @@ class lf_report():
     
             # move the banners and candela images to report path
 
-    #def setup_banner_logo(self):
+    #def copy_banner(self):
+
+    #def copy_logo(self):
 
 
     def set_path(self,_path):
         self.path = _path
     
-    def set_date_time_directory(self):
-        self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
+    def set_date_time_directory(self,_date):
+        self.date = _date
+        if self.date != "":
+            self.date_time_directory = self.date
+        else:
+            self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
 
     #def set_date_time_directory(self,date_time_directory):
     #    self.date_time_directory = date_time_directory
 
 
-    def set_path_date_time(self):
+    def build_date_time_directory(self):
         if self.date_time_directory == "":
             self.set_date_time_directory()
         try:
@@ -91,15 +108,11 @@ class lf_report():
             print("path_date_time {}".format(self.path_date_time))
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-            
         except:
             self.path_date_time = os.path.join(self.currentpath, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
         #print("report path : {}".format(self.path_date_time))    
-
-    def set_time_date(self,_time_date):
-        self.time_date
 
     def set_title(self,_title):
         self.title = _title
