@@ -37,17 +37,17 @@ class lf_report():
                 #_path the report directory under which the report directories will be created.
                 _path = "/home/lanforge/report-data",
                 _alt_path = "",
-                _results_dir_name = "LANforge_Test_Results",
-                _output_format = 'html',  # pass in on the write functionality, current not used
-                _dataframe="",
+                _date = "",
                 _title="LANForge Test Run Heading",
                 _table_title="LANForge Table Heading",
                 _graph_title="LANForge Graph Title",
                 _obj = "",
                 _obj_title = "",
-                _date="", 
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
+                _results_dir_name = "LANforge_Test_Results",
+                _output_format = 'html',  # pass in on the write functionality, current not used
+                _dataframe="",
                 _path_date_time=""):  # this is where the final report is placed.
                 #other report paths, 
 
@@ -126,7 +126,8 @@ class lf_report():
         if self.date != "":
             self.date_time_directory = str(self.date) + str("_") + str(self.results_dir_name)
         else:
-            self.date_time_directory = str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_")).replace(':','-') + str(self.results_dir_name)
+            self.date = str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(':','-')
+            self.date_time_directory = self.date + str("_") + str(self.results_dir_name)
 
     #def set_date_time_directory(self,date_time_directory):
     #    self.date_time_directory = date_time_directory
@@ -158,8 +159,11 @@ class lf_report():
     def set_date(self,_date):
         self.date = _date
 
-    def set_dataframe(self,_dataframe):
+    def set_table_dataframe(self,_dataframe):
         self.dataframe = _dataframe
+
+    def set_table_dataframe_from_csv(self,_csv):
+        self.dataframe = pd.read_csv(_csv)
 
     def set_custom_html(self,_custom_html):
         self.custom_html = _custom_html
