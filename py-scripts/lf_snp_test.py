@@ -1490,18 +1490,18 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #############################################
     # Script Controller Configurations
     #############################################
-    parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn> default: a',default="a", choices=["a","b"])
-    parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: auto',default="auto",
+    parser.add_argument('-cca' ,'--controller_aps', help='--controller_aps List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
+    parser.add_argument('-ccf' ,'--controller_bands', help='--controller_bands <a | b | abgn> default: a',default="a", choices=["a","b"])
+    parser.add_argument('-cwm' ,'--controller_wifimodes', help='List of of wifi mode to test default: auto',default="auto",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
-    parser.add_argument('-cc5','--controller_chan_5ghz', help='--controller_chan_5ghz <36 40 ...> default 36',default="36")
-    parser.add_argument('-cc2','--controller_chan_24ghz', help='--controller_chan_24ghz <1 2 ...> default 1',default="1")
-    parser.add_argument('-ccw','--controller_chan_width', help='--controller_chan_width <20 40 80 160> default: \"20\"',default="20")
-    parser.add_argument('-cam','--controller_ap_mode', help='--controller_ap_mode <local flexconnect> default local',default="local")
-    parser.add_argument('-cps','--controller_packet_size', help='--controller_packet_size List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
+    parser.add_argument('-cc5','--controller_chan_5ghzs', help='--controller_chan_5ghzs <36 40 ...> default 36',default="36")
+    parser.add_argument('-cc2','--controller_chan_24ghzs', help='--controller_chan_24ghzs <1 2 ...> default 1',default="1")
+    parser.add_argument('-ccw','--controller_chan_widths', help='--controller_chan_widths <20 40 80 160> default: \"20\"',default="20")
+    parser.add_argument('-cam','--controller_ap_modes', help='--controller_ap_modes <local flexconnect> default local',default="local")
+    parser.add_argument('-cps','--controller_packet_sizes', help='--controller_packet_sizes List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
-    parser.add_argument('-ccd','--controller_client_density', help='--controller_client_density List of client densities defaults 1', default="1" ) 
+    parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-cde','--controller_data_encryption', help='--controller_data_encryption \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
@@ -2014,9 +2014,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     ###########################################################################################
     else:    
 
-        controller_aps             = args.controller_ap.split()
-        controller_bands           = args.controller_band.split()
-        controller_wifimodes       = args.controller_wifimode.split()
+        controller_aps             = args.controller_aps.split()
+        controller_bands           = args.controller_bands.split()
+        controller_wifimodes       = args.controller_wifimodes.split()
         for mode in controller_wifimodes:
             if mode in wifi_mode_dict.keys():
                 pass
@@ -2024,15 +2024,15 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                 logg.info("wifimode [{}] not recognised. Please use: auto, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX".format(mode))
                 exit(1)
         controller_tx_powers          = args.controller_tx_powers.split() 
-        controller_chan_5ghzs         = args.controller_chan_5ghz.split()
-        controller_chan_24ghzs        = args.controller_chan_24ghz.split()
-        controller_chan_widths        = args.controller_chan_width.split()
-        controller_ap_modes           = args.controller_ap_mode.split()
-        controller_client_densities   = args.controller_client_density.split()
-        controller_packet_types       = args.endp_type.split()
-        controller_packet_sizes       = args.controller_packet_size.split()
+        controller_chan_5ghzs         = args.controller_chan_5ghzs.split()
+        controller_chan_24ghzs        = args.controller_chan_24ghzs.split()
+        controller_chan_widths        = args.controller_chan_widths.split()
+        controller_ap_modes           = args.controller_ap_modes.split()
+        controller_client_densities   = args.controller_client_densities.split()
+        controller_packet_types       = args.endp_types.split()
+        controller_packet_sizes       = args.controller_packet_sizes.split()
         controller_directions         = args.controller_directions.split()
-        controller_data_encryptions   = args.controller_data_encryption.split()
+        controller_data_encryptions   = args.controller_data_encryptions.split()
 
         controller_side_a_min_bps    = args.side_a_min_bps
         controller_side_b_min_bps    = args.side_b_min_bps
