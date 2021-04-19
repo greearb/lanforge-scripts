@@ -37,6 +37,7 @@ class lf_report():
                 #_path the report directory under which the report directories will be created.
                 _path = "/home/lanforge/report-data",
                 _alt_path = "",
+                _results_dir_name = "LANforge_Test_Results",
                 _output_format = 'html',  # pass in on the write functionality, current not used
                 _dataframe="",
                 _title="LANForge Test Run Heading",
@@ -87,7 +88,7 @@ class lf_report():
             self.current_path = os.path.dirname(os.path.abspath(__file__))
 
             # pass in _date to allow to change after construction
-            self.set_date_time_directory(_date)
+            self.set_date_time_directory(_date,_results_dir_name)
             self.build_date_time_directory()
 
             # move the banners and candela images to report path
@@ -118,13 +119,14 @@ class lf_report():
 
     def set_path(self,_path):
         self.path = _path
-    
-    def set_date_time_directory(self,_date):
+
+    def set_date_time_directory(self,_date,_results_dir_name):
         self.date = _date
+        self.results_dir_name = _results_dir_name
         if self.date != "":
-            self.date_time_directory = self.date
+            self.date_time_directory = str(self.date) + str("_") + str(self.results_dir_name)
         else:
-            self.date_time_directory = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
+            self.date_time_directory = str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_")).replace(':','-') + str(self.results_dir_name)
 
     #def set_date_time_directory(self,date_time_directory):
     #    self.date_time_directory = date_time_directory
@@ -133,7 +135,6 @@ class lf_report():
     def build_date_time_directory(self):
         if self.date_time_directory == "":
             self.set_date_time_directory()
-        #try:
         self.path_date_time = os.path.join(self.path, self.date_time_directory)
         print("path_date_time {}".format(self.path_date_time))
         try:        
@@ -178,6 +179,11 @@ class lf_report():
 
     def get_report_path(self):
         return self.path_date_time
+
+    def file_add_path(self, file):
+        output_file = str(self.path_date_time)+'/'+ str(file)
+        print("output file {}".format(output_file))
+        return output_file
 
     def write_html(self): 
         self.write_output_html = str(self.path_date_time)+'/'+ str(self.output_html)

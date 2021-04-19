@@ -54,6 +54,9 @@ import re
 import csv
 import random
 import logging
+from lf_report import lf_report
+from lf_graph import lf_bar_graph
+
 
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
@@ -1594,18 +1597,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.radio:
         radios = args.radio
 
-    if args.csv_outfile != None:
-        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
-        csv_results = "results_{}_{}.csv".format(args.csv_outfile,current_time)
-        print("csv output file : {}".format(csv_outfile))
-      
-    if args.log:
-        outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
-        print("output file log: {}".format(outfile_log))
-    else:
-        outfile_log = "stdout"
-        print("output file log: {}".format(outfile_log))    
 
     if args.wait_timeout:
         wait_timeout = int(args.wait_timeout)     
@@ -1652,6 +1643,28 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                     exit(1)
             print("ap_dict: {}".format(ap_dict))
 
+    # Logging information 
+    report = lf_report()
+
+    if args.csv_outfile != None:
+        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_outfile = report.file_add_path(csv_outfile)
+
+        csv_results = "results_{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_results = report.file_add_path(csv_results)
+        print("csv output file : {}".format(csv_outfile))
+        print("csv results file : {}".format(csv_results))
+      
+    if args.log:
+        outfile_log = "{}_{}_output_log.log".format(args.outfile,current_time)
+        outfile_log = report.file_add_path(outfile_log)
+        print("output file log: {}".format(outfile_log))
+    else:
+        outfile_log = "stdout"
+        print("output file log: {}".format(outfile_log))    
+
+    # Set up the log file
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
@@ -2419,6 +2432,17 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                 else:
                                                                     ip_var_test.passes()
                                                                     logg.info("Full test passed, all connections increased rx rate")
+    ##########################################
+    #
+    # Print out location of results
+    #
+    ##########################################
+    if args.csv_outfile != None:
+        logg.info("Report CSV: {}".format(csv_outfile))
+        logg.info("Report CSV Results: {}".format(csv_results))
+
+    if args.log:
+        logg.info("output_log: {}".format(outfile_log))
 
 if __name__ == "__main__":
     main()

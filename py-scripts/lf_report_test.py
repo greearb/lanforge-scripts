@@ -31,6 +31,13 @@ if __name__ == "__main__":
 
     #report = lf_report(_dataframe=dataframe)
     report = lf_report()
+
+    report_path = report.get_path()
+    report_path_date_time = report.get_path_date_time()
+
+    print("path: {}".format(report_path))
+    print("path_date_time: {}".format(report_path_date_time))
+
     report.set_title("Banner Title One")
     report.build_banner()
     #report.set_title("Banner Title Two")
