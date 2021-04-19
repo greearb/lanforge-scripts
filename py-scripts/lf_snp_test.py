@@ -3,7 +3,6 @@
 '''
 NAME: lf_snp_test.py  snp == Scaling and Performance
 
-
 PURPOSE: 
 
 This program is to configure a controller with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
@@ -14,27 +13,26 @@ The results will be recorded in CSV file with the following data
 AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
 unique test id, pass / fail, epoch time, and time.
 
-Hard coded test configurations take presidence to command line.
-
 EXAMPLE: 
 
 Use --print_test_config at end of command to see test configuration
 
-Using Coded Configuration:
+Test configurations take presidence to command line parameters
+
+Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
+    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
     --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
 
 Using Commandline Less Interations:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36"
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
-
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
+    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
+    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
 '''
 import sys
 import os
@@ -71,12 +69,11 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
-
 ################################################################################
-# controller class : Possibly move to another file
-# Scaling and Performance to be self contained and not impact other tests
+#
+# Controller Class : controller interface
+#
 ################################################################################
-
 class CreateCtlr():
     def __init__(self,
                 _scheme,
@@ -722,14 +719,18 @@ class CreateCtlr():
         
         logg.info("configure ap {} channel {} chan_width {}".format(self.ap,self.channel,self.chan_width))
         # Verify channel and channel width. 
-##########################################        
-# End of controller controller class
-##########################################
+################################################################################
+#
+# End of Controller Class : controller interface
+#
+################################################################################
 
-##########################################        
-# Traffic Generation Begin
-##########################################
 
+################################################################################
+#
+# Traffic Generation Class
+#
+################################################################################
 class L3VariableTime(Realm):
     def __init__(self, 
                 args,
@@ -1064,7 +1065,7 @@ class L3VariableTime(Realm):
                 self.rm_port(sta, check_exists=True)
                 self.total_stas += 1
 
-        # Make sure they are gone
+        # Verify Stations are Gone
         count = 0
         while (count < 10):
             more = False
@@ -1088,13 +1089,6 @@ class L3VariableTime(Realm):
             station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
             index += 1
 
-            # 12/4/2020 put back in multi cast
-            #for etype in self.endp_types:
-            #    if etype == "mc_udp" or etype == "mc_udp6":
-            #        logg.info("Creating Multicast connections for endpoint type: %s"%(etype))
-            #        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-            #        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
-            
             for _tos in self.tos:
                 logg.info("Creating connections for endpoint type: {} TOS: {} stations_names {}".format(self.endp_type, _tos, station_profile.station_names))
                 self.cx_profile.create(endp_type=self.endp_type, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
@@ -1117,17 +1111,12 @@ class L3VariableTime(Realm):
         temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
-        # need algorithm for setting time default 
         if self.wait_for_ip(temp_stations_list, timeout_sec=self.wait_timeout, debug=self.debug):
             logg.info("ip's acquired")
         else:
-            logg.info("print failed to get IP's")
-            exit(1) # why continue
+            logg.info("Stations Failed to get IP's")
+            exit(1) # Exit if cannot receive IP's
         time.sleep(30)
-        # Multi cast may not be needed for scaling and performance
-        logg.info("Starting multicast traffic (if any configured)")
-        self.multicast_profile.start_mc(debug_=self.debug)
-        self.multicast_profile.refresh_mc(debug_=self.debug)
         logg.info("Starting layer-3 traffic (if any configured)")
         self.cx_profile.start_cx()
         self.cx_profile.refresh_cx()
@@ -1200,7 +1189,6 @@ class L3VariableTime(Realm):
         csv_rx_headers.extend(['rx_rate_mbps','expected_rx','test_id','pass_fail','epoch_time','time'])
         return csv_rx_headers
 
-
     def csv_add_column_headers(self,headers):
         if self.csv_file is not None:
             self.csv_writer.writerow(headers)
@@ -1229,6 +1217,12 @@ def valid_endp_types(_endp_type):
             logg.info('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
             exit(1)
     return _endp_type
+################################################################################
+#
+# End of Traffic Generation Class
+#
+################################################################################
+
 
 ############################################################
 #
@@ -1283,54 +1277,6 @@ The ultimate aim of this script is to achieve the following:
       5. Review overall AP performance across multiple AP platforms
 
 
-Summary : 
-----------
-This program is to configure a controller with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
-The controller will configure the AP.  
-The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
-The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
-The results will be recorded in CSV file with the following data
-AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
-unique test id, pass / fail, epoch time, and time.
-
-Hard coded test configurations take presidence to command line.
-
-
-Generic command layout:
------------------------
-python .\\lf_controller_snp.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
-        --radio "radio==<radio> stations==<number staions> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3> wifimode==AUTO" --debug
-
-Multiple radios may be entered with individual --radio switches
-
-generiic command with controller setting channel and channel width test duration 30 sec
-python3 lf_controller_snp.py --controller_ctlr <IP> --mgr <Lanforge IP> 
-    --controller_channel <channel> --controller_chan_width <20,40,80,120> --endp_type 'lf_udp lf_tcp mc_udp' --upstream_port <1.ethX> 
-    --radio "radio==<radio 0 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
-    --radio "radio==<radio 1 > stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<wpa2 , open> wifimode==<AUTO>" 
-    --duration 5m
-
-wifimode:
-   <a  b   g   abg   abgn   bgn   bg   abgnAC   anAC   an   bgnAC   abgnAX   bgnAX   anAX 
-
-
-<duration>: number followed by one of the following 
-d - days
-h - hours
-m - minutes
-s - seconds
-
-<traffic type>: 
-lf_udp  : IPv4 UDP traffic
-lf_tcp  : IPv4 TCP traffic
-lf_udp6 : IPv6 UDP traffic
-lf_tcp6 : IPv6 TCP traffic
-mc_udp  : IPv4 multi cast UDP traffic , Support TBD
-mc_udp6 : IPv6 multi cast UDP traffic , Support TBD
-
-<tos>: 
-BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values.
-
 #########################################
 # Examples
 # #######################################            
@@ -1338,21 +1284,22 @@ EXAMPLE:
 
 Use --print_test_config at end of command to see test configuration
 
-Using Coded Configuration:
+Test configurations take presidence to command line parameters
+
+Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
+    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
     --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
 
 Using Commandline Less Interations:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36"
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
-
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
+    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
+    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
 
 
 ##############################################################################
@@ -1534,17 +1481,17 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         ''')
 
     #############################################
-    #
+    # Fixed Configurations coded into script
     #############################################
-    # Fixed tests coded into script
     parser.add_argument('-ct1' ,'--controller_test_1', help='--controller_test_1 LANforge static radio configuration',action="store_true")
     parser.add_argument('-ct2' ,'--controller_test_2', help='--controller_test_2 LANforge static radio configuration',action="store_true")
     parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 LANforge static radio configuration',action="store_true")
 
-    # Script switches
+    #############################################
+    # Script Controller Configurations
+    #############################################
     parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
     parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn> default: a',default="a", choices=["a","b"])
-    # controller wanted 11ax , 11ac, 11n, 11gb
     parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: auto',default="auto",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
 
@@ -1573,11 +1520,17 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
-                            
 
-    parser.add_argument('-apr','--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
-    parser.add_argument('-prs','--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
+    #################################################################
+    # Script AP parameters for reading AP, 
+    #################################################################
+    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, \
+        help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
+    #--ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
 
+    #############################################
+    # Script LANforge Configurations
+    #############################################
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='20s')
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
@@ -1591,7 +1544,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
 
-    #to do add wifimode
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
@@ -1600,17 +1552,18 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
-    # AP parameters
-    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, \
-        help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
-    #--ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
-
     # Parameters Used for testing
     parser.add_argument('-noc','--no_controller',  help='-noc / --no_controller no configuration of the controller', action='store_true')
     parser.add_argument('-nos','--no_stations',    help='-nos / --no_stations , no stations', action='store_true')
     parser.add_argument('-wto','--wait_timeout',   help='-wto / --wait_timeout , time to wait for stations to get IP ', default="120")
     parser.add_argument('-ptc','--print_test_config', help='-ptc / --print_test_config , print out the test configuration and exit', action='store_true')
 
+
+    ##############################################################
+    #
+    #  Scaling and Performance Args Parser
+    #
+    ##############################################################
     args = parser.parse_args()
 
     controller_args = args  # use args.
@@ -1618,9 +1571,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #logg.info("args: {}".format(args))
     debug_on = args.debug
 
-    ##################################################################
+    ###############################################################
     # Gather Test Data
-    #################################################################
+    ###############################################################
+
  
     if args.test_duration:
         test_duration = args.test_duration
