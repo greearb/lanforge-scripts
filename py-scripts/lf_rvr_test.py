@@ -12,27 +12,92 @@ may need to view a Rate-vs-Range test configured through the GUI to understand
 the options and how best to input data.
     
     ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name rvr-instance --config_name test_con --upstream 1.2.eth2 \
-      --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
-      --download_speed 85% --upload_speed 0 \
+      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \
+      --dut RootAP --duration 15s --station 1.1.wlan0 \
+      --download_speed 85% --upload_speed 56Kbps \
       --raw_line 'pkts: MTU' \
-      --raw_line 'directions: DUT Transmit;DUT Receive' \
-      --raw_line 'traffic_types: UDP;TCP' \
-      --test_rig Testbed-01 --pull_report \
+      --raw_line 'directions: DUT Transmit' \
+      --raw_line 'traffic_types: TCP' \
+      --test_rig Ferndale-Mesh-01 --pull_report \
+      --raw_line 'attenuator: 1.1.1040' \
+      --raw_line 'attenuations: 0..+50..950' \
+      --raw_line 'attenuator_mod: 3' \
       --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
       --influx_tag testbed Ferndale-Advanced
 
 Note:
+    attenuator_mod: selects the attenuator modules, bit-field.
+       This example uses 3, which is first two attenuator modules on Attenuator ID 1040.
+    
     --raw_line 'line contents' will add any setting to the test config.  This is
         useful way to support any options not specifically enabled by the
         command options.
     --set modifications will be applied after the other config has happened,
         so it can be used to override any other config.
 
-Example of raw text config for Dataplane, to show other possible options:
+Example of raw text config for Rate-vsRange, to show other possible options:
 
+sel_port-0: 1.1.wlan0
+show_events: 1
+show_log: 0
+port_sorting: 0
+kpi_id: Rate vs Range
+bg: 0xE0ECF8
+test_rig: 
+show_scan: 1
+auto_helper: 0
+skip_2: 0
+skip_5: 0
+skip_5b: 1
+skip_dual: 0
+skip_tri: 1
+selected_dut: RootAP
+duration: 15000
+traffic_port: 1.1.6 wlan0
+upstream_port: 1.1.1 eth1
+path_loss: 10
+speed: 85%
+speed2: 56Kbps
+min_rssi_bound: -150
+max_rssi_bound: 0
+channels: AUTO
+modes: Auto
+pkts: MTU
+spatial_streams: AUTO
+security_options: AUTO
+bandw_options: AUTO
+traffic_types: TCP
+directions: DUT Transmit
+txo_preamble: OFDM
+txo_mcs: 0 CCK, OFDM, HT, VHT
+txo_retries: No Retry
+txo_sgi: OFF
+txo_txpower: 15
+attenuator: 1.1.1040
+attenuator2: 0
+attenuator_mod: 243
+attenuator_mod2: 255
+attenuations: 0..+50..950
+attenuations2: 0..+50..950
+chamber: 0
+tt_deg: 0..+45..359
+cust_pkt_sz: 
+show_bar_labels: 1
+show_prcnt_tput: 0
+show_3s: 0
+show_ll_graphs: 0
+show_gp_graphs: 1
+show_1m: 1
+pause_iter: 0
+outer_loop_atten: 0
+show_realtime: 1
+operator: 
+mconn: 1
+mpkt: 1000
+tos: 0
+loop_iterations: 1
 
 """
 
@@ -63,13 +128,13 @@ class RvrTest(cvtest):
                  lf_password="lanforge",
                  instance_name="rvr_instance",
                  config_name="rvr_config",
-                 upstream="1.1.eth2",
+                 upstream="1.1.eth1",
                  pull_report=False,
                  load_old_cfg=False,
                  upload_speed="0",
                  download_speed="85%",
                  duration="15s",
-                 station="1.1.sta01500",
+                 station="1.1.wlan0",
                  dut="NA",
                  enables=[],
                  disables=[],
@@ -161,9 +226,9 @@ def main():
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="1.1.eth2",
+    parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-    parser.add_argument("--station", type=str, default="1.1.sta01500",
+    parser.add_argument("--station", type=str, default="",
                         help="Station to be used in this test, example: 1.1.sta01500")
 
     parser.add_argument("--dut", default="",
