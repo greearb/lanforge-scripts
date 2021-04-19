@@ -898,7 +898,7 @@ class L3VariableTime(Realm):
                 for item, value in endp_name.items():
                     if item in our_endps:
                         for value_name, value_rx in value.items():
-                            if value_name == 'rx bytes':
+                            if value_name == 'rx rate':
                                 endp_rx_map[item] = value_rx
                         for value_name, value_rx_drop in value.items():
                             if value_name == 'rx drop %':
@@ -1186,13 +1186,13 @@ class L3VariableTime(Realm):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time','monitor'])
+        csv_rx_headers.extend(['rx_rate_mbps','expected_rx','test_id','pass_fail','epoch_time','time','monitor'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['max_tp_bps','expected_tp','test_id','pass_fail','epoch_time','time'])
+        csv_rx_headers.extend(['rx_rate_mbps','expected_rx','test_id','pass_fail','epoch_time','time'])
         return csv_rx_headers
 
 
@@ -1250,12 +1250,16 @@ lf_controller_snp.py:
 --------------------
 
 ##################################################################################
-Task Description:
+Task Description:  Ultimate Aim
 ##################################################################################
 -----------------
-Candela SNP automation which involves controller WLC controller and Candela automation. 
+Candela Scaling and Performance Test (SNP) 
 
-Our ultimate aim of this script is to achieve the following:
+The Test supports configuraiton of a Controller which configures
+An AP and the Configuration of LANforge or Multiple LANforges
+configured into a "Realm". 
+
+The ultimate aim of this script is to achieve the following:
 
 1. 1 to 200 client SNP on 11ac (1, 50 and 200 client count tests)
       1. 5 Ghz with different channel widths
@@ -1276,9 +1280,16 @@ Our ultimate aim of this script is to achieve the following:
 
 Summary : 
 ----------
-create stations, create traffic between upstream port and stations,  run traffic. 
-The traffic on the stations will be checked once per minute to verify that traffic is transmitted
-and recieved.
+This program is to configure a controller with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
+The controller will configure the AP.  
+The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
+The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
+The results will be recorded in CSV file with the following data
+AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
+unique test id, pass / fail, epoch time, and time.
+
+Hard coded test configurations take presidence to command line.
+
 
 Generic command layout:
 -----------------------
@@ -1309,33 +1320,11 @@ lf_udp  : IPv4 UDP traffic
 lf_tcp  : IPv4 TCP traffic
 lf_udp6 : IPv6 UDP traffic
 lf_tcp6 : IPv6 TCP traffic
-mc_udp  : IPv4 multi cast UDP traffic
-mc_udp6 : IPv6 multi cast UDP traffic
+mc_udp  : IPv4 multi cast UDP traffic , Support TBD
+mc_udp6 : IPv6 multi cast UDP traffic , Support TBD
 
 <tos>: 
 BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values.
-
-#################################
-#Command switches
-#################################
---controller_ctlr <IP of controller Controller>',default=None
---controller_user <User-name for controller Controller>',default="admin"
---controller_passwd <Password for controller Controller>',default="controller123
---controller_prompt <Prompt for controller Controller>',default="(controller Controller) >
---controller_ap <controller AP in question>',default="APA453.0E7B.CF9C"
-    
---controller_channel <channel>',default=None  , no change
---controller_chan_width <20 40 80 160>',default="20",choices=["20","40","80","160"]
---controller_band <a | b | abgn>',default="a",choices=["a", "b", "abgn"]
-
---mgr <hostname for where LANforge GUI is running>',default='localhost'
--d  / --test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m'
---tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE"
---debug:  Enable debugging',default=False
--t  / --endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
-                        default='lf_udp', type=valid_endp_types
--u / --upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
--o / --outfile <Output file for csv data>", default='snp'
 
 #########################################
 # Examples
@@ -1355,7 +1344,7 @@ Using Commandline with defaults:
     Use --print_test_config at end of command to see test configuration
 
 ##############################################################################
-Detailed test loop description 10/9/2020 - Karthik Recommendation
+Detailed test loop description - Recommendation
 ##############################################################################
 Script logic loops:
 
@@ -1370,10 +1359,14 @@ AP {Axel, Vanc} Dynamic
                                                 Direction {Downstream, Upstream}
                                                       Packet-size { 88, 512, 1370, 1518}   Common
                                                             Time (4 iterations of 30 sec and get the best average out of it) 
-
-Notes:
 #############################################
-CandelaTech Radios and what supports
+#############################################
+LANforge Information and General Information
+#############################################
+#############################################
+
+#############################################
+Radios Description
 #############################################
 
 Radio descriptions:
@@ -1387,12 +1380,12 @@ ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , an)
 Note: wave-2 radios can act as ac, an, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
 #############################################
-wifimodes needed to support
+Wifi Modes 
 #############################################
 11ax (2.4 ghz or 5 ghz), 11ac (5 ghz only), 11n (2.4ghz or 5 ghz), 11bg (2.4 ghz)  (controller)
 
 #############################################
-5 Ghz
+5 Ghz Radios and Wifi Modes
 #############################################
 Wifi mode: 11ax  - 5ghz
 Radios   :  ax200  :        802.11 /a/n/ac/AX
@@ -1404,7 +1397,7 @@ Wifi mode: 11n - 5ghz
 Radios   :  ath10K(9984)    802.11an-AC (9984 are single band)
 
 #############################################
-24 Ghz
+24 Ghz Radios and Wifi Modes
 #############################################
 Wifi mode: 11ax - 24ghz
 Radios   :  ax200 -         802.11 /b/g/n/AX     
@@ -1419,7 +1412,7 @@ Wifi mode: 11bg - 24ghz
 Radios   :  ax200           802.11 /b/g/n/AX
 
 ############################################
-Radio support for specific Modes
+Radio Mode Configuration
 ############################################
 controller_wifimode == "anAX" or controller_wifimode == "abgn" or controller_wifimode == "bg":
         radios = radio_AX200_abgn_ax_dict[controller_client_density]
@@ -1429,7 +1422,7 @@ controller_wifimode == "an" or controller_wifimode == "anAC":
 
 
 ############################################
-Realm at controller
+LANforge Realm Configuration
 ############################################
 
 1.wiphy0  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
@@ -1466,9 +1459,9 @@ Realm at controller
 6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
-####################################################################################################
-LANforge information on what is displayed in the Column and how to access the value with cli or json
-####################################################################################################
+#########################################################################################################
+LANforge GUI what is displayed in the Column and how to access the value with cli or json
+#########################################################################################################
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
     Name                |  'name'
@@ -1526,13 +1519,15 @@ LANforge information on what is displayed in the Column and how to access the va
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
 
-
         ''')
 
+    #############################################
+    #
+    #############################################
     # Fixed tests coded into script
-    parser.add_argument('-ct1' ,'--controller_test_1', help='--controller_test_1 flag present default to subset tests',action="store_true")
-    parser.add_argument('-ct2' ,'--controller_test_2', help='--controller_test_2 flag present default to subset tests',action="store_true")
-    parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 flag present default to subset tests',action="store_true")
+    parser.add_argument('-ct1' ,'--controller_test_1', help='--controller_test_1 LANforge static radio configuration',action="store_true")
+    parser.add_argument('-ct2' ,'--controller_test_2', help='--controller_test_2 LANforge static radio configuration',action="store_true")
+    parser.add_argument('-ct3' ,'--controller_test_3', help='--controller_test_3 LANforge static radio configuration',action="store_true")
 
     # Script switches
     parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
@@ -1711,11 +1706,12 @@ LANforge information on what is displayed in the Column and how to access the va
         logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
 
-    ####################################################
+    #############################################################
     #
-    #  Static Configuration controller Realm one lanforge
+    #   Radio Eictionary for LANforge 1 in LANforge Realm
+    #   Configuration used by command switch --controller_test_1
     #
-    ####################################################
+    #############################################################
     radio_AX200_abgn_ax_list_001_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_AX200_abgn_ax_list_008_one    = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -1744,12 +1740,19 @@ LANforge information on what is displayed in the Column and how to access the va
                                         '50' : radio_ath10K_9984_an_AC_list_020_one,
                                         '65' : radio_ath10K_9984_an_AC_list_020_one}
 
+    ####################################################################
+    #
+    # End of Configuration used by command switch --controller_test_1
+    #
+    ####################################################################
 
-    ####################################################
+
+    ############################################################
     #
-    #  Static Configuration controller Realm
+    #  Radio Dictionary for multiple LANforge in  Realm 
+    #  Configuration used by command switch --controller_test_2
     #
-    ####################################################
+    ############################################################
     radio_AX200_abgn_ax_list_001        = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_AX200_abgn_ax_list_010        = [['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -1833,10 +1836,18 @@ LANforge information on what is displayed in the Column and how to access the va
                                     '50' : radio_ath10K_9984_an_AC_list_050,
                                     '200': radio_ath10K_9984_an_AC_list_200}
 
+    ####################################################################
+    #
+    # End of Configuration used by command switch --controller_test_2
+    #
+    ####################################################################
+
+
     #############################################################
     #
-    #  Static dictionaries for radios on 191.168.100.178  Test 3
+    #  Static dictionary for radios on 191.168.100.178  
     #  Static Configuration Candela Tech Realm ()
+    #  Configuration used by command switch --controller_test_3
     #
     #############################################################
     #iwlwifi(AX200) 521
@@ -1890,7 +1901,7 @@ LANforge information on what is displayed in the Column and how to access the va
 
     ####################################################################
     #
-    # End Test #3
+    # End of Configuration used by command switch --controller_test_3
     #
     ####################################################################
 
@@ -2101,10 +2112,14 @@ LANforge information on what is displayed in the Column and how to access the va
                                         for controller_ap_mode in controller_ap_modes:
                                             for controller_client_density in controller_client_densities:
                                                 radios = ""
-                                                # Validate radio configuration , if controller_client_density is not supported continue
-                                                ###########################
-                                                # USE command line radios
-                                                ###########################
+                                                ########################################################
+                                                # Validate radio configuration 
+                                                # If controller_client_density is NOT supported continue
+                                                ########################################################
+
+                                                ########################################################
+                                                # USE command line to configure LANforge radios
+                                                ###############################################
                                                 if args.radio:
                                                     radios = args.radio
                                                     logg.info("########################################################")
@@ -2113,9 +2128,9 @@ LANforge information on what is displayed in the Column and how to access the va
                                                     logg.info("# controller_wifimode: {}".format(controller_wifimode))
                                                     logg.info("########################################################")
                                                 
-                                                #######################################
-                                                # USE radio dictionaies
-                                                #######################################
+                                                #################################################################
+                                                # USE radio dictionaies in this file to configure LANforge radios
+                                                #################################################################
                                                 elif controller_band == "a":
                                                     if controller_wifimode == "anAX" or controller_wifimode == "abgn":
                                                         #AX200 dual band
@@ -2419,7 +2434,7 @@ LANforge information on what is displayed in the Column and how to access the va
                                                                     pass
                                                                 else:
                                                                     ip_var_test.passes()
-                                                                    logg.info("Full test passed, all connections increased rx bytes")
+                                                                    logg.info("Full test passed, all connections increased rx rate")
 
 if __name__ == "__main__":
     main()
