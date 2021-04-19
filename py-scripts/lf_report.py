@@ -179,6 +179,11 @@ class lf_report():
     def get_report_path(self):
         return self.path_date_time
 
+    def file_location(self, file):
+        output_file = str(self.path_date_time)+'/'+ str(file)
+        print("output file {}".format(output_file))
+        return output_file
+
     def write_html(self): 
         self.write_output_html = str(self.path_date_time)+'/'+ str(self.output_html)
         print("write_output_html: {}".format(self.write_output_html))
