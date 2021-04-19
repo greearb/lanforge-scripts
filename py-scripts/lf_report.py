@@ -162,6 +162,9 @@ class lf_report():
     def set_table_dataframe(self,_dataframe):
         self.dataframe = _dataframe
 
+    def set_table_dataframe_from_csv(self,_csv):
+        self.dataframe = pd.read_csv(_csv)
+
     def set_custom_html(self,_custom_html):
         self.custom_html = _custom_html
 
