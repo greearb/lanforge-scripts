@@ -1644,7 +1644,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
             print("ap_dict: {}".format(ap_dict))
 
     # Logging information 
-    report = lf_report()
+    report = lf_report(_results_dir_name = "Scaling_and_Performance")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
@@ -2434,15 +2434,25 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     logg.info("Full test passed, all connections increased rx rate")
     ##########################################
     #
-    # Print out location of results
+    # Build Results
     #
     ##########################################
     if args.csv_outfile != None:
         logg.info("Report CSV: {}".format(csv_outfile))
         logg.info("Report CSV Results: {}".format(csv_results))
+        report.set_title("Scaling And Performance")
+        report.build_banner()
+        report.set_table_title("Scaling And Performance Throught put")
+        report.build_table_title()
+        report.set_table_dataframe_from_csv(csv_results)
+        report.build_table()
+        report.write_html()
+        report.write_pdf()
 
     if args.log:
         logg.info("output_log: {}".format(outfile_log))
+
+    
 
 if __name__ == "__main__":
     main()
