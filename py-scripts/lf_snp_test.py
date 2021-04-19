@@ -904,7 +904,7 @@ class L3VariableTime(Realm):
                 for item, value in endp_name.items():
                     if item in our_endps:
                         for value_name, value_rx in value.items():
-                            if value_name == 'rx rate':
+                            if value_name == 'rx bytes':
                                 endp_rx_map[item] = value_rx
                         for value_name, value_rx_drop in value.items():
                             if value_name == 'rx drop %':
