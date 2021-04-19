@@ -33,6 +33,12 @@ Using Commandline Less Interations:
     --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
     --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
+
+INCLUDE_IN_README
+
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
 '''
 import sys
 import os
@@ -2442,7 +2448,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         logg.info("Report CSV Results: {}".format(csv_results))
         report.set_title("Scaling And Performance")
         report.build_banner()
-        report.set_table_title("Scaling And Performance Throught put")
+        report.set_table_title("Scaling And Performance Throughput")
         report.build_table_title()
         report.set_table_dataframe_from_csv(csv_results)
         report.build_table()
