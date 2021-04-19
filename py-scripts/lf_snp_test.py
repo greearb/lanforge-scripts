@@ -17,18 +17,23 @@ unique test id, pass / fail, epoch time, and time.
 Hard coded test configurations take presidence to command line.
 
 EXAMPLE: 
+
+Use --print_test_config at end of command to see test configuration
+
 Using Coded Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
-    Use --print_test_config at end of command to see test configuration
-
 Using Commandline with defaults:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" \
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" \
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
 
-    Use --print_test_config at end of command to see test configuration
+Using Commandline Less Interations:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
+    --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36"
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
 
 '''
 import sys
@@ -1330,18 +1335,25 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 # Examples
 # #######################################            
 EXAMPLE: 
+
+Use --print_test_config at end of command to see test configuration
+
 Using Coded Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 \
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)"
 
-    Use --print_test_config at end of command to see test configuration
-
 Using Commandline with defaults:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" \
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" \
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
 
-    Use --print_test_config at end of command to see test configuration
+Using Commandline Less Interations:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
+    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
+    --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36"
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
+
+
 
 ##############################################################################
 Detailed test loop description - Recommendation
@@ -1531,7 +1543,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     # Script switches
     parser.add_argument('-cca' ,'--controller_ap', help='--controller_ap List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn>',default="a b", choices=["a","b"])
+    parser.add_argument('-ccf' ,'--controller_band', help='--controller_band <a | b | abgn> default: a',default="a", choices=["a","b"])
     # controller wanted 11ax , 11ac, 11n, 11gb
     parser.add_argument('-cwm' ,'--controller_wifimode', help='List of of wifi mode to test default: auto',default="auto",
                         choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
@@ -1560,7 +1572,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
-    parser.add_argument('-hrd','--radar_duration',  help='--radar_duration, hack rf radar duration default 5s', default='5s')
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
                             
 
@@ -1941,6 +1952,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 #  Test Configurations:  Take presidence over command line arguments
 #     GOAL: help with command line configurations
 ###########################################################################################
+
+###########################################################################################
+#
+# controller_test_1
+#
+###########################################################################################
     # Test configuration that may be read in , in conjunction with command line arguments
     if args.controller_test_1:
         logg.info("USING: controller_test_1")
@@ -1969,6 +1986,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
 
+###########################################################################################
+#
+# controller_test_2
+#
+###########################################################################################
+
     elif args.controller_test_2:
         logg.info("USING: controller_test_2")
         # Note the local system only supports 802.11-abgn , 802.11a
@@ -1996,6 +2019,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
+
+###########################################################################################
+#
+# controller_test_3
+#
+###########################################################################################
 
     elif args.controller_test_3: #CMR_test_3
         logg.info("USING: controller_test_3")
@@ -2053,19 +2082,19 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
         controller_side_a_min_bps    = args.side_a_min_bps
         controller_side_b_min_bps    = args.side_b_min_bps
-
-    logg.info(controller_aps)
-    logg.info(controller_bands)
-    logg.info(controller_wifimodes)
-    logg.info(controller_tx_powers)
-    logg.info(controller_chan_5ghzs)
-    logg.info(controller_chan_24ghzs)
-    logg.info(controller_chan_widths)
-    logg.info(controller_ap_modes)
-    logg.info(controller_packet_types)
-    logg.info(controller_packet_sizes)
-    logg.info(controller_client_densities)
-    logg.info(controller_data_encryptions)
+    logg.info("TEST CONFIG: ")
+    logg.info("controller_aps: {}".format(controller_aps))
+    logg.info("controller_bands: {}".format(controller_bands))
+    logg.info("controller_wifimodes: {}".format(controller_wifimodes))
+    logg.info("controller_tx_powers: {}".format(controller_tx_powers))
+    logg.info("controller_chan_5ghzs: {}".format(controller_chan_5ghzs))
+    logg.info("controller_chan_24ghzs: {}".format(controller_chan_24ghzs))
+    logg.info("controller_chan_widths: {}".format(controller_chan_widths))
+    logg.info("controller_ap_modes: {}".format(controller_ap_modes))
+    logg.info("controller_packet_types: {}".format(controller_packet_types))
+    logg.info("controller_packet_sizes: {}".format(controller_packet_sizes))
+    logg.info("controller_client_densities: {}".format(controller_client_densities))
+    logg.info("controller_data_encryptions: {}".format(controller_data_encryptions))
 
     if args.radio:
         logg.info("radios from command line used")
@@ -2081,7 +2110,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         exit(1)
 
     if args.print_test_config:
-        logg.info("PRINT TEST CONFIG ONLY - exiting ")
+        logg.info("PRINT TEST CONFIG ONLY - exiting remove --print_test_config to run test")
         exit(1)
 
     __ap_set          = None
