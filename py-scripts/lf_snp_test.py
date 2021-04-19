@@ -2432,6 +2432,17 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                 else:
                                                                     ip_var_test.passes()
                                                                     logg.info("Full test passed, all connections increased rx rate")
+    ##########################################
+    #
+    # Print out location of results
+    #
+    ##########################################
+    if args.csv_outfile != None:
+        logg.info("Report CSV: {}".format(csv_outfile))
+        logg.info("Report CSV Results: {}".format(csv_results))
+
+    if args.log:
+        logg.info("output_log: {}".format(outfile_log))
 
 if __name__ == "__main__":
     main()
