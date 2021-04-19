@@ -179,7 +179,7 @@ class lf_report():
     def get_report_path(self):
         return self.path_date_time
 
-    def file_location(self, file):
+    def file_add_path(self, file):
         output_file = str(self.path_date_time)+'/'+ str(file)
         print("output file {}".format(output_file))
         return output_file
