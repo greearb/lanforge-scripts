@@ -20,16 +20,16 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C --controller_series "3504" 
     --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
 
 Using Commandline Less Interations:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
     --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
     --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
@@ -1536,7 +1536,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+    parser.add_argument('-t', '--endp_types', help='--endp_types <types of traffic> example --endp_types \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
     parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upstream downstream> example --controller_directions \"upstream downstream\"  Default: upstream downstream', default='upstream downstream')
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
@@ -1582,8 +1582,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.polling_interval:
         polling_interval = args.polling_interval
 
-    if args.endp_type:
-        endp_types = args.endp_type
+    if args.endp_types:
+        endp_types = args.endp_types
 
     if args.mgr:
         lfjson_host = args.mgr
