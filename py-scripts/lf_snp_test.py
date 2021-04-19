@@ -2030,8 +2030,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_ap_modes           = args.controller_ap_mode.split()
         controller_client_densities   = args.controller_client_density.split()
         controller_packet_types       = args.endp_type.split()
-        controller_directions         = args.controller_directions.split()
         controller_packet_sizes       = args.controller_packet_size.split()
+        controller_directions         = args.controller_directions.split()
         controller_data_encryptions   = args.controller_data_encryption.split()
 
         controller_side_a_min_bps    = args.side_a_min_bps
@@ -2045,9 +2045,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     logg.info("controller_chan_24ghzs: {}".format(controller_chan_24ghzs))
     logg.info("controller_chan_widths: {}".format(controller_chan_widths))
     logg.info("controller_ap_modes: {}".format(controller_ap_modes))
+    logg.info("controller_client_densities: {}".format(controller_client_densities))
     logg.info("controller_packet_types: {}".format(controller_packet_types))
     logg.info("controller_packet_sizes: {}".format(controller_packet_sizes))
-    logg.info("controller_client_densities: {}".format(controller_client_densities))
+    logg.info("controller_directions: {}".format(controller_directions))
     logg.info("controller_data_encryptions: {}".format(controller_data_encryptions))
 
     if args.radio:
