@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pdfkit
 from lf_report import lf_report
-from lf_graph import lf_bar_graph
+from lf_graph import lf_bar_graph, lf_scatter_graph , lf_stacked_graph
 
 # Unit Test
 if __name__ == "__main__":
@@ -83,7 +83,36 @@ if __name__ == "__main__":
     report.move_graph_image()
 
     report.build_graph()
+    set1 = [1, 2, 3, 4]
+    set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]
+    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis",
+                              _yaxis_name="y-axis",
+                              _graph_image_name="image_name1",
+                              _color=None,
+                              _label=["s1", "s2", "s3"])
+    graph_png = graph2.build_scatter_graph()
 
+    print("graph name {}".format(graph_png))
+
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+
+    report.build_graph()
+    dataset = [["1", "2", "3", "4"], [12, 45, 67, 34], [23, 67, 23, 12], [25, 45, 34, 23]]
+    graph = lf_stacked_graph(_data_set=dataset,
+                             _xaxis_name="Stations",
+                             _yaxis_name="Login PASS/FAIL",
+                             _label=['Success', 'Fail', 'both'],
+                             _graph_image_name="login_pass_fail1",
+                             _color=None)
+
+    graph_png = graph.build_stacked_graph()
+
+    print("graph name {}".format(graph_png))
+
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
     #report.build_all()
 
     html_file = report.write_html() 
