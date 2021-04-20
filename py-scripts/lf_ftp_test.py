@@ -9,8 +9,14 @@ PURPOSE:
     find out download/upload time of each client according to file size.
     This script will monitor the bytes-rd attribute of the endpoints.
 
-USE:  './ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
-    --file_size "2MB" --num_stations
+SETUP:  
+
+    Create a file to be downloaded    linux:  fallocate -l <size> <name>    example fallocate -l 2M ftp_test.txt
+
+
+EXAMPLE:  
+    './ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
+    --file_size "2MB" --num_stations 2
 
 INCLUDE_IN_README
 
@@ -19,7 +25,6 @@ INCLUDE_IN_README
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
-SETUP:  Create a file to be downloaded    linux:  fallocate -l <size> <name>    example fallocate -l 2M ftp_test.txt
 """
 import sys
 from ftp_html import *
@@ -40,7 +45,7 @@ import time
 import os
 
 class ftp_test(LFCliBase):
-    def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta= None,
+    def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio = "wiphy0", sta_prefix="sta", start_id=0, num_sta= None,
                  dut_ssid=None,dut_security=None, dut_passwd=None, file_size=None, band=None,
                  upstream="eth1",_debug_on=False, _exit_on_error=False,  _exit_on_fail=False, direction= None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
@@ -447,7 +452,7 @@ def main():
     parser.add_argument('--ssid',type=str, help='--ssid', default="TestAP-Jitendra")
     parser.add_argument('--passwd',type=str, help='--passwd', default="BLANK")
     parser.add_argument('--security', type=str, help='--security', default="open")
-    #parser.add_argument('--radios',nargs="+",help='--radio to use on LANforge for 5G and 2G', default=["wiphy0","wiphy1"])
+    parser.add_argument('--radios',nargs="+",help='--radio to use on LANforge for 5G and 2G', default=["wiphy0"])
     
     # Test variables
     parser.add_argument('--bands', nargs="+", help='--bands defaults ["5G","2.4G","Both"]', default=["5G","2.4G","Both"])
