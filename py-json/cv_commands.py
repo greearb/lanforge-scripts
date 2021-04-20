@@ -36,7 +36,6 @@ class chamberview(LFCliBase):
         text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT\
                     + " " + Dut_Radio + "\' " + Traffic + " " + Uses1 + ","+Uses2 + " " + Freq + " " + VLAN
 
-        print(text_blob)
         data = {
             "type": "Network-Connectivity",
             "name": scenario_name,
@@ -56,7 +55,6 @@ class chamberview(LFCliBase):
             "name": scenario_name,
             "text": Rawline
         }
-        print("data: ",data)
         rsp = self.json_post(req_url, data)
         time.sleep(2)
 
@@ -75,27 +73,32 @@ class chamberview(LFCliBase):
     def apply_cv_scenario(self, cv_scenario):
         cmd = "cv apply '%s'" % cv_scenario  #To apply scenario
         self.run_cv_cmd(cmd)
-        print("Apply scenario")
+        print("Applying %s scenario" % cv_scenario)
 
     def build_cv_scenario(self):#build chamber view scenario
         cmd = "cv build"
         self.run_cv_cmd(cmd)
-        print("Build scenario")
+        print("Building scenario")
 
     def is_cv_build(self):#check if scenario is build
-        cmd = "cv is_build"
-        self.run_cv_cmd(cmd)
+        cmd = "cv is_built"
+        response = self.run_cv_cmd(cmd)
+        return self.check_reponse(response)
 
     def sync_cv(self):#sync
         cmd = "cv sync"
         self.run_cv_cmd(cmd)
 
     def run_cv_cmd(self, command):#Send chamber view commands
+        response_json = []
         req_url = "/gui-json/cmd"
         data = {
             "cmd": command
         }
-        rsp = self.json_post(req_url, data)
-        print(rsp)
+        rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
+        return response_json
 
+    def check_reponse(self, response):
+        d1 = {k: v for e in response for (k, v) in e.items()}
+        return d1["LAST"]["response"]
 
