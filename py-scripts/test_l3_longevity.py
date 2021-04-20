@@ -735,7 +735,6 @@ class L3VariableTime(Realm):
                         self.__record_rx_dropped_percent(rx_drop_percent)
 
                     # At end of test step, record KPI information.
-                    print("Influxdb is %s" % self.influxdb)
                     if self.influxdb is not None:
                         self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
 
@@ -787,7 +786,7 @@ class L3VariableTime(Realm):
     # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
 
-        tags=dict()
+        tags = dict()
         tags['requested-ul-bps'] = ul
         tags['requested-dl-bps'] = dl
         tags['ul-pdu-size'] = ul_pdu
@@ -800,13 +799,13 @@ class L3VariableTime(Realm):
         for k in self.user_tags:
             tags[k[0]] = k[1]
 
-        time = str(datetime.datetime.utcnow().isoformat())
+        now = str(datetime.datetime.utcnow().isoformat())
 
         print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n"%(total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
 
-        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, time)
-        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, time)
-        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, time)
+        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, now)
+        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, now)
+        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, now)
 
         if self.csv_kpi_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
@@ -1134,8 +1133,7 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         csv_outfile = args.csv_outfile
 
     influxdb = None
-    if len(args.influx_bucket) > 0:
-        print("Influx bucket %s" % args.influx_bucket)
+    if args.influx_bucket is not None:
         from influx2 import RecordInflux
         influxdb = RecordInflux(_lfjson_host=lfjson_host,
                                 _lfjson_port=lfjson_port,
