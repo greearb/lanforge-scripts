@@ -169,10 +169,9 @@ class FIOEndpProfile(LFCliBase):
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
         for port_name in ports:
             for num_connection in range(connections_per_port):
-                if len(self.local_realm.name_to_eid(port_name)) >= 3:
-                    shelf = self.local_realm.name_to_eid(port_name)[0]
-                    resource = self.local_realm.name_to_eid(port_name)[1]
-                    name = self.local_realm.name_to_eid(port_name)[2]
+                shelf = self.local_realm.name_to_eid(port_name)[0]
+                resource = self.local_realm.name_to_eid(port_name)[1]
+                name = self.local_realm.name_to_eid(port_name)[2]
 
                 endp_data = {
                     "alias": "CX_" + self.cx_prefix + name + "_" + str(num_connection) + "_fio",

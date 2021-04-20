@@ -111,12 +111,9 @@ class L4CXProfile(LFCliBase):
         cx_post_data = []
         for port_name in ports:
             print("port_name: {} len: {} self.local_realm.name_to_eid(port_name): {}".format(port_name,len(self.local_realm.name_to_eid(port_name)),self.local_realm.name_to_eid(port_name),))
-            if len(self.local_realm.name_to_eid(port_name)) >= 3:
-                    shelf = self.local_realm.name_to_eid(port_name)[0]
-                    resource = self.local_realm.name_to_eid(port_name)[1]
-                    name = self.local_realm.name_to_eid(port_name)[2]
-            else:
-                raise ValueError("Unexpected name for port_name %s" % port_name)
+            shelf = self.local_realm.name_to_eid(port_name)[0]
+            resource = self.local_realm.name_to_eid(port_name)[1]
+            name = self.local_realm.name_to_eid(port_name)[2]
             endp_data = {
                 "alias": name + "_l4",
                 "shelf": shelf,

@@ -110,12 +110,9 @@ class HTTPProfile(LFCliBase):
             if (ip_addr is None) or (ip_addr == ""):
                 raise ValueError("HTTPProfile::create encountered blank ip/hostname")
 
-            if len(self.local_realm.name_to_eid(port_name)) >= 3:
-                shelf = self.local_realm.name_to_eid(port_name)[0]
-                resource = self.local_realm.name_to_eid(port_name)[1]
-                name = self.local_realm.name_to_eid(port_name)[2]
-            else:
-                raise ValueError("Unexpected name for port_name %s" % port_name)
+            shelf = self.local_realm.name_to_eid(port_name)[0]
+            resource = self.local_realm.name_to_eid(port_name)[1]
+            name = self.local_realm.name_to_eid(port_name)[2]
 
             if upload_name != None:  
                 name = upload_name
