@@ -40,19 +40,21 @@ if __name__ == "__main__":
 
     report.set_title("Banner Title One")
     report.build_banner()
+
+
     #report.set_title("Banner Title Two")
     #report.build_banner()
 
     report.set_table_title("Title One")
     report.build_table_title()
 
-    report.set_dataframe(dataframe)
+    report.set_table_dataframe(dataframe)
     report.build_table()
 
     report.set_table_title("Title Two")
     report.build_table_title()
 
-    report.set_dataframe(dataframe2)
+    report.set_table_dataframe(dataframe2)
     report.build_table()
 
     # test lf_graph in report
@@ -87,6 +89,12 @@ if __name__ == "__main__":
     html_file = report.write_html() 
     print("returned file {}".format(html_file))
     print(html_file)
-    report.write_pdf()
 
-    report.generate_report()
+    # try other pdf formats
+    #report.write_pdf()
+    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    #report.write_pdf(_page_size = 'A4', _orientation='Landscape')
+    report.write_pdf(_page_size = 'Legal', _orientation='Landscape')
+    #report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
+
+    #report.generate_report()

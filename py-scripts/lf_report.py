@@ -200,12 +200,17 @@ class lf_report():
             print("write_html failed")
         return self.write_output_html
 
-    def write_pdf(self):
+    # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
+    # page_size A4, A3, Letter, Legal
+    # orientation Portrait , Landscape
+    def write_pdf(self, _page_size = 'A4', _orientation = 'Portrait'):
             # write logic to generate pdf here
             # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
             # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
             
-            options = {"enable-local-file-access" : None}  # prevent error Blocked access to file
+            options = {"enable-local-file-access" : None,
+                        'orientation': _orientation,
+                        'page-size': _page_size}  # prevent error Blocked access to file
             self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
             pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
             pass
@@ -334,13 +339,13 @@ if __name__ == "__main__":
     report.set_table_title("Title One")
     report.build_table_title()
 
-    report.set_dataframe(dataframe)
+    report.set_table_dataframe(dataframe)
     report.build_table()
 
     report.set_table_title("Title Two")
     report.build_table_title()
 
-    report.set_dataframe(dataframe2)
+    report.set_table_dataframe(dataframe2)
     report.build_table()
 
     #report.build_all()
