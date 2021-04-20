@@ -735,7 +735,9 @@ class L3VariableTime(Realm):
                         self.__record_rx_dropped_percent(rx_drop_percent)
 
                     # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+                    print("Influxdb is %s" % self.influxdb)
+                    if self.influxdb is not None:
+                        self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
 
                     # Query all of our ports
                     port_eids = self.gather_port_eids()
@@ -784,8 +786,6 @@ class L3VariableTime(Realm):
 
     # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
-        if self.influxdb == None:
-            return
 
         tags=dict()
         tags['requested-ul-bps'] = ul
@@ -1134,7 +1134,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
         csv_outfile = args.csv_outfile
 
     influxdb = None
-    if args.influx_bucket is not None:
+    if len(args.influx_bucket) > 0:
+        print("Influx bucket %s" % args.influx_bucket)
         from influx2 import RecordInflux
         influxdb = RecordInflux(_lfjson_host=lfjson_host,
                                 _lfjson_port=lfjson_port,
