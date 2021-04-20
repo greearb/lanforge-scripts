@@ -2453,7 +2453,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         report.set_table_dataframe_from_csv(csv_results)
         report.build_table()
         report.write_html()
-        report.write_pdf()
+        report.write_pdf(_page_size = 'A3', _orientation='Landscape')
 
     if args.log:
         logg.info("output_log: {}".format(outfile_log))
