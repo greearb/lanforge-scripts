@@ -922,7 +922,7 @@ class L3VariableTime(Realm):
         return endp_rx_map, endp_rx_drop_map
 
     def time_stamp(self):
-        return time.strftime('%Y-%m-%d %H %M %S', time.localtime(self.epoch_time))
+        return time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(self.epoch_time))
 
     def __compare_vals(self, old_list, new_list):
         passes = 0
