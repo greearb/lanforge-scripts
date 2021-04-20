@@ -990,15 +990,14 @@ class L3VariableTime(Realm):
                 csv_rx_row_data.append(self.test_config_dict[key])
                 csv_result_row_data.append(self.test_config_dict[key])
                 csv_rx_delta_row_data.append(self.test_config_dict[key])
-                
+
+            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
+            csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
+
+
             max_tp_mbps      = sum(filtered_values)
             csv_rx_row_data.append(max_tp_mbps)
             csv_result_row_data.append(max_tp_mbps)
-
-            #To do  needs to be read or passed in based on test type
-            expected_tp_mbps = max_tp_mbps  
-            csv_rx_row_data.append(expected_tp_mbps)
-            csv_result_row_data.append(expected_tp_mbps)
 
             #Generate TestID
             for key in self.test_keys:
@@ -1007,17 +1006,6 @@ class L3VariableTime(Realm):
             print("test_id: {}".format(test_id))
             csv_rx_row_data.append(test_id)
             csv_result_row_data.append(test_id)
-
-            # Todo pass or fail
-            if max_tp_mbps == expected_tp_mbps:
-                csv_rx_row_data.append("pass")
-                csv_result_row_data.append("pass")
-            else:
-                csv_rx_row_data.append("fail")
-                csv_result_row_data.append("fail")
-
-            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
-            csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
 
             print("csv_rx_row_data {}".format(csv_rx_row_data))
             #TODO:  may want to pass in the information that needs to be in the csv file into the class
@@ -1033,7 +1021,7 @@ class L3VariableTime(Realm):
                     csv_rx_headers.append(item)
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
-            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            #self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
                 return True, max_tp_mbps, csv_result_row_data
@@ -1132,7 +1120,7 @@ class L3VariableTime(Realm):
 
         cur_time = datetime.datetime.now()
         logg.info("Getting initial values.")
-        old_rx_values, rx_drop_percent = self.__get_rx_values()
+        old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
         end_time = self.parse_time(self.test_duration) + cur_time
 
@@ -1150,7 +1138,9 @@ class L3VariableTime(Realm):
                 time.sleep(1)
             
             self.epoch_time = int(time.time())
-            new_rx_values, rx_drop_percent = self.__get_rx_values()
+            new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps  = self.__get_rx_values()
+
+            print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
             expected_passes += 1
 
@@ -1158,17 +1148,18 @@ class L3VariableTime(Realm):
             Result, max_tp_mbps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
             if max_tp_mbps > best_max_tp_mbps:
                 best_max_tp_mbps = max_tp_mbps
-                best_csv_rx_row_data = csv_rx_row_data
 
             # need to check the expected max_tp_mbps
             if Result:
                 passes += 1
             else:
-                self._fail("FAIL: Not all stations increased traffic", print_fail)
+                fail_msg = "FAIL: TIME: {} EPOCH: {} Not all stations increased traffic".format(cur_time, self.epoch_time)
+                self._fail(fail_msg, print_fail)
             old_rx_values = new_rx_values
 
             cur_time = datetime.datetime.now()
-        self.csv_add_row(best_csv_rx_row_data,self.csv_results_writer,self.csv_results)
+        csv_rx_row_data.append(endps, total_dl_bps, total_ul_bps)
+        self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
 
@@ -1189,13 +1180,15 @@ class L3VariableTime(Realm):
     def csv_generate_column_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['rx_rate_mbps','expected_rx','test_id','pass_fail','epoch_time','time','monitor'])
+        # test_keys are the controller configuration
+        csv_rx_headers.extend(['rx_rate_mbps','test_id','pass_fail','epoch_time','time','monitor','end point','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
-        csv_rx_headers.extend(['rx_rate_mbps','expected_rx','test_id','pass_fail','epoch_time','time'])
+        #test_keys are the controller configuration
+        csv_rx_headers.extend(['rx_rate_mbps','test_id','pass_fail','epoch_time','time','end point','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
