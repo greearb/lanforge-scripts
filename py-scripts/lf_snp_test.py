@@ -919,7 +919,7 @@ class L3VariableTime(Realm):
                             if value_name == 'rx drop %':
                                 endp_rx_drop_map[item] = value_rx_drop
 
-        return endp_rx_map, endp_rx_drop_map
+        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
 
     def time_stamp(self):
         return time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(self.epoch_time))
