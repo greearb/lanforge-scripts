@@ -42,6 +42,8 @@ INCLUDE_IN_README
 '''
 import sys
 import os
+from pprint import pprint
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -904,6 +906,11 @@ class L3VariableTime(Realm):
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
+
+        endps = []
+        total_ul = 0
+        total_dl = 0
+
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e
         for e in self.cx_profile.created_endp.keys():
@@ -912,13 +919,24 @@ class L3VariableTime(Realm):
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, value in endp_name.items():
                     if item in our_endps:
-                        for value_name, value_rx in value.items():
+                        endps.append(value)
+                        print("endpoint: ", item, " value:\n")
+                        pprint(value)
+                    
+                        for value_name, value in value.items():
                             if value_name == 'rx bytes':
-                                endp_rx_map[item] = value_rx
-                        for value_name, value_rx_drop in value.items():
+                                endp_rx_map[item] = value
                             if value_name == 'rx drop %':
-                                endp_rx_drop_map[item] = value_rx_drop
+                                endp_rx_drop_map[item] = value
+                            if value_name == 'rx rate':
+                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                #print("item: ", item, " rx-bps: ", value_rx_bps)
+                                if item.endswith("-A"):
+                                    total_dl += int(value)
+                                else:
+                                    total_ul += int(value)
 
+        #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
 
     def time_stamp(self):
