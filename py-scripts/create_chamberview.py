@@ -65,17 +65,13 @@ class CreateChamberview(cv):
              line="",
              raw_line=[]):
 
-        #check for any raw lines
-        print(raw_line)
         if raw_line:
-            print(raw_line)
+            print("creating %s scenario" % create_scenario)
             for create_lines in raw_line:
-                print("create_lines[0]: ", create_lines[0])
                 self.pass_raw_lines_to_cv(create_scenario,create_lines[0])
 
         #check for lines
-        elif line:
-            print(line)
+        if line:
             scenario_name = create_scenario
             line = line
             Resource = "1.1"
@@ -92,23 +88,17 @@ class CreateChamberview(cv):
             for i in range(len(line)):
                 if " " in line[i][0]:
                     line[i][0] = (re.split(' ', line[i][0]))
-                    print(line[i][0])
                 elif "," in line[i][0]:
                     line[i][0] = (re.split(',', line[i][0]))
-                    print(line[i][0])
-                    print("in second")
                 elif ", " in line[i][0]:
                     line[i][0] = (re.split(',', line[i][0]))
-                    print(line[i][0])
-                    print("in third")
                 elif " ," in line[i][0]:
                     line[i][0] = (re.split(',', line[i][0]))
-                    print(line[i][0])
-                    print("in forth")
                 else:
                     print("Wrong arguments entered !")
                     exit(1)
 
+                print("creating %s scenario" % scenario_name)
                 for j in range(len(line[i][0])):
                     line[i][0][j] = line[i][0][j].split("=")
                     for k in range(len(line[i][0][j])):
@@ -148,23 +138,22 @@ class CreateChamberview(cv):
                                             Freq,
                                             VLAN
                                             );  # To manage scenario
-        else:
+        if not line and not raw_line:
             raise Exception("scenario sceation failed")
             return False
+
         return True
 
     def build(self,scenario_name):
         self.sync_cv()  # chamberview sync
         time.sleep(2)
         self.apply_cv_scenario(scenario_name)  # Apply scenario
-        self.show_text_blob(None, None, False)
-        # time.sleep(2)
-        # self.sync_cv()
-        # time.sleep(2)
+        self.show_text_blob(None, None, False) # Show changes on GUI
         self.apply_cv_scenario(scenario_name)  # Apply scenario
-        # time.sleep(2)
         self.build_cv_scenario()  # build scenario
-        print("End")
+        while self.is_cv_build() == "NO": continue  # wait for cv to build
+        print("completed building %s scenario" %scenario_name)
+
 
 
 def main():
