@@ -23,11 +23,11 @@ from realm import Realm
 import datetime
 
 def influx_add_parser_args(parser):
-    parser.add_argument('--influx_host', help='Hostname for the Influx database', default="")
+    parser.add_argument('--influx_host', help='Hostname for the Influx database', default=None)
     parser.add_argument('--influx_port', help='IP Port for the Influx database', default=8086)
-    parser.add_argument('--influx_org', help='Organization for the Influx database', default="")
-    parser.add_argument('--influx_token', help='Token for the Influx database', default="")
-    parser.add_argument('--influx_bucket', help='Name of the Influx bucket', default="")
+    parser.add_argument('--influx_org', help='Organization for the Influx database', default=None)
+    parser.add_argument('--influx_token', help='Token for the Influx database', default=None)
+    parser.add_argument('--influx_bucket', help='Name of the Influx bucket', default=None)
     parser.add_argument('--influx_tag', action='append', nargs=2,
                         help='--influx_tag <key> <val>   Can add more than one of these.', default=[])
 
