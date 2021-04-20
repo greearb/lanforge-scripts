@@ -1176,7 +1176,9 @@ class L3VariableTime(Realm):
             old_rx_values = new_rx_values
 
             cur_time = datetime.datetime.now()
-        csv_rx_row_data.append(endps, total_dl_bps, total_ul_bps)
+        csv_rx_row_data.append(endps)
+        csv_rx_row_data.append(total_dl_bps)
+        csv_rx_row_data.append(total_ul_bps)
         self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
         if passes == expected_passes:
             self._pass("PASS: All tests passed", print_pass)
