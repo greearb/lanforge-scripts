@@ -27,7 +27,7 @@ class GrafanaRequest:
         self.debug = debug_
         self.die_on_error = die_on_error_
         self.headers = _headers
-        self.headers['Authorization'] = 'Bearer '+_api_token
+        self.headers['Authorization'] = 'Bearer ' + _api_token
         self.headers['Content-Type'] = 'application/json'
         self.grafanajson_url = "http://%s:%s" % (_grafanajson_host, _grafanajson_port)
         self.data = dict()
@@ -40,7 +40,7 @@ class GrafanaRequest:
             pass
 
     def list_dashboards(self):
-        url=self.grafanajson_url + '/api/search?folderIds=0&query=&starred=false'
+        url = self.grafanajson_url + '/api/search?folderIds=0&query=&starred=false'
         return requests.get(url).text
 
     def create_dashboard(self,
@@ -48,7 +48,8 @@ class GrafanaRequest:
                          ):
         self.grafanajson_url = self.grafanajson_url + "/api/dashboards/db"
 
-        data = ('{ "dashboard": { "id": null, "title": "%s" , "tags": [ "templated" ], "timezone": "browser", "schemaVersion": 6, "version": 0 }, "overwrite": false }' % dashboard_name)
+        data = (
+                    '{ "dashboard": { "id": null, "title": "%s" , "tags": [ "templated" ], "timezone": "browser", "schemaVersion": 6, "version": 0 }, "overwrite": false }' % dashboard_name)
         return requests.get(self.grafanajson_url, headers=self.headers, data=data, verify=False)
 
     def delete_dashboard(self,
@@ -58,3 +59,4 @@ class GrafanaRequest:
 
     def create_dashboard_from_data(self,
                                    json_file=None):
+        pass

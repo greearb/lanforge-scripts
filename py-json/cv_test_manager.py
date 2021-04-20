@@ -18,7 +18,7 @@ def cv_base_adjust_parser(args):
         # TODO:  In future, can use TestRig once that GUI update has propagated
         args.set.append(["Test Rig ID:", args.test_rig])
 
-    if args.influx_host != "":
+    if args.influx_host is not None:
         if (not args.pull_report):
             print("Specified influx host without pull_report, will enabled pull_request.")
             args.pull_report = True
@@ -358,7 +358,7 @@ class cv_test(Realm):
             print("Not submitting to influx, no report-dir.\n")
             return
 
-        if args.influx_host == "":
+        if args.influx_host is None:
             # No influx configured, return.
             print("Not submitting to influx, influx_host not configured.\n")
             return
