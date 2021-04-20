@@ -12,6 +12,9 @@ The transmission rate will be recorded and compared against the expected rate to
 The results will be recorded in CSV file with the following data
 AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
 unique test id, pass / fail, epoch time, and time.
+Note: the controller_client_densities are indpendent of the number of stations on a radio
+
+The test will measure:
 
 EXAMPLE: 
 
@@ -28,11 +31,11 @@ Using Commandline with defaults:
     --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
     --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
 
-Using Commandline Less Interations:
+Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
     --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
     --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
+    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  --print_test_config
 
 INCLUDE_IN_README
 
@@ -902,7 +905,7 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_max_pdu = side_b_max_pdu
 
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,rx+bytes,rx+drop+%25", debug_=False)
+        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
@@ -1176,7 +1179,8 @@ class L3VariableTime(Realm):
             old_rx_values = new_rx_values
 
             cur_time = datetime.datetime.now()
-        csv_rx_row_data.append(endps)
+        csv_rx_row_data.append(self.test_duration)
+        csv_rx_row_data.append(self.polling_interval_seconds)
         csv_rx_row_data.append(total_dl_bps)
         csv_rx_row_data.append(total_ul_bps)
         self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
@@ -1201,14 +1205,14 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['rx_rate_mbps','test_id','pass_fail','epoch_time','time','monitor','end point','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','rx_rate_bps','test_id','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['rx_rate_mbps','test_id','pass_fail','epoch_time','time','end point','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','rx_rate_bps','test_id','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
@@ -1523,6 +1527,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cam','--controller_ap_modes', help='--controller_ap_modes <local flexconnect> default local',default="local")
     parser.add_argument('-cps','--controller_packet_sizes', help='--controller_packet_sizes List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
+        
     parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-cde','--controller_data_encryptions', help='--controller_data_encryptions \"enable disable\"',default="disable" )
