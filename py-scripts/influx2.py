@@ -5,6 +5,7 @@
 # Version 2.0 influx DB Client
 
 import sys
+import os
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -22,7 +23,6 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 import datetime
 from LANforge.lfcli_base import LFCliBase
 import time
-
 
 class RecordInflux(LFCliBase):
     def __init__(self,
