@@ -22,8 +22,8 @@ TECHNICAL UNDERSTANDING:
         'rx bytes' - bytes transmitted
         'rx rate'  - bits per second 
 
-    in DL direction, LANforge Eth endpoint transmits bytes, station endpoint receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
-    in UL direction, LANforge Eth endpoint receives bytes, station endpoint transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+    in DL direction: -B tx -> -A rx, LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
+    in UL direction: -A tx -> -B rx, LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
 
 
 NOTES:
@@ -1058,23 +1058,8 @@ class L3VariableTime(Realm):
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before",new_evaluate_list) 
         # look at ul and dl
-        '''if "upstream" in self.test_config_dict.values():
-            for key in [key for key in new_evaluate_list if "-A" in key]: del new_evaluate_list[key]
-            print("upstream in dictionary values")
-        elif "downstream" in self.test_config_dict.values():   
-            for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
-            print("downstream in dictionary values")
-        '''            
-
         old_evaluate_list = old_list.copy()
-        '''
-        if "upstream" in self.test_config_dict.values():
-            for key in [key for key in old_evaluate_list if "-A" in key]: del old_evaluate_list[key]
-            print("upstream in dictionary values")
-        elif "downstream" in self.test_config_dict.values():   
-            for key in [key for key in old_evaluate_list if "-B" in key]: del old_evaluate_list[key]
-            print("downstream in dictionary values")
-        '''
+
         if len(old_evaluate_list) == len(new_evaluate_list):
             for item, value in old_evaluate_list.items():
                 # check only upstream or downstream - expected passes corresponds to traffic only in observed direction
@@ -1697,8 +1682,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps , station min tx bits per second default 256000', default=256000)
-    parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
+    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested downstream min tx rate bits per second default 256000', default=256000)
+    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upstream min tx rate bits per second default 256000', default=256000)
 
     ##############################################
     # Parameters Used For Testing
