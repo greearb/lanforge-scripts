@@ -61,6 +61,7 @@ OUTPUT:
     csv details_snp_<date>.csv raw data 
     * radios and con
 
+SAMPLE TEST CONFIG:
 
 
 EXAMPLE: 
@@ -70,7 +71,7 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types'lf_udp' --upstream_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
@@ -89,6 +90,31 @@ Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "
     --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
     --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "2"  --print_test_config
+
+
+SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
+
+2021-04-21 05:43:25,040 __main__ INFO: USING: controller_test_1
+2021-04-21 05:43:25,040 __main__ INFO: TEST CONFIG: 
+2021-04-21 05:43:25,040 __main__ INFO: controller_aps ('-cca' ,'--controller_aps'): ['vanc-e']
+2021-04-21 05:43:25,040 __main__ INFO: controller_bands ('-ccf' ,'--controller_bands'): ['a', 'b']
+2021-04-21 05:43:25,040 __main__ INFO: controller_wifimodes ('-cwm' ,'--controller_wifimodes'): ['an', 'anAX', 'anAC', 'abgn', 'bg']
+2021-04-21 05:43:25,040 __main__ INFO: controller_chan_5ghzs ('-cc5','--controller_chan_5ghzs'): ['36']
+2021-04-21 05:43:25,040 __main__ INFO: controller_chan_24ghzs ('-cc2','--controller_chan_24ghzs'): ['1']
+2021-04-21 05:43:25,040 __main__ INFO: controller_chan_widths ('-ccw','--controller_chan_widths'): ['20', '40', '80']
+2021-04-21 05:43:25,040 __main__ INFO: controller_tx_powers ('-ctp','--controller_tx_powers'): ['3']
+2021-04-21 05:43:25,041 __main__ INFO: controller_ap_modes ('-cam','--controller_ap_modes'): ['local']
+2021-04-21 05:43:25,041 __main__ INFO: controller_client_densities ('-ccd','--controller_client_densities'): ['1', '10', '50', '200']
+2021-04-21 05:43:25,041 __main__ INFO: controller_packet_types ('-t', '--endp_types'): ['lf_udp', 'lf_tcp']
+2021-04-21 05:43:25,041 __main__ INFO: controller_packet_sizes ('-cps','--controller_packet_sizes'): ['88', '512', '1370', '1518']
+2021-04-21 05:43:25,041 __main__ INFO: controller_directions ('-cd', '--controller_directions'): ['upstream', 'downstream']
+2021-04-21 05:43:25,041 __main__ INFO: controller_data_encryptions ('-cde','--controller_data_encryptions') ['disable']
+2021-04-21 05:43:25,041 __main__ INFO: controller_side_a_min_bps ('-amr','--side_a_min_bps'): 256000
+2021-04-21 05:43:25,041 __main__ INFO: controller_side_b_min_bps ('-bmr','--side_b_min_bps'): 256000
+2021-04-21 05:43:25,041 __main__ INFO: test duration ('-d','--test_duration'): 20s
+2021-04-21 05:43:25,041 __main__ INFO: polling_interval ('-pi','--polling_interval'): 5s
+2021-04-21 05:43:25,041 __main__ INFO: radios from coded config used
+
 
 
 INCLUDE_IN_README
@@ -2029,23 +2055,19 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Test configuration that may be read in , in conjunction with command line arguments
     if args.controller_test_1:
         logg.info("USING: controller_test_1")
-#        controller_aps              = "APA453.0E7B.CF9C".split()
-        controller_aps              = "vanc-e".split()
+        controller_aps              = "APA453.0E7B.CF9C".split()
+#        controller_aps              = "vanc-e".split()
         controller_bands            = "a b".split()
-#        controller_bands            = "a ".split()
         controller_wifimodes        = "an anAX anAC abgn bg".split()
-#        controller_wifimodes        = "an".split()
         controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
         controller_chan_24ghzs      = "1".split()
         controller_chan_widths      = "20 40 80".split()
-#        controller_ap_modes         = "local flex".split()
         controller_ap_modes         = "local".split()
         controller_data_encryptions = "disable".split()
         controller_packet_types     = "lf_udp lf_tcp".split()
         controller_directions       = "upstream downstream".split()
         controller_packet_sizes     = "88 512 1370 1518".split()
-#        controller_packet_sizes     = "1518".split()
         controller_client_densities = "1 10 50 200".split()
 
         controller_side_a_min_bps  = 256000
