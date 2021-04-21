@@ -78,26 +78,32 @@ Use --print_test_config at end of command to see test configuration
 
 Test configurations take presidence to command line parameters
 
+Using Coded Test Configuration --controller_test_1
+    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  --controller_aps "vanc-e" 
+    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "(Cisco Controller)" --controller_test_1
+    --print_test_config
+    
 Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
+    --controller_prompt "(Cisco Controller)" 
+    --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
+    --controller_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    --print_test_config
 
 Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
-    --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  --print_test_config
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  
+    --print_test_config
 
 Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
-    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "2"  --print_test_config
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "2"  
+    --print_test_config
 
 
 SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
@@ -1420,18 +1426,18 @@ Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" --print_test_config
+    --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" --controller_prompt "(Cisco Controller)" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --print_test_config
+    --upstream_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    --print_test_config
 
 Using Commandline Less Interations:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
-    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  --print_test_config
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
+    --controller_chan_5ghz "36" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  
+    --print_test_config
 
 
 ##############################################################################
@@ -1645,9 +1651,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cu' ,'--controller_user', help='--controller_user <User-name for controller Controller>',default="admin")
     parser.add_argument('-cpw','--controller_passwd', help='--controller_passwd <Password for controller Controller>',default="controller123")
     parser.add_argument('-ccs','--controller_scheme', help='--controller_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
-    parser.add_argument('-cw' ,'--controller_wlan', help='--controller_wlan <wlan name> ',required=True)
-    parser.add_argument('-cwi','--controller_wlanID', help='--controller_wlanID <wlanID> ',required=True)
-    parser.add_argument('-cws','--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
     parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
 
 
