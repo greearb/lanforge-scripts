@@ -1770,7 +1770,11 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                     exit(1)
             print("ap_dict: {}".format(ap_dict))
 
-    # Logging information 
+    ###############################################
+    #
+    # Create a report instanciate a reporting class
+    #
+    ###############################################
     report = lf_report(_results_dir_name = "Scaling_and_Performance",_output_html="snp.html",_output_pdf="snp.pdf")
 
     if args.csv_outfile != None:
@@ -2207,6 +2211,11 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     if args.print_test_config:
         logg.info("PRINT TEST CONFIG ONLY - exiting remove --print_test_config to run test")
+        try:
+            report_path = report.get_report_path()
+            logg.info("Reports Directory Created: {}".format(report_path))
+        except:
+            logg.info("Reports Directory Created")
         exit(1)
 
     __ap_set          = None
