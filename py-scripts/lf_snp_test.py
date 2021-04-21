@@ -970,7 +970,7 @@ class L3VariableTime(Realm):
     def time_stamp(self):
         return time.strftime('%Y_%m_%d_%H_%M_%S', time.localtime(self.epoch_time))
 
-    def __compare_vals(self, old_list, new_list):
+    def __compare_vals(self, old_list, new_list, total_dl_bps, total_ul_bps):
         passes = 0
         expected_passes = 0
         csv_rx_headers = []
@@ -1058,6 +1058,10 @@ class L3VariableTime(Realm):
             # Recorde the Total Transmit rate for all stations
             rx_rate_bps      = sum(filtered_values) #total
             csv_rx_row_data.append(rx_rate_bps)
+
+            # The total_dl_bps and total_up_bps is for the interval
+            csv_rx_row_data.append(total_dl_bps)
+            csv_rx_row_data.append(total_ul_bps)
             #csv_result_row_data.append(rx_rate_bps)
 
 
@@ -1073,6 +1077,7 @@ class L3VariableTime(Realm):
                     print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
                     csv_rx_headers.append(item)
+                # append the rate for each station
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
 
@@ -1175,6 +1180,7 @@ class L3VariableTime(Realm):
 
         cur_time = datetime.datetime.now()
         logg.info("Getting initial values.")
+        # the total_dl_bps and total_up_bps is for all stations 
         old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
         end_time = self.parse_time(self.test_duration) + cur_time
@@ -1193,6 +1199,7 @@ class L3VariableTime(Realm):
                 time.sleep(1)
             
             self.epoch_time = int(time.time())
+            # the total_dl_bps and total_up_bps is for all stations 
             new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps  = self.__get_rx_values()
 
             print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
@@ -1200,7 +1207,8 @@ class L3VariableTime(Realm):
             expected_passes += 1
 
             # __compare_vals - does the calculations
-            Result, rx_rate_bps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
+            Result, rx_rate_bps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values, total_dl_bps, total_ul_bps)
+            # save the best rate for the interval 
             if rx_rate_bps > best_rx_rate_bps:
                 best_rx_rate_bps = rx_rate_bps
 
