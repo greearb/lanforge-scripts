@@ -79,8 +79,8 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
-    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  --controller_aps "vanc-e" 
-    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "(Cisco Controller)" --controller_test_1
+    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "WLC" --controller_test_1
     --print_test_config
     
 Using Coded Test Configuration:
@@ -1057,21 +1057,24 @@ class L3VariableTime(Realm):
         # Evaluate Upstream or Downstream
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before",new_evaluate_list) 
-        if "upstream" in self.test_config_dict.values():
+        # look at ul and dl
+        '''if "upstream" in self.test_config_dict.values():
             for key in [key for key in new_evaluate_list if "-A" in key]: del new_evaluate_list[key]
             print("upstream in dictionary values")
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
             print("downstream in dictionary values")
+        '''            
 
         old_evaluate_list = old_list.copy()
+        '''
         if "upstream" in self.test_config_dict.values():
             for key in [key for key in old_evaluate_list if "-A" in key]: del old_evaluate_list[key]
             print("upstream in dictionary values")
         elif "downstream" in self.test_config_dict.values():   
             for key in [key for key in old_evaluate_list if "-B" in key]: del old_evaluate_list[key]
             print("downstream in dictionary values")
-
+        '''
         if len(old_evaluate_list) == len(new_evaluate_list):
             for item, value in old_evaluate_list.items():
                 expected_passes +=1
@@ -1081,9 +1084,13 @@ class L3VariableTime(Realm):
                     #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                     print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
-                    print("Failed to increase rx data: ", item, new_evaluate_list[item], old_evaluate_list[item])
+                    print("Failed to increase rx bytes: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
-                    csv_rx_headers.append(item)
+                    # stations that end in -A are dl (download, downstream), stations that end in -B are ul (upload, upstream)
+                    if item.endswith("-A"):
+                        csv_rx_headers.append(item+'-dl-rx-bytes') 
+                    else:
+                        csv_rx_headers.append(item+'-ul-rx-bytes')
                 csv_rx_delta_dict.update({item:(new_evaluate_list[item] - old_evaluate_list[item])})
                 
             if not self.csv_started:
@@ -1094,9 +1101,6 @@ class L3VariableTime(Realm):
                 csv_results = self.csv_generate_column_results_headers()
                 #csv_results += csv_rx_headers
                 self.csv_add_column_headers_results(csv_results)
-                print("###################################")
-                print(csv_results)
-                print("###################################")
                 self.csv_started = True
 
             # need to generate list of all the values
@@ -1687,10 +1691,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 256000', default=256000)
-    # Use --controller_packet_sizes parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
+    parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps , station min tx bits per second default 256000', default=256000)
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
-    # Use --controller_packet_sizes parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     ##############################################
     # Parameters Used For Testing
@@ -1735,7 +1737,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     if args.radio:
         radios = args.radio
-
 
     if args.wait_timeout:
         wait_timeout = int(args.wait_timeout)     
@@ -2072,8 +2073,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.controller_test_1:
         logg.info("USING: controller_test_1")
         controller_aps              = "APA453.0E7B.CF9C".split()
-#        controller_aps              = "vanc-e".split()
-        controller_bands            = "a b".split()
+        controller_aps              = "vanc-e".split()
+#        controller_bands            = "a b".split()
         controller_wifimodes        = "an anAX anAC abgn bg".split()
         controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
