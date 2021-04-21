@@ -1017,7 +1017,7 @@ class L3VariableTime(Realm):
                 csv_rx_delta_dict.update({item:(new_evaluate_list[item] - old_evaluate_list[item])})
                 
             if not self.csv_started:
-                csv_header = self.csv_generate_column_headers()
+                csv_header = self.csv_generate_column_details_headers()
                 csv_header += csv_rx_headers
                 logg.info(csv_header)
                 self.csv_add_column_headers(csv_header)
@@ -1052,6 +1052,9 @@ class L3VariableTime(Realm):
             csv_rx_row_data.append(test_id)
             csv_result_row_data.append(test_id)
 
+            csv_rx_row_data.append(self.test_duration)
+            csv_rx_row_data.append(self.polling_interval_seconds)
+
             # Recorde the Total Transmit rate for all stations
             rx_rate_bps      = sum(filtered_values) #total
             csv_rx_row_data.append(rx_rate_bps)
@@ -1072,7 +1075,8 @@ class L3VariableTime(Realm):
                     csv_rx_headers.append(item)
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
-            # data from each iteration
+
+            # data from each station for each iteration
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file_details)
 
             if passes == expected_passes:
@@ -1230,12 +1234,12 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             station_profile.cleanup()
         
-                                        
-    def csv_generate_column_headers(self):
+    # for details csv file                                    
+    def csv_generate_column_details_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','rx_rate_bps','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_rate_bps','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
