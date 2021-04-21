@@ -47,10 +47,18 @@ class GrafanaRequest:
                          dashboard_name=None,
                          ):
         self.grafanajson_url = self.grafanajson_url + "/api/dashboards/db"
-
-        data = (
-                    '{ "dashboard": { "id": null, "title": "%s" , "tags": [ "templated" ], "timezone": "browser", "schemaVersion": 6, "version": 0 }, "overwrite": false }' % dashboard_name)
-        return requests.get(self.grafanajson_url, headers=self.headers, data=data, verify=False)
+        datastore = dict()
+        dashboard = dict()
+        dashboard['id'] = None
+        dashboard['title'] = dashboard_name
+        dashboard['tags'] = ['templated']
+        dashboard['timezone'] = 'browser'
+        dashboard['shemaVersion'] = 6
+        dashboard['version'] = 0
+        datastore['dashboard'] = dashboard
+        datastore['overwrite'] = False
+        data = json.dumps(datastore, indent=4)
+        return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
 
     def delete_dashboard(self,
                          dashboard_uid=None):
