@@ -12,9 +12,34 @@ The transmission rate will be recorded and compared against the expected rate to
 The results will be recorded in CSV file with the following data
 AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
 unique test id, pass / fail, epoch time, and time.
-Note: the controller_client_densities are indpendent of the number of stations on a radio
 
-The test will measure:
+NOTES:
+    1.  The controller_client_densities are indpendent of the number of stations on a radio
+    2.  The --side_a_min_bps (download) and --side_b_min_bps (upload) is used to set the rate
+        
+
+The script is devided into parts:
+1. Controller Class : CreateCtlr controller interface
+2. Traffic Generation Class : L3VariableTime
+3. Scaling And Performance Main 
+    Command parcing
+    a. Fixed Configuration Coded Into The Script
+    b. Script Controller Configurations
+    c. Script LANforge Configurations
+    d. Parameters Used For Testing
+
+LANForge Monitored Values:
+    'rx bytes'
+    'rx rate'    
+
+OUTPUT:
+    In /home/lanforge/report-data/<date>_Scaling_and_Performance or if not present in script directory under <date>_Scaling_and_Performance
+    html results , default .html
+    pdf results , default .pdf
+    csv results_snp_<date>.csv  , results reflected in html and pdf files
+    csv snp_<date>.csv raw data pe
+
+
 
 EXAMPLE: 
 
@@ -85,7 +110,7 @@ class FileAdapter(object):
 
 ################################################################################
 #
-# Controller Class : controller interface
+# Controller Class : CrateCtlr  controller interface
 #
 ################################################################################
 class CreateCtlr():
@@ -742,7 +767,7 @@ class CreateCtlr():
 
 ################################################################################
 #
-# Traffic Generation Class
+# Traffic Generation Class : L3VariableTime
 #
 ################################################################################
 class L3VariableTime(Realm):
@@ -1042,7 +1067,8 @@ class L3VariableTime(Realm):
                     csv_rx_headers.append(item)
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
-            #self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            # data from each iteration
+            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
 
             if passes == expected_passes:
                 return True, max_tp_mbps, csv_result_row_data
@@ -1132,7 +1158,7 @@ class L3VariableTime(Realm):
         if self.wait_for_ip(temp_stations_list, timeout_sec=self.wait_timeout, debug=self.debug):
             logg.info("ip's acquired")
         else:
-            logg.info("Stations Failed to get IP's")
+            logg.info("Stations Failed to get IP's , consider increasing -wto','--wait_timeout' from the command line ")
             exit(1) # Exit if cannot receive IP's
         time.sleep(30)
         logg.info("Starting layer-3 traffic (if any configured)")
@@ -1507,7 +1533,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         ''')
 
     #############################################
-    # Fixed Configurations coded into script
+    # Fixed Configurations Coded Into Script
     #############################################
     parser.add_argument('-ct1' ,'--controller_test_1', help='--controller_test_1 LANforge static radio configuration',action="store_true")
     parser.add_argument('-ct2' ,'--controller_test_2', help='--controller_test_2 LANforge static radio configuration',action="store_true")
@@ -1528,7 +1554,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cps','--controller_packet_sizes', help='--controller_packet_sizes List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
         
-    parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-cde','--controller_data_encryptions', help='--controller_data_encryptions \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
@@ -1548,8 +1573,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                         ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
 
+
+
     #################################################################
-    # Script AP parameters for reading AP, 
+    # Script AP parameters for reading AP, - not used in this script
     #################################################################
     parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, \
         help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
@@ -1558,6 +1585,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #############################################
     # Script LANforge Configurations
     #############################################
+    parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
+
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='20s')
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
@@ -1579,10 +1608,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
     parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
-    # Parameters Used for testing
+    ##############################################
+    # Parameters Used For Testing
+    ##############################################
     parser.add_argument('-noc','--no_controller',  help='-noc / --no_controller no configuration of the controller', action='store_true')
     parser.add_argument('-nos','--no_stations',    help='-nos / --no_stations , no stations', action='store_true')
-    parser.add_argument('-wto','--wait_timeout',   help='-wto / --wait_timeout , time to wait for stations to get IP ', default="120")
+    parser.add_argument('-wto','--wait_timeout',   help='-wto / --wait_timeout , time to wait for stations to get IP ', default="360")
     parser.add_argument('-ptc','--print_test_config', help='-ptc / --print_test_config , print out the test configuration and exit', action='store_true')
 
 
@@ -1668,7 +1699,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
             print("ap_dict: {}".format(ap_dict))
 
     # Logging information 
-    report = lf_report(_results_dir_name = "Scaling_and_Performance")
+    report = lf_report(_results_dir_name = "Scaling_and_Performance",_output_html="snp.html",_output_pdf="snp.pdf")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
