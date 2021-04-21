@@ -1077,14 +1077,20 @@ class L3VariableTime(Realm):
         '''
         if len(old_evaluate_list) == len(new_evaluate_list):
             for item, value in old_evaluate_list.items():
-                expected_passes +=1
+                # check only upstream or downstream - expected passes corresponds to traffic only in observed direction
+                if "upstream" in self.test_config_dict.values() and item.endswith("-B") \
+                    or "downstream" in self.test_config_dict.values() and item.endswith("-A"):
+                    expected_passes +=1
                 print("ITEM: {} VALUE: {}".format(item, value))
                 if new_evaluate_list[item] > old_evaluate_list[item]:
                     passes += 1
                     #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                     print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
-                    print("Failed to increase rx bytes: ", item, new_evaluate_list[item], old_evaluate_list[item])
+                    if "upstream" in self.test_config_dict.values() and item.endswith("-B") \
+                        or "downstream" in self.test_config_dict.values() and item.endswith("-A"):
+                        # only a failure if expecting traffic in that direction
+                        print("Failed to increase rx bytes: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
                     # stations that end in -A are dl (download, downstream), stations that end in -B are ul (upload, upstream)
                     if item.endswith("-A"):
