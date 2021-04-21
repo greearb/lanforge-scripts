@@ -21,7 +21,6 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from LANforge.lfcli_base import LFCliBase
-from influx import RecordInflux
 import argparse
 
 
@@ -42,9 +41,13 @@ def main():
         --longevity 5h'''
     )
     target_kpi = ['bps rx', 'rx bytes', 'pps rx', 'rx pkts', 'rx drop']
-    parser.add_argument('--influx_user', help='Username for your Influx database', required=True)
-    parser.add_argument('--influx_passwd', help='Password for your Influx database', required=True)
-    parser.add_argument('--influx_db', help='Name of your Influx database', required=True)
+    parser.add_argument('--influx_user', help='Username for your Influx database')
+    parser.add_argument('--influx_passwd', help='Password for your Influx database')
+    parser.add_argument('--influx_token', help='Token for your Influx database', default=None)
+    parser.add_argument('--influx_db', help='Name of your Influx database')
+    parser.add_argument('--influx_bucket', help='Name of your Influx bucket')
+    parser.add_argument('--influx_org', help='Name of your Influx Organization')
+    parser.add_argument('--influx_port', help='Name of your Influx Port', default=8086)
     parser.add_argument('--longevity', help='How long you want to gather data', default='4h')
     parser.add_argument('--device', help='Device to monitor', action='append', required=True)
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
@@ -52,15 +55,31 @@ def main():
     args = parser.parse_args()
     monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
     longevity = LFCliBase.parse_time(args.longevity).total_seconds()
-    grapher = RecordInflux(_influx_host=args.mgr,
-                           _port=args.mgr_port,
-                           _influx_db=args.influx_db,
-                           _influx_user=args.influx_user,
-                           _influx_passwd=args.influx_passwd)
-    grapher.getdata(longevity=longevity,
-                    devices=args.device,
-                    monitor_interval=monitor_interval,
-                    target_kpi=args.target_kpi)
+    tags=dict()
+    tags['script'] = 'recordinflux'
+    if args.influx_user is None:
+        from influx2 import RecordInflux
+        grapher = RecordInflux(_influx_host=args.mgr,
+                               _influx_port=args.influx_port,
+                               _influx_bucket=args.influx_db,
+                               _influx_token=args.influx_token,
+                               _influx_org=args.influx_org)
+        grapher.monitor_port_data(longevity=longevity,
+                                  devices=args.device,
+                                  monitor_interval=monitor_interval,
+                                  tags=tags)
+
+    else:
+        from influx import RecordInflux
+        grapher = RecordInflux(_influx_host=args.mgr,
+                               _port=args.mgr_port,
+                               _influx_db=args.influx_db,
+                               _influx_user=args.influx_user,
+                               _influx_passwd=args.influx_passwd)
+        grapher.getdata(longevity=longevity,
+                        devices=args.device,
+                        monitor_interval=monitor_interval,
+                        target_kpi=args.target_kpi)
 
 
 if __name__ == "__main__":

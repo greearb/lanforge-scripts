@@ -44,7 +44,10 @@ class RecordInflux(LFCliBase):
         self.influx_token = _influx_token
         self.influx_bucket = _influx_bucket
         self.url = "http://%s:%s"%(self.influx_host, self.influx_port)
-        self.client = influxdb_client.InfluxDBClient(url=self.url, token=self.influx_token, org=self.influx_org, debug=_debug_on)
+        self.client = influxdb_client.InfluxDBClient(url=self.url,
+                                                     token=self.influx_token,
+                                                     org=self.influx_org,
+                                                     debug=_debug_on)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
         #print("org: ", self.influx_org)
         #print("token: ", self.influx_token)
