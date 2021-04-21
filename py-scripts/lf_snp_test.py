@@ -13,7 +13,8 @@ The controller will configure the AP.
 The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
 The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
 The results will be recorded in CSV file with the following data
-AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rate mbps, expected rate mbps, 
+AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rx bytes, upload bits per second,
+download bits per second. 
 unique test id, pass / fail, epoch time, and time.
 
 NOTES:
@@ -50,8 +51,8 @@ The script is devided into parts:
     f. report generation
 
 LANForge Monitored Values Per Polling Interval
-    'rx bytes'
-    'rx rate'    
+    'rx bytes' - bytes transmitted
+    'rx rate'  - bits per second   
 
 OUTPUT:
     In /home/lanforge/report-data/<date>_Scaling_and_Performance or if not present in script directory under <date>_Scaling_and_Performance
@@ -991,6 +992,7 @@ class L3VariableTime(Realm):
         our_endps = {}
 
         endps = []
+        # total upload in bits per second across all stations
         total_ul = 0
         total_dl = 0
 
@@ -1111,13 +1113,13 @@ class L3VariableTime(Realm):
             csv_rx_row_data.append(self.polling_interval_seconds)
 
             # Recorde the Total Transmit rate for all stations
-            rx_rate_bps      = sum(filtered_values) #total
-            csv_rx_row_data.append(rx_rate_bps)
+            rx_bytes      = sum(filtered_values) #total
+            csv_rx_row_data.append(rx_bytes)
 
             # The total_dl_bps and total_up_bps is for the interval
             csv_rx_row_data.append(total_dl_bps)
             csv_rx_row_data.append(total_ul_bps)
-            #csv_result_row_data.append(rx_rate_bps)
+            #csv_result_row_data.append(rx_bytes)
 
 
             print("csv_rx_row_data {}".format(csv_rx_row_data))
@@ -1140,9 +1142,9 @@ class L3VariableTime(Realm):
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file_details)
 
             if passes == expected_passes:
-                return True, rx_rate_bps, csv_result_row_data
+                return True, rx_bytes, csv_result_row_data
             else:
-                return False, rx_rate_bps, csv_result_row_data
+                return False, rx_bytes, csv_result_row_data
         else:
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
@@ -1208,8 +1210,8 @@ class L3VariableTime(Realm):
         self._pass("PASS: Stations build finished")        
         
     def start(self, print_pass=False, print_fail=False):
-        best_rx_rate_bps = 0
-        rx_rate_bps = 0
+        best_rx_bytes = 0
+        rx_bytes = 0
         csv_rx_row_data = " "
         Result = False
         logg.info("Bringing up stations")
@@ -1262,10 +1264,10 @@ class L3VariableTime(Realm):
             expected_passes += 1
 
             # __compare_vals - does the calculations
-            Result, rx_rate_bps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values, total_dl_bps, total_ul_bps)
+            Result, rx_bytes, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values, total_dl_bps, total_ul_bps)
             # save the best rate for the interval 
-            if rx_rate_bps > best_rx_rate_bps:
-                best_rx_rate_bps = rx_rate_bps
+            if rx_bytes > best_rx_bytes:
+                best_rx_bytes = rx_bytes
 
             if Result:
                 passes += 1
@@ -1277,7 +1279,7 @@ class L3VariableTime(Realm):
             cur_time = datetime.datetime.now()
         csv_rx_row_data.append(self.test_duration)
         csv_rx_row_data.append(self.polling_interval_seconds)
-        csv_rx_row_data.append(best_rx_rate_bps)
+        csv_rx_row_data.append(best_rx_bytes)
         csv_rx_row_data.append(total_dl_bps)
         csv_rx_row_data.append(total_ul_bps)
         self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
@@ -1302,14 +1304,14 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_rate_bps','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_bytes','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_rate_bps','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_bytes','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
