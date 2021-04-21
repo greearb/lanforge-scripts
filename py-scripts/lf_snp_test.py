@@ -18,7 +18,8 @@ unique test id, pass / fail, epoch time, and time.
 
 NOTES:
     1.  The controller_client_densities are indpendent of the number of stations on a radio
-    2.  The --side_a_min_bps (download) and --side_b_min_bps (upload) is used to set the rate
+    2.  The --side_a_min_bps (download) and --side_b_min_bps (upload) is used to set the rate 
+        a. default 256000
         
 
 The script is devided into parts:
@@ -79,8 +80,15 @@ Using Commandline with defaults:
 Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
     --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
-    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  --print_test_config
+    --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  --print_test_config
+
+Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
+    --controller_series "3504" --upstream_port eth2  --controller_wlan "test_candela" --controller_wlanID 1 --controller_wlanSSID "test_candela" 
+    --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "2"  --print_test_config
+
 
 INCLUDE_IN_README
 
@@ -1604,6 +1612,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cw' ,'--controller_wlan', help='--controller_wlan <wlan name> ',required=True)
     parser.add_argument('-cwi','--controller_wlanID', help='--controller_wlanID <wlanID> ',required=True)
     parser.add_argument('-cws','--controller_wlanSSID', help='--controller_wlanSSID <wlan ssid>',required=True)
+    parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
+
 
     parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
@@ -1621,7 +1631,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #############################################
     # Script LANforge Configurations
     #############################################
-    parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
 
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='20s')
@@ -1640,9 +1649,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
     parser.add_argument('-amr','--side_a_min_bps',  help='--side_a_min_bps, station min tx bits per second default 256000', default=256000)
-    parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
+    # Use --controller_packet_sizes parser.add_argument('-amp','--side_a_min_pdu',   help='--side_a_min_pdu ,  station ipdu size default 1518', default=1518)
     parser.add_argument('-bmr','--side_b_min_bps',  help='--side_b_min_bps , upstream min tx rate default 256000', default=256000)
-    parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
+    # Use --controller_packet_sizes parser.add_argument('-bmp','--side_b_min_pdu',   help='--side_b_min_pdu ,  upstream pdu size default 1518', default=1518)
 
     ##############################################
     # Parameters Used For Testing
@@ -2141,19 +2150,24 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_side_a_min_bps    = args.side_a_min_bps
         controller_side_b_min_bps    = args.side_b_min_bps
     logg.info("TEST CONFIG: ")
-    logg.info("controller_aps: {}".format(controller_aps))
-    logg.info("controller_bands: {}".format(controller_bands))
-    logg.info("controller_wifimodes: {}".format(controller_wifimodes))
-    logg.info("controller_tx_powers: {}".format(controller_tx_powers))
-    logg.info("controller_chan_5ghzs: {}".format(controller_chan_5ghzs))
-    logg.info("controller_chan_24ghzs: {}".format(controller_chan_24ghzs))
-    logg.info("controller_chan_widths: {}".format(controller_chan_widths))
-    logg.info("controller_ap_modes: {}".format(controller_ap_modes))
-    logg.info("controller_client_densities: {}".format(controller_client_densities))
-    logg.info("controller_packet_types: {}".format(controller_packet_types))
-    logg.info("controller_packet_sizes: {}".format(controller_packet_sizes))
-    logg.info("controller_directions: {}".format(controller_directions))
-    logg.info("controller_data_encryptions: {}".format(controller_data_encryptions))
+    logg.info("controller_aps ('-cca' ,'--controller_aps'): {}".format(controller_aps))
+    logg.info("controller_bands ('-ccf' ,'--controller_bands'): {}".format(controller_bands))
+    logg.info("controller_wifimodes ('-cwm' ,'--controller_wifimodes'): {}".format(controller_wifimodes))
+    logg.info("controller_chan_5ghzs ('-cc5','--controller_chan_5ghzs'): {}".format(controller_chan_5ghzs))
+    logg.info("controller_chan_24ghzs ('-cc2','--controller_chan_24ghzs'): {}".format(controller_chan_24ghzs))
+    logg.info("controller_chan_widths ('-ccw','--controller_chan_widths'): {}".format(controller_chan_widths))
+    logg.info("controller_tx_powers ('-ctp','--controller_tx_powers'): {}".format(controller_tx_powers))
+    logg.info("controller_ap_modes ('-cam','--controller_ap_modes'): {}".format(controller_ap_modes))
+    logg.info("controller_client_densities ('-ccd','--controller_client_densities'): {}".format(controller_client_densities))
+    logg.info("controller_packet_types ('-t', '--endp_types'): {}".format(controller_packet_types))
+    logg.info("controller_packet_sizes ('-cps','--controller_packet_sizes'): {}".format(controller_packet_sizes))
+    logg.info("controller_directions ('-cd', '--controller_directions'): {}".format(controller_directions))
+    logg.info("controller_data_encryptions ('-cde','--controller_data_encryptions') {}".format(controller_data_encryptions))
+    logg.info("controller_side_a_min_bps ('-amr','--side_a_min_bps'): {}".format(controller_side_a_min_bps))
+    logg.info("controller_side_b_min_bps ('-bmr','--side_b_min_bps'): {}".format(controller_side_b_min_bps))
+    logg.info("test duration ('-d','--test_duration'): {}".format(test_duration))
+    logg.info("polling_interval ('-pi','--polling_interval'): {}".format(polling_interval))
+
 
     if args.radio:
         logg.info("radios from command line used")
