@@ -17,10 +17,20 @@ AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet t
 download bits per second. 
 unique test id, pass / fail, epoch time, and time.
 
+TECHNICAL UNDERSTANDING:
+    LANForge Monitored Values Per Polling Interval
+        'rx bytes' - bytes transmitted
+        'rx rate'  - bits per second 
+
+    in DL direction, LANforge Eth endpoint transmits bytes, station endpoint receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
+    in UL direction, LANforge Eth endpoint receives bytes, station endpoint transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+
+
 NOTES:
     1.  The controller_client_densities are indpendent of the number of stations on a radio
     2.  The --side_a_min_bps (download) and --side_b_min_bps (upload) is used to set the rate 
         a. default 256000
+    
         
 
 The script is devided into parts:
@@ -50,9 +60,6 @@ The script is devided into parts:
     e. Parameters Used For Testing
     f. report generation
 
-LANForge Monitored Values Per Polling Interval
-    'rx bytes' - bytes transmitted
-    'rx rate'  - bits per second   
 
 OUTPUT:
     In /home/lanforge/report-data/<date>_Scaling_and_Performance or if not present in script directory under <date>_Scaling_and_Performance
@@ -1304,14 +1311,14 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_bytes','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_bytes','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
