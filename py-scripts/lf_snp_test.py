@@ -891,8 +891,8 @@ class L3VariableTime(Realm):
 
         # Full spread-sheet data
         if self.outfile is not None:
-            self.csv_file = open(self.outfile, "a+") 
-            self.csv_writer = csv.writer(self.csv_file, delimiter=",")
+            self.csv_file_details = open(self.outfile, "a+") 
+            self.csv_writer = csv.writer(self.csv_file_details, delimiter=",")
         
         if self.results is not None:
             self.csv_results = open(self.results, "a+") 
@@ -1031,19 +1031,18 @@ class L3VariableTime(Realm):
 
             # need to generate list first to determine worst and best
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
+            # if need the average use average_rx_delta
             #average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
+
+            # write out the configuraiton for the test
             for key in self.test_keys:
                 csv_rx_row_data.append(self.test_config_dict[key])
                 csv_result_row_data.append(self.test_config_dict[key])
                 csv_rx_delta_row_data.append(self.test_config_dict[key])
 
-            csv_rx_row_data.extend([self.epoch_time, self.time_stamp(),'rx_delta'])
+            csv_rx_row_data.extend([self.epoch_time, self.time_stamp()])
             csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
 
-
-            max_tp_mbps      = sum(filtered_values)
-            csv_rx_row_data.append(max_tp_mbps)
-            csv_result_row_data.append(max_tp_mbps)
 
             #Generate TestID
             for key in self.test_keys:
@@ -1052,6 +1051,12 @@ class L3VariableTime(Realm):
             print("test_id: {}".format(test_id))
             csv_rx_row_data.append(test_id)
             csv_result_row_data.append(test_id)
+
+            # Recorde the Total Transmit rate for all stations
+            rx_rate_bps      = sum(filtered_values) #total
+            csv_rx_row_data.append(rx_rate_bps)
+            #csv_result_row_data.append(rx_rate_bps)
+
 
             print("csv_rx_row_data {}".format(csv_rx_row_data))
             #TODO:  may want to pass in the information that needs to be in the csv file into the class
@@ -1068,12 +1073,12 @@ class L3VariableTime(Realm):
                 csv_rx_row_data.append(new_list[item] - old_list[item])
 
             # data from each iteration
-            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file)
+            self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file_details)
 
             if passes == expected_passes:
-                return True, max_tp_mbps, csv_result_row_data
+                return True, rx_rate_bps, csv_result_row_data
             else:
-                return False, max_tp_mbps, csv_result_row_data
+                return False, rx_rate_bps, csv_result_row_data
         else:
             print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
             print("old-list:",old_list)
@@ -1139,9 +1144,8 @@ class L3VariableTime(Realm):
         self._pass("PASS: Stations build finished")        
         
     def start(self, print_pass=False, print_fail=False):
-        best_max_tp_mbps = 0
-        best_csv_rx_row_data = " "
-        max_tp_mbps = 0
+        best_rx_rate_bps = 0
+        rx_rate_bps = 0
         csv_rx_row_data = " "
         Result = False
         logg.info("Bringing up stations")
@@ -1192,11 +1196,10 @@ class L3VariableTime(Realm):
             expected_passes += 1
 
             # __compare_vals - does the calculations
-            Result, max_tp_mbps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
-            if max_tp_mbps > best_max_tp_mbps:
-                best_max_tp_mbps = max_tp_mbps
+            Result, rx_rate_bps, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values)
+            if rx_rate_bps > best_rx_rate_bps:
+                best_rx_rate_bps = rx_rate_bps
 
-            # need to check the expected max_tp_mbps
             if Result:
                 passes += 1
             else:
@@ -1207,6 +1210,7 @@ class L3VariableTime(Realm):
             cur_time = datetime.datetime.now()
         csv_rx_row_data.append(self.test_duration)
         csv_rx_row_data.append(self.polling_interval_seconds)
+        csv_rx_row_data.append(best_rx_rate_bps)
         csv_rx_row_data.append(total_dl_bps)
         csv_rx_row_data.append(total_ul_bps)
         self.csv_add_row(csv_rx_row_data,self.csv_results_writer,self.csv_results)
@@ -1231,20 +1235,20 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','rx_rate_bps','test_id','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','rx_rate_bps','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','rx_rate_bps','test_id','test_duration','poll_sec','total_dl_bps','total_ul_bps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','poll_sec','rx_rate_bps','total_dl_bps','total_ul_bps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
-        if self.csv_file is not None:
+        if self.csv_file_details is not None:
             self.csv_writer.writerow(headers)
-            self.csv_file.flush()
+            self.csv_file_details.flush()
 
     def csv_add_column_headers_results(self,headers):
         if self.csv_results is not None:
@@ -1256,10 +1260,10 @@ class L3VariableTime(Realm):
             csv_list = csv_list + [('no data','no data')] * (length - len(csv_list))
         return csv_list
 
-    def csv_add_row(self,row,writer,csv_file): # can make two calls eventually
-        if csv_file is not None:
+    def csv_add_row(self,row,writer,csv_file_details): # can make two calls eventually
+        if csv_file_details is not None:
             writer.writerow(row)
-            csv_file.flush()
+            csv_file_details.flush()
 
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split()
@@ -1592,7 +1596,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
-    parser.add_argument('-t', '--endp_types', help='--endp_types <types of traffic> example --endp_types \"lf_udp lf_tcp mc_udp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+    parser.add_argument('-t', '--endp_types', help='--endp_types <types of traffic> example --endp_types \"lf_udp lf_tcp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
     parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upstream downstream> example --controller_directions \"upstream downstream\"  Default: upstream downstream', default='upstream downstream')
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
@@ -1703,7 +1707,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_outfile = "details_{}_{}.csv".format(args.csv_outfile,current_time)
         csv_outfile = report.file_add_path(csv_outfile)
 
         csv_results = "results_{}_{}.csv".format(args.csv_outfile,current_time)
@@ -2493,7 +2497,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #
     ##########################################
     if args.csv_outfile != None:
-        logg.info("Report CSV: {}".format(csv_outfile))
+        logg.info("Report CSV Details: {}".format(csv_outfile))
         logg.info("Report CSV Results: {}".format(csv_results))
         report.set_title("Scaling And Performance")
         report.build_banner()
