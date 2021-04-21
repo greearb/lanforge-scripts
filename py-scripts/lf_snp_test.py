@@ -58,7 +58,8 @@ OUTPUT:
     html results , default .html
     pdf results , default .pdf
     csv results_snp_<date>.csv  , results reflected in html and pdf files
-    csv snp_<date>.csv raw data pe
+    csv details_snp_<date>.csv raw data 
+    * radios and con
 
 
 
@@ -2030,22 +2031,22 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         logg.info("USING: controller_test_1")
 #        controller_aps              = "APA453.0E7B.CF9C".split()
         controller_aps              = "vanc-e".split()
-#        controller_bands            = "a b".split()
-        controller_bands            = "a ".split()
-#        controller_wifimodes        = "an anAX anAC abgn bg".split()
-        controller_wifimodes        = "an".split()
+        controller_bands            = "a b".split()
+#        controller_bands            = "a ".split()
+        controller_wifimodes        = "an anAX anAC abgn bg".split()
+#        controller_wifimodes        = "an".split()
         controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
         controller_chan_24ghzs      = "1".split()
-        controller_chan_widths      = "20".split()
+        controller_chan_widths      = "20 40 80".split()
 #        controller_ap_modes         = "local flex".split()
         controller_ap_modes         = "local".split()
         controller_data_encryptions = "disable".split()
         controller_packet_types     = "lf_udp lf_tcp".split()
         controller_directions       = "upstream downstream".split()
-        controller_packet_sizes     = "1518".split()
-        controller_client_densities = "1".split()
-        controller_data_encryptions = "disable".split()
+        controller_packet_sizes     = "88 512 1370 1518".split()
+#        controller_packet_sizes     = "1518".split()
+        controller_client_densities = "1 10 50 200".split()
 
         controller_side_a_min_bps  = 256000
         controller_side_b_min_bps  = 256000
