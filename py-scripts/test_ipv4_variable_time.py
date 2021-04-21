@@ -41,6 +41,7 @@ class IPV4VariableTime(Realm):
                  port=8080,
                  mode=0,
                  ap=None,
+                 traffic_type="lf_udp",
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000",
@@ -62,6 +63,7 @@ class IPV4VariableTime(Realm):
         self.radio = radio
         self.mode = mode
         self.ap = ap
+        self.traffic_type = traffic_type
         self.number_template = number_template
         self.debug = _debug_on
         # self.json_post("/cli-json/set_resource", {
@@ -133,7 +135,7 @@ class IPV4VariableTime(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
+        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.station_profile.station_names, side_b=self.upstream,
                                sleep_time=0)
         self._pass("PASS: Station build finished")
 
@@ -251,6 +253,7 @@ python3 ./test_ipv4_variable_time.py
 
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]')
     parser.add_argument('--output_format', help='choose either csv or xlsx')
     parser.add_argument('--report_file', help='where you want to store results', default=None)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -343,6 +346,7 @@ python3 ./test_ipv4_variable_time.py
                                    side_b_min_rate=args.b_min,
                                    mode=args.mode,
                                    ap=args.ap,
+                                   traffic_type=args.traffic_type,
                                    _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
