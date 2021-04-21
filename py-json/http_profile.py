@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
 import port_utils
@@ -20,6 +19,7 @@ class HTTPProfile(LFCliBase):
         self.direction = "dl"
         self.dest = "/dev/null"
         self.port_util = PortUtils(self.local_realm)
+        self.max_speed = 0 #infinity
 
     def check_errors(self, debug=False):
         fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
@@ -93,7 +93,7 @@ class HTTPProfile(LFCliBase):
                 self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
 
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
-               user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None):
+               https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None, https_ip=None):
         cx_post_data = []
         self.map_sta_ips(ports)
         print("Create CXs...")
@@ -114,7 +114,7 @@ class HTTPProfile(LFCliBase):
             resource = self.local_realm.name_to_eid(port_name)[1]
             name = self.local_realm.name_to_eid(port_name)[2]
 
-            if upload_name != None:  
+            if upload_name != None:
                 name = upload_name
 
             if http:
@@ -124,16 +124,24 @@ class HTTPProfile(LFCliBase):
                 else:
                     self.port_util.set_http(port_name=name, resource=resource, on=True)
                     url = "%s http://%s/ %s" % (self.direction, ip_addr, self.dest)
+            if https:
+                if https_ip is not None:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s %s" % (self.direction, https_ip, self.dest)
+                else:
+                    self.port_util.set_http(port_name=name, resource=resource, on=True)
+                    url = "%s https://%s/ %s" % (self.direction, ip_addr, self.dest)
+
             if ftp:
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
-                    if ftp_ip is not None: 
+                    if ftp_ip is not None:
                         ip_addr=ftp_ip
                     url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
                     print("###### url:{}".format(url))
                 else:
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
-            if not http and not ftp:
+            if not http and not ftp and not https:
                 raise ValueError("Please specify ftp and/or http")
 
             if (url is None) or (url == ""):
@@ -161,6 +169,9 @@ class HTTPProfile(LFCliBase):
                     "timeout": 10,
                     "url_rate": self.requests_per_ten,
                     "url": url,
+                    "ssl_cert_fname": "ca-bundle.crt",
+                    "proxy_port": 0,
+                    "max_speed": self.max_speed,
                     "proxy_auth_type": 0x200
                 }
             url = "cli-json/add_l4_endp"
@@ -182,5 +193,3 @@ class HTTPProfile(LFCliBase):
             self.local_realm.json_post(url, cx_data, debug_=debug_,
                                        suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
-
-
