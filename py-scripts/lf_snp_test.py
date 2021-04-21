@@ -5,7 +5,10 @@ NAME: lf_snp_test.py  snp == Scaling and Performance
 
 PURPOSE: 
 
-This program is to configure a controller with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
+This program is to test an AP connected to a controller.  
+    The AP name is configurable.
+    The controler 
+     with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
 The controller will configure the AP.  
 The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
 The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
@@ -19,16 +22,33 @@ NOTES:
         
 
 The script is devided into parts:
-1. Controller Class : CreateCtlr controller interface
+1. Controller Class : CreateCtlr controller interface. 
+    Configurable by script:
+        a. Band : a (5ghz) b (2.4ghz)
+        b. wifi_mode : supported modes based on radio
+        c. chan_5ghz and chan_24ghz
+        d. BW: Band width 20 40 80 160,  160 only supports (2x2) spatial streams
+        d. encryption : enable / disable, * encryption not supported
+        e. ap_mode : local / flex connect, * ap mode not supported
+        f. clients : number of clients set by controller_client_densities , radios much create associated number of stations Note: LANforge configuration
+        g. packet_type: lf_udp  lf_tcp
+        h. traffic direction: upstream / downstream
+        i. packet_size: --side_a_min_pdu, --side_b_min_pdu Note: LANforge configuration
+        
 2. Traffic Generation Class : L3VariableTime
-3. Scaling And Performance Main 
-    Command parcing
-    a. Fixed Configuration Coded Into The Script
-    b. Script Controller Configurations
-    c. Script LANforge Configurations
-    d. Parameters Used For Testing
+        a. Creates and brings up stations/clients on radios
+        b. Measures connections
+        c. reports results
 
-LANForge Monitored Values:
+3. Scaling And Performance Main 
+    a. Command parcing
+    b. Fixed Configuration Coded Into The Script
+    c. Script Controller Configurations
+    d. Script LANforge Configurations
+    e. Parameters Used For Testing
+    f. report generation
+
+LANForge Monitored Values Per Polling Interval
     'rx bytes'
     'rx rate'    
 
@@ -1029,7 +1049,7 @@ class L3VariableTime(Realm):
                 print("###################################")
                 self.csv_started = True
 
-            # need to generate list first to determine worst and best
+            # need to generate list of all the values
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
             # if need the average use average_rx_delta
             #average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
