@@ -45,7 +45,7 @@ The script is devided into parts:
         f. clients : number of clients set by controller_client_densities , radios much create associated number of stations Note: LANforge configuration
         g. packet_type: lf_udp  lf_tcp
         h. traffic direction: upload / download
-        i. packet_size: --side_a_min_pdu, --side_b_min_pdu Note: LANforge configuration
+        i. pdu: --side_a_min_pdu, --side_b_min_pdu Note: LANforge configuration
         
 2. Traffic Generation Class : L3VariableTime
         a. Creates and brings up stations/clients on radios
@@ -119,7 +119,7 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 2021-04-21 05:43:25,041 __main__ INFO: controller_ap_modes ('-cam','--controller_ap_modes'): ['local']
 2021-04-21 05:43:25,041 __main__ INFO: controller_client_densities ('-ccd','--controller_client_densities'): ['1', '10', '50', '200']
 2021-04-21 05:43:25,041 __main__ INFO: controller_packet_types ('-t', '--endp_types'): ['lf_udp', 'lf_tcp']
-2021-04-21 05:43:25,041 __main__ INFO: controller_packet_sizes ('-cps','--controller_packet_sizes'): ['88', '512', '1370', '1518']
+2021-04-21 05:43:25,041 __main__ INFO: controller_pdus ('-cps','--controller_pdus'): ['88', '512', '1370', '1518']
 2021-04-21 05:43:25,041 __main__ INFO: controller_directions ('-cd', '--controller_directions'): ['upload', 'download']
 2021-04-21 05:43:25,041 __main__ INFO: controller_data_encryptions ('-cde','--controller_data_encryptions') ['disable']
 2021-04-21 05:43:25,041 __main__ INFO: controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): 256000
@@ -1664,7 +1664,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cc2','--controller_chan_24ghzs', help='--controller_chan_24ghzs <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--controller_chan_widths', help='--controller_chan_widths <20 40 80 160> default: \"20\"',default="20")
     parser.add_argument('-cam','--controller_ap_modes', help='--controller_ap_modes <local flexconnect> default local',default="local")
-    parser.add_argument('-cps','--controller_packet_sizes', help='--controller_packet_sizes List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
+    parser.add_argument('-pdu','--controller_pdus', help='--controller_pdus List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
         
 
@@ -2107,7 +2107,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_data_encryptions = "disable".split()
         controller_packet_types     = "lf_udp lf_tcp".split()
         controller_directions       = "upload download".split()
-        controller_packet_sizes     = "88 512 1370 1518".split()
+        controller_pdus             = "88 512 1370 1518".split()
         controller_client_densities = "1 10 50 200".split()
 
         controller_side_a_tx_min_bps  = "256000"
@@ -2139,8 +2139,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_packet_types     = "lf_udp".split()
         #controller_directions      = "upload download".split()
         controller_directions       = "upload download".split()
-        #controller_packet_sizes    = "88 512 1370 1518".split()
-        controller_packet_sizes     = "1518".split()
+        #controller_pdus            = "88 512 1370 1518".split()
+        controller_pdus             = "1518".split()
         controller_client_densities = "10".split()
         controller_data_encryptions = "disable".split()
 
@@ -2173,8 +2173,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_packet_types     = "lf_udp".split()
         #controller_directions      = "upload download".split()
         controller_directions       = "upload download".split()
-        #controller_packet_sizes    = "88 512 1370 1518".split()
-        controller_packet_sizes     = "1518".split()
+        #controller_pdus            = "88 512 1370 1518".split()
+        controller_pdus             = "1518".split()
         controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
 
@@ -2206,7 +2206,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_ap_modes           = args.controller_ap_modes.split()
         controller_client_densities   = args.controller_client_densities.split()
         controller_packet_types       = args.endp_types.split()
-        controller_packet_sizes       = args.controller_packet_sizes.split()
+        controller_pdus               = args.controller_pdus.split()
         controller_directions         = args.controller_directions.split()
         controller_data_encryptions   = args.controller_data_encryptions.split()
 
@@ -2223,7 +2223,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     logg.info("controller_ap_modes ('-cam','--controller_ap_modes'): {}".format(controller_ap_modes))
     logg.info("controller_client_densities ('-ccd','--controller_client_densities'): {}".format(controller_client_densities))
     logg.info("controller_packet_types ('-t', '--endp_types'): {}".format(controller_packet_types))
-    logg.info("controller_packet_sizes ('-cps','--controller_packet_sizes'): {}".format(controller_packet_sizes))
+    logg.info("controller_pdus ('-cps','--controller_pdus'): {}".format(controller_pdus))
     logg.info("controller_directions ('-cd', '--controller_directions'): {}".format(controller_directions))
     logg.info("controller_data_encryptions ('-cde','--controller_data_encryptions') {}".format(controller_data_encryptions))
     logg.info("controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): {}".format(controller_side_a_tx_min_bps))
@@ -2352,13 +2352,13 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                     for controller_direction in controller_directions:
                                                         for side_a_tx_min_bps_ul in controller_side_a_tx_min_bps:
                                                             for side_b_tx_min_bps_dl in controller_side_b_tx_min_bps:
-                                                                for controller_packet_size in controller_packet_sizes:
+                                                                for controller_pdu in controller_pdus:
                                                                     logg.info("#####################################################")
                                                                     logg.info("# TEST RUNNING ,  TEST RUNNING ######################")
                                                                     logg.info("#####################################################")
                                                                     test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(
                                                                         controller_ap,controller_band,controller_chan_5ghz,controller_chan_24ghz,controller_wifimode,controller_chan_width,controller_data_encryption,controller_ap_mode,controller_client_density,
-                                                                        controller_packet_type,controller_direction,controller_packet_size)
+                                                                        controller_packet_type,controller_direction,controller_pdu)
                                                                     test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
 
                                                                     logg.info("# controller run settings: {}".format(test_config))
@@ -2571,11 +2571,11 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                                                 csv_started=__csv_started,
                                                                                                 side_a_tx_min_bps =side_a_tx_min_bps, 
                                                                                                 side_a_tx_max_bps =0,
-                                                                                                side_a_min_pdu =controller_packet_size, 
+                                                                                                side_a_min_pdu =controller_pdu, 
                                                                                                 side_a_max_pdu =0,
                                                                                                 side_b_tx_min_bps =side_b_tx_min_bps, 
                                                                                                 side_b_tx_max_bps =0,
-                                                                                                side_b_min_pdu =controller_packet_size, 
+                                                                                                side_b_min_pdu =controller_pdu, 
                                                                                                 side_b_max_pdu = 0,
                                                                                                 number_template="00", 
                                                                                                 test_duration=test_duration,
