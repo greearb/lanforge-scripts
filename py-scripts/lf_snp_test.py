@@ -69,7 +69,6 @@ OUTPUT:
     csv details_snp_<date>.csv raw data 
     * radios and con
 
-SAMPLE TEST CONFIG:
 
 
 EXAMPLE: 
@@ -132,6 +131,8 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 
 
 INCLUDE_IN_README
+
+
 
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
@@ -881,11 +882,11 @@ class L3VariableTime(Realm):
                 reset_port_time_max_list,
                 csv_started=False,
                 side_a_tx_min_bps=560000, 
-                side_a_tx_max_bps=0,
+                side_a_tx_max_bps=0, # setting to 0 will match min
                 side_a_min_pdu=1518,
                 side_a_max_pdu=0,
                 side_b_tx_min_bps=560000, 
-                side_b_tx_max_bps=0,
+                side_b_tx_max_bps=0, # setting to 0 will match min
                 side_b_min_pdu=1518,
                 side_b_max_pdu=0,
                 number_template="00",
@@ -950,6 +951,17 @@ class L3VariableTime(Realm):
         self.outfile = outfile
         self.results = results
         self.csv_started = csv_started
+
+        self.side_a_tx_min_bps = side_a_tx_min_bps
+        self.side_a_tx_max_bps = side_a_tx_max_bps
+        self.side_a_min_pdu = side_a_min_pdu
+        self.side_a_max_pdu = side_a_max_pdu
+
+        self.side_b_tx_min_bps = side_a_tx_min_bps
+        self.side_b_tx_max_bps = side_a_tx_max_bps
+        self.side_b_min_pdu = side_a_min_pdu
+        self.side_b_max_pdu = side_a_max_pdu
+
         self.epoch_time = int(time.time())
         self.debug = debug_on
         self.wait_timeout = wait_timeout
@@ -989,14 +1001,14 @@ class L3VariableTime(Realm):
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = side_a_tx_min_bps # Note: side_a_tx_min_bps is side_a_min_bps in py-json profiles
-        self.cx_profile.side_a_max_bps = side_a_tx_min_bps # Note: side_b_tx_min_bps is side_b_min_bps in py-json profiles
-        self.cx_profile.side_a_min_pdu = side_a_min_pdu
-        self.cx_profile.side_a_max_pdu = side_a_max_pdu
-        self.cx_profile.side_b_min_bps = side_b_tx_min_bps
-        self.cx_profile.side_b_max_bps = side_b_tx_min_bps
-        self.cx_profile.side_b_min_pdu = side_b_min_pdu
-        self.cx_profile.side_b_max_pdu = side_b_max_pdu
+        self.cx_profile.side_a_min_bps = self.side_a_tx_min_bps # Note: side_a_tx_min_bps is side_a_min_bps in py-json profiles
+        self.cx_profile.side_a_max_bps = self.side_a_tx_min_bps # Note: side_b_tx_min_bps is side_b_min_bps in py-json profiles
+        self.cx_profile.side_a_min_pdu = self.side_a_min_pdu
+        self.cx_profile.side_a_max_pdu = self.side_a_max_pdu
+        self.cx_profile.side_b_min_bps = self.side_b_tx_min_bps
+        self.cx_profile.side_b_max_bps = self.side_b_tx_min_bps
+        self.cx_profile.side_b_min_pdu = self.side_b_min_pdu
+        self.cx_profile.side_b_max_pdu = self.side_b_max_pdu
 
     def __get_rx_values(self):
         endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
@@ -1119,6 +1131,9 @@ class L3VariableTime(Realm):
 
             csv_rx_row_data.append(self.test_duration)
             csv_rx_row_data.append(self.polling_interval_seconds)
+
+            csv_rx_row_data.append(self.side_a_tx_min_bps)
+            csv_rx_row_data.append(self.side_b_tx_min_bps)
 
             # Recorde the Total Transmit rate for all stations
             rx_bytes      = sum(filtered_values) #total
@@ -1287,6 +1302,8 @@ class L3VariableTime(Realm):
             cur_time = datetime.datetime.now()
         csv_rx_row_data.append(self.test_duration)
         csv_rx_row_data.append(self.polling_interval_seconds)
+        csv_rx_row_data.append(self.side_a_tx_min_bps)
+        csv_rx_row_data.append(self.side_b_tx_min_bps)
         csv_rx_row_data.append(best_rx_bytes)
         csv_rx_row_data.append(total_dl_bps)
         csv_rx_row_data.append(total_ul_bps)
@@ -1312,14 +1329,14 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_tx_dl_bits_ps','B_tx_ul_bits_ps','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_tx_dl_bits_ps','B_tx_ul_bits_ps','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
