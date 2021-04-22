@@ -1,6 +1,13 @@
 #!/bin/bash
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#  Check for large files and purge many of the most inconsequencial       #
+#      Check for large files and purge the ones requested                 #
+#                                                                         #
+# The -a switch will automatically purge core files when there            #
+# is only 5GB of space left on filesystem.                                #
+#                                                                         #
+# To install as a cron-job, add the following line to /etc/crontab:       #
+# 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files
+#                                                                         #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # set -x
 # set -e
@@ -11,6 +18,9 @@ show_menu=1
 verbose=0
 quiet=0
 starting_dir="$PWD"
+cleanup_size_mb=$(( 1024 * 5 ))
+# do not name this file "core_x" because it will get removed
+lf_core_log="/home/lanforge/found_cores_log.txt"
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -a   # automatic: disable menu and clean automatically
@@ -44,7 +54,7 @@ note() {
     echo "# $1"
 }
 
-function contains () {
+function contains() {
     if [[ x$1 = x ]] || [[ x$2 = x ]]; then
         echo "contains wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
         exit 1
@@ -67,12 +77,60 @@ function contains () {
     return 1
 }
 
+function remove() {
+    if [[ x$1 = x ]] || [[ x$2 = x ]]; then
+        echo "remove wants ARRAY and ITEM arguments: if contains name joe; then...  }$"
+        exit 1
+    fi
+    # these two lines below are important to not modify
+    local tmp="${1}[@]"
+    local array=( ${!tmp} )
+
+    # if [[ x$verbose = x1 ]]; then
+    #    printf "contains array %s\n" "${array[@]}"
+    # fi
+    if (( ${#array[@]} < 1 )); then
+        return 1
+    fi
+    local item
+    for i in "${!array[@]}"; do
+        if [[ ${array[$i]} = "$2" ]]; then
+            unset 'array[i]'
+            debug "removed $2 from $1"
+            return 0
+        fi
+    done
+    return 1
+}
+
+function disk_space_below() {
+    if [[ x$1 = x ]] || [[ x$2 = x ]]; then
+        echo "disk_free: needs to know what filesystem, size in bytes to alarm on"
+        return
+    fi
+    local amount_left_mb=`df -BM --output=iavail | tail -1`
+    if (( $amount_left_mb < $cleanup_size_mb )) ; then
+        debug "amount left $amount_left_mb lt $cleanup_size_mb"
+        return 0
+    fi
+    debug "amount left $amount_left_mb ge $cleanup_size_mb"
+    return 1
+}
+
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+# ----- ----- M A I N                                   ----- ----- #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+
 #opts=""
 opts="abcdhklmqrtv"
 while getopts $opts opt; do
   case "$opt" in
     a)
-      verbose=0
+      if contains "selections" "v"; then
+          verbose=1
+      else
+          verbose=0
+      fi
       quiet=1
       selections+=($opt)
       show_menu=0
@@ -180,8 +238,9 @@ kernel_to_relnum() {
     #set -euxv
     local hunks=()
     # 1>&2 echo "KERNEL RELNUM:[$1]"
-    local my1="${1/*[^0-9+]-/}" # Dang, this is not intuitive to a PCRE user
+    local my1="${1/*[^0-9]-/}" # Dang, this is not intuitive to a PCRE user
     #1>&2 echo "KERNEL [$1] REGEX:[$my1]"
+    my1="${my1//\+/}"
     if [[ $my1 =~ ^[^0-9] ]]; then
         1>&2 echo "BAD SERIES: [$1]"
         exit 1
@@ -216,7 +275,7 @@ clean_old_kernels() {
     if (( ${#removable_packages[@]} > 0 )); then
         for f in "${removable_packages[@]}"; do
             echo "$f\*"
-        done | xargs /usr/bin/rpm -hve
+        done | xargs /usr/bin/rpm --nodeps -hve
     fi
     if (( ${#removable_kernels[@]} > 0 )); then
         for f in "${removable_kernels[@]}"; do
@@ -238,16 +297,42 @@ clean_core_files() {
         debug "No core files ?"
         return 0
     fi
+    #set -vux
     local counter=0
+    if [ ! -f "$lf_core_log" ]; then
+        touch "$lf_core_log"
+    fi
+    date +"%Y-%m-%d-%H:%M.%S" >> $lf_core_log
     for f in "${core_files[@]}"; do
-        echo -n "-"
-        rm -f "$f"
-        counter=$(( counter + 1 ))
-        if (( ($counter % 100) == 0 )); then
-            sleep 0.2
-        fi
+        file "$f" >> "$lf_core_log"
     done
+    note "Recorded ${#core_files[@]} core files to $lf_core_log: "
+    tail -n $(( 1 + ${#core_files[@]} )) $lf_core_log
+    local do_delete=0
+    if contains "selections" "a"; then
+        disk_space_below /      $cleanup_size_mb && do_delete=$(( $do_delete + 1 ))
+        disk_space_below /home  $cleanup_size_mb && do_delete=$(( $do_delete + 1 ))
+        (( $do_delete > 0)) && note "disk space below $cleanup_size_mb, removing core files"
+    elif contains "selections" "c"; then
+        do_delete=1
+        note "core file cleaning selected"
+    fi
+    if (( $do_delete > 0 )); then
+        for f in "${core_files[@]}"; do
+            echo -n "-"
+            rm -f "$f" && remove "core_files" "$f"
+            counter=$(( counter + 1 ))
+            if (( ($counter % 100) == 0 )); then
+                sleep 0.2
+            fi
+        done
+    else
+        note "disk space above $cleanup_size_mb, not removing core files"
+    fi
+    #set +vux
     echo ""
+    totals[c]=0
+    survey_core_files
 }
 
 clean_lf_downloads() {
@@ -311,10 +396,11 @@ clean_dnf_cache() {
 }
 
 clean_mnt_lf_files() {
-    note "clean mnt lf files WIP"
+    note "cleaning mnt lf files..."
     if (( $verbose > 0 )); then
         printf "%s\n" "${mnt_lf_files[@]}"
     fi
+    rm -f  "${mnt_lf_files[@]}"
 }
 
 compress_report_data() {
@@ -323,7 +409,7 @@ compress_report_data() {
     while read f; do
         (( $verbose > 0 )) && echo "    compressing $f"
         gzip -9 "$f"
-    done < <(find /home/lanforge -iname "*.csv")
+    done < <(find /home/lanforge/report-data /home/lanforge/html-reports -iname "*.csv")
 }
 
 clean_var_tmp() {
@@ -356,6 +442,7 @@ survey_kernel_files() {
     unset kernel_sort_serial
     unset pkg_sort_names
     unset libmod_sort_names
+    declare -A kernel_sort_serial=()
     declare -A kernel_sort_names=()
     declare -A pkg_sort_names=()
     declare -A libmod_sort_names=()
@@ -373,9 +460,10 @@ survey_kernel_files() {
     local file
     local fiile
     for file in "${kernel_files[@]}"; do
-        # echo "kernel_file [$file]"
+        debug "kernel_file [$file]"
         [[ $file =~ /boot/initramfs* ]] && continue
         [[ $file =~ *.fc*.x86_64 ]] && continue
+        [[ $file = *initrd-plymouth.img ]] && continue
         fiile=$( basename $file )
         fiile=${fiile%.img}
 
@@ -525,6 +613,7 @@ core_files=()
 survey_core_files() {
     debug "Surveying core files"
     cd /
+    #set -vux
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
         printf "    %s\n" "${core_files[@]}" | head
@@ -532,6 +621,7 @@ survey_core_files() {
     if (( ${#core_files[@]} > 0 )); then
         totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
     fi
+    #set +vux
     #set +x
     [[ x${totals[c]} = x ]] && totals[c]=0
     cd "$starting_dir"
@@ -582,7 +672,7 @@ mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
     debug "Surveying mnt lf"
-    mapfile -t mnt_lf_files < <(find /mnt/lf -type f --one_filesystem 2>/dev/null)
+    mapfile -t mnt_lf_files < <(find /mnt/lf -xdev -type f 2>/dev/null)
     totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
     [[ x${totals[m]} = x ]] && totals[m]=0
 }
@@ -610,7 +700,7 @@ survey_report_data() {
     cd /home/lanforge
     # set -veux
     local fsiz=0
-    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null ||: | wc -l )
+    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null | wc -l  ||:)
     # if (( $verbose > 0 )); then
         # hr
         # find -type f -a -name '*.csv' 2>/dev/null ||:
@@ -702,8 +792,8 @@ fi
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 if contains "selections" "a" ; then
-    note "Automatic deletion will include: "
-    printf "%s\n" "${selections[@]}"
+    # note "Automatic deletion will include: "
+    # printf "%s\n" "${selections[@]}"
     debug "Doing automatic cleanup"
     for z in "${selections[@]}"; do
         debug "Will perform ${desc[$z]}"
@@ -716,12 +806,13 @@ fi
 
 if (( ${#selections[@]} > 0 )) ; then
     debug "Doing selected cleanup: "
-    printf "    %s\n" "${selections[@]}"
-    sleep 1
+    # printf "    %s\n" "${selections[@]}"
+    # sleep 1
     for z in "${selections[@]}"; do
         debug "Performing ${desc[$z]}"
         ${cleaners_map[$z]}
-        selections=("${selections[@]/$z}")
+        # selections=("${selections[@]/$z}")
+        remove selections "$z"
     done
     survey_areas
     disk_usage_report

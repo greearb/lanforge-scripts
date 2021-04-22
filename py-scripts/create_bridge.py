@@ -136,6 +136,7 @@ Command example:
                        target_device=args.target_device)
 
     create_bridge.build()
+    print('Created %s bridges' % num_bridge)
 
 if __name__ == "__main__":
     main()

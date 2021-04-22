@@ -10,6 +10,8 @@ Follow our [getting started cookbook](http://www.candelatech.com/cookbook.php?vo
 to learn more about how to operate your LANforge client.
 
 ## Getting Started ##
+The first step is to run update_deps.py which is located in py-scripts. This command will install all dependencies necessary for lanforge-scripts on your system.
+
 New automation tests and JSON client scripts should go in `../py-scripts`. This directory
 is intended for utility and library scripts. To use this module, make sure your include path
 captures this module by adding it to your `sys.path`. We recommend your scripts in `../py-scripts`
@@ -33,7 +35,7 @@ begin with these imports:
                 `import LANforge`
                 `from LANforge import LFUtils`
                 `from LANforge import LFRequest`
-## create_sta.py ## 
+## create_sta.py ##
 Please follow though `create_sta.py` to see how you can
 utilize the JSON API provided by the LANforge client. It
 is possible to use similar commands to create virtual Access points.
@@ -41,73 +43,79 @@ is possible to use similar commands to create virtual Access points.
 Example that creates a WANlink
 ## generic_cx.py ##
 Example that creates a cross connect
-## realm.py ## 
+## realm.py ##
 Module defining the Realm class. `Realm` is a toolbox class that also serves as a facade for finer-grained methods in LFUtils and LFRequest:
 
-    * `__init__`: our constructor
-    * `load()`: load a test scenario database, as you would find in the GUI Status tab
-    * `cx_list()`: request json list of cross connects
-    * `station_map()`: request a map of stations via `/port/list` and alter the list to name based map of only stations
-    * `station_list()`: request a list of stations
-    * `vap_list()`: request a list of virtual APs
-    * `remove_vlan_by_eid()`: a way of deleting a port/station/vAP
-    * `find_ports_like()`: returns a list of ports matching a string prefix, like:
+     *`def __init__()`: our constructor
+     *`def wait_until_ports_appear()`: takes a list of ports and waits until they all appear in the list of existing stations
+     *`def wait_until_ports_disappear()`: takes a list of ports and waits until they all disappear from the list of existing stations
+     *`def rm_port()`: takes a string in eid format and attempts to remove it
+     *`def port_exists()`: takes a string in eid format and returns a boolean depending on if the port exists
+     *`def admin_up()`: takes a string in eid format attempts to set it to admin up
+     *`def admin_down()`: takes a string in eid format attempts to set it to admin down
+     *`def reset_port()`: takes a string in eid format requests a port reset
+     *`def rm_cx()`: takes a cross connect name as a string and attempts to remove it from LANforge
+     *`def rm_endp()`: takes an endpoint name as a string and attempts to remove it from LANforge
+     *`def set_endp_tos()`: attempts to set tos of a specified endpoint name
+     *`def stop_cx()`: attempts to stop a cross connect with the given name
+     *`def cleanup_cxe_prefix()`: attempts to remove all existing cross connects and endpoints
+     *`def channel_freq()`: takes a channel and returns its corresponding frequency
+     *`def freq_channel()`: takes a frequency and returns its corresponding channel
+     *`def wait_while_building()`: checks for OK or BUSY when querying cli-json/cv+is_built
+     *`def load()`: loads a database from the GUI
+     *`def cx_list()`: request json list of cross connects
+     *`def waitUntilEndpsAppear()`: takes a list of endpoints and waits until they all disappear from the list of existing endpoints
+        *deprecated method use def wait_until_endps_appear() instead*
+     *`def wait_until_endps_appear()`: takes a list of endpoints and waits until they all appear in the list of existing endpoints
+     *`def waitUntilCxsAppear()`: takes a list of cross connects and waits until they all disappear from the list of existing cross connects 
+        *deprecated method use def wait_until_cxs_appear() instead* 
+     *`def wait_until_cxs_appear()`: takes a list of cross connects and waits until they all disappear from the list of existing cross connects
+     *`def station_map()`: request a map of stations via `/port/list` and alter the list to name based map of only stations
+     *`def station_list()`: request a list of stations
+     *`def vap_list()`: request a list of virtual APs
+     *`def remove_vlan_by_eid()`: a way of deleting a port/station/vAP
+     *`def find_ports_like()`: returns a list of ports matching a string prefix, like:
       * `sta\*` matches names starting with `sta`
       * `sta10+` matches names with port numbers 10 or greater
       * `sta[10..20]` matches a range of stations including the range sta10 -- sta20
-    * `name_to_eid()`: takes a name like `1.1.eth1` and returns it split into an array `[1, 1, "eth1"]`
-    * `parse_time()`: returns numeric seconds when given strings like `1d`, `2h`, or `3m` or `4s`
-    * `parse_link()`:
-    * `new_station_profile()`: creates a blank station profile, configure station properties in this profile
+     *`def name_to_eid()`: takes a name like `1.1.eth1` and returns it split into an array `[1, 1, "eth1"]`
+     *`def wait_for_ip()`: takes a list of stations and waits until they all have an ip address. Default wait time is 360 seconds, 
+                           can take -1 as timeout argument to determine timeout based on mean ip acquisition time
+     *`def get_curr_num_ips()`: returns the number of stations with an ip address
+     *`def duration_time_to_seconds()`: returns an integer for a time string converted to seconds
+     *`def remove_all_stations()`: attempts to remove all currently existing stations
+     *`def remove_all_endps()`: attempts to remove all currently existing endpoints
+     *`def remove_all_cxs()`: attempts to remove all currently existing cross connects
+     *`def new_station_profile()`: creates a blank station profile, configure station properties in this profile
                                and then use its `create()` method to create a series of stations
-    * `new_l3_cx_profile()`: creates a blank Layer-3 profile, configure this connection profile and
+     *`def new_multicast_profile()`: creates a blank multicast profile, configure it then call `create()`
+     *`def new_wifi_monitor_profile()`: creates a blank wifi monitor profile, configure it then call `create()`
+     *`def new_l3_cx_profile()`: creates a blank Layer-3 profile, configure this connection profile and
                              then use its `create()` method to create a series of endpoints and cross connects
-    * `new_l4_cx_profile()`: creates a blank Layer-4 (http/ftp) profile, configure it then call `create()`
-    * `new_generic_cx_profile()`: creates a blank Generic connection profile (for lfping/iperf3/curl-post/speedtest.net)
+     *`def new_l4_cx_profile()`: creates a blank Layer-4 (http/ftp) profile, configure it then call `create()`
+     *`def new_generic_endp_profile()`: creates a blank Generic endpoint profile, configure it then call `create()`
+     *`def new_generic_cx_profile()`: creates a blank Generic connection profile (for lfping/iperf3/curl-post/speedtest.net)
                                   then configure and call `create()`
-    * class `L3CXProfile`: this class is the Layer-3 connection profile **unfinished**
-      * `__init__`: should be called by `Realm::new_l3_cx_profile()`
-      * `create()`: pass endpoint-type, side-a list, side-b list, and sleep_time between creating endpoints and connections
-      * Parameters for this profile include:
-        * prefix
-        * txbps
-    * class `L4CXProfile`: this class is the Layer-4 connection profile **unfinished**
-      * `__init__`: should be called by `Realm::new_l4_cx_profile()`
-      * `create()`: pass a list of ports to create endpoints on, note that resulting cross connects are prefixed with `CX_`
-      * Parameters for this profile include:
-        * url
-        * requests_per_ten: number of requests to make in ten minutes
-    * class `GenCXProfile`: this class is the Generic connection profile **unfinished**
-      * `__init__`: should be called by `Realm::new_gen_cx_profile()`
-      * `create()`: pass a list of ports to create connections on
-      * Parameters for this profile include:
-        * type: includes lfping, iperf3, speedtest, lfcurl or cmd
-        * dest: IP address of destination for command
-    * class `StationProfile`: configure instances of this class for creating series of ports
-      * `__init__`: should be called by `Realm::new_station_profile()`
-      * `use_wpa2()`: pass on=True,ssid=a,passwd,b to set station_command_param add_sta/ssid, add_sta_key
-                      pass on=False,ssid=a to turn off command_flag add_sta/flags/wpa2_enable
-      * `set_command_param()`
-      * `set_command_flag()`
-      * `set_prefix()`
-      * `add_named_flags()`
-      * `create()`: you can use either an integer number of stations or a list of station names, if you want to create a
-                    specific range of ports, create the names first and do not specify `num_stations`
-        * resource: the resource number for the radio
-        * radio: name of the radio, like 'wiphy0'
-        * num_stations: `value > 0` indicates creating station series `sta0000..sta$value`
-        * sta_names_: a list of station names to create, please use `LFUtils.port_name_series()`
-        * dry_run: True avoids posting commands
-        * debug:
-    * class `PacketFilter` : This class provides filters that can be used with tshark
-        * `get_filter_wlan_assoc_packets()` : This packet filter will look for wlan.fc.type_subtype<=3. It takes
+     *`def new_vap_profile()`: creates a blank VAP profile, configure it then call `create()`
+     *`def new_vr_profile()`: creates a blank VR profile, configure it then call `create()`
+     *`def new_http_profile()`: creates a blank HTTP profile, configure it then call `create()`
+     *`def new_fio_endp_profile()`: creates a blank FileIO profile, configure it then call `create()`
+     *`def new_dut_profile()`: creates a blank DUT profile, configure it then call `create()`
+     *`def new_mvlan_profile()`: creates a blank MACVLAN profile, configure it then call `create()`
+     *`def new_qvlan_profile()`: creates a blank QVLAN profile, configure it then call `create()`
+     *`def new_test_group_profile()`: creates a blank Test Group profile, configure it then call `create()`
+    *`class PacketFilter()`: This class provides filters that can be used with tshark
+     *`def get_filter_wlan_assoc_packets()`: This packet filter will look for wlan.fc.type_subtype<=3. It takes
                                              two arguments: `ap_mac` and `sta_mac`
-        * `get_filter_wlan_null_packets()` : This packet filter will look for wlan.fc.type_subtype==44. It takes
+     *`def get_filter_wlan_null_packets()`: This packet filter will look for wlan.fc.type_subtype==44. It takes
                                              two arguments: `ap_mac` and `sta_mac`
-        * `run_filter()` : This function will run the filter specified by the `filter` argument on the pcap
+     *`def run_filter()`: This function will run the filter specified by the `filter` argument on the pcap
                           file specified by the `pcap_file` argument. It redirects this output into a txt file in /tmp
                           and returns the lines in that file as an array.
-## realm_test.py ## 
+
+
+
+## realm_test.py ##
 Exercises realm.py
 ## show_ports.py ##
 This simple example shows how to gather a digest of ports
@@ -115,7 +123,7 @@ This simple example shows how to gather a digest of ports
 Example of how to use LFRequest to create a L4 endpoint
 ## wct-example.py ##
 Example of using expect on port 3990 to operate a WiFi Capacity Test
-## ws-sta-monitor.py ## 
+## ws-sta-monitor.py ##
 Websocket 8081 client that filters interesting station events from the lfclient websocket
 
 
@@ -172,4 +180,3 @@ This directory defines the LANforge module holding the following classes:
 
 Have fun coding!
 support@candelatech.com
-

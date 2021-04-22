@@ -12,7 +12,7 @@ if 'py-json' not in sys.path:
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
-import time
+# import time
 from uuid import uuid1
 import pprint
 from pprint import pprint
@@ -23,7 +23,7 @@ class TestStatusMessage(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.deep_clean = _deep_clean
         self.check_connect()
 
@@ -167,7 +167,6 @@ class TestStatusMessage(LFCliBase):
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
             self.exit_on_error=False
-            self.halt_on_error=False
             message_response = self.json_delete(self.session_url, debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
@@ -195,7 +194,6 @@ class TestStatusMessage(LFCliBase):
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
             self.exit_on_error=False
-            self.halt_on_error=False
             message_response = self.json_delete(self.session_url+"/this", debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
@@ -275,9 +273,9 @@ Actions can be:
         if args.session is not None:
             status_messages.json_put("/status-msg/"+args.session, {})
         else:
-            u = uuid1()
-            status_messages.json_put("/status-msg/"+u, {})
-            print("created session /status-msg/"+u)
+            a_uuid = uuid1()
+            status_messages.json_put("/status-msg/"+str(a_uuid), {})
+            print("created session /status-msg/"+str(a_uuid))
         return
 
     if args.action == "update":
@@ -310,7 +308,10 @@ Actions can be:
         if args.session is None:
             print("requires --session")
             return
-        response_o = status_messages.json_get("/status-msg/"+args.session)
+        if args.key is None:
+            print("requires --key")
+            return
+        response_o = status_messages.json_get("/status-msg/%s/%s"%(args.session, args.key))
         pprint(response_o)
         return
 

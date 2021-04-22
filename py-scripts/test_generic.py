@@ -26,7 +26,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import datetime
 import json
@@ -35,10 +35,12 @@ class GenTest(LFCliBase):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
                  number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
+                 file_output=None,
+                 loop_count=None,
                  _debug_on=False,
                  _exit_on_error=False,
-                 _exit_on_fail=False,):
-        super().__init__(host, port, _local_realm=realm.Realm(host,port), _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+                 _exit_on_fail=False):
+        super().__init__(host, port, _local_realm=Realm(host,port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -48,12 +50,6 @@ class GenTest(LFCliBase):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        if (speedtest_min_up is not None):
-            self.speedtest_min_up = float(speedtest_min_up)
-        if (speedtest_min_dl is not None):
-            self.speedtest_min_dl = float(speedtest_min_dl)
-        if (speedtest_max_ping is not None):
-            self.speedtest_max_ping = float(speedtest_max_ping)
         self.debug = _debug_on
         if (client is not None):
             self.client_name = client
@@ -72,57 +68,14 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.dest = dest
         self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
-
-    def choose_ping_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if self.debug:
-            print(gen_results)
-        if gen_results['endpoints'] is not None:
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
-                        if v['last results'] != "" and "Unreachable" not in v['last results']:
-                            return True, v['name']
-                        else:
-                            return False, v['name']
-
-    def choose_lfcurl_command(self):
-        return False, ''
-
-    def choose_iperf3_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
-            pprint.pprint(gen_results['endpoints'])
-            #for name in gen_results['endpoints']:
-               # pprint.pprint(name.items)
-                #for k,v in name.items():
-        exit(1)
-
-
-    def choose_speedtest_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['last results'] is not None and v['name'] in self.generic_endps_profile.created_endp and v['last results'] != '':
-                        last_results = json.loads(v['last results'])
-                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
-                            return False, v['name']
-                        elif last_results['download'] >= self.speedtest_min_dl and \
-                             last_results['upload'] >= self.speedtest_min_up and \
-                             last_results['ping'] <= self.speedtest_max_ping:
-                            return True, v['name']
-
-    def choose_generic_command(self):
-        gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if (gen_results['endpoints'] is not None):
-            for name in gen_results['endpoints']:
-                for k, v in name.items():
-                    if v['name'] in self.generic_endps_profile.created_endp and not v['name'].endswith('1'):
-                        if v['last results'] != "" and "not known" not in v['last results']:
-                            return True, v['name']
-                        else:
-                            return False, v['name']
+        self.generic_endps_profile.file_output= file_output
+        self.generic_endps_profile.loop_count = loop_count
+        if (speedtest_min_up is not None):
+            self.generic_endps_profile.speedtest_min_up = float(speedtest_min_up)
+        if (speedtest_min_dl is not None):
+            self.generic_endps_profile.speedtest_min_dl = float(speedtest_min_dl)
+        if (speedtest_max_ping is not None):
+            self.generic_endps_profile.speedtest_max_ping = float(speedtest_max_ping)
 
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
@@ -132,44 +85,13 @@ class GenTest(LFCliBase):
         if self.debug:
             pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
-        if self.local_realm.wait_for_ip(temp_stas):
+        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
             self.exit_fail()
-        cur_time = datetime.datetime.now()
-        passes = 0
-        expected_passes = 0
-        self.generic_endps_profile.start_cx()
-        time.sleep(15)
-        end_time = self.local_realm.parse_time("30s") + cur_time
-        print("Starting Test...")
-        result = False
-        while cur_time < end_time:
-            cur_time = datetime.datetime.now()
-            if self.generic_endps_profile.type == "lfping":
-                result = self.choose_ping_command()
-            elif self.generic_endps_profile.type == "generic":
-                result = self.choose_generic_command()
-            elif self.generic_endps_profile.type == "lfcurl":
-                result = self.choose_lfcurl_command()
-            elif self.generic_endps_profile.type == "speedtest":
-                result = self.choose_speedtest_command()
-            elif self.generic_endps_profile.type == "iperf3":
-                result = self.choose_iperf3_command()
-            else:
-                continue
-            expected_passes += 1
-            if result is not None:
-                if result[0]:
-                    passes += 1
-                else:
-                    self._fail("%s Failed to ping %s " % (result[1], self.generic_endps_profile.dest))
-                    break
-            time.sleep(1)
 
-        if passes == expected_passes:
-            self._pass("PASS: All tests passed")
+        self.generic_endps_profile.start_cx()
 
     def stop(self):
         print("Stopping Test...")
@@ -196,6 +118,24 @@ class GenTest(LFCliBase):
 
 
 def main():
+    optional = []
+    optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
+    optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
+    optional.append({'name': '--output_format', 'help': 'choose either csv or xlsx'})
+    optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
+    optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
+    optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
+    optional.append({'name': '--gen_cols', 'help': 'Columns wished to be monitored from layer 3 endpoint tab',
+                     'default': ['name', 'tx bytes', 'rx bytes']})
+    optional.append({'name': '--port_mgr_cols', 'help': 'Columns wished to be monitored from port manager tab',
+                     'default': ['ap', 'ip', 'parent dev']})
+    optional.append(
+        {'name': '--compared_report', 'help': 'report path and file which is wished to be compared with new report',
+         'default': None})
+    optional.append({'name': '--monitor_interval',
+                     'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                     'default': '2s'})
+
     parser = LFCliBase.create_basic_argparse(
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -232,7 +172,8 @@ python3 ./test_generic.py
     --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
-''')
+''',
+    more_optional=optional)
 
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
@@ -242,13 +183,63 @@ python3 ./test_generic.py
     parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
     parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
-    parser.add_argument('--client', help='client to the iperf3 server',default=None)
+    parser.add_argument('--client', help='client to the iperf3 server', default=None)
+    parser.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred', default=None)
+    parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
 
     args = parser.parse_args()
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
+
+        # Create directory
+
+        # if file path with output file extension is not given...
+        # check if home/lanforge/report-data exists. if not, save
+        # in new folder based in current file's directory
+    systeminfopath = None
+    if args.report_file is None:
+        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
+                                                                                                 '-') + '-test_generic'  # create path name
+        try:
+            path = os.path.join('/home/lanforge/report-data/', new_file_path)
+            os.mkdir(path)
+        except:
+            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            path = os.path.join(curr_dir_path, new_file_path)
+            os.mkdir(path)
+        systeminfopath = str(path) + '/systeminfo.txt'
+
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
+                                  'xlsx']:
+            report_f = str(path) + '/data.' + args.output_format
+            output = args.output_format
+        else:
+            print(
+                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
+            report_f = str(path) + '/data.csv'
+            output = 'csv'
+
+    else:
+        systeminfopath = str(args.report_file).split('/')[-1]
+        report_f = args.report_file
+        if args.output_format is None:
+            output = str(args.report_file).split('.')[-1]
+        else:
+            output = args.output_format
+    print("Saving final report data in ... " + report_f)
+
+    # Retrieve last data file
+    compared_rept = None
+    if args.compared_report:
+        compared_report_format = args.compared_report.split('.')[-1]
+        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+        if compared_report_format != 'csv':
+            print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
+            exit(1)
+        else:
+            compared_rept = args.compared_report
 
     station_list = LFUtils.portNameSeries(radio=args.radio,
                                           prefix_="sta",
@@ -273,6 +264,8 @@ python3 ./test_generic.py
                            speedtest_min_up=args.speedtest_min_up,
                            speedtest_min_dl=args.speedtest_min_dl,
                            speedtest_max_ping=args.speedtest_max_ping,
+                           file_output=args.file_output,
+                           loop_count=args.loop_count,
                            client=args.client,
                            _debug_on=args.debug)
 
@@ -280,11 +273,54 @@ python3 ./test_generic.py
     generic_test.build()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
-        generic_test.exit_fail()        
+        generic_test.exit_fail()
     generic_test.start()
     if not generic_test.passes():
         print(generic_test.get_fail_message())
         generic_test.exit_fail()
+
+    try:
+        genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
+    except:
+        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+
+    if type(args.gen_cols) is not list:
+        generic_cols = list(args.gen_cols.split(","))
+        # send col names here to file to reformat
+    else:
+        generic_cols = args.gen_cols
+        # send col names here to file to reformat
+    if type(args.port_mgr_cols) is not list:
+        port_mgr_cols = list(args.port_mgr_cols.split(","))
+        # send col names here to file to reformat
+    else:
+        port_mgr_cols = args.port_mgr_cols
+        # send col names here to file to reformat
+    if args.debug:
+        print("Generic Endp column names are...")
+        print(generic_cols)
+        print("Port Manager column names are...")
+        print(port_mgr_cols)
+    try:
+        monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
+    except ValueError as error:
+        print(ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+        exit(1)
+    generic_test.start(False, False)
+    generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
+                                    sta_list=station_list,
+                                    #port_mgr_cols=port_mgr_cols,
+                                    report_file=report_f,
+                                    systeminfopath=systeminfopath,
+                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                    monitor_interval_ms=monitor_interval,
+                                    created_cx=genconnections,
+                                    output_format=output,
+                                    compared_report=compared_rept,
+                                    script_name='test_generic',
+                                    arguments=args,
+                                    debug=args.debug)
+
     generic_test.stop()
     time.sleep(30)
     generic_test.cleanup(station_list)

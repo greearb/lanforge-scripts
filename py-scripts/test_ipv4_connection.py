@@ -48,13 +48,11 @@ class IPv4Test(LFCliBase):
                          _proxy_str=_proxy_str,
                          _local_realm=realm.Realm(lfclient_host=_host,
                                                   lfclient_port=_port,
-                                                  halt_on_error_=_exit_on_error,
                                                   _exit_on_error=_exit_on_error,
                                                   _exit_on_fail=_exit_on_fail,
                                                   _proxy_str=_proxy_str,
                                                   debug_=_debug_on),
                          _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.host = _host
         self.port = _port

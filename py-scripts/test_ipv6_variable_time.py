@@ -59,7 +59,6 @@ class IPV6VariableTime(LFCliBase):
                                                   _exit_on_error=_exit_on_error,
                                                   _exit_on_fail=_exit_on_fail),
                          _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.upstream = _upstream
         self.ssid = _ssid

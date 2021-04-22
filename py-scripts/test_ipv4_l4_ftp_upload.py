@@ -34,7 +34,7 @@ class IPV4L4(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -53,6 +53,7 @@ class IPV4L4(LFCliBase):
         self.cx_profile = self.local_realm.new_l4_cx_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
+        print("##### station_profile.lfclient_url: {}".format(self.station_profile.lfclient_url))
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security

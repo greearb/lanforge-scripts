@@ -30,13 +30,13 @@ import datetime
 
 class IPV4L4(LFCliBase):
     def __init__(self, host, port, ssid, security, password, url,
-                station_list,
-                number_template="00000", radio="wiphy0",
-                test_duration="5m", upstream_port="eth1",
-                _debug_on=False,
-                _exit_on_error=False,
-                _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+                 station_list,
+                 number_template="00000", radio="wiphy0",
+                 test_duration="5m", upstream_port="eth1",
+                 _debug_on=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False):
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.radio = radio
@@ -107,8 +107,7 @@ class IPV4L4(LFCliBase):
                                suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
-        temp_stas = self.sta_list.copy()
-        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        temp_stas = self.station_profile.station_names.copy()
         self.station_profile.admin_up()
         if self.local_realm.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
@@ -189,9 +188,8 @@ def main():
             ''')
 
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--url', help='--url specifies upload/download, address, and dest', default="dl http://10.40.0.1 /dev/null")
-
-
+    parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
+                        default="dl http://10.40.0.1 /dev/null")
 
     args = parser.parse_args()
     num_sta = 2
@@ -199,26 +197,32 @@ def main():
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_= num_sta-1, padding_number_=10000, radio=args.radio)
+    station_list = LFUtils.portNameSeries(prefix_="sta",
+                                          start_id_=0,
+                                          end_id_=num_sta - 1,
+                                          padding_number_=10000,
+                                          radio=args.radio)
 
     ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
-                    ssid=args.ssid,
-                    radio=args.radio,
-                    password=args.passwd,
-                    security=args.security,
-                    station_list=station_list,
-                    url=args.url,
-                    test_duration=args.test_duration,
-                    upstream_port=args.upstream_port,
-                    _debug_on=args.debug)
+                     ssid=args.ssid,
+                     radio=args.radio,
+                     password=args.passwd,
+                     security=args.security,
+                     station_list=station_list,
+                     url=args.url,
+                     test_duration=args.test_duration,
+                     upstream_port=args.upstream_port,
+                     _debug_on=args.debug)
 
     ip_test.cleanup(station_list)
     ip_test.build()
+    print('Stations built')
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         ip_test.exit_fail()
+    print('Starting Stations')
     ip_test.start(False, False)
+    print('Stopping Stations')
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())

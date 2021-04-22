@@ -2,7 +2,7 @@
 '''
 
   This Script Loads the Existing Scenario and Run the Simultaenous Throughput over time and Generate Report and Plot the Graph
-  This Scrip has three classes :
+  This Script has three classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
           2. FindPorts : Fetch the L3CX Throughput and VAP Throughput
           3. Login_DUT : This class is specifically used to test the Linux based DUT that has SSH Server. It is used to read the CPU Core temperature during testing
@@ -45,7 +45,7 @@ import realm
 from realm import Realm
 import logging
 
-import paramiko as pm
+import paramiko as pmgo
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
 from bokeh.io import output_file, show
@@ -65,7 +65,7 @@ class Login_DUT:
       self.host=HOST
       self.USERNAME = "lanforge"
       self.PASSWORD = "lanforge"
-      self.CLIENT= pm.SSHClient()
+      self.CLIENT= pmgo.SSHClient()
       self.LF1= self.Connect()
       self.data_core1=[]
       self.data_core2=[]
@@ -83,7 +83,7 @@ class Login_DUT:
 
     def Connect(self):
         self.CLIENT.load_system_host_keys()
-        self.CLIENT.set_missing_host_key_policy(pm.AutoAddPolicy())
+        self.CLIENT.set_missing_host_key_policy(pmgo.AutoAddPolicy())
         try:
             self.CLIENT.connect(self.host, username=self.USERNAME, password=self.PASSWORD,timeout=10)
             return None
@@ -282,7 +282,7 @@ def main():
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
 
-    parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)")
+    parser.add_argument("-t", "--duration", type=str, help="Enter the Time for which you want to run test")
     parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
     parser.add_argument("-td", "--test_detail", type=str, help="Enter the Test Detail in Quotes ")
 
@@ -297,8 +297,6 @@ def main():
          manager = args.manager
       if (args.scenario is not None):
          scenario = args.scenario
-      if (args.duration is not None):
-         duration = (args.duration * 60)/5
       if (args.report_name is not None):
          report_name = args.report_name
       if (args.duration is None):
@@ -324,9 +322,10 @@ def main():
     Scenario_2 = LoadScenario(manager, 8080, scenario)
     #Wait for Sometime
     time.sleep(10)
+    duration_sec=Realm.parse_time(args.duration).total_seconds() * 60
 
     # Port Utility function for reading CX and VAP
-    PortUtility(manager,8080, duration, report_name, scenario, test_detail)
+    PortUtility(manager,8080, duration_sec, report_name, scenario, test_detail)
 
 
 

@@ -59,7 +59,7 @@ class CreateVAP(Realm):
         self.vap_profile.dhcp = self.dhcp
         if self.debug:
             print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
-            pprint.pprint(self.sta_list)
+            pprint.pprint(self.vap_list)
             print("---- ~VAP List ----- ----- ----- ----- ----- ----- \n")
 
 

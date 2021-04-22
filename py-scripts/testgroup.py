@@ -64,7 +64,7 @@ class TestGroup(LFCliBase):
         if self.tg_action == 'del':
             print("Removing %s" % self.tg_profile.group_name)
             if self.tg_profile.check_group_exists():
-                self.tg_profile.remove_group()
+                self.tg_profile.rm_group()
             else:
                 print("%s not found, no action taken" % self.tg_profile.group_name)
 
@@ -154,6 +154,7 @@ def main():
     tg.do_tg_action()
     tg.update_cxs()
     tg.do_cx_action()
+    time.sleep(5)
     tg.show_info()
 
 

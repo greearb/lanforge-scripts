@@ -126,7 +126,6 @@ sudo rm -f /tmp/*.txt
 sudo rm -f $GUILog $GUIUpdate $CTLGUI $CTLH $ST
 
 touch "$NO_AUTO"
-pgrep java &>/dev/null && killall -9 java
 touch $GUIUpdate
 touch $ST
 if [ ! -z "$SKIP_INSTALL" ] && [ x$SKIP_INSTALL = x1 ]; then
@@ -150,6 +149,7 @@ else
 fi
 sleep 1
 rm -f "$NO_AUTO"
+pgrep java &>/dev/null && killall -9 java
 start_gui
 echo "Doing connectTest.py > $CTLGUI"
 python3 ${scripts}/connectTest.py &> $CTLGUI
@@ -160,15 +160,15 @@ pgrep java &>/dev/null && killall -9 java
 sleep 1
 
 #-daemon
-touch "$D_MODE"
-start_gui
-python3 ${scripts}/connectTest.py &> $CTLH
+#touch "$D_MODE"
+#start_gui
+#python3 ${scripts}/connectTest.py &> $CTLH#
 
-echo "== HEADLESS =============================================" >> $ST
-head $CTLH >> $ST
-echo "===============================================" >> $ST
-rm -f "$D_MODE"
-pgrep java &>/dev/null && killall -9 java
+#echo "== HEADLESS =============================================" >> $ST
+#head $CTLH >> $ST
+#echo "===============================================" >> $ST
+#rm -f "$D_MODE"
+#pgrep java &>/dev/null && killall -9 java
 start_gui
 connect_fail=0
 wait_8080 || connect_fail=1

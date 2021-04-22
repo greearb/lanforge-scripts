@@ -8,6 +8,16 @@ use warnings;
 # Un-buffer output
 $| = 1;
 use Cwd qw(getcwd);
+
+# this is pedantic necessity for the following use statements
+use if (-e "/home/lanforge/scripts"), lib => "/home/lanforge/scripts";
+use lib "../";
+use lib "./";
+
+use PeerConn;
+use Packet;
+use Getopt::Long;
+
 my $cwd = getcwd();
 if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
   use diagnostics;
@@ -15,21 +25,6 @@ if (defined $ENV{'DEBUG'} && $ENV{'DEBUG'} eq "1") {
   $SIG{ __DIE__  } = sub { Carp::confess( @_ ) };
   $SIG{ __WARN__ } = sub { Carp::confess( @_ ) };
 }
-# this is pedantic necessity for the following use statements
-use lib '/home/lanforge/scripts';
-if ( $cwd =~ q(.*LANforge-Server\scripts$)) {
-  use lib '/home/lanforge/scripts/LANforge';
-  use lib '/home/lanforge/scripts/wifi_diag';
-} else {
-  if ( -d "wifi_diag" ) {
-    use lib '.';
-  } else {
-    use lib '.';
-  }
-}
-use PeerConn;
-use Packet;
-use Getopt::Long;
 
 my %peer_conns = ();
 
@@ -51,6 +46,13 @@ my $glb_fh_mcs_tx;
 my $glb_fh_mcs_rx;
 my $glb_fh_rtx_tx;
 my $glb_fh_rtx_rx;
+my $glb_fh_color_tx;
+my $glb_fh_color_rx;
+my $glb_fh_ru_alloc_tx;
+my $glb_fh_ru_alloc_rx;
+my $glb_fh_trig_type_tx;
+my $glb_fh_trig_type_rx;
+my $glb_fh_ps_tx;
 
 my $tx_no_ack_found_big = 0;
 my $rx_no_ack_found_big = 0;
@@ -63,13 +65,15 @@ my %glb_pkt_type_tx_hash = ();
 my %glb_pkt_type_rx_hash = ();
 my %glb_ampdu_pkt_count_rx_hash = ();
 my %glb_ampdu_pkt_count_tx_hash = ();
+my %glb_encoding_type_tx_hash = ();
+my %glb_encoding_type_rx_hash = ();
 
 my $ampdu_pkt_count_total_tx = 0;
 my $ampdu_pkt_count_total_rx = 0;
 my $wmm_info = "";
 
 my $dut = "";
-our $report_prefix = "wifi-diag-";
+our $report_prefix = "wifi-diag-results";
 my $non_dut_frames = 0;
 my $show_help = 0;
 my $gen_report = 0;
@@ -103,8 +107,10 @@ if ($show_help) {
   print $usage;
   exit 0
 }
+
 $::report_prefix .= "/"
   if ($report_prefix !~ m{/$});
+
 my $glb_ba_tx_fname = $::report_prefix . "glb-ba-tx-rpt.txt";
 my $glb_ba_rx_fname = $::report_prefix . "glb-ba-rx-rpt.txt";
 my $glb_mcs_ps_fname = $::report_prefix . "glb-mcs-ps-rpt.txt";
@@ -112,12 +118,21 @@ my $glb_mcs_tx_fname = $::report_prefix . "glb-mcs-tx-rpt.txt";
 my $glb_mcs_rx_fname = $::report_prefix . "glb-mcs-rx-rpt.txt";
 my $glb_rtx_tx_fname = $::report_prefix . "glb-rtx-tx-rpt.txt";
 my $glb_rtx_rx_fname = $::report_prefix . "glb-rtx-rx-rpt.txt";
+my $glb_color_rx_fname = $::report_prefix . "glb-color-rx-rpt.txt";
+my $glb_color_tx_fname = $::report_prefix . "glb-color-tx-rpt.txt";
+my $glb_ru_alloc_rx_fname = $::report_prefix . "glb-ru-alloc-rx-rpt.txt";
+my $glb_ru_alloc_tx_fname = $::report_prefix . "glb-ru-alloc-tx-rpt.txt";
+my $glb_trig_type_rx_fname = $::report_prefix . "glb-trig-type-rx-rpt.txt";
+my $glb_trig_type_tx_fname = $::report_prefix . "glb-trig-type-tx-rpt.txt";
+my $glb_ps_tx_fname = $::report_prefix . "glb-ps-tx-rpt.txt";
 
 if ($gen_report) {
   $report_html .= genGlobalReports();
   saveHtmlReport();
   exit 0;
 }
+
+system("mkdir -p " . $::report_prefix);
 
 open($glb_fh_ba_tx,  ">", $glb_ba_tx_fname) or die("Can't open $glb_ba_tx_fname for writing: $!\n");
 open($glb_fh_ba_rx,  ">", $glb_ba_rx_fname) or die("Can't open $glb_ba_rx_fname for writing: $!\n");
@@ -126,6 +141,13 @@ open($glb_fh_mcs_tx, ">", $glb_mcs_tx_fname) or die("Can't open $glb_mcs_tx_fnam
 open($glb_fh_mcs_rx, ">", $glb_mcs_rx_fname) or die("Can't open $glb_mcs_rx_fname for writing: $!\n");
 open($glb_fh_rtx_tx, ">", $glb_rtx_tx_fname) or die("Can't open $glb_rtx_tx_fname for writing: $!\n");
 open($glb_fh_rtx_rx, ">", $glb_rtx_rx_fname) or die("Can't open $glb_rtx_rx_fname for writing: $!\n");
+open($glb_fh_color_rx, ">", $glb_color_rx_fname) or die("Can't open $glb_color_rx_fname for writing: $!\n");
+open($glb_fh_color_tx, ">", $glb_color_tx_fname) or die("Can't open $glb_color_tx_fname for writing: $!\n");
+open($glb_fh_ru_alloc_rx, ">", $glb_ru_alloc_rx_fname) or die("Can't open $glb_ru_alloc_rx_fname for writing: $!\n");
+open($glb_fh_ru_alloc_tx, ">", $glb_ru_alloc_tx_fname) or die("Can't open $glb_ru_alloc_tx_fname for writing: $!\n");
+open($glb_fh_trig_type_rx, ">", $glb_trig_type_rx_fname) or die("Can't open $glb_trig_type_rx_fname for writing: $!\n");
+open($glb_fh_trig_type_tx, ">", $glb_trig_type_tx_fname) or die("Can't open $glb_trig_type_tx_fname for writing: $!\n");
+open($glb_fh_ps_tx, ">", $glb_ps_tx_fname) or die("Can't open $glb_ps_tx_fname for writing: $!\n");
 
 my $hdr =  "#timestamp\ttid\ttime_diff\tperiod_tot_pkts_ps\t" .
   "period_rx_pkts_ps\tperiod_rx_retrans_pkts_ps\tperiod_rx_amsdu_pkts_ps\tperiod_rx_retrans_amsdu_pkts_ps\tperiod_dummy_rx_pkts_ps\t" .
@@ -216,6 +238,21 @@ for my $conn (values %peer_conns) {
   $rx_no_ack_found_all += $conn->rx_no_ack_found_all();
 }
 
+close($glb_fh_ba_tx);
+close($glb_fh_ba_rx);
+close($glb_fh_mcs_ps);
+close($glb_fh_mcs_tx);
+close($glb_fh_mcs_rx);
+close($glb_fh_rtx_tx);
+close($glb_fh_rtx_rx);
+close($glb_fh_color_tx);
+close($glb_fh_color_rx);
+close($glb_fh_ru_alloc_tx);
+close($glb_fh_ru_alloc_rx);
+close($glb_fh_trig_type_tx);
+close($glb_fh_trig_type_rx);
+close($glb_fh_ps_tx);
+
 $report_html .= genGlobalReports();
 
 # Print out all peer-conns we found
@@ -289,11 +326,17 @@ sub genTimeGnuplot {
   my $title = shift;
   my $cols = shift;
   my $graph_data = shift;
+  my $extra_gp = shift;
+
+  my $extra = "";
+  if (defined($extra_gp)) {
+     $extra = $extra_gp;
+  }
 
   my $text =qq(#!/usr/bin/gnuplot
 # auto-generated gnuplot script
 reset
-set terminal png
+set terminal png size 1024,480
 
 set xdata time
 set timefmt '\%s'
@@ -305,6 +348,9 @@ set ylabel '$ylabel'
 set title '$title'
 set key below
 set grid
+
+$extra
+
 plot '$graph_data' using $cols title '$title'
 );
   return $text;
@@ -316,10 +362,22 @@ sub doTimeGraph {
   my $cols = shift;
   my $data_file = shift;
   my $out_file = shift;
+  my $extra = shift;
+  my $pre_html = shift;
+
+  my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+      $atime,$mtime,$ctime,$blksize,$blocks) = stat($data_file);
+  if ($size < 4) {
+     print("time-graph, skipping $data_file, size: $size\n");
+     return "";
+  }
 
   my $html = "";
+  if (defined($pre_html)) {
+     $html .= $pre_html;
+  }
 
-  my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file);
+  my $text = genTimeGnuplot($ylabel, $title, $cols, $data_file, $extra);
   my $png_fname = "$::report_prefix/$out_file";
   $png_fname =~ s{//}{/}g;
   my $tmp = $report_prefix . "_gnuplot_tmp_script.txt";
@@ -386,50 +444,89 @@ sub htmlMcsHistogram {
     $html .= "WMM Info from DUT Beacon<br><pre>\n$wmm_info</pre>";
   }
 
-  $html .= "<h4>TX Encoding rate histogram.</h4>\n
+  if ($tx_pkts) {
+     $html .= "<h4>TX Encoding rate histogram.</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+     foreach my $name (sort {$a <=> $b} keys %glb_mcs_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_mcs_tx_hash{$name}, ($glb_mcs_tx_hash{$name} * 100.0) / $tx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
 
-  $html .= "<h4>RX Encoding rate histogram</h4>\n
+  if ($rx_pkts) {
+     $html .= "<h4>RX Encoding rate histogram</h4>\n
 <table $html_table_border><tr><th>Rate Mbps</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+     foreach my $name (sort {$a <=> $b} keys %glb_mcs_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_mcs_rx_hash{$name}, ($glb_mcs_rx_hash{$name} * 100.0) / $rx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table>\n";
 
-  $html .= "<h4>TX Packet Type histogram</h4>\n
-<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_tx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / $tx_pkts);
+  if ($tx_pkts) {
+     $html .= "<h4>TX PPDU Format histogram.</h4>\n
+<table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
+     foreach my $name (sort keys %glb_encoding_type_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_encoding_type_tx_hash{$name}, ($glb_encoding_type_tx_hash{$name} * 100.0) / $tx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table>\n";
 
-  $html .= "<h4>RX Packet Type histogram</h4>\n
-<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
-  foreach my $name (sort keys %glb_pkt_type_rx_hash) {
-    $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / $rx_pkts);
+  if ($rx_pkts) {
+     $html .= "<h4>RX PPDU Format histogram.</h4>\n
+<table $html_table_border><tr><th>PPDU Format</th><th>Packets</th><th>Percentage</th></tr>";
+     foreach my $name (sort keys %glb_encoding_type_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_encoding_type_rx_hash{$name}, ($glb_encoding_type_rx_hash{$name} * 100.0) / $rx_pkts);
+     }
+     $html .= "</table><P>\n";
   }
-  $html .= "</table><P>\n";
+
+  if ($tx_pkts + $dummy_tx_pkts) {
+     $html .= "<h4>TX Packet Type histogram</h4>\n
+<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+     foreach my $name (sort keys %glb_pkt_type_tx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_pkt_type_tx_hash{$name}, ($glb_pkt_type_tx_hash{$name} * 100.0) / ($tx_pkts + $dummy_tx_pkts));
+     }
+
+     $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                      $dummy_tx_pkts, ($dummy_tx_pkts * 100.0) / ($tx_pkts + $dummy_tx_pkts));
+     $html .= "</table><P>\n";
+  }
+
+  if ($rx_pkts + $dummy_rx_pkts) {
+     $html .= "<h4>RX Packet Type histogram</h4>\n
+<table $html_table_border><tr><th>Type</th><th>Packets</th><th>Percentage</th></tr>";
+     foreach my $name (sort keys %glb_pkt_type_rx_hash) {
+        $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                         $name, $glb_pkt_type_rx_hash{$name}, ($glb_pkt_type_rx_hash{$name} * 100.0) / ($rx_pkts + $dummy_rx_pkts));
+     }
+     $html .= sprintf(qq(<tr><td>ACK but not Captured</td><td class="ar">%d</td><td class="ar">%f</td></tr>\n),
+                      $dummy_rx_pkts, ($dummy_rx_pkts * 100.0) / ($rx_pkts + $dummy_rx_pkts));
+     $html .= "</table><P>\n";
+  }
 
   if ($ampdu_chain_tx_count) {
     $html .= "<h4>TX AMPDU chain count histogram<h4>Average: " . $ampdu_pkt_count_total_tx / $ampdu_chain_tx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_tx_hash) {
-      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                       $name, $glb_ampdu_pkt_count_tx_hash{$name}, ($glb_ampdu_pkt_count_tx_hash{$name} * 100.0) / $ampdu_chain_tx_count);
     }
-    $html .= "</table>\n";
+    $html .= "</table><P>\n";
   }
 
   if ($ampdu_chain_rx_count) {
     $html .= "<h4>RX AMPDU chain count histogram</h4> Average: " . $ampdu_pkt_count_total_rx / $ampdu_chain_rx_count . "\n";
     $html .= "<table $html_table_border><tr><th>Chain Count</th><th>Packets</th><th>Percentage</th></tr>";
     foreach my $name (sort {$a <=> $b} keys %glb_ampdu_pkt_count_rx_hash) {
-      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n), $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
+      $html .= sprintf(qq(<tr><td>%s</td><td class="ar">%s</td><td class="ar">%f</td></tr>\n),
+                       $name, $glb_ampdu_pkt_count_rx_hash{$name}, ($glb_ampdu_pkt_count_rx_hash{$name} * 100.0) / $ampdu_chain_rx_count);
     }
-    $html .= "</table>\n";
+    $html .= "</table><P>\n";
   }
 
   return $html;
@@ -460,6 +557,21 @@ sub genGlobalReports {
   $html .= doTimeGraph("TX-amsdu-pps", "TX AMSDU per sec", "1:12", $glb_mcs_ps_fname, "glb-mcs-tx-amsdu-ps.png");
   $html .= doTimeGraph("TX-retrans-amsdu-pps", "TX Retrans AMSDU per sec", "1:13", $glb_mcs_ps_fname, "glb-mcs-tx-rtx-amsdu-ps.png");
   $html .= doTimeGraph("TX-dummy pps", "TX Dummy Packets per sec", "1:14", $glb_mcs_ps_fname, "glb-mcs-tx-dummy-pps.png");
+
+  $html .= doTimeGraph("Power Save", "TX Power Save Awake (1) or Sleep(0), over time", "1:2", $glb_ps_tx_fname, "glb-ps-tx.png",
+                       "set yrange [-1:2]");
+
+  $html .= doTimeGraph("BSS Color", "RX BSS Color over time", "1:2", $glb_color_rx_fname, "glb-color-rx.png");
+  $html .= doTimeGraph("BSS Color", "TX BSS Color over time", "1:2", $glb_color_tx_fname, "glb-color-tx.png");
+
+  my $tt_desc = "<P>Basic Type (Indicates OFDMA): 0, Beamforming Report Poll (BRP, indicates MU-MIMO): 1, Multi-User Block Ack Request (MU-BAR): 2,<br>\n" .
+     " Multi-User Request To Send (MU-RTS): 3, Buffer Status Report Poll (BSRP): 4, Group Case Retries (GCR MU-BAR): 5<br>\n" .
+     " Bandwidth Query Report Poll (BQRP): 6, NDP Feedback Report Poll (NFRP): 7\n";
+  $html .= doTimeGraph("Trigger Type", "RX Trigger Type over time.", "1:2", $glb_trig_type_rx_fname, "glb-trig-type-rx.png", "", $tt_desc);
+  $html .= doTimeGraph("Trigger Type", "TX Trigger Type over time.", "1:2", $glb_trig_type_tx_fname, "glb-trig-type-tx.png", "", $tt_desc);
+
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "RX RU Alloc over time.", "1:2", $glb_ru_alloc_rx_fname, "glb-ru-alloc-rx.png");
+  $html .= doTimeGraph("Basic Trigger RU Alloc", "TX RU Alloc over time.", "1:2", $glb_ru_alloc_tx_fname, "glb-ru-alloc-tx.png");
 
   # Local peer sending BA back to DUT
   $html .= "\n\n<P>Block-Acks sent from all local endpoints to DUT.<P>\n";
@@ -704,6 +816,14 @@ sub processPkt {
     } else {
       $glb_mcs_rx_hash{$dr} = 1;
     }
+
+    $dr = $pkt->{ppdu_format};
+    if (exists $glb_encoding_type_rx_hash{$dr}) {
+      $glb_encoding_type_rx_hash{$dr}++;
+    } else {
+      $glb_encoding_type_rx_hash{$dr} = 1;
+    }
+
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_rx_hash{$dr}) {
       $glb_pkt_type_rx_hash{$dr}++;
@@ -726,11 +846,33 @@ sub processPkt {
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
     print $glb_fh_mcs_rx $ln;
+    if ($pkt->{bss_color_known}) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
+       print $glb_fh_color_rx $ln;
+    }
+    if ($pkt->{trigger_type_basic}) {
+       # We may have multiple, split them out.
+       my @toks = split(/,/, $pkt->{trigger_user_ru_alloc});
+       my $ti;
+       for ($ti = 0; $ti<@toks; $ti++) {
+          my $tok = $toks[$ti];
+          # tok looks like: 55 (106 tones)
+          if ($tok =~ /\s*(\d+)\s+.*/) {
+             $ln = "" . $pkt->timestamp() . "\t" . $1 . "\n";
+             print $glb_fh_ru_alloc_rx $ln;
+          }
+       }
+    }
+    if ($pkt->{trigger_type_num} >= 0) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{trigger_type_num} . "\n";
+       print $glb_fh_trig_type_rx $ln;
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_rx $ln;
     }
   } else {
+    # else is tx
     if ($delta != -1) {
       $delta_time_tx_count++;
       $delta_time_tx += $delta;
@@ -753,6 +895,14 @@ sub processPkt {
     } else {
       $glb_mcs_tx_hash{$dr} = 1;
     }
+
+    $dr = $pkt->{ppdu_format};
+    if (exists $glb_encoding_type_tx_hash{$dr}) {
+      $glb_encoding_type_tx_hash{$dr}++;
+    } else {
+      $glb_encoding_type_tx_hash{$dr} = 1;
+    }
+
     $dr = $pkt->type_subtype() . $pkt->{priority};
     if (exists $glb_pkt_type_tx_hash{$dr}) {
       $glb_pkt_type_tx_hash{$dr}++;
@@ -774,6 +924,31 @@ sub processPkt {
     }
     my $ln = "" . $pkt->timestamp() . "\t" . $pkt->datarate() . "\n";
     print $glb_fh_mcs_tx $ln;
+    if ($pkt->{bss_color_known}) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{bss_color} . "\n";
+       print $glb_fh_color_tx $ln;
+    }
+    if ($pkt->{ps_awake} != -1) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{ps_awake} . "\n";
+       print $glb_fh_ps_tx $ln;
+    }
+    if ($pkt->{trigger_type_basic}) {
+       # We may have multiple, split them out.
+       my @toks = split(/,/, $pkt->{trigger_user_ru_alloc});
+       my $ti;
+       for ($ti = 0; $ti<@toks; $ti++) {
+          my $tok = $toks[$ti];
+          # tok looks like: 55 (106 tones)
+          if ($tok =~ /\s*(\d+)\s+.*/) {
+             $ln = "" . $pkt->timestamp() . "\t" . $1 . "\n";
+             print $glb_fh_ru_alloc_tx $ln;
+          }
+       }
+    }
+    if ($pkt->{trigger_type_num} >= 0) {
+       $ln = "" . $pkt->timestamp() . "\t" . $pkt->{trigger_type_num} . "\n";
+       print $glb_fh_trig_type_tx $ln;
+    }
     if ($pkt->retrans()) {
       $ln = "" . $pkt->timestamp() . "\t" . $pkt->retrans() . "\n";
       print $glb_fh_rtx_tx $ln;

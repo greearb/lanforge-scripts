@@ -11,6 +11,14 @@ this script will depend on the mode used, a read-only test will check the read-b
 and both will check both attributes. If the relevant attributes increase over the duration of the test it will pass,
 otherwise it will fail.
 
+Example: 
+./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
+                 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+
+./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+                 --netmask 255.255.255.0 --gateway 192.168.92.1
+
+
 Use './test_fileio.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
@@ -35,6 +43,7 @@ import realm
 import time
 import datetime
 import pprint
+import os
 
 
 class FileIOTest(LFCliBase):
@@ -72,7 +81,7 @@ class FileIOTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.radio = radio
@@ -712,9 +721,14 @@ Generic command layout:
             dhcp = False
     else:
         dhcp = True
-    # print(port_list)
+    if 'nfs' in args.fs_type:
+        if len(os.popen('mount -l | grep nfs').read()) > 0:
+            print('Success')
+        else:
+            raise ValueError("No nfs share is mounted")
+    else:
+        exit(1)
 
-    # exit(1)
     ip_test = FileIOTest(args.mgr,
                          args.mgr_port,
                          ssid=args.ssid,
@@ -725,7 +739,6 @@ Generic command layout:
                          test_duration=args.test_duration,
                          upstream_port=args.upstream_port,
                          _debug_on=args.debug,
-
                          macvlan_parent=args.macvlan_parent,
                          use_macvlans=args.use_macvlans,
                          first_mvlan_ip=args.first_mvlan_ip,

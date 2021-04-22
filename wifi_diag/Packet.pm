@@ -5,7 +5,6 @@ use strict;
 
 use bignum;
 use bigint;
-
 our $d_counter = 0;
 
 sub new {
@@ -26,6 +25,7 @@ sub new {
 	      seen_ip => 0,
 	      timestamp => 0,
 	      datarate => 0,
+              ppdu_format => "UNKNOWN",
 	      dummy_tx_pkts => 0,
 	      dummy_rx_pkts => 0,
 	      is_last_ampdu => 0,
@@ -41,6 +41,13 @@ sub new {
 	      ssi_sig_found => 0,
               ba_bitmap => "0000000000000000", # empty bitmap
               ba_starting_seq => 0, # needs to be initialized
+              bss_color => 0,
+              bss_color_known => 0,
+              trigger_type_basic => 0, # basic trigger type relates to OFDMA
+              trigger_type_num => -1,
+              trigger_user_aid => "",
+              trigger_user_ru_alloc => "",
+              ps_awake => -1,
 	     };
 
   bless($self, $class);
@@ -104,6 +111,12 @@ sub append {
   elsif ($ln =~ /^.* = This is the last subframe of this A-MPDU: True/) {
     $self->{is_last_ampdu} = 1;
   }
+  elsif ($ln =~ /^.* = BSS Color known: Known/) {
+    $self->{bss_color_known} = 1;
+  }
+  elsif ($ln =~ /^.* = BSS Color: (\S+)/) {
+    $self->{bss_color} = hex($1);
+  }
   elsif ($ln =~ /^.* = Priority: (.*) \(.*/) {
     $self->{priority} = " $1";
   }
@@ -112,6 +125,15 @@ sub append {
   }
   elsif ($ln =~ /^.* = Payload Type: MSDU/) {
     $self->{is_msdu} = 1;
+  }
+  elsif ($ln =~ /^.* = PPDU Format: (.*)/) {
+    $self->{ppdu_format} = $1;
+  }
+  elsif ($ln =~ /^\s+PHY type: \S+\s+\((\S+)\)/) {
+     # The PPDU Format matches first, so don't over-ride that if we found something already.
+     if ($self->{ppdu_format} eq "UNKNOWN") {
+        $self->{ppdu_format} = $1; # OFDM etc
+     }
   }
   elsif ($ln =~ /^\s*\[Time delta from previous captured frame:\s+(\S+)/) {
     $self->{timedelta} = $1;
@@ -130,6 +152,42 @@ sub append {
   elsif ($ln =~ /^\s*Type\/Subtype: (.*)/) {
     $self->{type_subtype} = $1;
   }
+  elsif ($ln =~ /.* = (Trigger Type: .*)/) {
+     # Differentiate some special subtypes.
+     my $ttstr = $1;
+     $self->{type_subtype} = $ttstr;
+     if ($ttstr =~ /Trigger Type: .*\s\((\d+)\)/) {
+        if ($1 eq "0") {
+           $self->{trigger_type_basic} = 1;
+        }
+        $self->{trigger_type_num} = $1;
+     }
+  }
+  elsif ($ln =~ /.* = AID12: (\S+)/) {
+     if ($self->{trigger_type_basic}) {
+        if ($self->{trigger_user_aid} ne "") {
+           $self->{trigger_user_aid} .= ",";
+        }
+        $self->{trigger_user_aid} .= $1;
+     }
+  }
+  elsif ($ln =~ /.* = RU Allocation: (.*)/) {
+     if ($self->{trigger_type_basic}) {
+        if ($self->{trigger_user_ru_alloc} ne "") {
+           $self->{trigger_user_ru_alloc} .= ",";
+        }
+        $self->{trigger_user_ru_alloc} .= $1;
+        #print("ru-alloc: " . $self->{trigger_user_ru_alloc} . "\n");
+     }
+  }
+  elsif ($ln =~ /.*(\d) \.\.\.\. = PWR MGT:.*/) {
+     if ($1 eq "0") {
+        $self->{ps_awake} = 1;
+     }
+     else {
+        $self->{ps_awake} = 0;
+     }
+  }
   elsif ($ln =~ /.* = Starting Sequence Number: (\d+)/) {
     $self->{ba_starting_seq} = $1;
   }
@@ -141,9 +199,14 @@ sub append {
     $self->{ba_tid} = hex($1);
   }
   elsif ($ln =~ /^\s*Block Ack Bitmap: (\S+)/) {
-    #print "ba-bitmap: $1\n"; # this bitmap needs to be 16 bytes
-    warn("ba_bitmap only ".length($1)." bytes: ".$1) if (length($1) != 16);
-    $self->{ba_bitmap} = $1;
+    #print "ba-bitmap: $1\n"; # this bitmap needs to be at least 16 bytes
+     if (length($1) != 16) {
+        print("WARNING:  input-line: $.:  ba_bitmap is " . length($1) . " bytes instead of expected 16: " . $1);
+        $self->{ba_bitmap} = "0000000000000000";  # default to something somewhat sane.
+     }
+     else {
+        $self->{ba_bitmap} = $1;
+     }
   }
   elsif ($ln =~ /.* = Retry: Frame is being retransmitted/) {
     $self->{retrans} = 1;
@@ -167,7 +230,7 @@ sub append {
     $self->{payload_type} = $1;
   }
   elsif (($ln =~ /^\s+\[Data Rate: (.*)\]/) ||
-	 ($ln =~ /^\s*Data Rate: (.*)/)) {
+	 ($ln =~ /^\s*Data [rR]ate: (.*)/)) {
     my $dr = $1;
     if ($dr =~ /(\S+) Mb/) {
       $self->{datarate} = $1;

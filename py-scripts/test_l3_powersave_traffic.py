@@ -14,6 +14,7 @@ import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
+import l3_cxprofile
 import realm
 import time
 import datetime
@@ -26,7 +27,7 @@ class L3PowersaveTraffic(LFCliBase):
                  side_a_max_rate=0,
                  side_b_max_rate=0, pdu_size=1000, prefix="00000", test_duration="5m",
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -35,17 +36,16 @@ class L3PowersaveTraffic(LFCliBase):
         self.sta_list = station_list
         self.prefix = prefix
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False,
-                                       halt_on_error_=True)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
         # upload
-        self.cx_prof_upload = realm.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
                                                 side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
                                                 side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
                                                 side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
                                                 side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
 
         # download
-        self.cx_prof_download = realm.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
                                                   side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
                                                   side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
                                                   side_a_min_pdu=0, side_a_max_pdu=0,

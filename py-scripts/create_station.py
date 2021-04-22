@@ -17,7 +17,6 @@ if 'py-json' not in sys.path:
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 from realm import Realm
-import time
 import pprint
 
 
@@ -91,7 +90,6 @@ def main():
 --------------------
 Command example:
 ./create_station.py
-    --upstream_port eth1
     --radio wiphy0
     --num_stations 3
     --security open
@@ -131,6 +129,7 @@ Command example:
                        _debug_on=args.debug)
 
     create_station.build()
+    print('Created %s stations' % num_sta)
 
 if __name__ == "__main__":
     main()

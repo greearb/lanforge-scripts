@@ -21,7 +21,7 @@ class IPv4Test(LFCliBase):
     def __init__(self, ssid, security, password, sta_list=None, ap=None, mode = 0, number_template="00000",  host="localhost", port=8080,radio = "wiphy0",_debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid

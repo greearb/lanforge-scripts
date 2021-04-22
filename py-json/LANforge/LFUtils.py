@@ -365,6 +365,43 @@ def port_list_to_alias_map(json_list, debug_=False):
 
     return reverse_map
 
+def list_to_alias_map(json_list=None, from_element=None, debug_=False):
+    reverse_map = {}
+    if (json_list is None) or (len(json_list) < 1):
+        if debug_:
+            print("port_list_to_alias_map: no json_list provided")
+            raise ValueError("port_list_to_alias_map: no json_list provided")
+        return reverse_map
+
+    if debug_:
+        pprint.pprint(("list_to_alias_map:json_list: ", json_list))
+    json_interfaces = json_list
+    if from_element in json_list:
+        json_interfaces = json_list[from_element]
+
+    for record in json_interfaces:
+        if debug_:
+            pprint.pprint(("list_to_alias_map: %s record:" % from_element, record))
+        if len(record.keys()) < 1:
+            if debug_:
+                print("list_to_alias_map: no record.keys")
+            continue
+        record_keys = record.keys()
+        k2 = ""
+        # we expect one key in record keys, but we can't expect [0] to be populated
+        json_entry = None
+        for k in record_keys:
+            k2 = k
+            json_entry = record[k]
+        # skip uninitialized port records
+        if k2.find("Unknown") >= 0:
+            continue
+        port_json = record[k2]
+        reverse_map[k2] = json_entry
+    if debug_:
+        pprint.pprint(("list_to_alias_map: reverse_map", reverse_map))
+    return reverse_map
+
 
 def findPortEids(resource_id=1, base_url="http://localhost:8080", port_names=(), debug=False):
     return find_port_eids(resource_id=resource_id, base_url=base_url, port_names=port_names, debug=debug)
@@ -445,30 +482,59 @@ def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=[], debu
     wait_until_ports_disappear(base_url, port_list, debug)
 
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], debug=False):
-    print("Waiting until ports disappear...")
+    if (port_list is None) or (len(port_list) < 1):
+        if debug:
+            print("LFUtils: wait_until_ports_disappear: empty list, zipping back")
+        return
+
+    print("LFUtils: Waiting until %s ports disappear..." % len(port_list))
     url = "/port/1"
     if isinstance(port_list, list):
         found_stations = port_list.copy()
     else:
         found_stations = [port_list]
 
+    temp_names_by_resource = {1:[]}
+    temp_query_by_resource = {1:""}
+    for port_eid in port_list:
+        eid = name_to_eid(port_eid)
+        # shelf = eid[0]
+        resource_id = eid[1]
+        if resource_id == 0:
+            continue
+        if resource_id not in temp_names_by_resource.keys():
+            temp_names_by_resource[resource_id] = []
+        port_name = eid[2]
+        temp_names_by_resource[resource_id].append(port_name)
+        temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (url, resource_id, ",".join(temp_names_by_resource[resource_id]))
+    if debug:
+        pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
     while len(found_stations) > 0:
         found_stations = []
-        for port_eid in port_list:
-            eid = name_to_eid(port_eid)
-            shelf = eid[0]
-            resource_id = eid[1]
-            port_name = eid[2]
-
-            check_url = "%s/%s/%s" % (url, resource_id, port_name)
+        for (resource, check_url) in temp_query_by_resource.items():
             if debug:
-                print("checking:" + check_url)
-            lf_r = LFRequest.LFRequest(base_url, check_url)
-            json_response = lf_r.get_as_json(debug_=debug)
-            if (json_response != None):
-                found_stations.append(port_name)
+                pprint.pprint([
+                    ("base_url", base_url),
+                    ("check_url", check_url),
+                ])
+            lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
+            json_response = lf_r.get_as_json(debug_=debug, die_on_error_=False)
+            if (json_response == None):
+                print("Request returned None")
+            else:
+                if debug:
+                    pprint.pprint(("wait_until_ports_disappear json_response:", json_response))
+                if "interface" in json_response:
+                    found_stations.append(json_response["interface"])
+                elif "interfaces" in json_response:
+                    mapped_list = list_to_alias_map(json_response, from_element="interfaces", debug_=debug)
+                    found_stations.extend(mapped_list.keys())
+            if debug:
+                pprint.pprint([("port_list", port_list),
+                               ("found_stations", found_stations)])
         if len(found_stations) > 0:
-            sleep(1)
+            if debug:
+                pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
     sleep(1) # safety
     return
 
@@ -483,12 +549,14 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def name_to_eid(input):
-    rv = [1, 1, ""]
+def name_to_eid(input, non_port=False):
+    rv = [1, 1, "", ""]
     info = []
     if (input is None) or (input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
-    
+    if type(input) is not str:
+        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(input))
+
     info = input.split('.')
     if len(info) == 1:
         rv[2] = info[0]; # just port name
@@ -514,6 +582,15 @@ def name_to_eid(input):
         rv[2] = info[1]+"."+info[2]
         return rv
 
+    if non_port:
+        # Maybe attenuator or similar shelf.card.atten.index
+        rv[0] = int(info[0])
+        rv[1] = int(info[1])
+        rv[2] = int(info[2])
+        if (len(info) >= 4):
+            rv[3] = int(info[3])
+        return rv
+        
     if len(info) == 4: # shelf.resource.port-name.qvlan
         rv[0] = int(info[0])
         rv[1] = int(info[1])
