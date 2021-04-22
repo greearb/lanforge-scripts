@@ -1714,8 +1714,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested download min tx rate bits per second default 256000', default=256000)
-    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upload min tx rate bits per second default 256000', default=256000)
+    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested download min tx rate bits per second default 256000 1000000000', default="256000 1000000000")
+    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upload min tx rate bits per second default 256000 1000000000', default="256000 1000000000")
 
     ##############################################
     # Parameters Used For Testing
@@ -2110,8 +2110,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_packet_sizes     = "88 512 1370 1518".split()
         controller_client_densities = "1 10 50 200".split()
 
-        controller_side_a_tx_min_bps  = 256000
-        controller_side_b_tx_min_bps  = 256000
+        controller_side_a_tx_min_bps  = "256000"
+        controller_side_b_tx_min_bps  = "256000"
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -2144,8 +2144,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_client_densities = "10".split()
         controller_data_encryptions = "disable".split()
 
-        controller_side_a_tx_min_bps  = 256000
-        controller_side_b_tx_min_bps  = 256000
+        controller_side_a_tx_min_bps  = "256000".split()
+        controller_side_b_tx_min_bps  = "256000".split()
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -2178,8 +2178,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
 
-        controller_side_a_tx_min_bps  = 256000
-        controller_side_b_tx_min_bps  = 256000
+        controller_side_a_tx_min_bps  = "256000".split()
+        controller_side_b_tx_min_bps  = "256000".split()
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -2210,8 +2210,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_directions         = args.controller_directions.split()
         controller_data_encryptions   = args.controller_data_encryptions.split()
 
-        controller_side_a_tx_min_bps    = args.side_a_tx_min_bps
-        controller_side_b_tx_min_bps    = args.side_b_tx_min_bps
+        controller_side_a_tx_min_bps    = args.side_a_tx_min_bps.split()
+        controller_side_b_tx_min_bps    = args.side_b_tx_min_bps.split()
     logg.info("TEST CONFIG: ")
     logg.info("controller_aps ('-cca' ,'--controller_aps'): {}".format(controller_aps))
     logg.info("controller_bands ('-ccf' ,'--controller_bands'): {}".format(controller_bands))
@@ -2350,156 +2350,158 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
                                                 for controller_packet_type in controller_packet_types:
                                                     for controller_direction in controller_directions:
-                                                        for controller_packet_size in controller_packet_sizes:
-                                                            logg.info("#####################################################")
-                                                            logg.info("# TEST RUNNING ,  TEST RUNNING ######################")
-                                                            logg.info("#####################################################")
-                                                            test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(
-                                                                controller_ap,controller_band,controller_chan_5ghz,controller_chan_24ghz,controller_wifimode,controller_chan_width,controller_data_encryption,controller_ap_mode,controller_client_density,
-                                                                controller_packet_type,controller_direction,controller_packet_size)
-                                                            test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
+                                                        for side_a_tx_min_bps_ul in controller_side_a_tx_min_bps:
+                                                            for side_b_tx_min_bps_dl in controller_side_b_tx_min_bps:
+                                                                for controller_packet_size in controller_packet_sizes:
+                                                                    logg.info("#####################################################")
+                                                                    logg.info("# TEST RUNNING ,  TEST RUNNING ######################")
+                                                                    logg.info("#####################################################")
+                                                                    test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(
+                                                                        controller_ap,controller_band,controller_chan_5ghz,controller_chan_24ghz,controller_wifimode,controller_chan_width,controller_data_encryption,controller_ap_mode,controller_client_density,
+                                                                        controller_packet_type,controller_direction,controller_packet_size)
+                                                                    test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
 
-                                                            logg.info("# controller run settings: {}".format(test_config))
-                                                            if(args.no_controller):
-                                                                logg.info("################################################")
-                                                                logg.info("# NO CONTROLLER SET , TEST MODE")
-                                                                logg.info("################################################")
-                                                                if( controller_ap            != __ap_set or 
-                                                                    controller_band          != __band_set or
-                                                                    controller_chan_width    != __chan_width_set or
-                                                                    controller_ap_mode       != __ap_mode_set or
-                                                                    controller_tx_power      != __tx_power_set or
-                                                                    controller_chan_5ghz     != __chan_5ghz_set or
-                                                                    controller_chan_24ghz    != __chan_24ghz_set
-                                                                    ):
-                                                                    logg.info("###############################################")
-                                                                    logg.info("# NEW CONTROLLER CONFIG")
-                                                                    logg.info("###############################################")
-                                                                    __ap_set          = controller_ap
-                                                                    __band_set        = controller_band
-                                                                    __chan_width_set  = controller_chan_width
-                                                                    __ap_mode_set     = controller_ap_mode
-                                                                    __tx_power_set    = controller_tx_power
-                                                                    __chan_5ghz_set   = controller_chan_5ghz
-                                                                    __chan_24ghz_set  = controller_chan_24ghz
-                                                                    __client_density  = controller_client_density
-                                                            else:
-                                                                if( controller_ap            != __ap_set or 
-                                                                    controller_band          != __band_set or
-                                                                    controller_chan_width    != __chan_width_set or
-                                                                    controller_ap_mode       != __ap_mode_set or
-                                                                    controller_tx_power      != __tx_power_set or
-                                                                    controller_chan_5ghz     != __chan_5ghz_set or
-                                                                    controller_chan_24ghz    != __chan_24ghz_set
-                                                                    ):
-                                                                    logg.info("###############################################")
-                                                                    logg.info("# NEW CONTROLLER CONFIG")
-                                                                    logg.info("###############################################")
-                                                                    __ap_set          = controller_ap
-                                                                    __band_set        = controller_band
-                                                                    __chan_width_set  = controller_chan_width
-                                                                    __ap_mode_set     = controller_ap_mode
-                                                                    __tx_power_set    = controller_tx_power
-                                                                    __chan_5ghz_set   = controller_chan_5ghz
-                                                                    __chan_24ghz_set  = controller_chan_24ghz
-                                                                    __client_density  = controller_client_density
-
-                                                                    controller = CreateCtlr(
-                                                                                    _scheme=__scheme,
-                                                                                    _port=__port,
-                                                                                    _series=__series,
-                                                                                    _ctlr=__ctlr,
-                                                                                    _prompt=__prompt,
-                                                                                    _user=__user,
-                                                                                    _passwd=__passwd,
-                                                                                    _ap=__ap_set,
-                                                                                    _band=__band_set,
-                                                                                    _chan_5ghz=__chan_5ghz_set,
-                                                                                    _chan_24ghz=__chan_24ghz_set,
-                                                                                    _chan_width=__chan_width_set,
-                                                                                    _ap_mode=__ap_mode_set,
-                                                                                    _tx_power=__tx_power_set,
-                                                                                    _cap_ctl_out=__cap_ctl_out
-                                                                                    )
-                                                                    #Disable AP
-                                                                    #
-                                                                    # Controller Configuration
-                                                                    #
-                                                                    #if controller_args.controller_series == "9800":
-                                                                    #    controller_controller_no_loggin_console()
-                                                                    pss = controller.controller_show_ap_summary()
-                                                                    logg.info("pss {}".format(pss))
-                                                                    controller.controller_disable_ap()
-                                                                    if controller_args.controller_series == "9800":
-                                                                        controller.controller_disable_wlan()
-                                                                        controller.controller_disable_network_5ghz()
-                                                                        controller.controller_disable_network_24ghz()
-                                                                        controller.controller_role_manual()
+                                                                    logg.info("# controller run settings: {}".format(test_config))
+                                                                    if(args.no_controller):
+                                                                        logg.info("################################################")
+                                                                        logg.info("# NO CONTROLLER SET , TEST MODE")
+                                                                        logg.info("################################################")
+                                                                        if( controller_ap            != __ap_set or 
+                                                                            controller_band          != __band_set or
+                                                                            controller_chan_width    != __chan_width_set or
+                                                                            controller_ap_mode       != __ap_mode_set or
+                                                                            controller_tx_power      != __tx_power_set or
+                                                                            controller_chan_5ghz     != __chan_5ghz_set or
+                                                                            controller_chan_24ghz    != __chan_24ghz_set
+                                                                            ):
+                                                                            logg.info("###############################################")
+                                                                            logg.info("# NEW CONTROLLER CONFIG")
+                                                                            logg.info("###############################################")
+                                                                            __ap_set          = controller_ap
+                                                                            __band_set        = controller_band
+                                                                            __chan_width_set  = controller_chan_width
+                                                                            __ap_mode_set     = controller_ap_mode
+                                                                            __tx_power_set    = controller_tx_power
+                                                                            __chan_5ghz_set   = controller_chan_5ghz
+                                                                            __chan_24ghz_set  = controller_chan_24ghz
+                                                                            __client_density  = controller_client_density
                                                                     else:
-                                                                        controller.controller_disable_network_5ghz()
-                                                                        controller.controller_disable_network_24ghz()
-                                                                    controller.controller_set_tx_power()
-                                                                    controller.controller_set_channel()
-                                                                    controller.controller_set_bandwidth()
-                                                                    if controller_args.controller_series == "9800":
-                                                                        controller.controller_create_wlan()
-                                                                        controller.controller_set_wireless_tag_policy()
-                                                                        controller.controller_enable_wlan()
-                                                                    if controller_band == "a":    
-                                                                        controller.controller_enable_network_5ghz()
-                                                                    else:    
-                                                                        controller.controller_enable_network_24ghz()
-                                                                    controller.controller_enable_ap()
-                                                                    # need to actually check the CAC timer
-                                                                    time.sleep(30)
-                                                                    ####################################
-                                                                    # end of controller controller code
-                                                                    ####################################
-                                                                else:
-                                                                    logg.info("###############################################")
-                                                                    logg.info("# NO CHANGE TO CONTROLLER CONFIG")
-                                                                    logg.info("###############################################")
-                                                                    logg.info("controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}"
-                                                                        .format(controller_ap,controller_band, controller_chan_width, controller_ap_mode, controller_tx_power, controller_chan_5ghz, controller_chan_24ghz))
-                                                                    logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
-                                                                        .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
-                                                                logg.info("controller_wifi_mode {}".format(controller_wifimode))
+                                                                        if( controller_ap            != __ap_set or 
+                                                                            controller_band          != __band_set or
+                                                                            controller_chan_width    != __chan_width_set or
+                                                                            controller_ap_mode       != __ap_mode_set or
+                                                                            controller_tx_power      != __tx_power_set or
+                                                                            controller_chan_5ghz     != __chan_5ghz_set or
+                                                                            controller_chan_24ghz    != __chan_24ghz_set
+                                                                            ):
+                                                                            logg.info("###############################################")
+                                                                            logg.info("# NEW CONTROLLER CONFIG")
+                                                                            logg.info("###############################################")
+                                                                            __ap_set          = controller_ap
+                                                                            __band_set        = controller_band
+                                                                            __chan_width_set  = controller_chan_width
+                                                                            __ap_mode_set     = controller_ap_mode
+                                                                            __tx_power_set    = controller_tx_power
+                                                                            __chan_5ghz_set   = controller_chan_5ghz
+                                                                            __chan_24ghz_set  = controller_chan_24ghz
+                                                                            __client_density  = controller_client_density
 
-                                                                logg.info("radios {}".format(radios))
-                                                                for radio_ in radios:
-                                                                    radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
-                                                                    radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
-                                                                    logg.info("radio_dict {}".format(radio_info_dict))
-                                                                    for key in radio_keys:
-                                                                        if key not in radio_info_dict:
-                                                                            logg.info("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
-                                                                            exit(1)
-                                                                    radio_name_list.append(radio_info_dict['radio'])
-                                                                    ssid_list.append(radio_info_dict['ssid'])
-                                                                    ssid_password_list.append(radio_info_dict['ssid_pw'])
-                                                                    ssid_security_list.append(radio_info_dict['security'])
-                                                                    if args.radio:
-                                                                        number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-                                                                        wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-                                                                    else: 
-                                                                        number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-                                                                        wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
-                                                                    optional_radio_reset_keys = ['reset_port_enable']
-                                                                    radio_reset_found = True
-                                                                    for key in optional_radio_reset_keys:
-                                                                        if key not in radio_info_dict:
-                                                                            #logg.info("port reset test not enabled")
-                                                                            radio_reset_found = False
-                                                                            break
-                                                                        
-                                                                    if radio_reset_found:
-                                                                        reset_port_enable_list.append(True)
-                                                                        reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
-                                                                        reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
-                                                                    else:
-                                                                        reset_port_enable_list.append(False)
-                                                                        reset_port_time_min_list.append('0s')
-                                                                        reset_port_time_max_list.append('0s')
+                                                                            controller = CreateCtlr(
+                                                                                            _scheme=__scheme,
+                                                                                            _port=__port,
+                                                                                            _series=__series,
+                                                                                            _ctlr=__ctlr,
+                                                                                            _prompt=__prompt,
+                                                                                            _user=__user,
+                                                                                            _passwd=__passwd,
+                                                                                            _ap=__ap_set,
+                                                                                            _band=__band_set,
+                                                                                            _chan_5ghz=__chan_5ghz_set,
+                                                                                            _chan_24ghz=__chan_24ghz_set,
+                                                                                            _chan_width=__chan_width_set,
+                                                                                            _ap_mode=__ap_mode_set,
+                                                                                            _tx_power=__tx_power_set,
+                                                                                            _cap_ctl_out=__cap_ctl_out
+                                                                                            )
+                                                                            #Disable AP
+                                                                            #
+                                                                            # Controller Configuration
+                                                                            #
+                                                                            #if controller_args.controller_series == "9800":
+                                                                            #    controller_controller_no_loggin_console()
+                                                                            pss = controller.controller_show_ap_summary()
+                                                                            logg.info("pss {}".format(pss))
+                                                                            controller.controller_disable_ap()
+                                                                            if controller_args.controller_series == "9800":
+                                                                                controller.controller_disable_wlan()
+                                                                                controller.controller_disable_network_5ghz()
+                                                                                controller.controller_disable_network_24ghz()
+                                                                                controller.controller_role_manual()
+                                                                            else:
+                                                                                controller.controller_disable_network_5ghz()
+                                                                                controller.controller_disable_network_24ghz()
+                                                                            controller.controller_set_tx_power()
+                                                                            controller.controller_set_channel()
+                                                                            controller.controller_set_bandwidth()
+                                                                            if controller_args.controller_series == "9800":
+                                                                                controller.controller_create_wlan()
+                                                                                controller.controller_set_wireless_tag_policy()
+                                                                                controller.controller_enable_wlan()
+                                                                            if controller_band == "a":    
+                                                                                controller.controller_enable_network_5ghz()
+                                                                            else:    
+                                                                                controller.controller_enable_network_24ghz()
+                                                                            controller.controller_enable_ap()
+                                                                            # need to actually check the CAC timer
+                                                                            time.sleep(30)
+                                                                            ####################################
+                                                                            # end of controller controller code
+                                                                            ####################################
+                                                                        else:
+                                                                            logg.info("###############################################")
+                                                                            logg.info("# NO CHANGE TO CONTROLLER CONFIG")
+                                                                            logg.info("###############################################")
+                                                                            logg.info("controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}"
+                                                                                .format(controller_ap,controller_band, controller_chan_width, controller_ap_mode, controller_tx_power, controller_chan_5ghz, controller_chan_24ghz))
+                                                                            logg.info("__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
+                                                                                .format(__ap_set,__band_set, __chan_width_set, __ap_mode_set, __tx_power_set, __chan_5ghz_set, __chan_24ghz_set))
+                                                                        logg.info("controller_wifi_mode {}".format(controller_wifimode))
+
+                                                                        logg.info("radios {}".format(radios))
+                                                                        for radio_ in radios:
+                                                                            radio_keys = ['radio','stations','ssid','ssid_pw','security','wifimode']
+                                                                            radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
+                                                                            logg.info("radio_dict {}".format(radio_info_dict))
+                                                                            for key in radio_keys:
+                                                                                if key not in radio_info_dict:
+                                                                                    logg.info("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                                                                                    exit(1)
+                                                                            radio_name_list.append(radio_info_dict['radio'])
+                                                                            ssid_list.append(radio_info_dict['ssid'])
+                                                                            ssid_password_list.append(radio_info_dict['ssid_pw'])
+                                                                            ssid_security_list.append(radio_info_dict['security'])
+                                                                            if args.radio:
+                                                                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                                                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                                                            else: 
+                                                                                number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+                                                                                wifimode_list.append(int(wifi_mode_dict[radio_info_dict['wifimode']]))
+                                                                            optional_radio_reset_keys = ['reset_port_enable']
+                                                                            radio_reset_found = True
+                                                                            for key in optional_radio_reset_keys:
+                                                                                if key not in radio_info_dict:
+                                                                                    #logg.info("port reset test not enabled")
+                                                                                    radio_reset_found = False
+                                                                                    break
+                                                                                
+                                                                            if radio_reset_found:
+                                                                                reset_port_enable_list.append(True)
+                                                                                reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
+                                                                                reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+                                                                            else:
+                                                                                reset_port_enable_list.append(False)
+                                                                                reset_port_time_min_list.append('0s')
+                                                                                reset_port_time_max_list.append('0s')
                                                             # no stations for testing reconfiguration of the controller - 
                                                             if(args.no_stations):
                                                                 logg.info("##################################")
