@@ -91,7 +91,7 @@ class Login_DUT:
 # Class to Load a Scenario that has been Created in Chamber View saved under DB/[Database_Name]
 class LoadScenario(LFCliBase):
     def __init__(self, host, port, db_name, security_debug_on=False, _exit_on_error=False,_exit_on_fail=False):
-        super().__init__(host, port, _debug=security_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=security_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.json_post("/cli-json/load", { "name": db_name, "action": 'overwrite' })
@@ -102,7 +102,7 @@ class LoadScenario(LFCliBase):
 class CreateSTA_CX(LFCliBase):
     
     def __init__(self, host, port, radio, num_sta, sta_id, ssid, security, password, upstream, protocol, min_bps, max_bps, security_debug_on=True, _exit_on_error=True, _exit_on_fail=True):
-        super().__init__(host, port, _debug=security_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=security_debug_on, _exit_on_fail=_exit_on_fail)
         
         self.host = host
         self.port = port

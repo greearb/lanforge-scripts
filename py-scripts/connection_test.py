@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Candela Technologies Inc.
 
@@ -6,6 +7,10 @@ Info : Standard Script for Connection Testing -  Creates HTML and pdf report as 
 """
 
 import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
 
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
@@ -34,8 +39,7 @@ class ConnectionTest(LFCliBase):
                  dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", name_prefix="L3Test",
                  session_id="Layer3Test", test_name="Client/s Connectivity Test", pass_criteria=20, _debug_on=False,
                  _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = lfclient_host
         self.port = lfclient_port
         self.radio = radio

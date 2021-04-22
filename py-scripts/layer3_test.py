@@ -1,5 +1,11 @@
+#!/usr/bin/env python3
 
 import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
@@ -17,7 +23,7 @@ class Layer3Test(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio="wiphy1", sta_prefix="sta", start_id=0, num_sta=2,
                  dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", name_prefix="L3Test",
                  traffic_type="lf_udp",side_a_speed="0M", side_b_speed="10M", session_id="Layer3Test", duration="1m",_debug_on=False, _exit_on_error=False,  _exit_on_fail=False):
-        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         print("Test is about to start")
         self.host = lfclient_host
         self.port = lfclient_port
