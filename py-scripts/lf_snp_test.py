@@ -22,13 +22,13 @@ TECHNICAL UNDERSTANDING:
         'rx bytes' - bytes transmitted
         'rx rate'  - bits per second 
 
-    in DL direction: -B tx -> -A rx, LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
-    in UL direction: -A tx -> -B rx, LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+    in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
+    in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
 
 
 NOTES:
     1.  The controller_client_densities are indpendent of the number of stations on a radio
-    2.  The --side_a_min_bps (download) and --side_b_min_bps (upload) is used to set the rate 
+    2.  The --side_a_tx_min_bps (download) and --side_b_tx_min_bps (upload) is used to set the rate 
         a. default 256000
     
         
@@ -123,8 +123,8 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 2021-04-21 05:43:25,041 __main__ INFO: controller_packet_sizes ('-cps','--controller_packet_sizes'): ['88', '512', '1370', '1518']
 2021-04-21 05:43:25,041 __main__ INFO: controller_directions ('-cd', '--controller_directions'): ['upstream', 'downstream']
 2021-04-21 05:43:25,041 __main__ INFO: controller_data_encryptions ('-cde','--controller_data_encryptions') ['disable']
-2021-04-21 05:43:25,041 __main__ INFO: controller_side_a_min_bps ('-amr','--side_a_min_bps'): 256000
-2021-04-21 05:43:25,041 __main__ INFO: controller_side_b_min_bps ('-bmr','--side_b_min_bps'): 256000
+2021-04-21 05:43:25,041 __main__ INFO: controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): 256000
+2021-04-21 05:43:25,041 __main__ INFO: controller_side_b_tx_min_bps ('-bmr','--side_b_tx_min_bps'): 256000
 2021-04-21 05:43:25,041 __main__ INFO: test duration ('-d','--test_duration'): 20s
 2021-04-21 05:43:25,041 __main__ INFO: polling_interval ('-pi','--polling_interval'): 5s
 2021-04-21 05:43:25,041 __main__ INFO: radios from coded config used
@@ -880,12 +880,12 @@ class L3VariableTime(Realm):
                 reset_port_time_min_list,
                 reset_port_time_max_list,
                 csv_started=False,
-                side_a_min_bps=560000, 
-                side_a_max_bps=0,
+                side_a_tx_min_bps=560000, 
+                side_a_tx_max_bps=0,
                 side_a_min_pdu=1518,
                 side_a_max_pdu=0,
-                side_b_min_bps=560000, 
-                side_b_max_bps=0,
+                side_b_tx_min_bps=560000, 
+                side_b_tx_max_bps=0,
                 side_b_min_pdu=1518,
                 side_b_max_pdu=0,
                 number_template="00",
@@ -989,12 +989,12 @@ class L3VariableTime(Realm):
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = side_a_min_bps
-        self.cx_profile.side_a_max_bps = side_a_min_bps
+        self.cx_profile.side_a_tx_min_bps = side_a_tx_min_bps
+        self.cx_profile.side_a_tx_max_bps = side_a_tx_min_bps
         self.cx_profile.side_a_min_pdu = side_a_min_pdu
         self.cx_profile.side_a_max_pdu = side_a_max_pdu
-        self.cx_profile.side_b_min_bps = side_b_min_bps
-        self.cx_profile.side_b_max_bps = side_b_min_bps
+        self.cx_profile.side_b_tx_min_bps = side_b_tx_min_bps
+        self.cx_profile.side_b_tx_max_bps = side_b_tx_min_bps
         self.cx_profile.side_b_min_pdu = side_b_min_pdu
         self.cx_profile.side_b_max_pdu = side_b_max_pdu
 
@@ -1551,9 +1551,24 @@ LANforge Realm Configuration
 6.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 6.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
+########################################################################################################
+TECHNICAL UNDERSTANDING: LANForge
+########################################################################################################
+    LANForge Monitored Values Per Polling Interval
+        'rx bytes' - bytes transmitted
+        'rx rate'  - bits per second 
+
+    in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
+    in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+
+
 #########################################################################################################
 LANforge GUI what is displayed in the Column and how to access the value with cli or json
 #########################################################################################################
+
+
+
+
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
     Name                |  'name'
@@ -2078,8 +2093,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_packet_sizes     = "88 512 1370 1518".split()
         controller_client_densities = "1 10 50 200".split()
 
-        controller_side_a_min_bps  = 256000
-        controller_side_b_min_bps  = 256000
+        controller_side_a_tx_min_bps  = 256000
+        controller_side_b_tx_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
@@ -2112,8 +2127,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_client_densities = "10".split()
         controller_data_encryptions = "disable".split()
 
-        controller_side_a_min_bps  = 256000
-        controller_side_b_min_bps  = 256000
+        controller_side_a_tx_min_bps  = 256000
+        controller_side_b_tx_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -2146,8 +2161,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
 
-        controller_side_a_min_bps  = 256000
-        controller_side_b_min_bps  = 256000
+        controller_side_a_tx_min_bps  = 256000
+        controller_side_b_tx_min_bps  = 256000
 
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
@@ -2178,8 +2193,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_directions         = args.controller_directions.split()
         controller_data_encryptions   = args.controller_data_encryptions.split()
 
-        controller_side_a_min_bps    = args.side_a_min_bps
-        controller_side_b_min_bps    = args.side_b_min_bps
+        controller_side_a_tx_min_bps    = args.side_a_tx_min_bps
+        controller_side_b_tx_min_bps    = args.side_b_tx_min_bps
     logg.info("TEST CONFIG: ")
     logg.info("controller_aps ('-cca' ,'--controller_aps'): {}".format(controller_aps))
     logg.info("controller_bands ('-ccf' ,'--controller_bands'): {}".format(controller_bands))
@@ -2194,8 +2209,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     logg.info("controller_packet_sizes ('-cps','--controller_packet_sizes'): {}".format(controller_packet_sizes))
     logg.info("controller_directions ('-cd', '--controller_directions'): {}".format(controller_directions))
     logg.info("controller_data_encryptions ('-cde','--controller_data_encryptions') {}".format(controller_data_encryptions))
-    logg.info("controller_side_a_min_bps ('-amr','--side_a_min_bps'): {}".format(controller_side_a_min_bps))
-    logg.info("controller_side_b_min_bps ('-bmr','--side_b_min_bps'): {}".format(controller_side_b_min_bps))
+    logg.info("controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): {}".format(controller_side_a_tx_min_bps))
+    logg.info("controller_side_b_tx_min_bps ('-bmr','--side_b_tx_min_bps'): {}".format(controller_side_b_tx_min_bps))
     logg.info("test duration ('-d','--test_duration'): {}".format(test_duration))
     logg.info("polling_interval ('-pi','--polling_interval'): {}".format(polling_interval))
 
@@ -2487,12 +2502,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     index += 1
                                                                 # Run Traffic Upstream (STA to AP)
                                                                 if(controller_direction == "upstream"):
-                                                                    side_a_min_bps = controller_side_a_min_bps 
-                                                                    side_b_min_bps = 0  
+                                                                    side_a_tx_min_bps = controller_side_a_tx_min_bps 
+                                                                    side_b_tx_min_bps = 0  
                                                                 # Run Traffic Downstream (AP to STA)    
                                                                 else:
-                                                                    side_a_min_bps = 0 
-                                                                    side_b_min_bps = controller_side_b_min_bps  
+                                                                    side_a_tx_min_bps = 0 
+                                                                    side_b_tx_min_bps = controller_side_b_tx_min_bps  
                                                                 # current default is to have a values
                                                                 ip_var_test = L3VariableTime(
                                                                                                 args=args,
@@ -2535,12 +2550,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                                                 reset_port_time_min_list=reset_port_time_min_list,
                                                                                                 reset_port_time_max_list=reset_port_time_max_list,
                                                                                                 csv_started=__csv_started,
-                                                                                                side_a_min_bps =side_a_min_bps, 
-                                                                                                side_a_max_bps =0,
+                                                                                                side_a_tx_min_bps =side_a_tx_min_bps, 
+                                                                                                side_a_tx_max_bps =0,
                                                                                                 side_a_min_pdu =controller_packet_size, 
                                                                                                 side_a_max_pdu =0,
-                                                                                                side_b_min_bps =side_b_min_bps, 
-                                                                                                side_b_max_bps =0,
+                                                                                                side_b_tx_min_bps =side_b_tx_min_bps, 
+                                                                                                side_b_tx_max_bps =0,
                                                                                                 side_b_min_pdu =controller_packet_size, 
                                                                                                 side_b_max_pdu = 0,
                                                                                                 number_template="00", 
