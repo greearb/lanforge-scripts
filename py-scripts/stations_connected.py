@@ -18,7 +18,7 @@ from pprint import pprint
 
 class StationsConnected(LFCliBase):
     def __init__(self, lfjson_host, lfjson_port):
-        super().__init__(_lfjson_host=lfjson_host, _lfjson_port=lfjson_port, _halt_on_error=True, _debug=False)
+        super().__init__(_lfjson_host=lfjson_host, _lfjson_port=lfjson_port, _debug=False)
         self.localrealm = Realm(lfclient_host=lfjson_host, lfclient_port=lfjson_port, debug=False)
         self.check_connect()
 

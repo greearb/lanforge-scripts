@@ -36,7 +36,6 @@ class IPV4L4(LFCliBase):
         super().__init__(host, 
         port, 
         _debug=_debug_on, 
-        _halt_on_error=_exit_on_error,
         _local_realm = realm.Realm(lfclient_host=host, lfclient_port=port), 
         _exit_on_fail=_exit_on_fail)
         self.host = host

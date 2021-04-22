@@ -32,7 +32,6 @@ class Test1KClients(LFCliBase):
                          port,
                          _debug=_debug_on,
                          _local_realm=Realm(lfclient_host=host, lfclient_port=port),
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail)
         self.ssid_radio_map = {
             '1.1.wiphy0' : ("wpa2", "jedway-wpa2-x2048-4-4", "jedway-wpa2-x2048-4-4"),
