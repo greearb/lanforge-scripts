@@ -34,7 +34,6 @@ class UpdateDUT(LFCliBase):
 
         super().__init__(host, port,
                          _debug=_debug_on,
-                         _halt_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _local_realm=realm.Realm(lfclient_host=host, lfclient_port=port, debug_=_debug_on))
         self.host       = host

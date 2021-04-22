@@ -30,7 +30,7 @@ from realm import Realm
 
 class RunCvScenario(LFCliBase):
     def __init__(self, lfhost="localhost", lfport=8080, debug_=False, lanforge_db_=None, cv_scenario_=None, cv_test_=None, test_scenario_=None):
-        super().__init__( _lfjson_host=lfhost, _lfjson_port=lfport, _debug=debug_, _halt_on_error=True, _exit_on_error=True, _exit_on_fail=True)
+        super().__init__( _lfjson_host=lfhost, _lfjson_port=lfport, _debug=debug_, _exit_on_error=True, _exit_on_fail=True)
         self.lanforge_db = lanforge_db_
         self.cv_scenario = cv_scenario_
         self.cv_test = cv_test_
