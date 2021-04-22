@@ -56,19 +56,20 @@ TEST_DIR="${REPORT_DATA}/${NOW}"
 #set -vex
 echo $MGRLEN
 #Test array
+
+function run_l3_longevity {
+  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
+}
+function testgroup_list_groups {
+  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
+}
+function testgroup_list_connections {
+  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
+}
+function testgroup_delete_group {
+  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
+}
 if [[ $MGRLEN -gt 0 ]]; then
-  function run_l3_longevity {
-    ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
-  }
-  function testgroup_list_groups {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
-  }
-  function testgroup_list_connections {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
-  }
-  function testgroup_delete_group {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
-  }
   testCommands=(
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
       "./sta_connect2.py --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --mgr $MGR"
@@ -110,20 +111,12 @@ if [[ $MGRLEN -gt 0 ]]; then
       "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes --mgr $MGR"
       "./wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes --mgr $MGR"
   )
+elif [[ $MGR == "short" ]]; then
+  testCommands=(
+      run_l3_longevity
+      "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR"
+  )
 else
-  function run_l3_longevity {
-  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY"
-}
-  function testgroup_list_groups {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug
-  }
-  function testgroup_list_connections {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug
-  }
-  function testgroup_delete_group {
-    ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug
-  }
-
   testCommands=(
       #"../cpu_stats.py --duration 15"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug"
@@ -204,7 +197,7 @@ name_to_num=(
     ["wlan_capacity_calculator"]=27
     ["test_generic"]=28
     ["new_script"]=29
-    ["sta_connect_example.py"]=30
+    ["sta_connect_example"]=30
 )
 
 function blank_db() {
@@ -225,6 +218,7 @@ function run_test()  {
           ./scenario.py --load FACTORY_DFLT
         fi
         NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        $LAST_COMMIT=$(git log --pretty=oneline | tail -n 1)
         CURR_TEST_NAME=${i%%.py*}
         CURR_TEST_NAME=${CURR_TEST_NAME#./*}
         CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
@@ -287,6 +281,7 @@ function html_generator() {
 		<body>
 		<h1>Regression Results</h1>
 		<h4>$NOW</h4>
+		<h4>$LAST_COMMIT</h4>
 		<table border ='1' id='myTable2'>
 		<tr>
         <th onclick=\"sortTable(0)\">Command Name</th>
