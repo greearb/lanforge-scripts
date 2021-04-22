@@ -2521,12 +2521,12 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     index += 1
                                                                 # Run Traffic upload (STA to AP)
                                                                 if(controller_direction == "upload"):
-                                                                    side_a_tx_min_bps = controller_side_a_tx_min_bps 
+                                                                    side_a_tx_min_bps = side_a_tx_min_bps_ul 
                                                                     side_b_tx_min_bps = 0  
                                                                 # Run Traffic download (AP to STA)    
                                                                 else:
                                                                     side_a_tx_min_bps = 0 
-                                                                    side_b_tx_min_bps = controller_side_b_tx_min_bps  
+                                                                    side_b_tx_min_bps = side_b_tx_min_bps_dl  
                                                                 # current default is to have a values
                                                                 ip_var_test = L3VariableTime(
                                                                                                 args=args,
