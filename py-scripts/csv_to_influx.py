@@ -75,9 +75,7 @@ class CSVtoInflux(Realm):
                 date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
                 numeric_score = line[numeric_score_index]
                 numeric_score = float(numeric_score) #convert to float, InfluxDB cannot
-                test_details = line[test_details_index]
                 short_description = line[short_description_index]
-                test_id = line[test_id_index]
                 tags = dict()
                 tags['script'] = line[test_id_index]
                 tags['short-description'] = line[short_description_index]
@@ -91,6 +89,21 @@ class CSVtoInflux(Realm):
                 #influx wants to get data in the following format:
                 # variable n  ame, value, tags, date
                 # total-download-mbps-speed-for-the-duration-of-this-iteration 171.085494 {'script': 'WiFi Capacity'} 2021-04-14T19:04:04.902000
+
+    def script_name(self):
+        with open(self.target_csv) as fp:
+            line = fp.readline()
+            line = line.split('\t')
+            test_id_index = line.index('test-id')
+            line = fp.readline()
+            return line[test_id_index]
+
+
+    def create_dashboard(self,
+                         dashboard_name=None):
+        #Create a dashboard in Grafana to look at the data you just posted to Influx
+        dashboard_name
+
 
 
 def main():

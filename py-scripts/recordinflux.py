@@ -55,7 +55,7 @@ def main():
     args = parser.parse_args()
     monitor_interval = LFCliBase.parse_time(args.monitor_interval).total_seconds()
     longevity = LFCliBase.parse_time(args.longevity).total_seconds()
-    tags=dict()
+    tags = dict()
     tags['script'] = 'recordinflux'
     if args.influx_user is None:
         from influx2 import RecordInflux
@@ -72,14 +72,13 @@ def main():
     else:
         from influx import RecordInflux
         grapher = RecordInflux(_influx_host=args.mgr,
-                               _port=args.mgr_port,
+                               _influx_port=args.mgr_port,
                                _influx_db=args.influx_db,
                                _influx_user=args.influx_user,
                                _influx_passwd=args.influx_passwd)
-        grapher.getdata(longevity=longevity,
-                        devices=args.device,
-                        monitor_interval=monitor_interval,
-                        target_kpi=args.target_kpi)
+        grapher.monitor_port_data(longevity=longevity,
+                                  devices=args.device,
+                                  monitor_interval=monitor_interval)
 
 
 if __name__ == "__main__":

@@ -53,8 +53,8 @@ class GrafanaRequest:
         dashboard['title'] = dashboard_name
         dashboard['tags'] = ['templated']
         dashboard['timezone'] = 'browser'
-        dashboard['shemaVersion'] = 6
-        dashboard['version'] = 0
+        dashboard['schemaVersion'] = 27
+        dashboard['version'] = 4
         datastore['dashboard'] = dashboard
         datastore['overwrite'] = False
         data = json.dumps(datastore, indent=4)
@@ -67,4 +67,28 @@ class GrafanaRequest:
 
     def create_dashboard_from_data(self,
                                    json_file=None):
-        pass
+        self.grafanajson_url = self.grafanajson_url + '/api/dashboards/db'
+        datastore = dict()
+        dashboard = dict(json.loads(open(json_file).read()))
+        datastore['dashboard'] = dashboard
+        datastore['overwrite'] = False
+        data = json.dumps(datastore, indent=4)
+        #return print(data)
+        return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
+
+    def create_dashboard_from_dict(self,
+                                   dictionary=None):
+        self.grafanajson_url = self.grafanajson_url + '/api/dashboards/db'
+        datastore = dict()
+        dashboard = dict(json.loads(dictionary))
+        datastore['dashboard'] = dashboard
+        datastore['overwrite'] = False
+        data = json.dumps(datastore, indent=4)
+        #return print(data)
+        return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
+
+
+    def create_custom_dashboard(self,
+                                datastore=None):
+        data = json.dumps(datastore, indent=4)
+        return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)

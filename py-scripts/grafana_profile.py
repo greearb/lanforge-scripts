@@ -14,7 +14,7 @@ if 'py-json' not in sys.path:
 
 from GrafanaRequest import GrafanaRequest
 from LANforge.lfcli_base import LFCliBase
-
+import json
 
 class UseGrafana(LFCliBase):
     def __init__(self,
@@ -42,6 +42,83 @@ class UseGrafana(LFCliBase):
     def list_dashboards(self):
         return self.GR.list_dashboards()
 
+    def create_dashboard_from_data(self,
+                                   json_file):
+        return self.GR.create_dashboard_from_data(json_file=json_file)
+
+    def create_custom_dashboard(self):
+        name = input('Name of your dashboard: ')
+        number = input('Number of panels on dashboard: ')
+        dashboards = dict()
+        dashboards['title'] = name
+        dashboards['panels'] = list()
+        input1 = dict()
+        input1['name'] = "DS_INFLUXDB"
+        input1['label'] = "InfluxDB"
+        input1['description'] = ""
+        input1['type'] = "datasource"
+        input1['pluginId'] = "influxdb"
+        input1['pluginName'] = "InfluxDB"
+        inputs = list()
+        inputs.append(input1)
+        dashboards['__inputs'] = inputs
+
+        for dashboard in range(0,int(number)):
+            title = input('Title of dashboard # %s ' % dashboard)
+            lines = input('Lines on your graph? Y or N: ')
+            target_number = input('How many targets on your graph? ')
+            if lines == 'Y':
+                lines = True
+                linewidth = 1
+            else:
+                lines = False
+                linewidth = 0
+            panel = dict()
+            panel['aliasColors'] = dict()
+            panel['bars'] = False
+            panel['dashLength'] = 10
+            fieldConfig = dict()
+            fieldConfig['defaults'] = dict()
+            fieldConfig['overrides'] = list()
+            panel['fieldConfig'] = fieldConfig
+            panel['fill'] = 1
+            panel['fieldGradient'] = 0
+            panel['hiddenSeries'] = False
+            panel['id'] = dashboard
+            panel['lines'] = lines
+            panel['linewidth'] = linewidth
+            panel['nullPointMode'] = None
+            panel['percentage'] = False
+            panel['pluginVersion'] = "7.5.4"
+            panel['stack'] = False
+            targets = list()
+            for target in range(0,int(target_number)):
+                measurement = input('Name of  your first measurement')
+                target_item = dict()
+                target_item['delimiter'] = ','
+                target_item['header'] = True
+                target_item['ignoreUnknown'] = False
+                target_item['measurement'] = measurement
+                target_item['orderByTime'] = "ASC"
+                target_item['policy'] = "default"
+                target_item['skipRows'] = 0
+                targets.append(target_item)
+            panel['targets'] = targets
+            panel['title'] = title
+            xaxis=dict()
+            xaxis['buckets'] = None
+            xaxis['mode'] = "time"
+            xaxis['name'] = None
+            xaxis['show'] = True
+            xaxis['values'] = list()
+            panel['xaxis'] = xaxis
+            yaxis = dict()
+            yaxis['align'] = False
+            yaxis['alignLevel'] = None
+            panel['yaxis'] = yaxis
+            dashboards['panels'].append(panel)
+        print(json.dumps(dashboards, indent=2))
+        return self.GR.create_dashboard_from_dict(dictionary=json.dumps(dashboards))
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -67,6 +144,8 @@ def main():
     optional.add_argument('--grafana_port', help='Grafana port if different from 3000', default=3000)
     optional.add_argument('--grafana_host', help='Grafana host', default='localhost')
     optional.add_argument('--list_dashboards', help='List dashboards on Grafana server', default=None)
+    optional.add_argument('--dashboard_json', help='JSON of existing Grafana dashboard to import', default=None)
+    optional.add_argument('--create_custom', help='Guided Dashboard creation', default=None)
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -82,6 +161,11 @@ def main():
     if args.list_dashboards is not None:
         Grafana.list_dashboards()
 
+    if args.dashboard_json is not None:
+        Grafana.create_dashboard_from_data(args.dashboard_json)
+
+    if args.create_custom is not None:
+        Grafana.create_custom_dashboard()
 
 if __name__ == "__main__":
     main()
