@@ -10,7 +10,7 @@ This program is to test an AP connected to a controller.
     The controler 
      with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power. 
 The controller will configure the AP.  
-The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (Downstream, Upstream) and Packet-size. 
+The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (download, upload) and Packet-size. 
 The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
 The results will be recorded in CSV file with the following data
 AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rx bytes, upload bits per second,
@@ -44,7 +44,7 @@ The script is devided into parts:
         e. ap_mode : local / flex connect, * ap mode not supported
         f. clients : number of clients set by controller_client_densities , radios much create associated number of stations Note: LANforge configuration
         g. packet_type: lf_udp  lf_tcp
-        h. traffic direction: upstream / downstream
+        h. traffic direction: upload / download
         i. packet_size: --side_a_min_pdu, --side_b_min_pdu Note: LANforge configuration
         
 2. Traffic Generation Class : L3VariableTime
@@ -79,11 +79,11 @@ Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
     ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
-    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "WLC" --controller_test_1
+    --controller_series "9800" --endp_types 'lf_udp' --upload_port eth2 --controller_prompt "WLC" --controller_test_1
     --print_test_config
     
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upload_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" 
     --print_test_config
 
@@ -94,13 +94,13 @@ Using Commandline with defaults:
 
 Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"  
     --print_test_config
 
 Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
+    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
     --print_test_config
 
@@ -120,7 +120,7 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 2021-04-21 05:43:25,041 __main__ INFO: controller_client_densities ('-ccd','--controller_client_densities'): ['1', '10', '50', '200']
 2021-04-21 05:43:25,041 __main__ INFO: controller_packet_types ('-t', '--endp_types'): ['lf_udp', 'lf_tcp']
 2021-04-21 05:43:25,041 __main__ INFO: controller_packet_sizes ('-cps','--controller_packet_sizes'): ['88', '512', '1370', '1518']
-2021-04-21 05:43:25,041 __main__ INFO: controller_directions ('-cd', '--controller_directions'): ['upstream', 'downstream']
+2021-04-21 05:43:25,041 __main__ INFO: controller_directions ('-cd', '--controller_directions'): ['upload', 'download']
 2021-04-21 05:43:25,041 __main__ INFO: controller_data_encryptions ('-cde','--controller_data_encryptions') ['disable']
 2021-04-21 05:43:25,041 __main__ INFO: controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): 256000
 2021-04-21 05:43:25,041 __main__ INFO: controller_side_b_tx_min_bps ('-bmr','--side_b_tx_min_bps'): 256000
@@ -1066,7 +1066,7 @@ class L3VariableTime(Realm):
         for key in [key for key in new_list if "mtx" in key]: del new_list[key]
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
-        # Evaluate Upstream or Downstream
+        # Evaluate upload or download
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before",new_evaluate_list) 
         # look at ul and dl
@@ -1074,9 +1074,9 @@ class L3VariableTime(Realm):
 
         if len(old_evaluate_list) == len(new_evaluate_list):
             for item, value in old_evaluate_list.items():
-                # check only upstream or downstream - expected passes corresponds to traffic only in observed direction
-                if "upstream" in self.test_config_dict.values() and item.endswith("-B") \
-                    or "downstream" in self.test_config_dict.values() and item.endswith("-A"):
+                # check only upload or download - expected passes corresponds to traffic only in observed direction
+                if "upload" in self.test_config_dict.values() and item.endswith("-B") \
+                    or "download" in self.test_config_dict.values() and item.endswith("-A"):
                     expected_passes +=1
                 print("ITEM: {} VALUE: {}".format(item, value))
                 if new_evaluate_list[item] > old_evaluate_list[item]:
@@ -1084,12 +1084,12 @@ class L3VariableTime(Realm):
                     #if self.debug: logg.info(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                     print(item, new_evaluate_list[item], old_evaluate_list[item], " Difference: ", new_evaluate_list[item] - old_evaluate_list[item])
                 else:
-                    if "upstream" in self.test_config_dict.values() and item.endswith("-B") \
-                        or "downstream" in self.test_config_dict.values() and item.endswith("-A"):
+                    if "upload" in self.test_config_dict.values() and item.endswith("-B") \
+                        or "download" in self.test_config_dict.values() and item.endswith("-A"):
                         # only a failure if expecting traffic in that direction
                         print("Failed to increase rx bytes: ", item, new_evaluate_list[item], old_evaluate_list[item])
                 if not self.csv_started:
-                    # stations that end in -A are dl (download, downstream), stations that end in -B are ul (upload, upstream)
+                    # stations that end in -A are dl (download, download), stations that end in -B are ul (upload, upload)
                     if item.endswith("-A"):
                         csv_rx_headers.append(item+'-dl-rx-bytes') 
                     else:
@@ -1437,17 +1437,17 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upload_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    --upload_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
     --print_test_config
 
 Using Commandline Less Interations:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
+    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
     --controller_chan_5ghz "36" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  
     --print_test_config
 
@@ -1465,7 +1465,7 @@ AP {Axel, Vanc} Dynamic
                               AP-mode {local/flexconnect} Common
                                     client-density {1, 10, 20, 50, 100, 200} Dynamic
                                           Packet-type {TCP, UDP} Common
-                                                Direction {Downstream, Upstream}
+                                                Direction {download, upload}
                                                       Packet-size { 88, 512, 1370, 1518}   Common
                                                             Time (4 iterations of 30 sec and get the best average out of it) 
 #############################################
@@ -1705,8 +1705,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-db','--debug', help='--debug:  Enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_types', help='--endp_types <types of traffic> example --endp_types \"lf_udp lf_tcp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
-    parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upstream downstream> example --controller_directions \"upstream downstream\"  Default: upstream downstream', default='upstream downstream')
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upload download> example --controller_directions \"upload download\"  Default: upload download', default='upload download')
+    parser.add_argument('-u', '--upload_port', help='--upload_port <cross connect upload_port> example: --upload_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
@@ -1714,8 +1714,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested downstream min tx rate bits per second default 256000', default=256000)
-    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upstream min tx rate bits per second default 256000', default=256000)
+    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested download min tx rate bits per second default 256000', default=256000)
+    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upload min tx rate bits per second default 256000', default=256000)
 
     ##############################################
     # Parameters Used For Testing
@@ -1755,8 +1755,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.mgr:
         lfjson_host = args.mgr
 
-    if args.upstream_port:
-        side_b = args.upstream_port
+    if args.upload_port:
+        side_b = args.upload_port
 
     if args.radio:
         radios = args.radio
@@ -2106,7 +2106,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_ap_modes         = "local".split()
         controller_data_encryptions = "disable".split()
         controller_packet_types     = "lf_udp lf_tcp".split()
-        controller_directions       = "upstream downstream".split()
+        controller_directions       = "upload download".split()
         controller_packet_sizes     = "88 512 1370 1518".split()
         controller_client_densities = "1 10 50 200".split()
 
@@ -2137,8 +2137,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_data_encryptions = "disable".split()
         #controller_packet_types    = "lf_udp lf_tcp".split()
         controller_packet_types     = "lf_udp".split()
-        #controller_directions      = "upstream downstream".split()
-        controller_directions       = "upstream downstream".split()
+        #controller_directions      = "upload download".split()
+        controller_directions       = "upload download".split()
         #controller_packet_sizes    = "88 512 1370 1518".split()
         controller_packet_sizes     = "1518".split()
         controller_client_densities = "10".split()
@@ -2171,8 +2171,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_data_encryptions = "disable".split()
         #controller_packet_types    = "lf_udp lf_tcp".split()
         controller_packet_types     = "lf_udp".split()
-        #controller_directions      = "upstream downstream".split()
-        controller_directions       = "upstream downstream".split()
+        #controller_directions      = "upload download".split()
+        controller_directions       = "upload download".split()
         #controller_packet_sizes    = "88 512 1370 1518".split()
         controller_packet_sizes     = "1518".split()
         controller_client_densities = "1".split()
@@ -2517,11 +2517,11 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                                                           padding_number_=10000, radio=radio_name_)
                                                                     station_lists.append(station_list)
                                                                     index += 1
-                                                                # Run Traffic Upstream (STA to AP)
-                                                                if(controller_direction == "upstream"):
+                                                                # Run Traffic upload (STA to AP)
+                                                                if(controller_direction == "upload"):
                                                                     side_a_tx_min_bps = controller_side_a_tx_min_bps 
                                                                     side_b_tx_min_bps = 0  
-                                                                # Run Traffic Downstream (AP to STA)    
+                                                                # Run Traffic download (AP to STA)    
                                                                 else:
                                                                     side_a_tx_min_bps = 0 
                                                                     side_b_tx_min_bps = controller_side_b_tx_min_bps  
