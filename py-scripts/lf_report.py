@@ -35,7 +35,7 @@ import pdfkit
 class lf_report():
     def __init__(self,
                 #_path the report directory under which the report directories will be created.
-                _path = "/home/lanforge/report-data",
+                _path = "/home/lanforge/html-reports",
                 _alt_path = "",
                 _date = "",
                 _title="LANForge Test Run Heading",
@@ -126,7 +126,7 @@ class lf_report():
         if self.date != "":
             self.date_time_directory = str(self.date) + str("_") + str(self.results_dir_name)
         else:
-            self.date = str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(':','-')
+            self.date = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
             self.date_time_directory = self.date + str("_") + str(self.results_dir_name)
 
     #def set_date_time_directory(self,date_time_directory):
