@@ -79,11 +79,11 @@ Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
     ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
-    --controller_series "9800" --endp_types 'lf_udp' --upload_port eth2 --controller_prompt "WLC" --controller_test_1
+    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "WLC" --controller_test_1
     --print_test_config
     
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upload_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" 
     --print_test_config
 
@@ -94,13 +94,13 @@ Using Commandline with defaults:
 
 Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"  
     --print_test_config
 
 Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
     --print_test_config
 
@@ -1437,17 +1437,17 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upload_port eth2 --controller_test_3 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" --print_test_config
 
 Using Commandline with defaults:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upload_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    --upstream_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
     --print_test_config
 
 Using Commandline Less Interations:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
-    --controller_series "3504" --upload_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
     --controller_chan_5ghz "36" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  
     --print_test_config
 
@@ -1706,7 +1706,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-t', '--endp_types', help='--endp_types <types of traffic> example --endp_types \"lf_udp lf_tcp\"  Default: lf_udp lf_tcp, options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp lf_tcp', type=valid_endp_types)
     parser.add_argument('-cd', '--controller_directions', help='--controller_directions <upload download> example --controller_directions \"upload download\"  Default: upload download', default='upload download')
-    parser.add_argument('-u', '--upload_port', help='--upload_port <cross connect upload_port> example: --upload_port eth1',default='eth1')
+    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default='snp')
     parser.add_argument("-l", "--log",        action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument('-c','--csv_output', help="Generate csv output", default=True) 
@@ -1755,8 +1755,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.mgr:
         lfjson_host = args.mgr
 
-    if args.upload_port:
-        side_b = args.upload_port
+    if args.upstream_port:
+        side_b = args.upstream_port
 
     if args.radio:
         radios = args.radio
