@@ -2356,10 +2356,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     logg.info("#####################################################")
                                                                     logg.info("# TEST RUNNING ,  TEST RUNNING ######################")
                                                                     logg.info("#####################################################")
-                                                                    test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} packet_size=={}".format(
+                                                                    test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} pdu=={}".format(
                                                                         controller_ap,controller_band,controller_chan_5ghz,controller_chan_24ghz,controller_wifimode,controller_chan_width,controller_data_encryption,controller_ap_mode,controller_client_density,
                                                                         controller_packet_type,controller_direction,controller_pdu)
-                                                                    test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','packet_size'] 
+                                                                    test_keys = ['AP','Band','wifi_mode','chan_5ghz','chan_24ghz','BW','encryption','ap_mode','clients','packet_type','direction','pdu'] 
 
                                                                     logg.info("# controller run settings: {}".format(test_config))
                                                                     if(args.no_controller):
