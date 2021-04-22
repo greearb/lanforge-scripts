@@ -42,7 +42,7 @@ class EAPConnect(LFCliBase):
     def __init__(self, host, port, security=None, ssid=None, sta_list=None, number_template="00000", _debug_on=False, _dut_bssid="",
                  _exit_on_error=False, _sta_name=None, _resource=1, radio="wiphy0", key_mgmt="WPA-EAP", eap="", identity="",
                  ttls_passwd="", hessid=None, ttls_realm="", domain="", _sta_prefix='eap', _exit_on_fail=False, _cleanup_on_exit=True):
-        super().__init__(host, port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
