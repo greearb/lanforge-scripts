@@ -10,7 +10,7 @@ import base64
 
 class DUTProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
-        super().__init__(lfclient_host, lfclient_port, debug_, _halt_on_error=True, _local_realm=local_realm)
+        super().__init__(lfclient_host, lfclient_port, debug_, _local_realm=local_realm)
         self.name = "NA"
         self.flags = "NA"
         self.img_file = "NA"

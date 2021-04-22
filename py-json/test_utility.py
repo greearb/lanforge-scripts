@@ -34,8 +34,7 @@ updates_path = webconsole_dir + "/web_json/updates.js"
 
 class ClientVisualization(LFCliBase, threading.Thread):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, num_clients= 64, max_data= 120, thread_id=None, _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         threading.Thread.__init__(self)
         self.num_clients = num_clients
         self.max_data = max_data
@@ -292,7 +291,7 @@ class StatusSession(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.deep_clean = _deep_clean
         self.session_id = session_id
         self.json_put("/status-msg/" + self.session_id, {})

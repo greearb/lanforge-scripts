@@ -137,13 +137,12 @@ This directory defines the LANforge module holding the following classes:
 
         class MyScript(LFCliBase):
         def __init__(self, host, port, debug_=False, _exit_on_error=False, _exit_on_fail=False):
-            super().__init__(host, port, _debug=debug_, _halt_on_error=_exit_on_error, _exit_on_fail=_exit_on_fail)
+            super().__init__(host, port, _debug=debug_, _exit_on_fail=_exit_on_fail)
 
    Those parameters provide base functionality:
      * host: lfclient host running the LANforge GUI or headless LANforgeGUI -daemon
      * port: lfclient HTTP port, typically 8080
      * _debug: provides verbose mode behavior
-     * _halt_on_error: if a HTTP 400 or HTTP 500 occurs or some execeptions are raised, exit
      * _exit_on_fail: if a test calls _fail(), exit
 
   * LFRequest.py / class **LFRequest**: provides default mechanism to make API queries, use this
