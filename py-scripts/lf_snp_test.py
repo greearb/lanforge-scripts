@@ -957,10 +957,10 @@ class L3VariableTime(Realm):
         self.side_a_min_pdu = side_a_min_pdu
         self.side_a_max_pdu = side_a_max_pdu
 
-        self.side_b_tx_min_bps = side_a_tx_min_bps
-        self.side_b_tx_max_bps = side_a_tx_max_bps
-        self.side_b_min_pdu = side_a_min_pdu
-        self.side_b_max_pdu = side_a_max_pdu
+        self.side_b_tx_min_bps = side_b_tx_min_bps
+        self.side_b_tx_max_bps = side_b_tx_max_bps
+        self.side_b_min_pdu = side_b_min_pdu
+        self.side_b_max_pdu = side_b_max_pdu
 
         self.epoch_time = int(time.time())
         self.debug = debug_on
