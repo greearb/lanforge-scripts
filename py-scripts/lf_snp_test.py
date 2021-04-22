@@ -96,13 +96,13 @@ Using Commandline with defaults:
 Using Commandline:
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
     --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "10"  
+    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"  
     --print_test_config
 
 Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
     ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
     --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" --controller_client_densities "2"  
+    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
     --print_test_config
 
 
@@ -989,12 +989,12 @@ class L3VariableTime(Realm):
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_tx_min_bps = side_a_tx_min_bps
-        self.cx_profile.side_a_tx_max_bps = side_a_tx_min_bps
+        self.cx_profile.side_a_min_bps = side_a_tx_min_bps # Note: side_a_tx_min_bps is side_a_min_bps in py-json profiles
+        self.cx_profile.side_a_max_bps = side_a_tx_min_bps # Note: side_b_tx_min_bps is side_b_min_bps in py-json profiles
         self.cx_profile.side_a_min_pdu = side_a_min_pdu
         self.cx_profile.side_a_max_pdu = side_a_max_pdu
-        self.cx_profile.side_b_tx_min_bps = side_b_tx_min_bps
-        self.cx_profile.side_b_tx_max_bps = side_b_tx_min_bps
+        self.cx_profile.side_b_min_bps = side_b_tx_min_bps
+        self.cx_profile.side_b_max_bps = side_b_tx_min_bps
         self.cx_profile.side_b_min_pdu = side_b_min_pdu
         self.cx_profile.side_b_max_pdu = side_b_max_pdu
 
