@@ -51,7 +51,7 @@ class TIPStationPowersave(LFCliBase):
                  debug_on_=False,
                  exit_on_error_=False,
                  exit_on_fail_=False):
-        super().__init__(host, port, _debug=debug_on_, _halt_on_error=exit_on_error_, _exit_on_fail=exit_on_fail_)
+        super().__init__(host, port, _debug=debug_on_, _exit_on_fail=exit_on_fail_)
         self.resource = resource_
         if (channel_ == 0):
             raise ValueError("Please set your radio channel")
@@ -72,8 +72,7 @@ class TIPStationPowersave(LFCliBase):
         self.packet_filter = realm.PacketFilter()
         self.local_realm = realm.Realm(lfclient_host=self.host,
                                        lfclient_port=self.port,
-                                       debug_=self.debug,
-                                       halt_on_error_=self.exit_on_error)
+                                       debug_=self.debug)
 
         # background traffic
         self.cx_prof_bg = self.local_realm.new_l3_cx_profile()
