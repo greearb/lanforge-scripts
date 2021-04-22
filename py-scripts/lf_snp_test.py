@@ -1002,10 +1002,10 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = self.side_a_tx_min_bps # Note: side_a_tx_min_bps is side_a_min_bps in py-json profiles
-        self.cx_profile.side_a_max_bps = self.side_a_tx_min_bps # Note: side_b_tx_min_bps is side_b_min_bps in py-json profiles
+        self.cx_profile.side_a_max_bps = self.side_a_tx_min_bps 
         self.cx_profile.side_a_min_pdu = self.side_a_min_pdu
         self.cx_profile.side_a_max_pdu = self.side_a_max_pdu
-        self.cx_profile.side_b_min_bps = self.side_b_tx_min_bps
+        self.cx_profile.side_b_min_bps = self.side_b_tx_min_bps # Note: side_b_tx_min_bps is side_b_min_bps in py-json profiles
         self.cx_profile.side_b_max_bps = self.side_b_tx_min_bps
         self.cx_profile.side_b_min_pdu = self.side_b_min_pdu
         self.cx_profile.side_b_max_pdu = self.side_b_max_pdu
@@ -1329,14 +1329,14 @@ class L3VariableTime(Realm):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_tx_dl_bits_ps','B_tx_ul_bits_ps','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_to_B_tx_bps_ul','B_to_A_tx_bps_dl','rx_bytes_intv_best','all_sta_dl_bps','all_sta_ul_bps'])
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
-        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_tx_dl_bits_ps','B_tx_ul_bits_ps','rx_bytes_intv_best','all_sta_dl_bits_ps','all_sta_ul_bits_ps'])
+        csv_rx_headers.extend(['epoch_time','time','test_id','test_duration','intv_sec','A_to_B_tx_bps_ul','B_to_A_tx_bps_dl','rx_bytes_intv_best','all_sta_dl_bps','all_sta_ul_bps'])
         return csv_rx_headers
 
     def csv_add_column_headers(self,headers):
