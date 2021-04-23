@@ -273,6 +273,7 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--influx_org', help='Name of your Influx database')
     parser.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
     parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
+    parser.add_argument('--influx_mgr', help='IP address of the server your Influx database is hosted if different from your LANforge Manager', default=None)
 
     args = parser.parse_args()
 
@@ -392,9 +393,14 @@ python3 ./test_ipv4_variable_time.py
         exit(1)
     ip_var_test.start(False, False)
 
+    #if args.influx_mgr is None:
+    #    manager = args.mgr
+    #else:
+    #    manager = args.influx_mgr
+
     if args.influx_org is not None:
         from influx2 import RecordInflux
-        grapher = RecordInflux(_influx_host=args.mgr,
+        grapher = RecordInflux(#_influx_host=manager,
                                _influx_port=args.influx_port,
                                _influx_org=args.influx_org,
                                _influx_token=args.influx_token,
