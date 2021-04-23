@@ -2511,6 +2511,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     logg.info("# TEST MODE : NO STATIONS TEST MODE")
                                                                     logg.info("##################################################")
                                                                 else:
+                                                                    logg.info("#################################################")
+                                                                    logg.info("# SETUP MODE : CREATING STATIONS SETUP MODE")
+                                                                    logg.info("##################################################")
+
                                                                     index = 0
                                                                     station_lists = []
                                                                     for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
