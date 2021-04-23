@@ -46,7 +46,7 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-from cv_commands import chamberview as cv
+from cv_test_manager import cv_test as cv
 
 class CreateChamberview(cv):
     def __init__(self,
@@ -126,7 +126,7 @@ class CreateChamberview(cv):
                         else:
                             continue
 
-                self.manage_cv_scenario(scenario_name,
+                self.add_text_blob_line(scenario_name,
                                             Resource,
                                             Profile,
                                             Amount,
@@ -151,7 +151,16 @@ class CreateChamberview(cv):
         self.show_text_blob(None, None, False) # Show changes on GUI
         self.apply_cv_scenario(scenario_name)  # Apply scenario
         self.build_cv_scenario()  # build scenario
-        while self.is_cv_build() == "NO": continue  # wait for cv to build
+        tries = 0
+        while (True):
+            if not self.get_cv_is_built():
+                print("Waiting %i/60 for Chamber-View to be built." % (tries))
+                tries += 1
+                if (tries > 60):
+                    break
+                time.sleep(1)
+            else:
+                break
         print("completed building %s scenario" %scenario_name)
 
 

@@ -383,3 +383,75 @@ class cv_test(Realm):
         csvtoinflux.post_to_influx()
 
         print("All done posting to influx.\n")
+
+    #************************** chamber view **************************
+    def add_text_blob_line(self,
+                           scenario_name="Automation",
+                           Resources="1.1",
+                           Profile="STA-AC",
+                           Amount="1",
+                           DUT="DUT",
+                           Dut_Radio="Radio-1",
+                           Uses1="wiphy0",
+                           Uses2="AUTO",
+                           Traffic="http",
+                           Freq="-1",
+                           VLAN=""):
+        req_url = "/cli-json/add_text_blob"
+
+        text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT \
+                    + " " + Dut_Radio + "\' " + Traffic + " " + Uses1 + "," + Uses2 + " " + Freq + " " + VLAN
+
+        data = {
+            "type": "Network-Connectivity",
+            "name": scenario_name,
+            "text": text_blob
+        }
+
+        rsp = self.json_post(req_url, data)
+
+    def pass_raw_lines_to_cv(self,
+                             scenario_name="Automation",
+                             Rawline=""):
+        req_url = "/cli-json/add_text_blob"
+        data = {
+            "type": "Network-Connectivity",
+            "name": scenario_name,
+            "text": Rawline
+        }
+        rsp = self.json_post(req_url, data)
+        time.sleep(2)
+
+        # This is for chamber view buttons
+
+    def apply_cv_scenario(self, cv_scenario):
+        cmd = "cv apply '%s'" % cv_scenario  # To apply scenario
+        self.run_cv_cmd(cmd)
+        print("Applying %s scenario" % cv_scenario)
+
+    def build_cv_scenario(self):  # build chamber view scenario
+        cmd = "cv build"
+        self.run_cv_cmd(cmd)
+        print("Building scenario")
+
+    def get_cv_build_status(self):  # check if scenario is build
+        cmd = "cv is_built"
+        response = self.run_cv_cmd(cmd)
+        return self.check_reponse(response)
+
+    def sync_cv(self):  # sync
+        cmd = "cv sync"
+        print(self.run_cv_cmd(cmd))
+
+    def run_cv_cmd(self, command):  # Send chamber view commands
+        response_json = []
+        req_url = "/gui-json/cmd"
+        data = {
+            "cmd": command
+        }
+        rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
+        return response_json
+
+    def check_reponse(self, response):
+        d1 = {k: v for e in response for (k, v) in e.items()}
+        return d1["LAST"]["response"]
