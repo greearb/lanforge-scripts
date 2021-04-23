@@ -27,6 +27,7 @@ import sys
 import os
 from pprint import pprint
 from csv_to_influx import *
+import re
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -157,6 +158,10 @@ class L3VariableTime(Realm):
         # Lookup key is port-eid name
         self.port_csv_files = {}
         self.port_csv_writers = {}
+
+        # TODO:  cmd-line arg to enable/disable these stats.
+        self.ap_stats_col_titles = ["Station Address", "PHY Mbps", "Data Mbps", "Air Use", "Data Use",
+                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
                                                             
@@ -738,6 +743,25 @@ class L3VariableTime(Realm):
                     if self.influxdb is not None:
                         self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
 
+                    # Query AP for its stats.  Result for /ax bcm APs looks something like this:
+                    ap_stats = [];
+                    #ap_stats.add("root@Docsis-Gateway:~# wl -i wl1 bs_data")
+                    #ap_stats.add("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
+                    ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                    ap_stats.add("(overall)          -      200.2      26.5%         -         -")
+                    # TODO:  Read real stats, comment out the example above.
+                    # ap_stats = read_ap_stats()
+
+                    ap_stats_rows = [] # Array of Arrays
+                    for line in ap_stats:
+                        stats_row = line.split()
+                        ap_stats_rows.add(stats_row)
+
+                    m = re.search((r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)'ap_stats[0]
+
                     # Query all of our ports
                     port_eids = self.gather_port_eids()
                     for eid_name in port_eids:
@@ -749,6 +773,13 @@ class L3VariableTime(Realm):
                             pprint(response)
                         else:
                             p = response['interface']
+                            mac = response['mac']
+
+                            ap_row = []
+                            for row in ap_stats_rows:
+                                if row[0].lower() == mac.lower():
+                                    ap_row = row;
+
                             # p is map of key/values for this port
                             print("port: ")
                             pprint(p)
@@ -756,7 +787,8 @@ class L3VariableTime(Realm):
                             # Find latency, jitter for connections using this port.
                             latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
                             
-                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p, latency, jitter, tput)
+                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                latency, jitter, tput, ap_row, ap_stats_col_titles)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -767,7 +799,8 @@ class L3VariableTime(Realm):
                     if passes == expected_passes:
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput):
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput,
+                       ap_row, ap_stats_col_titles):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
@@ -776,7 +809,11 @@ class L3VariableTime(Realm):
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
 
-        # TODO:  Add in info queried from AP.
+        #Add in info queried from AP.
+        if len(ap_row) == len(self.ap_stats_col_titles):
+            i = 0
+            for col in ap_row:
+                row.append(col)
 
         writer = self.port_csv_writers[eid_name]
         writer.writerow(row)
@@ -856,6 +893,10 @@ class L3VariableTime(Realm):
                           'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
                           'Rx-Latency', 'Rx-Jitter', 'Rx-Goodput-Bps'
                           ]
+        # Add in columns we are going to query from the AP
+        for col in self.ap_stats_col_titles:
+            csv_rx_headers.append(col)
+
         return csv_rx_headers
 
     def csv_generate_kpi_column_headers(self):

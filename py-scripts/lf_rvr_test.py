@@ -25,7 +25,7 @@ the options and how best to input data.
       --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
-      --influx_tag testbed Ferndale-Advanced
+      --influx_tag testbed Ferndale-Mesh
 
 Note:
     attenuator_mod: selects the attenuator modules, bit-field.
