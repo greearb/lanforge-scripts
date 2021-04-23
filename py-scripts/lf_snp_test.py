@@ -1631,9 +1631,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Script Controller Configurations
     #############################################
     parser.add_argument('-cca' ,'--controller_aps', help='--controller_aps List of APs to test  default: APA453.0E7B.CF9C',default="APA453.0E7B.CF9C")
-    parser.add_argument('-ccf' ,'--controller_bands', help='--controller_bands <a | b | abgn> default: a',default="a", choices=["a","b"])
-    parser.add_argument('-cwm' ,'--controller_wifimodes', help='List of of wifi mode to test default: auto',default="auto",
-                        choices=[ "auto", "a", "b", "g", "abg", "abgn", "bgn", "bg", "abgnAC", "anAC", "an", "bgnAC", "abgnAX", "bgnAX", "anAX"])
+    parser.add_argument('-ccf' ,'--controller_bands', help='--controller_bands <a | b | abgn> default: a',default="a")
+    parser.add_argument('-cwm' ,'--controller_wifimodes', help='List of of wifi mode to test default: auto',default="auto")
 
     parser.add_argument('-cc5','--controller_chan_5ghzs', help='--controller_chan_5ghzs <36 40 ...> default 36',default="36")
     parser.add_argument('-cc2','--controller_chan_24ghzs', help='--controller_chan_24ghzs <1 2 ...> default 1',default="1")
