@@ -2365,7 +2365,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                 logg.info("# controller run settings: {}".format(test_config))
                                                                 if(args.no_controller):
                                                                     logg.info("################################################")
-                                                                    logg.info("# NO CONTROLLER SET , TEST MODE")
+                                                                    logg.info("# TEST MODE : NO CONTROLLER SET : TEST MODE")
                                                                     logg.info("################################################")
                                                                     if( controller_ap            != __ap_set or 
                                                                         controller_band          != __band_set or
@@ -2376,7 +2376,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         controller_chan_24ghz    != __chan_24ghz_set
                                                                         ):
                                                                         logg.info("###############################################")
-                                                                        logg.info("# NEW CONTROLLER CONFIG")
+                                                                        logg.info("# TEST MODE : NEW CONTROLLER CONFIG : TEST MODE")
                                                                         logg.info("###############################################")
                                                                         __ap_set          = controller_ap
                                                                         __band_set        = controller_band
@@ -2387,6 +2387,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         __chan_24ghz_set  = controller_chan_24ghz
                                                                         __client_density  = controller_client_density
                                                                 else:
+                                                                    logg.info("################################################")
+                                                                    logg.info("# SETUP MODE : SETUP CONTROLLER : SETUP MODE")
+                                                                    logg.info("################################################")
+                                                                     
                                                                     if( controller_ap            != __ap_set or 
                                                                         controller_band          != __band_set or
                                                                         controller_chan_width    != __chan_width_set or
@@ -2396,7 +2400,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         controller_chan_24ghz    != __chan_24ghz_set
                                                                         ):
                                                                         logg.info("###############################################")
-                                                                        logg.info("# NEW CONTROLLER CONFIG")
+                                                                        logg.info("# SETUP MODE : NEW CONTROLLER CONFIG")
                                                                         logg.info("###############################################")
                                                                         __ap_set          = controller_ap
                                                                         __band_set        = controller_band
@@ -2459,7 +2463,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         ####################################
                                                                     else:
                                                                         logg.info("###############################################")
-                                                                        logg.info("# NO CHANGE TO CONTROLLER CONFIG")
+                                                                        logg.info("# SETUP MODE : NO CHANGE TO CONTROLLER CONFIG")
                                                                         logg.info("###############################################")
                                                                         logg.info("controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}"
                                                                             .format(controller_ap,controller_band, controller_chan_width, controller_ap_mode, controller_tx_power, controller_chan_5ghz, controller_chan_24ghz))
@@ -2501,112 +2505,112 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                             reset_port_enable_list.append(False)
                                                                             reset_port_time_min_list.append('0s')
                                                                             reset_port_time_max_list.append('0s')
-                                                            # no stations for testing reconfiguration of the controller - 
-                                                            if(args.no_stations):
-                                                                logg.info("##################################")
-                                                                logg.info("# NO STATIONS TEST MODE")
-                                                                logg.info("##################################")
-                                                            else:
-                                                                index = 0
-                                                                station_lists = []
-                                                                for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
-                                                                    number_of_stations = int(number_of_stations_per_radio_)
-                                                                    if number_of_stations > MAX_NUMBER_OF_STATIONS:
-                                                                        logg.info("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
-                                                                        quit(1)
-                                                                    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                                                                                          padding_number_=10000, radio=radio_name_)
-                                                                    station_lists.append(station_list)
-                                                                    index += 1
-                                                                # Run Traffic upload (STA to AP)
-                                                                if(controller_direction == "upload"):
-                                                                    side_a_tx_min_bps = side_a_tx_min_bps_ul 
-                                                                    side_b_tx_min_bps = 0  
-                                                                # Run Traffic download (AP to STA)    
+                                                                # no stations for testing reconfiguration of the controller - 
+                                                                if(args.no_stations):
+                                                                    logg.info("#################################################")
+                                                                    logg.info("# TEST MODE : NO STATIONS TEST MODE")
+                                                                    logg.info("##################################################")
                                                                 else:
-                                                                    side_a_tx_min_bps = 0 
-                                                                    side_b_tx_min_bps = side_b_tx_min_bps_dl  
-                                                                # current default is to have a values
-                                                                ip_var_test = L3VariableTime(
-                                                                                                args=args,
-                                                                                                _scheme=__scheme,
-                                                                                                _port=__port,
-                                                                                                _series=__series,
-                                                                                                _ctlr=__ctlr,
-                                                                                                _prompt=__prompt,
-                                                                                                _user=__user,
-                                                                                                _passwd=__passwd,
-                                                                                                _ap=__ap_set,
-                                                                                                _ap_slot=__ap_slot,
-                                                                                                _band=__band_set,
-                                                                                                _chan_5ghz=__chan_5ghz_set,
-                                                                                                _chan_24ghz=__chan_24ghz_set,
-                                                                                                _chan_width=__chan_width_set,
-                                                                                                _ap_mode=__ap_mode_set,
-                                                                                                _tx_power=__tx_power_set,
-                                                                                                _client_density=__client_density,
-                                                                                                _cap_ctl_out=__cap_ctl_out,
-                                                                                                _ap_dict = ap_dict,
-                                                                                                endp_type=controller_packet_type,
-                                                                                                tos=args.tos,
-                                                                                                side_b=side_b,
-                                                                                                radio_name_list=radio_name_list,
-                                                                                                number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                                                                                ssid_list=ssid_list,
-                                                                                                ssid_password_list=ssid_password_list,
-                                                                                                ssid_security_list=ssid_security_list, 
-                                                                                                wifimode_list=wifimode_list, 
-                                                                                                station_lists= station_lists,
-                                                                                                name_prefix="LT-",
-                                                                                                debug_on=debug_on, 
-                                                                                                wait_timeout=wait_timeout,
-                                                                                                outfile=csv_outfile,
-                                                                                                results=csv_results,
-                                                                                                test_keys=test_keys,
-                                                                                                test_config=test_config,
-                                                                                                reset_port_enable_list=reset_port_enable_list,
-                                                                                                reset_port_time_min_list=reset_port_time_min_list,
-                                                                                                reset_port_time_max_list=reset_port_time_max_list,
-                                                                                                csv_started=__csv_started,
-                                                                                                side_a_tx_min_bps = side_a_tx_min_bps, 
-                                                                                                side_a_tx_max_bps =0,
-                                                                                                side_a_min_pdu =controller_pdu, 
-                                                                                                side_a_max_pdu =0,
-                                                                                                side_b_tx_min_bps =side_b_tx_min_bps, 
-                                                                                                side_b_tx_max_bps =0,
-                                                                                                side_b_min_pdu =controller_pdu, 
-                                                                                                side_b_max_pdu = 0,
-                                                                                                number_template="00", 
-                                                                                                test_duration=test_duration,
-                                                                                                polling_interval= polling_interval,
-                                                                                                lfclient_host=lfjson_host,
-                                                                                                lfclient_port=lfjson_port)
-                                                                __csv_started = True
-                                                                ip_var_test.pre_cleanup()
-                                                                ip_var_test.build()
-                                                                if not ip_var_test.passes():
-                                                                    logg.info("build step failed.")
-                                                                    logg.info(ip_var_test.get_fail_message())
-                                                                    exit(1) 
-                                                                ip_var_test.start(False, False)
-                                                                ip_var_test.stop()
-                                                                if not ip_var_test.passes():
-                                                                    logg.info("stop test failed")
-                                                                    logg.info(ip_var_test.get_fail_message())
-                                                                # clean up 
-                                                                radio_name_list = []
-                                                                number_of_stations_per_radio_list = []
-                                                                ssid_list = []
-                                                                ssid_password_list = []
-                                                                ssid_security_list = []
-                                                                wifimode_list = []
-                                                                ip_var_test.cleanup()
-                                                                if ( args.no_stations):
-                                                                    pass
-                                                                else:
-                                                                    ip_var_test.passes()
-                                                                    logg.info("Full test passed, all connections increased rx rate")
-    ##########################################
+                                                                    index = 0
+                                                                    station_lists = []
+                                                                    for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+                                                                        number_of_stations = int(number_of_stations_per_radio_)
+                                                                        if number_of_stations > MAX_NUMBER_OF_STATIONS:
+                                                                            logg.info("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+                                                                            quit(1)
+                                                                        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+                                                                                                              padding_number_=10000, radio=radio_name_)
+                                                                        station_lists.append(station_list)
+                                                                        index += 1
+                                                                    # Run Traffic upload (STA to AP)
+                                                                    if(controller_direction == "upload"):
+                                                                        side_a_tx_min_bps = side_a_tx_min_bps_ul 
+                                                                        side_b_tx_min_bps = 0  
+                                                                    # Run Traffic download (AP to STA)    
+                                                                    else:
+                                                                        side_a_tx_min_bps = 0 
+                                                                        side_b_tx_min_bps = side_b_tx_min_bps_dl  
+                                                                    # current default is to have a values
+                                                                    ip_var_test = L3VariableTime(
+                                                                                    args=args,
+                                                                                    _scheme=__scheme,
+                                                                                    _port=__port,
+                                                                                    _series=__series,
+                                                                                    _ctlr=__ctlr,
+                                                                                    _prompt=__prompt,
+                                                                                    _user=__user,
+                                                                                    _passwd=__passwd,
+                                                                                    _ap=__ap_set,
+                                                                                    _ap_slot=__ap_slot,
+                                                                                    _band=__band_set,
+                                                                                    _chan_5ghz=__chan_5ghz_set,
+                                                                                    _chan_24ghz=__chan_24ghz_set,
+                                                                                    _chan_width=__chan_width_set,
+                                                                                    _ap_mode=__ap_mode_set,
+                                                                                    _tx_power=__tx_power_set,
+                                                                                    _client_density=__client_density,
+                                                                                    _cap_ctl_out=__cap_ctl_out,
+                                                                                    _ap_dict = ap_dict,
+                                                                                    endp_type=controller_packet_type,
+                                                                                    tos=args.tos,
+                                                                                    side_b=side_b,
+                                                                                    radio_name_list=radio_name_list,
+                                                                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+                                                                                    ssid_list=ssid_list,
+                                                                                    ssid_password_list=ssid_password_list,
+                                                                                    ssid_security_list=ssid_security_list, 
+                                                                                    wifimode_list=wifimode_list, 
+                                                                                    station_lists= station_lists,
+                                                                                    name_prefix="LT-",
+                                                                                    debug_on=debug_on, 
+                                                                                    wait_timeout=wait_timeout,
+                                                                                    outfile=csv_outfile,
+                                                                                    results=csv_results,
+                                                                                    test_keys=test_keys,
+                                                                                    test_config=test_config,
+                                                                                    reset_port_enable_list=reset_port_enable_list,
+                                                                                    reset_port_time_min_list=reset_port_time_min_list,
+                                                                                    reset_port_time_max_list=reset_port_time_max_list,
+                                                                                    csv_started=__csv_started,
+                                                                                    side_a_tx_min_bps = side_a_tx_min_bps, 
+                                                                                    side_a_tx_max_bps =0,
+                                                                                    side_a_min_pdu =controller_pdu, 
+                                                                                    side_a_max_pdu =0,
+                                                                                    side_b_tx_min_bps =side_b_tx_min_bps, 
+                                                                                    side_b_tx_max_bps =0,
+                                                                                    side_b_min_pdu =controller_pdu, 
+                                                                                    side_b_max_pdu = 0,
+                                                                                    number_template="00", 
+                                                                                    test_duration=test_duration,
+                                                                                    polling_interval= polling_interval,
+                                                                                    lfclient_host=lfjson_host,
+                                                                                    lfclient_port=lfjson_port)
+                                                                    __csv_started = True
+                                                                    ip_var_test.pre_cleanup()
+                                                                    ip_var_test.build()
+                                                                    if not ip_var_test.passes():
+                                                                        logg.info("build step failed.")
+                                                                        logg.info(ip_var_test.get_fail_message())
+                                                                        exit(1) 
+                                                                    ip_var_test.start(False, False)
+                                                                    ip_var_test.stop()
+                                                                    if not ip_var_test.passes():
+                                                                        logg.info("stop test failed")
+                                                                        logg.info(ip_var_test.get_fail_message())
+                                                                    # clean up 
+                                                                    radio_name_list = []
+                                                                    number_of_stations_per_radio_list = []
+                                                                    ssid_list = []
+                                                                    ssid_password_list = []
+                                                                    ssid_security_list = []
+                                                                    wifimode_list = []
+                                                                    ip_var_test.cleanup()
+                                                                    if ( args.no_stations):
+                                                                        pass
+                                                                    else:
+                                                                        ip_var_test.passes()
+                                                                        logg.info("Full test passed, all connections increased rx rate")
+    ##########################################  
     #
     # Build Results
     #
