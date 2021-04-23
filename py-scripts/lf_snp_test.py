@@ -22,8 +22,14 @@ TECHNICAL UNDERSTANDING:
         'rx bytes' - bytes transmitted
         'rx rate'  - bits per second 
 
-    in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
-    in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+    in DL direction:    -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), 
+                        station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
+
+    in UL direction:    -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), 
+                        station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+
+    configured bps (side_a_tx_min_bps and side_b_tx_min_bps) if lists not same lenght shorter list padded out with 256000 if upload and download selected.
+
 
 
 NOTES:
@@ -69,8 +75,6 @@ OUTPUT:
     csv details_snp_<date>.csv raw data 
     * radios and con
 
-
-
 EXAMPLE: 
 
 Use --print_test_config at end of command to see test configuration
@@ -79,9 +83,15 @@ Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
     ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
-    --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "WLC" --controller_test_1
+    --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
-    
+
+Using Coded Test Configuration --controller_test_1
+    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
+    --print_test_config
+
+
 Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" 
@@ -1409,24 +1419,6 @@ The Test supports configuraiton of a Controller which configures
 An AP and the Configuration of LANforge or Multiple LANforges
 configured into a "Realm". 
 
-The ultimate aim of this script is to achieve the following:
-
-1. 1 to 200 client SNP on 11ac (1, 50 and 200 client count tests)
-      1. 5 Ghz with different channel widths
-      2. Data encryption enabled/disabled
-      3. Local/central switching and authentication combinations
-2. 1 to 37 client SNP on 11ax (1, 10 and 37 client count tests) eventually 200 clients
-      1. Different channel widths
-      2. Data encryption enabled/disabled
-      3. Local/central switching and authentication combinations
-      4. MU-MIMO and OFDMA enabled/disabled combination
-3. CI/CD implementation
-      1. Download latest WLC images and upload them to the controller
-      2. Start the test suite
-      3. Generate a report per release
-      4. Display and graph all result data according to each release along with each testcase historical graph
-      5. Review overall AP performance across multiple AP platforms
-
 
 #########################################
 # Examples
@@ -1453,22 +1445,6 @@ Using Commandline Less Interations:
     --print_test_config
 
 
-##############################################################################
-Detailed test loop description - Recommendation
-##############################################################################
-Script logic loops:
-
-AP {Axel, Vanc} Dynamic
-      frequency {24ghz, 5ghz} Common (band)  : 24ghz == b , 5ghz == a
-            wifimode{11ax (2.4 ghz or 5 ghz), 11ac (5 ghz only), 11n (2.4 ghz or 5ghz), 11bg(2.4 ghz)} Common  (an anAX anAC abgn bg)
-                  Bandwidth {20, 40, 80, 160}
-                        data-encryption {enable/disable} Common
-                              AP-mode {local/flexconnect} Common
-                                    client-density {1, 10, 20, 50, 100, 200} Dynamic
-                                          Packet-type {TCP, UDP} Common
-                                                Direction {download, upload}
-                                                      Packet-size { 88, 512, 1370, 1518}   Common
-                                                            Time (4 iterations of 30 sec and get the best average out of it) 
 #############################################
 #############################################
 LANforge Information and General Information
@@ -1583,9 +1559,7 @@ TECHNICAL UNDERSTANDING: LANForge
 #########################################################################################################
 LANforge GUI what is displayed in the Column and how to access the value with cli or json
 #########################################################################################################
-
-
-
+# NOTE: see how rx rate is used in script and can monitor any values in similiar manner 
 
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
@@ -1686,8 +1660,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                         ,choices=["1","2","3","4","5","6","7","8"])
     parser.add_argument('-cco','--cap_ctl_out',  help='--cap_ctl_out , switch the controller controller output will be captured', action='store_true')
 
-
-
     #################################################################
     # Script AP parameters for reading AP, - not used in this script
     #################################################################
@@ -1715,8 +1687,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '\
                         , required=False)
-    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , requested download min tx rate bits per second default 256000 1000000000', default="256000 1000000000")
-    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , requested upload min tx rate bits per second default 256000 1000000000', default="256000 1000000000")
+    parser.add_argument('-ul_bps','--side_a_tx_min_bps',  help='--side_a_tx_min_bps , upload (A side tx) min tx rate bps  default 256000 500000000', default="256000 1000000000")
+    parser.add_argument('-dl_bps','--side_b_tx_min_bps',  help='--side_b_tx_min_bps , download(B side tx) min tx rate bps  default 1000000000', default="1000000000")
 
     ##############################################
     # Parameters Used For Testing
