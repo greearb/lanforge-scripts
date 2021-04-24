@@ -6,7 +6,7 @@ from LANforge import LFUtils
 import pprint
 from pprint import pprint
 import time
-
+from LANforge.set_wifi_radio import set_radio_mode
 
 
 
@@ -25,7 +25,7 @@ class WifiMonitor:
         self.aid = "NA"  # used when sniffing /ax radios
         self.bsssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
 
-    def create(self, resource_=1, channel=None, radio_="wiphy0", name_="moni0"):
+    def create(self, resource_=1, channel=None, mode="AUTO", radio_="wiphy0", name_="moni0"):
         print("Creating monitor " + name_)
         self.monitor_name = name_
         computed_flags = 0
@@ -50,10 +50,11 @@ class WifiMonitor:
             "shelf": 1,
             "resource": resource_,
             "radio": radio_,
-            "mode": 0,  # "NA", #0 for AUTO or "NA"
+            "mode": set_radio_mode[mode],  # "NA", #0 for AUTO or "NA"
             "channel": channel,
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
+
         }
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
         time.sleep(1)
@@ -106,6 +107,7 @@ class WifiMonitor:
 
     def admin_up(self):
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.monitor_name)
+        self.local_realm.json_post("/cli-json/set_port", up_request)
         self.local_realm.json_post("/cli-json/set_port", up_request)
 
     def admin_down(self):

@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""
+    NAME:       lf_sniff_radio.py
+    PURPOSE:    THis script will sniff a Radio after changing the Radio settings.
+
+                Radio settings: channel radio mode  AUTO, 802.11a, 802.11b, etc... refer
+                                        lanforge-scripts/py-json/LANforge/set_wifi_radio.py for different modes
+
+    EXAMPLE:    python3 lf_sniff_radio.py
+                        --mgr localhost
+                        --mgr_port 8080
+                        --outfile /home/lanforge/test_sniff.pcap
+                        --duration 20
+                        --channel 52
+                        --radio_mode AUTO
+
+"""
+
+import sys
+
+if 'py-json' not in sys.path:
+    sys.path.append('../py-json')
+
+import argparse
+import time
+from LANforge.LFUtils import *
+from realm import Realm
+
+
+class SniffRadio(Realm):
+    def __init__(self,
+                 lfclient_host="localhost",
+                 lfclient_port=8080,
+                 radio="wiphy0",
+                 outfile="/home/lanforge/test_pcap.pcap",
+                 duration=60,
+                 channel=52,
+                 radio_mode="AUTO"):
+        super().__init__(lfclient_host, lfclient_port)
+        self.monitor = self.new_wifi_monitor_profile()
+        if channel != "AUTO":
+            channel = int(channel)
+        self.channel = channel
+        self.duration = duration
+        self.outfile = outfile
+        self.mode = radio_mode
+        self.radio = radio
+
+    def setup(self):
+        self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_="moni3a")
+
+    def start(self):
+        self.monitor.admin_up()
+        time.sleep(5)
+        self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration)
+        for i in range(0, self.duration):
+            print("started sniffer, PLease wait,", self.duration - i)
+            time.sleep(1)
+        print("Sniffing Completed Success", "Check ", self.outfile)
+        self.monitor.admin_down()
+        time.sleep(2)
+
+    def cleanup(self):
+        self.monitor.cleanup()
+
+
+def main():
+    parser = argparse.ArgumentParser(usage=
+                                     """./lf_sniff_radio.py 
+        --mgr localhost
+        --mgr_port 8080 
+        --radio wiphy0  
+        --outfile /home/lanforge/test_sniff.pcap
+        --duration 1
+        --channel 52
+        --radio_mode AUTO
+        """)
+
+    parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge', default="localhost")
+    parser.add_argument('--mgr_port', type=int, help='--mgr_port: HTTP Port of LANforge', default=8080)
+    parser.add_argument('--radio', type=str, help='--radio: Radio to sniff', default="wiphy0")
+    parser.add_argument('--outfile', type=str, help='--outfile: give the filename with path',
+                        default="/home/lanforge/test_pcap.pcap")
+    parser.add_argument('--duration', type=int, help='--duration duration in sec, for which you want to capture',
+                        default=60)
+    parser.add_argument('--channel', type=str, help='--channel Set channel pn selected Radio, [52, 56 ...]',
+                        default=0)
+    parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
+                                                       '802.11ab ...]', default="AUTO")
+
+    args = parser.parse_args()
+
+    obj = SniffRadio(lfclient_host=args.mgr,
+                     lfclient_port=args.mgr_port,
+                     outfile=args.outfile,
+                     duration=args.duration,
+                     channel=args.channel,
+                     radio_mode=args.radio_mode
+                     )
+    obj.setup()
+    time.sleep(5)
+    obj.start()
+    obj.cleanup()
+
+
+if __name__ == '__main__':
+    main()
