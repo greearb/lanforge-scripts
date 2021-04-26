@@ -30,14 +30,10 @@ TECHNICAL UNDERSTANDING:
 
     configured bps (side_a_tx_min_bps and side_b_tx_min_bps) if lists not same lenght shorter list padded out with 256000 if upload and download selected.
 
-
-
 NOTES:
     1.  The controller_client_densities are indpendent of the number of stations on a radio
     2.  The --side_a_tx_min_bps (download) and --side_b_tx_min_bps (upload) is used to set the rate 
-        a. default 256000
-    
-        
+        a. default 256000        
 
 The script is devided into parts:
 1. Controller Class : CreateCtlr controller interface. 
@@ -66,7 +62,6 @@ The script is devided into parts:
     e. Parameters Used For Testing
     f. report generation
 
-
 OUTPUT:
     In /home/lanforge/report-data/<date>_Scaling_and_Performance or if not present in script directory under <date>_Scaling_and_Performance
     html results , default .html
@@ -91,7 +86,6 @@ Using Coded Test Configuration --controller_test_1
     --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
-
 Using Coded Test Configuration:
     ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
     --controller_prompt "(Cisco Controller)" 
@@ -113,7 +107,6 @@ Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "
     --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
     --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
     --print_test_config
-
 
 SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 
@@ -138,12 +131,9 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 2021-04-21 05:43:25,041 __main__ INFO: polling_interval ('-pi','--polling_interval'): 5s
 2021-04-21 05:43:25,041 __main__ INFO: radios from coded config used
 
-
-
 INCLUDE_IN_README
 
-
-
+COPYWRITE
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
@@ -152,7 +142,6 @@ import sys
 import os
 import itertools
 from pprint import pprint
-
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -167,13 +156,11 @@ from realm import Realm
 import time
 import datetime
 import subprocess
-import re
 import csv
 import random
 import logging
 from lf_report import lf_report
-from lf_graph import lf_bar_graph
-
+#from lf_graph import lf_bar_graph
 
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
@@ -845,7 +832,6 @@ class CreateCtlr():
 #
 ################################################################################
 
-
 ################################################################################
 #
 # Traffic Generation Class : L3VariableTime
@@ -1131,7 +1117,6 @@ class L3VariableTime(Realm):
             csv_rx_row_data.extend([self.epoch_time, self.time_stamp()])
             csv_result_row_data.extend([self.epoch_time, self.time_stamp()])
 
-
             #Generate TestID
             for key in self.test_keys:
                 test_id = test_id + "_" + self.test_config_dict[key]
@@ -1155,7 +1140,6 @@ class L3VariableTime(Realm):
             csv_rx_row_data.append(total_ul_bps)
             #csv_result_row_data.append(rx_bytes)
 
-
             print("csv_rx_row_data {}".format(csv_rx_row_data))
             #TODO:  may want to pass in the information that needs to be in the csv file into the class
             
@@ -1170,7 +1154,6 @@ class L3VariableTime(Realm):
                     csv_rx_headers.append(item)
                 # append the rate for each station
                 csv_rx_row_data.append(new_list[item] - old_list[item])
-
 
             # data from each station for each iteration
             self.csv_add_row(csv_rx_row_data,self.csv_writer,self.csv_file_details)
@@ -1337,6 +1320,7 @@ class L3VariableTime(Realm):
         
     # for details csv file                                    
     def csv_generate_column_details_headers(self):
+        # test_keys used to generate the test_id
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         # test_keys are the controller configuration
@@ -1344,6 +1328,7 @@ class L3VariableTime(Realm):
         return csv_rx_headers
 
     def csv_generate_column_results_headers(self):
+        # test_keys used to generate test_id
         csv_rx_headers = self.test_keys.copy() 
         csv_rx_headers.extend 
         #test_keys are the controller configuration
@@ -1375,7 +1360,7 @@ def valid_endp_types(_endp_type):
     for endp_type in etypes:
         valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            logg.info('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
+        print('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
             exit(1)
     return _endp_type
 ################################################################################
@@ -1383,7 +1368,6 @@ def valid_endp_types(_endp_type):
 # End of Traffic Generation Class
 #
 ################################################################################
-
 
 ############################################################
 #
@@ -1394,7 +1378,6 @@ def main():
     global logg
     lfjson_host = "localhost"
     lfjson_port = 8080
-    endp_types = "lf_udp"
     debug_on = False
 
     parser = argparse.ArgumentParser(
@@ -1419,7 +1402,6 @@ The Test supports configuraiton of a Controller which configures
 An AP and the Configuration of LANforge or Multiple LANforges
 configured into a "Realm". 
 
-
 #########################################
 # Examples
 # #######################################            
@@ -1443,7 +1425,6 @@ Using Commandline Less Interations:
     --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
     --controller_chan_5ghz "36" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  
     --print_test_config
-
 
 #############################################
 #############################################
@@ -1506,7 +1487,6 @@ controller_wifimode == "anAX" or controller_wifimode == "abgn" or controller_wif
 controller_wifimode == "an" or controller_wifimode == "anAC":
         radios = radio_ath10K_9984_an_AC_dict[controller_client_density]
 
-
 ############################################
 LANforge Realm Configuration
 ############################################
@@ -1554,7 +1534,6 @@ TECHNICAL UNDERSTANDING: LANForge
 
     in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
     in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
-
 
 #########################################################################################################
 LANforge GUI what is displayed in the Column and how to access the value with cli or json
@@ -1617,9 +1596,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
-
         ''')
-
     #############################################
     # Fixed Configurations Coded Into Script
     #############################################
@@ -1641,7 +1618,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-pdu','--controller_pdus', help='--controller_pdus List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
         choices=["88","512","1370","1518"] )
         
-
     parser.add_argument('-cde','--controller_data_encryptions', help='--controller_data_encryptions \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
     parser.add_argument('-ccp','--controller_prompt',    type=str,help="controller prompt default WLC",default="WLC")
@@ -1653,7 +1629,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cpw','--controller_passwd', help='--controller_passwd <Password for controller Controller>',default="controller123")
     parser.add_argument('-ccs','--controller_scheme', help='--controller_scheme (serial|telnet|ssh): connect via serial, ssh or telnet',default="ssh",choices=["serial","telnet","ssh"])
     parser.add_argument('-ccd','--controller_client_densities', help='--controller_client_densities List of client densities defaults 1', default="1" ) 
-
 
     parser.add_argument('-ctp','--controller_tx_powers', help='--controller_tx_powers <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default 3',default="3"
                         ,choices=["1","2","3","4","5","6","7","8"])
@@ -1669,7 +1644,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #############################################
     # Script LANforge Configurations
     #############################################
-
     parser.add_argument('-lm','--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 2m options: number followed by d, h, m or s',default='20s')
     parser.add_argument('-pi','--polling_interval', help="--polling_interval <seconds>", default='5s')
@@ -1697,32 +1671,24 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-wto','--wait_timeout',   help='-wto / --wait_timeout , time to wait for stations to get IP ', default="360")
     parser.add_argument('-ptc','--print_test_config', help='-ptc / --print_test_config , print out the test configuration and exit', action='store_true')
 
-
     ##############################################################
     #
     #  Scaling and Performance Args Parser
     #
     ##############################################################
     args = parser.parse_args()
-
     controller_args = args  # use args.
-
     #logg.info("args: {}".format(args))
     debug_on = args.debug
 
     ###############################################################
     # Gather Test Data
     ###############################################################
-
- 
     if args.test_duration:
         test_duration = args.test_duration
 
     if args.polling_interval:
         polling_interval = args.polling_interval
-
-    if args.endp_types:
-        endp_types = args.endp_types
 
     if args.mgr:
         lfjson_host = args.mgr
@@ -1822,7 +1788,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         # stdout logging
         logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
-
     #############################################################
     #
     #   Radio Eictionary for LANforge 1 in LANforge Realm
@@ -1840,11 +1805,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                            ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
                                            ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
-
     radio_AX200_abgn_ax_dict_one = {'1'   : radio_AX200_abgn_ax_list_001_one, 
                                     '8'   : radio_AX200_abgn_ax_list_008_one} 
 
-    
     radio_ath10K_9984_an_AC_list_001_one     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010_one     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_020_one     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1862,7 +1825,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # End of Configuration used by command switch --controller_test_1
     #
     ####################################################################
-
 
     ############################################################
     #
@@ -1932,12 +1894,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                            ['radio==6.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
                                            ]
 
-
     radio_AX200_abgn_ax_dict = {'1'   : radio_AX200_abgn_ax_list_001, 
                                 '10'  : radio_AX200_abgn_ax_list_010, 
                                 '24'  : radio_AX200_abgn_ax_list_024}
 
-    
     radio_ath10K_9984_an_AC_list_001     = [['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010     = [['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_020     = [['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1959,7 +1919,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #
     ####################################################################
 
-
     #############################################################
     #
     #  Static dictionary for radios on 191.168.100.178  
@@ -1969,7 +1928,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     #############################################################
     #iwlwifi(AX200) 521
     radio_AX200_abgn_ax_list_001_wiphy2  = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-
 
     radio_AX200_abgn_ax_list_001     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_AX200_abgn_ax_list_004     = [['radio==1.wiphy2 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -1981,7 +1939,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                        '4': radio_AX200_abgn_ax_list_004}
 
     radio_AX200_abgn_ax_dict_test_wiphy2 = {'1' : radio_AX200_abgn_ax_list_001_wiphy2}
-
 
     radio_ath10K_9984_an_AC_list_001    = [['radio==1.wiphy0 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010    = [['radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -1997,8 +1954,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     radio_ath10K_9984_an_AC_dict_test   = {'1'  : radio_ath10K_9984_an_AC_list_001,
                                           '10'  : radio_ath10K_9984_an_AC_list_010,
                                           '50'  : radio_ath10K_9984_an_AC_list_050}
-
-
+                                          
+    ####################################################################
+    # Test to use ath9K
+    ####################################################################
 
     radio_ath9K_9984_abgn_list_001     = [['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath9K_9984_abgn_list_010     = [['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
@@ -2006,22 +1965,18 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     radio_ath9K_9984_abgn_list_050     = [['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath9K_9984_abgn_list_200     = [['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-
     radio_ath9K_9984_abgn_dict_test     = {'1'  : radio_ath9K_9984_abgn_list_001,
                                            '10' : radio_ath9K_9984_abgn_list_010,
                                            '20' : radio_ath9K_9984_abgn_list_020,
                                            '50' : radio_ath9K_9984_abgn_list_050,
                                            '200': radio_ath9K_9984_abgn_list_200 }
-    
-
+    ####################################################################
     # Test to only use teh ath9K
-
     ####################################################################
     #
     # End of Configuration used by command switch --controller_test_3
     #
     ####################################################################
-
     MAX_NUMBER_OF_STATIONS = 200
     
     radio_name_list = []
@@ -2069,7 +2024,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         logg.info("USING: controller_test_1")
         controller_aps              = "APA453.0E7B.CF9C".split()
         controller_aps              = "vanc-e".split()
-#        controller_bands            = "a b".split()
+        controller_bands            = "a b".split()
         controller_wifimodes        = "an anAX anAC abgn bg".split()
         controller_tx_powers        = "3".split()
         controller_chan_5ghzs       = "36".split()
@@ -2081,10 +2036,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_directions       = "upload download".split()
         controller_pdus             = "88 512 1370 1518".split()
         controller_client_densities = "1 10 50 200".split()
-
-        controller_side_a_tx_min_bps  = "256000"
-        controller_side_b_tx_min_bps  = "256000"
-
+        controller_side_a_tx_min_bps  = "256000".split()
+        controller_side_b_tx_min_bps  = "256000".split()
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_one
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_one
 
@@ -2093,7 +2046,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 # controller_test_2
 #
 ###########################################################################################
-
     elif args.controller_test_2:
         logg.info("USING: controller_test_2")
         # Note the local system only supports 802.11-abgn , 802.11a
@@ -2115,10 +2067,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_pdus             = "1518".split()
         controller_client_densities = "10".split()
         controller_data_encryptions = "disable".split()
-
         controller_side_a_tx_min_bps  = "256000".split()
         controller_side_b_tx_min_bps  = "256000".split()
-
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
 
@@ -2127,7 +2077,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 # controller_test_3
 #
 ###########################################################################################
-
     elif args.controller_test_3: #CMR_test_3
         logg.info("USING: controller_test_3")
         # Note the local system only supports 802.11-abgn , 802.11a
@@ -2149,10 +2098,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         controller_pdus             = "1518".split()
         controller_client_densities = "1".split()
         controller_data_encryptions = "disable".split()
-
         controller_side_a_tx_min_bps  = "256000".split()
         controller_side_b_tx_min_bps  = "256000".split()
-
         radio_AX200_abgn_ax_dict     = radio_AX200_abgn_ax_dict_test_wiphy2
         radio_ath10K_9984_an_AC_dict = radio_ath10K_9984_an_AC_dict_test
         #radio_ath10K_9984_an_AC_dict = radio_ath9K_9984_abgn_dict_test
@@ -2202,7 +2149,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     logg.info("controller_side_b_tx_min_bps ('-bmr','--side_b_tx_min_bps'): {}".format(controller_side_b_tx_min_bps))
     logg.info("test duration ('-d','--test_duration'): {}".format(test_duration))
     logg.info("polling_interval ('-pi','--polling_interval'): {}".format(polling_interval))
-
 
     if args.radio:
         logg.info("radios from command line used")
@@ -2300,7 +2246,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                         #logg.info("# controller run settings: {}".format(test_config))
                                                         logg.info("##################################")
                                                         exit(1)
-
                                                 else: # controller_band == "b"
                                                     if controller_wifimode == "an" or controller_wifimode == "anAX" or controller_wifimode == "abgn" or  controller_wifimode == "bg" or controller_wifimode == "auto":
                                                         #AX200 dual band
@@ -2318,7 +2263,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                         #logg.info("# controller run settings: {}".format(test_config))
                                                         logg.info("##################################")
                                                         exit(1)
-
 
                                                 for controller_packet_type in controller_packet_types:
                                                     for controller_direction in controller_directions:
@@ -2604,8 +2548,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     if args.log:
         logg.info("output_log: {}".format(outfile_log))
-
-    
 
 if __name__ == "__main__":
     main()
