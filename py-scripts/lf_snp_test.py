@@ -77,12 +77,12 @@ Use --print_test_config at end of command to see test configuration
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
-    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
     --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
 Using Coded Test Configuration --controller_test_1
-    ./lf_snp_test.py -controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
     --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
@@ -1411,19 +1411,36 @@ Use --print_test_config at end of command to see test configuration
 
 Test configurations take presidence to command line parameters
 
-Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_type 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_prompt "(Cisco Controller)" --print_test_config
-
-Using Commandline with defaults:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C --controller_series "3504" 
-    --upstream_port eth2 --controller_prompt "(Cisco Controller)"  --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+Using Coded Test Configuration --controller_test_1
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
-Using Commandline Less Interations:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_ap APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto" --controller_wifimode "a" 
-    --controller_chan_5ghz "36" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"  
+Using Coded Test Configuration --controller_test_1
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
+    --print_test_config
+
+Using Coded Test Configuration:
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
+    --controller_prompt "(Cisco Controller)" 
+    --print_test_config
+
+Using Commandline with defaults:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C --controller_series "3504" 
+    --controller_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    --print_test_config
+
+Using Commandline:
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"  
+    --print_test_config
+
+Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
+    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
     --print_test_config
 
 #############################################
