@@ -173,8 +173,6 @@ if 'py-json' not in sys.path:
 
 from cv_test_manager import cv_test as cvtest
 from cv_test_manager import *
-from cv_commands import chamberview as cv
-
 
 class DataplaneTest(cvtest):
     def __init__(self,
@@ -201,7 +199,6 @@ class DataplaneTest(cvtest):
         self.lf_port = lf_port
         self.lf_user = lf_user
         self.lf_password =lf_password
-        self.createCV = cv(lf_host, lf_port);
         self.instance_name = instance_name
         self.config_name = config_name
         self.dut5 = dut5
@@ -222,9 +219,9 @@ class DataplaneTest(cvtest):
 
 
     def run(self):
-        self.createCV.sync_cv()
+        self.sync_cv()
         time.sleep(2)
-        self.createCV.sync_cv()
+        self.sync_cv()
 
         blob_test = "%s-"%(self.test_name)
 

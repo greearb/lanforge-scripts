@@ -316,7 +316,6 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 from cv_test_manager import cv_test as cvtest
-from cv_commands import chamberview as cv
 from cv_test_manager import *
 
 
@@ -356,7 +355,6 @@ class WiFiCapacityTest(cvtest):
         self.lf_port = lf_port
         self.lf_user = lf_user
         self.lf_password =lf_password
-        self.createCV = cv(lf_host, lf_port);
         self.station_profile = self.new_station_profile()
         self.pull_report = pull_report
         self.load_old_cfg = load_old_cfg
@@ -395,8 +393,9 @@ class WiFiCapacityTest(cvtest):
 
 
     def run(self):
-        self.createCV.sync_cv()
+        self.sync_cv()
         time.sleep(2)
+        self.sync_cv()
 
         self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
         self.show_text_blob(None, None, False)
