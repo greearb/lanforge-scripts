@@ -197,6 +197,7 @@ class CreateCtlr():
                 _chan_width,
                 _ap_mode,
                 _tx_power,
+                _wlan,
                 _cap_ctl_out):
 
         self.scheme = _scheme
@@ -213,6 +214,7 @@ class CreateCtlr():
         self.chan_width = _chan_width
         self.ap_mode = _ap_mode
         self.tx_power = _tx_power
+        self.wlan = _wlan
         self.cap_ctl_out = _cap_ctl_out
         self.client_density = 0
 
@@ -1636,9 +1638,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         choices=["88","512","1370","1518"] )
         
     parser.add_argument('-cde','--controller_data_encryptions', help='--controller_data_encryptions \"enable disable\"',default="disable" )
-    parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="3504",choices=["9800","3504"])
+    parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="9800",choices=["9800","3504"])
     parser.add_argument('-ccp','--controller_prompt',    type=str,help="controller prompt default WLC",default="WLC")
     parser.add_argument('-cas','--controller_ap_slot',    type=str,help="AP slot, default 1",default="1")
+    parser.add_argument('-cwl','--controller_wlan',    type=str,help="--controller_wlan <wlan>, default wlan",default="wlan")
 
     parser.add_argument('-cc' ,'--controller_ip', help='--controller_ip <IP of controller Controller> default 192.168.100.178',default="192.168.100.178")
     parser.add_argument('-cp' ,'--controller_port', help='--controller_port <port of controller Controller> ssh default 22',default="22")
@@ -1747,6 +1750,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     
     if args.controller_ap_slot:
         __ap_slot = args.controller_ap_slot
+
+    if args.controller_wlan:
+        __wlan = args.controller_wlan
 
     ap_dict = []
     if args.ap_info:
@@ -2357,6 +2363,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                                         _chan_width=__chan_width_set,
                                                                                         _ap_mode=__ap_mode_set,
                                                                                         _tx_power=__tx_power_set,
+                                                                                        _wlan = __wlan,
                                                                                         _cap_ctl_out=__cap_ctl_out
                                                                                         )
                                                                         #Disable AP
