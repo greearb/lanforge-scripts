@@ -202,6 +202,7 @@ class cv_test(Realm):
 
     def show_text_blob(self, config_name, blob_test_name, brief):
         req_url = "/cli-json/show_text_blob"
+        response_json = []
         data = {"type": "Plugin-Settings"}
         if config_name and blob_test_name:
             data["name"] = "%s%s"%(blob_test_name, config_name)  # config name
@@ -209,7 +210,8 @@ class cv_test(Realm):
             data["name"] = "ALL"
         if brief:
             data["brief"] = "brief"
-        return self.json_post(req_url, data)
+        self.json_post(req_url, data,  response_json_list_=response_json)
+        return response_json
 
     def rm_text_blob(self, config_name, blob_test_name):
         req_url = "/cli-json/rm_text_blob"

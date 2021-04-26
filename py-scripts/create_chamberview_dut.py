@@ -1,3 +1,50 @@
+"""
+Note: To Run this script gui should be opened with
+
+    path: cd LANforgeGUI_5.4.3 (5.4.3 can be changed with GUI version)
+          pwd (Output : /home/lanforge/LANforgeGUI_5.4.3)
+          ./lfclient.bash -cli-socket 3990
+
+Note: This script is used to create a DUT in chamber view.
+        Manual steps:
+            1. open GUI
+            2. click Chamber View
+            3. right click on empty space in Scenario configuration  select "New DUT"
+            4. Enter Name (DUT Name), SSID , Security type, BSsid (if available)
+            5. click on apply and OK
+            6. you will see a DUT created in chamber view under scenario configuration
+
+Note : If entered DUT name is already created in lanforge,
+    it will overwrite on to that DUT ( All information will be overwritten )
+    Which means it will "Update the DUT".
+
+    If entered DUT name is not already in lanforge,
+    then new DUT will be created will all the provided information
+
+How to Run this:
+    ./create_chamberview_dut --lfmgr "localhost" --port "8080" --dut_name "dut_name"
+                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
+                --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
+
+    --lfmgr = IP of lanforge
+    --port = Default 8080
+    --dut_name = Enter name of DUT ( to update DUT enter same DUT name )
+                                ( enter new DUT name to create a new DUT)
+    --ssid = "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
+
+            --ssid will take = ssid_idx (from 0 to 7) : we can add upto 7 ssids to a DUT
+                             = ssid : Name of SSID
+                             = security : Security type WPA|WEP|11r|EAP-PEAP ( in case of multiple security add "|"
+                                        after each type ex. WPA|WEP (this will select WPA and WEP both)
+                             = bssid : Enter BSSID
+                             (if you dont want to give bssid
+                                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP"
+                                )
+
+Output : DUT will be created in Chamber View
+"""
+
+
 import sys
 import os
 import argparse
@@ -28,7 +75,7 @@ class DUT(dut):
             lfclient_host=lfmgr,
             lfclient_port=port,
         )
-        self.cv = cvtest(lfmgr, port)
+        self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
         self.password = password
@@ -109,8 +156,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="""
         ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name" 
-                -s "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
-                -s "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
+                -ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
+                -ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
                """)
     parser.add_argument("-m", "--lfmgr", type=str, default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
@@ -131,11 +178,10 @@ def main():
 
     new_dut.setup()
     new_dut.add_ssids()
-    cv =cvtest(args.lfmgr,
-                  args.port)
-    cv.show_text_blob(None, None, False)  # Show changes on GUI
-    cv.sync_cv()
+    new_dut.cv_test.show_text_blob(None, None, True)  # Show changes on GUI
+    new_dut.cv_test.sync_cv()
     time.sleep(2)
+    new_dut.cv_test.sync_cv()
 
 if __name__ == "__main__":
     main()
