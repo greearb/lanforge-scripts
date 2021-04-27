@@ -72,17 +72,17 @@ class UseGrafana(LFCliBase):
         targets['query'] = (
                 'from(bucket: "%s")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r["script"] == "%s")\n  |> filter(fn: (r) => r["Graph-Group"] == "%s")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: "mean")\n  ' % (
             bucket, scriptname, graph_group))
-        targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index+1]
+        targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index + 1]
         targets['resultFormat'] = "time_series"
         targets['schema'] = list()
         targets['skipRows'] = 0
         targets['tags'] = list()
         return targets
 
-    def create_custom_dashboard(self):
-        title = input('Name of your dashboard: ')
-        numberofdashboards = input('Number of panels on dashboard: ')
-        bucket = input('Name of your Influx bucket: ')
+    def create_custom_dashboard(self,
+                                scripts=None,
+                                title=None,
+                                bucket=None):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -106,10 +106,8 @@ class UseGrafana(LFCliBase):
         timedict['to'] = 'now'
 
         panels = list()
-        for dashboard in range(0, int(numberofdashboards)):
-            paneltitle = input("title of dashboard %s: " % dashboard)
-            #numberoftargets = input("How many targets do you want? ")
-            scriptname = input('Name of your script for dashboard %s: ' % dashboard)
+        index = 1
+        for scriptname in scripts:
             panel = dict()
 
             gridpos = dict()
@@ -139,7 +137,6 @@ class UseGrafana(LFCliBase):
                             'Per Stations Rate UL',
                             'Per Stations Rate UL+DL']
             counter = 0
-            #for count in range(0, int(numberoftargets)):
             for graph_group in graph_groups:
                 new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group)
                 counter = counter + 1
@@ -178,7 +175,7 @@ class UseGrafana(LFCliBase):
             panel['fillGradient'] = 0
             panel['gridPos'] = gridpos
             panel['hiddenSeries'] = False
-            panel['id'] = dashboard
+            panel['id'] = index
             panel['legend'] = legend
             panel['lines'] = True
             panel['linewidth'] = 1
@@ -198,7 +195,7 @@ class UseGrafana(LFCliBase):
             panel['timeFrom'] = None
             panel['timeRegions'] = list()
             panel['timeShift'] = None
-            panel['title'] = paneltitle
+            panel['title'] = scriptname
             panel['type'] = "graph"
             panel['xaxis'] = xaxis
             panel['yaxes'] = list()
@@ -207,6 +204,7 @@ class UseGrafana(LFCliBase):
             panel['yaxis'] = yaxis1
 
             panels.append(panel)
+            index = index + 1
         input1['annotations'] = annot
         input1['editable'] = True
         input1['gnetId'] = None
@@ -224,7 +222,7 @@ class UseGrafana(LFCliBase):
         input1['title'] = title
         input1['uid'] = uid
         input1['version'] = 11
-        #print(json.dumps(input1, indent=2))
+        # print(json.dumps(input1, indent=2))
         return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
 
@@ -254,6 +252,10 @@ def main():
     optional.add_argument('--list_dashboards', help='List dashboards on Grafana server', default=None)
     optional.add_argument('--dashboard_json', help='JSON of existing Grafana dashboard to import', default=None)
     optional.add_argument('--create_custom', help='Guided Dashboard creation', default=None)
+    optional.add_argument('--dashboard_title', help='Titles of dashboards', default=None, action='append')
+    optional.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
+    optional.add_argument('--title', help='title of your Grafana Dashboard', default=None)
+    optional.add_argument('--grafana_bucket', help='Name of your Grafana Bucket', default=None)
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -273,7 +275,9 @@ def main():
         Grafana.create_dashboard_from_data(args.dashboard_json)
 
     if args.create_custom is not None:
-        Grafana.create_custom_dashboard()
+        Grafana.create_custom_dashboard(scripts=args.scripts,
+                                        title=args.title,
+                                        bucket=args.grafana_bucket)
 
 
 if __name__ == "__main__":
