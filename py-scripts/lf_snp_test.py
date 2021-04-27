@@ -2045,7 +2045,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Test configuration that may be read in , in conjunction with command line arguments
     if args.controller_test_1:
         logg.info("USING: controller_test_1")
-        controller_aps              = "APA453.0E7B.CF9C".split()
         controller_aps              = "vanc-e".split()
         controller_bands            = "a b".split()
         controller_wifimodes        = "an anAX anAC abgn bg".split()
@@ -2376,20 +2375,20 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         logg.info("pss {}".format(pss))
                                                                         controller.controller_disable_ap()
                                                                         if controller_args.controller_series == "9800":
-                                                                            controller.controller_disable_wlan()
+                                                                            # CISCO 4/27/2021 controller.controller_disable_wlan()
                                                                             controller.controller_disable_network_5ghz()
                                                                             controller.controller_disable_network_24ghz()
-                                                                            controller.controller_role_manual()
+                                                                            # CISCO 4/27/2021 controller.controller_role_manual()
                                                                         else:
                                                                             controller.controller_disable_network_5ghz()
                                                                             controller.controller_disable_network_24ghz()
                                                                         controller.controller_set_tx_power()
                                                                         controller.controller_set_channel()
                                                                         controller.controller_set_bandwidth()
-                                                                        if controller_args.controller_series == "9800":
+                                                                        #if controller_args.controller_series == "9800":
                                                                             # CANDELA TODO, not needed controller.controller_create_wlan()
                                                                             # CANDELA TODO set the policy tag, controller.controller_set_wireless_tag_policy()
-                                                                            controller.controller_enable_wlan()
+                                                                            # CANDELA controller.controller_enable_wlan()
                                                                         if controller_band == "a":    
                                                                             controller.controller_enable_network_5ghz()
                                                                         else:    
