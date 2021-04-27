@@ -1634,8 +1634,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-cc2','--controller_chan_24ghzs', help='--controller_chan_24ghzs <1 2 ...> default 1',default="1")
     parser.add_argument('-ccw','--controller_chan_widths', help='--controller_chan_widths <20 40 80 160> default: \"20\"',default="20")
     parser.add_argument('-cam','--controller_ap_modes', help='--controller_ap_modes <local flexconnect> default local',default="local")
-    parser.add_argument('-pdu','--controller_pdus', help='--controller_pdus List of packet sizes \"88 512 1370 1518\" default 1580',default="1518", 
-        choices=["88","512","1370","1518"] )
+    parser.add_argument('-pdu','--controller_pdus', help='--controller_pdus List of packet sizes \"88 512 1370 1518\" default 1580',default="1518" )
         
     parser.add_argument('-cde','--controller_data_encryptions', help='--controller_data_encryptions \"enable disable\"',default="disable" )
     parser.add_argument('-cs' ,'--controller_series', help='--controller_series <9800 | 3504>',default="9800",choices=["9800","3504"])
