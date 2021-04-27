@@ -74,7 +74,7 @@ class data_to_grafana(LFCliBase):
                         "y": 0
                     },
                     "hiddenSeries": False,
-                    "id": 3,
+                    "id": 2,
                     "legend": {
                         "avg": False,
                         "current": False,
@@ -86,11 +86,12 @@ class data_to_grafana(LFCliBase):
                     },
                     "lines": True,
                     "linewidth": 1,
-                    "nullPointMode": "null",
+                    "NonePointMode": "None",
                     "options": {
                         "alertThreshold": True
                     },
                     "percentage": False,
+                    "pluginVersion": "7.5.4",
                     "pointradius": 2,
                     "points": False,
                     "renderer": "flot",
@@ -110,7 +111,7 @@ class data_to_grafana(LFCliBase):
                                 },
                                 {
                                     "params": [
-                                        "null"
+                                        "None"
                                     ],
                                     "type": "fill"
                                 }
@@ -119,7 +120,7 @@ class data_to_grafana(LFCliBase):
                             "ignoreUnknown": False,
                             "orderByTime": "ASC",
                             "policy": "default",
-                            "query": "from(bucket: \"%s\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"script\"] == \"%s\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: False)\n  |> yield(name: \"mean\")\n  " % (self.influx_bucket, self.script),
+                            "query": ("from(bucket: \" %s \")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"script\"] == \" %s\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: False)\n  |> yield(name: \"mean\")\n  " % self.bucket, self.script ),
                             "refId": "A",
                             "resultFormat": "time_series",
                             "schema": [],
@@ -143,7 +144,7 @@ class data_to_grafana(LFCliBase):
                     ],
                     "thresholds": [],
                     "timeRegions": [],
-                    "title": self.panel_name,
+                    "title": "json test",
                     "tooltip": {
                         "shared": True,
                         "sort": 0,
@@ -181,6 +182,8 @@ class data_to_grafana(LFCliBase):
                     }
                 }
             ],
+            "refresh": False,
+            "schemaVersion": 27,
             "style": "dark",
             "tags": [],
             "templating": {
@@ -193,7 +196,8 @@ class data_to_grafana(LFCliBase):
             "timepicker": {},
             "timezone": "",
             "title": str(self.script),
-            "uid": uid
+            "uid": uid,
+            "version": 2
         }
         return json.dumps(json_dict)
 

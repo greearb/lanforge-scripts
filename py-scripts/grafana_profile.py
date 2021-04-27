@@ -15,6 +15,9 @@ if 'py-json' not in sys.path:
 from GrafanaRequest import GrafanaRequest
 from LANforge.lfcli_base import LFCliBase
 import json
+import string
+import random
+
 
 class UseGrafana(LFCliBase):
     def __init__(self,
@@ -46,79 +49,184 @@ class UseGrafana(LFCliBase):
                                    json_file):
         return self.GR.create_dashboard_from_data(json_file=json_file)
 
-    def create_custom_dashboard(self):
-        name = input('Name of your dashboard: ')
-        number = input('Number of panels on dashboard: ')
-        dashboards = dict()
-        dashboards['title'] = name
-        dashboards['panels'] = list()
-        input1 = dict()
-        input1['name'] = "DS_INFLUXDB"
-        input1['label'] = "InfluxDB"
-        input1['description'] = ""
-        input1['type'] = "datasource"
-        input1['pluginId'] = "influxdb"
-        input1['pluginName'] = "InfluxDB"
-        inputs = list()
-        inputs.append(input1)
-        dashboards['__inputs'] = inputs
+    def groupby(self, params, grouptype):
+        dic = dict()
+        dic['params'] = list()
+        dic['params'].append(params)
+        dic['type'] = grouptype
+        return dic
 
-        for dashboard in range(0,int(number)):
-            title = input('Title of dashboard # %s ' % dashboard)
-            lines = input('Lines on your graph? Y or N: ')
-            target_number = input('How many targets on your graph? ')
-            if lines == 'Y':
-                lines = True
-                linewidth = 1
-            else:
-                lines = False
-                linewidth = 0
+    def maketargets(self,
+                    bucket,
+                    scriptname,
+                    groupBy,
+                    index,
+                    graph_group):
+        targets = dict()
+        targets['delimiter'] = ','
+        targets['groupBy'] = groupBy
+        targets['header'] = True
+        targets['ignoreUnknown'] = False
+        targets['orderByTime'] = 'ASC'
+        targets['policy'] = 'default'
+        targets['query'] = (
+                'from(bucket: "%s")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r["script"] == "%s")\n  |> filter(fn: (r) => r["Graph-Group"] == "%s")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: "mean")\n  ' % (
+            bucket, scriptname, graph_group))
+        targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index+1]
+        targets['resultFormat'] = "time_series"
+        targets['schema'] = list()
+        targets['skipRows'] = 0
+        targets['tags'] = list()
+        return targets
+
+    def create_custom_dashboard(self):
+        title = input('Name of your dashboard: ')
+        numberofdashboards = input('Number of panels on dashboard: ')
+        bucket = input('Name of your Influx bucket: ')
+        options = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        uid = ''.join(random.choice(options) for i in range(9))
+        input1 = dict()
+        annotations = dict()
+        annotations['builtIn'] = 1
+        annotations['datasource'] = '-- Grafana --'
+        annotations['enable'] = True
+        annotations['hide'] = True
+        annotations['iconColor'] = 'rgba(0, 211, 255, 1)'
+        annotations['name'] = 'Annotations & Alerts'
+        annotations['type'] = 'dashboard'
+        annot = dict()
+        annot['list'] = list()
+        annot['list'].append(annotations)
+
+        templating = dict()
+        templating['list'] = list()
+
+        timedict = dict()
+        timedict['from'] = 'now-1y'
+        timedict['to'] = 'now'
+
+        panels = list()
+        for dashboard in range(0, int(numberofdashboards)):
+            paneltitle = input("title of dashboard %s: " % dashboard)
+            #numberoftargets = input("How many targets do you want? ")
+            scriptname = input('Name of your script for dashboard %s: ' % dashboard)
             panel = dict()
-            panel['aliasColors'] = dict()
-            panel['bars'] = False
-            panel['dashLength'] = 10
+
+            gridpos = dict()
+            gridpos['h'] = 8
+            gridpos['w'] = 12
+            gridpos['x'] = 0
+            gridpos['y'] = 0
+
+            legend = dict()
+            legend['avg'] = False
+            legend['current'] = False
+            legend['max'] = False
+            legend['min'] = False
+            legend['show'] = True
+            legend['total'] = False
+            legend['values'] = False
+
+            options = dict()
+            options['alertThreshold'] = True
+
+            groupBy = list()
+            groupBy.append(self.groupby('$__interval', 'time'))
+            groupBy.append(self.groupby('null', 'fill'))
+
+            targets = list()
+            graph_groups = ['Per Stations Rate DL',
+                            'Per Stations Rate UL',
+                            'Per Stations Rate UL+DL']
+            counter = 0
+            #for count in range(0, int(numberoftargets)):
+            for graph_group in graph_groups:
+                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group)
+                counter = counter + 1
+                targets.append(new_target)
+
             fieldConfig = dict()
             fieldConfig['defaults'] = dict()
             fieldConfig['overrides'] = list()
-            panel['fieldConfig'] = fieldConfig
-            panel['fill'] = 1
-            panel['fieldGradient'] = 0
-            panel['hiddenSeries'] = False
-            panel['id'] = dashboard
-            panel['lines'] = lines
-            panel['linewidth'] = linewidth
-            panel['nullPointMode'] = None
-            panel['percentage'] = False
-            panel['pluginVersion'] = "7.5.4"
-            panel['stack'] = False
-            targets = list()
-            for target in range(0,int(target_number)):
-                measurement = input('Name of  your first measurement')
-                target_item = dict()
-                target_item['delimiter'] = ','
-                target_item['header'] = True
-                target_item['ignoreUnknown'] = False
-                target_item['measurement'] = measurement
-                target_item['orderByTime'] = "ASC"
-                target_item['policy'] = "default"
-                target_item['skipRows'] = 0
-                targets.append(target_item)
-            panel['targets'] = targets
-            panel['title'] = title
-            xaxis=dict()
+
+            xaxis = dict()
             xaxis['buckets'] = None
             xaxis['mode'] = "time"
             xaxis['name'] = None
             xaxis['show'] = True
             xaxis['values'] = list()
-            panel['xaxis'] = xaxis
+
             yaxis = dict()
-            yaxis['align'] = False
-            yaxis['alignLevel'] = None
-            panel['yaxis'] = yaxis
-            dashboards['panels'].append(panel)
-        print(json.dumps(dashboards, indent=2))
-        return self.GR.create_dashboard_from_dict(dictionary=json.dumps(dashboards))
+            yaxis['format'] = 'short'
+            yaxis['label'] = None
+            yaxis['logBase'] = 1
+            yaxis['max'] = None
+            yaxis['min'] = None
+            yaxis['show'] = True
+
+            yaxis1 = dict()
+            yaxis1['align'] = False
+            yaxis1['alignLevel'] = None
+
+            panel['aliasColors'] = dict()
+            panel['bars'] = False
+            panel['dashes'] = False
+            panel['dashLength'] = 10
+            panel['datasource'] = 'InfluxDB'
+            panel['fieldConfig'] = fieldConfig
+            panel['fill'] = 0
+            panel['fillGradient'] = 0
+            panel['gridPos'] = gridpos
+            panel['hiddenSeries'] = False
+            panel['id'] = dashboard
+            panel['legend'] = legend
+            panel['lines'] = True
+            panel['linewidth'] = 1
+            panel['nullPointMode'] = 'null'
+            panel['options'] = options
+            panel['percentage'] = False
+            panel['pluginVersion'] = '7.5.4'
+            panel['pointradius'] = 2
+            panel['points'] = True
+            panel['renderer'] = 'flot'
+            panel['seriesOverrides'] = list()
+            panel['spaceLength'] = 10
+            panel['stack'] = False
+            panel['steppedLine'] = False
+            panel['targets'] = targets
+            panel['thresholds'] = list()
+            panel['timeFrom'] = None
+            panel['timeRegions'] = list()
+            panel['timeShift'] = None
+            panel['title'] = paneltitle
+            panel['type'] = "graph"
+            panel['xaxis'] = xaxis
+            panel['yaxes'] = list()
+            panel['yaxes'].append(yaxis)
+            panel['yaxes'].append(yaxis)
+            panel['yaxis'] = yaxis1
+
+            panels.append(panel)
+        input1['annotations'] = annot
+        input1['editable'] = True
+        input1['gnetId'] = None
+        input1['graphTooltip'] = 0
+        input1['links'] = list()
+        input1['panels'] = panels
+        input1['refresh'] = False
+        input1['schemaVersion'] = 27
+        input1['style'] = 'dark'
+        input1['tags'] = list()
+        input1['templating'] = templating
+        input1['time'] = timedict
+        input1['timepicker'] = dict()
+        input1['timezone'] = ''
+        input1['title'] = title
+        input1['uid'] = uid
+        input1['version'] = 11
+        #print(json.dumps(input1, indent=2))
+        return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
+
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -166,6 +274,7 @@ def main():
 
     if args.create_custom is not None:
         Grafana.create_custom_dashboard()
+
 
 if __name__ == "__main__":
     main()
