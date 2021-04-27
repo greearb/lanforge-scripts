@@ -2387,8 +2387,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         controller.controller_set_channel()
                                                                         controller.controller_set_bandwidth()
                                                                         if controller_args.controller_series == "9800":
-                                                                            controller.controller_create_wlan()
-                                                                            controller.controller_set_wireless_tag_policy()
+                                                                            # CANDELA TODO, not needed controller.controller_create_wlan()
+                                                                            # CANDELA TODO set the policy tag, controller.controller_set_wireless_tag_policy()
                                                                             controller.controller_enable_wlan()
                                                                         if controller_band == "a":    
                                                                             controller.controller_enable_network_5ghz()
