@@ -62,30 +62,38 @@ Core communication files to LANforge
 ### Python Scripts py-json/ ###
 | Name | Purpose |
 |------|---------|
-|`create_wanlink.py`         | Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python |
-|`cv_commands.py`            | This is a library file used to create a chamber view scenario.  import this file as showed in create_chamberview.py to create a scenario|
-|`cv_test_manager.py`        | This script is working as library for chamberview tests.  It holds different commands to automate test.|
-|`cv_test_reports.py`        | Class: lanforge_reports  Pulls reports from LANforge|
-|`dut_profile.py`            | Class: DUTProfile (new_dut_profile) Use example:  py-scripts/update_dut.py used to updates a Device Under Test (DUT) entry in the LANforge test scenario A common reason to use this would be to update MAC addresses in a DUT when you switch between different items of the same make/model of a DUT|
-|`fio_endp_profile.py`       | Class: FIOEndpProfile (new_fio_endp_profile) Use example: py-scripts/test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic|
-|`gen_cxprofile.py`          | Class: GenCXProfile (new_generic_endp_profile) Use example: test_generic.py  will create stations and endpoints to generate traffic based on a command-line specified command type |
-|`http_profile.py`           | Class: HTTPProfile (new_http_profile) Use example: test_ipv4_l4_wifi.py  will create stations and endpoints to generate and verify layer-4 upload traffic|
-|`influx2.py`                | Class: RecordInflux version 2.0 influx DB client|
-|`influx.py`                 | Class: RecordInflux  influx DB client|
-|`l3_cxprofile.py`           | Class: L3CXProfile (new_l3_cx_profile)  Use example: test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic|
-|`l4_cxprofile.py`           | Class: L4CXProfile (new_l4_cx_profile) Use example: test_ipv4_l4.py will create stations and endpoints to generate and verify layer-4 traffic |
-|`mac_vlan_profile.py`       | Class: MACVLANProfile (new_mvlan_profile) Use example: test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic. |
-|`multicast_profile.py`      | Class: MULTICASTProfile (new_multicast_profile) Use example: test_l3_longevity.py multi cast profiles are created in this test |
-|`port_utils.py`             | Class: PortUtils used to set the ftp or http port|
-|`qvlan_profile.py`          | Class: QVLANProfile (new_qvlan_profile) Use example: create_qvlan.py (802.1Q VLAN)|
-|`realm.py`                  | Class: The Realm Class is inherited by most python tests.  Realm Class inherites from LFCliBase. The Realm Class contains the configurable components for LANforge,  For example L3 / L4 cross connects, stations.  http://www.candelatech.com/cookbook.php?vol=cli&book=Python_Create_Test_Scripts_With_the_Realm_Class|
-|`station_profile.py`        | Class: StationProfile (new_station_profile) Use example: most scripts create and use station profiles|
-|`test_group_profile.py`     | Class: TestGroupProfile (new_test_group_profile) Use example: test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic|
-|`vap_profile.py`            | Class: VAPProfile (new_vap_profile) profile for creating Virtual AP's Use example: create_vap.py |
-|`wifi_monitor_profile.py`   | Class: WifiMonitor (new_wifi_monitor_profile) Use example: tip_station_powersave.py This script uses filters from realm's PacketFilter class to filter pcap output for specific packets.|
-|`wlan_theoretical_sta.py`   | Class: abg11_calculator Standard Script for WLAN Capaity Calculator  Use example: wlan_capacitycalculator.py|
-|`ws_generic_monitor.py`     | Class: WS_Listener web socket listener Use example: ws_generic_monitor_test.py, ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py|
-|`ws-sta-monitor.py`         | Example of how to filter messages from the :8081 websocket |
+| `base_profile.py`                 | Class: BaseProfile  Use example: py-json/l3_cxprofile2.py used to define generic utility methods to be inherited by other classes |
+| `create_wanlink.py`               | Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python |
+| `cv_commands.py`                  | This is a library file used to create a chamber view scenario.  import this file as showed in create_chamberview.py to create a scenario |
+| `cv_test_manager.py`              | This script is working as library for chamberview tests.  It holds different commands to automate test. |
+| `cv_test_reports.py`              | Class: lanforge_reports  Pulls reports from LANforge |
+| `dataplane_test_profile.py`       | Library to Run Dataplane Test: Using lf_cv_base class |
+| `dut_profile.py`                  | Class: DUTProfile (new_dut_profile) Use example:  py-scripts/update_dut.py used to updates a Device Under Test (DUT) entry in the LANforge test scenario A common reason to use this would be to update MAC addresses in a DUT when you switch between different items of the same make/model of a DUT |
+| `fio_endp_profile.py`             | Class: FIOEndpProfile (new_fio_endp_profile) Use example: py-scripts/test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic |
+| `gen_cxprofile.py`                | Class: GenCXProfile (new_generic_endp_profile) Use example: test_generic.py  will create stations and endpoints to generate traffic based on a command-line specified command type |
+| `http_profile.py`                 | Class: HTTPProfile (new_http_profile) Use example: test_ipv4_l4_wifi.py  will create stations and endpoints to generate and verify layer-4 upload traffic |
+| `l3_cxprofile.py`                 | Class: L3CXProfile (new_l3_cx_profile)  Use example: test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic |
+| `l3_cxprofile2.py`                | Class: L3CXProfile2 (new_l3_cx_profile, ver=2) No current use example, inherits utility functions from BaseProfile, maintains functionality of L3CXProfile |
+| `l4_cxprofile.py`                 | Class: L4CXProfile (new_l4_cx_profile) Use example: test_ipv4_l4.py will create stations and endpoints to generate and verify layer-4 traffic |
+| `lf_cv_base.py`                   | Class: ChamberViewBase, Base Class to be used for Chamber View Tests, inherited by DataPlaneTest in dataplane_test_profile.py |
+| `lfdata.py`                       | Class: LFDataCollection, class used for data collection utility methods |
+| `mac_vlan_profile.py`             | Class: MACVLANProfile (new_mvlan_profile) Use example: test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic. |
+| `multicast_profile.py`            | Class: MULTICASTProfile (new_multicast_profile) Use example: test_l3_longevity.py multi cast profiles are created in this test |
+| `port_utils.py`                   | Class: PortUtils used to set the ftp or http port |
+| `qvlan_profile.py`                | Class: QVLANProfile (new_qvlan_profile) Use example: create_qvlan.py (802.1Q VLAN) |
+| `realm.py`                        | Class: The Realm Class is inherited by most python tests.  Realm Class inherites from LFCliBase. The Realm Class contains the configurable components for LANforge,  For example L3 / L4 cross connects, stations.  http://www.candelatech.com/cookbook.php?vol=cli&book=Python_Create_Test_Scripts_With_the_Realm_Class |
+| `realm_test.py`                   | Python script meant to test functionality of realm methods |
+| `show_ports.py`                   | Python script example of how to check a LANforge json url  |
+| `station_profile.py`              | Class: StationProfile (new_station_profile) Use example: most scripts create and use station profiles |
+| `test_base.py`                    | Class: TestBase, basic class for creating tests, uses basic functions for cleanup, starting/stopping, and passing of tests |
+| `test_group_profile.py`           | Class: TestGroupProfile (new_test_group_profile) Use example: test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic |
+| `test_utility.py`                 | Standard Script for Webconsole Test Utility |
+| `vap_profile.py`                  | Class: VAPProfile (new_vap_profile) profile for creating Virtual AP's Use example: create_vap.py |
+| `vr_profile2.py`                  | Class: VRProfile (new_vap_profile, ver=2) No current use example, inherits utility functions from BaseProfile |
+| `wifi_monitor_profile.py`         | Class: WifiMonitor (new_wifi_monitor_profile) Use example: tip_station_powersave.py This script uses filters from realm's PacketFilter class to filter pcap output for specific packets. |
+| `wlan_theoretical_sta.py`         | Class: abg11_calculator Standard Script for WLAN Capaity Calculator  Use example: wlan_capacitycalculator.py |
+| `ws-sta-monitor.py`               | Example of how to filter messages from the :8081 websocket |
+| `ws_generic_monitor.py`           | Class: WS_Listener web socket listener Use example: ws_generic_monitor_test.py, ws_generic_monitor to monitor events triggered by scripts, This script when running, will monitor the events triggered by test_ipv4_connection.py |
 
 
 
