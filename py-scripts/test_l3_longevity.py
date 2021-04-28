@@ -28,6 +28,9 @@ import os
 from pprint import pprint
 from csv_to_influx import *
 import re
+import serial
+import pexpect
+from pexpect_serial import SerialSpawn
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -44,7 +47,6 @@ from realm import Realm
 import time
 import datetime
 import subprocess
-import re
 import csv
 import random
 
@@ -128,6 +130,7 @@ class L3VariableTime(Realm):
         self.show_least_most_csv = show_least_most_csv
         self.mconn = mconn
         self.user_tags = user_tags
+        
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -623,6 +626,29 @@ class L3VariableTime(Realm):
 
         self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
 
+    def read_ap_stats(self,band):
+        #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
+        stats_5ghz  = "wl -i wl1 bs_data"
+        stats_24ghz = "w1 -i wl0 bs_data"
+        ap_data = ""
+        command = stats_5ghz
+        '''if band == "5ghz":
+            command = stats_5ghz
+        else:
+            command = stats_24ghz'''
+    
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.args.tty, int(self.args.baud), timeout=5)
+            egg = SerialSpawn(ser)
+            egg.sendline(str(command))
+            egg.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
+            ap_data = egg.before.decode('utf-8','ignore')
+        except:
+            print("WARNING unable to read AP")
+        
+        return ap_data
+
     # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
@@ -747,11 +773,11 @@ class L3VariableTime(Realm):
                     ap_stats = [];
                     #ap_stats.add("root@Docsis-Gateway:~# wl -i wl1 bs_data")
                     #ap_stats.add("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                    ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                    ap_stats.add("(overall)          -      200.2      26.5%         -         -")
+                    #ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                    #ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                    #ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                    #ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                    #ap_stats.add("(overall)          -      200.2      26.5%         -         -")
                     # TODO:  Read real stats, comment out the example above.
                     # ap_stats = read_ap_stats()
 
@@ -760,7 +786,7 @@ class L3VariableTime(Realm):
                         stats_row = line.split()
                         ap_stats_rows.add(stats_row)
 
-                    m = re.search((r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)'ap_stats[0]
+                    #m = re.search((r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)'ap_stats[0]
 
                     # Query all of our ports
                     port_eids = self.gather_port_eids()
@@ -787,6 +813,8 @@ class L3VariableTime(Realm):
                             # Find latency, jitter for connections using this port.
                             latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
                             
+                            ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
+
                             self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                 latency, jitter, tput, ap_row, ap_stats_col_titles)
 
@@ -1102,7 +1130,8 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
                         ,choices=["1","2","3","4","5","6","7","8","NA"])
 
 
-
+    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP')
+    parser.add_argument('--baud', help='--baud \"9600\"   baud rate for the serial interface',default="9600")
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
@@ -1119,6 +1148,9 @@ python3 test_l3_longevity.py --cisco_ctlr 192.168.100.112 --cisco_dfs True --mgr
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ',
                         required=True)
+
+    parser.add_argument('-tty',  help='-tty <port> serial interface to AP -tty \"/dev/ttyUSB2\"',default="")
+    parser.add_argument('-baud', help='-baud <rate> serial interface baud rate to AP -baud ',default='9600')
 
     parser.add_argument('-amr','--side_a_min_bps',
                         help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k', default="256000")
