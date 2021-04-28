@@ -1,9 +1,27 @@
 #!/usr/bin/python3
 '''
+
+NAME:
+ap_ctl.py
+
+PURPOSE:
+Script that logs into an AP via Serial, SSH, or Telnet to read data or execute commands
+
+EXAMPLE:
+
+./ap_ctl.py --scheme "serial" --prompt "#" --dest <ip if using SSH or Telnet> --port <port , none for serial>  --user <user name>
+        --passwd <password> --action <command>
+
+In a program: 
+ap_info= subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'],"--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                        "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'],"--action", "powercfg"],stdout=subprocess.PIPE)
+                                
+NOTES: 
+
 LANforge 192.168.100.178
 Controller at 192.168.100.112 admin/Cisco123
 Controller is 192.1.0.10
-AP is on serial port /dev/ttyUSB1  9600 8 n 1
+AP is on serial port /dev/ttyUSB1 or /dev/ttyUSB2  9600 8 n 1 
 
 make sure pexpect is installed:
 $ sudo yum install python3-pexpect
