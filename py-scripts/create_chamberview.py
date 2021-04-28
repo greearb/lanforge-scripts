@@ -23,8 +23,8 @@ Note: Script for creating a chamberview scenario.
     ********************************      OR        ********************************
 
     create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
-    ----raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
-    ----raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
+    --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
+    --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
 Output:
     You should see build scenario with the given arguments at the end of this script.

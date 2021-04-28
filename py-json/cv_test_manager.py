@@ -196,8 +196,8 @@ class cv_test(Realm):
                 break
 
     #Get port listing
-    def get_ports(self):
-        response = self.json_get("/ports/")
+    def get_ports(self, url="/ports/"):
+        response = self.json_get(url)
         return response
 
     def show_text_blob(self, config_name, blob_test_name, brief):
@@ -422,7 +422,6 @@ class cv_test(Realm):
             "text": Rawline
         }
         rsp = self.json_post(req_url, data)
-        time.sleep(2)
 
         # This is for chamber view buttons
 
