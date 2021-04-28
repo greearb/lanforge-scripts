@@ -108,103 +108,102 @@ class UseGrafana(LFCliBase):
         panels = list()
         index = 1
         for scriptname in scripts:
-            panel = dict()
-
-            gridpos = dict()
-            gridpos['h'] = 8
-            gridpos['w'] = 12
-            gridpos['x'] = 0
-            gridpos['y'] = 0
-
-            legend = dict()
-            legend['avg'] = False
-            legend['current'] = False
-            legend['max'] = False
-            legend['min'] = False
-            legend['show'] = True
-            legend['total'] = False
-            legend['values'] = False
-
-            options = dict()
-            options['alertThreshold'] = True
-
-            groupBy = list()
-            groupBy.append(self.groupby('$__interval', 'time'))
-            groupBy.append(self.groupby('null', 'fill'))
-
-            targets = list()
             graph_groups = ['Per Stations Rate DL',
                             'Per Stations Rate UL',
                             'Per Stations Rate UL+DL']
-            counter = 0
             for graph_group in graph_groups:
+                panel = dict()
+
+                gridpos = dict()
+                gridpos['h'] = 8
+                gridpos['w'] = 12
+                gridpos['x'] = 0
+                gridpos['y'] = 0
+
+                legend = dict()
+                legend['avg'] = False
+                legend['current'] = False
+                legend['max'] = False
+                legend['min'] = False
+                legend['show'] = True
+                legend['total'] = False
+                legend['values'] = False
+
+                options = dict()
+                options['alertThreshold'] = True
+
+                groupBy = list()
+                groupBy.append(self.groupby('$__interval', 'time'))
+                groupBy.append(self.groupby('null', 'fill'))
+
+                targets = list()
+                counter = 0
                 new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group)
-                counter = counter + 1
                 targets.append(new_target)
 
-            fieldConfig = dict()
-            fieldConfig['defaults'] = dict()
-            fieldConfig['overrides'] = list()
+                fieldConfig = dict()
+                fieldConfig['defaults'] = dict()
+                fieldConfig['overrides'] = list()
 
-            xaxis = dict()
-            xaxis['buckets'] = None
-            xaxis['mode'] = "time"
-            xaxis['name'] = None
-            xaxis['show'] = True
-            xaxis['values'] = list()
+                xaxis = dict()
+                xaxis['buckets'] = None
+                xaxis['mode'] = "time"
+                xaxis['name'] = None
+                xaxis['show'] = True
+                xaxis['values'] = list()
 
-            yaxis = dict()
-            yaxis['format'] = 'short'
-            yaxis['label'] = None
-            yaxis['logBase'] = 1
-            yaxis['max'] = None
-            yaxis['min'] = None
-            yaxis['show'] = True
+                yaxis = dict()
+                yaxis['format'] = 'short'
+                yaxis['label'] = None
+                yaxis['logBase'] = 1
+                yaxis['max'] = None
+                yaxis['min'] = None
+                yaxis['show'] = True
 
-            yaxis1 = dict()
-            yaxis1['align'] = False
-            yaxis1['alignLevel'] = None
+                yaxis1 = dict()
+                yaxis1['align'] = False
+                yaxis1['alignLevel'] = None
 
-            panel['aliasColors'] = dict()
-            panel['bars'] = False
-            panel['dashes'] = False
-            panel['dashLength'] = 10
-            panel['datasource'] = 'InfluxDB'
-            panel['fieldConfig'] = fieldConfig
-            panel['fill'] = 0
-            panel['fillGradient'] = 0
-            panel['gridPos'] = gridpos
-            panel['hiddenSeries'] = False
-            panel['id'] = index
-            panel['legend'] = legend
-            panel['lines'] = True
-            panel['linewidth'] = 1
-            panel['nullPointMode'] = 'null'
-            panel['options'] = options
-            panel['percentage'] = False
-            panel['pluginVersion'] = '7.5.4'
-            panel['pointradius'] = 2
-            panel['points'] = True
-            panel['renderer'] = 'flot'
-            panel['seriesOverrides'] = list()
-            panel['spaceLength'] = 10
-            panel['stack'] = False
-            panel['steppedLine'] = False
-            panel['targets'] = targets
-            panel['thresholds'] = list()
-            panel['timeFrom'] = None
-            panel['timeRegions'] = list()
-            panel['timeShift'] = None
-            panel['title'] = scriptname
-            panel['type'] = "graph"
-            panel['xaxis'] = xaxis
-            panel['yaxes'] = list()
-            panel['yaxes'].append(yaxis)
-            panel['yaxes'].append(yaxis)
-            panel['yaxis'] = yaxis1
+                panel['aliasColors'] = dict()
+                panel['bars'] = False
+                panel['dashes'] = False
+                panel['dashLength'] = 10
+                panel['datasource'] = 'InfluxDB'
+                panel['fieldConfig'] = fieldConfig
+                panel['fill'] = 0
+                panel['fillGradient'] = 0
+                panel['gridPos'] = gridpos
+                panel['hiddenSeries'] = False
+                panel['id'] = index
+                panel['legend'] = legend
+                panel['lines'] = True
+                panel['linewidth'] = 1
+                panel['nullPointMode'] = 'null'
+                panel['options'] = options
+                panel['percentage'] = False
+                panel['pluginVersion'] = '7.5.4'
+                panel['pointradius'] = 2
+                panel['points'] = True
+                panel['renderer'] = 'flot'
+                panel['seriesOverrides'] = list()
+                panel['spaceLength'] = 10
+                panel['stack'] = False
+                panel['steppedLine'] = False
+                panel['targets'] = targets
+                panel['thresholds'] = list()
+                panel['timeFrom'] = None
+                panel['timeRegions'] = list()
+                panel['timeShift'] = None
+                panel['title'] = scriptname+' '+graph_group
+                panel['type'] = "graph"
+                panel['xaxis'] = xaxis
+                panel['yaxes'] = list()
+                panel['yaxes'].append(yaxis)
+                panel['yaxes'].append(yaxis)
+                panel['yaxis'] = yaxis1
 
-            panels.append(panel)
-            index = index + 1
+                panels.append(panel)
+                index = index + 1
         input1['annotations'] = annot
         input1['editable'] = True
         input1['gnetId'] = None
