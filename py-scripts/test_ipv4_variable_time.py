@@ -41,7 +41,7 @@ class IPV4VariableTime(Realm):
                  port=8080,
                  mode=0,
                  ap=None,
-                 traffic_type="lf_udp",
+                 traffic_type=None,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000",
@@ -52,7 +52,6 @@ class IPV4VariableTime(Realm):
                  _exit_on_fail=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
-        self.l3cxprofile = self.new_l3_cx_profile()
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -180,6 +179,7 @@ python3 ./test_ipv4_variable_time.py
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --output_format csv
+    --traffic_type lf_udp
     --report_file ~/Documents/results.csv                       (Example of csv file output  - please use another extension for other file formats)
     --compared_report ~/Documents/results_prev.csv              (Example of csv file retrieval - please use another extension for other file formats) - UNDER CONSTRUCTION
     --layer3_cols 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
@@ -253,7 +253,7 @@ python3 ./test_ipv4_variable_time.py
 
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]')
+    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
     parser.add_argument('--output_format', help='choose either csv or xlsx')
     parser.add_argument('--report_file', help='where you want to store results', default=None)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -405,8 +405,8 @@ python3 ./test_ipv4_variable_time.py
                                _influx_org=args.influx_org,
                                _influx_token=args.influx_token,
                                _influx_bucket=args.influx_bucket)
-        devices=[station.split('.')[-1] for station in station_list]
-        tags=dict()
+        devices = [station.split('.')[-1] for station in station_list]
+        tags = dict()
         tags['script']='test_ipv4_variable_time'
         try:
             for k in args.influx_tag:
@@ -417,20 +417,20 @@ python3 ./test_ipv4_variable_time.py
                                   devices=devices,
                                   monitor_interval=Realm.parse_time(args.monitor_interval).total_seconds(),
                                   tags=tags)
-    else:
-        ip_var_test.l3cxprofile.monitor(layer3_cols=layer3_cols,
-                                        sta_list=station_list,
-                                        # port_mgr_cols=port_mgr_cols,
-                                        report_file=report_f,
-                                        systeminfopath=systeminfopath,
-                                        duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                        monitor_interval_ms=monitor_interval,
-                                        created_cx=layer3connections,
-                                        output_format=output,
-                                        compared_report=compared_rept,
-                                        script_name='test_ipv4_variable_time',
-                                        arguments=args,
-                                        debug=args.debug)
+
+    ip_var_test.cx_profile.monitor(layer3_cols=layer3_cols,
+                                    sta_list=station_list,
+                                    # port_mgr_cols=port_mgr_cols,
+                                    report_file=report_f,
+                                    systeminfopath=systeminfopath,
+                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                    monitor_interval_ms=monitor_interval,
+                                    created_cx=layer3connections,
+                                    output_format=output,
+                                    compared_report=compared_rept,
+                                    script_name='test_ipv4_variable_time',
+                                    arguments=args,
+                                    debug=args.debug)
 
     ip_var_test.stop()
     if not ip_var_test.passes():
