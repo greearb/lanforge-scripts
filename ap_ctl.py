@@ -9,7 +9,7 @@ Script that logs into an AP via Serial, SSH, or Telnet to read data or execute c
 
 EXAMPLE:
 
-./ap_ctl.py --scheme "serial" --prompt "#" --dest <ip if using SSH or Telnet> --port <port , none for serial>  --user <user name>
+./ap_ctl.py --scheme "serial" "--tty "Serial port for accessing AP" --prompt "#" --dest <ip if using SSH or Telnet> --port <port , none for serial>  --user <user name>
         --passwd <password> --action <command>
 
 In a program: 
@@ -302,6 +302,20 @@ def main():
             print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         if i == 1:
             print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+
+    elif (args.action == "ds_data_5ghz"):
+        logg.info("execute: wl -i wl1 bs_data")
+        egg.sendline('wl -i wl1 bs_data')
+        egg.expect([pexpect.TIMEOUT], timeout=4) # do not detete this for it allow for subprocess to read
+        print(egg.before.decode('utf-8','ignore')) # do not delete this for it  allows for subprocess to see output
+
+
+    elif (args.action == "ds_data_24ghz"):
+        logg.info("execute: wl -i wl0 bs_data")
+        egg.sendline('wl -i wl1 bs_data')
+        egg.expect([pexpect.TIMEOUT], timeout=4) # do not detete this for it allow for subprocess to read
+        print(egg.before.decode('utf-8','ignore')) # do not delete this for it  allows for subprocess to see output
+
 
     else: # no other command at this time so send the same power command
         #logg.info("no action so execute: show controllers dot11Radio 1 powercfg | g T1")
