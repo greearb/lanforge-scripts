@@ -95,6 +95,7 @@ def main():
                      outfile=args.outfile,
                      duration=args.duration,
                      channel=args.channel,
+                     radio=args.radio,
                      radio_mode=args.radio_mode
                      )
     obj.setup()
