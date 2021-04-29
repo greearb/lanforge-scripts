@@ -23,7 +23,7 @@ cleanup_size_mb=$(( 1024 * 5 ))
 lf_core_log="/home/lanforge/found_cores_log.txt"
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
- -a   # automatic: disable menu and clean automatically
+ -a   # automatic: disable menu and remove crash files if free space is < ${cleanup_size_mb}MB
  -b   # remove extra kernels and modules
  -c   # remove all core files
  -d   # remove old LANforge downloads
@@ -32,10 +32,10 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -l   # remove old files from /var/log, truncate /var/log/messages
  -m   # remove orphaned fileio items in /mnt/lf
  -q   # quiet
- -r   # compress .csv data in /home/lanforge
+ -r   # compress /home/lanforge report data and pcap files
  -t   # remove /var/tmp files
  -v   # verbose
-
+ -z   # compressed files in /home/lanforge
 "
 
 eyedee=`id -u`
@@ -171,6 +171,9 @@ while getopts $opts opt; do
       quiet=0
       verbose=1
       ;;
+    z)
+      selections+=($opt)
+      ;;
     *)
       echo "unknown option: $opt"
       echo "$USAGE"
@@ -198,6 +201,7 @@ declare -A totals=(
     [m]=0
     [r]=0
     [t]=0
+    [z]=0
 )
 declare -A desc=(
     [b]="kernel files"
@@ -207,8 +211,9 @@ declare -A desc=(
     [l]="/var/log"
     [m]="/mnt/lf files"
     [n]="DNF cache"
-    [r]="/home/lanforge/report_data"
+    [r]="Report Data"
     [t]="/var/tmp"
+    [z]="compressed files"
 )
 declare -A surveyors_map=(
     [b]="survey_kernel_files"
@@ -220,6 +225,7 @@ declare -A surveyors_map=(
     [n]="survey_dnf_cache"
     [r]="survey_report_data"
     [t]="survey_var_tmp"
+    [z]="survey_compressed_files"
 )
 
 declare -A cleaners_map=(
@@ -232,6 +238,7 @@ declare -A cleaners_map=(
     [n]="clean_dnf_cache"
     [r]="compress_report_data"
     [t]="clean_var_tmp"
+    [z]="clean_compressed_files"
 )
 
 kernel_to_relnum() {
@@ -266,9 +273,20 @@ kernel_to_relnum() {
     set +x
     #1>&2 echo "EXPANDO: ${expandos[0]}${expandos[1]}${expandos[2]}"
     echo "k${expandos[0]}${expandos[1]}${expandos[2]}"
-
 }
 
+clean_compressed_files() {
+    note "Listing compressed files..."
+    local f
+    if (( ${#compressed_files[@]} > 0 )); then
+        for f in "${compressed_files[@]}"; do
+            echo "$f"
+        done | paste - - - | less
+    else
+        echo "No compressed files."
+    fi
+    totals[z]=0
+}
 clean_old_kernels() {
     note "Cleaning old CT kernels..."
     local f
@@ -312,7 +330,7 @@ clean_core_files() {
     if contains "selections" "a"; then
         disk_space_below /      $cleanup_size_mb && do_delete=$(( $do_delete + 1 ))
         disk_space_below /home  $cleanup_size_mb && do_delete=$(( $do_delete + 1 ))
-        (( $do_delete > 0)) && note "disk space below $cleanup_size_mb, removing core files"
+        (( $do_delete > 0)) && note "disk space below $cleanup_size_mfb, removing core files"
     elif contains "selections" "c"; then
         do_delete=1
         note "core file cleaning selected"
@@ -352,6 +370,7 @@ clean_lf_downloads() {
         sleep 0.02
         rm -f "$f"
     done
+    totals[d]=0
     cd "$starting_dir"
 }
 
@@ -393,6 +412,7 @@ clean_dnf_cache() {
     (( $? < 0 )) && yum="yum"
     debug "Purging $yum cache"
     $yum clean all
+    totals[n]=0
 }
 
 clean_mnt_lf_files() {
@@ -401,15 +421,20 @@ clean_mnt_lf_files() {
         printf "%s\n" "${mnt_lf_files[@]}"
     fi
     rm -f  "${mnt_lf_files[@]}"
+    totals[m]=0
 }
 
 compress_report_data() {
     note "compress report data..."
+    cd /home/lanforge
     # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
     while read f; do
         (( $verbose > 0 )) && echo "    compressing $f"
-        gzip -9 "$f"
-    done < <(find /home/lanforge/report-data /home/lanforge/html-reports -iname "*.csv")
+        xz -7 "$f"
+    done < <(find html-reports/ lf_reports/ report-data/ tmp/ -type f \
+     -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \) )
+    totals[r]=0
+    cd -
 }
 
 clean_var_tmp() {
@@ -672,9 +697,15 @@ mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
     debug "Surveying mnt lf"
+    # set -vx
     mapfile -t mnt_lf_files < <(find /mnt/lf -xdev -type f 2>/dev/null)
-    totals[m]=$(du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}')
+    if (( ${#mnt_lf_files[@]} < 1 )); then
+        totals[m]=0
+        return
+    fi
+    totals[m]=$( du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
     [[ x${totals[m]} = x ]] && totals[m]=0
+    # set +vx
 }
 
 survey_dnf_cache() {
@@ -684,6 +715,25 @@ survey_dnf_cache() {
     debug "Surveying $yum cache"
     totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
 }
+
+compressed_files=()
+survey_compressed_files() {
+    debug "Surveying compressed /home/lanforge "
+    cd /home/lanforge
+    mapfile -t compressed_files < <( find Documents/ html-reports/ lf_reports/ report-data/ tmp/ -type f \
+        -a \( -name "*.gz" -o -name "*.xz" -o -name "*.bz2" -o -name "*.7z" -o -name "*.zip" \) 2>/dev/null )
+    if (( ${#compressed_files[@]} < 1 )); then
+        debug "no compressed files found"
+        totals[z]=0
+        return
+    fi
+    # set -veux
+    totals[z]=$( du -xhc "${compressed_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+    # set +veux
+    [[ x${totals[z]} = x ]] && totals[z]=0
+    cd -
+}
+
 
 ## Find size of /lib/modules
 # cd /lib/modules
@@ -698,26 +748,18 @@ report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
     cd /home/lanforge
-    # set -veux
+
     local fsiz=0
-    local fnum=$( find -type f -a -name '*.csv' 2>/dev/null | wc -l  ||:)
-    # if (( $verbose > 0 )); then
-        # hr
-        # find -type f -a -name '*.csv' 2>/dev/null ||:
-        # hr
-        # sleep 10
-        # if (( $fnum > 0 )); then
-        #     hr
-        #     find -type f -a -name '*.csv' -print0 2>/dev/null ||: | xargs -0 du -hc
-        #     hr
-        #     sleep 10
-        # fi
-    # fi
+    local fnum=0
+    local csv_list=(`find report-data/ html-reports/ lf_reports/ -type f -a -name '*.csv' 2>/dev/null ||:`)
+    local pdf_list=(`find report-data/ html-reports/ lf_reports/ Documents/ -type f -a -name '*.pdf' 2>/dev/null ||:`)
+    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ -type f -a \( -name '*.pcap' -o -name '*.pcapng' \) 2>/dev/null ||:`)
+    fnum=$(( ${#csv_list[@]} + ${#pdf_list[@]} + ${#pcap_list[@]} ))
+
     if (( $fnum > 0 )); then
-        fsiz=$( find -type f -name '*.csv' -print0 2>/dev/null | xargs -0 du -hc | awk '/total/{print $1}')
+        fsiz=$(du -hc "${csv_list[@]}" "${pdf_list[@]}" "${pcap_list[@]}" | awk '/total/{print $1}')
     fi
-    # set +veux
-    totals[r]="CSV: $fnum files, $fsiz"
+    totals[r]="$fnum files ($fsiz): ${#csv_list[@]} csv, ${#pdf_list[@]} pdf, ${#pcap_list[@]} pcap"
     [[ x${totals[r]} = x ]] && totals[r]=0
     # report_files=("CSV files: $fnum tt $fsiz")
     cd "$starting_dir"
@@ -826,9 +868,12 @@ fi
 choice=""
 refresh=0
 while [[ $choice != q ]]; do
+    echo ""
     hr
-    #abcdhklmqrtv
-    echo "Would you like to delete? "
+    df -h --type ext4
+    echo ""
+    hr
+    echo "What would you like to delete or compress? "
     echo "  b) old kernels                : ${totals[b]}"
     echo "  c) core crash files           : ${totals[c]}"
     echo "  d) old LANforge downloads     : ${totals[d]}"
@@ -836,8 +881,9 @@ while [[ $choice != q ]]; do
     echo "  l) old /var/log files         : ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
     echo "  n) purge dnf/yum cache        : ${totals[n]}"
-    echo "  r) compress .csv files        : ${totals[r]}"
+    echo "  r) report data                : ${totals[r]}"
     echo "  t) clean /var/tmp             : ${totals[t]}"
+    echo "  z) list compressed files      : ${totals[z]}"
     echo "  q) quit"
     read -p "> " choice
     refresh=0
@@ -877,6 +923,10 @@ while [[ $choice != q ]]; do
     q )
         break
         ;;
+    z )
+        clean_compressed_files
+        refresh=1
+        ;;
     * )
         echo "not an option [$choice]"
         ;;
@@ -886,6 +936,4 @@ while [[ $choice != q ]]; do
         disk_usage_report
     fi
 done
-
-
 echo bye
