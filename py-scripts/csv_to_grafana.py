@@ -252,17 +252,11 @@ def main():
 
     scriptname = csvtoinflux.script_name()
 
-    if args.panel_name is None:
-        panel_name = scriptname
-    else:
-        panel_name = args.panel_name
-
-    DataToGrafana = data_to_grafana(_bucket=args.influx_bucket,
-                                    _script=scriptname,
-                                    _panel_name=panel_name)
-
     csvtoinflux.post_to_influx()
 
-    grafana_input = DataToGrafana.json_parser
+    GrafanaDB.create_custom_dashboard(scripts=[scriptname],
+                                      title=args.panel_name,
+                                      bucket=args.influx_bucket)
 
-    GrafanaDB.GR.create_dashboard_from_dict(dictionary=grafana_input)
+if __name__ == "__main__":
+    main()

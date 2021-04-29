@@ -96,6 +96,7 @@ class CSVtoInflux(Realm):
             line = line.split('\t')
             test_id_index = line.index('test-id')
             line = fp.readline()
+            line.split('\t')
             return line[test_id_index]
 
 
@@ -113,7 +114,7 @@ def main():
     debug = False
 
     parser = argparse.ArgumentParser(
-        prog='test_l3_longevity.py',
+        prog='csv_to_influx.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''

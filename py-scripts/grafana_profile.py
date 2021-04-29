@@ -145,6 +145,13 @@ class UseGrafana(LFCliBase):
                 fieldConfig['defaults'] = dict()
                 fieldConfig['overrides'] = list()
 
+                transformation = dict()
+                transformation['id'] = "renameByRegex"
+                transformation_options = dict()
+                transformation_options['regex'] = "(.*) value.*"
+                transformation_options['renamePattern'] = "$1"
+                transformation['options'] = transformation_options
+
                 xaxis = dict()
                 xaxis['buckets'] = None
                 xaxis['mode'] = "time"
@@ -195,6 +202,8 @@ class UseGrafana(LFCliBase):
                 panel['timeRegions'] = list()
                 panel['timeShift'] = None
                 panel['title'] = scriptname+' '+graph_group
+                panel['transformations'] = list()
+                panel['transformations'].append(transformation)
                 panel['type'] = "graph"
                 panel['xaxis'] = xaxis
                 panel['yaxes'] = list()
