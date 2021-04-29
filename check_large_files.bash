@@ -13,7 +13,6 @@
 # set -e
 # these are default selections
 selections=()
-deletion_targets=()
 show_menu=1
 verbose=0
 quiet=0
@@ -23,7 +22,7 @@ cleanup_size_mb=$(( 1024 * 5 ))
 lf_core_log="/home/lanforge/found_cores_log.txt"
 
 USAGE="$0 # Check for large files and purge many of the most inconsequencial
- -a   # automatic: disable menu and remove crash files if free space is < ${cleanup_size_mb}MB
+ -a   # automatic: quietly empty trash and remove crash files if free space is < ${cleanup_size_mb}MB
  -b   # remove extra kernels and modules
  -c   # remove all core files
  -d   # remove old LANforge downloads
@@ -33,6 +32,7 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -m   # remove orphaned fileio items in /mnt/lf
  -q   # quiet
  -r   # compress /home/lanforge report data and pcap files
+ -s   # empty the trash
  -t   # remove /var/tmp files
  -v   # verbose
  -z   # compressed files in /home/lanforge
@@ -133,6 +133,7 @@ while getopts $opts opt; do
       fi
       quiet=1
       selections+=($opt)
+      selections+=(s) # dump trash
       show_menu=0
       ;;
     b)
@@ -158,6 +159,9 @@ while getopts $opts opt; do
       selections+=($opt)
       ;;
     r)
+      selections+=($opt)
+      ;;
+    s)
       selections+=($opt)
       ;;
     q)
@@ -200,6 +204,7 @@ declare -A totals=(
     [l]=0
     [m]=0
     [r]=0
+    [s]=0
     [t]=0
     [z]=0
 )
@@ -210,8 +215,9 @@ declare -A desc=(
     [k]="lf/ath10 files"
     [l]="/var/log"
     [m]="/mnt/lf files"
-    [n]="DNF cache"
-    [r]="Report Data"
+    [n]="dnf cache"
+    [r]="report data"
+    [s]="trash can"
     [t]="/var/tmp"
     [z]="compressed files"
 )
@@ -224,6 +230,7 @@ declare -A surveyors_map=(
     [m]="survey_mnt_lf_files"
     [n]="survey_dnf_cache"
     [r]="survey_report_data"
+    [s]="survey_trash_can"
     [t]="survey_var_tmp"
     [z]="survey_compressed_files"
 )
@@ -237,6 +244,7 @@ declare -A cleaners_map=(
     [m]="clean_mnt_lf_files"
     [n]="clean_dnf_cache"
     [r]="compress_report_data"
+    [s]="empty_trash_can"
     [t]="clean_var_tmp"
     [z]="clean_compressed_files"
 )
@@ -273,6 +281,30 @@ kernel_to_relnum() {
     set +x
     #1>&2 echo "EXPANDO: ${expandos[0]}${expandos[1]}${expandos[2]}"
     echo "k${expandos[0]}${expandos[1]}${expandos[2]}"
+}
+
+empty_trash_can() {
+    set -vux
+    if [ -x /usr/bin/trash-empty ]; then
+        for can in "${trash_cans[@]}"; do
+            if [[ $can = /home* ]]; then
+                # that =() nonsense is turning the '/' into spaces and letting default IFS let () treat it as array items
+                local hunks=(${can//\// })
+                local uzer="${hunks[1]}"
+                su -l $uzer -c "unset DISPLAY; /usr/bin/trash-empty"
+            else
+                # we should be root
+                /usr/bin/trash-empty
+            fi
+        done
+    else
+        note "trash-cli not installed, destroying trash files"
+        for can in "${trash_cans[@]}"; do
+            find "${can}" -type f -exec rm -vf {} \;
+        done
+    fi
+    totals[s]=0
+    set +vux
 }
 
 clean_compressed_files() {
@@ -315,7 +347,7 @@ clean_core_files() {
         debug "No core files ?"
         return 0
     fi
-    #set -vux
+
     local counter=0
     if [ ! -f "$lf_core_log" ]; then
         touch "$lf_core_log"
@@ -380,7 +412,7 @@ clean_ath10_files() {
     while read f; do
         echo "removing $f"
         rm -f "$f"
-    done < <( find /home/lanforge -type f -iname "ath10*")
+    done < <( find /home/lanforge -type f -iname "ath10*" ||:)
 }
 
 clean_var_log() {
@@ -481,7 +513,7 @@ survey_kernel_files() {
     local booted=`uname -r`
 
     note "** You are running kernel $booted **"
-    # set -veux
+
     local file
     local fiile
     for file in "${kernel_files[@]}"; do
@@ -494,7 +526,7 @@ survey_kernel_files() {
 
         if [[ $fiile =~ $booted ]]; then
             debug "    ignoring booted CT kernel $file"
-            sleep 2
+            # sleep 2
             continue
         else
             ser=$( kernel_to_relnum ${fiile#*ct} )
@@ -504,7 +536,7 @@ survey_kernel_files() {
             removable_kernels+=($file)
         fi
     done
-    sleep 2
+    # sleep 2
     local booted_ser=$( kernel_to_relnum $booted )
     if (( ${#kernel_sort_names[@]} > 0 )); then
         declare -A ser_files
@@ -609,46 +641,80 @@ survey_kernel_files() {
     for pkg in "${k_pkgs[@]}"; do
         pkg=${pkg%.fc??.x86_64}
         ser=$( kernel_to_relnum $pkg )
-        for zpkg in "${removable_pkg_series[@]}"; do
-            if (( $ser == $zpkg )); then
-                removable_packages+=($pkg)
-            fi
-        done
+        if (( ${#removable_pkg_series[@]} > 0 )); then
+            for zpkg in "${removable_pkg_series[@]}"; do
+                if (( $ser == $zpkg )); then
+                    removable_packages+=($pkg)
+                fi
+            done
+        fi
     done
 
     set +x
     if (( $quiet < 1 )); then
-        if (( ${#removable_packages[@]} > 0 )); then
+        if [[ ${removable_packages+x} = x ]] && (( ${#removable_packages[@]} > 0 )); then
             echo "Removable packages "
             printf "    %s\n" "${removable_packages[@]}"
         fi
-        if (( ${#removable_kernels[@]} > 0 )); then
+        if [[ ${removable_kernels+x} = x ]] && (( ${#removable_kernels[@]} > 0 )); then
             echo "Removable kernel files "
             printf "    %s\n" "${removable_kernels[@]}"
         fi
-        if (( ${#removable_libmod_dirs[@]} > 0 )); then
+        if [[ ${removable_libmod_dirs+x} = x ]] && (( ${#removable_libmod_dirs[@]} > 0 )); then
             echo "Removable /lib/module directories "
             printf "    %s\n" "${removable_libmod_dirs[@]}"
         fi
     fi
 } # ~survey_kernel_files
 
+# check the trash can
+trash_cans=()
+survey_trash_can() {
+    debug "Checking trash can"
+    local lstf=".local/share/Trash/files"
+    local some_items=()
+    mapfile -t trash_cans < <(ls -d /root/$lstf /home/lanforge/$lstf 2>/dev/null) 2>/dev/null
+    if [[ $verbose = 1 ]] && (( ${#trash_cans} > 0 )); then
+        printf "    %s\n" "${trash_cans[@]}"
+    fi
+    if (( ${#trash_cans[@]} > 0 )); then
+        totals[s]=$( du -hc "${trash_cans[@]}" | awk '/total/{print $1}' )
+        [[ x${totals[s]} = x ]] && totals[s]=0 ||:
+        for can in "${trash_cans[@]}"; do
+            mapfile -t -O "${#some_items[@]}" some_items < <(find "$can" -type f | head 2>/dev/null )
+        done
+    fi
+    if (( ${#some_items[@]} > 0 )) && (( $quiet < 1 )) && (( $verbose > 0 )); then
+        hr
+        note "Some trash can items:"
+        note "${some_items[@]}"
+        hr
+        # sleep 1
+    fi
+    if [ ! -x /usr/bin/trash-empty ] && (( $quiet < 1 )); then
+        note "Package trash-cli not installed. Please install it using command:"
+        note "sudo dnf install -y trash-cli"
+        sleep 2
+    fi
+}
+
 # Find core files
 core_files=()
 survey_core_files() {
     debug "Surveying core files"
     cd /
-    #set -vux
+
     mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
         printf "    %s\n" "${core_files[@]}" | head
     fi
     if (( ${#core_files[@]} > 0 )); then
         totals[c]=$(du -hc "${core_files[@]}" | awk '/total/{print $1}')
+        [[ x${totals[c]} = x ]] && totals[c]=0 ||:
+    else
+        totals[c]=0
     fi
-    #set +vux
-    #set +x
-    [[ x${totals[c]} = x ]] && totals[c]=0
+
     cd "$starting_dir"
 }
 
@@ -659,8 +725,12 @@ survey_lf_downloads() {
     [ ! -d "/home/lanforge/Downloads" ] && note "No downloads folder " && return 0
     cd /home/lanforge/Downloads
     mapfile -t lf_downloads < <(ls *gz *z2 *-Installer.exe *firmware* kinst_* *Docs* 2>/dev/null)
-    totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
-    [[ x${totals[d]} = x ]] && totals[d]=0
+    if [[ ${lf_downloads+x} = x ]]; then
+        totals[d]=$(du -hc "${lf_downloads[@]}" | awk '/total/{print $1}')
+        [[ x${totals[d]} = x ]] && totals[d]=0
+    else
+        totals[d]=0
+    fi
     cd "$starting_dir"
 }
 
@@ -669,8 +739,14 @@ ath10_files=()
 survey_ath10_files() {
     debug "Surveying ath10 crash files"
     mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
-    totals[k]=$(du -hc "${ath10_files}" 2>/dev/null | awk '/total/{print $1}')
-    [[ x${totals[k]} = x ]] && totals[k]=0
+    if [[ ${ath10_files+x} = x ]]; then
+        totals[k]=$(du -hc "${ath10_files[@]}" 2>/dev/null | awk '/total/{print $1}')
+        [[ x${totals[k]} = x ]] && totals[k]=0 ||:
+    else
+        totals[k]=0
+        return
+    fi
+
 }
 
 # stuff in var log
@@ -678,18 +754,27 @@ var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
     mapfile -t var_log_files < <(find /var/log -type f -size +35M \
-        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null)
-    totals[l]=$(du -hc "${var_log_files}" 2>/dev/null | awk '/total/{print $1}' )
-    [[ x${totals[l]} = x ]] && totals[l]=0
+        -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null ||:)
+    if [[ ${var_log_files+x} = x ]]; then
+        totals[l]=$(du -hc "${var_log_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+        [[ x${totals[l]} = x ]] && totals[l]=0 ||:
+    else
+        totals[l]=0
+        return
+    fi
 }
 
 # stuff in var tmp
 var_tmp_files=()
 survey_var_tmp() {
     debug "Surveying var tmp"
-    mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null)
-    totals[t]=$(du -sh "${var_tmp_files}" 2>/dev/null | awk '/total/{print $1}' )
-    [[ x${totals[t]} = x ]] && totals[t]=0
+    mapfile -t var_tmp_files < <(find /var/tmp -type f 2>/dev/null || :)
+    if [[ ${var_tmp_files+x} = x ]]; then
+        totals[t]=$(du -sh "${var_tmp_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+        [[ x${totals[t]} = x ]] && totals[t]=0 ||:
+    else
+        totals[t]=0
+    fi
 }
 
 # Find size of /mnt/lf that is not mounted
@@ -697,14 +782,19 @@ mnt_lf_files=()
 survey_mnt_lf_files() {
     [ ! -d /mnt/lf ] && return 0
     debug "Surveying mnt lf"
-    # set -vx
-    mapfile -t mnt_lf_files < <(find /mnt/lf -xdev -type f 2>/dev/null)
-    if (( ${#mnt_lf_files[@]} < 1 )); then
+
+    mapfile -t mnt_lf_files < <(find /mnt/lf -xdev -type f 2>/dev/null ||:)
+    if [[ ${mnt_lf_files+x} = x ]]; then
+        if (( ${#mnt_lf_files[@]} < 1 )); then
+            totals[m]=0
+            return
+        fi
+        totals[m]=$( du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
+        [[ x${totals[m]} = x ]] && totals[m]=0 ||:
+    else
         totals[m]=0
         return
     fi
-    totals[m]=$( du -xhc "${mnt_lf_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
-    [[ x${totals[m]} = x ]] && totals[m]=0
     # set +vx
 }
 
@@ -721,19 +811,18 @@ survey_compressed_files() {
     debug "Surveying compressed /home/lanforge "
     cd /home/lanforge
     mapfile -t compressed_files < <( find Documents/ html-reports/ lf_reports/ report-data/ tmp/ -type f \
-        -a \( -name "*.gz" -o -name "*.xz" -o -name "*.bz2" -o -name "*.7z" -o -name "*.zip" \) 2>/dev/null )
+        -a \( -name "*.gz" -o -name "*.xz" -o -name "*.bz2" -o -name "*.7z" -o -name "*.zip" \) 2>/dev/null ||:)
     if (( ${#compressed_files[@]} < 1 )); then
         debug "no compressed files found"
         totals[z]=0
         return
     fi
-    # set -veux
+
     totals[z]=$( du -xhc "${compressed_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
     # set +veux
-    [[ x${totals[z]} = x ]] && totals[z]=0
+    [[ x${totals[z]} = x ]] && totals[z]=0 ||:
     cd -
 }
-
 
 ## Find size of /lib/modules
 # cd /lib/modules
@@ -744,7 +833,7 @@ survey_compressed_files() {
 # mapfile -t boot_kernels < <(ls init*)
 # boot_usage=`du -sh .`
 
-report_files=()
+# report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
     cd /home/lanforge
@@ -776,9 +865,23 @@ survey_areas() {
         if (( $quiet < 1 )) && (( $verbose < 1 )); then
             echo -n "#"
         fi
-        ${surveyors_map[$area]}
+
+        if [[ $area = b ]]; then
+            if [[ ${kernel_sort_names+x} != x ]] || (( ${#kernel_sort_names[@] < 1 } )); then
+                debug "surveying kernel area"
+                # sleep 5
+                ${surveyors_map[$area]}
+            else
+                debug "kernel area already surveyed"
+            fi
+
+        else
+            debug "surveying $area"
+            # sleep 2
+            ${surveyors_map[$area]}
+        fi
     done
-    if (( $quiet < 1 )) && (( $verbose < 1 )); then
+    if (( $quiet < 1 )); then
         echo ""
     fi
 }
@@ -797,7 +900,6 @@ disk_usage_report
 if (( ${#core_files[@]} > 0 )); then
     hr
     note "${#core_files[@]} Core Files detected:"
-    filestr=""
     declare -A core_groups
     # set -e
     # note that the long pipe at the bottom of the loop is the best way to get
@@ -882,6 +984,7 @@ while [[ $choice != q ]]; do
     echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
     echo "  n) purge dnf/yum cache        : ${totals[n]}"
     echo "  r) report data                : ${totals[r]}"
+    echo "  s) trash cans                 : ${totals[s]}"
     echo "  t) clean /var/tmp             : ${totals[t]}"
     echo "  z) list compressed files      : ${totals[z]}"
     echo "  q) quit"
@@ -916,16 +1019,21 @@ while [[ $choice != q ]]; do
         compress_report_data
         refresh=1
         ;;
+    s )
+        empty_trash_can
+        refresh=1
+        ;;
     t )
         clean_var_tmp
         refresh=1
         ;;
-    q )
-        break
-        ;;
     z )
         clean_compressed_files
         refresh=1
+        ;;
+    q )
+        echo ""
+        exit
         ;;
     * )
         echo "not an option [$choice]"
