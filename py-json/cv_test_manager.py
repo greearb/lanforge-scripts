@@ -221,6 +221,13 @@ class cv_test(Realm):
         }
         rsp = self.json_post(req_url, data)
 
+    def rm_cv_text_blob(self, type="Network-Connectivity", name=None):
+        req_url = "/cli-json/rm_text_blob"
+        data = {
+            "type": type,
+            "name": name,  # config name
+        }
+        rsp = self.json_post(req_url, data)
 
     def apply_cfg_options(self, cfg_options, enables, disables, raw_lines, raw_lines_file):
 
