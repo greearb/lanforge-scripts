@@ -1,8 +1,64 @@
 #!/bin/bash
-#This bash script aims to automate the test process of all Candela Technologies's test_* scripts in the lanforge-scripts directory. The script can be run 2 ways and may include (via user input) the "start_num" and "stop_num" variables to select which tests should be run.
-# OPTION ONE: ./test_all_scripts.sh : this command runs all the scripts in the array "testCommands"
-# OPTION TWO: ./test_all_scripts.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num.
-#Variables
+##########################
+# Help
+##########################
+Help()
+{
+  echo "This bash script aims to automate the test process of all Candela Technologies's test_* scripts in the lanforge-scripts directory. The script can be run 2 ways and may include (via user input) the \"start_num\" and \"stop_num\" variables to select which tests should be run."
+  echo "OPTION ONE: ./regression_test.sh : this command runs all the scripts in the array \"testCommands\""
+  echo "OPTION TWO: ./regression_test.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num."
+  echo "Optional Variables:"
+  echo "SSID is the name of the network you are testing against"
+  echo "PASSWD is the password of said network"
+  echo "SECURITY is the security protocol of the network"
+  echo "MGR is the IP address of the device which has LANforge installed, if different from the system you are using."
+  echo "A is used to call to test a specific command based on"
+  echo "F is used to pass in an RC file which can store the credentials for running regression multiple times on your system"
+  echo "Example command: ./regression_test.sh -s SSID -p PASSWD -w SECURITY -m MGR"
+}
+
+while getopts ":h:s:p:w:m:A:r:" option; do
+  case "${option}" in
+    h) # display Help
+      Help
+      exit 1
+      ;;
+    s)
+      SSID_USED=${OPTARG}
+      ;;
+    p)
+      PASSWD_USED=${OPTARG}
+      ;;
+    w)
+      SECURITY=${OPTARG}
+      ;;
+    m)
+      MGR=${OPTARG}
+      ;;
+    A)
+      A=${OPTARG}
+      ;;
+    r)
+      RADIO_USED=${OPTARG}
+      ;;
+    F)
+      RC_FILE=${OPTARG}
+      ;;
+    *)
+
+      ;;
+  esac
+done
+
+if [[ ${#SSID_USED} -eq 0 ]]; then #Network credentials
+  SSID_USED="jedway-wpa2-x2048-5-3"
+  PASSWD_USED="jedway-wpa2-x2048-5-3"
+  SECURITY="wpa2"
+fi
+
+if [[ ${#RADIO_USED} -eq 0 ]]; then # Allow the user to change the radio they test against
+  RADIO_USED="wiphy1"
+fi
 
 FILE="/tmp/gui-update.lock"
 if test -f "$FILE"; then
@@ -12,29 +68,20 @@ fi
 
 HOMEPATH=$(realpath ~)
 
-if [[ ${#1} -gt 0 ]]; then
-  SSID_USED=$1
-  PASSWD_USED=$2
-  SECURITY=$3
-  if [[ ${#4} -gt 0 ]]; then
-    MGR=$4
-    # FILENAME=$5 # this appears unused
-  elif [ -f "$1" ]; then
-    source "$1"
-  elif [ -f ./regression_test.rc ]; then
+if [[ ${#RC_FILE} -gt 0 ]]; then
+  source "$RC_FILE"
+fi
+
+if [[ ${#SSID_USED} -gt 0 ]]; then
+  if [ -f ./regression_test.rc ]; then
     source ./regression_test.rc # this version is a better unix name
   elif [ -f ./regression_test.txt ]; then
     source ./regression_test.txt # this less unixy name was discussed earlier
   fi
-else # these are jedway lab defaults
-  SSID_USED="jedway-wpa2-x2048-5-3"
-  PASSWD_USED="jedway-wpa2-x2048-5-3"
-  SECURITY="wpa2"
 fi
 NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
-MGRLEN="$(${#MGR})"
-RADIO_USED="wiphy0"
+MGRLEN=${#MGR}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 #START_NUM=0
@@ -53,9 +100,7 @@ if [ ! -d "${REPORT_DATA}" ]; then
     exit 1
 fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
-#set -vex
-echo $MGRLEN
-#Test array
+
 
 function run_l3_longevity {
   ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
@@ -99,13 +144,13 @@ if [[ $MGRLEN -gt 0 ]]; then
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
       "./test_wanlink.py --debug --mgr $MGR"
       #"./ws_generic_monitor_test.py --mgr $MGR"
-      "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
-      "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug --mgr $MGR"
+      "./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
+      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_macvlan.py --radio $RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
       "./create_qvlan.py --first_qvlan_ip 192.168.1.50"
-      "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vr.py --vr_name 2.vr0 --ports 2.br0,2.vap2 --services"
       "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes --mgr $MGR"
       "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes --mgr $MGR"
@@ -118,7 +163,7 @@ elif [[ $MGR == "short" ]]; then
   )
 else
   testCommands=(
-      #"../cpu_stats.py --duration 15"
+       #"../cpu_stats.py --duration 15"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wpa-1 --passwd jedway-wpa-1 --radio $RADIO_USED --security wpa --debug"
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug"
       "./example_security_connection.py --num_stations $NUM_STA --ssid jedway-wep-48 --passwd 0123456789 --radio $RADIO_USED --security wep --debug"
@@ -152,14 +197,14 @@ else
       "./test_wanlink.py --debug"
       #"./ws_generic_monitor_test.py"
       #"../py-json/ws-sta-monitor.py --debug"
-      "./create_bridge.py --radio wiphy1 --upstream_port eth1 --target_device sta0000 --debug"
-      "./create_l3.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      "./create_l4.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      "./create_macvlan.py --radio wiphy1 --macvlan_parent eth1 --debug"
-      "./create_station.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
-      "./create_vap.py --radio wiphy1 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+      "./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug"
+      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+      "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+      "./create_macvlan.py --radio $RADIO_USED --macvlan_parent eth1 --debug"
+      "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
+      "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug"
       "./create_vr.py --vr_name 2.vr0 --ports 2.br0,2.vap2 --services"
-      "./create_qvlan.py --radio wiphy1 --qvlan_parent eth1"
+      "./create_qvlan.py --radio $RADIO_USED --qvlan_parent eth1"
       "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes"
       "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes"
       "./wlan_capacity_calculator.py -sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"
@@ -195,62 +240,72 @@ name_to_num=(
     ["ws_generic_monitor_test"]=25
     ["sta_connect2"]=26
     ["wlan_capacity_calculator"]=27
-    ["test_generic"]=28
-    ["new_script"]=29
-    ["sta_connect_example"]=30
+    ["new_script"]=28
+    ["sta_connect_example"]=29
 )
 
 function blank_db() {
-    echo "Loading blank scenario..." >>"${HOMEPATH}/test_all_output_file.txt"
-    ./scenario.py --load BLANK >>"${HOMEPATH}/test_all_output_file.txt"
+    echo "Loading blank scenario..." >>"${HOMEPATH}/regression_file.txt"
+    ./scenario.py --load BLANK >>"${HOMEPATH}/regression_file.txt"
     #check_blank.py
 }
 
 function echo_print() {
-    echo "Beginning $CURR_TEST_NAME test..." >>"${HOMEPATH}/test_all_output_file.txt"
+    echo "Beginning $CURR_TEST_NAME test..." >>"${HOMEPATH}/regression_file.txt"
+}
+
+function test() {
+  if [[ $MGRLEN -gt 0 ]]; then
+    ./scenario.py --load FACTORY_DFLT --mgr "${MGR}"
+  else
+    ./scenario.py --load FACTORY_DFLT
+  fi
+
+  echo ""
+  echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
+
+  echo_print
+  echo "$i"
+  $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+  chmod 664 "${TEST_DIR}/${NAME}.txt"
+  FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
+  if (( FILESIZE > 0)); then
+      results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+                <td class='failure'>Failure</td>
+                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+  else
+      results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+                <td class='success'>Success</td>
+                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                <td></td></tr>")
+  fi
 }
 
 function run_test()  {
+  if [[ ${#A} -gt 0 ]]; then
     for i in "${testCommands[@]}"; do
-        if [[ $MGRLEN -gt 0 ]]; then
-          ./scenario.py --load FACTORY_DFLT --mgr "${MGR}"
-        else
-          ./scenario.py --load FACTORY_DFLT
-        fi
-        NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-        $LAST_COMMIT=$(git log --pretty=oneline | tail -n 1)
-        CURR_TEST_NAME=${i%%.py*}
-        CURR_TEST_NAME=${CURR_TEST_NAME#./*}
-        CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
-
-        #if (( $CURR_TEST_NUM > $STOP_NUM )) || (( $STOP_NUM == $CURR_TEST_NUM )) && (( $STOP_NUM != 0 )); then
-        #    exit 1
-        #fi
-        echo ""
-        echo "Test $CURR_TEST_NUM: $CURR_TEST_NAME"
-
-        #if (( $CURR_TEST_NUM > $START_NUM )) || (( $CURR_TEST_NUM == $START_NUM )); then
-        echo_print
-        echo "$i"
-        $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
-        chmod 664 "${TEST_DIR}/${NAME}.txt"
-        FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
-        if (( FILESIZE > 0)); then
-            results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
-                      <td class='failure'>Failure</td>
-                      <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                      <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
-        else
-            results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
-                      <td class='success'>Success</td>
-                      <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                      <td></td></tr>")
-        fi
-        #fi
+      NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+      CURR_TEST_NAME=${i%%.py*}
+      CURR_TEST_NAME=${CURR_TEST_NAME#./*}
+      CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
+      if [[ $A == "$CURR_TEST_NAME" ]]; then
+        test
+      fi
     done
+  else
+    for i in "${testCommands[@]}"; do
+      NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+      CURR_TEST_NAME=${i%%.py*}
+      CURR_TEST_NAME=${CURR_TEST_NAME#./*}
+      CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
+      test
+    done
+  fi
 }
 
 function html_generator() {
+    LAST_COMMIT=$(git log --pretty=oneline | tail -n 1)
     header="<html>
 		<head>
 		<title>Regression Test Results $NOW</title>
@@ -293,7 +348,7 @@ function html_generator() {
     tail="</body>
 		</html>"
 
-    fname="${HOMEPATH}/html-reports/test_all_output_file-${NOW}.html"
+    fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
     echo "</table>" >> "$fname"
