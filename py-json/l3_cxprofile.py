@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 import pprint
 from pprint import pprint
 from LANforge.lfcli_base import LFCliBase
@@ -7,6 +6,7 @@ import csv
 import pandas as pd
 import time
 import datetime
+
 
 class L3CXProfile(LFCliBase):
     def __init__(self,
@@ -43,7 +43,7 @@ class L3CXProfile(LFCliBase):
         :param mconn:  Multi-conn setting for this connection.
         :param debug_:
         """
-        super().__init__(lfclient_host, lfclient_port, _debug = debug_)
+        super().__init__(lfclient_host, lfclient_port, _debug=debug_)
         self.debug = debug_
         self.local_realm = local_realm
         self.side_a_min_pdu = side_a_min_pdu
@@ -140,75 +140,72 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                raise ValueError('Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
+                raise ValueError('Filename %s has an extension that does not match output format %s .' % (
+                    report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
-       
 
-        #default save to csv first
+        # default save to csv first
         if report_file.split('.')[-1] != 'csv':
-            report_file = report_file.replace(str(output_format),'csv',1)
+            report_file = report_file.replace(str(output_format), 'csv', 1)
             print("Saving rolling data into..." + str(report_file))
 
-        #================== Step 1, set column names and header row
-        layer3_cols=[self.replace_special_char(x) for x in layer3_cols]
+        # ================== Step 1, set column names and header row
+        layer3_cols = [self.replace_special_char(x) for x in layer3_cols]
         layer3_fields = ",".join(layer3_cols)
-        default_cols=['Timestamp','Timestamp milliseconds epoch','Timestamp seconds epoch','Duration elapsed']
+        default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
         default_cols.extend(layer3_cols)
         if port_mgr_cols is not None:
             default_cols.extend(port_mgr_cols)
-        header_row=default_cols
+        header_row = default_cols
 
-      
-        #csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
+        # csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
 
         if port_mgr_cols is not None:
-            port_mgr_cols=[self.replace_special_char(x) for x in port_mgr_cols]
-            port_mgr_cols_labelled =[]
+            port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled = []
             for col_name in port_mgr_cols:
                 port_mgr_cols_labelled.append("port mgr - " + col_name)
-            
-            port_mgr_fields=",".join(port_mgr_cols)
+
+            port_mgr_fields = ",".join(port_mgr_cols)
             header_row.extend(port_mgr_cols_labelled)
-        #create sys info file
+        # create sys info file
         systeminfo = self.json_get('/')
-        sysinfo=[str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']), str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
-        with open(systeminfopath,'w') as filehandle:
+        sysinfo = [str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']),
+                   str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
+        with open(systeminfopath, 'w') as filehandle:
             for listitem in sysinfo:
                 filehandle.write('%s\n' % listitem)
 
-
-        #================== Step 2, monitor columns
+        # ================== Step 2, monitor columns
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
         passes = 0
         expected_passes = 0
-        old_cx_rx_values = self.__get_rx_values()        
+        old_cx_rx_values = self.__get_rx_values()
 
-        #instantiate csv file here, add specified column headers 
-        csvfile=open(str(report_file),'w')
-        csvwriter = csv.writer(csvfile,delimiter=",")      
+        # instantiate csv file here, add specified column headers
+        csvfile = open(str(report_file), 'w')
+        csvwriter = csv.writer(csvfile, delimiter=",")
         csvwriter.writerow(header_row)
 
-        #wait 10 seconds to get proper port data
+        # wait 10 seconds to get proper port data
         time.sleep(10)
-        
+
         # for x in range(0,int(round(iterations,0))):
-        initial_starttime= datetime.datetime.now()
+        initial_starttime = datetime.datetime.now()
         while datetime.datetime.now() < end_time:
             t = datetime.datetime.now()
-            timestamp= t.strftime("%m/%d/%Y %I:%M:%S")
-            t_to_millisec_epoch= int(self.get_milliseconds(t))
-            t_to_sec_epoch= int(self.get_seconds(t))
-            time_elapsed=int(self.get_seconds(t))-int(self.get_seconds(initial_starttime))
-            basecolumns=[timestamp,t_to_millisec_epoch,t_to_sec_epoch,time_elapsed]
-        
+            timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
+            t_to_millisec_epoch = int(self.get_milliseconds(t))
+            t_to_sec_epoch = int(self.get_seconds(t))
+            time_elapsed = int(self.get_seconds(t)) - int(self.get_seconds(initial_starttime))
+            basecolumns = [timestamp, t_to_millisec_epoch, t_to_sec_epoch, time_elapsed]
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
-
             if port_mgr_cols is not None:
-                port_mgr_response=self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
-            #get info from port manager with list of values from cx_a_side_list
+                port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
+            # get info from port manager with list of values from cx_a_side_list
             if "endpoint" not in layer_3_response or layer_3_response is None:
                 print(layer_3_response)
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
@@ -221,9 +218,9 @@ class L3CXProfile(LFCliBase):
                 if debug:
                     print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
 
-            for endpoint in layer_3_response["endpoint"]: #each endpoint is a dictionary
-                endp_values=list(endpoint.values())[0]
-                temp_list=basecolumns
+            for endpoint in layer_3_response["endpoint"]:  # each endpoint is a dictionary
+                endp_values = list(endpoint.values())[0]
+                temp_list = basecolumns
                 for columnname in header_row[len(basecolumns):]:
                     temp_list.append(endp_values[columnname])
                     if port_mgr_cols is not None:
@@ -231,12 +228,12 @@ class L3CXProfile(LFCliBase):
                             if sta_name in current_sta:
                                 for interface in port_mgr_response["interfaces"]:
                                     if sta_name in list(interface.keys())[0]:
-                                        merge=temp_endp_values.copy()
-                                        #rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
-                                        port_mgr_values_dict =list(interface.values())[0]
-                                        renamed_port_cols={}
+                                        merge = temp_endp_values.copy()
+                                        # rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
+                                        port_mgr_values_dict = list(interface.values())[0]
+                                        renamed_port_cols = {}
                                         for key in port_mgr_values_dict.keys():
-                                            renamed_port_cols['port mgr - ' +key]=port_mgr_values_dict[key]
+                                            renamed_port_cols['port mgr - ' + key] = port_mgr_values_dict[key]
                                         merge.update(renamed_port_cols)
                                         for name in port_mgr_cols:
                                             temp_list.append(merge[name])
@@ -254,21 +251,33 @@ class L3CXProfile(LFCliBase):
             else:
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
-            old_cx_rx_values = new_cx_rx_values
+            try:
+                cx_data = self.json_get("/cx/all")
+                cx_data.pop("handler")
+                cx_data.pop("uri")
+                for i in self.created_cx.keys():
+                    print("cx name: ", i,
+                          "  bps tx a :", cx_data[i]['bps rx a'], "  bps rx a : ", cx_data[i]['bps rx a'],
+                          "  bps tx b :", cx_data[i]['bps rx a'], "  bps rx b : ", cx_data[i]['bps rx a'],
+                          "  pkt rx a :", cx_data[i]['pkt rx a'], "  pkt rx b : ", cx_data[i]['pkt rx b'],
+                          "  rx drop % a :", cx_data[i]['rx drop % a'], "  rx drop % b : ", cx_data[i]['rx drop % b'])
+                print("\n")
+            except Exception as e:
+                print(e)
             time.sleep(monitor_interval_ms)
         csvfile.close()
 
-        #comparison to last report / report inputted
+        # comparison to last report / report inputted
         if compared_report is not None:
-            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file), dataframe_two=self.file_to_df(compared_report))
+            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file),
+                                              dataframe_two=self.file_to_df(compared_report))
             exit(1)
-            #append compared df to created one
+            # append compared df to created one
             if output_format.lower() != 'csv':
                 self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
         else:
             if output_format.lower() != 'csv':
                 self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
-
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():
@@ -308,13 +317,13 @@ class L3CXProfile(LFCliBase):
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 if self.debug:
-                    print("Cleaning cx: %s"%(cx_name))
+                    print("Cleaning cx: %s" % (cx_name))
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
                     if self.debug:
-                        print("Cleaning endpoint: %s"%(ename))
+                        print("Cleaning endpoint: %s" % (ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
         self.clean_cx_lists()
@@ -351,7 +360,7 @@ class L3CXProfile(LFCliBase):
             side_b_resource = side_b_info[1]
 
             for port_name in side_a:
-                side_a_info = self.local_realm.name_to_eid(port_name,debug=debug_)
+                side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
                 if port_name.find('.') < 0:
@@ -397,12 +406,14 @@ class L3CXProfile(LFCliBase):
                     "multi_conn": mconn_b,
                 }
 
-                #print("1: endp-side-b: ", endp_side_b)
+                # print("1: endp-side-b: ", endp_side_b)
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("napping %f sec"%sleep_time)
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                # print("napping %f sec"%sleep_time)
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -411,16 +422,20 @@ class L3CXProfile(LFCliBase):
                     "flag": "AutoHelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
                 data["name"] = endp_b_name
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
 
                 if (endp_type == "lf_udp") or (endp_type == "udp") or (endp_type == "lf_udp6") or (endp_type == "udp6"):
                     data["name"] = endp_a_name
                     data["flag"] = "UseAutoNAT"
-                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
                     data["name"] = endp_b_name
-                    self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                    self.local_realm.json_post(url, data, debug_=debug_,
+                                               suppress_related_commands_=suppress_related_commands)
 
                 if tos != None:
                     self.local_realm.set_endp_tos(endp_a_name, tos)
@@ -441,14 +456,14 @@ class L3CXProfile(LFCliBase):
                 })
 
         elif type(side_b) == list and type(side_a) != list:
-            side_a_info = self.local_realm.name_to_eid(side_a,debug=debug_)
+            side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
             # side_a_name = side_a_info[2]
 
             for port_name in side_b:
                 print(side_b)
-                side_b_info = self.local_realm.name_to_eid(port_name,debug=debug_)
+                side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
                 side_b_name = side_b_info[2]
@@ -492,12 +507,14 @@ class L3CXProfile(LFCliBase):
                     "multi_conn": mconn_b,
                 }
 
-                #print("2: endp-side-b: ", endp_side_b)
+                # print("2: endp-side-b: ", endp_side_b)
 
                 url = "/cli-json/add_endp"
-                self.local_realm.json_post(url, endp_side_a, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                self.local_realm.json_post(url, endp_side_b, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("napping %f sec" %sleep_time )
+                self.local_realm.json_post(url, endp_side_a, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, endp_side_b, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                # print("napping %f sec" %sleep_time )
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -506,7 +523,8 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
 
                 url = "cli-json/set_endp_flag"
                 data = {
@@ -514,8 +532,9 @@ class L3CXProfile(LFCliBase):
                     "flag": "autohelper",
                     "val": 1
                 }
-                self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
-                #print("CXNAME451: %s" % cx_name)
+                self.local_realm.json_post(url, data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands)
+                # print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -532,7 +551,7 @@ class L3CXProfile(LFCliBase):
             raise ValueError(
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
-        print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp,debug_))
+        print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp, debug_))
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
         for data in cx_post_data:
@@ -546,5 +565,3 @@ class L3CXProfile(LFCliBase):
 
     def to_string(self):
         pprint.pprint(self)
-
-
