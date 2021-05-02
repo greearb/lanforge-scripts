@@ -258,8 +258,8 @@ class L3CXProfile(LFCliBase):
                 cx_data.pop("uri")
                 for i in self.created_cx.keys():
                     print("cx name: ", i,
-                          "  bps tx a :", cx_data[i]['bps rx a'], "  bps rx a : ", cx_data[i]['bps rx a'],
-                          "  bps tx b :", cx_data[i]['bps rx a'], "  bps rx b : ", cx_data[i]['bps rx a'],
+                          "  bps tx a :", cx_data[i]['bps tx a'], "  bps rx a : ", cx_data[i]['bps rx a'],
+                          "  bps tx b :", cx_data[i]['bps tx b'], "  bps rx b : ", cx_data[i]['bps rx b'],
                           "  pkt rx a :", cx_data[i]['pkt rx a'], "  pkt rx b : ", cx_data[i]['pkt rx b'],
                           "  rx drop % a :", cx_data[i]['rx drop % a'], "  rx drop % b : ", cx_data[i]['rx drop % b'])
                 print("\n")
