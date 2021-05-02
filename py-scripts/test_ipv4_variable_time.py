@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 
 """test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic.
+This Sdript has two working modes:
+    Mode 1:
+        When station is not available,
 
-This script will create a variable number of stations each with their own set of cross-connects and endpoints.
-It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
-This test will pass if all stations increase traffic over the full test duration.
+        This script will create a variable number of stations each with their own set of cross-connects and endpoints.
+        It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+        This test will pass if all stations increase traffic over the full test duration.
+
+    Mode 2:
+
+        When station is already available This script will create layer3 cross-connects and endpoints It will then
+        create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
+        This test will pass if all stations increase traffic over the full test duration.
 
 Use './test_ipv4_variable_time.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -34,6 +43,7 @@ class IPV4VariableTime(Realm):
                  security=None,
                  password=None,
                  sta_list=[],
+                 create_sta=True,
                  name_prefix=None,
                  upstream=None,
                  radio=None,
@@ -57,6 +67,7 @@ class IPV4VariableTime(Realm):
         self.port = port
         self.ssid = ssid
         self.sta_list = sta_list
+        self.create_sta = create_sta
         self.security = security
         self.password = password
         self.radio = radio
@@ -99,15 +110,16 @@ class IPV4VariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def start(self, print_pass=False, print_fail=False):
-        self.station_profile.admin_up()
-        # to-do- check here if upstream port got IP
-        temp_stas = self.station_profile.station_names.copy()
+        if self.create_sta:
+            self.station_profile.admin_up()
+            # to-do- check here if upstream port got IP
+            temp_stas = self.station_profile.station_names.copy()
 
-        if self.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs")
-        else:
-            self._fail("Stations failed to get IPs")
-            self.exit_fail()
+            if self.wait_for_ip(temp_stas):
+                self._pass("All stations got IPs")
+            else:
+                self._fail("Stations failed to get IPs")
+                self.exit_fail()
         self.cx_profile.start_cx()
 
     def stop(self):
@@ -121,23 +133,26 @@ class IPV4VariableTime(Realm):
 
     def cleanup(self):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
-                                           debug=self.debug)
+        if self.create_sta:
+            self.station_profile.cleanup()
+            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
+                                               debug=self.debug)
 
     def build(self):
+        if self.create_sta:
+            self.station_profile.use_security(self.security, self.ssid, self.password)
+            self.station_profile.set_number_template(self.number_template)
+            print("Creating stations")
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param("set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+            self._pass("PASS: Station build finished")
 
-        self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.station_profile.station_names, side_b=self.upstream,
+        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
+                               side_b=self.upstream,
                                sleep_time=0)
-        self._pass("PASS: Station build finished")
-
+        print("Some")
 
 def main():
     parser = Realm.create_basic_argparse(
@@ -185,6 +200,15 @@ python3 ./test_ipv4_variable_time.py
     --layer3_cols 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --port_mgr_cols 'ap','ip'                                    (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --debug
+    
+    python3 ./test_ipv4_variable_time.py
+    --upstream_port eth1        (upstream POrt)
+    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp)
+    --test_duration 5m          (duration to run traffic 5m --> 5 Minutes)
+    --create_sta False          (False, means it will not create stations and use the sta_names specified below)
+    --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
+        
+    
 ===============================================================================
  ** FURTHER INFORMATION **
     Using the layer3_cols flag:
@@ -260,22 +284,29 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     parser.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
-                     default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
+                        default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
     parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
-                     default=['ap', 'ip', 'parent dev'])
+                        default=['ap', 'ip', 'parent dev'])
     parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     parser.add_argument('--monitor_interval',
-                     help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
-                     default='10s')
+                        help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                        default='10s')
     parser.add_argument('--influx_token', help='Username for your Influx database')
     parser.add_argument('--influx_bucket', help='Password for your Influx database')
     parser.add_argument('--influx_org', help='Name of your Influx database')
     parser.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
-    parser.add_argument('--influx_tag', action='append', nargs=2, help='--influx_tag <key> <val>   Can add more than one of these.')
-    parser.add_argument('--influx_mgr', help='IP address of the server your Influx database is hosted if different from your LANforge Manager', default=None)
-
+    parser.add_argument('--influx_tag', action='append', nargs=2,
+                        help='--influx_tag <key> <val>   Can add more than one of these.')
+    parser.add_argument('--influx_mgr',
+                        help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
+                        default=None)
+    parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', default=True)
+    parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     args = parser.parse_args()
+    create_sta = True
+    if args.create_sta == "False":
+        create_sta = False
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -329,12 +360,16 @@ python3 ./test_ipv4_variable_time.py
         else:
             compared_rept = args.compared_report
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
-                                          radio=args.radio)
+    if create_sta:
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
+                                              radio=args.radio)
+    else:
+        station_list = args.sta_names.split(",")
     ip_var_test = IPV4VariableTime(host=args.mgr,
                                    port=args.mgr_port,
                                    number_template="0000",
                                    sta_list=station_list,
+                                   create_sta=create_sta,
                                    name_prefix="VT",
                                    upstream=args.upstream_port,
                                    ssid=args.ssid,
@@ -350,11 +385,15 @@ python3 ./test_ipv4_variable_time.py
                                    traffic_type=args.traffic_type,
                                    _debug_on=args.debug)
 
-    ip_var_test.pre_cleanup()
+    if create_sta:
+        ip_var_test.pre_cleanup()
+
     ip_var_test.build()
-    if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
-        ip_var_test.exit_fail()
+    # exit()
+    if create_sta:
+        if not ip_var_test.passes():
+            print(ip_var_test.get_fail_message())
+            ip_var_test.exit_fail()
 
     try:
         layer3connections = ','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
@@ -393,21 +432,21 @@ python3 ./test_ipv4_variable_time.py
         exit(1)
     ip_var_test.start(False, False)
 
-    #if args.influx_mgr is None:
+    # if args.influx_mgr is None:
     #    manager = args.mgr
-    #else:
+    # else:
     #    manager = args.influx_mgr
 
     if args.influx_org is not None:
         from influx2 import RecordInflux
-        grapher = RecordInflux(#_influx_host=manager,
-                               _influx_port=args.influx_port,
-                               _influx_org=args.influx_org,
-                               _influx_token=args.influx_token,
-                               _influx_bucket=args.influx_bucket)
+        grapher = RecordInflux(  # _influx_host=manager,
+            _influx_port=args.influx_port,
+            _influx_org=args.influx_org,
+            _influx_token=args.influx_token,
+            _influx_bucket=args.influx_bucket)
         devices = [station.split('.')[-1] for station in station_list]
         tags = dict()
-        tags['script']='test_ipv4_variable_time'
+        tags['script'] = 'test_ipv4_variable_time'
         try:
             for k in args.influx_tag:
                 tags[k[0]] = k[1]
@@ -419,29 +458,30 @@ python3 ./test_ipv4_variable_time.py
                                   tags=tags)
 
     ip_var_test.cx_profile.monitor(layer3_cols=layer3_cols,
-                                    sta_list=station_list,
-                                    # port_mgr_cols=port_mgr_cols,
-                                    report_file=report_f,
-                                    systeminfopath=systeminfopath,
-                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                    monitor_interval_ms=monitor_interval,
-                                    created_cx=layer3connections,
-                                    output_format=output,
-                                    compared_report=compared_rept,
-                                    script_name='test_ipv4_variable_time',
-                                    arguments=args,
-                                    debug=args.debug)
+                                   sta_list=station_list,
+                                   # port_mgr_cols=port_mgr_cols,
+                                   report_file=report_f,
+                                   systeminfopath=systeminfopath,
+                                   duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                   monitor_interval_ms=monitor_interval,
+                                   created_cx=layer3connections,
+                                   output_format=output,
+                                   compared_report=compared_rept,
+                                   script_name='test_ipv4_variable_time',
+                                   arguments=args,
+                                   debug=args.debug)
 
     ip_var_test.stop()
-    if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
-        ip_var_test.exit_fail()
-    LFUtils.wait_until_ports_admin_up(port_list=station_list)
+    if create_sta:
+        if not ip_var_test.passes():
+            print(ip_var_test.get_fail_message())
+            ip_var_test.exit_fail()
+        LFUtils.wait_until_ports_admin_up(port_list=station_list)
 
+
+        if ip_var_test.passes():
+            ip_var_test.success()
     ip_var_test.cleanup()
-    if ip_var_test.passes():
-        ip_var_test.success()
-
     print("IPv4 Variable Time Test Report Data: {}".format(report_f))
 
 
