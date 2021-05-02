@@ -128,8 +128,9 @@ class IPV4VariableTime(Realm):
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
-        for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True)
+        if self.create_sta:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -385,8 +386,7 @@ python3 ./test_ipv4_variable_time.py
                                    traffic_type=args.traffic_type,
                                    _debug_on=args.debug)
 
-    if create_sta:
-        ip_var_test.pre_cleanup()
+    ip_var_test.pre_cleanup()
 
     ip_var_test.build()
     # exit()

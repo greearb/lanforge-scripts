@@ -252,6 +252,7 @@ class L3CXProfile(LFCliBase):
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             try:
+                self.refresh_cx()
                 cx_data = self.json_get("/cx/all")
                 cx_data.pop("handler")
                 cx_data.pop("uri")
