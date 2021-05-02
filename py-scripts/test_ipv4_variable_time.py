@@ -291,7 +291,7 @@ python3 ./test_ipv4_variable_time.py
     parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     parser.add_argument('--monitor_interval',
-                        help='how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
+                        help='how frequently do you want your monitor function to take measurements; \, 35s, 2h',
                         default='10s')
     parser.add_argument('--influx_token', help='Username for your Influx database')
     parser.add_argument('--influx_bucket', help='Password for your Influx database')

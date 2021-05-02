@@ -252,17 +252,27 @@ class L3CXProfile(LFCliBase):
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
             try:
-                self.refresh_cx()
                 cx_data = self.json_get("/cx/all")
                 cx_data.pop("handler")
                 cx_data.pop("uri")
+
                 for i in self.created_cx.keys():
-                    print("cx name: ", i,
-                          "  bps tx a :", cx_data[i]['bps tx a'], "  bps rx a : ", cx_data[i]['bps rx a'],
-                          "  bps tx b :", cx_data[i]['bps tx b'], "  bps rx b : ", cx_data[i]['bps rx b'],
+                    endp_a_data = self.json_get("/endp/"+ cx_data[i]['endpoints'][0])
+                    endp_b_data = self.json_get("/endp/" + cx_data[i]['endpoints'][1])
+                    print("cx name:", i, "\n",
+                          " bps tx a :", endp_a_data['endpoint']['tx rate'], " --> ",
+                          "  bps rx b : ", endp_b_data['endpoint']['rx rate'],
+                          "  rx drop % b : ", cx_data[i]['rx drop % b'], "\n"
+                          "  tx bytes a : ", endp_a_data['endpoint']['tx bytes'], " --> " 
+                          "  rx bytes b", endp_b_data['endpoint']['rx bytes'],  "\n"
+                          "  tx bytes b : ", endp_b_data['endpoint']['tx bytes'], " --> " 
+                          "  rx bytes a", endp_a_data['endpoint']['rx bytes'], "\n"
+                          "  bps tx b :", endp_b_data['endpoint']['tx rate'], " --> "
+                          "  bps rx a : ", endp_a_data['endpoint']['rx rate'],
+                          "  rx drop % a :", cx_data[i]['rx drop % a'], "\n"
                           "  pkt rx a :", cx_data[i]['pkt rx a'], "  pkt rx b : ", cx_data[i]['pkt rx b'],
-                          "  rx drop % a :", cx_data[i]['rx drop % a'], "  rx drop % b : ", cx_data[i]['rx drop % b'])
-                print("\n")
+                          )
+                print("\n\n\n")
             except Exception as e:
                 print(e)
             time.sleep(monitor_interval_ms)
