@@ -62,8 +62,8 @@ class client_connect(Realm):
         self.station_profile.use_security(self.security, self.ssid, self.paswd)
 
         if self.bss_trans:
-            self.station_profile.desired_add_sta_flags.append("use-bss-transition")
-            self.station_profile.desired_add_sta_flags_mask.append("use-bss-transition")
+            self.station_profile.desired_add_sta_flags = ["use-bss-transition"]
+            self.station_profile.desired_add_sta_flags_mask = ["use-bss-transition"]
 
         for station_name in range(len(station_)):
             stat_list = []
