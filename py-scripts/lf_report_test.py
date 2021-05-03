@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+'''
+NAME: lf_report_test.py
+
+PURPOSE: 
+Common file for testing lf_report and lf_graph Library generates html and pdf output
+
+SETUP:  
+/lanforge/html-reports directory needs to be present or output generated in local file
+
+EXAMPLE:  
+./lf_report_test.py : currently script does not accept input
+
+COPYWRITE
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README
+'''
 
 import matplotlib.pyplot as plt 
 import matplotlib as mpl 

@@ -6,7 +6,7 @@ NAME: lf_report.py
 PURPOSE: 
 
 This program is a helper  class for reporting results for a lanforge python script.
-The class will generate an output directory based on date and time in the /home/lanforge/reports-data/ .   
+The class will generate an output directory based on date and time in the /home/lanforge/html-reports/ .   
 If the reports-data is not present then the date and time directory will be created in the current directory.
 The banner and Candela Technology logo will be copied in the results directory. 
 The results directory may be over written and many of the other paramaters during construction. 
@@ -21,6 +21,8 @@ LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
     Copyright 2021 Candela Technologies Inc
 
+
+INCLUDE_IN_README
 '''
 
 import os
