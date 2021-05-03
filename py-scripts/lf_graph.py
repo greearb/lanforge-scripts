@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+'''
+NAME: lf_graph.py
+
+PURPOSE: 
+Common Library for generating graphs for LANforge output
+
+SETUP:  
+/lanforge/html-reports directory needs to be present or output generated in local file
+
+EXAMPLE:  
+see: /py-scritps/lf_report_test.py for example
+
+INCLUDE_IN_README
+'''
 
 import matplotlib.pyplot as plt 
 import matplotlib as mpl 
