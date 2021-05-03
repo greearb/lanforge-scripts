@@ -18,6 +18,7 @@ if sys.version_info[0]  != 3:
     print("This script requires Python3")
     exit()
 
+import os
 import logging
 import time
 from time import sleep
@@ -27,8 +28,11 @@ import serial
 from pexpect_serial import SerialSpawn
 import json
 from json import load
+import configparser
 from pprint import *
     
+
+CONFIG_FILE = os.getcwd() + '/py-scripts/sandbox/config.ini'    
 
 # see https://stackoverflow.com/a/13306095/11014343
 class FileAdapter(object):
@@ -44,17 +48,30 @@ class FileAdapter(object):
 
 
 class lf_check():
+    def __init__(self):
+        self.ssid =""
+        self.passwd =""
+        self.security =""
     
     # Functions in this section are/can be overridden by descendants
-    def readConfigContents(self, config_file):
+    def readConfigContents(self):
+        config_file = configparser.ConfigParser()
         success = True
+        success = config_file.read(CONFIG_FILE)
+        print("{}".format(success))
+        print("{}".format(config_file))
 
-        if 'TEST_CONFIG' in config_file.sections():
-            section = config_file['TEST_CONFIG']
+        if 'AP_CONFIG' in config_file.sections():
+            config_instance = config_file['AP_CONFIG']
             try:
-                lf_globals.test_list = json.loads(section.get(lf_testlist,lf_gloabs.test_list))
-                print("test list retrieved")
-                print("test list: {}".format(lf_globals.test_list))
+                self.ssid = config_instance.get('SSID')
+                self.passwd = config_instance.get('PASSWD')
+                self.security = config_instance.get('SECURITY')
+
+                print("AP_CONFIG retrieved")
+                print("ssid {}".format(self.ssid))
+                print("passwd {}".format(self.passwd))
+                print("security {}".format(self.security))
             except:
                 print("no test list")
 
@@ -159,7 +176,8 @@ class lf_check():
 
 def main():
     check = lf_check()
-    check.parse_ap_stats()
+    #check.parse_ap_stats()
+    check.readConfigContents()
 
 
 if __name__ == '__main__':
