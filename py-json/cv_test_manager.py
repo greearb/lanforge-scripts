@@ -33,9 +33,9 @@ def cv_add_base_parser(parser):
                         help="LANforge username to pull reports")
     parser.add_argument("--lf_password", type=str, default="lanforge",
                         help="LANforge Password to pull reports")
-    parser.add_argument("-i", "--instance_name", type=str,
+    parser.add_argument("-i", "--instance_name", type=str, default="cv_dflt_inst",
                         help="create test instance")
-    parser.add_argument("-c", "--config_name", type=str,
+    parser.add_argument("-c", "--config_name", type=str, default="cv_dflt_cfg",
                         help="Config file name")
 
     parser.add_argument("-r", "--pull_report", default=False, action='store_true',
