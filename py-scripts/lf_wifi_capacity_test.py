@@ -317,7 +317,7 @@ if 'py-json' not in sys.path:
 
 from cv_test_manager import cv_test as cvtest
 from cv_test_manager import *
-
+from LANforge import LFUtils
 
 class WiFiCapacityTest(cvtest):
     def __init__(self,
@@ -402,8 +402,12 @@ class WiFiCapacityTest(cvtest):
 
         # Test related settings
         cfg_options = []
+
+
+        eid = LFUtils.name_to_eid(self.upstream)
+        port = "%i.%i.%s"%(eid[0], eid[1], eid[2])
         
-        port_list = [self.upstream]
+        port_list = [port]
         if self.stations == "":
             stas = self.station_map()  # See realm
             for eid in stas.keys():
