@@ -284,10 +284,11 @@ class cv_test(Realm):
         start_try = 0
         while (True):
             response = self.create_test(test_name, instance_name, load_old)
-            d1 = {k: v for e in response for (k, v) in e.items()}
-            if d1["LAST"]["response"] == "OK":
+            if response[0]["LAST"]["response"] == "OK":
                 break
             else:
+                print("Could not create test, try: %i/60:\n"%(start_try))
+                pprint(response)
                 start_try += 1
                 if start_try > 60:
                     print("ERROR:  Could not start within 60 tries, aborting.")
@@ -307,9 +308,8 @@ class cv_test(Realm):
             self.run_cv_cmd(cmd)
 
         response = self.start_test(instance_name)
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        if d1["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", d1["LAST"]["response"], "\n");
+        if response[0]["LAST"]["response"].__contains__("Could not find instance:"):
+            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n");
             # pprint(response)
             exit(1)
 
@@ -460,6 +460,5 @@ class cv_test(Realm):
         rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
         return response_json
 
-    def check_reponse(self, response):
-        d1 = {k: v for e in response for (k, v) in e.items()}
-        return d1["LAST"]["response"]
+    def get_response_string(self, response):
+        return response[0]["LAST"]["response"]
