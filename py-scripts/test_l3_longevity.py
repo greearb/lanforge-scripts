@@ -768,25 +768,37 @@ class L3VariableTime(Realm):
                     # At end of test step, record KPI information.
                     if self.influxdb is not None:
                         self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+                    # RAW OUTPUT
+                    '''
+                    root@Docsis-Gateway:~# wl -i wl1 bs_data
+Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo
+50:E0:85:87:AA:19     1064.5       52.8       6.0%      25.0%       1.5%   80  10.0     2    0.0%    0.0%
+50:E0:85:84:7A:E7      927.1       53.6       7.0%      25.4%       5.7%   80   8.8     2    0.0%    0.0%
+50:E0:85:89:5D:00      857.5       51.8       6.8%      24.6%       0.8%   80     8     2    0.0%    0.0%
+50:E0:85:87:5B:F4     1071.7       52.8       6.0%      25.0%       1.3%   80    10     2    0.0%    0.0%
+        (overall)          -      210.9      25.8%         -         -
+'''        
 
                     # Query AP for its stats.  Result for /ax bcm APs looks something like this:
+                    # '''
                     ap_stats = [];
-                    #ap_stats.add("root@Docsis-Gateway:~# wl -i wl1 bs_data")
-                    #ap_stats.add("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                    #ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                    #ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                    #ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                    #ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                    #ap_stats.add("(overall)          -      200.2      26.5%         -         -")
+                    ap_stats.add("root@Docsis-Gateway:~# wl -i wl1 bs_data")
+                    ap_stats.add("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
+                    ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                    ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                    ap_stats.add("(overall)          -      200.2      26.5%         -         -")
+                    # '''
                     # TODO:  Read real stats, comment out the example above.
-                    # ap_stats = read_ap_stats()
+                    # ap_stats = self.read_ap_stats()
 
                     ap_stats_rows = [] # Array of Arrays
                     for line in ap_stats:
                         stats_row = line.split()
                         ap_stats_rows.add(stats_row)
 
-                    #m = re.search((r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)'ap_stats[0]
+                    m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',ap_stats_rows[0])
 
                     # Query all of our ports
                     port_eids = self.gather_port_eids()
