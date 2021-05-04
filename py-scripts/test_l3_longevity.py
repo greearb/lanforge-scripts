@@ -218,7 +218,7 @@ class L3VariableTime(Realm):
         tput = 0
         count = 0
 
-        #print("endp-stats-for-port, port-eid: ", eid_name)
+        #print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
 
         # Convert all eid elements to strings
@@ -230,6 +230,11 @@ class L3VariableTime(Realm):
             #pprint(e)
             eid_endp = e["eid"].split(".")
             print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
+            # Look through all the endpoints (endps), to find the port the eid_name is using.
+            # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
+            # Then read the eid_endp to get the delay, jitter and rx rate
+            # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as 
+            # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
                 lat += int(e["delay"])
                 jit += int(e["jitter"])
@@ -804,6 +809,7 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                         print("regedit had issue with re.search ")
 
                     # Query all of our ports
+                    # Note: the endp eid is the shelf.resource.port.endp-id
                     port_eids = self.gather_port_eids()
                     for eid_name in port_eids:
                         eid = self.name_to_eid(eid_name)
@@ -828,6 +834,7 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                             # p is map of key/values for this port
                             print("port: ")
                             pprint(p)
+
 
                             # Find latency, jitter for connections using this port.
                             latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
