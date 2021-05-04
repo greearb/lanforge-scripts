@@ -813,8 +813,12 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                             print("query-port: %s: incomplete response:"%(url))
                             pprint(response)
                         else:
+                            #print("response".format(response))
+                            #pprint(response)
                             p = response['interface']
-                            mac = response['mac']
+                            print("#### p, response['insterface']:{}".format(p))
+                            # mac = response['mac']
+                            mac = p['mac']
 
                             ap_row = []
                             for row in ap_stats_rows:
