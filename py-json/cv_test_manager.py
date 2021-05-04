@@ -125,6 +125,13 @@ class cv_test(Realm):
         }
         debug_par = ""
         rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
+        try:
+            if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
+                print("Unknown command?\n");
+                pprint(response_json)
+        except:
+            # Ignore un-handled structs at this point, let calling code deal with it.
+            pass
         return response_json
 
     #For auto save report
