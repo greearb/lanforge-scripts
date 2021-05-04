@@ -782,13 +782,13 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                     # Query AP for its stats.  Result for /ax bcm APs looks something like this:
                     # '''
                     ap_stats = [];
-                    ap_stats.add("root@Docsis-Gateway:~# wl -i wl1 bs_data")
-                    ap_stats.add("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                    ap_stats.add("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                    ap_stats.add("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                    ap_stats.add("(overall)          -      200.2      26.5%         -         -")
+                    ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
+                    ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
+                    ap_stats.append("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                    ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                    ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                    ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                    ap_stats.append("(overall)          -      200.2      26.5%         -         -")
                     # '''
                     # TODO:  Read real stats, comment out the example above.
                     # ap_stats = self.read_ap_stats()
@@ -796,9 +796,12 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                     ap_stats_rows = [] # Array of Arrays
                     for line in ap_stats:
                         stats_row = line.split()
-                        ap_stats_rows.add(stats_row)
+                        ap_stats_rows.append(stats_row)
 
-                    m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',ap_stats_rows[0])
+                    try:
+                        m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',str(ap_stats_rows[0]))
+                    except:
+                        print("regedit had issue with re.search ")
 
                     # Query all of our ports
                     port_eids = self.gather_port_eids()
