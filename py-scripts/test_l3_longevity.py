@@ -90,6 +90,10 @@ class L3VariableTime(Realm):
                  _exit_on_fail=False,
                  _proxy_str=None,
                  influxdb=None,
+                 ap_read=False,
+                 ap_port='/dev/ttyUSB0',
+                 ap_baud='115200',
+                 ap_cmd='wl -i wl1 bs_data',
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
@@ -154,6 +158,11 @@ class L3VariableTime(Realm):
         self.cx_profile.side_a_max_bps = side_a_max_rate[0]
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
+
+        self.ap_read = ap_read
+        self.ap_port = ap_port
+        self.ap_baud = ap_baud
+        self.ap_cmd = ap_cmd
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -492,7 +501,7 @@ class L3VariableTime(Realm):
     
         try:
             # configure the serial interface
-            ser = serial.Serial(self.args.tty, int(self.args.baud), timeout=5)
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             egg = SerialSpawn(ser)
             egg.sendline(str(command))
             egg.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
@@ -633,63 +642,64 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
                     # Query AP for its stats.  Result for /ax bcm APs looks something like this:
                     # '''
-                    ap_stats = [];
-                    ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
-                    ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                    ap_stats.append("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                    ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                    ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                    ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                    ap_stats.append("(overall)          -      200.2      26.5%         -         -")
-                    # '''
-                    # TODO:  Read real stats, comment out the example above.
-                    # ap_stats = self.read_ap_stats()
+                    if self.ap_read:
+                        ap_stats = [];
+                        ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
+                        ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
+                        ap_stats.append("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                        ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                        ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                        ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                        ap_stats.append("(overall)          -      200.2      26.5%         -         -")
+                        # '''
+                        # TODO:  Uncomment for ap_stats read from device
+                        #ap_stats = self.read_ap_stats()
 
-                    ap_stats_rows = [] # Array of Arrays
-                    for line in ap_stats:
-                        stats_row = line.split()
-                        ap_stats_rows.append(stats_row)
+                        ap_stats_rows = [] # Array of Arrays
+                        for line in ap_stats:
+                            stats_row = line.split()
+                            ap_stats_rows.append(stats_row)
 
-                    try:
-                        m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',str(ap_stats_rows[0]))
-                    except:
-                        print("regedit had issue with re.search ")
+                        try:
+                            m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',str(ap_stats_rows[0]))
+                        except:
+                            print("regedit had issue with re.search ")
 
-                    # Query all of our ports
-                    # Note: the endp eid is the shelf.resource.port.endp-id
-                    port_eids = self.gather_port_eids()
-                    for eid_name in port_eids:
-                        eid = self.name_to_eid(eid_name)
-                        url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
-                        response = self.json_get(url)
-                        if (response is None) or ("interface" not in response):
-                            print("query-port: %s: incomplete response:"%(url))
-                            pprint(response)
-                        else:
-                            #print("response".format(response))
-                            #pprint(response)
-                            p = response['interface']
-                            print("#### p, response['insterface']:{}".format(p))
-                            # mac = response['mac']
-                            mac = p['mac']
+                        # Query all of our ports
+                        # Note: the endp eid is the shelf.resource.port.endp-id
+                        port_eids = self.gather_port_eids()
+                        for eid_name in port_eids:
+                            eid = self.name_to_eid(eid_name)
+                            url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                            response = self.json_get(url)
+                            if (response is None) or ("interface" not in response):
+                                print("query-port: %s: incomplete response:"%(url))
+                                pprint(response)
+                            else:
+                                #print("response".format(response))
+                                #pprint(response)
+                                p = response['interface']
+                                print("#### p, response['insterface']:{}".format(p))
+                                # mac = response['mac']
+                                mac = p['mac']
 
-                            ap_row = []
-                            for row in ap_stats_rows:
-                                if row[0].lower() == mac.lower():
-                                    ap_row = row;
+                                ap_row = []
+                                for row in ap_stats_rows:
+                                    if row[0].lower() == mac.lower():
+                                        ap_row = row;
 
-                            # p is map of key/values for this port
-                            print("port: ")
-                            pprint(p)
+                                # p is map of key/values for this port
+                                print("port: ")
+                                pprint(p)
 
 
-                            # Find latency, jitter for connections using this port.
-                            latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
-                            
-                            ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
-
-                            self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                latency, jitter, tput, ap_row, ap_stats_col_titles)
+                                # Find latency, jitter for connections using this port.
+                                latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                
+                                ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
+    
+                                self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                    latency, jitter, tput, ap_row, ap_stats_col_titles)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -959,6 +969,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ',
                         required=True)
 
+    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
+    parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
+    parser.add_argument('--ap_cmd', help='ap_cmd \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
+
     parser.add_argument('-tty',  help='-tty <port> serial interface to AP -tty \"/dev/ttyUSB2\"',default="")
     parser.add_argument('-baud', help='-baud <rate> serial interface baud rate to AP -baud ',default='9600')
 
@@ -988,7 +1003,21 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     #print("args: {}".format(args))
     debug = args.debug
- 
+
+    if args.ap_read:
+        ap_read = args.ap_read
+    else:
+        ap_read = False
+
+    if args.ap_port:
+        ap_port = args.ap_port
+
+    if args.ap_baud:
+        ap_baud = args.ap_baud
+
+    if args.ap_cmd:
+        ap_cmd = args.ap_cmd
+
     if args.test_duration:
         test_duration = args.test_duration
 
@@ -1137,7 +1166,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     user_tags=args.influx_tag,
                                     debug=debug,
                                     outfile=csv_outfile,
-                                    influxdb=influxdb)
+                                    influxdb=influxdb,
+                                    ap_read=ap_read,
+                                    ap_port=ap_port,
+                                    ap_baud=ap_baud,
+                                    ap_cmd=ap_cmd)
 
     ip_var_test.pre_cleanup()
 
