@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Note: To Run this script gui should be opened with
 
