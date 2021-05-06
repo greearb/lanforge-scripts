@@ -19,7 +19,6 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-from realm import Realm
 import datetime
 
 def influx_add_parser_args(parser):
@@ -32,11 +31,8 @@ def influx_add_parser_args(parser):
                         help='--influx_tag <key> <val>   Can add more than one of these.', default=[])
 
 
-class CSVtoInflux(Realm):
+class CSVtoInflux():
     def __init__(self,
-                 lfclient_host="localhost",
-                 lfclient_port=8080,
-                 debug=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
@@ -44,15 +40,8 @@ class CSVtoInflux(Realm):
                  influxdb=None,
                  _influx_tag=[],
                  target_csv=None):
-        super().__init__(lfclient_host=lfclient_host,
-                         lfclient_port=lfclient_port,
-                         debug_=debug,
-                         _exit_on_error=_exit_on_error,
-                         _exit_on_fail=_exit_on_fail,
-                         _proxy_str=_proxy_str,
-                         _capture_signal_list=_capture_signal_list)
         self.influxdb = influxdb
-        self.target_csv = target_csv
+        self.target_csv = target_csv.replace('/home/lanforge/html-reports/', '')
         self.influx_tag = _influx_tag
 
     # Submit data to the influx db if configured to do so.

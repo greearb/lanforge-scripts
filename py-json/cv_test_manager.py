@@ -66,10 +66,11 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
+                 report_dir=""
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
-        self.report_dir=""
+        self.report_dir = report_dir
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
@@ -321,7 +322,7 @@ class cv_test(Realm):
             exit(1)
 
         not_running = 0
-        while (True):
+        while True:
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd);
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
@@ -330,16 +331,18 @@ class cv_test(Realm):
             
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
-            if location != "\"Report Location:::\"":
-                location = location.replace("Report Location:::", "")
-                location = location.strip("\"")
+            if location != '\"Report Location:::\"':
+                print(location)
+                location = location.replace('\"Report Location:::', '')
+                location = location.replace('\"', '')
                 report = lf_rpt()
                 print(location)
+                self.report_dir = location
                 try:
                     if pull_report:
+                        print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             report_location=location)
-                        self.report_dir=location
                 except:
                     raise Exception("Could not find Reports")
                 break
@@ -357,7 +360,7 @@ class cv_test(Realm):
         self.delete_instance(instance_name)
 
         # Clean up any remaining popups.
-        while (True):
+        while True:
             dialog = self.run_cv_cmd(cmd);
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 print("Popup Dialog:\n")
