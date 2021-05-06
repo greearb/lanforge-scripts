@@ -3,7 +3,7 @@ import subprocess
 def main():
     print("Installing Script Python3 Dependencies")
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh','pyarrow', 'websocket-client', 'xlsxwriter',\
-         'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial' ]
+         'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial', 'pexpect-serial' ]
     packages_installed = []
     packages_failed =[]
     for package in packages:

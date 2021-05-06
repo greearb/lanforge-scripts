@@ -315,13 +315,14 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-from cv_test_manager import cv_test as cvtest
+from cv_test_manager import cv_test
 from cv_test_manager import *
 from LANforge import LFUtils
 
-class WiFiCapacityTest(cvtest):
+
+class WiFiCapacityTest(cv_test):
     def __init__(self,
-                 lf_host="localhost",
+                 lfclient_host="localhost",
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
@@ -348,13 +349,16 @@ class WiFiCapacityTest(cvtest):
                  raw_lines=[],
                  raw_lines_file="",
                  sets=[],
+                 influx_host="localhost",
+                 influx_port=8086,
+                 report_dir=""
                  ):
-        super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
+        super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
-        self.lf_host = lf_host
+        self.lfclient_host = lfclient_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.station_profile = self.new_station_profile()
         self.pull_report = pull_report
         self.load_old_cfg = load_old_cfg
@@ -370,7 +374,7 @@ class WiFiCapacityTest(cvtest):
         self.upstream = upstream
         self.sort = sort
         self.stations = stations
-        self.create_stations =create_stations
+        self.create_stations = create_stations
         self.security = security
         self.ssid = ssid
         self.paswd = paswd
@@ -380,6 +384,9 @@ class WiFiCapacityTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
+        self.influx_host = influx_host,
+        self.influx_port = influx_port
+        self.report_dir=report_dir
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -390,7 +397,6 @@ class WiFiCapacityTest(cvtest):
             self.station_profile.admin_up()
             self.wait_for_ip(station_list=sta)
             print("stations created")
-
 
     def run(self):
         self.sync_cv()
@@ -403,10 +409,9 @@ class WiFiCapacityTest(cvtest):
         # Test related settings
         cfg_options = []
 
-
         eid = LFUtils.name_to_eid(self.upstream)
-        port = "%i.%i.%s"%(eid[0], eid[1], eid[2])
-        
+        port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
+
         port_list = [port]
         if self.stations == "":
             stas = self.station_map()  # See realm
@@ -454,7 +459,7 @@ class WiFiCapacityTest(cvtest):
 
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
-                                 self.pull_report, self.lf_host, self.lf_user, self.lf_password,
+                                 self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
                                  cv_cmds)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
@@ -463,7 +468,6 @@ class WiFiCapacityTest(cvtest):
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         description="""
         ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
@@ -507,11 +511,13 @@ def main():
                         help="ssid Security type")
     parser.add_argument("-paswd", "--paswd", default="[BLANK]",
                         help="ssid Password")
+    parser.add_argument("--report_dir",default="")
+    parser.add_argument("--scenario",default="")
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
-    WFC_Test = WiFiCapacityTest(lf_host=args.mgr,
+    WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
                                 lf_user=args.lf_user,
                                 lf_password=args.lf_password,
@@ -529,15 +535,15 @@ def main():
                                 sort=args.sort,
                                 stations=args.stations,
                                 create_stations=args.create_stations,
-                                radio =args.radio,
+                                radio=args.radio,
                                 ssid=args.ssid,
-                                security =args.security,
-                                paswd =args.paswd,
-                                enables = args.enable,
-                                disables = args.disable,
-                                raw_lines = args.raw_line,
-                                raw_lines_file = args.raw_lines_file,
-                                sets = args.set
+                                security=args.security,
+                                paswd=args.paswd,
+                                enables=args.enable,
+                                disables=args.disable,
+                                raw_lines=args.raw_line,
+                                raw_lines_file=args.raw_lines_file,
+                                sets=args.set,
                                 )
     WFC_Test.setup()
     WFC_Test.run()
