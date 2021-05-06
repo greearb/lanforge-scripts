@@ -24,6 +24,7 @@ from time import sleep
 import argparse
 import pexpect
 import serial
+from pexpect_serial import SerialSpawn
 import json
 from json import load
 from pprint import *
@@ -43,46 +44,36 @@ class FileAdapter(object):
 
 
 class lf_check():
+    def __init__(self, 
+                 _ap_port, 
+                 _ap_baud, 
+                 _ap_cmd):
+        self.ap_port = _ap_port
+        self.ap_baud = _ap_baud
+        self.ap_cmd = _ap_cmd
     
-    # Functions in this section are/can be overridden by descendants
-    def readConfigContents(self, config_file):
-        success = True
-
-        if 'TEST_CONFIG' in config_file.sections():
-            section = config_file['TEST_CONFIG']
-            try:
-                lf_globals.test_list = json.loads(section.get(lf_testlist,lf_gloabs.test_list))
-                print("test list retrieved")
-                print("test list: {}".format(lf_globals.test_list))
-            except:
-                print("no test list")
-
 
     def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
-        stats_5ghz  = "wl -i wl1 bs_data"
-        stats_24ghz = "w1 -i wl0 bs_data"
         ap_data = ""
         ap_stats = []
-        command = stats_5ghz
+        #command = stats_5ghz
         '''if band == "5ghz":
             command = stats_5ghz
         else:
             command = stats_24ghz'''
-    
-        '''try:
-            # configure the serial interface
-            ser = serial.Serial(self.args.tty, int(self.args.baud), timeout=5)
-            egg = SerialSpawn(ser)
-            egg.sendline(str(command))
-            egg.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
-            ap_data = egg.before.decode('utf-8','ignore')
-        except:
-            print("WARNING unable to read AP")
-        '''
+        # /dev/ttyUSB0 baud 115200
+        # configure the serial interface
+        #ser = serial.Serial(self.args.tty, int(self.args.baud), timeout=5)
+        ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+        ss = SerialSpawn(ser)
+        ss.sendline(str(self.ap_cmd))
+        ss.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
+        ap_stats = ss.before.decode('utf-8','ignore')
+        print("ap_stats {}".format(ap_stats))
         '''ap_stats = "\
            \
-" '''
+" 
         ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
         ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
         ap_stats.append("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
@@ -92,7 +83,7 @@ class lf_check():
         ap_stats.append("(overall)          -      200.2      26.5%         -         -")
         # TODO:  Read real stats, comment out the example above.
 
-        
+        '''
         return ap_stats
 
         '''root@Docsis-Gateway:~# wl -i wl1 bs_data
@@ -157,8 +148,47 @@ class lf_check():
             #                            latency, jitter, tput, ap_row, ap_stats_col_titles
 
 def main():
-    check = lf_check()
-    check.parse_ap_stats()
+
+    parser = argparse.ArgumentParser(
+        prog='lf_check.py',
+        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        Useful Information:
+            1. Verification
+            ''',
+        
+        description='''\
+lf_check.py:
+--------------------
+#ssid TCH-XB7
+#ssidpw comcats123
+Summary : 
+----------
+This file is used for verification
+
+Generic command layout:
+-----------------------
+
+        ''')
+    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
+    parser.add_argument('--ap_baud', help='--ap_baud  \'115200\'',default='115200')
+    parser.add_argument('--ap_cmd', help='--ap_cmd \'wl -i wl1 bs_data\'',default="wl -i wl1 bs_data")
+    
+    args = parser.parse_args()
+    
+
+    __ap_port = args.ap_port
+    __ap_baud = args.ap_baud
+    __ap_cmd  = args.ap_cmd
+
+    check = lf_check(
+                _ap_port = __ap_port,
+                _ap_baud = __ap_baud,
+                _ap_cmd = __ap_cmd )
+    #check.parse_ap_stats()
+    check.read_ap_stats()
+    #check.run_test()
 
 
 if __name__ == '__main__':
