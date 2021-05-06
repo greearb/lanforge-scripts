@@ -9,7 +9,7 @@ Script to verify connectivity to an AP
 
 EXAMPLE:
 
-./lf_check.py --ap_port '/dev/ttyUSB0' --ap_baud '115200' --ap_cmd "wl -i wl0 bs_data"
+./lf_check_ap.py --ap_port '/dev/ttyUSB0' --ap_baud '115200' --ap_cmd "wl -i wl0 bs_data"
 ap_stats wl -i wl0 bs_data
 
 NOTES:
