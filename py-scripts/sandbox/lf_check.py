@@ -5,11 +5,17 @@ NAME:
 lf_check.py
 
 PURPOSE:
-Script is used to run a series of tests to verifiy realm changes.
+Script to verify connectivity to an AP
 
 EXAMPLE:
 
+./lf_check.py --ap_port '/dev/ttyUSB0' --ap_baud '115200' --ap_cmd "wl -i wl0 bs_data"
+ap_stats wl -i wl0 bs_data
+
 NOTES:
+
+Script is in the sandbox
+run /py-scripts/update_dependencies.py 
 
 '''
 
