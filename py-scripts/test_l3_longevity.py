@@ -90,7 +90,6 @@ class L3VariableTime(Realm):
                  _exit_on_fail=False,
                  _proxy_str=None,
                  influxdb=None,
-                 show_least_most_csv=False,
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
@@ -126,7 +125,6 @@ class L3VariableTime(Realm):
         self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug
-        self.show_least_most_csv = show_least_most_csv
         self.mconn = mconn
         self.user_tags = user_tags
         
@@ -304,14 +302,6 @@ class L3VariableTime(Realm):
         filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
         average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
 
-        if self.show_least_most_csv:
-            csv_performance_rx_drop_percent_values=sorted(rx_drop_percent.items(), key=lambda x: (x[1],x[0]), reverse=False)
-            csv_performance_rx_drop_percent_values=self.csv_validate_list(csv_performance_rx_drop_percent_values,5)
-            for i in range(5):
-                csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-            for i in range(-1,-6,-1):
-                csv_rx_drop_percent_data.append(str(csv_performance_rx_drop_percent_values[i]).replace(',',';'))
-
         csv_rx_drop_percent_data.append(average_rx_drop_percent)
 
         for item, value in rx_drop_percent.items():
@@ -334,7 +324,6 @@ class L3VariableTime(Realm):
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
-        csv_performance_values = []
         csv_rx_headers = []
         csv_rx_delta_dict = {}
 
@@ -348,14 +337,6 @@ class L3VariableTime(Realm):
 
         filtered_values = [v for _, v in new_list.items() if v !=0]
         average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        if self.show_least_most_csv:
-            csv_performance_values=sorted(new_list.items(), key=lambda x: (x[1],x[0]), reverse=False)
-            csv_performance_values=self.csv_validate_list(csv_performance_values,5)
-            for i in range(5):
-                csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
-            for i in range(-1,-6,-1):
-                csv_rx_row_data.append(str(csv_performance_values[i]).replace(',',';'))
 
         csv_rx_row_data.append(average_rx)
 
@@ -388,14 +369,6 @@ class L3VariableTime(Realm):
             # need to generate list first to determine worst and best
             filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
             average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-            if self.show_least_most_csv:
-                csv_performance_delta_values=sorted(csv_rx_delta_dict.items(), key=lambda x: (x[1],x[0]), reverse=False)
-                csv_performance_delta_values=self.csv_validate_list(csv_performance_delta_values,5)
-                for i in range(5):
-                    csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
-                for i in range(-1,-6,-1):
-                    csv_rx_delta_row_data.append(str(csv_performance_delta_values[i]).replace(',',';'))
 
             csv_rx_delta_row_data.append(average_rx_delta)
             
@@ -805,12 +778,6 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU',
                           ]
-        if self.show_least_most_csv:
-            for i in range(1,6):
-                csv_rx_headers.append("least_rx_data_bytes_{}".format(i))
-            for i in range(1,6):
-                csv_rx_headers.append("most_rx_data_bytes_{}".format(i))
-
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
@@ -1016,7 +983,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out, switch the controller output will be captured", action='store_true')
     parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
 
-    parser.add_argument("--show_least_most_csv",  help="Should we show the least/most csv column data in reports?", action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -1171,7 +1137,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     user_tags=args.influx_tag,
                                     debug=debug,
                                     outfile=csv_outfile,
-                                    show_least_most_csv=args.show_least_most_csv,
                                     influxdb=influxdb)
 
     ip_var_test.pre_cleanup()
