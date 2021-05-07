@@ -94,6 +94,7 @@ class L3VariableTime(Realm):
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
                  ap_cmd='wl -i wl1 bs_data',
+                 ap_test_mode=False,
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
@@ -163,6 +164,7 @@ class L3VariableTime(Realm):
         self.ap_port = ap_port
         self.ap_baud = ap_baud
         self.ap_cmd = ap_cmd
+        self.ap_test_mode = ap_test_mode
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -490,20 +492,12 @@ class L3VariableTime(Realm):
 
     def read_ap_stats(self,band):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
-        stats_5ghz  = "wl -i wl1 bs_data"
-        stats_24ghz = "w1 -i wl0 bs_data"
         ap_data = ""
-        command = stats_5ghz
-        '''if band == "5ghz":
-            command = stats_5ghz
-        else:
-            command = stats_24ghz'''
-    
         try:
             # configure the serial interface
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             egg = SerialSpawn(ser)
-            egg.sendline(str(command))
+            egg.sendline(str(self.ap_cmd))
             egg.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
             ap_data = egg.before.decode('utf-8','ignore')
         except:
@@ -642,18 +636,20 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
                     # Query AP for its stats.  Result for /ax bcm APs looks something like this:
                     # '''
-                    if self.ap_read:
-                        ap_stats = [];
-                        ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
-                        ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                        ap_stats.append("04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                        ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                        ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                        ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                        # - note the MAC will match ap_stats.append("(overall)          -      200.2      26.5%         -         -")
-                        # '''
-                        # TODO:  Uncomment for ap_stats read from device
-                        #ap_stats = self.read_ap_stats()
+                    if self.ap_test_mode:
+                        if self.ap_read:
+                            ap_stats = [];
+                            ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
+                            ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
+                            ap_stats.append("04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                            ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
+                            ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
+                            ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
+                            # - note the MAC will match ap_stats.append("(overall)          -      200.2      26.5%         -         -")
+                            # '''
+                        # read from the AP
+                        else:
+                            ap_stats = self.read_ap_stats()
 
                         ap_stats_rows = [] # Array of Arrays
                         for line in ap_stats:
@@ -678,7 +674,6 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                             else:
                                 #print("response".format(response))
                                 #pprint(response)
-
                                 p = response['interface']
                                 #print("#### p, response['insterface']:{}".format(p))
                                 # mac = response['mac']
@@ -687,16 +682,17 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 ap_row = []
                                 for row in ap_stats_rows:
                                     #print("row[0] {}  mac {}".format(row[0].lower(),mac.lower()))
-                                    if row[0].lower() == mac.lower():
-                                        ap_row = row
-                                        #print("selected ap_row: {}".format(ap_row))
-
-
+                                    if self.ap_test_mode:
+                                        if row[0].lower != mac.lower():
+                                            ap_row = row
+                                    else:
+                                        if row[0].lower() == mac.lower():
+                                            ap_row = row
+                                #print("selected ap_row: {}".format(ap_row))
 
                                 # p is map of key/values for this port
                                 #print("port: ")
                                 # pprint(p)
-
 
                                 # Find latency, jitter for connections using this port.
                                 latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
@@ -986,6 +982,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
     parser.add_argument('--ap_cmd', help='ap_cmd \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
 
+    parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
+
     parser.add_argument('-tty',  help='-tty <port> serial interface to AP -tty \"/dev/ttyUSB2\"',default="")
     parser.add_argument('-baud', help='-baud <rate> serial interface baud rate to AP -baud ',default='9600')
 
@@ -1029,6 +1027,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     if args.ap_cmd:
         ap_cmd = args.ap_cmd
+
+    if args.ap_test_mode:
+        ap_test_mode = args.ap_test_mode
 
     if args.test_duration:
         test_duration = args.test_duration
@@ -1182,7 +1183,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     ap_read=ap_read,
                                     ap_port=ap_port,
                                     ap_baud=ap_baud,
-                                    ap_cmd=ap_cmd)
+                                    ap_cmd=ap_cmd,
+                                    ap_test_mode=ap_test_mode)
 
     ip_var_test.pre_cleanup()
 
