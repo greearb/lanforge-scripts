@@ -209,6 +209,10 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+    def get_kpi_csv(self):
+        #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
+        return self.csv_kpi_file.name
+
     # Find avg latency, jitter for connections using specified port.
     def get_endp_stats_for_port(self, eid_name, endps):
         lat = 0
@@ -500,8 +504,7 @@ class L3VariableTime(Realm):
                         #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
                     # At end of test step, record KPI information.
-                    if self.influxdb is not None:
-                        self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
                     # RAW OUTPUT
                     '''
                     root@Docsis-Gateway:~# wl -i wl1 bs_data
@@ -638,9 +641,10 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
         print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n"%(total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
 
-        self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, now)
-        self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, now)
-        self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, now)
+        if self.influxdb is not None:
+            self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, now)
+            self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, now)
+            self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, now)
 
         if self.csv_kpi_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
@@ -925,19 +929,12 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if args.radio:
         radios = args.radio
 
-    if args.csv_outfile == "":
-        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "longevity_{}.csv".format(current_time)
-        print("csv output file : {}".format(csv_outfile))
-    else:
-        csv_outfile = args.csv_outfile
-
     # Create report, instanciate a reporting class
-    report = report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+    report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "longevity_{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_outfile = "test_l3_longevity_{}_{}.csv".format(args.csv_outfile,current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
 
@@ -1090,6 +1087,22 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     ip_var_test.cleanup()
     if ip_var_test.passes():
         print("Full test passed, all connections increased rx bytes")
+
+    # Results
+    csv_kpi_file = ip_var_test.get_kpi_csv()
+    report.set_title("L3 Longevity")
+    report.build_banner()
+    report.set_table_title("L3 Longevity Key Performance Indexes")
+    report.build_table_title()
+    report.set_table_dataframe_from_csv(csv_kpi_file)
+    report.build_table()
+    report.write_html()
+    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    report.write_pdf(_page_size = 'A4', _orientation='Portrait')
+
+    #for csv_file in csv_list:
+    #    print("Ouptput reports CSV list value: {}".format(str(csv_file)))
+
 
 if __name__ == "__main__":
     main()
