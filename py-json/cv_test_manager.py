@@ -284,7 +284,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds):
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, graphgroupsfile=None):
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -336,6 +336,10 @@ class cv_test(Realm):
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
+                if graphgroupsfile:
+                    filelocation=open(graphgroupsfile, 'w')
+                    filelocation.write(location)
+                    filelocation.close()
                 print(location)
                 self.report_dir = location
                 try:

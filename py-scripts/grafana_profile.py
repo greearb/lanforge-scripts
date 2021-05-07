@@ -61,7 +61,20 @@ class UseGrafana(LFCliBase):
                     scriptname,
                     groupBy,
                     index,
-                    graph_group):
+                    graph_group,
+                    testbed):
+        query = (
+                'from(bucket: "%s")\n  '
+                '|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  '
+                '|> filter(fn: (r) => r["script"] == "%s")\n   '
+                % (bucket, scriptname))
+        queryend = ('|> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  '
+                    '|> yield(name: "mean")\n  ')
+        if graph_group is not None:
+            graphgroup = ('|> filter(fn: (r) => r["Graph-Group"] == "%s")\n' % graph_group)
+            query += graphgroup
+        if testbed is not None:
+            query += ('|> filter(fn: (r) => r["testbed"] == "%s")\n' % testbed)
         targets = dict()
         targets['delimiter'] = ','
         targets['groupBy'] = groupBy
@@ -69,9 +82,7 @@ class UseGrafana(LFCliBase):
         targets['ignoreUnknown'] = False
         targets['orderByTime'] = 'ASC'
         targets['policy'] = 'default'
-        targets['query'] = (
-                'from(bucket: "%s")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r["script"] == "%s")\n  |> filter(fn: (r) => r["Graph-Group"] == "%s")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: "mean")\n  ' % (
-            bucket, scriptname, graph_group))
+        targets['query'] = query + queryend
         targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index + 1]
         targets['resultFormat'] = "time_series"
         targets['schema'] = list()
@@ -82,7 +93,9 @@ class UseGrafana(LFCliBase):
     def create_custom_dashboard(self,
                                 scripts=None,
                                 title=None,
-                                bucket=None):
+                                bucket=None,
+                                graph_groups=None,
+                                testbed=None):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -108,9 +121,6 @@ class UseGrafana(LFCliBase):
         panels = list()
         index = 1
         for scriptname in scripts:
-            graph_groups = ['Per Stations Rate DL',
-                            'Per Stations Rate UL',
-                            'Per Stations Rate UL+DL']
             for graph_group in graph_groups:
                 panel = dict()
 
@@ -138,7 +148,7 @@ class UseGrafana(LFCliBase):
 
                 targets = list()
                 counter = 0
-                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group)
+                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group,testbed)
                 targets.append(new_target)
 
                 fieldConfig = dict()
@@ -201,7 +211,10 @@ class UseGrafana(LFCliBase):
                 panel['timeFrom'] = None
                 panel['timeRegions'] = list()
                 panel['timeShift'] = None
-                panel['title'] = scriptname+' '+graph_group
+                if graph_group is not None:
+                    panel['title'] = scriptname + ' ' + graph_group
+                else:
+                    panel['title'] = scriptname
                 panel['transformations'] = list()
                 panel['transformations'].append(transformation)
                 panel['type'] = "graph"
@@ -233,6 +246,22 @@ class UseGrafana(LFCliBase):
         # print(json.dumps(input1, indent=2))
         return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
+    def get_graph_groups(self,
+                         target_csvs):
+        groups = []
+        for target_csv in target_csvs:
+            with open(target_csv) as fp:
+                line = fp.readline()
+                line = line.split('\t')
+                graph_group_index = line.index('Graph-Group')
+                line = fp.readline()
+                while line:
+                    line = line.split('\t') #split the line by tabs to separate each item in the string
+                    graphgroup = line[graph_group_index]
+                    groups.append(graphgroup)
+                    line = fp.readline()
+        print(groups)
+        return list(set(groups))
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -247,6 +276,15 @@ def main():
             --grafana_token 
             --dashbaord_name
             --scripts "Wifi Capacity"
+        
+        Create a custom dashboard with the following command:
+        ./grafana_profile.py --create_custom yes 
+                            --title Dataplane 
+                            --influx_bucket lanforge 
+                            --grafana_token TOKEN 
+                            --graph_groups 'Per Stations Rate DL'
+                            --graph_groups 'Per Stations Rate UL'
+                            --graph_groups 'Per Stations Rate UL+DL'
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--grafana_token', help='token to access your Grafana database', required=True)
@@ -261,11 +299,15 @@ def main():
     optional.add_argument('--grafana_host', help='Grafana host', default='localhost')
     optional.add_argument('--list_dashboards', help='List dashboards on Grafana server', default=None)
     optional.add_argument('--dashboard_json', help='JSON of existing Grafana dashboard to import', default=None)
-    optional.add_argument('--create_custom', help='Guided Dashboard creation', default=None)
+    optional.add_argument('--create_custom', help='Guided Dashboard creation', action='store_true')
     optional.add_argument('--dashboard_title', help='Titles of dashboards', default=None, action='append')
     optional.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
     optional.add_argument('--title', help='title of your Grafana Dashboard', default=None)
     optional.add_argument('--influx_bucket', help='Name of your Influx Bucket', default=None)
+    optional.add_argument('--graph-groups', help='How you want to filter your graphs on your dashboard',
+                          action='append', default=[None])
+    optional.add_argument('--testbed', help='Which testbed you want to query', default=None)
+    optional.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -284,10 +326,15 @@ def main():
     if args.dashboard_json is not None:
         Grafana.create_dashboard_from_data(args.dashboard_json)
 
-    if args.create_custom is not None:
+    if args.kpi is not None:
+        args.graph_groups = args.graph_groups+Grafana.get_graph_groups(args.graph_groups)
+
+    if args.create_custom:
         Grafana.create_custom_dashboard(scripts=args.scripts,
                                         title=args.title,
-                                        bucket=args.grafana_bucket)
+                                        bucket=args.influx_bucket,
+                                        graph_groups=args.graph_groups,
+                                        testbed=args.testbed)
 
 
 if __name__ == "__main__":

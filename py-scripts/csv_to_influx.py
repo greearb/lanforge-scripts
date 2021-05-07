@@ -57,6 +57,10 @@ class CSVtoInflux():
             short_description_index = line.index('short-description')
             graph_group_index = line.index('Graph-Group')
             units_index = line.index('Units')
+            testbed_index = line.index('test-rig')
+            duthwversion = line.index('dut-hw-version')
+            dutswversion = line.index('dut-sw-version')
+            dutserialnum = line.index('dut-serial-num')
             line = fp.readline()
             while line:
                 line = line.split('\t') #split the line by tabs to separate each item in the string
@@ -70,6 +74,10 @@ class CSVtoInflux():
                 tags['short-description'] = line[short_description_index]
                 tags['test_details'] = line[test_details_index]
                 tags['Graph-Group'] = line[graph_group_index]
+                tags['DUT-HW-version'] = line[duthwversion]
+                tags['DUT-SW-version'] = line[dutswversion]
+                tags['DUT-Serial-Num'] = line[dutserialnum]
+                tags['testbed'] = line[testbed_index]
                 tags['Units'] = line[units_index]
                 for item in self.influx_tag: # Every item in the influx_tag command needs to be added to the tags variable
                     tags[item[0]] = item[1]
