@@ -156,6 +156,7 @@ class CreateChamberview(cv):
         self.build_cv_scenario()  # build scenario
         tries = 0
         while (True):
+            self.get_popup_info_and_close()
             if not self.get_cv_is_built():
                 print("Waiting %i/60 for Chamber-View to be built." % (tries))
                 tries += 1

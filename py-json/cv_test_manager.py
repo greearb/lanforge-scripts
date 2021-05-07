@@ -472,3 +472,11 @@ class cv_test(Realm):
 
     def get_response_string(self, response):
         return response[0]["LAST"]["response"]
+
+    def get_popup_info_and_close(self):
+        cmd = "cv get_and_close_dialog"
+        dialog = self.run_cv_cmd(cmd);
+        if dialog[0]["LAST"]["response"] != "NO-DIALOG":
+            print("Popup Dialog:\n")
+            print(dialog[0]["LAST"]["response"])
+
