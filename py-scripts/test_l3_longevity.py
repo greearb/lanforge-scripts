@@ -646,11 +646,11 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                         ap_stats = [];
                         ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
                         ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                        ap_stats.append("50:E0:85:87:AA:19     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
+                        ap_stats.append("04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
                         ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
                         ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
                         ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                        ap_stats.append("(overall)          -      200.2      26.5%         -         -")
+                        # - note the MAC will match ap_stats.append("(overall)          -      200.2      26.5%         -         -")
                         # '''
                         # TODO:  Uncomment for ap_stats read from device
                         #ap_stats = self.read_ap_stats()
@@ -678,28 +678,36 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                             else:
                                 #print("response".format(response))
                                 #pprint(response)
+
                                 p = response['interface']
-                                print("#### p, response['insterface']:{}".format(p))
+                                #print("#### p, response['insterface']:{}".format(p))
                                 # mac = response['mac']
                                 mac = p['mac']
 
                                 ap_row = []
                                 for row in ap_stats_rows:
+                                    #print("row[0] {}  mac {}".format(row[0].lower(),mac.lower()))
                                     if row[0].lower() == mac.lower():
-                                        ap_row = row;
+                                        ap_row = row
+                                        #print("selected ap_row: {}".format(ap_row))
+
+
 
                                 # p is map of key/values for this port
-                                print("port: ")
-                                pprint(p)
+                                #print("port: ")
+                                # pprint(p)
 
 
                                 # Find latency, jitter for connections using this port.
                                 latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
-                                
+
                                 ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
-    
+
                                 self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                    latency, jitter, tput, ap_row, ap_stats_col_titles)
+                                                    latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
+                                #self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                #                    latency, jitter, tput, ap_row, ap_stats_col_titles)
+
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -720,10 +728,14 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
 
-        #Add in info queried from AP.
+        #Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
+        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
             i = 0
+            #print("ap_row {}".format(ap_row))
             for col in ap_row:
+                #print("col {}".format(col))
                 row.append(col)
 
         writer = self.port_csv_writers[eid_name]
