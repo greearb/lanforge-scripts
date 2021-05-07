@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+'''
+This script loads and builds a Chamber View Scenario, runs WiFi Capacity Test, and posts the results to Grafana
+'''
 import sys
 import os
 import argparse
@@ -12,11 +14,7 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
 
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-import json
-from csv_to_grafana import CSVtoInflux
-from create_l3 import CreateL3
+
 from lf_wifi_capacity_test import WiFiCapacityTest
 from cv_test_manager import *
 
@@ -36,7 +34,8 @@ def main():
             --influx_token
             --influx_bucket
             --target_csv
-            --panel_name'''
+            --panel_name
+            --dut_name'''
     )
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
@@ -55,28 +54,13 @@ def main():
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument("-s", "--stations", type=str, default="",
-                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
-    parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
-                        help="create stations in lanforge (by default: False)")
-    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000',
                         default=0000)
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument("-radio", "--radio", default="wiphy0",
-                        help="create stations in lanforge at this radio (by default: wiphy0)")
-    parser.add_argument("-ssid", "--ssid", default="",
-                        help="ssid name")
-    parser.add_argument("-security", "--security", default="open",
-                        help="ssid Security type")
-    parser.add_argument("-passwd", "--passwd", default="[BLANK]",
-                        help="ssid Password")
     parser.add_argument("--num_stations", default=2)
     parser.add_argument("--mgr_port", default=8080)
     parser.add_argument("--upstream_port", default="1.1.eth1")
-    parser.add_argument("--debug", default=False)
     parser.add_argument("--scenario", help="", default=None)
     args = parser.parse_args()
 
@@ -100,12 +84,6 @@ def main():
                                      download_rate=args.download_rate,
                                      upload_rate=args.upload_rate,
                                      sort=args.sort,
-                                     stations=args.stations,
-                                     create_stations=args.create_stations,
-                                     radio=args.radio,
-                                     ssid=args.ssid,
-                                     security=args.security,
-                                     paswd=args.passwd,
                                      enables=args.enable,
                                      disables=args.disable,
                                      raw_lines=args.raw_line,

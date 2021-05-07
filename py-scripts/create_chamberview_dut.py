@@ -46,12 +46,10 @@ How to Run this:
 Output : DUT will be created in Chamber View
 """
 
-
 import sys
 import os
 import argparse
 import time
-import re
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -62,6 +60,7 @@ if 'py-json' not in sys.path:
 
 from cv_dut_profile import cv_dut as dut
 from cv_test_manager import cv_test as cvtest
+
 
 class DUT(dut):
     def __init__(self,
@@ -88,70 +87,45 @@ class DUT(dut):
         self.create_dut(dut_name=self.dut_name)
 
     def add_ssids(self):
+        flags = dict()
+        flags['wep'] = 0x8
+        flags['wpa'] = 0x10
+        flags['wpa2'] = 0x20
+        flags['wpa3'] = 0x100
+        flags['11r'] = 0x200
+        flags['eap-ttls'] = 0x400
+        flags['eap-peap'] = 0x800
         if self.ssid:
+            for j in range(len(self.ssid)):
+                self.ssid[j] = self.ssid[j][0].split(' ')
+                for k in range(len(self.ssid[j])):
+                    self.ssid[j][k] = self.ssid[j][k].split('=')
+                d = dict()
+                for item in self.ssid[j]:
+                    d[item[0].lower()] = item[1]
+                self.ssid[j] = d
+                self.ssid[j]['flag'] = []
+                self.ssid[j].keys
 
-            for i in range(len(self.ssid)):
+                if 'security' in self.ssid[j].keys():
+                    self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
+                    for security in self.ssid[j]['security']:
+                        try:
+                            self.ssid[j]['flag'].append(flags[security.lower()])
+                        except:
+                            pass
 
-                if " " in self.ssid[i][0]:
-                    self.ssid[i][0] = (re.split(' ', self.ssid[i][0]))
-                elif "," in self.ssid[i][0]:
-                    self.ssid[i][0] = (re.split(',', self.ssid[i][0]))
-                elif ", " in self.ssid[i][0]:
-                    self.ssid[i][0] = (re.split(',', self.ssid[i][0]))
-                elif " ," in self.ssid[i][0]:
-                    self.ssid[i][0] = (re.split(',', self.ssid[i][0]))
-                else:
-                    print("Wrong arguments entered !")
-                    exit(1)
-
-                ssid_idx = 0
-                ssid = "[BLANK]"
-                passwd = "[BLANK]"
-                bssid = "00:00:00:00:00:00"
-                flag = 0x0
-
-                for j in range(len(self.ssid[i][0])):
-                    self.ssid[i][0][j] = self.ssid[i][0][j].split("=")
-                    for k in range(len(self.ssid[i][0][j])):
-                        name = self.ssid[i][0][j][k]
-                        if str(name) == "SSID" or str(name) == "ssid" or str(name) == "s":
-                            ssid = self.ssid[i][0][j][k + 1]
-                        elif str(name) == "PASSWORD" or str(name) == "password" or str(name) == "pass":
-                            passwd = self.ssid[i][0][j][k + 1]
-                        elif str(name) == "ssid_idx" or str(name) == "no" or str(name) == "N":
-                            ssid_idx = self.ssid[i][0][j][k + 1]
-                        elif str(name) == "security" or str(name) == "sec":
-                            if self.ssid[i][0][j][k + 1]:
-                                all_flags = self.ssid[i][0][j][k + 1].split("|")
-                                for flags in all_flags:
-                                    if flags == "WEP" or flags == "wep":
-                                        flag += 0x8
-                                    if flags == "WPA" or flags == "wpa":
-                                        flag += 0x10
-                                    if flags == "WPA2" or flags == "wpa2":
-                                        flag += 0x20
-                                    if flags == "WPA3" or flags == "wpa3":
-                                        flag += 0x100
-                                    if flags == "11r":
-                                        flag += 0x200
-                                    if flags == "EAP-TTLS":
-                                        flag += 0x400
-                                    if flags == "EAP-PEAP":
-                                        flag += 0x800
-                        elif str(name) == "BSSID" or str(name) == "bssid" or str(name) == "B":
-                            bssid = self.ssid[i][0][j][k + 1]
-                        else:
-                            continue
+                if 'bssid' not in self.ssid[j].keys():
+                    self.ssid[j]['bssid'] = '00:00:00:00:00:00'
 
                 self.add_ssid(dut_name=self.dut_name,
-                          ssid_idx=ssid_idx,
-                          ssid=ssid,
-                          passwd=passwd,
-                          bssid=bssid,
-                          ssid_flags=flag,
-                          ssid_flags_mask=0xFFFFFFFF
-                          )
-
+                              ssid_idx=self.ssid[j]['ssid_idx'],
+                              ssid=self.ssid[j]['ssid'],
+                              passwd=self.ssid[j]['password'],
+                              bssid=self.ssid[j]['bssid'],
+                              ssid_flags=self.ssid[j]['flag'],
+                              ssid_flags_mask=0xFFFFFFFF
+                              )
 
 
 def main():
@@ -170,7 +144,6 @@ def main():
     parser.add_argument("-s", "--ssid", action='append', nargs=1,
                         help="SSID", default=[])
 
-
     args = parser.parse_args()
     new_dut = DUT(args.lfmgr,
                   args.port,
@@ -184,6 +157,7 @@ def main():
     new_dut.cv_test.sync_cv()
     time.sleep(2)
     new_dut.cv_test.sync_cv()
+
 
 if __name__ == "__main__":
     main()

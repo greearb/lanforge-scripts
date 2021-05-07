@@ -95,7 +95,7 @@ def main():
         description='''{file}
 --------------------
 Generic command layout:
-python ./{file} --dut [DUT name]     # update existing DUT record
+python   {file} --dut [DUT name]     # update existing DUT record
                 --entry [key,value]     # update/add entry by specifying key and value
                 --flag [flag,0|1]       # toggle a flag on 1 or off 0
                 --notes "all lines of text"
@@ -117,7 +117,7 @@ python3 {file} --mgr 192.168.100.24 --update Pathfinder \
 '''.format(file=__file__, params=param_string, flags=flags_string),
          epilog="See",
     )
-    parser.add_argument("-d", "--dut",      type=str, help="name of DUT record")
+    parser.add_argument("--dut",      type=str, help="name of DUT record")
     parser.add_argument("-p", "--param",    type=str, action="append", help="name,value pair to set parameter")
     parser.add_argument("-f", "--flag",     type=str, action="append", help="name,1/0/True/False pair to turn parameter on or off")
     parser.add_argument("-n", "--notes",    type=str, action="append", help="replace lines of notes in the record")

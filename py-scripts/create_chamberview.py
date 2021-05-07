@@ -188,7 +188,7 @@ def main():
            """)
     parser.add_argument("-m", "--lfmgr", type=str,
                         help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int,
+    parser.add_argument("-o", "--port", type=int, default=8080,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-cs", "--create_scenario", "--create_lf_scenario", type=str,
                         help="name of scenario to be created")

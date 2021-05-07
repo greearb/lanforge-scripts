@@ -19,7 +19,7 @@
 
     Example
     .\Lexus_Final.py --lf_host 192.168.200.15 --dut_host 192.168.200.18 --dut_radio wiphy1 --lf_radio wiphy1 --num_sta 1 --sta_id 1 --lf_ssid lanforge_ap --dut_ssid lexusap --security open --dut_upstream eth2 --lf_upstream eth1 --protocol lf_udp --min_bps 1000 --max_bps 10000 --time 1
-  This Script is intended to automate the testing of DUT That has stations as well as AP.
+  This Script is intended to automate the testing of DUT that has stations as well as AP.
   To automate the simultaenous testing and check the DUT Temperature
 '''
 

@@ -933,7 +933,7 @@ class Realm(LFCliBase):
 
     def new_dut_profile(self, ver = 1):
         if ver == 1:
-            dut_profile = dut_profile.DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+            dut_profile = DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         # elif ver == 2:
         #     import dut_profile2
         #     dut_profile = dut_profile2.DUTProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
