@@ -31,6 +31,7 @@ import re
 import serial
 import pexpect
 from pexpect_serial import SerialSpawn
+from lf_report import lf_report
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -931,6 +932,16 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     else:
         csv_outfile = args.csv_outfile
 
+    # Create report, instanciate a reporting class
+    report = report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+
+    if args.csv_outfile != None:
+        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+        csv_outfile = "longevity_{}_{}.csv".format(args.csv_outfile,current_time)
+        csv_outfile = report.file_add_path(csv_outfile)
+        print("csv output file : {}".format(csv_outfile))
+
+
     influxdb = None
     if args.influx_bucket is not None:
         from influx2 import RecordInflux
@@ -1074,13 +1085,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         print("Test Ended: There were Failures")
         print(ip_var_test.get_fail_message())
          
-    try: 
-        sub_output = subprocess.run(["./csv_processor.py", "--infile",csv_outfile],capture_output=True, check=True)
-        pss = sub_output.stdout.decode('utf-8', 'ignore')
-        print(pss)
-    except Exception as e:
-        print("Exception: {} failed creating summary and raw for {}, are all packages installed , pandas?".format(e,csv_outfile))
-
     print("Pausing {} seconds after run for manual inspection before we clean up.".format(args.wait))
     time.sleep(int(args.wait))
     ip_var_test.cleanup()
