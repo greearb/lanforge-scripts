@@ -30,6 +30,7 @@ from time import sleep
 import argparse
 import pexpect
 import serial
+from serial import Serial
 from pexpect_serial import SerialSpawn
 import json
 from json import load
