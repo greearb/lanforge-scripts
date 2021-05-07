@@ -245,7 +245,9 @@ def main():
         Command example:
         ./grafana_profile.py
             --grafana_token 
-            --''')
+            --dashbaord_name
+            --scripts "Wifi Capacity"
+            ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--grafana_token', help='token to access your Grafana database', required=True)
 
@@ -263,7 +265,7 @@ def main():
     optional.add_argument('--dashboard_title', help='Titles of dashboards', default=None, action='append')
     optional.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
     optional.add_argument('--title', help='title of your Grafana Dashboard', default=None)
-    optional.add_argument('--grafana_bucket', help='Name of your Grafana Bucket', default=None)
+    optional.add_argument('--influx_bucket', help='Name of your Influx Bucket', default=None)
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
