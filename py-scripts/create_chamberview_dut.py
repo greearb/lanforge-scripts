@@ -108,16 +108,21 @@ class DUT(dut):
                 self.ssid[j]['flag'] = []
                 self.ssid[j].keys
 
+                flag=0x0
                 if 'security' in self.ssid[j].keys():
                     self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
                     for security in self.ssid[j]['security']:
                         try:
-                            self.ssid[j]['flag'].append(flags[security.lower()])
+                            flag |= flags[security.lower()]
                         except:
                             pass
+                self.ssid[j]['flag'] = flag
 
                 if 'bssid' not in self.ssid[j].keys():
                     self.ssid[j]['bssid'] = '00:00:00:00:00:00'
+
+                if 'password' not in self.ssid[j].keys():
+                    self.ssid[j]['password'] = '[BLANK]'
 
                 self.add_ssid(dut_name=self.dut_name,
                               ssid_idx=self.ssid[j]['ssid_idx'],
@@ -133,8 +138,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="""
         ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name" 
-                -ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
-                -ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
+                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
+                --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
                """)
     parser.add_argument("-m", "--lfmgr", type=str, default="localhost",
                         help="address of the LANforge GUI machine (localhost is default)")
