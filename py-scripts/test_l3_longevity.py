@@ -179,19 +179,8 @@ class L3VariableTime(Realm):
         if (self.polling_interval_seconds > dur + 1):
             self.polling_interval_seconds = dur - 1
 
-        # Some checking on the duration
-        #self.parse_time(self.test_duration)
-        #if (    (radio_info_dict['reset_port_time_min'] >= args.test_duration)  
-        #    or  (radio_info_dict['reset_port_time_max'] >= args.test_duration)):
-        #    print("port reset times min {} max {} mismatched with test duration {}"\
-        #        .format(radio_info_dict['reset_port_time_min'],radio_info_dict['reset_port_time_max'],args.test_duration)))
-        #    exit(1)
-
-
         # Full spread-sheet data
         if self.outfile is not None:
-            self.csv_file = open(self.outfile, "w") 
-            self.csv_writer = csv.writer(self.csv_file, delimiter=",")
             kpi = self.outfile[:-4]
             kpi = kpi + "-kpi.csv"
             self.csv_kpi_file = open(kpi, "w")
@@ -301,114 +290,6 @@ class L3VariableTime(Realm):
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
         return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
-
-    # Generate rx-dropped csv data
-    def __record_rx_dropped_percent(self,rx_drop_percent):
-
-        csv_rx_drop_percent_data = self.get_row_data_start('rx_drop_percent')
-
-        # Honestly, I don't understand this code. --Ben
-        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
-
-        filtered_values = [v for _, v in rx_drop_percent.items() if v !=0]
-        average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        csv_rx_drop_percent_data.append(average_rx_drop_percent)
-
-        for item, value in rx_drop_percent.items():
-            #print(item, "rx drop percent: ", rx_drop_percent[item])
-            csv_rx_drop_percent_data.append(rx_drop_percent[item])
-
-        self.csv_add_row(csv_rx_drop_percent_data, self.csv_writer, self.csv_file)
-
-    def get_row_data_start(self, third_row):
-        return [self.epoch_time, self.time_stamp(), third_row,
-                self.cx_profile.side_a_min_bps, self.cx_profile.side_a_max_bps,
-                self.cx_profile.side_b_min_bps, self.cx_profile.side_b_max_bps,
-                self.cx_profile.side_a_min_pdu, self.cx_profile.side_a_max_pdu,
-                self.cx_profile.side_b_min_pdu, self.cx_profile.side_b_max_pdu,
-            ]
-        
-    # Compare last stats report with current stats report.  Generate CSV data lines
-    # for the various csv output files this test supports.
-    # old-list and new list holds 'rx-bytes' counters.
-    def __compare_vals(self, old_list, new_list):
-        passes = 0
-        expected_passes = 0
-        csv_rx_headers = []
-        csv_rx_delta_dict = {}
-
-        # this may need to be a list as more monitoring takes place.
-        csv_rx_row_data = self.get_row_data_start("rx-bytes")
-        
-        csv_rx_delta_row_data = self.get_row_data_start("rx-bytes_delta")
-
-        for key in [key for key in old_list if "mtx" in key]: del old_list[key]
-        for key in [key for key in new_list if "mtx" in key]: del new_list[key]
-
-        filtered_values = [v for _, v in new_list.items() if v !=0]
-        average_rx= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-        csv_rx_row_data.append(average_rx)
-
-        if len(old_list) == len(new_list):
-            for item, value in old_list.items():
-                expected_passes +=1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
-                    fail_msg = "Failed to increase rx data: station: {} rx_new: {} rx_old: {}".format(item, new_list[item], old_list[item])
-                    self._fail(fail_msg, True)
-                if not self.csv_started:
-                    csv_rx_headers.append(item) # column header is endp name
-                csv_rx_delta_dict.update({item:(new_list[item] - old_list[item])})
-                
-
-            if not self.csv_started:
-                csv_header = self.csv_generate_column_headers()
-                csv_header += csv_rx_headers
-                #print(csv_header)
-                self.csv_add_column_headers(csv_header)
-                port_eids = self.gather_port_eids()
-                for eid_name in port_eids:
-                    self.csv_add_port_column_headers(eid_name, self.csv_generate_port_column_headers())
-                self.csv_started = True
-
-            # need to generate list first to determine worst and best
-            filtered_values = [v for _, v in csv_rx_delta_dict.items() if v !=0]
-            average_rx_delta= sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
-
-            csv_rx_delta_row_data.append(average_rx_delta)
-            
-            for item, value in old_list.items():
-                expected_passes +=1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-                    #if self.debug: print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                    print(item, new_list[item], old_list[item], " Difference: ", new_list[item] - old_list[item])
-                else:
-                    print("Failed to increase rx data: ", item, new_list[item], old_list[item])
-                if not self.csv_started:
-                    csv_rx_headers.append(item)
-                csv_rx_row_data.append(new_list[item])
-                csv_rx_delta_row_data.append(new_list[item] - old_list[item])
-
-            self.csv_add_row(csv_rx_row_data, self.csv_writer, self.csv_file)
-            self.csv_add_row(csv_rx_delta_row_data, self.csv_writer, self.csv_file)
-
-            if passes == expected_passes:
-                return True
-            else:
-                return False
-        else:
-            print("Old-list length: %i  new: %i does not match in compare-vals."%(len(old_list), len(new_list)))
-            print("old-list:",old_list)
-            print("new-list:",new_list)
-            return False
-
 
     # Cleanup any older config that a previous run of this test may have created.
     def pre_cleanup(self):
@@ -525,6 +406,13 @@ class L3VariableTime(Realm):
             # TODO:  Allow fail and abort at this point.
             print("print failed to get IP's")
 
+        csv_header = self.csv_generate_column_headers()
+        #print(csv_header)
+        self.csv_add_column_headers(csv_header)
+        port_eids = self.gather_port_eids()
+        for eid_name in port_eids:
+            self.csv_add_port_column_headers(eid_name, self.csv_generate_port_column_headers())
+
         # For each rate
         rate_idx = 0
         for ul in self.side_a_min_rate:
@@ -609,16 +497,6 @@ class L3VariableTime(Realm):
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
                         #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
-
-                        expected_passes += 1
-                        if self.__compare_vals(old_rx_values, new_rx_values):
-                            passes += 1
-                        else:
-                            fail_msg = "FAIL: TIME: {} EPOCH: {} Not all stations increased traffic".format(cur_time, self.epoch_time) 
-                            self._fail(fail_msg, print_fail)
-                        old_rx_values = new_rx_values
-
-                        self.__record_rx_dropped_percent(rx_drop_percent)
 
                     # At end of test step, record KPI information.
                     if self.influxdb is not None:
@@ -825,25 +703,22 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
     # Write initial headers to csv file.
     def csv_add_column_headers(self,headers):
-        if self.csv_file is not None:
-            self.csv_writer.writerow(headers)
-            self.csv_file.flush()
         if self.csv_kpi_file is not None:
             self.csv_kpi_writer.writerow(self.csv_generate_kpi_column_headers())
             self.csv_kpi_file.flush()
 
     # Write initial headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
-        if self.csv_file is not None:
-            fname = self.outfile[:-4]  # Strip '.csv' from file name
-            fname = fname + "-" + eid_name + ".csv"
-            pfile = open(fname, "w")
-            port_csv_writer = csv.writer(pfile, delimiter=",")
-            self.port_csv_files[eid_name] = pfile
-            self.port_csv_writers[eid_name] = port_csv_writer
+        #if self.csv_file is not None:
+        fname = self.outfile[:-4]  # Strip '.csv' from file name
+        fname = fname + "-" + eid_name + ".csv"
+        pfile = open(fname, "w")
+        port_csv_writer = csv.writer(pfile, delimiter=",")
+        self.port_csv_files[eid_name] = pfile
+        self.port_csv_writers[eid_name] = port_csv_writer
             
-            port_csv_writer.writerow(headers)
-            pfile.flush()
+        port_csv_writer.writerow(headers)
+        pfile.flush()
 
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
