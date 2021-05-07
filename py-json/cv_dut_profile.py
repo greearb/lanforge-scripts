@@ -1,9 +1,9 @@
-
 import time
 
 # !/usr/bin/env python3
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 from LANforge.lfcli_base import LFCliBase
+
 
 class cv_dut(LFCliBase):
     def __init__(self,
@@ -12,10 +12,19 @@ class cv_dut(LFCliBase):
                  ):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port)
+        self.cv_dut_name = "DUT"
+        self.flags = "4098"
+        self.sw_version = "[BLANK]"
+        self.hw_version = "[BLANK]"
+        self.model_num = "[BLANK]"
+        self.serial_num = "[BLANK]"
+        self.serial_port = "[BLANK]"
+        self.wan_port = "[BLANK]"
+        self.lan_port = "[BLANK]"
+        self.api_id = "0"
+        self.flags_mask = "NA"
 
     def create_dut(self,
-                   dut_name="DUT",
-                   flags="4098",
                    ssid1="[BLANK]",
                    pass1="[BLANK]",
                    ssid2="[BLANK]",
@@ -30,16 +39,16 @@ class cv_dut(LFCliBase):
         response_json = []
         req_url = "/cli-json/add_dut"
         data = {
-            "name": dut_name,
-            "flags": flags,
+            "name": self.cv_dut_name,
+            "flags": self.flags,
             "img_file": "NONE",
-            "sw_version": "[BLANK]",
-            "hw_version": "[BLANK]",
-            "model_num": "[BLANK]",
-            "serial_num": "[BLANK]",
-            "serial_port": "[BLANK]",
-            "wan_port": "[BLANK]",
-            "lan_port": "[BLANK]",
+            "sw_version": self.sw_version,
+            "hw_version": self.hw_version,
+            "model_num": self.model_num,
+            "serial_num": self.serial_num,
+            "serial_port": self.serial_port,
+            "wan_port": self.wan_port,
+            "lan_port": self.lan_port,
             "ssid1": ssid1,
             "passwd1": pass1,
             "ssid2": ssid2,
@@ -47,8 +56,8 @@ class cv_dut(LFCliBase):
             "ssid3": ssid3,
             "passwd3": pass3,
             "mgt_ip": mgt_ip,
-            "api_id": "0",
-            "flags_mask": "NA",
+            "api_id": self.api_id,
+            "flags_mask": self.flags_mask,
             "antenna_count1": "0",
             "antenna_count2": "0",
             "antenna_count3": "0",
@@ -62,7 +71,6 @@ class cv_dut(LFCliBase):
         rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
         return rsp
 
-
     def add_ssid(self,
                  dut_name="DUT",
                  ssid_idx=0,
@@ -72,13 +80,13 @@ class cv_dut(LFCliBase):
                  ssid_flags=0,
                  ssid_flags_mask=0xFFFFFFFF):
         req_url = "/cli-json/add_dut_ssid"
-        print( "name:" + dut_name,
-            "ssid_idx:"+ ssid_idx,
-            "ssid:"+ ssid,
-            "passwd:" + passwd,
-            "bssid:" + bssid,
-            "ssid_flags:" + str(ssid_flags),
-            "ssid_flags_mask:"+ str(ssid_flags_mask))
+        print("name:" + dut_name,
+              "ssid_idx:" + ssid_idx,
+              "ssid:" + ssid,
+              "passwd:" + passwd,
+              "bssid:" + bssid,
+              "ssid_flags:" + str(ssid_flags),
+              "ssid_flags_mask:" + str(ssid_flags_mask))
 
         self.json_post(req_url, {
             "name": dut_name,

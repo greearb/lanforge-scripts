@@ -76,6 +76,7 @@ class DUT(dut):
             lfclient_host=lfmgr,
             lfclient_port=port,
         )
+        self.cv_dut_name = dut_name
         self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
@@ -84,7 +85,7 @@ class DUT(dut):
         self.security = security
 
     def setup(self):
-        self.create_dut(dut_name=self.dut_name)
+        self.create_dut()
 
     def add_ssids(self):
         flags = dict()
