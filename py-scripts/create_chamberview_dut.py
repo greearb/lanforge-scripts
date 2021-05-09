@@ -68,21 +68,23 @@ class DUT(dut):
                  port="8080",
                  dut_name="DUT",
                  ssid=[],
-                 password=[],
-                 bssid=[],
-                 security=[]
+                 sw_version="NA",
+                 hw_version="NA",
+                 serial_num="NA",
+                 model_num="NA",
                  ):
         super().__init__(
             lfclient_host=lfmgr,
             lfclient_port=port,
+            sw_version=sw_version,
+            hw_version=hw_version,
+            serial_num=serial_num,
+            model_num=model_num,
         )
         self.cv_dut_name = dut_name
         self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
-        self.password = password
-        self.bssid = bssid
-        self.security = security
 
     def setup(self):
         self.create_dut()
@@ -150,11 +152,20 @@ def main():
     parser.add_argument("-s", "--ssid", action='append', nargs=1,
                         help="SSID", default=[])
 
+    parser.add_argument("--sw_version", default="NA", help="DUT Software version.")
+    parser.add_argument("--hw_version", default="NA", help="DUT Hardware version.")
+    parser.add_argument("--serial_num", default="NA", help="DUT Serial number.")
+    parser.add_argument("--model_num", default="NA", help="DUT Model Number.")
+
     args = parser.parse_args()
-    new_dut = DUT(args.lfmgr,
-                  args.port,
-                  args.dut_name,
-                  args.ssid,
+    new_dut = DUT(lfmgr=args.lfmgr,
+                  port=args.port,
+                  dut_name=args.dut_name,
+                  ssid=args.ssid,
+                  sw_version = args.sw_version,
+                  hw_version = args.hw_version,
+                  serial_num = args.serial_num,
+                  model_num = args.model_num,
                   )
 
     new_dut.setup()

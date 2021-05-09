@@ -9,15 +9,19 @@ class cv_dut(LFCliBase):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
+                 sw_version="NA",
+                 hw_version="NA",
+                 serial_num="NA",
+                 model_num="NA",
                  ):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port)
         self.cv_dut_name = "DUT"
         self.flags = "4098"
-        self.sw_version = "[BLANK]"
-        self.hw_version = "[BLANK]"
-        self.model_num = "[BLANK]"
-        self.serial_num = "[BLANK]"
+        self.sw_version = sw_version
+        self.hw_version = hw_version
+        self.model_num = model_num
+        self.serial_num = serial_num
         self.serial_port = "[BLANK]"
         self.wan_port = "[BLANK]"
         self.lan_port = "[BLANK]"
@@ -35,7 +39,10 @@ class cv_dut(LFCliBase):
                    bssid2="00:00:00:00:00:00",
                    bssid3="00:00:00:00:00:00",
                    mgt_ip="0.0.0.0",
-                   eap_id="[BLANK]"):
+                   eap_id="[BLANK]",
+                   top_left_x="NA",
+                   top_left_y="NA",
+                   ):
         response_json = []
         req_url = "/cli-json/add_dut"
         data = {
@@ -64,8 +71,8 @@ class cv_dut(LFCliBase):
             "bssid1": bssid1,
             "bssid2": bssid2,
             "bssid3": bssid3,
-            "top_left_x": "0",
-            "top_left_y": "0",
+            "top_left_x": top_left_x,
+            "top_left_y": top_left_y,
             "eap_id": eap_id,
         }
         rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
