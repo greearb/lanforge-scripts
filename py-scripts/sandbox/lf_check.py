@@ -76,7 +76,8 @@ class lf_check():
 
         if 'TEST_DICTIONARY' in config_file.sections():
             section = config_file['TEST_DICTIONARY']
-            self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict))
+            # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
+            self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n','').replace('\r',''))
             #print("test_dict {}".format(self.test_dict))
 
     def run_script_test(self):
@@ -99,7 +100,10 @@ class lf_check():
                 command = "./{} {}".format(self.test_dict[test]['command'],self.test_dict[test]['args'])
                 print("command: {}".format(command))
 
-                process = subprocess.run([command], check= True, stdout=subprocess.PIPE, universal_newlines=True)
+                try:
+                    process = subprocess.run([command], check= True, stdout=subprocess.PIPE, universal_newlines=True)
+                except:
+                    print("exception on command: {}".format(command))
 
 
 def main():
