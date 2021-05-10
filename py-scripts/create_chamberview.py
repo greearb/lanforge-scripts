@@ -158,9 +158,11 @@ class CreateChamberview(cv):
         while (True):
             self.get_popup_info_and_close()
             if not self.get_cv_is_built():
-                print("Waiting %i/60 for Chamber-View to be built." % (tries))
+                # It can take a while to build a large scenario, so wait-time
+                # is currently max of 5 minutes.
+                print("Waiting %i/300 for Chamber-View to be built." % (tries))
                 tries += 1
-                if (tries > 60):
+                if (tries > 300):
                     break
                 time.sleep(1)
             else:
