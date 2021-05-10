@@ -28,6 +28,7 @@ import json
 from json import load
 import configparser
 from pprint import *
+import subprocess
     
 
 CONFIG_FILE = os.getcwd() + '/py-scripts/sandbox/lf_check_config.ini'    
@@ -48,6 +49,8 @@ class FileAdapter(object):
 
 class lf_check():
     def __init__(self):
+        self.lf_mgr_ip = ""
+        self.lf_mgr_port = "" 
         self.radio_dict = {}
         self.test_dict = {}
     
@@ -58,6 +61,13 @@ class lf_check():
         success = config_file.read(CONFIG_FILE)
         print("{}".format(success))
         print("{}".format(config_file))
+
+        if 'LF_MGR' in config_file.sections():
+            section = config_file['LF_MGR']
+            self.lf_mgr_ip = section['LF_MGR_IP']
+            self.lf_mgr_port = section['LF_MGR_PORT']
+            print("lf_mgr_ip {}".format(self.lf_mgr_ip))
+            print("lf_mgr_port {}".format(self.lf_mgr_port))
 
         # NOTE: this may need to be a list for ssi 
         if 'RADIO_DICTIONARY' in config_file.sections():
@@ -71,6 +81,7 @@ class lf_check():
 
     def run_script_test(self):
         for test in self.test_dict:
+            # load the default database 
             if self.test_dict[test]['enabled'] == "TRUE":
                 # print("test: {} enable: {} command: {} args: {}".format(self.test_dict[test],self.test_dict[test]['enabled'],self.test_dict[test]['command'],self.test_dict[test]['args']))
 
@@ -87,6 +98,10 @@ class lf_check():
                 #print("enable: {} command: {} args: {}".format(self.test_dict[test]['enabled'],self.test_dict[test]['command'],self.test_dict[test]['args']))
                 command = "./{} {}".format(self.test_dict[test]['command'],self.test_dict[test]['args'])
                 print("command: {}".format(command))
+
+                process = subprocess.run([command], check= True, stdout=subprocess.PIPE, universal_newlines=True)
+
+
 def main():
     check = lf_check()
     #check.parse_ap_stats()
