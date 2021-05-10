@@ -29,6 +29,7 @@ from json import load
 import configparser
 from pprint import *
 import subprocess
+from pathlib import Path
     
 
 CONFIG_FILE = os.getcwd() + '/py-scripts/sandbox/lf_check_config.ini'    
@@ -77,7 +78,7 @@ class lf_check():
         if 'TEST_DICTIONARY' in config_file.sections():
             section = config_file['TEST_DICTIONARY']
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
-            self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n','').replace('\r',''))
+            self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
             #print("test_dict {}".format(self.test_dict))
 
     def run_script_test(self):
@@ -94,16 +95,17 @@ class lf_check():
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio {} --ssid {} --passwd {} --security {}'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
                                             
+                # Move 
+                scripts_wd = Path(__file__).parents[1]
+                print("file_wd {}".format(scripts_wd))
+                command = "{}/{}".format(scripts_wd,self.test_dict[test]['command'])
+                cmd_args = "{}".format(self.test_dict[test]['args'])
+                print("command: {} cmd_args {}".format(command,cmd_args))
 
-                #print("test: {} enable: {} command: {} args: {}".format(self.test_dict[test],self.test_dict[test]['enabled'],self.test_dict[test]['command'],self.test_dict[test]['args']))
-                #print("enable: {} command: {} args: {}".format(self.test_dict[test]['enabled'],self.test_dict[test]['command'],self.test_dict[test]['args']))
-                command = "./{} {}".format(self.test_dict[test]['command'],self.test_dict[test]['args'])
-                print("command: {}".format(command))
-
-                try:
-                    process = subprocess.run([command], check= True, stdout=subprocess.PIPE, universal_newlines=True)
-                except:
-                    print("exception on command: {}".format(command))
+                #try:
+                process = subprocess.run([command, cmd_args], check= True, stdout=subprocess.PIPE, universal_newlines=True)
+                #except:
+                #    print("exception on command: {}".format(command))
 
 
 def main():
