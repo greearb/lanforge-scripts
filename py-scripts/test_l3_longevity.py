@@ -739,7 +739,7 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
 # Check some input values.
 def valid_endp_types(_endp_type):
-    etypes = _endp_type.split()
+    etypes = _endp_type.split(',')
     for endp_type in etypes:
         valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
         if not (str(endp_type) in valid_endp_type):
