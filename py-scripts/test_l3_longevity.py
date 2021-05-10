@@ -967,7 +967,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     print("radios {}".format(radios))
     for radio_ in radios:
         radio_keys = ['radio','stations','ssid','ssid_pw','security']
-        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").split()))
+        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").replace(","," ").split()))
         print("radio_dict {}".format(radio_info_dict))
 
         for key in radio_keys:
