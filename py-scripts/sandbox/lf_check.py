@@ -111,7 +111,13 @@ class lf_check():
                 print("cmd_args {}".format(cmd_args))
 
                 #try:
-                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                #process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                
+                print("###################### STDOUT #########################")
+                print(process.stdout)
+                print("###################### STDERR #########################")
+                print(process.stderr)
                 #except:
                 #    print("exception on command: {}".format(command))
 
