@@ -7,6 +7,12 @@
 #
 # Read in ~/text-csv-0-candela.csv, output is stored at outfile.csv
 # ./py-scripts/csv_convert.py -i ~/text-csv-0-candela.csv
+#
+# Output is csv file with mixxed columns, top part:
+# Test Run,Position [Deg],Attenuation 1 [dB], Pal Stats Endpoint 1 Control Rssi [dBm],  Pal Stats Endpoint 1 Data Rssi [dBm]
+
+# Second part:
+# Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]
 
 import sys
 import os
@@ -21,12 +27,14 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 class CSVParcer():
-    def __init__(self,csv_infile=None,csv_outfile=None,ddb=False):
+    def __init__(self,csv_infile=None,csv_outfile=None):
 
         idx = 0
         i_atten = -1
         i_rotation = -1
         i_rxbps = -1
+        i_beacon_rssi = -1
+        i_data_rssi = -1
         fpo = open(csv_outfile, "w")
         with open(csv_infile) as fp:
             line = fp.readline()
@@ -37,41 +45,40 @@ class CSVParcer():
             x = line.split(",")
             cni = 0
             for cn in x:
-                if (cn == "Atten"):
+                if (cn == "Attenuation [dB]"):
                     i_atten = cni
-                if (cn == "Rotation"):
+                if (cn == "Position [Deg]"):
                     i_rotation = cni
-                if (cn == "Rx-Bps"):
+                if (cn == "Throughput [Mbps]"):
                     i_rxbps = cni
+                if (cn == "Beacon RSSI [dBm]"):
+                    i_beacon_rssi = cni
+                if (cn == "Data RSSI [dBm]"):
+                    i_data_rssi = cni
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write("Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n")
+            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm]")
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
             line = fp.readline()
 
+            bottom_half="Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n"
+
+            test_run="1"
+
             step_i = 0
             while line:
                 x = line.split(",")
-                mbps_data = x[i_rxbps]
-                mbps_array = mbps_data.split(" ")
-                mbps_val = float(mbps_array[0])
-                if (mbps_array[1] == "Gbps"):
-                    mbps_val *= 1000
-                if (mbps_array[1] == "Kbps"):
-                    mbps_val /= 1000
-                if (mbps_array[1] == "bps"):
-                    mbps_val /= 1000000
-
-                attenv = float(x[i_atten])
-                if ddb:
-                    attenv /= 10
-                    
-                fpo.write("%s,%s,%s,%s\n" % (step_i, x[i_rotation], attenv, mbps_val))
+                fpo.write("%s,%s,%s,%s\n" % (test_run, x[i_rotation], x[i_atten], x[i_beacon_rssi], x[i_data_rssi]))
+                bottom_half += ("%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], x[i_rxbps]))
                 line = fp.readline()
                 step_i += 1
+
+            # First half is written out now, and second half is stored...
+            fpo.write("\n\n# RvRvO Data\n\n")
+            fpo.write(bottom_half)
 
 def main():
 
@@ -85,14 +92,11 @@ def main():
         
         description='''
 csv_convert.py:  
-    converts the candela csv into the comcast csv and xlsx, 
-    renames input file from candela to comcast if not outfile given
+    converts the candela brief csv into the data for specific customer,
         ''')
 
     # for testing parser.add_argument('-i','--infile', help="input file of csv data", default='text-csv-0-candela.csv')
     parser.add_argument('-i','--infile', help="input file of csv data", required=True)
-    parser.add_argument('-d','--ddb', help="Specify attenuation units are in ddb in source file",
-                        action='store_true', default=False)
     parser.add_argument('-o','--outfile', help="output file in .csv format", default='outfile.csv')
 
 
@@ -104,9 +108,9 @@ csv_convert.py:
     if args.outfile:
         csv_outfile_name = args.outfile
 
-    print("infile: %s  outfile: %s  convert-ddb: %s"%(csv_infile_name, csv_outfile_name, args.ddb))
+    print("infile: %s  outfile: %s"%(csv_infile_name, csv_outfile_name))
 
-    CSVParcer(csv_infile_name, csv_outfile_name, args.ddb)
+    CSVParcer(csv_infile_name, csv_outfile_name)
 
 if __name__ == "__main__":
     main()
