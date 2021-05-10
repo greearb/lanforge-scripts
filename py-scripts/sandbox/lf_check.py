@@ -103,15 +103,20 @@ class lf_check():
                 #scripts_wd = os.getcwd()
 
                 print("file_wd {}".format(self.scripts_wd))
+                try:
+                    os.chdir(self.scripts_wd)
+                    print("Current Working Directory {}".format(os.getcwd()))
+                except:
+                    print("failed to change to {}".format(self.scripts_wd))
                 cmd_args = "{}".format(self.test_dict[test]['args'])
-                command = "{}/{} {}".format(self.scripts_wd,self.test_dict[test]['command'], cmd_args)
+                command = "./{} {}".format(self.test_dict[test]['command'], cmd_args)
                 #command = "{}/{}".format(scripts_wd,self.test_dict[test]['command'])
                 # cmd_args = "{}".format(self.test_dict[test]['args'])
                 print("command: {}".format(command))
                 print("cmd_args {}".format(cmd_args))
 
                 #try:
-                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.run((command).split(' '), check= False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
                 #process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
                 
                 print("###################### STDOUT #########################")
@@ -124,11 +129,9 @@ class lf_check():
 
 def main():
     check = lf_check()
-    print("Here 1")
 
     #check.parse_ap_stats()
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
-    print("Here 2")
 
 
     check.run_script_test()

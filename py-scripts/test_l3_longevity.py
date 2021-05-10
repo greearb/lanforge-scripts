@@ -106,7 +106,7 @@ class L3VariableTime(Realm):
                          _capture_signal_list=_capture_signal_list)
         self.influxdb = influxdb
         self.tos = tos.split()
-        self.endp_types = endp_types.split()
+        self.endp_types = endp_types.split(",")
         self.side_b = side_b
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
