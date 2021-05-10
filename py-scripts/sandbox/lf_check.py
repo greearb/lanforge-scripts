@@ -29,10 +29,9 @@ from json import load
 import configparser
 from pprint import *
 import subprocess
-from pathlib import Path
     
 
-CONFIG_FILE = os.getcwd() + '/py-scripts/sandbox/lf_check_config.ini'    
+CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
 RUN_CONDITION = 'ENABLE'
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -54,9 +53,14 @@ class lf_check():
         self.lf_mgr_port = "" 
         self.radio_dict = {}
         self.test_dict = {}
+        path_parent = os.path.dirname(os.getcwd())
+        os.chdir(path_parent)
+        self.scripts_wd = os.getcwd()
+
     
     # Functions in this section are/can be overridden by descendants
     def read_config_contents(self):
+        print("read_config_contents {}".format(CONFIG_FILE))
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(CONFIG_FILE)
@@ -92,26 +96,34 @@ class lf_check():
                 for radio in self.radio_dict:
                     # Replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio {} --ssid {} --passwd {} --security {}'
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}"'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
                                             
                 # Move 
-                scripts_wd = Path(__file__).parents[1]
-                print("file_wd {}".format(scripts_wd))
-                command = "{}/{}".format(scripts_wd,self.test_dict[test]['command'])
+                #scripts_wd = os.getcwd()
+
+                print("file_wd {}".format(self.scripts_wd))
                 cmd_args = "{}".format(self.test_dict[test]['args'])
-                print("command: {} cmd_args {}".format(command,cmd_args))
+                command = "{}/{} {}".format(self.scripts_wd,self.test_dict[test]['command'], cmd_args)
+                #command = "{}/{}".format(scripts_wd,self.test_dict[test]['command'])
+                # cmd_args = "{}".format(self.test_dict[test]['args'])
+                print("command: {}".format(command))
+                print("cmd_args {}".format(cmd_args))
 
                 #try:
-                process = subprocess.run([command, cmd_args], check= True, stdout=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, universal_newlines=True)
                 #except:
                 #    print("exception on command: {}".format(command))
 
 
 def main():
     check = lf_check()
+    print("Here 1")
+
     #check.parse_ap_stats()
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
+    print("Here 2")
+
 
     check.run_script_test()
 
