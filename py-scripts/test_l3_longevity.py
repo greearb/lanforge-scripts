@@ -87,15 +87,15 @@ class L3VariableTime(Realm):
                  lfclient_host="localhost", 
                  lfclient_port=8080, 
                  debug=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False,
-                 _proxy_str=None,
                  influxdb=None,
                  ap_read=False,
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
                  ap_cmd='wl -i wl1 bs_data',
                  ap_test_mode=False,
+                 _exit_on_error=False,
+                 _exit_on_fail=False,
+                 _proxy_str=None,
                  _capture_signal_list=[]):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
@@ -134,6 +134,7 @@ class L3VariableTime(Realm):
         self.mconn = mconn
         self.user_tags = user_tags
         
+
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -204,6 +205,7 @@ class L3VariableTime(Realm):
                 reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(self.station_profile)
         
+
         self.multicast_profile.host = self.lfclient_host
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
@@ -899,6 +901,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     else:
         ap_read = False
 
+    if args.ap_test_mode:
+        ap_test_mode = args.ap_test_mode
+    else:
+        ap_test_mode = False
+
     if args.ap_port:
         ap_port = args.ap_port
 
@@ -907,9 +914,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     if args.ap_cmd:
         ap_cmd = args.ap_cmd
-
-    if args.ap_test_mode:
-        ap_test_mode = args.ap_test_mode
 
     if args.test_duration:
         test_duration = args.test_duration
@@ -1031,13 +1035,10 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %(len(ul_rates), len(dl_rates)))
     if (len(ul_pdus) != len(dl_pdus)):
         print("ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %(len(ul_rates), len(dl_rates)))
-
+    
     ip_var_test = L3VariableTime(
-                                    args=args,
-                                    number_template="00", 
-                                    station_lists= station_lists,
-                                    name_prefix="LT-",
                                     endp_types=endp_types,
+                                    args=args,
                                     tos=args.tos,
                                     side_b=side_b,
                                     radio_name_list=radio_name_list,
@@ -1045,10 +1046,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     ssid_list=ssid_list,
                                     ssid_password_list=ssid_password_list,
                                     ssid_security_list=ssid_security_list, 
-                                    test_duration=test_duration,
-                                    polling_interval= polling_interval,
-                                    lfclient_host=lfjson_host,
-                                    lfclient_port=lfjson_port,
+                                    station_lists= station_lists,
+                                    name_prefix="LT-",
+                                    outfile=csv_outfile,
                                     reset_port_enable_list=reset_port_enable_list,
                                     reset_port_time_min_list=reset_port_time_min_list,
                                     reset_port_time_max_list=reset_port_time_max_list,
@@ -1056,13 +1056,17 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     side_b_min_rate=dl_rates,
                                     side_a_min_pdu=ul_pdus,
                                     side_b_min_pdu=dl_pdus,
+                                    user_tags=args.influx_tag,
                                     rates_are_totals=args.rates_are_totals,
                                     mconn=args.multiconn,
                                     attenuators=attenuators,
                                     atten_vals=atten_vals,
-                                    user_tags=args.influx_tag,
+                                    number_template="00", 
+                                    test_duration=test_duration,
+                                    polling_interval= polling_interval,
+                                    lfclient_host=lfjson_host,
+                                    lfclient_port=lfjson_port,
                                     debug=debug,
-                                    outfile=csv_outfile,
                                     influxdb=influxdb,
                                     ap_read=ap_read,
                                     ap_port=ap_port,
