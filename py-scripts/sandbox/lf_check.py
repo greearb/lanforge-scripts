@@ -102,6 +102,23 @@ class lf_check():
         print("###################### STDERR - scenario load FACTORY_DFLT #########################")
         print(process.stderr)
 
+    def load_blank_db(self):
+        print("file_wd {}".format(self.scripts_wd))
+        try:
+            os.chdir(self.scripts_wd)
+            print("Current Working Directory {}".format(os.getcwd()))
+        except:
+            print("failed to change to {}".format(self.scripts_wd))
+
+        # no spaces after FACTORY_DFLT
+        command = "./{} {}".format("scenario.py", "--load BLANK")
+        process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
+        print("###################### STDOUT - scenario load BLANK #########################")
+        print(process.stdout)
+        print("###################### STDERR - scenario load BLANK #########################")
+        print(process.stderr)
+
+
     def run_script_test(self):
         for test in self.test_dict:
             # load the default database 
@@ -115,6 +132,8 @@ class lf_check():
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
                 # Clear out the database
                 self.load_factory_default_db()
+                #self.load_blank_db()
+                sleep(5) # the sleep is to allow for the database to stablize
 
                 # CMR this is just to get the directory with the scripts to run. 
                 print("file_wd {}".format(self.scripts_wd))
@@ -133,15 +152,15 @@ class lf_check():
                 # Put lanforge in known state
 
                 #try:
-                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=120)
-                #process = subprocess.run((command).split(' '), check= True, capture_output=True )
+                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                #process = subprocess.run((command).split(' '), check= True, capture_output=True, timeout=30 )
                 #pss1 = process.stdout.decode('utf-8', 'ignore')
                 #print(pss1)
 
                 
-                print("###################### STDOUT #########################")
+                #print("###################### STDOUT #########################")
                 print(process.stdout)
-                print("###################### STDERR #########################")
+                #print("###################### STDERR #########################")
                 print(process.stderr)
                 #except:
                 #    print("exception on command: {}".format(command))
