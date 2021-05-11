@@ -518,8 +518,8 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
                     # Query AP for its stats.  Result for /ax bcm APs looks something like this:
                     # '''
-                    if self.ap_test_mode:
-                        if self.ap_read:
+                    if self.ap_read:
+                        if self.ap_test_mode:
                             ap_stats = [];
                             ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
                             ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
@@ -967,7 +967,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     print("radios {}".format(radios))
     for radio_ in radios:
         radio_keys = ['radio','stations','ssid','ssid_pw','security']
-        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('[','').replace(']','').replace("'","").replace(","," ").split()))
+        print("radio_dict before format {}".format(radio_))
+        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"','').replace('[','').replace(']','').replace("'","").replace(","," ").split()))
         print("radio_dict {}".format(radio_info_dict))
 
         for key in radio_keys:
