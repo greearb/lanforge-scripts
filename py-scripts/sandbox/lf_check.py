@@ -29,6 +29,7 @@ from json import load
 import configparser
 from pprint import *
 import subprocess
+import sys
     
 
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
@@ -116,8 +117,11 @@ class lf_check():
                 print("cmd_args {}".format(cmd_args))
 
                 #try:
-                process = subprocess.run((command).split(' '), check= False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-                #process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                #process = subprocess.run((command).split(' '), check= True, capture_output=True )
+                #pss1 = process.stdout.decode('utf-8', 'ignore')
+                #print(pss1)
+
                 
                 print("###################### STDOUT #########################")
                 print(process.stdout)
