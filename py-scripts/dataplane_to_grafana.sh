@@ -6,11 +6,16 @@ Help()
 {
   echo "This bash script creates a DUT, loads a scenario, runs a WiFi Capacity test, and saves it to Influx"
 }
-MGR=192.168.1.7
-INFLUXTOKEN=Tdxwq5KRbj1oNbZ_ErPL5tw_HUH2wJ1VR4dwZNugJ-APz__mEFIwnqHZdoobmQpt2fa1VdWMlHQClR8XNotwbg==
-GRAFANATOKEN=eyJrIjoiZTJwZkZlemhLQVNpY3hiemRjUkNBZ3k2RWc3bWpQWEkiLCJuIjoibWFzdGVyIiwiaWQiOjF9
+MGR=192.168.1.6
+#INFLUXTOKEN=Tdxwq5KRbj1oNbZ_ErPL5tw_HUH2wJ1VR4dwZNugJ-APz__mEFIwnqHZdoobmQpt2fa1VdWMlHQClR8XNotwbg==
+#GRAFANATOKEN=eyJrIjoiZTJwZkZlemhLQVNpY3hiemRjUkNBZ3k2RWc3bWpQWEkiLCJuIjoibWFzdGVyIiwiaWQiOjF9
+INFLUXTOKEN=31N9QDhjJHBu4eMUlMBwbK3sOjXLRAhZuCzZGeO8WVCj-xvR8gZWWvRHOcuw-5RHeB7xBFnLs7ZV023k4koR1A==
+GRAFANATOKEN=eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ==
 TESTBED=Stidmatt-01
 GROUPS=/tmp/lf_cv_rpt_filelocation.txt
+INFLUXBUCKET=stidmatt
+INFLUX_MGR=192.168.100.201
+
 #Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
 echo "Make new DUT"
 ./create_chamberview_dut.py --lfmgr ${MGR} --dut_name DUT_TO_GRAFANA_DUT --ssid "ssid_idx=0 ssid=lanforge security=WPA2 password=password bssid=04:f0:21:2c:41:84 traffic=wiphy1"
@@ -23,9 +28,9 @@ echo "Build Chamber View Scenario" #change the lfmgr to your system, set the rad
 #config_name doesn't matter, change the influx_host to your LANforge device,
 echo "run Dataplane test"
 ./lf_dataplane_test.py --mgr ${MGR} --instance_name dataplane-instance --config_name test_config --upstream 1.1.eth1 \
---station 1.1.14 --dut linksys-8450 --influx_host ${MGR} --influx_port 8086 --influx_org Candela --influx_token ${INFLUXTOKEN} \
---influx_bucket lanforge --influx_tag testbed ${TESTBED} --graphgroups ${GROUPS}
+--station 1.1.14 --dut linksys-8450 --influx_host ${INFLUX_MGR} --influx_port 8086 --influx_org Candela --influx_token ${INFLUXTOKEN} \
+--influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graphgroups ${GROUPS}
 
-./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket lanforge --mgr 192.168.1.7 --grafana_token ${GRAFANATOKEN} \
---grafana_host 192.168.1.7 --testbed ${TESTBED} --graph-groups ${GROUPS} \
+./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token ${GRAFANATOKEN} \
+--grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph-groups ${GROUPS} \
 --scripts Dataplane --scripts 'WiFi Capacity'

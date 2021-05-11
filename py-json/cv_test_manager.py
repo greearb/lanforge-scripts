@@ -336,9 +336,10 @@ class cv_test(Realm):
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
-                if graphgroupsfile:
-                    filelocation=open(graphgroupsfile, 'w')
-                    filelocation.write(location)
+                print(graphgroupsfile)
+                if graphgroupsfile is not None:
+                    filelocation = open(graphgroupsfile, 'a')
+                    filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
                 print(location)
                 self.report_dir = location
@@ -347,8 +348,9 @@ class cv_test(Realm):
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             report_location=location)
-                except:
-                    raise Exception("Could not find Reports")
+                except Exception as e:
+                    print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
+                    raise e#Exception("Could not find Reports")
                 break
 
             # Of if test stopped for some reason and could not generate report.
@@ -372,7 +374,6 @@ class cv_test(Realm):
             else:
                 break
 
-
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
     def check_influx_kpi(self, args):
@@ -389,19 +390,20 @@ class cv_test(Realm):
         print("Creating influxdb connection.\n")
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
-        influxdb = RecordInflux(_lfjson_host = "",
-                                _lfjson_port = "",
-                                _influx_host = args.influx_host,
-                                _influx_port = args.influx_port,
-                                _influx_org = args.influx_org,
-                                _influx_token = args.influx_token,
-                                _influx_bucket = args.influx_bucket)
+        influxdb = RecordInflux(_lfjson_host="",
+                                _lfjson_port="",
+                                _influx_host=args.influx_host,
+                                _influx_port=args.influx_port,
+                                _influx_org=args.influx_org,
+                                _influx_token=args.influx_token,
+                                _influx_bucket=args.influx_bucket)
 
-        path = "%s/kpi.csv"%(self.report_dir)
+        path = "%s/kpi.csv" % (self.report_dir)
+
         print("Attempt to submit kpi: ", path)
-        csvtoinflux = CSVtoInflux(influxdb = influxdb,
-                                  target_csv = path,
-                                  _influx_tag = args.influx_tag)
+        csvtoinflux = CSVtoInflux(influxdb=influxdb,
+                                  target_csv=path,
+                                  _influx_tag=args.influx_tag)
         print("Posting to influx...\n")
         csvtoinflux.post_to_influx()
 
@@ -483,4 +485,3 @@ class cv_test(Realm):
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
             print("Popup Dialog:\n")
             print(dialog[0]["LAST"]["response"])
-
