@@ -58,7 +58,7 @@ class CSVParcer():
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm]")
+            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm]\n")
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
@@ -71,7 +71,9 @@ class CSVParcer():
             step_i = 0
             while line:
                 x = line.split(",")
-                fpo.write("%s,%s,%s,%s\n" % (test_run, x[i_rotation], x[i_atten], x[i_beacon_rssi], x[i_data_rssi]))
+                #print(x)
+                #print([test_run, x[i_rotation], x[i_atten], x[i_beacon_rssi], x[i_data_rssi]])
+                fpo.write("%s,%s,%s,%s,%s" % (test_run, x[i_rotation], x[i_atten], x[i_beacon_rssi], x[i_data_rssi]))
                 bottom_half += ("%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], x[i_rxbps]))
                 line = fp.readline()
                 step_i += 1
