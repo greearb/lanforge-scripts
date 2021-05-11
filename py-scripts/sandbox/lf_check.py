@@ -86,23 +86,37 @@ class lf_check():
             self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
             #print("test_dict {}".format(self.test_dict))
 
+    def load_factory_default_db(self):
+        print("file_wd {}".format(self.scripts_wd))
+        try:
+            os.chdir(self.scripts_wd)
+            print("Current Working Directory {}".format(os.getcwd()))
+        except:
+            print("failed to change to {}".format(self.scripts_wd))
+
+        # no spaces after FACTORY_DFLT
+        command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
+        process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
+        print("###################### STDOUT - scenario load FACTORY_DFLT #########################")
+        print(process.stdout)
+        print("###################### STDERR - scenario load FACTORY_DFLT #########################")
+        print(process.stderr)
+
     def run_script_test(self):
         for test in self.test_dict:
             # load the default database 
             if self.test_dict[test]['enabled'] == "TRUE":
-                # print("test: {} enable: {} command: {} args: {}".format(self.test_dict[test],self.test_dict[test]['enabled'],self.test_dict[test]['command'],self.test_dict[test]['args']))
-
-                # Note: do not replace with a lambda function  or (k), v for k, v in ... , 
                 # loop through radios
                 for radio in self.radio_dict:
                     # Replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
+                    # not "KEY" is just a word to refer to the RADIO define (e.g. RADIO_0_CFG) to get the vlaues
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}"'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
-                                            
-                # Move 
-                #scripts_wd = os.getcwd()
+                # Clear out the database
+                self.load_factory_default_db()
 
+                # CMR this is just to get the directory with the scripts to run. 
                 print("file_wd {}".format(self.scripts_wd))
                 try:
                     os.chdir(self.scripts_wd)
@@ -116,8 +130,10 @@ class lf_check():
                 print("command: {}".format(command))
                 print("cmd_args {}".format(cmd_args))
 
+                # Put lanforge in known state
+
                 #try:
-                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=120)
                 #process = subprocess.run((command).split(' '), check= True, capture_output=True )
                 #pss1 = process.stdout.decode('utf-8', 'ignore')
                 #print(pss1)
