@@ -380,18 +380,20 @@ class L3VariableTime(Realm):
 
     def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
-        ap_data = ""
+        ap_stats = ""
         try:
             # configure the serial interface
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            egg = SerialSpawn(ser)
-            egg.sendline(str(self.ap_cmd))
-            egg.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
-            ap_data = egg.before.decode('utf-8','ignore')
+            ss = SerialSpawn(ser)
+            ss.sendline(str(self.ap_cmd))
+            ss.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
+            ap_stats = ss.before.decode('utf-8','ignore')
+            print("ap_stats {}".format(ap_stats))
+
         except:
             print("WARNING unable to read AP")
         
-        return ap_data
+        return ap_stats
 
     # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
@@ -537,7 +539,9 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
                         ap_stats_rows = [] # Array of Arrays
                         for line in ap_stats:
+                            print("ap_stats: {}".format(line))
                             stats_row = line.split()
+                            print("ap_stats split {}".format(stats_row))
                             ap_stats_rows.append(stats_row)
 
                         try:
@@ -556,10 +560,10 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 print("query-port: %s: incomplete response:"%(url))
                                 pprint(response)
                             else:
-                                print("response".format(response))
+                                #print("response".format(response))
                                 pprint(response)
                                 p = response['interface']
-                                print("#### p, response['insterface']:{}".format(p))
+                                #print("#### p, response['insterface']:{}".format(p))
                                 mac = p['mac']
 
                                 ap_row = []
