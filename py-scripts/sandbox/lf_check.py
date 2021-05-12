@@ -30,6 +30,9 @@ import configparser
 from pprint import *
 import subprocess
 import sys
+#from ..lf_report import lf_report
+sys.path.append('../')
+from lf_report import lf_report
     
 
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
@@ -49,7 +52,8 @@ class FileAdapter(object):
 
 
 class lf_check():
-    def __init__(self):
+    def __init__(self,
+                _csv_outfile):
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -58,6 +62,7 @@ class lf_check():
         os.chdir(path_parent)
         self.scripts_wd = os.getcwd()
         self.results = ""
+        self.csv_outfile = _csv_outfile
 
     
     # Functions in this section are/can be overridden by descendants
@@ -176,13 +181,62 @@ class lf_check():
                 #    print("exception on command: {}".format(command))
 
 def main():
-    check = lf_check()
+    # arguments
+    parser = argparse.ArgumentParser(
+        prog='lf_check.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            lf_check.py : for running scripts listed in lf_check_config.ini file
+            ''',
+        description='''\
+lf_check.py
+-----------
+
+Summary :
+---------
+for running scripts listed in lf_check_config.ini
+            ''')
+
+    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data", default="")
+
+    args = parser.parse_args()    
+
+    # Create report, instanciate a reporting class
+    # need to be able to pass in the naming?
+    report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf_check.pdf")
+
+    current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+    csv_outfile = "lf_check_{}_{}.csv".format(args.csv_outfile,current_time)
+    csv_outfile = report.file_add_path(csv_outfile)
+    print("csv output file : {}".format(csv_outfile))
+
+    # create header
+
+
+    # lf_check() class created
+    check = lf_check(_csv_outfile = csv_outfile)
 
     #check.parse_ap_stats()
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
 
 
     check.run_script_test()
+
+    # Get Results
+    # csv_test_results_file =     
+    # csv_kpi_file
+
+    # report.set_title("LF Check (lf_check.py)")
+    # report.build_banner()
+    # report.set_table_title("LF Check Test Results")
+    # report.build_table_title()
+    # report.set_table_dataframe_from_csv(csv_kpi_file)
+    # report.build_table()
+    # report.write_html()
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf(_page_size = 'A4', _orientation='Portrait')
+
+
 
 
 if __name__ == '__main__':
