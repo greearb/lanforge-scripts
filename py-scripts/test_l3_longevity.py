@@ -378,7 +378,7 @@ class L3VariableTime(Realm):
 
         self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
 
-    def read_ap_stats(self,band):
+    def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
         ap_data = ""
         try:
