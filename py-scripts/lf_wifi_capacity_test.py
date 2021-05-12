@@ -352,7 +352,7 @@ class WiFiCapacityTest(cv_test):
                  influx_host="localhost",
                  influx_port=8086,
                  report_dir="",
-                 graphgroups=None
+                 graph_groups=None
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -388,7 +388,7 @@ class WiFiCapacityTest(cv_test):
         self.influx_host = influx_host,
         self.influx_port = influx_port
         self.report_dir = report_dir
-        self.graphgroups = graphgroups
+        self.graph_groups = graph_groups
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -462,7 +462,7 @@ class WiFiCapacityTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graphgroupsfile=self.graphgroups)
+                                 cv_cmds, graph_groups_file=self.graph_groups)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -515,7 +515,7 @@ def main():
                         help="ssid Password")
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
-    parser.add_argument("--graphgroups", help="File to save graphgroups to", default=None)
+    parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
@@ -547,7 +547,7 @@ def main():
                                 raw_lines=args.raw_line,
                                 raw_lines_file=args.raw_lines_file,
                                 sets=args.set,
-                                graphgroups=args.graphgroups
+                                graph_groups=args.graph_groups
                                 )
     WFC_Test.setup()
     WFC_Test.run()

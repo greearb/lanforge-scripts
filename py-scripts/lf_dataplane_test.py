@@ -134,7 +134,7 @@ class DataplaneTest(cvtest):
                  raw_lines=[],
                  raw_lines_file="",
                  sets=[],
-                 graphgroups=None
+                 graph_groups=None
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -158,7 +158,7 @@ class DataplaneTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
-        self.graphgroups = graphgroups
+        self.graph_groups = graph_groups
 
     def setup(self):
         # Nothing to do at this time.
@@ -203,7 +203,7 @@ class DataplaneTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graphgroupsfile=self.graphgroups)
+                                 cv_cmds, graph_groups_file=self.graph_groups)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
@@ -246,7 +246,7 @@ def main():
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
-    parser.add_argument("--graphgroups", help="File to save graphgroups to", default=None)
+    parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
 
     args = parser.parse_args()
 
@@ -271,7 +271,7 @@ def main():
                             raw_lines = args.raw_line,
                             raw_lines_file = args.raw_lines_file,
                             sets = args.set,
-                            graphgroups = args.graphgroups
+                            graph_groups = args.graph_groups
                             )
     CV_Test.setup()
     CV_Test.run()

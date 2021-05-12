@@ -13,6 +13,7 @@ import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
 from csv_to_influx import *
 
+
 def cv_base_adjust_parser(args):
     if args.test_rig != "":
         # TODO:  In future, can use TestRig once that GUI update has propagated
@@ -284,7 +285,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, graphgroupsfile=None):
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -307,7 +308,7 @@ class cv_test(Realm):
         self.auto_save_report(instance_name)
 
         for kv in sets:
-            cmd = "cv set '%s' '%s' '%s'"%(instance_name, kv[0], kv[1]);
+            cmd = "cv set '%s' '%s' '%s'" % (instance_name, kv[0], kv[1])
             print("Running CV set command: ", cmd)
             self.run_cv_cmd(cmd)
 
@@ -328,7 +329,7 @@ class cv_test(Realm):
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 print("Popup Dialog:\n")
                 print(dialog[0]["LAST"]["response"])
-            
+
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
             if location != '\"Report Location:::\"':
@@ -336,10 +337,14 @@ class cv_test(Realm):
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
-                print(graphgroupsfile)
-                if graphgroupsfile is not None:
-                    filelocation = open(graphgroupsfile, 'a')
-                    filelocation.write(location + '/kpi.csv\n')
+                print(graph_groups_file)
+                if graph_groups_file is not None:
+                    filelocation = open(graph_groups_file, 'a')
+                    if pull_report:
+                        location2 = location.replace('/home/lanforge/html-reports/', '')
+                        filelocation.write(location2 + '/kpi.csv\n')
+                    else:
+                        filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
                 print(location)
                 self.report_dir = location
@@ -350,7 +355,7 @@ class cv_test(Realm):
                                             report_location=location)
                 except Exception as e:
                     print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
-                    raise e#Exception("Could not find Reports")
+                    raise e  # Exception("Could not find Reports")
                 break
 
             # Of if test stopped for some reason and could not generate report.
@@ -409,7 +414,7 @@ class cv_test(Realm):
 
         print("All done posting to influx.\n")
 
-    #************************** chamber view **************************
+    # ************************** chamber view **************************
     def add_text_blob_line(self,
                            scenario_name="Automation",
                            Resources="1.1",

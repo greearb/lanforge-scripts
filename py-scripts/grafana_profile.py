@@ -95,7 +95,9 @@ class UseGrafana(LFCliBase):
                                 title=None,
                                 bucket=None,
                                 graph_groups=None,
-                                testbed=None):
+                                graph_groups_file=None,
+                                testbed=None,
+                                datasource='InfluxDB'):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -120,8 +122,12 @@ class UseGrafana(LFCliBase):
 
         panels = list()
         index = 1
-        for scriptname in scripts:
-            for graph_group in graph_groups:
+        if graph_groups_file:
+            print("graph_groups_file: %s" % graph_groups_file)
+            target_csvs = open(graph_groups_file).read().split('\n')
+            graph_groups = self.get_graph_groups(target_csvs)  # Get the list of graph groups which are in the tests we ran
+        for scriptname in graph_groups.keys():
+            for graph_group in graph_groups[scriptname]:
                 panel = dict()
 
                 gridpos = dict()
@@ -185,7 +191,7 @@ class UseGrafana(LFCliBase):
                 panel['bars'] = False
                 panel['dashes'] = False
                 panel['dashLength'] = 10
-                panel['datasource'] = 'InfluxDB'
+                panel['datasource'] = datasource
                 panel['fieldConfig'] = fieldConfig
                 panel['fill'] = 0
                 panel['fillGradient'] = 0
@@ -243,25 +249,35 @@ class UseGrafana(LFCliBase):
         input1['title'] = title
         input1['uid'] = uid
         input1['version'] = 11
-        # print(json.dumps(input1, indent=2))
         return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
-    def get_graph_groups(self,
-                         target_csvs):
-        groups = []
+    def read_csv(self, file):
+        csv=open(file).read().split('\n')
+        rows=list()
+        for x in csv:
+            if len(x) > 0:
+                rows.append(x.split('\t'))
+        return rows
+
+    def get_values(self, csv, target):
+        value=csv[0].index(target)
+        results=[]
+        for row in csv[1:]:
+            results.append(row[value])
+        return results
+
+    def get_graph_groups(self,target_csvs):
+        dictionary=dict()
         for target_csv in target_csvs:
-            with open(target_csv) as fp:
-                line = fp.readline()
-                line = line.split('\t')
-                graph_group_index = line.index('Graph-Group')
-                line = fp.readline()
-                while line:
-                    line = line.split('\t') #split the line by tabs to separate each item in the string
-                    graphgroup = line[graph_group_index]
-                    groups.append(graphgroup)
-                    line = fp.readline()
-        print(groups)
-        return list(set(groups))
+            if len(target_csv) > 1:
+                csv=self.read_csv(target_csv)
+                scripts=list(set(self.get_values(csv,'test-id')))
+                for value in ['Graph-Group']:
+                    for script in scripts:
+                        dictionary[script]=list(set(self.get_values(csv,value)))
+        print(dictionary)
+        return dictionary
+
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -304,10 +320,13 @@ def main():
     optional.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
     optional.add_argument('--title', help='title of your Grafana Dashboard', default=None)
     optional.add_argument('--influx_bucket', help='Name of your Influx Bucket', default=None)
-    optional.add_argument('--graph-groups', help='How you want to filter your graphs on your dashboard',
+    optional.add_argument('--graph_groups', help='How you want to filter your graphs on your dashboard',
                           action='append', default=[None])
+    optional.add_argument('--graph_groups_file', help='File which determines how you want to filter your graphs on your dashboard',
+                          default=None)
     optional.add_argument('--testbed', help='Which testbed you want to query', default=None)
     optional.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
+    optional.add_argument('--datasource', help='Name of Influx database if different from InfluxDB', default='InfluxDB')
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -334,7 +353,9 @@ def main():
                                         title=args.title,
                                         bucket=args.influx_bucket,
                                         graph_groups=args.graph_groups,
-                                        testbed=args.testbed)
+                                        graph_groups_file=args.graph_groups_file,
+                                        testbed=args.testbed,
+                                        datasource=args.datasource)
 
 
 if __name__ == "__main__":

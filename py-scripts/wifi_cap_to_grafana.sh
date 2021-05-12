@@ -9,11 +9,14 @@ MGR=192.168.1.6
 INFLUX_MGR=192.168.100.201
 #INFLUXTOKEN=Tdxwq5KRbj1oNbZ_ErPL5tw_HUH2wJ1VR4dwZNugJ-APz__mEFIwnqHZdoobmQpt2fa1VdWMlHQClR8XNotwbg==
 INFLUXTOKEN=31N9QDhjJHBu4eMUlMBwbK3sOjXLRAhZuCzZGeO8WVCj-xvR8gZWWvRHOcuw-5RHeB7xBFnLs7ZV023k4koR1A==
-TESTBED=Stidmatt-01
+TESTBED=Stidmatt-02
 INFLUXBUCKET=stidmatt
 #GRAFANATOKEN=eyJrIjoiZTJwZkZlemhLQVNpY3hiemRjUkNBZ3k2RWc3bWpQWEkiLCJuIjoibWFzdGVyIiwiaWQiOjF9
 GRAFANATOKEN=eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ==
 GROUPS=lf_cv_rpt_filelocation.txt
+
+rm lf_cv_rpt_filelocation.txt
+touch lf_cv_rpt_filelocation.txt
 
 # Create/update new DUT.
 #Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
@@ -34,17 +37,18 @@ echo "Build Chamber View Scenario"
 echo "run wifi capacity test"
 ./lf_wifi_capacity_test.py --config_name Custom --create_stations --radio wiphy1 --pull_report --influx_host ${INFLUX_MGR} \
 --influx_port 8086 --influx_org Candela --influx_token  ${INFLUXTOKEN} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} \
---instance_name testing --upstream eth1 --test_rig ${TESTBED} --graphgroups lf_cv_rpt_filelocation.txt --lf_password lanforgepassword
+--instance_name testing --upstream eth1 --test_rig ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s
 
 
 #config_name doesn't matter, change the influx_host to your LANforge device,
 echo "run Dataplane test"
 ./lf_dataplane_test.py --mgr ${MGR} --instance_name dataplane-instance --config_name test_config --upstream 1.1.eth1 \
 --station 1.1.06 --dut linksys-8450 --influx_host ${INFLUX_MGR} --influx_port 8086 --influx_org Candela --influx_token ${INFLUXTOKEN} \
---influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graphgroups lf_cv_rpt_filelocation.txt
+--influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s
 
 # Build grafana dashboard and graphs view for the KPI in the capacity test.
-./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token ${GRAFANATOKEN} \
---grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph-groups  lf_cv_rpt_filelocation.txt --scripts Dataplane --scripts 'WiFi Capacity'
+./grafana_profile.py --create_custom --title 'Stidmatt-02' --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token \
+${GRAFANATOKEN} --grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph_groups_file lf_cv_rpt_filelocation.txt \
+--scripts Dataplane --datasource 'InfluxDB stidmatt bucket'
 
-#rm ${GROUPS}
+rm lf_cv_rpt_filelocation.txt
