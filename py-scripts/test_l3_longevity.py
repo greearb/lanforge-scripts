@@ -560,7 +560,6 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 pprint(response)
                                 p = response['interface']
                                 print("#### p, response['insterface']:{}".format(p))
-                                mac = response['mac']
                                 mac = p['mac']
 
                                 ap_row = []
