@@ -266,15 +266,17 @@ class UseGrafana(LFCliBase):
             results.append(row[value])
         return results
 
-    def get_graph_groups(self,target_csvs):
+    def get_graph_groups(self,target_csvs): # Get the unique values in the Graph-Group column
         dictionary=dict()
         for target_csv in target_csvs:
             if len(target_csv) > 1:
-                csv=self.read_csv(target_csv)
-                scripts=list(set(self.get_values(csv,'test-id')))
-                for value in ['Graph-Group']:
-                    for script in scripts:
-                        dictionary[script]=list(set(self.get_values(csv,value)))
+                csv = self.read_csv(target_csv)
+                # Unique values in the test-id column
+                scripts = list(set(self.get_values(csv,'test-id')))
+                # we need to make sure we match each Graph Group to the script it occurs in
+                for script in scripts:
+                    # Unique Graph Groups for each script
+                    dictionary[script] = list(set(self.get_values(csv,'Graph-Group')))
         print(dictionary)
         return dictionary
 
