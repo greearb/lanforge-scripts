@@ -57,6 +57,7 @@ class lf_check():
         path_parent = os.path.dirname(os.getcwd())
         os.chdir(path_parent)
         self.scripts_wd = os.getcwd()
+        self.results = ""
 
     
     # Functions in this section are/can be overridden by descendants
@@ -160,11 +161,19 @@ class lf_check():
                 
                 #print("###################### STDOUT #########################")
                 print(process.stdout)
+                if (process.stdout == ''):
+                    print("stdout empty")
+                else:
+                    print("stdout not empty")                    
                 #print("###################### STDERR #########################")
+                # if the stderr is empty the test is considered , does there need to check for pass fail
                 print(process.stderr)
+                if (process.stderr == ''):
+                    print("stderr empty")
+                else:
+                    print("stderr not empty")
                 #except:
                 #    print("exception on command: {}".format(command))
-
 
 def main():
     check = lf_check()
