@@ -556,23 +556,23 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 print("query-port: %s: incomplete response:"%(url))
                                 pprint(response)
                             else:
-                                #print("response".format(response))
-                                #pprint(response)
+                                print("response".format(response))
+                                pprint(response)
                                 p = response['interface']
-                                #print("#### p, response['insterface']:{}".format(p))
-                                # mac = response['mac']
+                                print("#### p, response['insterface']:{}".format(p))
+                                mac = response['mac']
                                 mac = p['mac']
 
                                 ap_row = []
                                 for row in ap_stats_rows:
-                                    #print("row[0] {}  mac {}".format(row[0].lower(),mac.lower()))
+                                    print("row[0] {}  mac {}".format(row[0].lower(),mac.lower()))
                                     if self.ap_test_mode:
-                                        if row[0].lower != mac.lower():
+                                        if row[0].lower() != mac.lower():
                                             ap_row = row
                                     else:
                                         if row[0].lower() == mac.lower():
                                             ap_row = row
-                                #print("selected ap_row: {}".format(ap_row))
+                                print("selected ap_row: {}".format(ap_row))
 
                                 # p is map of key/values for this port
                                 #print("port: ")
