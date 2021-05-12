@@ -5,11 +5,11 @@
 # into influxdb.  As final step, it builds a grafana dashboard for the KPI information.
 
 # Define some common variables.  This will need to be changed to match your own testbed.
-MGR=192.168.1.6
+MGR=10.0.0.202
 INFLUX_MGR=192.168.100.201
 #INFLUXTOKEN=Tdxwq5KRbj1oNbZ_ErPL5tw_HUH2wJ1VR4dwZNugJ-APz__mEFIwnqHZdoobmQpt2fa1VdWMlHQClR8XNotwbg==
 INFLUXTOKEN=31N9QDhjJHBu4eMUlMBwbK3sOjXLRAhZuCzZGeO8WVCj-xvR8gZWWvRHOcuw-5RHeB7xBFnLs7ZV023k4koR1A==
-TESTBED=Stidmatt-02
+TESTBED=Stidmatt-01
 INFLUXBUCKET=stidmatt
 #GRAFANATOKEN=eyJrIjoiZTJwZkZlemhLQVNpY3hiemRjUkNBZ3k2RWc3bWpQWEkiLCJuIjoibWFzdGVyIiwiaWQiOjF9
 GRAFANATOKEN=eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ==
@@ -47,7 +47,7 @@ echo "run Dataplane test"
 --influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s
 
 # Build grafana dashboard and graphs view for the KPI in the capacity test.
-./grafana_profile.py --create_custom --title 'Stidmatt-02' --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token \
+./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token \
 ${GRAFANATOKEN} --grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph_groups_file lf_cv_rpt_filelocation.txt \
 --scripts Dataplane --datasource 'InfluxDB stidmatt bucket'
 

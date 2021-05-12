@@ -126,6 +126,11 @@ class UseGrafana(LFCliBase):
             print("graph_groups_file: %s" % graph_groups_file)
             target_csvs = open(graph_groups_file).read().split('\n')
             graph_groups = self.get_graph_groups(target_csvs)  # Get the list of graph groups which are in the tests we ran
+            unit_dict = dict()
+            for csv in target_csvs:
+                if len(csv)>1:
+                    print(csv)
+                    unit_dict.update(self.get_units(csv))
         for scriptname in graph_groups.keys():
             for graph_group in graph_groups[scriptname]:
                 panel = dict()
@@ -177,7 +182,7 @@ class UseGrafana(LFCliBase):
 
                 yaxis = dict()
                 yaxis['format'] = 'short'
-                yaxis['label'] = None
+                yaxis['label'] = unit_dict[graph_group]
                 yaxis['logBase'] = 1
                 yaxis['max'] = None
                 yaxis['min'] = None
@@ -246,28 +251,28 @@ class UseGrafana(LFCliBase):
         input1['time'] = timedict
         input1['timepicker'] = dict()
         input1['timezone'] = ''
-        input1['title'] = title
+        input1['title'] = ("Testbed: %s" % title)
         input1['uid'] = uid
         input1['version'] = 11
         return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
     def read_csv(self, file):
-        csv=open(file).read().split('\n')
-        rows=list()
+        csv = open(file).read().split('\n')
+        rows = list()
         for x in csv:
             if len(x) > 0:
                 rows.append(x.split('\t'))
         return rows
 
     def get_values(self, csv, target):
-        value=csv[0].index(target)
-        results=[]
+        value = csv[0].index(target)
+        results = []
         for row in csv[1:]:
             results.append(row[value])
         return results
 
     def get_graph_groups(self,target_csvs): # Get the unique values in the Graph-Group column
-        dictionary=dict()
+        dictionary = dict()
         for target_csv in target_csvs:
             if len(target_csv) > 1:
                 csv = self.read_csv(target_csv)
@@ -279,6 +284,13 @@ class UseGrafana(LFCliBase):
                     dictionary[script] = list(set(self.get_values(csv,'Graph-Group')))
         print(dictionary)
         return dictionary
+
+    def get_units(self, target_csv):
+        csv = self.read_csv(target_csv)
+        graph_group = self.get_values(csv, 'Graph-Group')
+        units = self.get_values(csv, 'Units')
+        return dict(zip(graph_group, units))
+
 
 
 def main():
