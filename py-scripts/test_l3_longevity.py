@@ -524,7 +524,7 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                     # '''
                     if self.ap_read:
                         if self.ap_test_mode:
-                            ap_stats = [];
+                            '''ap_stats = [];
                             ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
                             ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
                             ap_stats.append("04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
@@ -533,16 +533,21 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                             ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
                             # - note the MAC will match ap_stats.append("(overall)          -      200.2      26.5%         -         -")
                             # '''
+                            ap_stats = "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0% \n 50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%"
                         # read from the AP
                         else:
                             ap_stats = self.read_ap_stats()
 
-                        ap_stats_rows = [] # Array of Arrays
-                        for line in ap_stats:
+                        #ap_stats_rows = [] # Array of Arrays
+
+                        ap_stats_rows = ap_stats.splitlines()
+                        print("ap_stats_rows {}".format(ap_stats_rows))
+
+                        '''for line in ap_stats:
                             print("ap_stats: {}".format(line))
                             stats_row = line.split()
                             print("ap_stats split {}".format(stats_row))
-                            ap_stats_rows.append(stats_row)
+                            ap_stats_rows.append(stats_row)'''
 
                         try:
                             m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',str(ap_stats_rows[0]))
