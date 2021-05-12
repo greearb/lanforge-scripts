@@ -33,6 +33,8 @@ import sys
 #from ..lf_report import lf_report
 sys.path.append('../')
 from lf_report import lf_report
+sys.path.append('/')
+
     
 
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
@@ -53,7 +55,8 @@ class FileAdapter(object):
 
 class lf_check():
     def __init__(self,
-                _csv_outfile):
+                _csv_outfile,
+                _outfile):
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -62,7 +65,8 @@ class lf_check():
         os.chdir(path_parent)
         self.scripts_wd = os.getcwd()
         self.results = ""
-        self.csv_outfile = _csv_outfile
+        self.csv_outfile = _csv_outfile,
+        self.outfile = _outfile
 
     
     # Functions in this section are/can be overridden by descendants
@@ -102,7 +106,11 @@ class lf_check():
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
-        process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
+        #process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
+        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        # wait for the process to terminate
+        out, err = process.communicate()
+        errcode = process.returncode
         print("###################### STDOUT - scenario load FACTORY_DFLT #########################")
         print(process.stdout)
         print("###################### STDERR - scenario load FACTORY_DFLT #########################")
@@ -158,18 +166,28 @@ class lf_check():
                 # Put lanforge in known state
 
                 #try:
-                process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-                #process = subprocess.run((command).split(' '), check= True, capture_output=True, timeout=30 )
+                if self.outfile is not None:
+                    stdout_log_txt = self.outfile[:-4]
+                    stdout_log_txt = stdout_log_txt + "{}-stdout.txt".format(test)
+                    print("stdout_log_txt: {}".format(stdout_log_txt))
+                    stdout_log = open(stdout_log_txt, 'a')
+                    stderr_log_txt = self.outfile[:-4]
+                    stderr_log_txt = stderr_log_txt + "{}-stderr.txt".format(test)                    
+                    print("stdout_log_txt: {}".format(stderr_log_txt))
+                    stderr_log = open(stderr_log_txt, 'a')
+                #process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                # wait for the process to terminate
+                out, err = process.communicate()
+                errcode = process.returncode
+
                 #pss1 = process.stdout.decode('utf-8', 'ignore')
                 #print(pss1)
-
                 
                 #print("###################### STDOUT #########################")
-                print(process.stdout)
-                if (process.stdout == ''):
-                    print("stdout empty")
-                else:
-                    print("stdout not empty")                    
+                #print(process.stdout)
+                print(stdout_log_txt)
+                print(stderr_log_txt)
                 #print("###################### STDERR #########################")
                 # if the stderr is empty the test is considered , does there need to check for pass fail
                 print(process.stderr)
@@ -197,24 +215,29 @@ Summary :
 for running scripts listed in lf_check_config.ini
             ''')
 
-    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data", default="")
+    parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
 
     args = parser.parse_args()    
 
     # Create report, instanciate a reporting class
     # need to be able to pass in the naming?
-    report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf_check.pdf")
+    report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf-check.pdf")
 
-    current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-    csv_outfile = "lf_check_{}_{}.csv".format(args.csv_outfile,current_time)
+    current_time = time.strftime("%m-%d-%Y-%H-%M-%S", time.localtime())
+    csv_outfile = "lf_check-{}-{}.csv".format(args.outfile,current_time)
     csv_outfile = report.file_add_path(csv_outfile)
     print("csv output file : {}".format(csv_outfile))
+    outfile = "lf_check-{}-{}".format(args.outfile,current_time)
+    outfile = report.file_add_path(outfile)
+    print("output file : {}".format(outfile))
+
 
     # create header
 
 
     # lf_check() class created
-    check = lf_check(_csv_outfile = csv_outfile)
+    check = lf_check(_csv_outfile = csv_outfile,
+                    _outfile = outfile)
 
     #check.parse_ap_stats()
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
