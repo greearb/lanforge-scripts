@@ -118,7 +118,6 @@ class lf_report():
         print("graph_dst_file: {}".format(graph_dst_file))
         shutil.move(graph_src_file,graph_dst_file)
 
-
     def set_path(self,_path):
         self.path = _path
 
@@ -130,10 +129,6 @@ class lf_report():
         else:
             self.date = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
             self.date_time_directory = self.date + str("_") + str(self.results_dir_name)
-
-    #def set_date_time_directory(self,date_time_directory):
-    #    self.date_time_directory = date_time_directory
-
 
     def build_date_time_directory(self):
         if self.date_time_directory == "":
@@ -221,7 +216,6 @@ class lf_report():
         self.write_html()            
         self.write_pdf()
 
-    # only use is pass all data in constructor, no graph output
     def build_all(self):
         self.build_banner()
         self.build_table_title()
@@ -312,7 +306,6 @@ class lf_report():
             <br><br>
             """
         self.html +=self.graph_html_obj
-
 
 # Unit Test
 if __name__ == "__main__":

@@ -35,8 +35,6 @@ sys.path.append('../')
 from lf_report import lf_report
 sys.path.append('/')
 
-    
-
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
 RUN_CONDITION = 'ENABLE'
 
@@ -52,7 +50,6 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
-
 class lf_check():
     def __init__(self,
                 _csv_outfile,
@@ -67,7 +64,6 @@ class lf_check():
         self.results = ""
         self.csv_outfile = _csv_outfile,
         self.outfile = _outfile
-
     
     # Functions in this section are/can be overridden by descendants
     def read_config_contents(self):
@@ -106,15 +102,10 @@ class lf_check():
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
-        #process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         # wait for the process to terminate
         out, err = process.communicate()
         errcode = process.returncode
-        print("###################### STDOUT - scenario load FACTORY_DFLT #########################")
-        print(process.stdout)
-        print("###################### STDERR - scenario load FACTORY_DFLT #########################")
-        print(process.stderr)
 
     def load_blank_db(self):
         print("file_wd {}".format(self.scripts_wd))
@@ -126,12 +117,7 @@ class lf_check():
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load BLANK")
-        process = subprocess.run((command).split(' '), check= True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,timeout=20)
-        print("###################### STDOUT - scenario load BLANK #########################")
-        print(process.stdout)
-        print("###################### STDERR - scenario load BLANK #########################")
-        print(process.stderr)
-
+        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     def run_script_test(self):
         for test in self.test_dict:
@@ -144,9 +130,7 @@ class lf_check():
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}"'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
-                # Clear out the database
                 self.load_factory_default_db()
-                #self.load_blank_db()
                 sleep(5) # the sleep is to allow for the database to stablize
 
                 # CMR this is just to get the directory with the scripts to run. 
@@ -158,14 +142,9 @@ class lf_check():
                     print("failed to change to {}".format(self.scripts_wd))
                 cmd_args = "{}".format(self.test_dict[test]['args'])
                 command = "./{} {}".format(self.test_dict[test]['command'], cmd_args)
-                #command = "{}/{}".format(scripts_wd,self.test_dict[test]['command'])
-                # cmd_args = "{}".format(self.test_dict[test]['args'])
                 print("command: {}".format(command))
                 print("cmd_args {}".format(cmd_args))
 
-                # Put lanforge in known state
-
-                #try:
                 if self.outfile is not None:
                     stdout_log_txt = self.outfile[:-4]
                     stdout_log_txt = stdout_log_txt + "{}-stdout.txt".format(test)
@@ -181,22 +160,19 @@ class lf_check():
                 out, err = process.communicate()
                 errcode = process.returncode
 
-                #pss1 = process.stdout.decode('utf-8', 'ignore')
-                #print(pss1)
-                
-                #print("###################### STDOUT #########################")
-                #print(process.stdout)
                 print(stdout_log_txt)
-                print(stderr_log_txt)
-                #print("###################### STDERR #########################")
-                # if the stderr is empty the test is considered , does there need to check for pass fail
-                print(process.stderr)
-                if (process.stderr == ''):
-                    print("stderr empty")
+                stdout_log_size = os.path.getsize(stdout_log_txt)
+                if stdout_log_size == 0:
+                    print("File: {} is empty: {}".format(stdout_log_txt,str(stdout_log_size)))
                 else:
-                    print("stderr not empty")
-                #except:
-                #    print("exception on command: {}".format(command))
+                    print("File: {} is not empty: {}".format(stdout_log_txt,str(stdout_log_size)))
+
+                print(stderr_log_txt)
+                stderr_log_size = os.path.getsize(stderr_log_txt)
+                if stderr_log_size == 0:
+                    print("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                else:
+                    print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
 
 def main():
     # arguments
