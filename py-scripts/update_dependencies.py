@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# INCLUDE_IN_README
+'''
+NAME: update_dependencies.py 
+
+PURPOSE:  Installs python3 script package dependencies
+
+OUTPUT: List of successful and unsuccessful installs
+
+NOTES: Install as root
+'''
+
 import subprocess
 def main():
     print("Installing Script Python3 Dependencies")
