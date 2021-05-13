@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import pdfkit
 from lf_report import lf_report
-from lf_graph import lf_bar_graph, lf_scatter_graph , lf_stacked_graph
+from lf_graph import lf_bar_graph, lf_scatter_graph , lf_stacked_graph, lf_horizontal_stacked_graph
 
 # Unit Test
 if __name__ == "__main__":
@@ -103,11 +103,25 @@ if __name__ == "__main__":
     report.build_graph()
     set1 = [1, 2, 3, 4]
     set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]
-    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis",
+    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis", _values = None,
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name1",
                               _color=None,
                               _label=["s1", "s2", "s3"])
+    graph_png = graph2.build_scatter_graph()
+
+    print("graph name {}".format(graph_png))
+
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+
+    report.build_graph()
+    # this will generate graph which is independent,we can customize the value with different colors
+    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=[45, 67, 45, 34], _values=[0 , 0, 0, 1], _xaxis_name="x-axis",
+                              _yaxis_name="y-axis",
+                              _graph_image_name="image_name_map",
+                              _color=None,
+                              _label=["s1", "s2"])
     graph_png = graph2.build_scatter_graph()
 
     print("graph name {}".format(graph_png))
@@ -125,6 +139,27 @@ if __name__ == "__main__":
                              _color=None)
 
     graph_png = graph.build_stacked_graph()
+
+    print("graph name {}".format(graph_png))
+
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+
+    graph = lf_horizontal_stacked_graph(_seg= 2,
+                _yaxis_set=('A','B'),
+                _xaxis_set1=[12, 65],
+                _xaxis_set2=[23, 34],
+                _unit="",
+                _xaxis_name="Stations",
+                _label=['Success', 'Fail'],
+                _graph_image_name="image_name_pass_fail",
+                _color=["r", "g"],
+                _figsize=(9, 4))
+
+    graph_png = graph.build_horizontal_stacked_graph()
 
     print("graph name {}".format(graph_png))
 

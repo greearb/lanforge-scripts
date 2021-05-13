@@ -275,7 +275,7 @@ class lf_report():
             os.mkdir(self.path_date_time)       
 
     def build_table(self):
-        self.dataframe_html = self.dataframe.to_html(index=False)  # have the index be able to be passed in.
+        self.dataframe_html = self.dataframe.to_html(index=False, justify='center')  # have the index be able to be passed in.
         self.html += self.dataframe_html
 
     def build_custom(self):

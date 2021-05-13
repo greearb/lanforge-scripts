@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 import pdfkit
 import math
+from matplotlib.colors import ListedColormap
 
 # internal candela references included during intial phases, to be deleted at future date
 
@@ -98,8 +99,9 @@ class lf_bar_graph():
 
 class lf_scatter_graph():
     def __init__(self,
-                _x_data_set= ["sta0 ","sta1","sta2","sta3"],
-                _y_data_set= [[30,55,69,37]],
+                _x_data_set=["sta0 ","sta1","sta2","sta3"],
+                _y_data_set=[[30,55,69,37]],
+                _values =None,
                 _xaxis_name="x-axis",
                 _yaxis_name="y-axis",
                  _label = ["num1", "num2"],
@@ -114,19 +116,28 @@ class lf_scatter_graph():
         self.graph_image_name = _graph_image_name
         self.color = _color
         self.label = _label
+        self.values = _values
 
     def build_scatter_graph(self):
         if self.color is None:
             self.color = ["orchid", "lime", "aquamarine", "royalblue", "darkgray", "maroon"]
         fig = plt.subplots(figsize=self.figsize)
-        plt.scatter(self.x_data_set, self.y_data_set[0], color=self.color[0], label=self.label[0])
-        if len(self.y_data_set) > 1:
-            for i in range(1,len(self.y_data_set)):
-                plt.scatter(self.x_data_set, self.y_data_set[i], color=self.color[i], label=self.label[i])
-        plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
-        plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
-        plt.gcf().autofmt_xdate()
-        plt.legend()
+        if self.values is None:
+            plt.scatter(self.x_data_set, self.y_data_set[0], color=self.color[0], label=self.label[0])
+            if len(self.y_data_set) > 1:
+                for i in range(1,len(self.y_data_set)):
+                    plt.scatter(self.x_data_set, self.y_data_set[i], color=self.color[i], label=self.label[i])
+            plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+            plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+            plt.gcf().autofmt_xdate()
+            plt.legend()
+        else:
+            colours = ListedColormap(self.color)
+            scatter = plt.scatter(self.x_data_set, self.y_data_set, c=self.values, cmap=colours)
+            plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+            plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+            plt.gcf().autofmt_xdate()
+            plt.legend(handles=scatter.legend_elements()[0], labels=self.label)
         plt.savefig("%s.png" % (self.graph_image_name), dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
@@ -163,6 +174,69 @@ class lf_stacked_graph():
         plt.xlabel(self.xaxis_name)
         plt.ylabel(self.yaxis_name)
         plt.legend(self.label)
+        plt.savefig("%s.png" % (self.graph_image_name), dpi=96)
+        plt.close()
+        print("{}.png".format(self.graph_image_name))
+
+        return "%s.png" % (self.graph_image_name)
+
+class lf_horizontal_stacked_graph():
+    def __init__(self,
+                _seg= 2,
+                _yaxis_set=('A','B'),
+                _xaxis_set1=[12, 0, 0, 16, 15],
+                _xaxis_set2 = [23, 34, 23, 0],
+                _unit ="%",
+                _xaxis_name="Stations",
+                _label=['Success', 'Fail'],
+                _graph_image_name="image_name",
+                _color=["success", "Fail"],
+                _figsize=(9,4)):
+        self.unit = _unit
+        self.seg = _seg
+        self.xaxis_set1 = _xaxis_set1
+        self.xaxis_set2 = _xaxis_set2
+        self.yaxis_set = _yaxis_set
+        self.xaxis_name = _xaxis_name
+        self.figsize = _figsize
+        self.graph_image_name = _graph_image_name
+        self.label = _label
+        self.color = _color
+
+    def build_horizontal_stacked_graph(self):
+        def sumzip(items):
+            return [sum(values) for values in zip(items)]
+
+        fig, ax = plt.subplots(figsize=self.figsize)
+
+        N = self.seg
+        values1 = self.xaxis_set1
+        values2 = self.xaxis_set2
+
+        ind = np.arange(N) + .15
+        width = 0.3
+
+        rects1 = plt.barh(ind, values1, width, color=self.color[0], label=self.label[0])
+        rects2 = plt.barh(ind, values2, width, left=sumzip(values1), color=self.color[1],label=self.label[1])
+
+        extra_space = 0.15
+        ax.set_yticks(ind + width - extra_space)
+        ax.set_yticklabels(self.yaxis_set)
+        ax.yaxis.set_tick_params(length=0, labelbottom=True)
+
+        for i, v in enumerate(values1):
+            if v!=0:
+                plt.text(v * 0.45, i + .145, "%s%s" % (v, self.unit), color='white', fontweight='bold', fontsize=10,
+                         ha='center', va='center')
+
+        for i, v in enumerate(values2):
+            if v != 0:
+                plt.text(v * 0.45 + values1[i], i + .145, "%s%s" % (v, self.unit), color='white', fontweight='bold', fontsize=10,
+                         ha='center', va='center')
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend(loc='upper right')
         plt.savefig("%s.png" % (self.graph_image_name), dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
