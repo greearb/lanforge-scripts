@@ -552,7 +552,7 @@ class L3VariableTime(Realm):
                                         #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
-                                                ap_row = row
+                                                ap_row = split_row
                                         else:
                                             if split_row[0].lower() == mac.lower():
                                                 ap_row = split_row
