@@ -39,17 +39,19 @@ class CSVtoInflux():
                  _capture_signal_list=[],
                  influxdb=None,
                  _influx_tag=[],
-                 target_csv=None):
+                 target_csv=None,
+                 sep='\t'):
         self.influxdb = influxdb
         self.target_csv = target_csv.replace('/home/lanforge/html-reports/', '')
         self.influx_tag = _influx_tag
+        self.sep = sep
 
     def read_csv(self, file):
         csv = open(file).read().split('\n')
         rows = list()
         for x in csv:
             if len(x) > 0:
-                rows.append(x.split('\t'))
+                rows.append(x.split(self.sep))
         return rows
 
     # Submit data to the influx db if configured to do so.
@@ -57,6 +59,7 @@ class CSVtoInflux():
         df = self.read_csv(self.target_csv)
         length = list(range(0, len(df[0])))
         columns = dict(zip(df[0], length))
+        print('columns: %s' % columns)
         influx_variables = ['script', 'short-description', 'test_details', 'Graph-Group',
                             'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Units']
         csv_variables = ['test-id', 'short-description', 'test details', 'Graph-Group',
@@ -64,6 +67,7 @@ class CSVtoInflux():
         csv_vs_influx = dict(zip(csv_variables, influx_variables))
         for row in df[1:]:
             tags = dict()
+            print("row: %s" % row)
             short_description = row[columns['short-description']]
             numeric_score = float(row[columns['numeric-score']])
             date = row[columns['Date']]
@@ -138,6 +142,7 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
     # This argument is specific to this script, so not part of the generic influxdb parser args
     # method above.
     parser.add_argument('--target_csv', help='CSV file to record to influx database', default="")
+    parser.add_argument('--sep', help='character to split CSV by', default='\t')
 
     args = parser.parse_args()
 
@@ -151,7 +156,8 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
 
     csvtoinflux = CSVtoInflux(influxdb=influxdb,
                               target_csv=args.target_csv,
-                              _influx_tag=args.influx_tag)
+                              _influx_tag=args.influx_tag,
+                              sep=args.sep)
     csvtoinflux.post_to_influx()
 
 

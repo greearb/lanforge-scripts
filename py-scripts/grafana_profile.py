@@ -98,7 +98,9 @@ class UseGrafana(LFCliBase):
                                 graph_groups_file=None,
                                 testbed=None,
                                 datasource='InfluxDB',
-                                from_date='now-1y'):
+                                from_date='now-1y',
+                                graph_height=8,
+                                graph__width=12):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -137,8 +139,8 @@ class UseGrafana(LFCliBase):
                 panel = dict()
 
                 gridpos = dict()
-                gridpos['h'] = 8
-                gridpos['w'] = 12
+                gridpos['h'] = graph_height
+                gridpos['w'] = graph__width
                 gridpos['x'] = 0
                 gridpos['y'] = 0
 
@@ -343,6 +345,8 @@ def main():
     optional.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
     optional.add_argument('--datasource', help='Name of Influx database if different from InfluxDB', default='InfluxDB')
     optional.add_argument('--from_date', help='Date you want to start your Grafana dashboard from', default='now-1y')
+    optional.add_argument('--graph_height', help='Custom height for the graph on grafana dashboard', default=8)
+    optional.add_argument('--graph_width', help='Custom width for the graph on grafana dashboard', default=12)
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -372,7 +376,9 @@ def main():
                                         graph_groups_file=args.graph_groups_file,
                                         testbed=args.testbed,
                                         datasource=args.datasource,
-                                        from_date=args.from_date)
+                                        from_date=args.from_date,
+                                        graph_height=args.graph_height,
+                                        graph__width=args.graph_width)
 
 
 if __name__ == "__main__":
