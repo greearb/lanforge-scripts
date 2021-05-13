@@ -18,36 +18,35 @@ COPYWRITE
 INCLUDE_IN_README
 '''
 
-import matplotlib.pyplot as plt 
-import matplotlib as mpl 
-import numpy as np 
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
 import pandas as pd
 import pdfkit
 from lf_report import lf_report
-from lf_graph import lf_bar_graph, lf_scatter_graph , lf_stacked_graph, lf_horizontal_stacked_graph
+from lf_graph import lf_bar_graph, lf_scatter_graph, lf_stacked_graph, lf_horizontal_stacked_graph
 
 # Unit Test
 if __name__ == "__main__":
-
-    # Testing: generate data frame 
+    # Testing: generate data frame
     dataframe = pd.DataFrame({
-    'product':['CT521a-264-1ac-1n','CT521a-1ac-1ax','CT522-264-1ac2-1n','CT523c-2ac2-db-10g-cu','CT523c-3ac2-db-10g-cu','CT523c-8ax-ac10g-cu','CT523c-192-2ac2-1ac-10g'],
-    'radios':[1,1,2,2,6,9,3],
-    'MIMO':['N','N','N','Y','Y','Y','Y'],
-    'stations':[200,64,200,128,384,72,192],
-    'mbps':[300,300,300,10000,10000,10000,10000]
+        'product': ['CT521a-264-1ac-1n', 'CT521a-1ac-1ax', 'CT522-264-1ac2-1n', 'CT523c-2ac2-db-10g-cu',
+                    'CT523c-3ac2-db-10g-cu', 'CT523c-8ax-ac10g-cu', 'CT523c-192-2ac2-1ac-10g'],
+        'radios': [1, 1, 2, 2, 6, 9, 3],
+        'MIMO': ['N', 'N', 'N', 'Y', 'Y', 'Y', 'Y'],
+        'stations': [200, 64, 200, 128, 384, 72, 192],
+        'mbps': [300, 300, 300, 10000, 10000, 10000, 10000]
     })
 
     print(dataframe)
 
     # Testing: generate data frame 
     dataframe2 = pd.DataFrame({
-     'station':[1,2,3,4,5,6,7],
-     'time_seconds':[23,78,22,19,45,22,25]
+        'station': [1, 2, 3, 4, 5, 6, 7],
+        'time_seconds': [23, 78, 22, 19, 45, 22, 25]
     })
 
-
-    #report = lf_report(_dataframe=dataframe)
+    # report = lf_report(_dataframe=dataframe)
     report = lf_report()
 
     report_path = report.get_path()
@@ -59,9 +58,8 @@ if __name__ == "__main__":
     report.set_title("Banner Title One")
     report.build_banner()
 
-
-    #report.set_title("Banner Title Two")
-    #report.build_banner()
+    # report.set_title("Banner Title Two")
+    # report.build_banner()
 
     report.set_table_title("Title One")
     report.build_table_title()
@@ -76,21 +74,20 @@ if __name__ == "__main__":
     report.build_table()
 
     # test lf_graph in report
-    dataset = [[45,67,34,22],[22,45,12,34],[30,55,69,37]]
-    x_axis_values = [1,2,3,4]
+    dataset = [[45, 67, 34, 22], [22, 45, 12, 34], [30, 55, 69, 37]]
+    x_axis_values = [1, 2, 3, 4]
 
     report.set_graph_title("Graph Title")
     report.build_graph_title()
-    
-    graph = lf_bar_graph(_data_set=dataset, 
-                        _xaxis_name="stations", 
-                        _yaxis_name="Throughput 2 (Mbps)", 
-                        _xaxis_categories=x_axis_values,
-                        _graph_image_name="Bi-single_radio_2.4GHz",
-                        _label=["bi-downlink", "bi-uplink",'uplink'], 
-                        _color=None,
-                        _color_edge='red')
 
+    graph = lf_bar_graph(_data_set=dataset,
+                         _xaxis_name="stations",
+                         _yaxis_name="Throughput 2 (Mbps)",
+                         _xaxis_categories=x_axis_values,
+                         _graph_image_name="Bi-single_radio_2.4GHz",
+                         _label=["bi-downlink", "bi-uplink", 'uplink'],
+                         _color=None,
+                         _color_edge='red')
 
     graph_png = graph.build_bar_graph()
 
@@ -103,7 +100,7 @@ if __name__ == "__main__":
     report.build_graph()
     set1 = [1, 2, 3, 4]
     set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]
-    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis", _values = None,
+    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis", _values=None,
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name1",
                               _color=None,
@@ -117,7 +114,8 @@ if __name__ == "__main__":
 
     report.build_graph()
     # this will generate graph which is independent,we can customize the value with different colors
-    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=[45, 67, 45, 34], _values=[0 , 0, 0, 1], _xaxis_name="x-axis",
+    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=[45, 67, 45, 34], _values=[0, 0, 0, 1],
+                              _xaxis_name="x-axis",
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name_map",
                               _color=None,
@@ -146,18 +144,16 @@ if __name__ == "__main__":
     report.move_graph_image()
     report.build_graph()
 
-
-
-    graph = lf_horizontal_stacked_graph(_seg= 2,
-                _yaxis_set=('A','B'),
-                _xaxis_set1=[12, 65],
-                _xaxis_set2=[23, 34],
-                _unit="",
-                _xaxis_name="Stations",
-                _label=['Success', 'Fail'],
-                _graph_image_name="image_name_pass_fail",
-                _color=["r", "g"],
-                _figsize=(9, 4))
+    graph = lf_horizontal_stacked_graph(_seg=2,
+                                        _yaxis_set=('A', 'B'),
+                                        _xaxis_set1=[12, 65],
+                                        _xaxis_set2=[23, 34],
+                                        _unit="",
+                                        _xaxis_name="Stations",
+                                        _label=['Success', 'Fail'],
+                                        _graph_image_name="image_name_pass_fail",
+                                        _color=["r", "g"],
+                                        _figsize=(9, 4))
 
     graph_png = graph.build_horizontal_stacked_graph()
 
@@ -166,17 +162,17 @@ if __name__ == "__main__":
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
-    #report.build_all()
+    # report.build_all()
 
-    html_file = report.write_html() 
+    html_file = report.write_html()
     print("returned file {}".format(html_file))
     print(html_file)
 
     # try other pdf formats
-    #report.write_pdf()
-    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    #report.write_pdf(_page_size = 'A4', _orientation='Landscape')
-    report.write_pdf(_page_size = 'Legal', _orientation='Landscape')
-    #report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
+    # report.write_pdf()
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf(_page_size = 'A4', _orientation='Landscape')
+    report.write_pdf(_page_size='Legal', _orientation='Landscape')
+    # report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
 
-    #report.generate_report()
+    # report.generate_report()
