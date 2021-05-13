@@ -507,8 +507,6 @@ class L3VariableTime(Realm):
 
                         #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
-                    # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
                     # RAW OUTPUT
                     '''
                     root@Docsis-Gateway:~# wl -i wl1 bs_data
@@ -524,16 +522,15 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                     # '''
                     if self.ap_read:
                         if self.ap_test_mode:
-                            '''ap_stats = [];
-                            ap_stats.append("root@Docsis-Gateway:~# wl -i wl1 bs_data")
-                            ap_stats.append("Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo")
-                            ap_stats.append("04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%")
-                            ap_stats.append("50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%")
-                            ap_stats.append("50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%")
-                            ap_stats.append("50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%")
-                            # - note the MAC will match ap_stats.append("(overall)          -      200.2      26.5%         -         -")
-                            # '''
-                            ap_stats = "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0% \n 50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%"
+                            # Create the test data as a continuous string
+                            ap_stats="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                            "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+                            "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+                            "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+                            "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+                            "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
+                            "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+                            print("ap_stats {}".format(ap_stats))
                         # read from the AP
                         else:
                             ap_stats = self.read_ap_stats()
@@ -542,17 +539,6 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
 
                         ap_stats_rows = ap_stats.splitlines()
                         print("ap_stats_rows {}".format(ap_stats_rows))
-
-                        '''for line in ap_stats:
-                            print("ap_stats: {}".format(line))
-                            stats_row = line.split()
-                            print("ap_stats split {}".format(stats_row))
-                            ap_stats_rows.append(stats_row)'''
-
-                        try:
-                            m = re.search(r'(\S+)\s+(\S+)\s+(Data Mbps)\s+(Air Use)',str(ap_stats_rows[0]))
-                        except:
-                            print("regedit had issue with re.search ")
 
                         # Query all of our ports
                         # Note: the endp eid is the shelf.resource.port.endp-id
@@ -565,26 +551,25 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 print("query-port: %s: incomplete response:"%(url))
                                 pprint(response)
                             else:
-                                #print("response".format(response))
-                                pprint(response)
+                                # print("response".format(response))
+                                # pprint(response)
                                 p = response['interface']
                                 #print("#### p, response['insterface']:{}".format(p))
                                 mac = p['mac']
 
                                 ap_row = []
                                 for row in ap_stats_rows:
-                                    print("row[0] {}  mac {}".format(row[0].lower(),mac.lower()))
+                                    split_row = row.split()
+                                    print("split_row {}".format(split_row))
+                                    print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                     if self.ap_test_mode:
-                                        if row[0].lower() != mac.lower():
+                                        if split_row[0].lower() != mac.lower():
                                             ap_row = row
                                     else:
-                                        if row[0].lower() == mac.lower():
-                                            ap_row = row
-                                print("selected ap_row: {}".format(ap_row))
+                                        if split_row[0].lower() == mac.lower():
+                                            ap_row = split_row
+                                print("selected ap_row (from split_row): {}".format(ap_row))
 
-                                # p is map of key/values for this port
-                                #print("port: ")
-                                # pprint(p)
 
                                 # Find latency, jitter for connections using this port.
                                 latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
@@ -596,6 +581,10 @@ Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mc
                                 #self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                 #                    latency, jitter, tput, ap_row, ap_stats_col_titles)
 
+
+
+                    # At end of test step, record KPI information.
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
