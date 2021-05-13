@@ -507,79 +507,65 @@ class L3VariableTime(Realm):
 
                         #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
-                    # RAW OUTPUT
-                    '''
-                    root@Docsis-Gateway:~# wl -i wl1 bs_data
-Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo
-50:E0:85:87:AA:19     1064.5       52.8       6.0%      25.0%       1.5%   80  10.0     2    0.0%    0.0%
-50:E0:85:84:7A:E7      927.1       53.6       7.0%      25.4%       5.7%   80   8.8     2    0.0%    0.0%
-50:E0:85:89:5D:00      857.5       51.8       6.8%      24.6%       0.8%   80     8     2    0.0%    0.0%
-50:E0:85:87:5B:F4     1071.7       52.8       6.0%      25.0%       1.3%   80    10     2    0.0%    0.0%
-        (overall)          -      210.9      25.8%         -         -
-'''        
-
-                    # Query AP for its stats.  Result for /ax bcm APs looks something like this:
-                    # '''
-                    if self.ap_read:
-                        if self.ap_test_mode:
-                            # Create the test data as a continuous string
-                            ap_stats="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
-                            "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                            "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                            "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                            "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                            "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
-                            "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
-                            print("ap_stats {}".format(ap_stats))
-                        # read from the AP
-                        else:
-                            ap_stats = self.read_ap_stats()
-
-                        #ap_stats_rows = [] # Array of Arrays
-
-                        ap_stats_rows = ap_stats.splitlines()
-                        print("ap_stats_rows {}".format(ap_stats_rows))
-
-                        # Query all of our ports
-                        # Note: the endp eid is the shelf.resource.port.endp-id
-                        port_eids = self.gather_port_eids()
-                        for eid_name in port_eids:
-                            eid = self.name_to_eid(eid_name)
-                            url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
-                            response = self.json_get(url)
-                            if (response is None) or ("interface" not in response):
-                                print("query-port: %s: incomplete response:"%(url))
-                                pprint(response)
+                        # AP OUTPUT
+                        if self.ap_read:
+                            if self.ap_test_mode:
+                                # Create the test data as a continuous string
+                                ap_stats="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                                "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+                                "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+                                "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+                                "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+                                "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
+                                "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+                                print("ap_stats {}".format(ap_stats))
+                            # read from the AP
                             else:
-                                # print("response".format(response))
-                                # pprint(response)
-                                p = response['interface']
-                                #print("#### p, response['insterface']:{}".format(p))
-                                mac = p['mac']
-
-                                ap_row = []
-                                for row in ap_stats_rows:
-                                    split_row = row.split()
-                                    print("split_row {}".format(split_row))
-                                    print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
-                                    if self.ap_test_mode:
-                                        if split_row[0].lower() != mac.lower():
-                                            ap_row = row
-                                    else:
-                                        if split_row[0].lower() == mac.lower():
-                                            ap_row = split_row
-                                print("selected ap_row (from split_row): {}".format(ap_row))
-
-
-                                # Find latency, jitter for connections using this port.
-                                latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
-
-                                ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
-
-                                self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                    latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
-                                #self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                #                    latency, jitter, tput, ap_row, ap_stats_col_titles)
+                                ap_stats = self.read_ap_stats()
+    
+                            #ap_stats_rows = [] # Array of Arrays
+    
+                            ap_stats_rows = ap_stats.splitlines()
+                            print("ap_stats_rows {}".format(ap_stats_rows))
+    
+                            # Query all of our ports
+                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            port_eids = self.gather_port_eids()
+                            for eid_name in port_eids:
+                                eid = self.name_to_eid(eid_name)
+                                url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                response = self.json_get(url)
+                                if (response is None) or ("interface" not in response):
+                                    print("query-port: %s: incomplete response:"%(url))
+                                    pprint(response)
+                                else:
+                                    # print("response".format(response))
+                                    # pprint(response)
+                                    p = response['interface']
+                                    #print("#### p, response['insterface']:{}".format(p))
+                                    mac = p['mac']
+    
+                                    ap_row = []
+                                    for row in ap_stats_rows:
+                                        split_row = row.split()
+                                        #print("split_row {}".format(split_row))
+                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        if self.ap_test_mode:
+                                            if split_row[0].lower() != mac.lower():
+                                                ap_row = row
+                                        else:
+                                            if split_row[0].lower() == mac.lower():
+                                                ap_row = split_row
+                                    print("selected ap_row (from split_row): {}".format(ap_row))
+    
+    
+                                    # Find latency, jitter for connections using this port.
+                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+    
+                                    ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
+    
+                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                        latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
 
 
 
