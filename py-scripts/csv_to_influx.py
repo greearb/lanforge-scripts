@@ -44,48 +44,35 @@ class CSVtoInflux():
         self.target_csv = target_csv.replace('/home/lanforge/html-reports/', '')
         self.influx_tag = _influx_tag
 
+    def read_csv(self, file):
+        csv = open(file).read().split('\n')
+        rows = list()
+        for x in csv:
+            if len(x) > 0:
+                rows.append(x.split('\t'))
+        return rows
+
     # Submit data to the influx db if configured to do so.
     def post_to_influx(self):
-        with open(self.target_csv) as fp:
-            line = fp.readline()
-            line = line.split('\t')
-            # indexes tell us where in the CSV our data is located. We do it this way so that even if the columns are moved around, as long as they are present, the script will still work.
-            numeric_score_index = line.index('numeric-score')
-            test_id_index = line.index('test-id')
-            date_index = line.index('Date')
-            test_details_index = line.index('test details')
-            short_description_index = line.index('short-description')
-            graph_group_index = line.index('Graph-Group')
-            units_index = line.index('Units')
-            testbed_index = line.index('test-rig')
-            duthwversion = line.index('dut-hw-version')
-            dutswversion = line.index('dut-sw-version')
-            dutserialnum = line.index('dut-serial-num')
-            line = fp.readline()
-            while line:
-                line = line.split('\t') #split the line by tabs to separate each item in the string
-                date = line[date_index]
-                date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
-                numeric_score = line[numeric_score_index]
-                numeric_score = float(numeric_score) #convert to float, InfluxDB cannot
-                short_description = line[short_description_index]
-                tags = dict()
-                tags['script'] = line[test_id_index]
-                tags['short-description'] = line[short_description_index]
-                tags['test_details'] = line[test_details_index]
-                tags['Graph-Group'] = line[graph_group_index]
-                tags['DUT-HW-version'] = line[duthwversion]
-                tags['DUT-SW-version'] = line[dutswversion]
-                tags['DUT-Serial-Num'] = line[dutserialnum]
-                tags['testbed'] = line[testbed_index]
-                tags['Units'] = line[units_index]
-                for item in self.influx_tag: # Every item in the influx_tag command needs to be added to the tags variable
-                    tags[item[0]] = item[1]
-                self.influxdb.post_to_influx(short_description, numeric_score, tags, date)
-                line = fp.readline()
-                #influx wants to get data in the following format:
-                # variable n  ame, value, tags, date
-                # total-download-mbps-speed-for-the-duration-of-this-iteration 171.085494 {'script': 'WiFi Capacity'} 2021-04-14T19:04:04.902000
+        df = self.read_csv(self.target_csv)
+        length = list(range(0, len(df[0])))
+        columns = dict(zip(df[0], length))
+        influx_variables = ['script', 'short-description', 'test_details', 'Graph-Group',
+                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Units']
+        csv_variables = ['test-id', 'short-description', 'test details', 'Graph-Group',
+                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'Units']
+        csv_vs_influx = dict(zip(csv_variables, influx_variables))
+        for row in df[1:]:
+            tags = dict()
+            short_description = row[columns['short-description']]
+            numeric_score = float(row[columns['numeric-score']])
+            date = row[columns['Date']]
+            date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
+            for variable in csv_variables:
+                index = columns[variable]
+                influx_variable = csv_vs_influx[variable]
+                tags[influx_variable] = row[index]
+            self.influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
     def script_name(self):
         with open(self.target_csv) as fp:

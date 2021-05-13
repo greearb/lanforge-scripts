@@ -97,7 +97,8 @@ class UseGrafana(LFCliBase):
                                 graph_groups=None,
                                 graph_groups_file=None,
                                 testbed=None,
-                                datasource='InfluxDB'):
+                                datasource='InfluxDB',
+                                from_date='now-1y'):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -117,7 +118,7 @@ class UseGrafana(LFCliBase):
         templating['list'] = list()
 
         timedict = dict()
-        timedict['from'] = 'now-1y'
+        timedict['from'] = from_date
         timedict['to'] = 'now'
 
         panels = list()
@@ -341,6 +342,7 @@ def main():
     optional.add_argument('--testbed', help='Which testbed you want to query', default=None)
     optional.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
     optional.add_argument('--datasource', help='Name of Influx database if different from InfluxDB', default='InfluxDB')
+    optional.add_argument('--from_date', help='Date you want to start your Grafana dashboard from', default='now-1y')
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
@@ -369,7 +371,8 @@ def main():
                                         graph_groups=args.graph_groups,
                                         graph_groups_file=args.graph_groups_file,
                                         testbed=args.testbed,
-                                        datasource=args.datasource)
+                                        datasource=args.datasource,
+                                        from_date=args.from_date)
 
 
 if __name__ == "__main__":
