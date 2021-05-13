@@ -199,7 +199,7 @@ for running scripts listed in lf_check_config.ini
     # need to be able to pass in the naming?
     report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf-check.pdf")
 
-    current_time = time.strftime("%m-%d-%Y-%H-%M-%S", time.localtime())
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_outfile = "lf_check-{}-{}.csv".format(args.outfile,current_time)
     csv_outfile = report.file_add_path(csv_outfile)
     print("csv output file : {}".format(csv_outfile))
