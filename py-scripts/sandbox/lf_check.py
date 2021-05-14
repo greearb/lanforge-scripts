@@ -67,6 +67,9 @@ class lf_check():
         self.test_result = "Failure"
         self.results_col_titles = ["Test","Command","Result","STDOUT","STDERR"]
         self.html_results = ""
+        self.background_green = "background-color:green"
+        self.background_red = "background-color:red"
+        self.background_purple = "background-color:purple"
 
     def get_html_results(self):
         return self.html_results
@@ -75,7 +78,7 @@ class lf_check():
         self.html_results += """
                 <table border="1" class="dataframe">
                     <thead>
-                        <tr style="text-align: right;">
+                        <tr style="text-align: left;">
                           <th>Test</th>
                           <th>Command</th>
                           <th>Result</th>
@@ -90,6 +93,9 @@ class lf_check():
         self.html_results += """
                     </tbody>
                 </table>
+                <br>
+                <br>
+                <br>
                 """
 
     # Functions in this section are/can be overridden by descendants
@@ -201,13 +207,16 @@ class lf_check():
                 if stderr_log_size > 0:
                     print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
                     self.test_result = "Failure"
+                    background = self.background_red
                 else:
                     print("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
                     self.test_result = "Success"
+                    background = self.background_green
+
 
                 self.html_results += """
                     <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
-                <td style="balckground-color:green">""" + str(self.test_result) + """ 
+                <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
                 <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>
                 <td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td></tr>""" 
 
@@ -273,7 +282,7 @@ for running scripts listed in lf_check_config.ini
     report.build_table_title()
     # custom html (maybe try different)
     html_results = check.get_html_results()
-    print("html_results {}".format(html_results))
+    #print("html_results {}".format(html_results))
     report.set_custom_html(html_results)
     report.build_custom()
     report.write_html()
