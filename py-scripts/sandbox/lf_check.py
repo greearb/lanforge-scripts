@@ -64,7 +64,34 @@ class lf_check():
         self.results = ""
         self.csv_outfile = _csv_outfile,
         self.outfile = _outfile
-    
+        self.test_result = "Failure"
+        self.results_col_titles = ["Test","Command","Result","STDOUT","STDERR"]
+        self.html_results = ""
+
+    def get_html_results(self):
+        return self.html_results
+
+    def start_html_results(self):
+        self.html_results += """
+                <table border="1" class="dataframe">
+                    <thead>
+                        <tr style="text-align: right;">
+                          <th>Test</th>
+                          <th>Command</th>
+                          <th>Result</th>
+                          <th>STDOUT</th>
+                          <th>STDERR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      """
+
+    def finish_html_results(self):
+        self.html_results += """
+                    </tbody>
+                </table>
+                """
+
     # Functions in this section are/can be overridden by descendants
     def read_config_contents(self):
         print("read_config_contents {}".format(CONFIG_FILE))
@@ -119,7 +146,9 @@ class lf_check():
         command = "./{} {}".format("scenario.py", "--load BLANK")
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
+
     def run_script_test(self):
+        self.start_html_results() 
         for test in self.test_dict:
             # load the default database 
             if self.test_dict[test]['enabled'] == "TRUE":
@@ -162,17 +191,30 @@ class lf_check():
 
                 print(stdout_log_txt)
                 stdout_log_size = os.path.getsize(stdout_log_txt)
-                if stdout_log_size == 0:
-                    print("File: {} is empty: {}".format(stdout_log_txt,str(stdout_log_size)))
-                else:
+                if stdout_log_size > 0:
                     print("File: {} is not empty: {}".format(stdout_log_txt,str(stdout_log_size)))
+                else:
+                    print("File: {} is empty: {}".format(stdout_log_txt,str(stdout_log_size)))
 
                 print(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
-                if stderr_log_size == 0:
-                    print("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
-                else:
+                if stderr_log_size > 0:
                     print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                    self.test_result = "Failure"
+                else:
+                    print("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                    self.test_result = "Success"
+
+                self.html_results += """
+                    <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
+                <td style="balckground-color:green">""" + str(self.test_result) + """ 
+                <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>
+                <td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td></tr>""" 
+
+                row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
+                print("row: {}".format(row))
+
+        self.finish_html_results()        
 
 def main():
     # arguments
@@ -200,7 +242,7 @@ for running scripts listed in lf_check_config.ini
     report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf-check.pdf")
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_outfile = "lf_check-{}-{}.csv".format(args.outfile,current_time)
+    csv_outfile = "lf_check{}-{}.csv".format(args.outfile,current_time)
     csv_outfile = report.file_add_path(csv_outfile)
     print("csv output file : {}".format(csv_outfile))
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
@@ -225,10 +267,19 @@ for running scripts listed in lf_check_config.ini
     # csv_test_results_file =     
     # csv_kpi_file
 
-    # report.set_title("LF Check (lf_check.py)")
-    # report.build_banner()
-    # report.set_table_title("LF Check Test Results")
-    # report.build_table_title()
+    report.set_title("LF Check (lf_check.py)")
+    report.build_banner()
+    report.set_table_title("LF Check Test Results")
+    report.build_table_title()
+    # custom html (maybe try different)
+    html_results = check.get_html_results()
+    print("html_results {}".format(html_results))
+    report.set_custom_html(html_results)
+    report.build_custom()
+    report.write_html()
+
+
+
     # report.set_table_dataframe_from_csv(csv_kpi_file)
     # report.build_table()
     # report.write_html()
