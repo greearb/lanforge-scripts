@@ -125,6 +125,7 @@ class lf_check():
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
+            print("self.radio_dict {}".format(self.radio_dict))
 
         if 'TEST_DICTIONARY' in config_file.sections():
             section = config_file['TEST_DICTIONARY']
@@ -164,8 +165,11 @@ class lf_check():
     def run_script_test(self):
         self.start_html_results() 
         for test in self.test_dict:
+            if self.test_dict[test]['enabled'] == "FALSE":
+                print("test: {}  skipped".format(test))
             # load the default database 
-            if self.test_dict[test]['enabled'] == "TRUE":
+            elif self.test_dict[test]['enabled'] == "TRUE":
+                print("test: {} executed".format(test))
                 # loop through radios
                 for radio in self.radio_dict:
                     # Replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
@@ -209,7 +213,7 @@ class lf_check():
                 stdout_log_size = os.path.getsize(stdout_log_txt)
                 #print(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
-                if stderr_log_size > 0:
+                if stderr_log_size > 0 or stdout_log_size == 0:
                     print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
                     self.test_result = "Failure"
                     background = self.background_red
@@ -231,6 +235,8 @@ class lf_check():
                 # CMR need to generate the CSV.. should be pretty straight forward
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
                 #print("row: {}".format(row))
+            else:
+                print("enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'],test))
 
         self.finish_html_results()        
 
