@@ -104,8 +104,8 @@ class lf_check():
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(CONFIG_FILE)
-        print("{}".format(success))
-        print("{}".format(config_file))
+        #print("{}".format(success))
+        #print("{}".format(config_file))
 
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
@@ -114,6 +114,13 @@ class lf_check():
             print("lf_mgr_ip {}".format(self.lf_mgr_ip))
             print("lf_mgr_port {}".format(self.lf_mgr_port))
 
+        if 'TEST_IP' in config_file.sections():
+            section = config_file['TEST_IP']
+            self.http_test_ip = section['HTTP_TEST_IP']
+            print("http_test_ip {}".format(self.http_test_ip))
+            self.ftp_test_ip = section['FTP_TEST_IP']
+            print("ftp_test_ip {}".format(self.ftp_test_ip))
+            
         # NOTE: this may need to be a list for ssi 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
@@ -126,10 +133,10 @@ class lf_check():
             #print("test_dict {}".format(self.test_dict))
 
     def load_factory_default_db(self):
-        print("file_wd {}".format(self.scripts_wd))
+        #print("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            print("Current Working Directory {}".format(os.getcwd()))
+            #print("Current Working Directory {}".format(os.getcwd()))
         except:
             print("failed to change to {}".format(self.scripts_wd))
 
@@ -142,10 +149,10 @@ class lf_check():
 
     # Not currently used
     def load_blank_db(self):
-        print("file_wd {}".format(self.scripts_wd))
+        #print("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            print("Current Working Directory {}".format(os.getcwd()))
+            #print("Current Working Directory {}".format(os.getcwd()))
         except:
             print("failed to change to {}".format(self.scripts_wd))
 
@@ -166,14 +173,20 @@ class lf_check():
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}"'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
+
+                if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP',self.http_test_ip)
+                if 'FTP_TEST_IP' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('FTP_TEST_IP',self.ftp_test_ip)
+
                 self.load_factory_default_db()
                 sleep(5) # the sleep is to allow for the database to stablize
 
                 # this is just to get the directory with the scripts to run. 
-                print("file_wd {}".format(self.scripts_wd))
+                #print("file_wd {}".format(self.scripts_wd))
                 try:
                     os.chdir(self.scripts_wd)
-                    print("Current Working Directory {}".format(os.getcwd()))
+                    #print("Current Working Directory {}".format(os.getcwd()))
                 except:
                     print("failed to change to {}".format(self.scripts_wd))
                 cmd_args = "{}".format(self.test_dict[test]['args'])
@@ -184,22 +197,17 @@ class lf_check():
                 if self.outfile is not None:
                     stdout_log_txt = self.outfile
                     stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
-                    print("stdout_log_txt: {}".format(stdout_log_txt))
+                    #print("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
                     stderr_log_txt = self.outfile
                     stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
-                    print("stderr_log_txt: {}".format(stderr_log_txt))
+                    #print("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
 
-                print(stdout_log_txt)
+                #print(stdout_log_txt)
                 stdout_log_size = os.path.getsize(stdout_log_txt)
-                if stdout_log_size > 0:
-                    print("File: {} is not empty: {}".format(stdout_log_txt,str(stdout_log_size)))
-                else:
-                    print("File: {} is empty: {}".format(stdout_log_txt,str(stdout_log_size)))
-
-                print(stderr_log_txt)
+                #print(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
                 if stderr_log_size > 0:
                     print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
@@ -220,9 +228,9 @@ class lf_check():
                 else:
                     self.html_results += """<td></td>"""
                 self.html_results += """</tr>""" 
-
+                # CMR need to generate the CSV.. should be pretty straight forward
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
-                print("row: {}".format(row))
+                #print("row: {}".format(row))
 
         self.finish_html_results()        
 
@@ -253,10 +261,10 @@ for running scripts listed in lf_check_config.ini
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_outfile = "lf_check{}-{}.csv".format(args.outfile,current_time)
     csv_outfile = report.file_add_path(csv_outfile)
-    print("csv output file : {}".format(csv_outfile))
+    #print("csv output file : {}".format(csv_outfile))
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
     outfile = report.file_add_path(outfile)
-    print("output file : {}".format(outfile))
+    #print("output file : {}".format(outfile))
 
     # lf_check() class created
     check = lf_check(_csv_outfile = csv_outfile,
@@ -279,7 +287,7 @@ for running scripts listed in lf_check_config.ini
     report.build_banner()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    report.set_text("sha: {}".format(git_sha))
+    report.set_text("git sha: {}".format(git_sha))
     report.build_text()
     html_results = check.get_html_results()
     #print("html_results {}".format(html_results))
