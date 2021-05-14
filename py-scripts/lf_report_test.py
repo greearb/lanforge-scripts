@@ -25,6 +25,7 @@ import pandas as pd
 import pdfkit
 from lf_report import lf_report
 from lf_graph import lf_bar_graph, lf_scatter_graph, lf_stacked_graph, lf_horizontal_stacked_graph
+import random
 
 # Unit Test
 if __name__ == "__main__":
@@ -72,10 +73,19 @@ if __name__ == "__main__":
 
     report.set_table_dataframe(dataframe2)
     report.build_table()
+    set_xaxis = []
+    y_set1 = []
+    y_set2 = []
+    y_set3 = []
+    for i in range(0, 30):
+        set_xaxis.append(i)
+        y_set1.append(random.randint(1, 50))
+        y_set2.append(random.randint(1, 50))
+        y_set3.append(random.randint(1, 50))
 
     # test lf_graph in report
-    dataset = [[45, 67, 34, 22], [22, 45, 12, 34], [30, 55, 69, 37]]
-    x_axis_values = [1, 2, 3, 4]
+    dataset = [y_set1, y_set2, y_set3]
+    x_axis_values = set_xaxis
 
     report.set_graph_title("Graph Title")
     report.build_graph_title()

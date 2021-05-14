@@ -83,8 +83,9 @@ class lf_bar_graph():
                 i = i + 1
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
-        plt.xticks([r + self.bar_width for r in range(len(self.data_set[0]))],
-                   self.xaxis_categories)
+        """plt.xticks([r + self.bar_width for r in range(len(self.data_set[0]))],
+                   self.xaxis_categories)"""
+        plt.xticks(np.arange(0, len(self.xaxis_categories), step=5))
         plt.legend()
 
         fig = plt.gcf()
