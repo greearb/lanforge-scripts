@@ -1084,9 +1084,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_kpi_file)
     report.build_table()
-    report.write_html()
+    report.write_html_with_timestamp()
     #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    report.write_pdf(_page_size = 'A4', _orientation='Portrait')
+    report.write_pdf_with_timestamp(_page_size = 'A4', _orientation='Portrait')
 
     #for csv_file in csv_list:
     #    print("Ouptput reports CSV list value: {}".format(str(csv_file)))
