@@ -197,6 +197,18 @@ class lf_report():
             print("write_html failed")
         return self.write_output_html
 
+    def write_html_with_timestamp(self): 
+        self.write_output_html = "{}/{}-{}".format(self.path_date_time,self.date,self.output_html)
+        print("write_output_html: {}".format(self.write_output_html))
+        try:
+            test_file = open(self.write_output_html, "w")
+            test_file.write(self.html)
+            test_file.close()
+        except:
+            print("write_html failed")
+        return self.write_output_html
+
+
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
     # orientation Portrait , Landscape
@@ -210,7 +222,21 @@ class lf_report():
                         'page-size': _page_size}  # prevent error Blocked access to file
             self.write_output_pdf = str(self.path_date_time)+'/'+ str(self.output_pdf)
             pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
-            pass
+
+    # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
+    # page_size A4, A3, Letter, Legal
+    # orientation Portrait , Landscape
+    def write_pdf_with_timestamp(self, _page_size = 'A4', _orientation = 'Portrait'):
+            # write logic to generate pdf here
+            # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
+            # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
+            
+            options = {"enable-local-file-access" : None,
+                        'orientation': _orientation,
+                        'page-size': _page_size}  # prevent error Blocked access to file
+            self.write_output_pdf = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
+            pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+
 
     def generate_report(self):
         self.write_html()            

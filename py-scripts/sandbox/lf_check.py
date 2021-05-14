@@ -217,8 +217,11 @@ class lf_check():
                 self.html_results += """
                     <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
                 <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
-                <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>
-                <td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td></tr>""" 
+                <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>"""
+                if self.test_result == "Failure":
+                    self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
+                else:
+                    self.html_results += """</tr>""" 
 
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
                 print("row: {}".format(row))
@@ -280,12 +283,12 @@ for running scripts listed in lf_check_config.ini
     report.build_banner()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    # custom html (maybe try different)
     html_results = check.get_html_results()
     #print("html_results {}".format(html_results))
     report.set_custom_html(html_results)
     report.build_custom()
-    report.write_html()
+    report.write_html_with_timestamp()
+    report.write_pdf_with_timestamp()
 
 
 
