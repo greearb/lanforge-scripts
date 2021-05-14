@@ -221,7 +221,8 @@ class lf_check():
                 if self.test_result == "Failure":
                     self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
                 else:
-                    self.html_results += """</tr>""" 
+                    self.html_results += """<td></td>"""
+                self.html_results += """</tr>""" 
 
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
                 print("row: {}".format(row))
