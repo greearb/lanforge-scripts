@@ -17,7 +17,8 @@ Note: This is a test file which will run a wifi capacity test.
              --test_rig Testbed-01 \
              --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
              --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-             --influx_bucket ben --influx_tag testbed Ferndale-01
+             --influx_bucket ben \
+             --influx_tag testbed Ferndale-01
 
     ex. on how to run this script (to create new stations):
     ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \

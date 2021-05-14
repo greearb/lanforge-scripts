@@ -363,7 +363,7 @@ class cv_test(Realm):
                 print("Detected test is not running.")
                 not_running += 1
                 if not_running > 5:
-                    break;
+                    break
 
             time.sleep(1)
 

@@ -142,7 +142,7 @@ class CreateChamberview(cv):
                                             VLAN
                                             );  # To manage scenario
         if not line and not raw_line:
-            raise Exception("scenario sceation failed")
+            raise Exception("scenario creation failed")
             return False
 
         return True
@@ -210,9 +210,9 @@ def main():
     if args.delete_scenario:
         Create_Chamberview.clean_cv_scenario(type="Network-Connectivity", scenario_name=args.create_scenario)
 
-    Create_Chamberview.setup( create_scenario=args.create_scenario,
-                              line=args.line,
-                              raw_line=args.raw_line)
+    Create_Chamberview.setup(create_scenario=args.create_scenario,
+                             line=args.line,
+                             raw_line=args.raw_line)
     Create_Chamberview.build(args.create_scenario)
 
 

@@ -110,10 +110,11 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-from cv_test_manager import cv_test as cvtest
+from cv_test_manager import cv_test
 from cv_test_manager import *
 
-class DataplaneTest(cvtest):
+
+class DataplaneTest(cv_test):
     def __init__(self,
                  lf_host="localhost",
                  lf_port=8080,
@@ -134,14 +135,15 @@ class DataplaneTest(cvtest):
                  raw_lines=[],
                  raw_lines_file="",
                  sets=[],
-                 graph_groups=None
+                 graph_groups=None,
+                 report_dir=""
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
         self.dut = dut
@@ -159,11 +161,11 @@ class DataplaneTest(cvtest):
         self.raw_lines_file = raw_lines_file
         self.sets = sets
         self.graph_groups = graph_groups
+        self.report_dir = report_dir
 
     def setup(self):
         # Nothing to do at this time.
         return
-
 
     def run(self):
         self.sync_cv()
@@ -208,7 +210,6 @@ class DataplaneTest(cvtest):
 
 
 def main():
-
     parser = argparse.ArgumentParser("""
     Open this file in an editor and read the top notes for more details.
 
@@ -247,6 +248,7 @@ def main():
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
+    parser.add_argument("--report_dir", default="")
 
     args = parser.parse_args()
 
@@ -277,6 +279,7 @@ def main():
     CV_Test.run()
 
     CV_Test.check_influx_kpi(args)
+
 
 if __name__ == "__main__":
     main()
