@@ -920,8 +920,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
 
     if args.csv_outfile != None:
-        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        csv_outfile = "test_l3_longevity_{}_{}.csv".format(args.csv_outfile,current_time)
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        csv_outfile = "{}_{}-test_l3_longevity.csv".format(args.csv_outfile,current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
 

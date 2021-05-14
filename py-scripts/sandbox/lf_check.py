@@ -140,6 +140,7 @@ class lf_check():
         out, err = process.communicate()
         errcode = process.returncode
 
+    # Not currently used
     def load_blank_db(self):
         print("file_wd {}".format(self.scripts_wd))
         try:
@@ -192,8 +193,8 @@ class lf_check():
                 #process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                 # wait for the process to terminate
-                out, err = process.communicate()
-                errcode = process.returncode
+                # out, err = process.communicate() #CMR remove
+                # errcode = process.returncode    #CMR remove
 
                 print(stdout_log_txt)
                 stdout_log_size = os.path.getsize(stdout_log_txt)
@@ -250,8 +251,7 @@ for running scripts listed in lf_check_config.ini
 
     args = parser.parse_args()    
 
-    # Create report, instanciate a reporting class
-    # need to be able to pass in the naming?
+    # output report.
     report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf-check.pdf")
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
@@ -262,44 +262,35 @@ for running scripts listed in lf_check_config.ini
     outfile = report.file_add_path(outfile)
     print("output file : {}".format(outfile))
 
-
-    # create header
-
-
     # lf_check() class created
     check = lf_check(_csv_outfile = csv_outfile,
                     _outfile = outfile)
 
-    #check.parse_ap_stats()
+    # get the git sha 
+    process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
+    (commit_hash, err) = process.communicate()
+    exit_code = process.wait()
+    git_sha = commit_hash.decode('utf-8','ignore')
+    #print("commit_hash: {}".format(commit_hash))
+    #print("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
+
+
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
-
-
     check.run_script_test()
 
-    # Get Results
-    # csv_test_results_file =     
-    # csv_kpi_file
-
-    report.set_title("LF Check (lf_check.py)")
+    # Generate Ouptput reports
+    report.set_title("LF Check: lf_check.py")
     report.build_banner()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
+    report.set_text("sha: {}".format(git_sha))
+    report.build_text()
     html_results = check.get_html_results()
     #print("html_results {}".format(html_results))
     report.set_custom_html(html_results)
     report.build_custom()
     report.write_html_with_timestamp()
     report.write_pdf_with_timestamp()
-
-
-
-    # report.set_table_dataframe_from_csv(csv_kpi_file)
-    # report.build_table()
-    # report.write_html()
-    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    # report.write_pdf(_page_size = 'A4', _orientation='Portrait')
-
-
 
 
 if __name__ == '__main__':

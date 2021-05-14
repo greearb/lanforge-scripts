@@ -65,6 +65,7 @@ class lf_report():
                 print("path set: {}".format(self.path))
                 
             self.dataframe=_dataframe
+            self.text = ""
             self.title=_title
             self.table_title=_table_title
             self.graph_title=_graph_title
@@ -143,6 +144,9 @@ class lf_report():
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
         print("report path : {}".format(self.path_date_time))    
+
+    def set_text(self,_text):
+        self.text = _text
 
     def set_title(self,_title):
         self.title = _title
@@ -286,6 +290,18 @@ class lf_report():
                 <h2 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.table_title) + """</h2>
                 """
         self.html += self.table_title_html
+
+    def build_text(self):
+        self.text_html = """
+                <html lang='en'>
+                <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1' />
+                <div class='HeaderStyle'>
+                <h3 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.text) + """</h3>
+                """
+        self.html += self.text_html
+
 
     def build_date_time(self):
         self.date_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':','-')
