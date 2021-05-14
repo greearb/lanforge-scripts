@@ -169,7 +169,7 @@ class lf_check():
                 self.load_factory_default_db()
                 sleep(5) # the sleep is to allow for the database to stablize
 
-                # CMR this is just to get the directory with the scripts to run. 
+                # this is just to get the directory with the scripts to run. 
                 print("file_wd {}".format(self.scripts_wd))
                 try:
                     os.chdir(self.scripts_wd)
@@ -182,19 +182,15 @@ class lf_check():
                 print("cmd_args {}".format(cmd_args))
 
                 if self.outfile is not None:
-                    stdout_log_txt = self.outfile[:-4]
-                    stdout_log_txt = stdout_log_txt + "{}-stdout.txt".format(test)
+                    stdout_log_txt = self.outfile
+                    stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
                     print("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
-                    stderr_log_txt = self.outfile[:-4]
-                    stderr_log_txt = stderr_log_txt + "{}-stderr.txt".format(test)                    
-                    print("stdout_log_txt: {}".format(stderr_log_txt))
+                    stderr_log_txt = self.outfile
+                    stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
+                    print("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
-                #process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
-                # wait for the process to terminate
-                # out, err = process.communicate() #CMR remove
-                # errcode = process.returncode    #CMR remove
 
                 print(stdout_log_txt)
                 stdout_log_size = os.path.getsize(stdout_log_txt)
