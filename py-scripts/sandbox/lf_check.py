@@ -71,6 +71,16 @@ class lf_check():
         self.background_red = "background-color:red"
         self.background_purple = "background-color:purple"
 
+        self.http_test_ip = ""
+        self.ftp_test_ip = ""
+        self.test_ip = ""
+
+        self.radio_lf = ""
+        self.ssdi = ""
+        self.ssid_pw = ""
+        self.security = ""
+        self.num_sta = ""
+
     def get_html_results(self):
         return self.html_results
 
@@ -114,14 +124,28 @@ class lf_check():
             print("lf_mgr_ip {}".format(self.lf_mgr_ip))
             print("lf_mgr_port {}".format(self.lf_mgr_port))
 
-        if 'TEST_IP' in config_file.sections():
-            section = config_file['TEST_IP']
+        if 'TEST_NETWORK' in config_file.sections():
+            section = config_file['TEST_NETWORK']
             self.http_test_ip = section['HTTP_TEST_IP']
             print("http_test_ip {}".format(self.http_test_ip))
             self.ftp_test_ip = section['FTP_TEST_IP']
             print("ftp_test_ip {}".format(self.ftp_test_ip))
+            self.test_ip = section['TEST_IP']
+            print("test_ip {}".format(self.test_ip))
+
+        if 'TEST_GENERIC' in config_file.sections():
+            section = config_file['TEST_GENERIC']
+            self.radio_lf = section['RADIO_USED']
+            print("radio_lf {}".format(self.radio_lf))
+            self.ssid = section['SSID_USED']
+            print("ssid {}".format(self.ssid))
+            self.ssid_pw = section['SSID_PW_USED']
+            print("ssid_pw {}".format(self.ssid_pw))
+            self.security = section['SECURITY_USED']
+            print("secruity {}".format(self.security))
+            self.num_sta = section['NUM_STA']
+            print("num_sta {}".format(self.num_sta))
             
-        # NOTE: this may need to be a list for ssi 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
@@ -181,6 +205,19 @@ class lf_check():
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP',self.http_test_ip)
                 if 'FTP_TEST_IP' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('FTP_TEST_IP',self.ftp_test_ip)
+                if 'TEST_IP' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_IP',self.test_ip)
+
+                if 'RADIO_USED' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED',self.radio_lf)
+                if 'SSID_USED' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_USED',self.ssid)
+                if 'SSID_PW_USED' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_PW_USED',self.ssid_pw)
+                if 'SECURITY_USED' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_USED',self.security)
+                if 'NUM_STA' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('NUM_STA',self.num_sta)
 
                 self.load_factory_default_db()
                 sleep(5) # the sleep is to allow for the database to stablize
