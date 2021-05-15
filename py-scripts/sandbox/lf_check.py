@@ -234,6 +234,8 @@ class lf_check():
                 print("command: {}".format(command))
                 print("cmd_args {}".format(cmd_args))
 
+
+
                 if self.outfile is not None:
                     stdout_log_txt = self.outfile
                     stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
@@ -244,18 +246,36 @@ class lf_check():
                     #print("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                try:
+                    out, err = process.communicate(timeout=20)
+                except:
+                    #if err:
+                    print("command Test timed out: {}".format(command))
+
 
                 # close the file
+                stdout_log.flush()
                 stdout_log.close()
-                stderr_log.close()
 
-                sleep(2)
+                stderr_log.flush()
+                stderr_log.close()
 
                 #print(stdout_log_txt)
                 stdout_log_size = os.path.getsize(stdout_log_txt)
-                stdout_log_size = os.stat(stdout_log_txt).st_size
+                stdout_log_st_size = os.stat(stdout_log_txt).st_size
                 print("stdout_log_size {}".format(stdout_log_size))
+                print("stdout_log_st_size {}".format(stdout_log_st_size))
                 print("stdout {}".format(os.stat(stdout_log_txt)))
+
+
+
+                stderr_log_size = os.path.getsize(stderr_log_txt)
+                stderr_log_st_size = os.stat(stderr_log_txt).st_size
+                #print("stderr_log_size {}".format(stderr_log_size))
+                #print("stderr_log_st_size {}".format(stderr_log_st_size))
+                #print("stderr {}".format(os.stat(stderr_log_txt)))
+
+
                 #print(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
                 if stderr_log_size > 0 :
