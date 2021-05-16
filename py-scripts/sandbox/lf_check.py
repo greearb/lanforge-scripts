@@ -30,6 +30,8 @@ import configparser
 from pprint import *
 import subprocess
 import sys
+import csv
+
 #from ..lf_report import lf_report
 sys.path.append('../')
 from lf_report import lf_report
@@ -62,7 +64,6 @@ class lf_check():
         os.chdir(path_parent)
         self.scripts_wd = os.getcwd()
         self.results = ""
-        self.csv_results = _csv_results,
         self.outfile = _outfile
         self.test_result = "Failure"
         self.results_col_titles = ["Test","Command","Result","STDOUT","STDERR"]
@@ -83,6 +84,7 @@ class lf_check():
         self.col_names = ""
         self.upstream_port = ""
 
+        self.csv_results = _csv_results
         self.csv_results_file = ""
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
@@ -91,10 +93,11 @@ class lf_check():
         return self.csv_file.name
 
     def start_csv_results(self):
+        print("self.csv_results")
         self.csv_results_file = open(self.csv_results, "w")
         self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
         self.csv_results_column_headers = ['Test','Command','Result','STDOUT','STDERR'] 
-        self.csv_rsults_writer.writerow(self.csv_results_column_headers)
+        self.csv_results_writer.writerow(self.csv_results_column_headers)
         self.csv_results_file.flush()
 
     def get_html_results(self):
