@@ -80,6 +80,8 @@ class lf_check():
         self.ssid_pw = ""
         self.security = ""
         self.num_sta = ""
+        self.col_names = ""
+        self.upstream_port = ""
 
     def get_html_results(self):
         return self.html_results
@@ -145,7 +147,12 @@ class lf_check():
             print("secruity {}".format(self.security))
             self.num_sta = section['NUM_STA']
             print("num_sta {}".format(self.num_sta))
-            
+            self.col_names = section['COL_NAMES']
+            print("col_names {}".format(self.col_names))
+            self.upstream_port = section['UPSTREAM_PORT']
+            print("upstream_port {}".format(self.upstream_port))
+
+
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
@@ -193,13 +200,15 @@ class lf_check():
                 print("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
+                # Make the command replace ment a separate method call.
                 # loop through radios
                 for radio in self.radio_dict:
                     # Replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
                     # not "KEY" is just a word to refer to the RADIO define (e.g. RADIO_0_CFG) to get the vlaues
+                    # --num_stations needs to be int not string (no double quotes)
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}"'
-                        .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY']))
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}" --num_stations {}'
+                        .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY'],self.radio_dict[radio]['STATIONS']))
 
                 if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP',self.http_test_ip)
@@ -218,12 +227,15 @@ class lf_check():
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_USED',self.security)
                 if 'NUM_STA' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('NUM_STA',self.num_sta)
+                if 'COL_NAMES' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('COL_NAMES',self.col_names)
+                if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
+
 
                 self.load_factory_default_db()
                 sleep(5) # the sleep is to allow for the database to stablize
 
-                # this is just to get the directory with the scripts to run. 
-                #print("file_wd {}".format(self.scripts_wd))
                 try:
                     os.chdir(self.scripts_wd)
                     #print("Current Working Directory {}".format(os.getcwd()))
@@ -234,8 +246,6 @@ class lf_check():
                 print("command: {}".format(command))
                 print("cmd_args {}".format(cmd_args))
 
-
-
                 if self.outfile is not None:
                     stdout_log_txt = self.outfile
                     stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
@@ -245,6 +255,7 @@ class lf_check():
                     stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
                     #print("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
+
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                 try:
                     out, err = process.communicate(timeout=20)
