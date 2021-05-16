@@ -52,7 +52,7 @@ class FileAdapter(object):
 
 class lf_check():
     def __init__(self,
-                _csv_outfile,
+                _csv_results,
                 _outfile):
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
@@ -62,7 +62,7 @@ class lf_check():
         os.chdir(path_parent)
         self.scripts_wd = os.getcwd()
         self.results = ""
-        self.csv_outfile = _csv_outfile,
+        self.csv_results = _csv_results,
         self.outfile = _outfile
         self.test_result = "Failure"
         self.results_col_titles = ["Test","Command","Result","STDOUT","STDERR"]
@@ -82,6 +82,20 @@ class lf_check():
         self.num_sta = ""
         self.col_names = ""
         self.upstream_port = ""
+
+        self.csv_results_file = ""
+        self.csv_results_writer = ""
+        self.csv_results_column_headers = ""
+
+    def get_csv_results(self):
+        return self.csv_file.name
+
+    def start_csv_results(self):
+        self.csv_results_file = open(self.csv_results, "w")
+        self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+        self.csv_results_column_headers = ['Test','Command','Result','STDOUT','STDERR'] 
+        self.csv_rsults_writer.writerow(self.csv_results_column_headers)
+        self.csv_results_file.flush()
 
     def get_html_results(self):
         return self.html_results
@@ -116,8 +130,8 @@ class lf_check():
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(CONFIG_FILE)
-        #print("{}".format(success))
-        #print("{}".format(config_file))
+        print("{}".format(success))
+        print("{}".format(config_file))
 
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
@@ -164,6 +178,7 @@ class lf_check():
             self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
             #print("test_dict {}".format(self.test_dict))
 
+
     def load_factory_default_db(self):
         #print("file_wd {}".format(self.scripts_wd))
         try:
@@ -195,6 +210,8 @@ class lf_check():
 
     def run_script_test(self):
         self.start_html_results() 
+        self.start_csv_results()
+
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
                 print("test: {}  skipped".format(test))
@@ -263,30 +280,23 @@ class lf_check():
                     #if err:
                     print("command Test timed out: {}".format(command))
 
-
-                # close the file
                 stdout_log.flush()
                 stdout_log.close()
-
                 stderr_log.flush()
                 stderr_log.close()
-
-                #print(stdout_log_txt)
+                '''
                 stdout_log_size = os.path.getsize(stdout_log_txt)
                 stdout_log_st_size = os.stat(stdout_log_txt).st_size
                 print("stdout_log_size {}".format(stdout_log_size))
                 print("stdout_log_st_size {}".format(stdout_log_st_size))
                 print("stdout {}".format(os.stat(stdout_log_txt)))
 
-
-
                 stderr_log_size = os.path.getsize(stderr_log_txt)
                 stderr_log_st_size = os.stat(stderr_log_txt).st_size
-                #print("stderr_log_size {}".format(stderr_log_size))
-                #print("stderr_log_st_size {}".format(stderr_log_st_size))
-                #print("stderr {}".format(os.stat(stderr_log_txt)))
-
-
+                print("stderr_log_size {}".format(stderr_log_size))
+                print("stderr_log_st_size {}".format(stderr_log_st_size))
+                print("stderr {}".format(os.stat(stderr_log_txt)))
+                '''
                 #print(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
                 if stderr_log_size > 0 :
@@ -299,7 +309,6 @@ class lf_check():
                     self.test_result = "Success"
                     background = self.background_green
 
-
                 self.html_results += """
                     <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
                 <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
@@ -309,8 +318,10 @@ class lf_check():
                 else:
                     self.html_results += """<td></td>"""
                 self.html_results += """</tr>""" 
-                # CMR need to generate the CSV.. should be pretty straight forward
+
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
+                self.csv_results_writer.writerow(row)
+                self.csv_results_file.flush()
                 #print("row: {}".format(row))
                 print("test: {} executed".format(test))
 
@@ -344,15 +355,15 @@ for running scripts listed in lf_check_config.ini
     report = lf_report(_results_dir_name = "lf_check",_output_html="lf_check.html",_output_pdf="lf-check.pdf")
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_outfile = "lf_check{}-{}.csv".format(args.outfile,current_time)
-    csv_outfile = report.file_add_path(csv_outfile)
-    #print("csv output file : {}".format(csv_outfile))
+    csv_results = "lf_check{}-{}.csv".format(args.outfile,current_time)
+    csv_results = report.file_add_path(csv_results)
+    #print("csv output file : {}".format(csv_results))
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
     outfile = report.file_add_path(outfile)
     #print("output file : {}".format(outfile))
 
     # lf_check() class created
-    check = lf_check(_csv_outfile = csv_outfile,
+    check = lf_check(_csv_results = csv_results,
                     _outfile = outfile)
 
     # get the git sha 
