@@ -141,6 +141,8 @@ our %sec_options        = (
    "no-supp-op-class-ie"   =>    0x4000000000,  # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
    "txo-enable"            =>    0x8000000000,  # Enable/disable tx-offloads, typically managed by set_wifi_txo command
    "wpa3"                  =>    0x10000000000, # Enable WPA-3 (SAE Personal) mode.
+   "use-bss-transition"    =>    0x80000000000, # Enable BSS transition.
+   "disable-twt"           =>    0x100000000000, # Disable TWT mode 
 );
 our %ieee80211w_options = (
    "disabled"  => 0,
@@ -231,7 +233,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--ssid {ssid}]            # e.g. jedtest
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
       [--security {open|wep|wpa|wpa2|wpa3}] # station authentication type, Default is open
-      [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script
+      [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script {to set flags same as in add_sta}
       [--passphrase {...}]       # Set security too if you want to enable security
       [--wifi_mode {$mode_list}]
       [--ieee80211w {disabled,optional,required}] # protected management frames (wpa2-ent/wpa3) also { NA, 0, 1, 2 }
@@ -345,6 +347,10 @@ $0 --mgr 192.168.100.1 --radio wiphy0 \\
 
  $0 --mgr ben-ota-1 --resource 2 --action del_all_phy --port_del wiphy0
 
+## Create a station and set Flags
+
+ $0 --mgr localhost --radio wiphy1 --ssid sushant-AP --action add --num_stations 1 \\
+    --xsec use-bss-transition --first_ip DHCP
 );
 
 my $shelf_num = 1;
