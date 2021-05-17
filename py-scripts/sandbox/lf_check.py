@@ -137,55 +137,55 @@ class lf_check():
             section = config_file['LF_MGR']
             self.lf_mgr_ip = section['LF_MGR_IP']
             self.lf_mgr_port = section['LF_MGR_PORT']
-            print("lf_mgr_ip {}".format(self.lf_mgr_ip))
-            print("lf_mgr_port {}".format(self.lf_mgr_port))
+            self.logger.info("lf_mgr_ip {}".format(self.lf_mgr_ip))
+            self.logger.info("lf_mgr_port {}".format(self.lf_mgr_port))
 
         if 'TEST_NETWORK' in config_file.sections():
             section = config_file['TEST_NETWORK']
             self.http_test_ip = section['HTTP_TEST_IP']
-            print("http_test_ip {}".format(self.http_test_ip))
+            self.logger.info("http_test_ip {}".format(self.http_test_ip))
             self.ftp_test_ip = section['FTP_TEST_IP']
-            print("ftp_test_ip {}".format(self.ftp_test_ip))
+            self.logger.info("ftp_test_ip {}".format(self.ftp_test_ip))
             self.test_ip = section['TEST_IP']
-            print("test_ip {}".format(self.test_ip))
+            self.logger.info("test_ip {}".format(self.test_ip))
 
         if 'TEST_GENERIC' in config_file.sections():
             section = config_file['TEST_GENERIC']
             self.radio_lf = section['RADIO_USED']
-            print("radio_lf {}".format(self.radio_lf))
+            self.logger.info("radio_lf {}".format(self.radio_lf))
             self.ssid = section['SSID_USED']
-            print("ssid {}".format(self.ssid))
+            self.logger.info("ssid {}".format(self.ssid))
             self.ssid_pw = section['SSID_PW_USED']
-            print("ssid_pw {}".format(self.ssid_pw))
+            self.logger.info("ssid_pw {}".format(self.ssid_pw))
             self.security = section['SECURITY_USED']
-            print("secruity {}".format(self.security))
+            self.logger.info("secruity {}".format(self.security))
             self.num_sta = section['NUM_STA']
-            print("num_sta {}".format(self.num_sta))
+            self.logger.info("num_sta {}".format(self.num_sta))
             self.col_names = section['COL_NAMES']
-            print("col_names {}".format(self.col_names))
+            self.logger.info("col_names {}".format(self.col_names))
             self.upstream_port = section['UPSTREAM_PORT']
-            print("upstream_port {}".format(self.upstream_port))
+            self.logger.info("upstream_port {}".format(self.upstream_port))
 
 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
-            print("self.radio_dict {}".format(self.radio_dict))
+            self.logger.info("self.radio_dict {}".format(self.radio_dict))
 
         if 'TEST_DICTIONARY' in config_file.sections():
             section = config_file['TEST_DICTIONARY']
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
             self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
-            #print("test_dict {}".format(self.test_dict))
+            #self.logger.info("test_dict {}".format(self.test_dict))
 
 
     def load_factory_default_db(self):
-        #print("file_wd {}".format(self.scripts_wd))
+        #self.logger.info("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            #print("Current Working Directory {}".format(os.getcwd()))
+            #self.logger.info("Current Working Directory {}".format(os.getcwd()))
         except:
-            print("failed to change to {}".format(self.scripts_wd))
+            self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
@@ -196,12 +196,12 @@ class lf_check():
 
     # Not currently used
     def load_blank_db(self):
-        #print("file_wd {}".format(self.scripts_wd))
+        #self.logger.info("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            #print("Current Working Directory {}".format(os.getcwd()))
+            #self.logger.info("Current Working Directory {}".format(os.getcwd()))
         except:
-            print("failed to change to {}".format(self.scripts_wd))
+            self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load BLANK")
@@ -214,7 +214,7 @@ class lf_check():
 
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
-                print("test: {}  skipped".format(test))
+                self.logger.info("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
                 # Make the command replace ment a separate method call.
@@ -255,22 +255,22 @@ class lf_check():
 
                 try:
                     os.chdir(self.scripts_wd)
-                    #print("Current Working Directory {}".format(os.getcwd()))
+                    #self.logger.info("Current Working Directory {}".format(os.getcwd()))
                 except:
-                    print("failed to change to {}".format(self.scripts_wd))
+                    self.logger.info("failed to change to {}".format(self.scripts_wd))
                 cmd_args = "{}".format(self.test_dict[test]['args'])
                 command = "./{} {}".format(self.test_dict[test]['command'], cmd_args)
-                print("command: {}".format(command))
-                print("cmd_args {}".format(cmd_args))
+                self.logger.info("command: {}".format(command))
+                self.logger.info("cmd_args {}".format(cmd_args))
 
                 if self.outfile is not None:
                     stdout_log_txt = self.outfile
                     stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
-                    #print("stdout_log_txt: {}".format(stdout_log_txt))
+                    #self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
                     stderr_log_txt = self.outfile
                     stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
-                    #print("stderr_log_txt: {}".format(stderr_log_txt))
+                    #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
@@ -278,34 +278,22 @@ class lf_check():
                     out, err = process.communicate(timeout=20)
                 except:
                     #if err:
-                    print("command Test timed out: {}".format(command))
+                    self.logger.info("command Test timed out: {}".format(command))
 
                 stdout_log.flush()
                 stdout_log.close()
                 stderr_log.flush()
                 stderr_log.close()
-                '''
-                stdout_log_size = os.path.getsize(stdout_log_txt)
-                stdout_log_st_size = os.stat(stdout_log_txt).st_size
-                print("stdout_log_size {}".format(stdout_log_size))
-                print("stdout_log_st_size {}".format(stdout_log_st_size))
-                print("stdout {}".format(os.stat(stdout_log_txt)))
 
-                stderr_log_size = os.path.getsize(stderr_log_txt)
-                stderr_log_st_size = os.stat(stderr_log_txt).st_size
-                print("stderr_log_size {}".format(stderr_log_size))
-                print("stderr_log_st_size {}".format(stderr_log_st_size))
-                print("stderr {}".format(os.stat(stderr_log_txt)))
-                '''
-                #print(stderr_log_txt)
+                #self.logger.info(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
                 if stderr_log_size > 0 :
-                    print("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                    self.logger.info("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
 
                     self.test_result = "Failure"
                     background = self.background_red
                 else:
-                    print("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                    self.logger.info("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
                     self.test_result = "Success"
                     background = self.background_green
 
@@ -322,11 +310,11 @@ class lf_check():
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
                 self.csv_results_writer.writerow(row)
                 self.csv_results_file.flush()
-                #print("row: {}".format(row))
-                print("test: {} executed".format(test))
+                #self.logger.info("row: {}".format(row))
+                self.logger.info("test: {} executed".format(test))
 
             else:
-                print("enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'],test))
+                self.logger.info("enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'],test))
 
         self.finish_html_results()        
 
@@ -358,10 +346,8 @@ for running scripts listed in lf_check_config.ini
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_results = "lf_check{}-{}.csv".format(args.outfile,current_time)
     csv_results = report.file_add_path(csv_results)
-    #print("csv output file : {}".format(csv_results))
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
     outfile = report.file_add_path(outfile)
-    #print("output file : {}".format(outfile))
 
     # lf_check() class created
     check = lf_check(_csv_results = csv_results,
@@ -374,16 +360,18 @@ for running scripts listed in lf_check_config.ini
     git_sha = commit_hash.decode('utf-8','ignore')
 
     # set up logging 
-    logfile = args.logfile
+    logfile = args.logfile[:-4]
+    print("logfile: {}".format(logfile))
+    logfile = "{}-{}.log".format(logfile,current_time)
     logfile = report.file_add_path(logfile)
+    print("logfile {}".format(logfile))
     formatter = logging.Formatter(FORMAT)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler(logfile, "w")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    logger.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stderr
-
+    logger.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stdout
 
     logger.info("commit_hash: {}".format(commit_hash))
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
