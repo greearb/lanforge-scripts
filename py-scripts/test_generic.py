@@ -1,11 +1,28 @@
 #!/usr/bin/env python3
 
-"""test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
+"""
+NAME: test_generic.py
+
+PURPOSE:
+test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
 
 This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
 including ping, speedtest, generic types. The test will check the last-result attribute for different things
 depending on what test is being run. Ping will test for successful pings, speedtest will test for download
 speed, upload speed, and ping time, generic will test for successful generic commands
+
+EXAMPLE:
+    LFPING:
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --num_stations 7 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
+    LFCURL (under construction):
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 26 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
+    GENERIC:
+        ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+    SPEEDTEST:
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 13 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20
+        --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+    IPERF3 (under construction):
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 
 Use './test_generic.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc

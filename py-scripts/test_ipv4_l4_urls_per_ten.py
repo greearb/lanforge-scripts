@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_l4_urls_per_ten.py will create stations and endpoints to generate and verify layer-4 traffic
+"""
+NAME: test_ipv4_l4_urls_per_ten.py
+
+PURPOSE:
+test_ipv4_l4_urls_per_ten.py will create stations and endpoints to generate and verify layer-4 traffic
 
 This script will monitor the urls/s attribute of the endpoints. If the the monitored value does not continually increase, this test will not pass.
+
+EXAMPLE:
+./test_ipv4_l4_urls_per_ten.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
+    --ssid netgear --passwd admin123 --requests_per_ten 600 --mode   1 --num_tests 1 --url "dl http://10.40.0.1 /dev/null"
+    --ap "00:0e:8e:78:e1:76" --target_per_ten 600 --output_format csv --report_file ~/Documents/results.csv --test_duration 2m
+    --debug
+
 
 Use './test_ipv4_l4_urls_per_ten.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc

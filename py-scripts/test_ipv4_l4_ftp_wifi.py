@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_l4_ftp_wifi.py will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection
+"""
+NAME: test_ipv4_l4_ftp_wifi.py
+
+PURPOSE:
+test_ipv4_l4_ftp_wifi.py will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection
 
 This script will monitor the bytes-wr attribute of the endpoints. If the the monitored value does not continually increase, this test will not pass.
 
+EXAMPLE:
+./test_ipv4_l4_ftp_wifi.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
+    --ssid netgear --passwd admin123 --dest 10.40.0.1 --test_duration 2m --interval 1s --requests_per_ten 600
+    --dest /var/www/html/data_slug_4K.bin --source /tmp/data_slug_4K.bin --ftp_user lanforge --ftp_passwd lanforge
+    --debug
+    
 Use './test_ipv4_l4_ftp_wifi.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.

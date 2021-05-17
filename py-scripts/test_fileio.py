@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic.
+"""
+NAME: test_fileio.py
+
+PURPOSE:
+test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic.
 
 This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
 macvlans can be used as well. Command line options are available to update cross-connects as well as using a list of
@@ -11,7 +15,7 @@ this script will depend on the mode used, a read-only test will check the read-b
 and both will check both attributes. If the relevant attributes increase over the duration of the test it will pass,
 otherwise it will fail.
 
-Example: 
+EXAMPLE:
 ./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 

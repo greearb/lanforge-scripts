@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 
-"""test_ipv6_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over IPv6.
+"""
+NAME: test_ipv6_variable_time.py
+
+PURPOSE:
+test_ipv6_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over IPv6.
 
 This script will create a variable number of stations, using IPv6, each with their own set of cross-connects and endpoints.
 It will then create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
 This test will pass if all stations increase traffic over the full test duration.
+
+EXAMPLE:
+    ./test_ipv6_connection.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
+    --ssid netgear --passwd admin123 --upstream 10.40.0.1 --test_duration 2m --interval 1s --a_min 256000 --b_min 256000
+    --debug
 
 Use './test_ipv6_variable_time.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc

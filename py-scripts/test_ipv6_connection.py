@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 
-"""test_ipv6_connection.py will create stations and attempt to connect to an SSID using IPv6. WPA, WPA2, WPA3, WEP, and Open connection types are supported
+"""
+NAME: test_ipv6_connection.py
+
+PURPOSE:
+test_ipv6_connection.py will create stations and attempt to connect to an SSID using IPv6. WPA, WPA2, WPA3, WEP, and Open connection types are supported
 
 Script for creating a variable number of stations and attempting to connect them to an SSID using IPv6.
 A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
 pass, otherwise, the test will fail.
+
+EXAMPLE:
+    ./test_ipv6_connection.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --proxy --security {open|wep|wpa|wpa2|wpa3}
+        --ssid netgear --passwd admin123 --mode   1 --ap "00:0e:8e:78:e1:76" --test_id --timeout 120 --debug
 
 Use './test_ipv6_connection.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -153,7 +161,7 @@ python3 ./test_ipv6_connection.py
         --mode   1  
         --ap "00:0e:8e:78:e1:76"
         --test_id
-        -- timeout 120 
+        --timeout 120 
         --debug
             ''')
 

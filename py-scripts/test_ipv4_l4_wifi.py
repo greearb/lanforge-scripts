@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_l4_wifi.py will create stations and endpoints to generate and verify layer-4 upload traffic
+"""
+NAME: test_ipv4_l4_wifi.py
+
+PURPOSE:
+test_ipv4_l4_wifi.py will create stations and endpoints to generate and verify layer-4 upload traffic
 
 This script will monitor the bytes-rd attribute of the endpoints. If the the monitored value does not continually increase, this test will not pass.
+
+EXAMPLE:
+./test_ipv4_l4_wifi.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security open --ssid netgear
+                       --passwd admin123 --test_duration 2m --requests_per_ten 600 --direction {ul | dl}
+                       --dest /dev/null (or 10.40.0.1) --debug
 
 Use './test_ipv4_l4_wifi.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc

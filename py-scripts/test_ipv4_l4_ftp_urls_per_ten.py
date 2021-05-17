@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_l4_ftp_urls_per_ten.py will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection
+"""
+NAME: test_ipv4_l4_ftp_urls_per_ten.py
+
+PURPOSE:
+test_ipv4_l4_ftp_urls_per_ten.py will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection
 
 This script will monitor the urls/s attribute of the endpoints. If the the monitored value does not continually increase, this test will not pass.
+
+EXAMPLE:
+    ./test_ipv4_l4_ftp_urls_per_ten.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
+    --ssid netgear --passwd admin123 --test_duration 2m --interval 1s --mode 1 --ap "00:0e:8e:78:e1:76" --requests_per_ten 600
+    --num_tests 1 --url "ul ftp://lanforge:lanforge@10.40.0.1/example.txt  /home/lanforge/example.txt" --debug
 
 Use './test_ipv4_l4_ftp_urls_per_ten.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic.
-This Sdript has two working modes:
+"""
+NAME: test_ipv4_variable_time.py
+
+PURPOSE:
+test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic.
+This Script has two working modes:
     Mode 1:
         When station is not available,
 

@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 
-"""test_ipv4_connection.py will create stations and attempt to connect to an SSID. WPA, WPA2, WPA3, WEP, and Open connection types are supported
+"""
+NAME: test_ipv4_connection.py
+
+PURPOSE:
+test_ipv4_connection.py will create stations and attempt to connect to an SSID. WPA, WPA2, WPA3, WEP, and Open connection types are supported
 
 Script for creating a variable number of stations and attempting to connect them to an SSID.
 A test will run to verify stations are associated and get an IP, if these conditions are both true, the test will
 pass, otherwise, the test will fail.
+
+EXAMPLE:
+./test_ipv4_connection.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security open --ssid netgear --passwd BLANK --debug
 
 Use './test_ipv4_connection.py' --help to see command line usage and options
 Copyright 2021 Candela Technologies Inc
