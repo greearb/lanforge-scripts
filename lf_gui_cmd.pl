@@ -32,6 +32,7 @@ my $scenario = "";
 my $tconfig = "";  # test config
 my $rpt_dest = "";
 my $show_help = 0;
+my $verbosity = -1;
 my @modifiers_key = ();
 my @modifiers_val = ();
 
@@ -50,6 +51,7 @@ my $usage = qq($0  [--manager { hostname or address of LANforge GUI machine } ]
                  [--tconfig {test configuration name, use defaults if not specified} ]
                  [--rpt_dest {Copy report to destination once it is complete} ]
                  [--cmd { command to send to the GUI } ]
+                 [--verbosity { report verbosity 1 - 11 } ]
                  [--modifier "
 
 Example:
@@ -75,6 +77,7 @@ GetOptions (
    'rpt_dest=s'            => \$rpt_dest,
    'port=s'                => \$port,
    'cmd|c=s'               => \$cmd,
+    'verbosity|v=i'         => \$verbosity,
 ) || die("$usage");
 
 if ($show_help) {
@@ -141,6 +144,9 @@ if ($ttype ne "") {
   if ($tconfig ne "") {
     print doCmd("cv load '$tname' '$tconfig'");
   }
+    if ($verbosity >= 1) {
+        print doCmd("cv set '$tname' 'VERBOSITY' '$verbosity'");
+    }
   print doCmd("cv click '$tname' 'Auto Save Report'");
 
   for ($i = 0; $i<@modifiers_key; $i++) {
