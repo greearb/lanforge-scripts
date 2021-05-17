@@ -46,16 +46,8 @@ sys.path.append('/')
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
 RUN_CONDITION = 'ENABLE'
 
-# setup logging
+# setup logging FORMAT
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
-#logger = logging.getLogger('Throughput_Test')
-#logger.setLevel(logging.INFO)
-#hdlr = logging.FileHandler(local_dir+"/Throughput_Testing.log")
-#formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-#hdlr.setFormatter(formatter)
-#logger.addHandler(hdlr)
-#logger.setLevel(logging.INFO)
-
 
 class lf_check():
     def __init__(self,
@@ -139,10 +131,7 @@ class lf_check():
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(CONFIG_FILE)
-        #print("{}".format(success))
-        #print("{}".format(config_file))
         self.logger.info("logger worked")
-        exit(1)
 
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
