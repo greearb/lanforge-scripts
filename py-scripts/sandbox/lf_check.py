@@ -274,16 +274,12 @@ class lf_check():
                     stderr_log = open(stderr_log_txt, 'a')
 
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                
                 try:
-                    out, err = process.communicate(timeout=20)
+                    out, err = process.communicate()
                 except:
-                    #if err:
-                    self.logger.info("command Test timed out: {}".format(command))
-
-                stdout_log.flush()
-                stdout_log.close()
-                stderr_log.flush()
-                stderr_log.close()
+                    if err:
+                        self.logger.info("command Test timed out: {}".format(command))
 
                 #self.logger.info(stderr_log_txt)
                 stderr_log_size = os.path.getsize(stderr_log_txt)
