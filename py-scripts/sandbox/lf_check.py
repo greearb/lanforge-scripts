@@ -19,7 +19,9 @@ if sys.version_info[0]  != 3:
     print("This script requires Python3")
     exit()
 
+
 import os
+import pexpect
 import logging
 import time
 from time import sleep
@@ -29,28 +31,31 @@ from json import load
 import configparser
 from pprint import *
 import subprocess
-import sys
+import re
 import csv
 
-#from ..lf_report import lf_report
-sys.path.append('../')
+# lf_report is from the parent of the current file
+dir_path = os.path.dirname(os.path.realpath(__file__))
+parent_dir_path = os.path.abspath(os.path.join(dir_path,os.pardir))
+sys.path.insert(0, parent_dir_path)
+
+#sys.path.append('../')
 from lf_report import lf_report
 sys.path.append('/')
 
 CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
 RUN_CONDITION = 'ENABLE'
 
-# see https://stackoverflow.com/a/13306095/11014343
-class FileAdapter(object):
-    def __init__(self, logger):
-        self.logger = logger
-    def write(self, data):
-        # NOTE: data can be a partial line, multiple lines
-        data = data.strip() # ignore leading/trailing whitespace
-        if data: # non-blank
-           self.logger.info(data)
-    def flush(self):
-        pass  # leave it to logging to flush properly
+# setup logging
+FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
+#logger = logging.getLogger('Throughput_Test')
+#logger.setLevel(logging.INFO)
+#hdlr = logging.FileHandler(local_dir+"/Throughput_Testing.log")
+#formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+#hdlr.setFormatter(formatter)
+#logger.addHandler(hdlr)
+#logger.setLevel(logging.INFO)
+
 
 class lf_check():
     def __init__(self,
@@ -88,6 +93,7 @@ class lf_check():
         self.csv_results_file = ""
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
+        self.logger = logging.getLogger(__name__)
 
     def get_csv_results(self):
         return self.csv_file.name
@@ -129,12 +135,14 @@ class lf_check():
 
     # Functions in this section are/can be overridden by descendants
     def read_config_contents(self):
-        print("read_config_contents {}".format(CONFIG_FILE))
+        self.logger.info("read_config_contents {}".format(CONFIG_FILE))
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(CONFIG_FILE)
-        print("{}".format(success))
-        print("{}".format(config_file))
+        #print("{}".format(success))
+        #print("{}".format(config_file))
+        self.logger.info("logger worked")
+        exit(1)
 
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
@@ -351,6 +359,7 @@ for running scripts listed in lf_check_config.ini
             ''')
 
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
+    parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
     args = parser.parse_args()    
 
@@ -374,9 +383,21 @@ for running scripts listed in lf_check_config.ini
     (commit_hash, err) = process.communicate()
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8','ignore')
-    #print("commit_hash: {}".format(commit_hash))
-    #print("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
+    # set up logging 
+    logfile = args.logfile
+    logfile = report.file_add_path(logfile)
+    formatter = logging.Formatter(FORMAT)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(logfile, "w")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stderr
+
+
+    logger.info("commit_hash: {}".format(commit_hash))
+    logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
     check.read_config_contents() # CMR need mode to just print out the test config and not run 
     check.run_script_test()
