@@ -33,6 +33,8 @@ from pprint import *
 import subprocess
 import re
 import csv
+import shutil
+import os.path
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -365,11 +367,11 @@ for running scripts listed in lf_check_config.ini
     csv_results = "lf_check{}-{}.csv".format(args.outfile,current_time)
     csv_results = report.file_add_path(csv_results)
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
-    outfile = report.file_add_path(outfile)
+    outfile_path = report.file_add_path(outfile)
 
     # lf_check() class created
     check = lf_check(_csv_results = csv_results,
-                    _outfile = outfile)
+                    _outfile = outfile_path)
 
     # get the git sha 
     process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
@@ -405,11 +407,38 @@ for running scripts listed in lf_check_config.ini
     report.set_text("git sha: {}".format(git_sha))
     report.build_text()
     html_results = check.get_html_results()
-    #print("html_results {}".format(html_results))
     report.set_custom_html(html_results)
     report.build_custom()
-    report.write_html_with_timestamp()
+    html_report = report.write_html_with_timestamp()
+    print("html report: {}".format(html_report))
     report.write_pdf_with_timestamp()
+
+    # copy results to lastest so someone may see the latest.
+    lf_check_latest_html = os.path.dirname(os.path.dirname(html_report)) + "/lf_check_latest.html"
+    # duplicates html_report file up one directory
+    lf_check_html_report = os.path.dirname(os.path.dirname(html_report)) + "/{}.html".format(outfile)
+
+    # 
+    banner_src_png =  os.path.dirname(html_report)+ "/banner.png"
+    banner_dest_png = os.path.dirname(os.path.dirname(html_report))+ "/banner.png"
+    CandelaLogo_src_png = os.path.dirname(html_report) + "/CandelaLogo2-90dpi-200x90-trans.png"
+    CandelaLogo_dest_png = os.path.dirname(os.path.dirname(html_report)) + "/CandelaLogo2-90dpi-200x90-trans.png"
+
+    # copy one directory above
+    shutil.copyfile(html_report,lf_check_latest_html)
+    shutil.copyfile(html_report,lf_check_html_report)
+
+    shutil.copyfile(banner_src_png, banner_dest_png)
+    shutil.copyfile(CandelaLogo_src_png,CandelaLogo_dest_png)
+    print("lf_check_latest.html: {}".format(lf_check_latest_html))
+    print("lf_check_html_report: {}".format(lf_check_html_report))
+    print("lf_check_latest.html: {}".format(banner_dest_png))
+    print("lf_check_latest.html: {}".format(CandelaLogo_dest_png))
+
+
+
+    # copy results up one directory 
+
 
 
 if __name__ == '__main__':
