@@ -86,6 +86,9 @@ class lf_check():
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
         self.logger = logging.getLogger(__name__)
+        self.test_timeout = 20
+        self.load_blank_db = "False"
+        self.load_factory_default_db = "False"
 
     def get_csv_results(self):
         return self.csv_file.name
@@ -166,6 +169,11 @@ class lf_check():
             self.upstream_port = section['UPSTREAM_PORT']
             self.logger.info("upstream_port {}".format(self.upstream_port))
 
+        if 'TEST_PARAMETERS' in config_file.sections():
+            section = config_file['TEST_PARAMETERS']
+            self.test_timeout = section['TEST_TIMEOUT']
+            self.load_blank_db = section['LOAD_BLANK_DB']
+            self.load_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
@@ -249,8 +257,11 @@ class lf_check():
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
 
+                if self.load_factory_default_db == "True":
+                    self.load_factory_default_db()
+                elif self.load_blank_db == "True":
+                    self.load_blank_db()
 
-                self.load_factory_default_db()
                 sleep(5) # the sleep is to allow for the database to stablize
 
                 try:
@@ -277,7 +288,7 @@ class lf_check():
                 
                 try:
                     #out, err = process.communicate()
-                    process.wait(timeout=120)
+                    process.wait(timeout=int(self.test_timeout))
                 except subprocess.TimeoutExpired:
                     process.terminate()
                     self.test_result = "TIMEOUT"
