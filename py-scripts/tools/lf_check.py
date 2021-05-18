@@ -276,28 +276,39 @@ class lf_check():
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                 
                 try:
-                    out, err = process.communicate()
-                except:
-                    if err:
-                        self.logger.info("command Test timed out: {}".format(command))
+                    #out, err = process.communicate()
+                    process.wait(timeout=120)
+                except subprocess.TimeoutExpired:
+                    process.terminate()
+                    self.test_result = "TIMEOUT"
+
+                    #if err:
+                    #    self.logger.info("command Test timed out: {}".format(command))
 
                 #self.logger.info(stderr_log_txt)
-                stderr_log_size = os.path.getsize(stderr_log_txt)
-                if stderr_log_size > 0 :
-                    self.logger.info("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                if(self.test_result != "TIMEOUT"):
+                    stderr_log_size = os.path.getsize(stderr_log_txt)
+                    if stderr_log_size > 0 :
+                        self.logger.info("File: {} is not empty: {}".format(stderr_log_txt,str(stderr_log_size)))
 
-                    self.test_result = "Failure"
-                    background = self.background_red
+                        self.test_result = "Failure"
+                        background = self.background_red
+                    else:
+                        self.logger.info("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
+                        self.test_result = "Success"
+                        background = self.background_green
                 else:
-                    self.logger.info("File: {} is empty: {}".format(stderr_log_txt,str(stderr_log_size)))
-                    self.test_result = "Success"
-                    background = self.background_green
+                    self.logger.info("TIMEOUT FAILURE,  Check LANforge Radios")
+                    self.test_result = "Time Out"
+                    background = self.background_purple
 
                 self.html_results += """
                     <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
                 <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
                 <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>"""
                 if self.test_result == "Failure":
+                    self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
+                elif self.test_result == "Time Out":
                     self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
                 else:
                     self.html_results += """<td></td>"""
