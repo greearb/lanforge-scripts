@@ -278,11 +278,15 @@ class lf_check():
 
                 if self.use_factory_default_db == "TRUE":
                     self.load_factory_default_db()
+                    sleep(1)
                     self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
-                elif self.use_blank_db == "TRUE":
+                if self.use_blank_db == "TRUE":
                     self.load_blank_db()
+                    sleep(1)
                     self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
-                elif self.use_custom_db == "TRUE":
+                if self.use_custom_db == "TRUE":
+                    self.load_factory_default_db()
+                    sleep(1)
                     try:
                         self.load_custom_db(self.custom_db)
                         self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
@@ -291,7 +295,7 @@ class lf_check():
                 else:
                     self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
 
-                sleep(5) # the sleep is to allow for the database to stablize
+                sleep(1) # the sleep is to allow for the database to stablize
 
                 try:
                     os.chdir(self.scripts_wd)
