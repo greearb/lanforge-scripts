@@ -176,6 +176,8 @@ class lf_check():
             self.test_timeout = section['TEST_TIMEOUT']
             self.load_blank_db = section['LOAD_BLANK_DB']
             self.load_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
+            self.load_custom_db = section['LOAD_CUSTOM_DB']
+            self.custom_db = section['CUSTOM_DB']
 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
@@ -217,6 +219,20 @@ class lf_check():
         command = "./{} {}".format("scenario.py", "--load BLANK")
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
+    def load_custom_db(self,custom_db):
+        #self.logger.info("file_wd {}".format(self.scripts_wd))
+        try:
+            os.chdir(self.scripts_wd)
+            #self.logger.info("Current Working Directory {}".format(os.getcwd()))
+        except:
+            self.logger.info("failed to change to {}".format(self.scripts_wd))
+
+        # no spaces after FACTORY_DFLT
+        command = "./{} {}".format("scenario.py", "--load {}".format(custom_db))
+        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        # wait for the process to terminate
+        out, err = process.communicate()
+        errcode = process.returncode
 
     def run_script_test(self):
         self.start_html_results() 
@@ -263,6 +279,11 @@ class lf_check():
                     self.load_factory_default_db()
                 elif self.load_blank_db == "True":
                     self.load_blank_db()
+                elif self.load_custom_db == "True":
+                    try:
+                        self.load_custom_db(self.custom_db)
+                    except:
+                        logger.info("custom database failed to load check existance and location")
 
                 sleep(5) # the sleep is to allow for the database to stablize
 
