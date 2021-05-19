@@ -277,11 +277,14 @@ class lf_check():
 
                 if self.load_factory_default_db == "TRUE":
                     self.load_factory_default_db()
+                    logger.info("scenario.py --load FACTORY_DFLT")
                 elif self.load_blank_db == "TRUE":
                     self.load_blank_db()
+                    logger.info("scenario.py --load BLANK")
                 elif self.load_custom_db == "TRUE":
                     try:
                         self.load_custom_db(self.custom_db)
+                        logger.info("scenario.py --load {}".format(self.custom_db))
                     except:
                         logger.info("custom database failed to load check existance and location")
 
