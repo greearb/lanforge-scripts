@@ -89,8 +89,9 @@ class lf_check():
         self.csv_results_column_headers = ""
         self.logger = logging.getLogger(__name__)
         self.test_timeout = 20
-        self.load_blank_db = "False"
-        self.load_factory_default_db = "False"
+        self.use_blank_db = "FALSE"
+        self.use_factory_default_db = "FALSE"
+        self.use_custom_db = "FALSE"
 
     def get_csv_results(self):
         return self.csv_file.name
@@ -174,9 +175,9 @@ class lf_check():
         if 'TEST_PARAMETERS' in config_file.sections():
             section = config_file['TEST_PARAMETERS']
             self.test_timeout = section['TEST_TIMEOUT']
-            self.load_blank_db = section['LOAD_BLANK_DB']
-            self.load_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
-            self.load_custom_db = section['LOAD_CUSTOM_DB']
+            self.use_blank_db = section['LOAD_BLANK_DB']
+            self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
+            self.use_custom_db = section['LOAD_CUSTOM_DB']
             self.custom_db = section['CUSTOM_DB']
 
         if 'RADIO_DICTIONARY' in config_file.sections():
@@ -275,18 +276,20 @@ class lf_check():
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
 
-                if self.load_factory_default_db == "TRUE":
+                if self.use_factory_default_db == "TRUE":
                     self.load_factory_default_db()
-                    logger.info("scenario.py --load FACTORY_DFLT")
-                elif self.load_blank_db == "TRUE":
+                    self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
+                elif self.use_blank_db == "TRUE":
                     self.load_blank_db()
-                    logger.info("scenario.py --load BLANK")
-                elif self.load_custom_db == "TRUE":
+                    self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
+                elif self.use_custom_db == "TRUE":
                     try:
                         self.load_custom_db(self.custom_db)
-                        logger.info("scenario.py --load {}".format(self.custom_db))
+                        self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
                     except:
-                        logger.info("custom database failed to load check existance and location")
+                        self.logger.info("custom database failed to load check existance and location")
+                else:
+                    self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
 
                 sleep(5) # the sleep is to allow for the database to stablize
 
