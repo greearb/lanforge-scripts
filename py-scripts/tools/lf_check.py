@@ -275,11 +275,11 @@ class lf_check():
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
 
-                if self.load_factory_default_db == "True":
+                if self.load_factory_default_db == "TRUE":
                     self.load_factory_default_db()
-                elif self.load_blank_db == "True":
+                elif self.load_blank_db == "TRUE":
                     self.load_blank_db()
-                elif self.load_custom_db == "True":
+                elif self.load_custom_db == "TRUE":
                     try:
                         self.load_custom_db(self.custom_db)
                     except:
