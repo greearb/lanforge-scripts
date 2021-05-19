@@ -449,17 +449,11 @@ for running scripts listed in lf_check_config.ini
     shutil.copyfile(html_report,lf_check_latest_html)
     shutil.copyfile(html_report,lf_check_html_report)
 
+    # copy banner and logo
     shutil.copyfile(banner_src_png, banner_dest_png)
     shutil.copyfile(CandelaLogo_src_png,CandelaLogo_dest_png)
     print("lf_check_latest.html: {}".format(lf_check_latest_html))
     print("lf_check_html_report: {}".format(lf_check_html_report))
-    print("lf_check_latest.html: {}".format(banner_dest_png))
-    print("lf_check_latest.html: {}".format(CandelaLogo_dest_png))
-
-
-
-    # copy results up one directory 
-
 
 
 if __name__ == '__main__':
