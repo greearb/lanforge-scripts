@@ -278,17 +278,16 @@ class lf_check():
 
                 if self.use_factory_default_db == "TRUE":
                     self.load_factory_default_db()
-                    sleep(1)
+                    sleep(3)
                     self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
                 if self.use_blank_db == "TRUE":
                     self.load_blank_db()
-                    sleep(1)
+                    sleep(3)
                     self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
                 if self.use_custom_db == "TRUE":
-                    self.load_factory_default_db()
-                    sleep(1)
                     try:
                         self.load_custom_db(self.custom_db)
+                        sleep(3)
                         self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
                     except:
                         self.logger.info("custom database failed to load check existance and location")
