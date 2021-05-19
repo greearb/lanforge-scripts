@@ -343,7 +343,8 @@ class lf_check():
                 if self.test_result == "Failure":
                     self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
                 elif self.test_result == "Time Out":
-                    self.html_results += """<td></td>"""
+                    self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
+                    #self.html_results += """<td></td>"""
                 else:
                     self.html_results += """<td></td>"""
                 self.html_results += """</tr>""" 
