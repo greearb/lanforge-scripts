@@ -128,7 +128,8 @@ class IPV4VariableTime(Realm):
 
     def stop(self):
         self.cx_profile.stop_cx()
-        self.station_profile.admin_down()
+        if self.create_sta:
+            self.station_profile.admin_down()
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -157,7 +158,6 @@ class IPV4VariableTime(Realm):
         self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
                                side_b=self.upstream,
                                sleep_time=0)
-        print("Some")
 
 def main():
     parser = Realm.create_basic_argparse(

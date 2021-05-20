@@ -17,7 +17,7 @@ from LANforge import LFUtils
 import realm
 import time
 import pprint
-
+from test_ipv4_variable_time import IPV4VariableTime
 
 class TTLSTest(LFCliBase):
     def __init__(self, host="localhost", port=8080,
@@ -54,6 +54,7 @@ class TTLSTest(LFCliBase):
                  network_auth_type="NA",
                  anqp_3gpp_cell_net="NA",
                  ieee80211w=1,
+                 vap=True,
                  hs20_enable=False,
                  enable_pkc=False,
                  number_template="00000",
@@ -109,8 +110,12 @@ class TTLSTest(LFCliBase):
         self.debug = _debug_on
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
-        self.vap_profile = self.local_realm.new_vap_profile()
-        self.vap_profile.vap_name = "TestNet"
+        self.vap = vap
+        self.upstream_port = "eth1"
+        self.upstream_resource = 1
+        if self.vap:
+            self.vap_profile = self.local_realm.new_vap_profile()
+            self.vap_profile.vap_name = "TestNet"
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -118,20 +123,47 @@ class TTLSTest(LFCliBase):
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = 0
 
+        # Layer3 Traffic
+        self.l3_cx_obj_udp = IPV4VariableTime(host=self.host, port=self.port,
+                                              create_sta=False, sta_list=self.sta_list, traffic_type="lf_udp",
+                                              upstream=self.upstream_port)
+        self.l3_cx_obj_udp.cx_profile.name_prefix = "udp-"
+
+        self.l3_cx_obj_udp.cx_profile.side_a_min_bps = 128000
+        self.l3_cx_obj_udp.cx_profile.side_a_max_bps = 128000
+        self.l3_cx_obj_udp.cx_profile.side_b_min_bps = 128000
+        self.l3_cx_obj_udp.cx_profile.side_b_max_bps = 128000
+        self.l3_cx_obj_udp.cx_profile.side_a_min_pdu = 1200
+        self.l3_cx_obj_udp.cx_profile.side_b_min_pdu = 1500
+        self.l3_cx_obj_udp.cx_profile.report_timer = 1000
+
+        self.l3_cx_obj_tcp = IPV4VariableTime(host=self.host, port=self.port,
+                                              create_sta=False, sta_list=self.sta_list, traffic_type="lf_tcp",
+                                              upstream=self.upstream_port)
+        self.l3_cx_obj_tcp.cx_profile.name_prefix = "tcp-"
+        self.l3_cx_obj_tcp.cx_profile.side_a_min_bps = 128000
+        self.l3_cx_obj_tcp.cx_profile.side_a_max_bps = 128000
+        self.l3_cx_obj_tcp.cx_profile.side_b_min_bps = 128000
+        self.l3_cx_obj_tcp.cx_profile.side_b_max_bps = 128000
+        self.l3_cx_obj_tcp.cx_profile.side_a_min_pdu = 1200
+        self.l3_cx_obj_tcp.cx_profile.side_b_min_pdu = 1500
+        self.l3_cx_obj_tcp.cx_profile.report_timer = 1000
+
     def build(self):
         # Build stations
         keyphrase = "[BLANK]"
 
         self.station_profile.use_security(self.security, self.ssid, passwd=self.password)
-        self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
+        if self.vap:
+            self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
-                                            pairwise="DEFAULT",
-                                            group="DEFAULT",
+                                            pairwise=self.pairwise,
+                                            group=self.group,
                                             psk=self.password,
                                             eap=self.eap,
                                             identity=self.identity,
@@ -146,36 +178,40 @@ class TTLSTest(LFCliBase):
         if self.hs20_enable:
             self.station_profile.set_command_flag("add_sta", "hs20_enable", 1)
 
-        self.vap_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
-                                        pairwise="DEFAULT",
-                                        group="DEFAULT",
-                                        psk=self.password,
-                                        eap=self.eap,
-                                        identity=self.identity,
-                                        passwd=self.ttls_passwd,
-                                        realm=self.ttls_realm,
-                                        domain=self.domain,
-                                        hessid=self.hessid)
-        self.vap_profile.create(resource=1,
-                                radio=self.radio,
-                                channel=36,
-                                up_=True,
-                                debug=False,
-                                suppress_related_commands_=True,
-                                use_radius=True,
-                                hs20_enable=False)
+        if self.vap:
+            self.vap_profile.set_wifi_extra(key_mgmt=self.key_mgmt,
+                                            pairwise="DEFAULT",
+                                            group="DEFAULT",
+                                            psk=self.password,
+                                            eap=self.eap,
+                                            identity=self.identity,
+                                            passwd=self.ttls_passwd,
+                                            realm=self.ttls_realm,
+                                            domain=self.domain,
+                                            hessid=self.hessid)
+            self.vap_profile.create(resource=1,
+                                    radio=self.radio,
+                                    channel=36,
+                                    up_=True,
+                                    debug=False,
+                                    suppress_related_commands_=True,
+                                    use_radius=True,
+                                    hs20_enable=False)
         self.station_profile.create(radio=self.radio,
                                     sta_names_=self.sta_list,
                                     debug=self.debug,
                                     use_radius=True,
                                     hs20_enable=False)
         self._pass("Station build finished")
+        self.l3_cx_obj_udp.build()
+        self.l3_cx_obj_tcp.build()
         if self.debug:
             pprint.pprint(self.station_profile.add_sta_data)
 
-    def start(self, sta_list, print_pass, print_fail):
+    def start(self, sta_list, print_pass, print_fail, wait_time=40):
         self.station_profile.admin_up()
-        self.vap_profile.admin_up(1)
+        if self.vap:
+            self.vap_profile.admin_up(1)
         associated_map = {}
         ip_map = {}
         print("Starting test...")
@@ -183,7 +219,7 @@ class TTLSTest(LFCliBase):
             for sta_name in sta_list:
                 sta_status = self.json_get("port/1/1/" + sta_name + "?fields=port,alias,ip,ap", debug_=self.debug)
                 # print(sta_status)
-                if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
+                if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ip'] == "0.0.0.0":
                     continue
                 if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
                     # print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
@@ -210,6 +246,9 @@ class TTLSTest(LFCliBase):
                 print("ip_map", ip_map)
                 print("associated_map", associated_map)
 
+        self.l3_cx_obj_udp.start()
+        self.l3_cx_obj_tcp.start()
+        time.sleep(wait_time)
         # notice that this does not actually generate traffic
         # please see test_ipv4_variable_time for example of generating traffic
         return self.passes()
@@ -218,13 +257,57 @@ class TTLSTest(LFCliBase):
     def stop(self):
         # Bring stations down
         self.station_profile.admin_down()
-        self.vap_profile.admin_down(1)
+        if self.vap:
+            self.vap_profile.admin_down(1)
+        self.l3_cx_obj_udp.stop()
+        self.l3_cx_obj_tcp.stop()
+        self.collect_endp_stats(self.l3_cx_obj_tcp.cx_profile.created_cx, traffic_type="TCP")
+        self.collect_endp_stats(self.l3_cx_obj_udp.cx_profile.created_cx, traffic_type="UDP")
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
-        self.vap_profile.cleanup(1)
+        if self.vap:
+            self.vap_profile.cleanup(1)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
+
+    def collect_endp_stats(self, endp_map, traffic_type="TCP"):
+        self.resulting_endpoints = {}
+        print("Collecting Data")
+        fields = "?fields=name,tx+bytes,rx+bytes"
+        for (cx_name, endps) in endp_map.items():
+            try:
+                endp_url = "/endp/%s%s" % (endps[0], fields)
+                endp_json = self.json_get(endp_url)
+                self.resulting_endpoints[endp_url] = endp_json
+                ptest_a_tx = endp_json['endpoint']['tx bytes']
+                ptest_a_rx = endp_json['endpoint']['rx bytes']
+
+                # ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
+                endp_url = "/endp/%s%s" % (endps[1], fields)
+                endp_json = self.json_get(endp_url)
+                self.resulting_endpoints[endp_url] = endp_json
+
+                ptest_b_tx = endp_json['endpoint']['tx bytes']
+                ptest_b_rx = endp_json['endpoint']['rx bytes']
+
+                self.compare_vals("test" + traffic_type + "-A TX", ptest_a_tx)
+                self.compare_vals("test" + traffic_type + "-A RX", ptest_a_rx)
+
+                self.compare_vals("test" + traffic_type + "-B TX", ptest_b_tx)
+                self.compare_vals("test" + traffic_type + "-B RX", ptest_b_rx)
+
+
+            except Exception as e:
+                print("Is this the function having the error?")
+                self.error(e)
+
+    def compare_vals(self, name, postVal, print_pass=True, print_fail=True):
+        # print(f"Comparing {name}")
+        if postVal > 0:
+            self._pass("%s %s" % (name, postVal), print_pass)
+        else:
+            self._fail("%s did not report traffic: %s" % (name, postVal), print_fail)
 
 def main():
 
@@ -291,6 +374,7 @@ test_ipv4_ttls.py:
                          key_mgmt=args.key_mgmt,
                          wpa_psk=args.wpa_psk,
                          eap=args.eap,
+                         vap=True,
                          identity=args.identity,
                          ttls_passwd=args.ttls_passwd,
                          ttls_realm=args.ttls_realm,
