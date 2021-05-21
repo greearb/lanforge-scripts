@@ -25,6 +25,7 @@ import argparse
 import time
 from LANforge.LFUtils import *
 from realm import Realm
+import realm
 
 
 class SniffRadio(Realm):
@@ -35,9 +36,16 @@ class SniffRadio(Realm):
                  outfile="/home/lanforge/test_pcap.pcap",
                  duration=60,
                  channel=52,
-                 radio_mode="AUTO"):
+                 radio_mode="AUTO",
+                 debug_on_=False):
         super().__init__(lfclient_host, lfclient_port)
-        self.monitor = self.new_wifi_monitor_profile()
+        self.lfclient_host = lfclient_host
+        self.lfclient_port = lfclient_port
+        self.debug = debug_on_
+        self.local_realm = realm.Realm(lfclient_host=self.lfclient_host,
+                                       lfclient_port=self.lfclient_port,
+                                       debug_=self.debug)
+        self.monitor = self.local_realm.new_wifi_monitor_profile()
         if channel != "AUTO":
             channel = int(channel)
         self.channel = channel
@@ -47,6 +55,9 @@ class SniffRadio(Realm):
         self.radio = radio
 
     def setup(self):
+        self.monitor.set_flag(param_name="disable_ht40", value=0)
+        self.monitor.set_flag(param_name="disable_ht80", value=0)
+        self.monitor.set_flag(param_name="ht160_enable", value=0)
         self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_="moni3a")
 
     def start(self):
