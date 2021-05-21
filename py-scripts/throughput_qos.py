@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 
-"""throughput_qos.py will create stations and endpoints which evaluates  l3 traffic for a particular type of service.
+"""
+NAME: throughput_qos.py
+
+PURPOSE: throughput_qos.py will create stations and endpoints which evaluates  l3 traffic for a particular type of service.
+
+EXAMPLE:
+python3 throughput_qos.py --mgr 192.168.200.240 --mgr_port 8080 -u eth1 --num_stations 1
+--radio wiphy1 --ssid TestAP5-71 --passwd lanforge --security wpa2 --mode 11 --a_min 1000000 --b_min 1000000 --traffic_type lf_udp
+
+python3 throughput_qos.py --num_stations 1 --radio wiphy1 --ssid ct523c-vap --passwd ct523c-vap --security wpa2 --mode 11 --a_min 1000000 --b_min 1000000 --traffic_type lf_udp
 
 
 Use './throughput_qos.py --help' to see command line usage and options
@@ -27,6 +36,7 @@ import datetime
 
 class ThroughputQOS(Realm):
     def __init__(self,
+                 tos,
                  ssid=None,
                  security=None,
                  password=None,
@@ -44,7 +54,6 @@ class ThroughputQOS(Realm):
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000",
                  test_duration="15m",
-                 ip_tos=None,
                  use_ht160=False,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -63,11 +72,11 @@ class ThroughputQOS(Realm):
         self.mode = mode
         self.ap = ap
         self.traffic_type = traffic_type
+        self.tos = tos.split(",")
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.ip_tos = ["BK", "BE", "VI", "VO"]
         self.station_profile = self.new_station_profile()
         self.cx_profile = self.new_l3_cx_profile()
         self.station_profile.lfclient_url = self.lfclient_url
@@ -131,29 +140,36 @@ class ThroughputQOS(Realm):
             self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
             self._pass("PASS: Station build finished")
 
-        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.upstream,
-                               side_b=self.sta_list,
-                               sleep_time=0, tos="BK")
-        #self.create_cx()
+        # self.cx_profile.create(endp_type=self.traffic_type, side_a=self.upstream,
+        #                        side_b=self.sta_list,
+        #                        sleep_time=0, tos=BE)
+        self.create_cx()
         print("cx build finished")
 
     def create_cx(self):
-        self.ip_tos = ["BK", "BE", "VI", "VO"]
-        for tos in self.ip_tos:
-            self.cx_profile.create(endp_type=self.traffic_type, side_a=self.upstream,
-                                   side_b=self.sta_list,
-                                   sleep_time=0, tos=tos)
+        _tos = "BE,BK,VI,VO"
+        self.tos = _tos.split(",")
+        print("tos: {}".format(self.tos))
+        for ip_tos in self.tos:
+            print("## ip_tos: {}".format(ip_tos))
+            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+            self.traffic_type, ip_tos, self.cx_profile.get_cx_count()))
+            self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
+                                   side_b=self.upstream,
+                                   sleep_time=0, tos=ip_tos)
+
         print("cross connections with TOS type created.")
 
     def evaluate_throughput(self):
         test_bps_rx_a, test_bps_rx_b = [], []
         for sta in self.cx_profile.created_cx.keys():
             if self.cx_profile.side_a_min_bps != '0':
-                test_bps_rx_a.append(float(f"{list((self.json_get('/cx/%s?fields=bps+rx+a' % (sta))).values())[2]['bps rx a']/10000:.2f}"))
+                test_bps_rx_a.append(float(
+                    f"{list((self.json_get('/cx/%s?fields=bps+rx+a' % (sta))).values())[2]['bps rx a'] / 10000:.2f}"))
             if self.cx_profile.side_b_min_bps != '0':
-                test_bps_rx_b.append(float(f"{list((self.json_get('/cx/%s?fields=bps+rx+b' % (sta))).values())[2]['bps rx b']/10000:.2f}"))
+                test_bps_rx_b.append(float(
+                    f"{list((self.json_get('/cx/%s?fields=bps+rx+b' % (sta))).values())[2]['bps rx b'] / 10000:.2f}"))
         return test_bps_rx_a, test_bps_rx_b
-
 
 
 def main():
@@ -221,6 +237,8 @@ python3 ./throughput_QOS.py
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', default=True)
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
+    parser.add_argument('--tos', help='used to provide different ToS settings: BK | BE | VI | VO | numeric',
+                        default="BE")
     args = parser.parse_args()
     create_sta = True
     if args.create_sta == "False":
@@ -229,7 +247,6 @@ python3 ./throughput_QOS.py
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
-
 
     if create_sta:
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
@@ -254,6 +271,7 @@ python3 ./throughput_QOS.py
                                         mode=args.mode,
                                         ap=args.ap,
                                         traffic_type=args.traffic_type,
+                                        tos=args.tos,
                                         _debug_on=args.debug)
 
     throughput_qos_test.pre_cleanup()
@@ -271,7 +289,7 @@ python3 ./throughput_QOS.py
         raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
     throughput_qos_test.start(False, False)
-    throughput_qos_test.stop()
+    # throughput_qos_test.stop()
     if create_sta:
         if not throughput_qos_test.passes():
             print(throughput_qos_test.get_fail_message())
@@ -279,7 +297,7 @@ python3 ./throughput_QOS.py
         LFUtils.wait_until_ports_admin_up(port_list=station_list)
         if throughput_qos_test.passes():
             throughput_qos_test.success()
-    #throughput_qos_test.cleanup()
+    # throughput_qos_test.cleanup()
 
 
 if __name__ == "__main__":
