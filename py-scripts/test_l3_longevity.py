@@ -386,7 +386,7 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd))
-            ss.expect([pexpect.TIMEOUT], timeout=2) # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
             ap_stats = ss.before.decode('utf-8','ignore')
             print("ap_stats {}".format(ap_stats))
 
