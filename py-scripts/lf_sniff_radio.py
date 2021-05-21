@@ -54,10 +54,10 @@ class SniffRadio(Realm):
         self.mode = radio_mode
         self.radio = radio
 
-    def setup(self):
-        self.monitor.set_flag(param_name="disable_ht40", value=0)
-        self.monitor.set_flag(param_name="disable_ht80", value=0)
-        self.monitor.set_flag(param_name="ht160_enable", value=0)
+    def setup(self, ht40_value, ht80_value, ht160_value):
+        self.monitor.set_flag(param_name="disable_ht40", value=ht40_value)
+        self.monitor.set_flag(param_name="disable_ht80", value=ht80_value)
+        self.monitor.set_flag(param_name="ht160_enable", value=ht160_value)
         self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_="moni3a")
 
     def start(self):
@@ -98,6 +98,9 @@ def main():
                         default=0)
     parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
                                                        '802.11ab ...]', default="AUTO")
+    parser.add_argument('--disable_ht40', type=str, help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]', default=0)
+    parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]', default=0)
+    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\ [0-disable,1-enable]" ', default=0)
 
     args = parser.parse_args()
 
@@ -109,7 +112,7 @@ def main():
                      radio=args.radio,
                      radio_mode=args.radio_mode
                      )
-    obj.setup()
+    obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
     time.sleep(5)
     obj.start()
     obj.cleanup()
