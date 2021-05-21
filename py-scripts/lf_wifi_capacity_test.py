@@ -446,6 +446,8 @@ class WiFiCapacityTest(cv_test):
         if self.download_rate != "":
             cfg_options.append("dl_rate: " + self.download_rate)
 
+        cfg_options.append("save_csv: 1")
+
         blob_test = "Wifi-Capacity-"
 
         # We deleted the scenario earlier, now re-build new one line at a time.

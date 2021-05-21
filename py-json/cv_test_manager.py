@@ -20,7 +20,7 @@ def cv_base_adjust_parser(args):
         args.set.append(["Test Rig ID:", args.test_rig])
 
     if args.influx_host is not None:
-        if (not args.pull_report):
+        if not args.pull_report:
             print("Specified influx host without pull_report, will enabled pull_request.")
             args.pull_report = True
 
@@ -182,7 +182,7 @@ class cv_test(Realm):
 
         # It can take a while, some test rebuild the old scenario upon exit, for instance.
         tries = 0
-        while (True):
+        while True:
             if self.get_exists(instance):
                 print("Waiting %i/60 for test instance: %s to be deleted."%(tries, instance))
                 tries += 1
@@ -194,7 +194,7 @@ class cv_test(Realm):
 
         # And make sure chamber-view is properly re-built
         tries = 0
-        while (True):
+        while True:
             if not self.get_cv_is_built():
                 print("Waiting %i/60 for Chamber-View to be built."%(tries))
                 tries += 1
@@ -291,7 +291,7 @@ class cv_test(Realm):
             load_old = "true"
 
         start_try = 0
-        while (True):
+        while True:
             response = self.create_test(test_name, instance_name, load_old)
             if response[0]["LAST"]["response"] == "OK":
                 break
@@ -348,15 +348,15 @@ class cv_test(Realm):
                     filelocation.close()
                 print(location)
                 self.report_dir = location
-                try:
-                    if pull_report:
+                if pull_report:
+                    try:
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             report_location=location)
-                except Exception as e:
-                    print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
-                    raise e  # Exception("Could not find Reports")
-                break
+                    except Exception as e:
+                        print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
+                        raise e  # Exception("Could not find Reports")
+                    break
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):

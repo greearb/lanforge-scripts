@@ -21,6 +21,16 @@ Influx from this script.
 --station 1.1.sta00002
 --duration 15s
 --upstream 1.1.eth1
+--radio2 1.1.wiphy1
+--radio5 1.1.wiphy2
+--dut5_0 linksys-8450
+--set 'Basic Client Connectivity' 1
+--set 'Multi-Station Throughput vs Pkt Size' 0
+--set 'Multi Band Performance' 1
+--set Stability 1
+--set 'Throughput vs Pkt Size' 0
+--set Capacity 0
+--set Band-Steering 0
 
 OPTIONAL GRAFANA ARGUMENTS
 --grafana_token TOKEN
@@ -38,6 +48,18 @@ Each line argument adds a line to the Chamber View Scenario which you create in 
 DUT flag gives the name of the DUT which is created by this script. It can be found in the DUT tab in LANforge Manager.
 
 The station flag tells Dataplane test which station to test with.
+
+The AP Auto test is triggered by the radio2 or radio5 flag. Select which tests in the AP Auto Test with the set argument.
+
+AP Auto test has the following argument:
+* max_stations_2: Specify maximum 2.4Ghz stations
+* max_stations_5: Specify maximum 5Ghz stations
+* max_stations_dual: Specify maximum stations for dual-band tests
+* dut5_0: Specify 5Ghz DUT entry
+* dut2_0: Specify 2Ghz DUT entry
+DUT syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)
+* radio2: Specify 2.4Ghz radio.  May be specified multiple times.
+* radio5: Specify 5Ghz radio.  May be specified multiple times.
 '''
 import sys
 import os
@@ -58,6 +80,8 @@ from create_chamberview_dut import DUT
 from create_chamberview import CreateChamberview
 from lf_dataplane_test import DataplaneTest
 from grafana_profile import UseGrafana
+from lf_ap_auto_test import ApAutoTest
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -104,7 +128,8 @@ def main():
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000',
+    parser.add_argument('--number_template',
+                        help='Start the station numbering with a particular number. Default is 0000',
                         default=0000)
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
@@ -127,12 +152,11 @@ def main():
     parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
+                        help="Specify requested download speed.  Percentage of theoretical is also supported.")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--ssid_dut", action='append', nargs=1, help="SSID", default=[])
-
 
     parser.add_argument("--sw_version", default="NA", help="DUT Software version.")
     parser.add_argument("--hw_version", default="NA", help="DUT Hardware version.")
@@ -142,6 +166,24 @@ def main():
     parser.add_argument('--grafana_token', help='token to access your Grafana database')
     parser.add_argument('--grafana_port', help='Grafana port if different from 3000', default=3000)
     parser.add_argument('--grafana_host', help='Grafana host', default='localhost')
+
+    #Flags for AP-Auto Test config
+
+    parser.add_argument("--max_stations_2", type=int, default=-1,
+                        help="Specify maximum 2.4Ghz stations")
+    parser.add_argument("--max_stations_5", type=int, default=-1,
+                        help="Specify maximum 5Ghz stations")
+    parser.add_argument("--max_stations_dual", type=int, default=-1,
+                        help="Specify maximum stations for dual-band tests")
+    parser.add_argument("--dut5_0", type=str, default="",
+                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)")
+    parser.add_argument("--dut2_0", type=str, default="",
+                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
+
+    parser.add_argument("--radio2", action='append', nargs=1, default=[],
+                        help="Specify 2.4Ghz radio.  May be specified multiple times.")
+    parser.add_argument("--radio5", action='append', nargs=1, default=[],
+                        help="Specify 5Ghz radio.  May be specified multiple times.")
 
     args = parser.parse_args()
 
@@ -232,6 +274,34 @@ def main():
     CV_Test.run()
 
     CV_Test.check_influx_kpi(args)
+
+    if len(args.radio2) + len(args.radio5) > 0:
+        ApAuto = ApAutoTest(lf_host=args.mgr,
+                            lf_port=args.port,
+                            lf_user=args.lf_user,
+                            lf_password=args.lf_password,
+                            instance_name=args.instance_name,
+                            config_name=args.config_name,
+                            upstream=args.upstream,
+                            pull_report=args.pull_report,
+                            dut5_0=args.dut5_0,
+                            dut2_0=args.dut2_0,
+                            load_old_cfg=args.load_old_cfg,
+                            max_stations_2=args.max_stations_2,
+                            max_stations_5=args.max_stations_5,
+                            max_stations_dual=args.max_stations_dual,
+                            radio2=args.radio2,
+                            radio5=args.radio5,
+                            enables=args.enable,
+                            disables=args.disable,
+                            raw_lines=args.raw_line,
+                            raw_lines_file=args.raw_lines_file,
+                            sets=args.set
+                            )
+        ApAuto.setup()
+        ApAuto.run()
+
+        ApAuto.check_influx_kpi(args)
 
     if args.grafana_token:
         print("Create Grafana dashboard")
