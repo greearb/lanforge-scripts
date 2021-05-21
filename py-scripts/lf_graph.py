@@ -192,7 +192,8 @@ class lf_horizontal_stacked_graph():
                  _label=['Success', 'Fail'],
                  _graph_image_name="image_name",
                  _color=["success", "Fail"],
-                 _figsize=(9, 4)):
+                 _figsize=(9, 4),
+                 _disable_xaxis=False):
         self.unit = _unit
         self.seg = _seg
         self.xaxis_set1 = _xaxis_set1
@@ -203,6 +204,7 @@ class lf_horizontal_stacked_graph():
         self.graph_image_name = _graph_image_name
         self.label = _label
         self.color = _color
+        self.disable_xaxis = _disable_xaxis
 
     def build_horizontal_stacked_graph(self):
         def sumzip(items):
@@ -239,6 +241,8 @@ class lf_horizontal_stacked_graph():
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.legend(loc='upper right')
+        if self.disable_xaxis:
+            plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)  # disable x-axis
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
