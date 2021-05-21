@@ -106,7 +106,8 @@ class IPv4Test(LFCliBase):
                 eidn = self.local_realm.name_to_eid(sta_name)
                 url = "/port/1/%s/%s" % (eidn[1], eidn[2])
                 sta_status = self.json_get(url + "?fields=port,alias,ip,ap", debug_=self.debug)
-                print(sta_status)
+                if self.debug:
+                    print(sta_status)
                 try:                
                     if (sta_status is None) or (sta_status['interface'] is None) or (sta_status['interface']['ap'] is None):
                         continue

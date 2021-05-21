@@ -95,7 +95,10 @@ class IPv6Test(LFCliBase):
                                            debug_=self.debug)
                 if self.debug:
                     print(sta_status)
-                if sta_status is None or sta_status['interface'] is None or sta_status['interface']['ap'] is None:
+                try:                
+                    if (sta_status is None) or (sta_status['interface'] is None) or (sta_status['interface']['ap'] is None):
+                        continue
+                except:
                     continue
                 if len(sta_status['interface']['ap']) == 17 and sta_status['interface']['ap'][-3] == ':':
                     if self.debug:
