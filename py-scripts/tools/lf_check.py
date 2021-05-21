@@ -251,7 +251,7 @@ class lf_check():
                     # not "KEY" is just a word to refer to the RADIO define (e.g. RADIO_0_CFG) to get the vlaues
                     # --num_stations needs to be int not string (no double quotes)
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio "{}" --ssid "{}" --passwd "{}" --security "{}" --num_stations {}'
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.radio_dict[radio]["KEY"],'--radio {} --ssid {} --passwd {} --security {} --num_stations {}'
                         .format(self.radio_dict[radio]['RADIO'],self.radio_dict[radio]['SSID'],self.radio_dict[radio]['PASSWD'],self.radio_dict[radio]['SECURITY'],self.radio_dict[radio]['STATIONS']))
 
                 if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
@@ -275,19 +275,18 @@ class lf_check():
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('COL_NAMES',self.col_names)
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
-
                 if self.use_factory_default_db == "TRUE":
                     self.load_factory_default_db()
                     sleep(3)
                     self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
                 if self.use_blank_db == "TRUE":
                     self.load_blank_db()
-                    sleep(3)
+                    sleep(1)
                     self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
                 if self.use_custom_db == "TRUE":
                     try:
                         self.load_custom_db(self.custom_db)
-                        sleep(3)
+                        sleep(1)
                         self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
                     except:
                         self.logger.info("custom database failed to load check existance and location")
@@ -316,6 +315,8 @@ class lf_check():
                     #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
+
+                print("running {}".format(command))
                 process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                 
                 try:
