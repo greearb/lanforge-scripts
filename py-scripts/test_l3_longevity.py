@@ -500,7 +500,7 @@ class L3VariableTime(Realm):
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
-                            time.sleep(1)
+                            time.sleep(.2)
 
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
