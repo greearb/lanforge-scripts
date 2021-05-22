@@ -11,9 +11,13 @@ including ping, speedtest, generic types. The test will check the last-result at
 depending on what test is being run. Ping will test for successful pings, speedtest will test for download
 speed, upload speed, and ping time, generic will test for successful generic commands
 
+SETUP:
+Enable the generic tab in LANforge GUI
+
 EXAMPLE:
+
     LFPING:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy0 --num_stations 7 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type lfping --dest 10.40.0.1 --security wpa2
+        ./test_generic.py --radio wiphy1 --ssid ct523c --passwd ct523c --security wpa2 --num_stations 4 --type lfping --dest "192.168.0.104" --debug
     LFCURL (under construction):
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 26 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
     GENERIC:
@@ -299,7 +303,7 @@ python3 ./test_generic.py
     try:
         genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
     except:
-        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+        raise ValueError('1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port')
 
     if type(args.gen_cols) is not list:
         generic_cols = list(args.gen_cols.split(","))
