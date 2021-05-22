@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+The best way to use create_custom_dashboard by creating a graph_groups_file
+The Graph_groups_file command is a txt file which lists the files which are going to be added to the Grafana Dashboard
+It gets the columns of the files and from that it automatically determines the necessary titles on your dashboard.
+"""
 import sys
 import os
 import argparse
@@ -67,6 +72,7 @@ class UseGrafana(LFCliBase):
                 'from(bucket: "%s")\n  '
                 '|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  '
                 '|> filter(fn: (r) => r["script"] == "%s")\n   '
+                '|> group(columns: ["_measurement"])\n '
                 % (bucket, scriptname))
         queryend = ('|> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  '
                     '|> yield(name: "mean")\n  ')

@@ -204,6 +204,7 @@ class ApAutoTest(cvtest):
                  raw_lines=[],
                  raw_lines_file="",
                  sets=[],
+                 graph_groups=None
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -229,6 +230,7 @@ class ApAutoTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
+        self.graph_groups = graph_groups
 
     def setup(self):
         # Nothing to do at this time.
@@ -281,7 +283,7 @@ class ApAutoTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds)
+                                 cv_cmds, graph_groups_file=self.graph_groups)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 

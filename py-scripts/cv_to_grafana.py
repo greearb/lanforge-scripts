@@ -178,12 +178,26 @@ def main():
     parser.add_argument("--dut5_0", type=str, default="",
                         help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)")
     parser.add_argument("--dut2_0", type=str, default="",
-                        help="Specify 5Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
+                        help="Specify 2Ghz DUT entry.  Syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)")
 
     parser.add_argument("--radio2", action='append', nargs=1, default=[],
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
+
+    #Flags for Grafana
+
+    parser.add_argument('--dashboard_title', help='Titles of dashboards', default=None, action='append')
+    parser.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
+    parser.add_argument('--title', help='title of your Grafana Dashboard', default=None)
+    parser.add_argument('--testbed', help='Which testbed you want to query', default=None)
+    parser.add_argument('--graph_groups_file', help='File which determines how you want to filter your graphs on your dashboard',
+                          default=None)
+    parser.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
+    parser.add_argument('--datasource', help='Name of Influx database if different from InfluxDB', default='InfluxDB')
+    parser.add_argument('--from_date', help='Date you want to start your Grafana dashboard from', default='now-1y')
+    parser.add_argument('--graph_height', help='Custom height for the graph on grafana dashboard', default=8)
+    parser.add_argument('--graph_width', help='Custom width for the graph on grafana dashboard', default=12)
 
     args = parser.parse_args()
 
@@ -240,7 +254,8 @@ def main():
                                      disables=args.disable,
                                      raw_lines=args.raw_line,
                                      raw_lines_file=args.raw_lines_file,
-                                     sets=args.set)
+                                     sets=args.set,
+                                     graph_groups=args.graph_groups_file)
     wifi_capacity.apply_cv_scenario(args.scenario)
     wifi_capacity.build_cv_scenario()
     wifi_capacity.setup()
@@ -268,7 +283,7 @@ def main():
                             raw_lines=args.raw_line,
                             raw_lines_file=args.raw_lines_file,
                             sets=args.set,
-                            graph_groups=args.graph_groups
+                            graph_groups=args.graph_groups_file
                             )
     CV_Test.setup()
     CV_Test.run()
@@ -296,7 +311,8 @@ def main():
                             disables=args.disable,
                             raw_lines=args.raw_line,
                             raw_lines_file=args.raw_lines_file,
-                            sets=args.set
+                            sets=args.set,
+                            graph_groups=args.graph_groups_file
                             )
         ApAuto.setup()
         ApAuto.run()
