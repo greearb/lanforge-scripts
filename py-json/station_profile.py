@@ -195,8 +195,14 @@ class StationProfile:
 
     def add_security_extra(self, security):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
+        if self.desired_add_sta_flags.__contains__(types[security]) and \
+                self.desired_add_sta_flags_mask.__contains__(types[security]):
+            self.desired_add_sta_flags.remove(types[security])
+            self.desired_add_sta_flags_mask.remove(types[security])
         self.desired_add_sta_flags.append(types[security])
         self.desired_add_sta_flags_mask.append(types[security])
+        if security == "wpa3":
+            self.set_command_param("add_sta", "ieee80211w", 2)
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
