@@ -191,8 +191,12 @@ class StationProfile:
             # unset any other security flag before setting our present flags
             if security_type == "wpa3":
                 self.set_command_param("add_sta", "ieee80211w", 2)
-
             # self.add_sta_data["key"] = passwd
+
+    def add_security_extra(self, security):
+        types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
+        self.desired_add_sta_flags.append(types[security])
+        self.desired_add_sta_flags_mask.append(types[security])
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
