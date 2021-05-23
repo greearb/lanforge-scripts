@@ -129,7 +129,7 @@ class StaConnect2(LFCliBase):
         super().clear_test_results()
         #super(StaConnect, self).clear_test_results().test_results.clear()
 
-    def setup(self):
+    def setup(self, extra_securities=[]):
         self.clear_test_results()
         self.check_connect()
         upstream_json = self.json_get("%s?fields=alias,phantom,down,port,ip" % self.get_upstream_url(), debug_=False)
@@ -172,7 +172,8 @@ class StaConnect2(LFCliBase):
         elif self.dut_security == WPA3:
             self.station_profile.use_security(security_type="wpa3", ssid=self.dut_ssid, passwd=self.dut_passwd)
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-
+        for security in extra_securities:
+            self.station_profile.add_security_extra(security=security)
         print("Adding new stations ", end="")
         self.station_profile.create(radio=self.radio, sta_names_=self.station_names, up_=False, debug=self.debug, suppress_related_commands_=True)
         LFUtils.wait_until_ports_appear(self.lfclient_url, self.station_names, debug=self.debug)
