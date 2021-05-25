@@ -24,21 +24,10 @@ if sys.version_info[0]  != 3:
     print("This script requires Python3")
     exit()
 
-import logging
-import time
-from time import sleep
 import argparse
 import pexpect
 import serial
-from serial import Serial
 from pexpect_serial import SerialSpawn
-import json
-from json import load
-from pprint import *
-    
-import os
-import shutil
-import datetime
 
 
 # see https://stackoverflow.com/a/13306095/11014343
