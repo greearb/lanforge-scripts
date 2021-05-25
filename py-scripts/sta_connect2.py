@@ -279,7 +279,11 @@ class StaConnect2(LFCliBase):
             if station_info is None:
                 print("unable to query %s" % sta_url)
             self.resulting_stations[sta_url] = station_info
-            ap = station_info["interface"]["ap"]
+            try:
+                ap = station_info["interface"]["ap"]
+            except Exception as e:
+                print(e)
+                ap = "NULL"
             ip = station_info["interface"]["ip"]
             if (ap != "") and (ap != "Not-Associated"):
                 print(" %s +AP %s, " % (sta_name, ap), end="")

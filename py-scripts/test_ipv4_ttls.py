@@ -149,11 +149,13 @@ class TTLSTest(LFCliBase):
         self.l3_cx_obj_tcp.cx_profile.side_b_min_pdu = 1500
         self.l3_cx_obj_tcp.cx_profile.report_timer = 1000
 
-    def build(self):
+    def build(self, extra_securities=[]):
         # Build stations
         keyphrase = "[BLANK]"
 
         self.station_profile.use_security(self.security, self.ssid, passwd=self.password)
+        for security in extra_securities:
+            self.station_profile.add_security_extra(security=security)
         if self.vap:
             self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
