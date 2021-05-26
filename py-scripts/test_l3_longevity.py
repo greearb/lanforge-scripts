@@ -492,6 +492,10 @@ class L3VariableTime(Realm):
                     total_dl_bps = 0
                     total_ul_bps = 0
                     endps = []
+                    ap_row = []
+                    ap_stats_col_titles = []
+
+
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -545,7 +549,6 @@ class L3VariableTime(Realm):
                                     #print("#### p, response['insterface']:{}".format(p))
                                     mac = p['mac']
     
-                                    ap_row = []
                                     for row in ap_stats_rows:
                                         split_row = row.split()
                                         #print("split_row {}".format(split_row))
@@ -566,7 +569,24 @@ class L3VariableTime(Realm):
     
                                     self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                         latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
+                        else:
 
+                            # Query all of our ports
+                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            port_eids = self.gather_port_eids()
+                            for eid_name in port_eids:
+                                eid = self.name_to_eid(eid_name)
+                                url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                response = self.json_get(url)
+                                if (response is None) or ("interface" not in response):
+                                    print("query-port: %s: incomplete response:"%(url))
+                                    pprint(response)
+                                else:
+                                    p = response['interface']
+                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                
+                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                        latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
 
 
                     # At end of test step, record KPI information.
