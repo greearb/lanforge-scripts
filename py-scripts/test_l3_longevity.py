@@ -746,9 +746,9 @@ class L3VariableTime(Realm):
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split(',')
     for endp_type in etypes:
-        valid_endp_type=['lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
+        valid_endp_type=['lf','lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            print('invalid endp_type: %s. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
+            print('invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
             exit(1)
     return _endp_type
 
