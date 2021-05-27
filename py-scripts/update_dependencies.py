@@ -18,7 +18,11 @@ def main():
     packages_installed = []
     packages_failed =[]
     for package in packages:
-        command = "pip3 install {} ".format(package)#pandas plotly numpy paramiko bokeh websocket-client pyarrow xlsxwriter pyshark influxdb influxdb-client matplotlib pdfkit pip-search --upgrade"
+        command = "if ($( pip3 install {} --upgrade > /tmp/pip-out 2> /tmp/pip-err ));" \
+                  "then echo Success;" \
+                  "else echo Problem installing {} please run that by hand;" \
+                  "fi".format(package, package)
+
         res = subprocess.call(command, shell = True)
         if res == 0:
             print("Package {} install SUCCESS Returned Value: {} ".format(package, res))
@@ -28,10 +32,10 @@ def main():
             print("To see errors try: pip3 install {}".format(package))
             packages_failed.append(package)
 
-
-    print("Install Complete")
-    print("Packages Installed Success: {}".format(packages_installed))
-    print("Packages Failed (Some scripts may not need these packages): {}".format(packages_failed))
+    if len(packages_failed) > 0:
+        print("Install Complete")
+        print("Packages Installed Success: {}\n".format(packages_installed))
+        print("Packages Failed (Some scripts may not need these packages): {}".format(packages_failed))
 
 if __name__ == "__main__":
     main()

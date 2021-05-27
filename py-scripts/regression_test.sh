@@ -101,18 +101,21 @@ if [ ! -d "${REPORT_DATA}" ]; then
 fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
 
-
-function run_l3_longevity {
+function run_l3_longevity() {
   ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
 }
-function testgroup_list_groups {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
+function testgroup_list_groups() {
+  ./scenario.py --load test_l3_scenario_throughput
+  ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
 }
-function testgroup_list_connections {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
+function testgroup_list_connections() {
+  ./scenario.py --load test_l3_scenario_throughput
+  ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
 }
-function testgroup_delete_group {
-  ./scenario.py --load test_l3_scenario_throughput;./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003;./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
+function testgroup_delete_group() {
+  ./scenario.py --load test_l3_scenario_throughput
+  ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003
+  ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
 if [[ $MGRLEN -gt 0 ]]; then
   testCommands=(
@@ -357,6 +360,9 @@ function html_generator() {
         rm -f "${HOMEPATH}/html-reports/latest.html"
     fi
     ln -s "${fname}" "${HOMEPATH}/html-reports/latest.html"
+    HOSTNAME=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+    content="View the latest regression report at ${HOSTNAME}/html-reports/latest.html"
+    mail -s "Regression Results" scripters@candelatech.com <<<$content
 }
 
 results=()
