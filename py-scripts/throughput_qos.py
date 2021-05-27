@@ -179,6 +179,14 @@ class ThroughputQOS(Realm):
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
                     tos_upload['_video'].append(data['bps rx a'])
                     tos_download['_video'].append(data['bps rx b'])
+            tos_upload.update({"_video" : sum(tos_upload['_video'])})
+            tos_upload.update({"_voice": sum(tos_upload['_voice'])})
+            tos_upload.update({"_bk": sum(tos_upload['_bk'])})
+            tos_upload.update({"_be": sum(tos_upload['_be'])})
+            tos_download.update({"_video": sum(tos_download['_video'])})
+            tos_download.update({"_voice": sum(tos_download['_voice'])})
+            tos_download.update({"_bk": sum(tos_download['_bk'])})
+            tos_download.update({"_be": sum(tos_download['_be'])})
         else:
             print("no connections available to evaluate QOS")
         print(tos_upload, tos_download)
@@ -249,69 +257,79 @@ python3 ./throughput_QOS.py
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
-
+    results = [], load = {"a_min": [], "b_min": []}
     # for multiple test conditions #
     if args.num_stations is not None:
-        if len(args.num_stations.split(',')) > 1:
-            num_stations = args.num_stations.split(',')
-        if args.modes is not None:
-            modes = args.modes.split(',')
-        if args.radio is not None:
-            radios = args.modes.split(',')
-    # ---------------------------------------#
+        stations = args.num_stations.split(',')
+    if args.modes is not None:
+        modes = args.mode.split(',')
+    if args.radio is not None:
+        radios = args.radio.split(',')
+    if  args.a_min is not None or args.b_min is not None:
+        args.a_min = args.a_min.split(',')
+        args.b_min = args.b_min.split(',')
+        load.update({"a_min": args.a_min})
+        load.update({"b_min": args.b_min})
+    if args.test_duration is not None:
+        args.test_duration = args.test_duration.strip('m')
+    for station in stations:
+        if args.create_sta:
+            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(station) - 1,
+                                                  padding_number_=10000,
+                                                  radio=args.radio)
+        else:
+            station_list = args.sta_names.split(",")
+        throughput_qos = ThroughputQOS(host=args.mgr,
+                                       port=args.mgr_port,
+                                       number_template="0000",
+                                       sta_list=station_list,
+                                       create_sta=args.create_sta,
+                                       name_prefix="TOS-",
+                                       upstream=args.upstream_port,
+                                       ssid=args.ssid,
+                                       password=args.passwd,
+                                       radio=args.radio,
+                                       security=args.security,
+                                       test_duration=args.test_duration,
+                                       use_ht160=False,
+                                       side_a_min_rate=args.a_min,
+                                       side_b_min_rate=args.b_min,
+                                       mode=args.mode,
+                                       ap=args.ap,
+                                       traffic_type=args.traffic_type,
+                                       tos=args.tos,
+                                       modes=args.modes,
+                                       _debug_on=args.debug)
 
-    if args.create_sta:
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
-                                              padding_number_=10000,
-                                              radio=args.radio)
-    else:
-        station_list = args.sta_names.split(",")
-    throughput_qos = ThroughputQOS(host=args.mgr,
-                                   port=args.mgr_port,
-                                   number_template="0000",
-                                   sta_list=station_list,
-                                   create_sta=args.create_sta,
-                                   name_prefix="TOS-",
-                                   upstream=args.upstream_port,
-                                   ssid=args.ssid,
-                                   password=args.passwd,
-                                   radio=args.radio,
-                                   security=args.security,
-                                   test_duration=args.test_duration,
-                                   use_ht160=False,
-                                   side_a_min_rate=args.a_min,
-                                   side_b_min_rate=args.b_min,
-                                   mode=args.mode,
-                                   ap=args.ap,
-                                   traffic_type=args.traffic_type,
-                                   tos=args.tos,
-                                   modes=args.modes,
-                                   _debug_on=args.debug)
+        throughput_qos.pre_cleanup()
+        throughput_qos.build()
+        # exit()
+        if args.create_sta:
+            if not throughput_qos.passes():
+                print(throughput_qos.get_fail_message())
+                throughput_qos.exit_fail()
+        # try:
+        #     layer3connections = ','.join([[*x.keys()][0] for x in throughput_qos.json_get('endp')['endpoint']])
+        # except:
+        #     raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
-    throughput_qos.pre_cleanup()
-    throughput_qos.build()
-    # exit()
-    if args.create_sta:
-        if not throughput_qos.passes():
-            print(throughput_qos.get_fail_message())
-            throughput_qos.exit_fail()
-    # try:
-    #     layer3connections = ','.join([[*x.keys()][0] for x in throughput_qos.json_get('endp')['endpoint']])
-    # except:
-    #     raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+        throughput_qos.start(False, False)
+        time.sleep(int(args.test_duration) * 60)
+        throughput_qos.stop()
+        results.append(throughput_qos.evaluate_throughput())
+        if args.create_sta:
+            if not throughput_qos.passes():
+                print(throughput_qos.get_fail_message())
+                throughput_qos.exit_fail()
+            LFUtils.wait_until_ports_admin_up(port_list=station_list)
+            if throughput_qos.passes():
+                throughput_qos.success()
+        throughput_qos.cleanup()
+        # ---------------------------------------#
+    print('+++++++++++++++++')
+    print(results)
+    print('+++++++++++++++++')
 
-    throughput_qos.start(False, False)
-    time.sleep(30)
-    throughput_qos.stop()
-    throughput_qos.evaluate_throughput()
-    if args.create_sta:
-        if not throughput_qos.passes():
-            print(throughput_qos.get_fail_message())
-            throughput_qos.exit_fail()
-        LFUtils.wait_until_ports_admin_up(port_list=station_list)
-        if throughput_qos.passes():
-            throughput_qos.success()
-    throughput_qos.cleanup()
 
 
 if __name__ == "__main__":

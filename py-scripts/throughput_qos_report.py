@@ -117,12 +117,12 @@ def tos_report(util, sta_num, bps_rx_a, bps_rx_b, tbl_title, grp_title, upload=1
     if download:
         grph(report,
              data_set=[[min(i) for i in bps_rx_a], [max(i) for i in bps_rx_a], [sum(i) / len(i) for i in bps_rx_a]],
-             xaxis_name="Utilizations", yaxis_name="Throughput (Mbps)",
+             xaxis_name="Load", yaxis_name="Throughput (Mbps)",
              xaxis_categories=util, label=["min", "max", 'avg'], graph_image_name="Throughput_download")
     if upload:
         grph(report,
              data_set=[[min(i) for i in bps_rx_b], [max(i) for i in bps_rx_b], [sum(i) / len(i) for i in bps_rx_b]],
-             xaxis_name="Utilizations", yaxis_name="Throughput (Mbps)",
+             xaxis_name="Load", yaxis_name="Throughput (Mbps)",
              xaxis_categories=util, label=["min", "max", 'avg'], graph_image_name="Throughput_upload")
 
     for i in range(len(util)):
