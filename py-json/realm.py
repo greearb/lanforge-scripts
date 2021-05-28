@@ -19,6 +19,7 @@ from LANforge.lfcli_base import LFCliBase
 from l3_cxprofile import L3CXProfile
 from l3_cxprofile2 import L3CXProfile2
 from l4_cxprofile import L4CXProfile
+from lf_attenmod import ATTENUATORProfile
 from multicast_profile import MULTICASTProfile
 from http_profile import HTTPProfile
 from station_profile import StationProfile
@@ -869,7 +870,10 @@ class Realm(LFCliBase):
             #                   debug_=self.debug,
             #                   report_timer_=3000)
         return cx_prof
-
+    def new_attenuator_profile(self, ver=1):
+        if ver == 1:
+            atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+        return  atten_prof
     def new_generic_endp_profile(self, ver=1):
         if ver == 1 :
             endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
