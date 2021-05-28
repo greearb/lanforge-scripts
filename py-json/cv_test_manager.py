@@ -392,7 +392,8 @@ class cv_test(Realm):
             print("Not submitting to influx, influx_host not configured.\n")
             return
 
-        print("Creating influxdb connection.\n")
+        print("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n"%
+              (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
         influxdb = RecordInflux(_lfjson_host="",
