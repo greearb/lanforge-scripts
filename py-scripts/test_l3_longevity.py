@@ -22,6 +22,17 @@
 #  --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
 #  --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
 
+''' Sample command using attenuator
+./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
+    --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
+    --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
+    --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
+    --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
+    --endp_type lf_udp --ap_read --side_a_min_bps=20000 --side_b_min_bps=400000000 \
+    --attenuators 1.1.<serial number>.1 \
+    --atten_vals 20,21,40,41
+    
+'''
 
 import sys
 import os
