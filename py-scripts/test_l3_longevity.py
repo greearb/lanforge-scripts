@@ -67,7 +67,8 @@ class L3VariableTime(Realm):
                  endp_types, 
                  args, 
                  tos, 
-                 side_b, 
+                 side_b,
+                 side_a, 
                  radio_name_list, 
                  number_of_stations_per_radio_list,
                  ssid_list, 
@@ -119,6 +120,12 @@ class L3VariableTime(Realm):
         self.tos = tos.split(",")
         self.endp_types = endp_types.split(",")
         self.side_b = side_b
+        self.side_a = side_a
+        # if it is a dataplane test the side_a is not none and an ethernet port
+        if self.side_a != None:
+            self.dataplane = True
+        else:
+            self.dataplane = False
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists       
@@ -199,23 +206,27 @@ class L3VariableTime(Realm):
             self.csv_kpi_file = open(kpi, "w")
             self.csv_kpi_writer = csv.writer(self.csv_kpi_file, delimiter=",")
         
-        for (radio_, ssid_, ssid_password_, ssid_security_,\
-            reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-            in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
-            reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
-            self.station_profile = self.new_station_profile()
-            self.station_profile.lfclient_url = self.lfclient_url
-            self.station_profile.ssid = ssid_
-            self.station_profile.ssid_pass = ssid_password_
-            self.station_profile.security = ssid_security_
-            self.station_profile.number_template = self.number_template
-            self.station_profile.mode = 0
-            self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                test_duration=self.duration_time_to_seconds(self.test_duration),\
-                reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
-                reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
-            self.station_profiles.append(self.station_profile)
-        
+        # if side_a is None then side_a is radios
+        if self.dataplane == False:
+            for (radio_, ssid_, ssid_password_, ssid_security_,\
+                reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
+                in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
+                reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+                self.station_profile = self.new_station_profile()
+                self.station_profile.lfclient_url = self.lfclient_url
+                self.station_profile.ssid = ssid_
+                self.station_profile.ssid_pass = ssid_password_
+                self.station_profile.security = ssid_security_
+                self.station_profile.number_template = self.number_template
+                self.station_profile.mode = 0
+                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
+                    test_duration=self.duration_time_to_seconds(self.test_duration),\
+                    reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
+                    reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+                self.station_profiles.append(self.station_profile)
+        else:
+            pass
+
 
         self.multicast_profile.host = self.lfclient_host
         self.cx_profile.host = self.lfclient_host
@@ -348,6 +359,7 @@ class L3VariableTime(Realm):
         self.station_count = 0
         self.udp_endps = []
         self.tcp_endps = []
+        self.eth_endps = []
 
         if rebuild:
             # if we are just re-applying new cx values, then no need to rebuild
@@ -358,36 +370,54 @@ class L3VariableTime(Realm):
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
-        for station_profile in self.station_profiles:
-            if not rebuild:
-                station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
-                station_profile.set_number_template(station_profile.number_template)
-                print("Creating stations on radio %s"%(self.radio_name_list[index]))
-
-                station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
-                index += 1
-
-            self.station_count += len(station_profile.station_names)
-
-            # Build/update connection types
+        if self.dataplane:
             for etype in self.endp_types:
-                if etype == "mc_udp" or etype == "mc_udp6":
-                    print("Creating Multicast connections for endpoint type: %s"%(etype))
-                    self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-                    self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
-                else:
-                    for _tos in self.tos:
-                        print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
-                        these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
+                for _tos in self.tos:
+                    print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
+                    # use brackes on [self.side_a] to make it a list
+                    these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=[self.side_a],
                                                                       side_b=self.side_b, sleep_time=0, tos=_tos)
-                        if (etype == "lf_udp" or etype == "lf_udp6"):
-                            self.udp_endps = self.udp_endps + these_endp;
-                        else:
-                            self.tcp_endps = self.tcp_endps + these_endp;
+                    if (etype == "lf_udp" or etype == "lf_udp6"):
+                        self.udp_endps = self.udp_endps + these_endp
+                    elif(etype=="lf"):
+                        self.lf_endps = self.eth_endps + these_endp
+                    else:
+                        self.tcp_endps = self.tcp_endps + these_endp
+
+        else:
+            for station_profile in self.station_profiles:
+                if not rebuild:
+                    station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
+                    station_profile.set_number_template(station_profile.number_template)
+                    print("Creating stations on radio %s"%(self.radio_name_list[index]))
+
+                    station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+                    index += 1
+
+                self.station_count += len(station_profile.station_names)
+
+                # Build/update connection types
+                for etype in self.endp_types:
+                    if etype == "mc_udp" or etype == "mc_udp6":
+                        print("Creating Multicast connections for endpoint type: %s"%(etype))
+                        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
+                        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
+                    else:
+                        for _tos in self.tos:
+                            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
+                            these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
+                                                                      side_b=self.side_b, sleep_time=0, tos=_tos)
+                            if (etype == "lf_udp" or etype == "lf_udp6"):
+                                self.udp_endps = self.udp_endps + these_endp;
+                            else:
+                                self.tcp_endps = self.tcp_endps + these_endp;
 
         self.cx_count = self.cx_profile.get_cx_count()
 
-        self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
+        if self.dataplane == True:
+            self._pass("PASS: CX build finished: created/updated:  %s connections."%(self.cx_count))        
+        else:
+            self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
 
     def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
@@ -860,18 +890,18 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
     parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('-d','--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
+    parser.add_argument('--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('--debug', help='--debug flag present debug on  enable debugging',action='store_true')
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
+    parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2',default='eth2')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ',
-                        required=True)
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ')
 
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
@@ -944,8 +974,16 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if args.upstream_port:
         side_b = args.upstream_port
 
+    if args.downstream_port:
+        side_a = args.downstream_port
+    else:
+        side_a = None
+
+
     if args.radio:
         radios = args.radio
+    else:
+        radios = None
 
     # Create report, instanciate a reporting class
     report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
@@ -976,59 +1014,60 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     ssid_list = []
     ssid_password_list = []
     ssid_security_list = []
+    station_lists = []
 
     #optional radio configuration
     reset_port_enable_list = []
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
-    print("radios {}".format(radios))
-    for radio_ in radios:
-        radio_keys = ['radio','stations','ssid','ssid_pw','security']
-        print("radio_dict before format {}".format(radio_))
-        radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"','').replace('[','').replace(']','').replace("'","").replace(","," ").split()))
-        print("radio_dict {}".format(radio_info_dict))
+    if radios != None:
+        print("radios {}".format(radios))
+        for radio_ in radios:
+            radio_keys = ['radio','stations','ssid','ssid_pw','security']
+            print("radio_dict before format {}".format(radio_))
+            radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"','').replace('[','').replace(']','').replace("'","").replace(","," ").split()))
+            print("radio_dict {}".format(radio_info_dict))
 
-        for key in radio_keys:
-            if key not in radio_info_dict:
-                print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
-                exit(1)
-        
-        radio_name_list.append(radio_info_dict['radio'])
-        number_of_stations_per_radio_list.append(radio_info_dict['stations'])
-        ssid_list.append(radio_info_dict['ssid'])
-        ssid_password_list.append(radio_info_dict['ssid_pw'])
-        ssid_security_list.append(radio_info_dict['security'])
+            for key in radio_keys:
+                if key not in radio_info_dict:
+                    print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                    exit(1)
 
-        optional_radio_reset_keys = ['reset_port_enable']
-        radio_reset_found = True
-        for key in optional_radio_reset_keys:
-            if key not in radio_info_dict:
-                #print("port reset test not enabled")
-                radio_reset_found = False
-                break
+            radio_name_list.append(radio_info_dict['radio'])
+            number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+            ssid_list.append(radio_info_dict['ssid'])
+            ssid_password_list.append(radio_info_dict['ssid_pw'])
+            ssid_security_list.append(radio_info_dict['security'])
 
-        if radio_reset_found:
-            reset_port_enable_list.append(True)
-            reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
-            reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
-        else:
-            reset_port_enable_list.append(False)
-            reset_port_time_min_list.append('0s')
-            reset_port_time_max_list.append('0s')
+            optional_radio_reset_keys = ['reset_port_enable']
+            radio_reset_found = True
+            for key in optional_radio_reset_keys:
+                if key not in radio_info_dict:
+                    #print("port reset test not enabled")
+                    radio_reset_found = False
+                    break
+
+            if radio_reset_found:
+                reset_port_enable_list.append(True)
+                reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
+                reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+            else:
+                reset_port_enable_list.append(False)
+                reset_port_time_min_list.append('0s')
+                reset_port_time_max_list.append('0s')
 
 
-    index = 0
-    station_lists = []
-    for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
-        number_of_stations = int(number_of_stations_per_radio_)
-        if number_of_stations > MAX_NUMBER_OF_STATIONS:
-            print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
-            quit(1)
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
-                                              padding_number_=10000, radio=radio_name_)
-        station_lists.append(station_list)
-        index += 1
+        index = 0
+        for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+            number_of_stations = int(number_of_stations_per_radio_)
+            if number_of_stations > MAX_NUMBER_OF_STATIONS:
+                print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+                quit(1)
+            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+                                                  padding_number_=10000, radio=radio_name_)
+            station_lists.append(station_list)
+            index += 1
 
     #print("endp-types: %s"%(endp_types))
 
@@ -1055,6 +1094,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     args=args,
                                     tos=args.tos,
                                     side_b=side_b,
+                                    side_a=side_a,
                                     radio_name_list=radio_name_list,
                                     number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                     ssid_list=ssid_list,
