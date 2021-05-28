@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
+'''
+ Supports creating user-specified amount stations on multiple radios
+ Supports configuring upload and download requested rates and PDU sizes.
+ Supports generating KPI data for storing in influxdb (used by Graphana)
+ Supports generating connections with different ToS values.
+ Supports generating tcp and/or UDP traffic types.
+ Supports iterating over different PDU sizes
+ Supports iterating over different requested tx rates (configurable as total or per-connection value)
+ Supports iterating over attenuation values.
+ Supports testing connection between two ethernet connection - L3 dataplane
 
-# Supports creating user-specified amount stations on multiple radios
-# Supports configuring upload and download requested rates and PDU sizes.
-# Supports generating KPI data for storing in influxdb (used by Graphana)
-# Supports generating connections with different ToS values.
-# Supports generating tcp and/or UDP traffic types.
+ Example config
 
-# Supports iterating over different PDU sizes
-# Supports iterating over different requested tx rates (configurable as total or per-connection value)
-# Supports iterating over attenuation values.
-#
-# Example config
-#
-# 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
-# Configured to submit KPI info to influxdb-version2.
-#./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-#  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-#  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-#  --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-#  --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-#  --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
-#  --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
+ 10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
+ Configured to submit KPI info to influxdb-version2.
+./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
+  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
+  --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+  --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+  --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
+  --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
 
-''' Sample command using attenuator
+ Sample command using attenuator
 ./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
     --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
@@ -31,7 +31,11 @@
     --endp_type lf_udp --ap_read --side_a_min_bps=20000 --side_b_min_bps=400000000 \
     --attenuators 1.1.<serial number>.1 \
     --atten_vals 20,21,40,41
-    
+
+Sample using upsteam eth1 downstream eth2 
+    ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2 
+    --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
+
 '''
 
 import sys
