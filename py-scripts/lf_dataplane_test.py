@@ -120,6 +120,8 @@ class DataplaneTest(cv_test):
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
+                 ssh_port=22,
+                 local_path="",
                  instance_name="dpt_instance",
                  config_name="dpt_config",
                  upstream="1.1.eth2",
@@ -205,7 +207,8 @@ class DataplaneTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups)
+                                 cv_cmds, ssh_port=self.ssh_port, local_path=self.local_path,
+                                 graph_groups_file=self.graph_groups)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 

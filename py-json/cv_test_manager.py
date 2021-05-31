@@ -72,6 +72,7 @@ class cv_test(Realm):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
         self.report_dir = report_dir
+        self.report_name = None
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
@@ -366,7 +367,7 @@ class cv_test(Realm):
                     break
 
             time.sleep(1)
-
+        self.report_name = self.get_report_location(instance_name)
         # Ensure test is closed and cleaned up
         self.delete_instance(instance_name)
 
