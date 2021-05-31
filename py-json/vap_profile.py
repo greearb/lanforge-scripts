@@ -213,7 +213,7 @@ class VAPProfile(LFCliBase):
 
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
                use_ht160=False,
-               suppress_related_commands_=True, use_radius=False, hs20_enable=False):
+               suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
             port_list = port_list['interfaces']
@@ -329,25 +329,27 @@ class VAPProfile(LFCliBase):
                         time.sleep(5)
 
         # create bridge
-        data = {
-            "shelf": 1,
-            "resource": resource,
-            "port": "br0",
-            "network_devs": "eth1,%s" % self.vap_name
-        }
-        self.local_realm.json_post("cli-json/add_br", data)
+        if bridge :
+            print("creating bridge")
+            data = {
+                "shelf": 1,
+                "resource": resource,
+                "port": "br0",
+                "network_devs": "eth1,%s" % self.vap_name
+            }
+            self.local_realm.json_post("cli-json/add_br", data)
 
-        bridge_set_port = {
-            "shelf": 1,
-            "resource": 1,
-            "port": "br0",
-            "current_flags": 0x80000000,
-            "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
-        }
-        self.local_realm.json_post("cli-json/set_port", bridge_set_port)
+            bridge_set_port = {
+                "shelf": 1,
+                "resource": resource,
+                "port": "br0",
+                "current_flags": 0x80000000,
+                "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+            }
+            self.local_realm.json_post("cli-json/set_port", bridge_set_port)
 
         if (self.up):
-            self.admin_up(1)
+            self.admin_up(resource)
 
     def cleanup(self, resource, delay=0.03):
         print("Cleaning up VAPs")
@@ -361,3 +363,4 @@ class VAPProfile(LFCliBase):
 
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
+
