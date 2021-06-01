@@ -164,6 +164,8 @@ class DataplaneTest(cv_test):
         self.sets = sets
         self.graph_groups = graph_groups
         self.report_dir = report_dir
+        self.ssh_port = ssh_port
+        self.local_path = local_path
 
     def setup(self):
         # Nothing to do at this time.
