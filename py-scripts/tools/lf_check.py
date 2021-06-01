@@ -109,9 +109,14 @@ class lf_check():
     def send_results_email(self):
         # Following recommendation 
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
-        command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
+        #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
+        if(self.production_run == "TRUE"):
+            command = 'echo "$HOSTNAME {}/html-report/lf_check_latest.html " | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_production,self.email_list_production)
+        else:
+            command = 'echo "$HOSTNAME {}/html-report/lf_check_latest.html " | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_test,self.email_list_test)
+
         print("running {}".format(command))
-        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         
         try:
             #out, err = process.communicate()
@@ -119,7 +124,6 @@ class lf_check():
         except subprocess.TimeoutExpired:
             print("send email timed out")
             process.terminate()
-            self.test_result = "TIMEOUT"
     
     def get_csv_results(self):
         return self.csv_file.name
