@@ -56,6 +56,7 @@ RUN_CONDITION = 'ENABLE'
 # setup logging FORMAT
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
+# lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
                 _csv_results,
@@ -104,12 +105,21 @@ class lf_check():
         self.email_list_test = ""
         self.host_ip_test = None
 
-
-
+    # NOT complete : will send the email results
     def send_results_email(self):
         # Following recommendation 
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
-        pass
+        command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
+        print("running {}".format(command))
+        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        
+        try:
+            #out, err = process.communicate()
+            process.wait(timeout=int(self.test_timeout))
+        except subprocess.TimeoutExpired:
+            print("send email timed out")
+            process.terminate()
+            self.test_result = "TIMEOUT"
     
     def get_csv_results(self):
         return self.csv_file.name
@@ -212,8 +222,11 @@ class lf_check():
         if 'TEST_DICTIONARY' in config_file.sections():
             section = config_file['TEST_DICTIONARY']
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
-            self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
-            #self.logger.info("test_dict {}".format(self.test_dict))
+            try:            
+                self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
+                self.logger.info("TEST_DICTIONARY:  {}".format(self.test_dict))
+            except:
+                self.logger.info("Excpetion loading TEST_DICTIONARY, is there comma after the last entry?  Check syntax")                
 
     def load_factory_default_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
@@ -489,6 +502,7 @@ for running scripts listed in lf_check_config.ini
     print("lf_check_latest.html: {}".format(lf_check_latest_html))
     print("lf_check_html_report: {}".format(lf_check_html_report))
 
+    check.send_results_email()
 
 if __name__ == '__main__':
     main()
