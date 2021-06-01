@@ -5,12 +5,17 @@ NAME:
 lf_check.py
 
 PURPOSE:
-Configuration for lf_check.py , runs various tests
+lf_check.py will run a series of tests based on the test TEST_DICTIONARY listed in lf_check_config.ini.
+The lf_check_config.ini file is copied from lf_check_config_template.ini and local configuration is made
+to the lf_check_config.ini.
 
 EXAMPLE:
 lf_check.py
 
 NOTES:
+Before using lf_check.py
+1. copy lf_check_config_template.ini to the lf_check_config.ini
+2. update lf_check_config.ini to enable (TRUE) tests to be run in the TEST_DICTIONARY , the TEST_DICTIONARY needs to be passed in
 
 '''
 
@@ -75,6 +80,7 @@ class lf_check():
         self.ftp_test_ip = ""
         self.test_ip = ""
 
+        # section TEST_GENERIC 
         self.radio_lf = ""
         self.ssdi = ""
         self.ssid_pw = ""
@@ -88,11 +94,23 @@ class lf_check():
         self.csv_results_writer = ""
         self.csv_results_column_headers = ""
         self.logger = logging.getLogger(__name__)
-        self.test_timeout = 20
+        self.test_timeout = 120
         self.use_blank_db = "FALSE"
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
+        self.production_run = "FALSE"
+        self.email_list_production = ""
+        self.host_ip_production = None
+        self.email_list_test = ""
+        self.host_ip_test = None
 
+
+
+    def send_results_email(self):
+        # Following recommendation 
+        # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
+        pass
+    
     def get_csv_results(self):
         return self.csv_file.name
 
@@ -132,6 +150,7 @@ class lf_check():
                 """
 
     # Functions in this section are/can be overridden by descendants
+    # This code reads the lf_check_config.ini file to populate the test variables
     def read_config_contents(self):
         self.logger.info("read_config_contents {}".format(CONFIG_FILE))
         config_file = configparser.ConfigParser()
@@ -179,6 +198,11 @@ class lf_check():
             self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
             self.use_custom_db = section['LOAD_CUSTOM_DB']
             self.custom_db = section['CUSTOM_DB']
+            self.production_run = section['PRODUCTION_RUN']
+            self.email_list_production = section['EMAIL_LIST_PRODUCTION']
+            self.host_ip_production = section['HOST_IP_PRODUCTION']
+            self.email_list_test = section['EMAIL_LIST_TEST']
+            self.host_ip_test = section['HOST_IP_TEST']
 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
@@ -190,7 +214,6 @@ class lf_check():
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
             self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
             #self.logger.info("test_dict {}".format(self.test_dict))
-
 
     def load_factory_default_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
