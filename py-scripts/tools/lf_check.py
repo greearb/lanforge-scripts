@@ -116,9 +116,9 @@ class lf_check():
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-        message_txt = """Results from {hostname}:\\n
-http://{ip}/{report}\\n
-NOTE: for now to see stdout and stderr remove /home/lanforge from path.\\n
+        message_txt = """Results from {hostname}:
+http://{ip}/{report}
+NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 """.format(hostname=hostname, ip=ip, report=report_url)
 
 
