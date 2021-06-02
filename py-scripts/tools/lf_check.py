@@ -140,7 +140,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.\\n
                     ip=ip, #self.host_ip_test,
                     address=self.email_list_test)
 
-            print("running {}".format(command))
+            print("running:[{}]".format(command))
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             # have email on separate timeout        
             process.wait(timeout=int(self.test_timeout))
