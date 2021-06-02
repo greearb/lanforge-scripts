@@ -112,9 +112,9 @@ class lf_check():
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         try:
             if(self.production_run == "TRUE"):
-                command = 'echo "Results from $HOSTNAME {}/html-reports/lf_check_latest.html " | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_production,self.email_list_production)
+                command = 'echo "Results from $HOSTNAME {}/html-reports/lf_check_latest.html NOTE: for now to see stdout and stderr remove  /home/lanforge from path " | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_production,self.email_list_production)
             else:
-                command = 'echo "Results from $HOSTNAME {}/html-reports/lf_check_latest.html " | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_test,self.email_list_test)
+                command = 'echo "Results from $HOSTNAME {}/html-reports/lf_check_latest.html NOTE: for now to see stdout and stderr remove  /home/lanforge from path" | mail -s "Regression Test Results from: $HOSTNAME $(date)" {}'.format(self.host_ip_test,self.email_list_test)
 
             print("running {}".format(command))
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
