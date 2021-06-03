@@ -286,6 +286,7 @@ class lf_report():
     <title>{title}</title>
 </head>
 <body>
+<div id='BannerBack'>
     <div id='Banner'>
         <br/>
         <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0' />
@@ -294,6 +295,7 @@ class lf_report():
             <h4 class='TitleFontPrintSub'>{date}</h4>
         </div>
     </div>
+</div>
 """.format(
             title=self.title,
             date=self.date,
