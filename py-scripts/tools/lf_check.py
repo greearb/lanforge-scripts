@@ -17,6 +17,9 @@ Before using lf_check.py
 1. copy lf_check_config_template.ini to the lf_check_config.ini
 2. update lf_check_config.ini to enable (TRUE) tests to be run in the TEST_DICTIONARY , the TEST_DICTIONARY needs to be passed in
 
+TO DO NOTES:
+6/4/2021 :  add server (telnet localhost 4001) build info,  GUI build shaw, and Kernel version to the output. 
+
 '''
 import datetime
 import pprint

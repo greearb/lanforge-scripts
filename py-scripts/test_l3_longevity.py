@@ -666,9 +666,9 @@ class L3VariableTime(Realm):
                     # At end of test if requested store upload and download stats
                     if self.ap_scheduler_stats:
                         # get the (UL) Upload scheduler statistics
-                        self.ap_umsched = self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        self.ap_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
                         # get the (DL) Download schduler staticstics
-                        self.ap_msched = self.ap_custom_cmd('wl -i wl1 dump msched')
+                        self.ap_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
 
 
                     # Stop connections.
