@@ -32,7 +32,10 @@ class StationProfile:
                  shelf=1,
                  dhcp=True,
                  debug_=False,
-                 use_ht160=False):
+                 use_ht160=False,
+                 COMMANDS=["add_sta", "set_port"],
+                 desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"],
+                 desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]):
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
@@ -45,9 +48,9 @@ class StationProfile:
         self.security = security
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
-        self.COMMANDS = ["add_sta", "set_port"]
-        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
-        self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.COMMANDS = COMMANDS
+        self.desired_add_sta_flags = desired_add_sta_flags
+        self.desired_add_sta_flags_mask = desired_add_sta_flags_mask
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
         self.add_sta_data = {
