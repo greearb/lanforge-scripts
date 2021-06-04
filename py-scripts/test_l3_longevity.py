@@ -28,7 +28,7 @@
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --endp_type lf_udp --ap_read --side_a_min_bps=20000 --side_b_min_bps=400000000 \
+    --endp_type lf_udp --ap_read --ap_stats --side_a_min_bps=20000 --side_b_min_bps=400000000 \
     --attenuators 1.1.<serial number>.1 \
     --atten_vals 20,21,40,41
 
@@ -104,6 +104,7 @@ class L3VariableTime(Realm):
                  lfclient_port=8080, 
                  debug=False,
                  influxdb=None,
+                 ap_scheduler_stats=False,
                  ap_read=False,
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
@@ -184,11 +185,14 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
 
+        self.ap_scheduler_stats = ap_scheduler_stats
         self.ap_read = ap_read
         self.ap_port = ap_port
         self.ap_baud = ap_baud
         self.ap_cmd = ap_cmd
         self.ap_test_mode = ap_test_mode
+        self.ap_umsched = ""
+        self.ap_msched = ""
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -236,6 +240,12 @@ class L3VariableTime(Realm):
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
+
+    def get_ap_umsched(self):
+        return self.ap_umsched
+
+    def get_ap_msched(self):
+        return self.ap_msched
 
     def get_kpi_csv(self):
         #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
@@ -423,6 +433,21 @@ class L3VariableTime(Realm):
         else:
             self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
 
+    def ap_custom_cmd(self,ap_custom_cmd):
+        ap_results = ""
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+            ss = SerialSpawn(ser)
+            ss.sendline(str(ap_custom_cmd))
+            ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
+            ap_results = ss.before.decode('utf-8','ignore')
+            print("ap_custom_cmd: {} ap_results {}".format(ap_custom_cmd, ap_results))
+        except:
+            print("ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
+
+        return ap_results
+        
     def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
         ap_stats = ""
@@ -511,6 +536,9 @@ class L3VariableTime(Realm):
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
+                if self.ap_scheduler_stats:
+                    self.ap_custom_cmd('wl -i wl1 dump_clear')
+
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
@@ -539,8 +567,6 @@ class L3VariableTime(Realm):
                     endps = []
                     ap_row = []
                     ap_stats_col_titles = []
-
-
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -636,6 +662,14 @@ class L3VariableTime(Realm):
 
                     # At end of test step, record KPI information.
                     self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+
+                    # At end of test if requested store upload and download stats
+                    if self.ap_scheduler_stats:
+                        # get the (UL) Upload scheduler statistics
+                        self.ap_umsched = self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        # get the (DL) Download schduler staticstics
+                        self.ap_msched = self.ap_custom_cmd('wl -i wl1 dump msched')
+
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -911,6 +945,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
     parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
     parser.add_argument('--ap_cmd', help='ap_cmd \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
+    parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file on ap', action='store_true')
+    
 
     parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
 
@@ -948,6 +984,12 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         ap_read = args.ap_read
     else:
         ap_read = False
+
+    if args.ap_scheduler_stats:
+        ap_scheduler_stats = args.ap_scheduler_stats
+    else:
+        ap_scheduler_stats = False
+
 
     if args.ap_test_mode:
         ap_test_mode = args.ap_test_mode
@@ -1126,6 +1168,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     lfclient_port=lfjson_port,
                                     debug=debug,
                                     influxdb=influxdb,
+                                    ap_scheduler_stats=ap_scheduler_stats,
                                     ap_read=ap_read,
                                     ap_port=ap_port,
                                     ap_baud=ap_baud,
@@ -1162,6 +1205,25 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     report.write_html_with_timestamp()
     #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     report.write_pdf_with_timestamp(_page_size = 'A4', _orientation='Portrait')
+
+    # ap scheduler results and write to a file
+    if ap_scheduler_stats:
+        print("getting umsched and msched ap data and writing to a file")
+        file_date = report.get_date()
+
+        ap_umsched_data = ip_var_test.get_ap_umsched()
+        ap_umsched =  "{}-{}".format(file_date,"ap_umsched.txt")
+        ap_umsched =  report.file_add_path(ap_umsched)
+        ap_umsched_file = open(ap_umsched, "w")
+        ap_umsched_file.write(str(ap_umsched_data))
+        ap_umsched_file.close()
+
+        ap_msched_data = ip_var_test.get_ap_msched()
+        ap_msched =  report.file_add_path("ap_msched.txt")
+        ap_msched =  report.file_add_path(ap_msched)
+        ap_msched_file = open(ap_msched, "w")
+        ap_msched_file.write(str(ap_msched_data))
+        ap_msched_file.close()
 
     #for csv_file in csv_list:
     #    print("Ouptput reports CSV list value: {}".format(str(csv_file)))

@@ -175,6 +175,7 @@ class lf_report():
     def set_graph_title(self,_graph_title):
         self.graph_title = _graph_title
 
+    # The _date is set when class is enstanciated / created so this set_date should be used with caution, used to synchronize results
     def set_date(self,_date):
         self.date = _date
 
@@ -194,9 +195,12 @@ class lf_report():
     def set_graph_image(self,_graph_image):
         self.graph_image = _graph_image
 
+    def get_date(self):
+        return self.date
+
     def get_path(self):
         return self.path
-    # get_path_date_time, get_report_path and need to be the same ()
+    # get_path_date_time, get_report_path and need to be the same
     def get_path_date_time(self):
         return self.path_date_time
 
