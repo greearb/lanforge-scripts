@@ -43,6 +43,8 @@ import csv
 import shutil
 import os.path
 import xlsxwriter
+import re
+import pandas as pd
 
 
 class lf_renewals():
@@ -56,6 +58,7 @@ class lf_renewals():
           self.stdout_log = ""
           self.stderr_log_txt = ""
           self.stderr_log = ""
+          self.dataframe = ""
 
      def get_data(self):
 
@@ -63,11 +66,11 @@ class lf_renewals():
           if self.outfile is not None:
                self.stdout_log_txt = self.outfile
                self.stdout_log_txt = self.stdout_log_txt + "-{}-stdout.txt".format("test")
-               self.stdout_log = open(self.stdout_log_txt, 'a')
+               self.stdout_log = open(self.stdout_log_txt, 'w+')
                self.stderr_log_txt = self.outfile
                self.stderr_log_txt = self.stderr_log_txt + "-{}-stderr.txt".format("test")                    
                #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
-               self.stderr_log = open(self.stderr_log_txt, 'a')
+               self.stderr_log = open(self.stderr_log_txt, 'w+')
 
                print("Names {} {}".format(self.stdout_log.name, self.stderr_log.name))
 
@@ -86,6 +89,26 @@ class lf_renewals():
           self.stderr_log.close()
 
           return self.stdout_log_txt
+
+     def preprocess_data(self):
+          pass
+
+     # this method uses pandas dataframe - will use for data manipulation, 
+     # the data mainupulation may be done in other manners
+     def datafile_to_dataframe(self):
+          # note the error_bad_lines=False will miss one of the lines 
+          try:
+               self.dataframe = pd.read_csv(self.stdout_log_txt, delimiter = [':'])
+          except:
+               print("one of the files may have a SN: in it need to correct ")
+               self.dataframe = pd.read_csv(self.stdout_log_txt, delimiter = ':', error_bad_lines=False)
+          #print(self.dataframe)
+          print("saving data to .csv")
+          # this removes the extention of .txt
+          renewals_csv= self.stdout_log_txt[:-4]
+          renewals_csv = renewals_csv + ".csv"
+          renewals_csv = self.dataframe.to_csv(renewals_csv,mode='w',index=False)
+
 
 def main():
     # arguments
@@ -111,6 +134,8 @@ show renewas
 
     renewals = lf_renewals()
     output_file = renewals.get_data()
+
+    renewals.datafile_to_dataframe()
 
     print("output file: {}".format(str(output_file)))
     print("END lf_renewals.py")
