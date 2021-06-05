@@ -52,30 +52,40 @@ class lf_renewals():
           self.timeout = 10
           self.outfile = "renewal"
           self.result = ""
+          self.stdout_log_txt = ""
+          self.stdout_log = ""
+          self.stderr_log_txt = ""
+          self.stderr_log = ""
 
      def get_data(self):
-          command = "pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'"
-          #self.renewal_info = subprocess.check_output("pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'", shell=True)
-          self.renewal_info = subprocess.Popen("pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'", shell=True)
-          print("running {}".format(command))
 
           # o.k. a little over kill here ,  just save data to file to help debug if something goes wrong
           if self.outfile is not None:
-               stdout_log_txt = self.outfile
-               stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
-               stdout_log = open(stdout_log_txt, 'a')
-               stderr_log_txt = self.outfile
-               stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
+               self.stdout_log_txt = self.outfile
+               self.stdout_log_txt = self.stdout_log_txt + "-{}-stdout.txt".format("test")
+               self.stdout_log = open(self.stdout_log_txt, 'a')
+               self.stderr_log_txt = self.outfile
+               self.stderr_log_txt = self.stderr_log_txt + "-{}-stderr.txt".format("test")                    
                #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
-               stderr_log = open(stderr_log_txt, 'a')
+               self.stderr_log = open(self.stderr_log_txt, 'a')
 
-          process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+               print("Names {} {}".format(self.stdout_log.name, self.stderr_log.name))
+
+          command = "pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'"
+          print("running {}".format(command))
+
+          process = subprocess.Popen(['pdfgrep','-r','--include','ASA*.pdf','ASA End Date'], shell=False, stdout=self.stdout_log, stderr=self.stderr_log, universal_newlines=True)
           try:
                process.wait(timeout=int(self.timeout))
                self.result = "SUCCESS"
           except subprocess.TimeoutExpired:
                process.terminate()
                self.result = "TIMEOUT"
+
+          self.stdout_log.close()
+          self.stderr_log.close()
+
+          return self.stdout_log_txt
 
 def main():
     # arguments
@@ -100,7 +110,10 @@ show renewas
     args = parser.parse_args()    
 
     renewals = lf_renewals()
-    renewals.get_data()
+    output_file = renewals.get_data()
+
+    print("output file: {}".format(str(output_file)))
+    print("END lf_renewals.py")
 
 
 if __name__ == "__main__":
