@@ -2,24 +2,20 @@
 
 '''
 NAME:
-lf_renewals.py
+lf_pdf_search.py
 
 PURPOSE:
-lf_renewals.py will run "pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'" to find the renews in the /ct/sales directory 
+lf_pdf_search.py will run a pdf grep looking for specific information in pdf files 
+"pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'" 
 
 EXAMPLE:
-lf_renewals.py
+lf_pdf_search.py
 
 NOTES:
-1. copy lf_renewals.py to the /ct/sales directory to run
+1. copy lf_pdf_search.py to a directory that has the pdf information
 
 TO DO NOTES:
-6/4/2021 :  
-1. Organize data to be print based on: 
-     customer
-     vendor
-     date
-2. add and delete information form the google calender
+
 
 '''
 import datetime
@@ -47,12 +43,12 @@ import re
 import pandas as pd
 
 
-class lf_renewals():
+class lf_pdf_search():
      def __init__(self):
 
           self.renewal_info = ""
           self.timeout = 10
-          self.outfile = "renewal"
+          self.outfile = "pdf_search"
           self.result = ""
           self.stdout_log_txt = ""
           self.stdout_log = ""
@@ -74,6 +70,7 @@ class lf_renewals():
 
                print("Names {} {}".format(self.stdout_log.name, self.stderr_log.name))
 
+          # have ability to pass in a specific command
           command = "pdfgrep -r --include 'ASA*.pdf' 'ASA End Date'"
           print("running {}".format(command))
 
@@ -105,21 +102,21 @@ class lf_renewals():
           #print(self.dataframe)
           print("saving data to .csv")
           # this removes the extention of .txt
-          renewals_csv= self.stdout_log_txt[:-4]
-          renewals_csv = renewals_csv + ".csv"
-          renewals_csv = self.dataframe.to_csv(renewals_csv,mode='w',index=False)
+          pdf_search_csv= self.stdout_log_txt[:-4]
+          pdf_search_csv = pdf_search_csv + ".csv"
+          pdf_search_csv = self.dataframe.to_csv(pdf_search_csv,mode='w',index=False)
 
 
 def main():
     # arguments
     parser = argparse.ArgumentParser(
-        prog='renewals.py',
+        prog='lf_pdf_search.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            renewals.py : for running scripts listed in lf_check_config.ini file
+            lf_pdf_search.py : for running scripts listed in lf_check_config.ini file
             ''',
         description='''\
-renewals.py
+lf_pdf_search.py
 -----------
 
 Summary :
@@ -128,17 +125,17 @@ show renewas
             ''')
 
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
-    parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of renewals script", default="renewals.log")
+    parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_pdf_search script", default="lf_pdf_search.log")
 
     args = parser.parse_args()    
 
-    renewals = lf_renewals()
-    output_file = renewals.get_data()
+    pdf_search = lf_pdf_search()
+    output_file = pdf_search.get_data()
 
-    renewals.datafile_to_dataframe()
+    pdf_search.datafile_to_dataframe()
 
     print("output file: {}".format(str(output_file)))
-    print("END lf_renewals.py")
+    print("END lf_pdf_search.py")
 
 
 if __name__ == "__main__":
