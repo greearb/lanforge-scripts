@@ -54,7 +54,9 @@ class lf_pdf_search():
           self.stdout_log = ""
           self.stderr_log_txt = ""
           self.stderr_log = ""
+          self.processed_log_txt = ""
           self.dataframe = ""
+          self.pdf_search_csv = ""
 
      def get_data(self):
 
@@ -94,17 +96,19 @@ class lf_pdf_search():
      # the data mainupulation may be done in other manners
      def datafile_to_dataframe(self):
           # note the error_bad_lines=False will miss one of the lines 
+          delimiter_list = [':']
           try:
                self.dataframe = pd.read_csv(self.stdout_log_txt, delimiter = [':'])
+               #self.dataframe = pd.read_csv(self.stdout_log_txt, sep = ':')
           except:
                print("one of the files may have a SN: in it need to correct ")
                self.dataframe = pd.read_csv(self.stdout_log_txt, delimiter = ':', error_bad_lines=False)
           #print(self.dataframe)
           print("saving data to .csv")
           # this removes the extention of .txt
-          pdf_search_csv= self.stdout_log_txt[:-4]
-          pdf_search_csv = pdf_search_csv + ".csv"
-          pdf_search_csv = self.dataframe.to_csv(pdf_search_csv,mode='w',index=False)
+          self.pdf_search_csv= self.stdout_log_txt[:-4]
+          self.pdf_search_csv = self.pdf_search_csv + ".csv"
+          self.pdf_search_csv = self.dataframe.to_csv(self.pdf_search_csv,mode='w',index=False)
 
 
 def main():
