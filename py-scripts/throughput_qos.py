@@ -158,38 +158,37 @@ class ThroughputQOS(Realm):
         print("cross connections with TOS type created.")
 
     def evaluate_throughput(self):
-        tos_upload = {'_video': [], '_voice': [], '_bk': [], '_be': []}
-        tos_download = {'_video': [], '_voice': [], '_bk': [], '_be': []}
+        tos_upload = {'video': [], 'voice': [], 'bk': [], 'be': []}
+        tos_download = {'video': [], 'voice': [], 'bk': [], 'be': []}
         if self.cx_profile.get_cx_count() > 0:
             for sta in self.cx_profile.created_cx.keys():
                 temp = int(sta[12:])
                 if temp % 4 == 0:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['_bk'].append(data['bps rx a'])
-                    tos_download['_bk'].append(data['bps rx b'])
+                    tos_upload['bk'].append(data['bps rx a'])
+                    tos_download['bk'].append(data['bps rx b'])
                 elif temp % 4 == 1:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['_be'].append(data['bps rx a'])
-                    tos_download['_be'].append(data['bps rx b'])
+                    tos_upload['be'].append(data['bps rx a'])
+                    tos_download['be'].append(data['bps rx b'])
                 elif temp % 4 == 2:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['_voice'].append(data['bps rx a'])
-                    tos_download['_voice'].append(data['bps rx b'])
+                    tos_upload['voice'].append(data['bps rx a'])
+                    tos_download['voice'].append(data['bps rx b'])
                 elif temp % 4 == 3:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['_video'].append(data['bps rx a'])
-                    tos_download['_video'].append(data['bps rx b'])
-            tos_upload.update({"_videoQOS": sum(tos_upload['_video'])})
-            tos_upload.update({"_voiceQOS": sum(tos_upload['_voice'])})
-            tos_upload.update({"_bkQOS": sum(tos_upload['_bk'])})
-            tos_upload.update({"_beQOS": sum(tos_upload['_be'])})
-            tos_download.update({"_videoQOS": sum(tos_download['_video'])})
-            tos_download.update({"_voiceQOS": sum(tos_download['_voice'])})
-            tos_download.update({"_bkQOS": sum(tos_download['_bk'])})
-            tos_download.update({"_beQOS": sum(tos_download['_be'])})
+                    tos_upload['video'].append(data['bps rx a'])
+                    tos_download['video'].append(data['bps rx b'])
+            tos_upload.update({"videoQOS": sum(tos_upload['video'])})
+            tos_upload.update({"voiceQOS": sum(tos_upload['voice'])})
+            tos_upload.update({"bkQOS": sum(tos_upload['bk'])})
+            tos_upload.update({"beQOS": sum(tos_upload['be'])})
+            tos_download.update({"videoQOS": sum(tos_download['video'])})
+            tos_download.update({"voiceQOS": sum(tos_download['voice'])})
+            tos_download.update({"bkQOS": sum(tos_download['bk'])})
+            tos_download.update({"beQOS": sum(tos_download['be'])})
         else:
             print("no connections available to evaluate QOS")
-        print(tos_upload, tos_download)
         return tos_upload, tos_download
 
 
@@ -198,7 +197,7 @@ def main():
         prog='throughput_QOS.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Create stations and endpoints and runs L3 traffic with various IP types of service(BK |  BE | Video | Voice)
+            Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
             ''',
         description='''\
 throughput_QOS.py:
@@ -253,14 +252,12 @@ python3 ./throughput_QOS.py
     parser.add_argument('--modes', help='used to run on multiple radio modes,can be used with multiple stations',
                         default="0")
     args = parser.parse_args()
-
     print("--------------------------------------------")
     print(args)
     print("--------------------------------------------")
     results = []
+    loads = {}
     # for multiple test conditions #
-    if args.num_stations is not None:
-        stations = args.num_stations.split(',')
     if args.mode is not None:
         modes = args.mode.split(',')
     if args.radio is not None:
@@ -269,20 +266,44 @@ python3 ./throughput_QOS.py
         args.a_min = args.a_min.split(',')
         args.b_min = args.b_min.split(',')
         loads = {"a_min": args.a_min, "b_min": args.b_min}
-        # try:
-        #     if len(args.a_min) != len(args.b_min):
-        #         raise print("The values of a_min and b_min should be same.")
-        # finally:
-        #         print("")
+    # if radios is not None:
+    # try:
+    #     if len(args.a_min) != len(args.b_min):
+    #         raise print("The values of a_min and b_min should be same.")
+    # finally:
+    #         print("")
     if args.test_duration is not None:
         args.test_duration = args.test_duration.strip('m')
-    for station in stations:
-        if args.create_sta:
-            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(station) - 1,
-                                                  padding_number_=10000,
-                                                  radio=args.radio)
-        else:
-            station_list = args.sta_names.split(",")
+    for key in modes:
+        if key == "2.4G" or key == "2.4g":
+            if args.create_sta:
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
+                                                      padding_number_=10000,
+                                                      radio=radios[0])
+            else:
+                station_list = args.sta_names.split(",")
+        elif key == "5G" or key == "5g":
+            if radios[1] is None:
+                radios[1] = "wiphy0"
+            if args.create_sta:
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) - 1,
+                                                      padding_number_=10000,
+                                                      radio=radios[1])
+            else:
+                station_list = args.sta_names.split(",")
+        elif key == "BOTH" or key == "both":
+            if radios[2] is not None:
+                radios[2] = "wiphy0"
+            if args.create_sta:
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=int(args.num_stations) // 2,
+                                                      padding_number_=10000,
+                                                      radio=radios[2])
+                station_list.append(LFUtils.portNameSeries(prefix_="sta", start_id_=(int(args.num_stations) // 2) + 1,
+                                                           end_id_=int(args.num_stations) - 1,
+                                                           padding_number_=10000,
+                                                           radio=radios[2]))
+            else:
+                station_list = args.sta_names.split(",")
         for index in range(len(loads["a_min"])):
             throughput_qos = ThroughputQOS(host=args.mgr,
                                            port=args.mgr_port,
@@ -293,21 +314,20 @@ python3 ./throughput_QOS.py
                                            upstream=args.upstream_port,
                                            ssid=args.ssid,
                                            password=args.passwd,
-                                           radio=args.radio,
+                                           radio=radios[key],
                                            security=args.security,
                                            test_duration=args.test_duration,
                                            use_ht160=False,
                                            side_a_min_rate=loads["a_min"][index],
                                            side_b_min_rate=loads["b_min"][index],
-                                           mode=args.mode,
+                                           mode=int(modes[key]),
                                            ap=args.ap,
                                            traffic_type=args.traffic_type,
                                            tos=args.tos,
                                            _debug_on=args.debug)
-
             throughput_qos.pre_cleanup()
             throughput_qos.build()
-            # exit()
+
             if args.create_sta:
                 if not throughput_qos.passes():
                     print(throughput_qos.get_fail_message())
@@ -333,7 +353,6 @@ python3 ./throughput_QOS.py
     print('+++++++++++++++++')
     print(results)
     print('+++++++++++++++++')
-
 
 
 if __name__ == "__main__":

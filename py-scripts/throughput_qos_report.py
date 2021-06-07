@@ -41,7 +41,7 @@ def grph(report, data_set=None, xaxis_name="stations", yaxis_name="Throughput 2 
     report.build_graph()
 
 
-def tos_report(util, sta_num, bps_rx_a, bps_rx_b, tbl_title, grp_title, upload=1000000, download=1000000):
+def generate_report(util, sta_num, bps_rx_a, bps_rx_b, tbl_title, grp_title, upload=1000000, download=1000000):
     # report generation main function
     rx_a = []
     rx_b = []
@@ -107,7 +107,7 @@ def tos_report(util, sta_num, bps_rx_a, bps_rx_b, tbl_title, grp_title, upload=1
 
     # objective title and description
     report.set_obj_html(_obj_title="Objective",
-                        _obj="Through this test we can evaluate the throughput  given number of clients which"
+                        _obj="Through this test we can evaluate the throughput for given number of clients which"
                              "are running the traffic with a particular TOS i.e BK,BE,VI,VO")
     report.build_objective()
 
