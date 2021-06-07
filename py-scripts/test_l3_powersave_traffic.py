@@ -156,8 +156,8 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     # station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
-    station_list = ["sta0000", "sta0001"]
-    ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid="jedway-open-149", security="open",
+    station_list = ["sta0000", "sta0001", "sta0002", "sta0003"]
+    ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid="j-open-36", security="open",
                                            password="[BLANK]", station_list=station_list, side_a_min_rate=2000,
                                            side_b_min_rate=2000, side_a_max_rate=0,
                                            side_b_max_rate=0, prefix="00000", test_duration="30s",

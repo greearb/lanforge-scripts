@@ -17,9 +17,6 @@ Before using lf_check.py
 1. copy lf_check_config_template.ini to the lf_check_config.ini
 2. update lf_check_config.ini to enable (TRUE) tests to be run in the TEST_DICTIONARY , the TEST_DICTIONARY needs to be passed in
 
-TO DO NOTES:
-6/4/2021 :  add server (telnet localhost 4001) build info,  GUI build shaw, and Kernel version to the output. 
-
 '''
 import datetime
 import pprint
@@ -119,9 +116,9 @@ class lf_check():
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-        message_txt = """Results from {hostname}:
-http://{ip}/{report}
-NOTE: for now to see stdout and stderr remove /home/lanforge from path.
+        message_txt = """Results from {hostname}:\\n
+http://{ip}/{report}\\n
+NOTE: for now to see stdout and stderr remove /home/lanforge from path.\\n
 """.format(hostname=hostname, ip=ip, report=report_url)
 
 

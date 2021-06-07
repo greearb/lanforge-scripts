@@ -25,9 +25,10 @@ LICENSE:
 INCLUDE_IN_README
 '''
 
+import datetime
 import os
 import shutil
-import datetime
+
 import pandas as pd
 import pdfkit
 
@@ -50,7 +51,8 @@ class lf_report():
                 _results_dir_name = "LANforge_Test_Results",
                 _output_format = 'html',  # pass in on the write functionality, current not used
                 _dataframe="",
-                _path_date_time=""):  # this is where the final report is placed.
+                _path_date_time="",
+                 _custom_css='custom-example.css'):  # this is where the final report is placed.
                 #other report paths, 
 
             # _path is where the directory with the data time will be created
@@ -89,13 +91,15 @@ class lf_report():
             self.logo_directory = "artifacts"       
             self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
             self.current_path = os.path.dirname(os.path.abspath(__file__))
-
+            self.custom_css = _custom_css
             # pass in _date to allow to change after construction
             self.set_date_time_directory(_date,_results_dir_name)
             self.build_date_time_directory()
 
+            self.font_file = "CenturyGothic.woff"
             # move the banners and candela images to report path
             self.copy_banner()
+            self.copy_css()
             self.copy_logo()
     
     def copy_banner(self):
@@ -103,21 +107,35 @@ class lf_report():
         banner_dst_file = str(self.path_date_time)+'/'+ str(self.banner_file_name)
         #print("banner src_file: {}".format(banner_src_file))
         #print("dst_file: {}".format(banner_dst_file))
-        shutil.copy(banner_src_file,banner_dst_file)
+        shutil.copy(banner_src_file, banner_dst_file)
+
+    def copy_css(self):
+        reportcss_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/report.css'
+        reportcss_dest_file = str(self.path_date_time)+'/report.css'
+
+        customcss_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.custom_css)
+        customcss_dest_file = str(self.path_date_time)+'/custom.css'
+
+        font_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.font_file)
+        font_dest_file = str(self.path_date_time)+'/'+str(self.font_file)
+
+        shutil.copy(reportcss_src_file, reportcss_dest_file)
+        shutil.copy(customcss_src_file, customcss_dest_file)
+        shutil.copy(font_src_file, font_dest_file)
 
     def copy_logo(self):
         logo_src_file = str(self.current_path)+'/'+str(self.logo_directory)+'/'+str(self.logo_file_name)
         logo_dst_file = str(self.path_date_time)+'/'+ str(self.logo_file_name)
         #print("logo_src_file: {}".format(logo_src_file))
         #print("logo_dst_file: {}".format(logo_dst_file))
-        shutil.copy(logo_src_file,logo_dst_file)
+        shutil.copy(logo_src_file, logo_dst_file)
 
     def move_graph_image(self,):
         graph_src_file = str(self.graph_image)
         graph_dst_file = str(self.path_date_time)+'/'+ str(self.graph_image)
         print("graph_src_file: {}".format(graph_src_file))
         print("graph_dst_file: {}".format(graph_dst_file))
-        shutil.move(graph_src_file,graph_dst_file)
+        shutil.move(graph_src_file, graph_dst_file)
 
     def set_path(self,_path):
         self.path = _path
@@ -157,6 +175,7 @@ class lf_report():
     def set_graph_title(self,_graph_title):
         self.graph_title = _graph_title
 
+    # The _date is set when class is enstanciated / created so this set_date should be used with caution, used to synchronize results
     def set_date(self,_date):
         self.date = _date
 
@@ -176,9 +195,12 @@ class lf_report():
     def set_graph_image(self,_graph_image):
         self.graph_image = _graph_image
 
+    def get_date(self):
+        return self.date
+
     def get_path(self):
         return self.path
-    # get_path_date_time, get_report_path and need to be the same ()
+    # get_path_date_time, get_report_path and need to be the same
     def get_path_date_time(self):
         return self.path_date_time
 
@@ -248,60 +270,56 @@ class lf_report():
 
     def build_all(self):
         self.build_banner()
+        self.start_content_div()
         self.build_table_title()
         self.build_table()
+        self.end_content_div()
 
     def build_banner(self):
-        self.banner_html = """
-               <!DOCTYPE html>
-                <html lang='en'>
-                <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1' />
-                <br>
-                </head>
-
-                <title>BANNER </title></head>
-                <body>
-                <div class='Section report_banner-1000x205' style='background-image:url("banner.png");background-repeat:no-repeat;padding:0;margin:0;min-width:1000px; min-height:205px;width:1000px; height:205px;max-width:1000px; max-height:205px;'>
-                <br>
-                <img align='right' style='padding:25;margin:5;width:200px;' src="CandelaLogo2-90dpi-200x90-trans.png" border='0' />
-
-                <div class='HeaderStyle'>
-                <br>
-                <h1 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.title) + """</h1>
-                <h3 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.date) + """</h3>
-                <br>
-                <br>
-                <br>
-                <br>
-                <br>
-                </div>
-                """
+        # NOTE: {{ }} are the ESCAPED curly braces
+        self.banner_html = """<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <style>
+    body {{ margin: 0; padding: 0; }}
+    </style>
+    <link rel='stylesheet' href='report.css' />
+    <link rel='stylesheet' href='custom.css' />
+    <title>{title}</title>
+</head>
+<body>
+<div id='BannerBack'>
+    <div id='Banner'>
+        <br/>
+        <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0' />
+        <div class='HeaderStyle'>
+            <h1 class='TitleFontPrint'>{title}</h1>
+            <h4 class='TitleFontPrintSub'>{date}</h4>
+        </div>
+    </div>
+</div>
+""".format(
+            title=self.title,
+            date=self.date,
+        )
         self.html += self.banner_html
 
     def build_table_title(self):
-        self.table_title_html = """
-                <html lang='en'>
-                <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1' />
-                <div class='HeaderStyle'>
-                <h2 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.table_title) + """</h2>
-                """
+        self.table_title_html = "<h2 class='TitleFontPrint''>{title}</h2>".format(title=self.table_title)
         self.html += self.table_title_html
 
-    def build_text(self):
-        self.text_html = """
-                <html lang='en'>
-                <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1' />
-                <div class='HeaderStyle'>
-                <h3 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.text) + """</h3>
-                """
-        self.html += self.text_html
+    def start_content_div(self):
+        self.html += "\n<div class='contentDiv'>\n"
 
+    def build_text(self):
+        # please do not use 'style=' tags unless you cannot override a class
+        self.text_html = """
+        <div class='HeaderStyle'>
+            <h3 class='TitleFontPrint'>{text}</h3>\n
+        </div>""".format(text=self.text)
+        self.html += self.text_html
 
     def build_date_time(self):
         self.date_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%m-m-%S-s")).replace(':','-')
@@ -325,29 +343,28 @@ class lf_report():
 
     def build_objective(self):
         self.obj_html = """
-                    <!-- Test Objective -->
-                    <h3 align='left'>""" + str(self.obj_title) + """</h3> 
-                    <p align='left' width='900'>""" + str(self.objective) + """</p>
-                    """
+            <!-- Test Objective -->
+            <h3 align='left'>{title}</h3> 
+            <p align='left' width='900'>{objective}</p>
+            """.format(title=self.obj_title,
+                       objective=self.objective)
         self.html += self.obj_html
 
     def build_graph_title(self):
         self.table_graph_html = """
-                <html lang='en'>
-                <head>
-                <meta charset='UTF-8'>
-                <meta name='viewport' content='width=device-width, initial-scale=1' />
-                <div class='HeaderStyle'>
-                <h2 class='TitleFontPrint' style='color:darkgreen;'>""" + str(self.graph_title) + """</h2>
-                """
+            <div class='HeaderStyle'>
+                <h2 class='TitleFontPrint' style='color:darkgreen;'>{title}</h2>
+            """.format(title=self.graph_title)
         self.html += self.table_graph_html
 
     def build_graph(self):
         self.graph_html_obj = """
-              <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (self.graph_image) + """ border='1' />
-            <br><br>
-            """
+              <img align='center' style='padding:15px;margin:5px 5px 2em 5px;width:1000px;' src='{image}' border='1' />
+            """.format(image=self.graph_image)
         self.html +=self.graph_html_obj
+
+    def end_content_div(self):
+        self.html += "\n</div><!-- end contentDiv -->\n"
 
 # Unit Test
 if __name__ == "__main__":
