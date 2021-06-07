@@ -286,7 +286,8 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, graph_groups_file=None):
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_path="", ssh_port=22,
+                            graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -353,6 +354,7 @@ class cv_test(Realm):
                     try:
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
+                                            port=ssh_port, local_path=local_path,
                                             report_location=location)
                     except Exception as e:
                         print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
