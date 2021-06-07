@@ -4,6 +4,7 @@
 NAME: test_ipv6_connection.py
 
 PURPOSE:
+This scripts functionality has been replaced by test_ip_connection.py, consider this script deprecated
 test_ipv6_connection.py will create stations and attempt to connect to an SSID using IPv6. WPA, WPA2, WPA3, WEP, and Open connection types are supported
 
 Script for creating a variable number of stations and attempting to connect them to an SSID using IPv6.
