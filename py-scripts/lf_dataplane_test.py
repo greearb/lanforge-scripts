@@ -10,7 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running Dataplane tests.  You
 may need to view a Dataplane test configured through the GUI to understand
 the options and how best to input data.
-    
+
     ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 \
       --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
@@ -40,7 +40,7 @@ port_sorting: 0
 kpi_id: Dataplane Pkt-Size
 notes0: ec5211 in bridge mode, wpa2 auth.
 bg: 0xE0ECF8
-test_rig: 
+test_rig:
 show_scan: 1
 auto_helper: 0
 skip_2: 0
@@ -88,7 +88,7 @@ show_1m: 1
 pause_iter: 0
 outer_loop_atten: 0
 show_realtime: 1
-operator: 
+operator:
 mconn: 1
 mpkt: 1000
 tos: 0
@@ -164,6 +164,8 @@ class DataplaneTest(cv_test):
         self.sets = sets
         self.graph_groups = graph_groups
         self.report_dir = report_dir
+        self.ssh_port = ssh_port
+        self.local_path = local_path
 
     def setup(self):
         # Nothing to do at this time.
@@ -231,7 +233,7 @@ def main():
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
       --influx_tag testbed Ferndale-01
-    
+
       """
                                      )
 
@@ -257,26 +259,26 @@ def main():
 
     cv_base_adjust_parser(args)
 
-    CV_Test = DataplaneTest(lf_host = args.mgr,
-                            lf_port = args.port,
-                            lf_user = args.lf_user,
-                            lf_password = args.lf_password,
-                            instance_name = args.instance_name,
-                            config_name = args.config_name,
-                            upstream = args.upstream,
-                            pull_report = args.pull_report,
-                            load_old_cfg = args.load_old_cfg,
-                            download_speed = args.download_speed,
-                            upload_speed = args.upload_speed,
-                            duration = args.duration,
-                            dut = args.dut,
-                            station = args.station,
-                            enables = args.enable,
-                            disables = args.disable,
-                            raw_lines = args.raw_line,
-                            raw_lines_file = args.raw_lines_file,
-                            sets = args.set,
-                            graph_groups = args.graph_groups
+    CV_Test = DataplaneTest(lf_host=args.mgr,
+                            lf_port=args.port,
+                            lf_user=args.lf_user,
+                            lf_password=args.lf_password,
+                            instance_name=args.instance_name,
+                            config_name=args.config_name,
+                            upstream=args.upstream,
+                            pull_report=args.pull_report,
+                            load_old_cfg=args.load_old_cfg,
+                            download_speed=args.download_speed,
+                            upload_speed=args.upload_speed,
+                            duration=args.duration,
+                            dut=args.dut,
+                            station=args.station,
+                            enables=args.enable,
+                            disables=args.disable,
+                            raw_lines=args.raw_line,
+                            raw_lines_file=args.raw_lines_file,
+                            sets=args.set,
+                            graph_groups=args.graph_groups
                             )
     CV_Test.setup()
     CV_Test.run()
