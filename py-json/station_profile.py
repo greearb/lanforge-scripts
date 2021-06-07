@@ -1,5 +1,5 @@
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFRequest
 from LANforge import LFUtils
@@ -91,6 +91,21 @@ class StationProfile:
             "realm": None,
             "domain": None
         }
+        self.wifi_txo_data_modified = False
+        self.wifi_txo_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "txo_enable": None,
+            "txo_txpower": None,
+            "txo_pream": None,
+            "txo_mcs": None,
+            "txo_nss": None,
+            "txo_bw": None,
+            "txo_retries": None,
+            "txo_sgi": None
+
+        }
 
         self.reset_port_extra_data = {
             "shelf": 1,
@@ -104,6 +119,24 @@ class StationProfile:
             "port_to_reset": 0,
             "seconds_till_reset": 0
         }
+
+    def set_wifi_txo(self, txo_ena=1,
+                     tx_power=255,
+                     pream=0,
+                     mcs=0,
+                     nss=0,
+                     bw=0,
+                     retries=1,
+                     sgi=0):
+        self.wifi_txo_data_modified = True
+        self.wifi_txo_data["txo_enable"] = txo_ena
+        self.wifi_txo_data["txo_txpower"] = tx_power
+        self.wifi_txo_data["txo_pream"] = pream
+        self.wifi_txo_data["txo_mcs"] = mcs
+        self.wifi_txo_data["txo_nss"] = nss
+        self.wifi_txo_data["txo_bw"] = bw
+        self.wifi_txo_data["txo_retries"] = retries
+        self.wifi_txo_data["txo_sgi"] = sgi
 
     def set_wifi_extra(self, key_mgmt="WPA-EAP",
                        pairwise="CCMP TKIP",
@@ -382,6 +415,8 @@ class StationProfile:
                                                               set_port.set_port_interest_flags)
         self.wifi_extra_data["resource"] = radio_resource
         self.wifi_extra_data["shelf"] = radio_shelf
+        self.wifi_txo_data["resource"] = radio_resource
+        self.wifi_txo_data["shelf"] = radio_shelf
         self.reset_port_extra_data["resource"] = radio_resource
         self.reset_port_extra_data["shelf"] = radio_shelf
 
@@ -390,6 +425,7 @@ class StationProfile:
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta", debug_=debug)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port", debug_=debug)
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
+        wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         my_sta_names = []
         # add radio here
         if (num_stations > 0) and (len(sta_names_) < 1):
@@ -465,9 +501,14 @@ class StationProfile:
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
+            self.wifi_txo_data["resource"] = radio_resource
+            self.wifi_txo_data["port"] = name
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
+            if self.wifi_txo_data_modified:
+                wifi_txo_r.addPostData(self.wifi_txo_data)
+                json_response = wifi_txo_r.jsonPost(debug)
 
             # append created stations to self.station_names
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
