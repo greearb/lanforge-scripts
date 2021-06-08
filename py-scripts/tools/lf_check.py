@@ -381,21 +381,22 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
-
+                # HERE is thwere the test is run
                 print("running {}".format(command))
-                process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
-                
                 try:
-                    #out, err = process.communicate()
-                    process.wait(timeout=int(self.test_timeout))
-                except subprocess.TimeoutExpired:
-                    process.terminate()
-                    self.test_result = "TIMEOUT"
+                    process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                    # If there is a better solution please propose,  the TIMEOUT Result is different then FAIL
+                    try:
+                        #out, err = process.communicate()
+                        process.wait(timeout=int(self.test_timeout))
+                    except subprocess.TimeoutExpired:
+                        process.terminate()
+                        self.test_result = "TIMEOUT"
 
-                    #if err:
-                    #    self.logger.info("command Test timed out: {}".format(command))
+                except:
+                    print("No such file or directory with command: {}".format(command))
+                    self.logger.info("No such file or directory with command: {}".format(command))
 
-                #self.logger.info(stderr_log_txt)
                 if(self.test_result != "TIMEOUT"):
                     stderr_log_size = os.path.getsize(stderr_log_txt)
                     if stderr_log_size > 0 :
@@ -496,7 +497,8 @@ for running scripts listed in lf_check_config.ini
     logger.info("commit_hash: {}".format(commit_hash))
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
-    check.read_config_contents() # CMR need mode to just print out the test config and not run 
+    # READ Config and RUN Tests
+    check.read_config_contents() 
     check.run_script_test()
 
     # Generate Ouptput reports
