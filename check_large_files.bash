@@ -1,14 +1,14 @@
 #!/bin/bash
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#      Check for large files and purge the ones requested                 #
-#                                                                         #
-# The -a switch will automatically purge core files when there            #
-# is only 5GB of space left on filesystem.                                #
-#                                                                         #
-# To install as a cron-job, add the following line to /etc/crontab:       #
-# 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files
-#                                                                         #
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#      Check for large files and purge the ones requested                                               #
+#                                                                                                       #
+# The -a switch will automatically purge core files when there                                          #
+# is only 5GB of space left on filesystem.                                                              #
+#                                                                                                       #
+# To install as a cron-job, add the following line to /etc/crontab:                                     #
+# 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files     #
+#                                                                                                       #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # set -x
 # set -e
 # these are default selections
