@@ -567,7 +567,7 @@ survey_kernel_files() {
         fi
     done
 
-    if (( $verbose > 0 )) && (( ${#libmod_sort_names[@]} > 0 )); then
+    if (( ${#libmod_sort_names[@]} > 0 )); then
         # debug "Removable libmod dirs: "
         while read ser; do
             file="${libmod_sort_names[$ser]}"
