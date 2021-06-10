@@ -141,7 +141,9 @@ class ThroughputQOS(Realm):
                 self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                 if key == "BOTH" or key == "both":
                     split = len(self.sta_list) // 2
+                    self.station_profile.mode = 9
                     self.station_profile.create(radio=self.radio[0], sta_names_=self.sta_list[:split], debug=self.debug)
+                    self.station_profile.mode = 11
                     self.station_profile.create(radio=self.radio[1], sta_names_=self.sta_list[split:], debug=self.debug)
                 else:
                     self.station_profile.create(radio=self.radio[0], sta_names_=self.sta_list, debug=self.debug)
@@ -244,7 +246,7 @@ python3 ./throughput_QOS.py
     --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
     ''')
 
-    parser.add_argument('--mode', help='Used to force mode of stations')
+    parser.add_argument('--mode', help='Used to force mode of stations', default="0")
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -270,14 +272,14 @@ python3 ./throughput_QOS.py
         radios = args.radio.split(',')
         if len(radios) < 2:
             radios.append(radios[0])
-
     if args.test_duration is not None:
         args.test_duration = args.test_duration.strip('m')
 
     for i in range(len(bands)):
         if bands[i] == "2.4G" or bands[i] == "2.4g":
             args.bands = bands[i]
-            args.mode = 9
+            if args.mode is not None:
+                args.mode = 11
             if i == 0:
                 args.radio = radios[0]
             if i == 1:
@@ -289,7 +291,7 @@ python3 ./throughput_QOS.py
                 station_list = args.sta_names.split(",")
         elif bands[i] == "5G" or bands[i] == "5g":
             args.bands = bands[i]
-            args.mode = 11
+            args.mode = 9
             if i == 0:
                 args.radio = radios[0]
             if i == 1:
@@ -302,17 +304,25 @@ python3 ./throughput_QOS.py
                 station_list = args.sta_names.split(",")
         elif bands[i] == "BOTH" or bands[i] == "both":
             args.bands = bands[i]
-            args.radio = radios
+            args.radio = str(radios[0]+","+radios[1])
             if args.create_sta:
-                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=(int(args.num_stations) // 2),
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=(int(args.num_stations) // 2)
+                                                      - 1,
                                                       padding_number_=10000,
                                                       radio=radios[0])
-                station_list.append(LFUtils.portNameSeries(prefix_="sta", start_id_=(int(args.num_stations) // 2) + 1,
-                                                           end_id_=int(args.num_stations) - 1,
+                station_list.extend(LFUtils.portNameSeries(prefix_="sta", start_id_=(int(args.num_stations) // 2) - 1,
+                                                           end_id_=int(args.num_stations),
                                                            padding_number_=10000,
                                                            radio=radios[1]))
             else:
                 station_list = args.sta_names.split(",")
+        print("-----------------")
+        print(bands[i])
+        print(args.radio)
+        print(args.mode)
+        print(station_list)
+        print("-----------------")
+        exit(1)
 
         throughput_qos = ThroughputQOS(host=args.mgr,
                                        port=args.mgr_port,
