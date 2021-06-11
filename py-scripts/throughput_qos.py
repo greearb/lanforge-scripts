@@ -304,14 +304,14 @@ python3 ./throughput_QOS.py
                 station_list = args.sta_names.split(",")
         elif bands[i] == "BOTH" or bands[i] == "both":
             args.bands = bands[i]
-            args.radio = str(radios[0]+","+radios[1])
+            args.radio = str(radios[0] + "," + radios[1])
+            mid = int(args.num_stations) // 2
             if args.create_sta:
-                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=(int(args.num_stations) // 2)
-                                                      - 1,
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=mid - 1,
                                                       padding_number_=10000,
                                                       radio=radios[0])
-                station_list.extend(LFUtils.portNameSeries(prefix_="sta", start_id_=(int(args.num_stations) // 2) - 1,
-                                                           end_id_=int(args.num_stations),
+                station_list.extend(LFUtils.portNameSeries(prefix_="sta", start_id_=mid,
+                                                           end_id_=int(args.num_stations) - 1,
                                                            padding_number_=10000,
                                                            radio=radios[1]))
             else:
@@ -322,7 +322,6 @@ python3 ./throughput_QOS.py
         print(args.mode)
         print(station_list)
         print("-----------------")
-        exit(1)
 
         throughput_qos = ThroughputQOS(host=args.mgr,
                                        port=args.mgr_port,
