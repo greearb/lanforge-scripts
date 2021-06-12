@@ -239,6 +239,7 @@ def main():
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
+    parser.add_argument('--json', help="--json <config.json> json input file", default="")
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="",
@@ -257,7 +258,50 @@ def main():
 
     args = parser.parse_args()
 
+    # TODO
+    if args.json != "":
+        try:
+            with open(args.json, 'r') as json_config:
+                json_data = json.load(json_config)
+        except:
+            print("Error reading {}".format(args.json))
+        # json configuation takes presidence to command line 
+        # TODO see if there is easier way to search presence, look at parser args
+        if "mgr" in json_data:
+            args.mgr = json_data["mgr"]
+        if "port" in json_data:
+            args.port = json_data["port"]
+        if "lf_user" in json_data:
+            args.lf_user = json_data["lf_user"]
+        if "lf_password" in json_data:
+            args.lf_password = json_data["lf_password"]
+        if "instance_name" in json_data:
+            args.instance_name = json_data["instance_name"]
+        if "config_name" in json_data:
+            args.config_name = json_data["config_name"]
+        if "upstream" in json_data:
+            args.upstream = json_data["upstream"]
+        if "dut" in json_data:
+            args.dut = json_data["dut"]
+        if "duration" in json_data:
+            args.duration = json_data["duration"]
+        if "station" in json_data:
+            args.station = json_data["station"]
+        if "download_speed" in json_data:
+            args.download_speed = json_data["download_speed"]
+        if "upload_speed" in json_data:
+            args.upload_speed = json_data["upload_speed"]
+        if "raw_line" in json_data:
+            # the json_data is a list , need to make into a list of lists, to match command line raw_line paramaters
+            # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
+            json_data_tmp = [[x] for x in json_data["raw_line"]]
+            args.raw_line = json_data_tmp
+
     cv_base_adjust_parser(args)
+    print(args)
+    #exit(1)
+
+    # if json present use json config will override
 
     CV_Test = DataplaneTest(lf_host = args.mgr,
                             lf_port = args.port,
@@ -275,7 +319,7 @@ def main():
                             station = args.station,
                             enables = args.enable,
                             disables = args.disable,
-                            raw_lines = args.raw_line,
+                            raw_lines = args.raw_line,  # this is interesting.
                             raw_lines_file = args.raw_lines_file,
                             sets = args.set,
                             graph_groups = args.graph_groups
