@@ -64,10 +64,12 @@ class lf_check():
     def __init__(self,
                 _config_ini,
                 _test_suite,
+                _production,
                 _csv_results,
                 _outfile):
         self.config_ini = _config_ini
         self.test_suite = _test_suite
+        self.production_run  = _production
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -106,7 +108,6 @@ class lf_check():
         self.use_blank_db = "FALSE"
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
-        self.production_run = "FALSE"
         self.email_list_production = ""
         self.host_ip_production = None
         self.email_list_test = ""
@@ -134,7 +135,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname,
                                                                     date=datetime.datetime.now())
         try:
-            if self.production_run == "TRUE":
+            if self.production_run == True:
                 msg = message_txt.format(ip=self.host_ip_production)
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=msg,
@@ -244,7 +245,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
             self.use_custom_db = section['LOAD_CUSTOM_DB']
             self.custom_db = section['CUSTOM_DB']
-            self.production_run = section['PRODUCTION_RUN']
             self.email_list_production = section['EMAIL_LIST_PRODUCTION']
             self.host_ip_production = section['HOST_IP_PRODUCTION']
             self.email_list_test = section['EMAIL_LIST_TEST']
@@ -466,6 +466,7 @@ for running scripts listed in lf_check_config.ini
 
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
+    parser.add_argument('--production', help="--production  stores true, sends email results to production email list", action='store_true')
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
@@ -478,9 +479,16 @@ for running scripts listed in lf_check_config.ini
     else:
         print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
         exit(1)
-
     # Select test suite 
     test_suite = args.suite
+    
+    if args.production:
+        production = True
+        print("Email to production list")
+    else:
+        production = False
+        print("Email to email list")
+
 
     # Create Report Class for reporting
     report = lf_report(_results_dir_name="lf_check",
@@ -496,6 +504,7 @@ for running scripts listed in lf_check_config.ini
     # lf_check() class created
     check = lf_check(_config_ini = config_ini,
                     _test_suite = test_suite,
+                    _production = production,
                     _csv_results = csv_results,
                     _outfile = outfile_path)
 
