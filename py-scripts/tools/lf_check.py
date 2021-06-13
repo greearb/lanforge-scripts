@@ -41,6 +41,8 @@ import subprocess
 import csv
 import shutil
 import os.path
+from os import path
+
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -51,17 +53,16 @@ sys.path.insert(0, parent_dir_path)
 from lf_report import lf_report
 sys.path.append('/')
 
-CONFIG_FILE = os.getcwd() + '/lf_check_config.ini'    
-RUN_CONDITION = 'ENABLE'
-
 # setup logging FORMAT
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 
 # lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
+                _config_ini,
                 _csv_results,
                 _outfile):
+        self.config_ini = _config_ini
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -192,10 +193,10 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
     # Functions in this section are/can be overridden by descendants
     # This code reads the lf_check_config.ini file to populate the test variables
     def read_config_contents(self):
-        self.logger.info("read_config_contents {}".format(CONFIG_FILE))
+        self.logger.info("read_config_contents {}".format(self.config_ini))
         config_file = configparser.ConfigParser()
         success = True
-        success = config_file.read(CONFIG_FILE)
+        success = config_file.read(self.config_ini)
         self.logger.info("logger worked")
 
         if 'LF_MGR' in config_file.sections():
@@ -454,10 +455,18 @@ Summary :
 for running scripts listed in lf_check_config.ini
             ''')
 
+    parser.add_argument('--ini', help="--ini <config.ini file>  ", default="lf_check_config.ini")
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
-    args = parser.parse_args()    
+    args = parser.parse_args()   
+    # load the test config information
+    config_ini = os.getcwd() + '/' + args.ini
+    if os.path.exists(config_ini):
+        print("TEST CONFIG : {}".format(config_ini))
+    else:
+        print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
+        exit(1)
 
     # output report.
     report = lf_report(_results_dir_name="lf_check",
@@ -471,7 +480,8 @@ for running scripts listed in lf_check_config.ini
     outfile_path = report.file_add_path(outfile)
 
     # lf_check() class created
-    check = lf_check(_csv_results = csv_results,
+    check = lf_check(_config_ini = config_ini,
+                    _csv_results = csv_results,
                     _outfile = outfile_path)
 
     # get the git sha 
