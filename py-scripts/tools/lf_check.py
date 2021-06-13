@@ -262,7 +262,11 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
                 self.logger.info("{}:  {}".format(self.test_suite,self.test_dict))
             except:
-                self.logger.info("Excpetion loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))                
+                self.logger.info("Excpetion loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))   
+        else:
+            self.logger.info("EXITING... NOT FOUND Test Suite with name : {}".format(self.test_suite))   
+            exit(1)
+
 
     def load_factory_default_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
@@ -466,7 +470,8 @@ for running scripts listed in lf_check_config.ini
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
     args = parser.parse_args()   
-    # load the test config information
+
+    # Load test config file information
     config_ini = os.getcwd() + '/' + args.ini
     if os.path.exists(config_ini):
         print("TEST CONFIG : {}".format(config_ini))
@@ -474,9 +479,10 @@ for running scripts listed in lf_check_config.ini
         print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
         exit(1)
 
+    # Select test suite 
     test_suite = args.suite
 
-    # output report.
+    # Create Report Class for reporting
     report = lf_report(_results_dir_name="lf_check",
                        _output_html="lf_check.html",
                        _output_pdf="lf-check.pdf")
@@ -493,13 +499,13 @@ for running scripts listed in lf_check_config.ini
                     _csv_results = csv_results,
                     _outfile = outfile_path)
 
-    # get the git sha 
+    # Get git sha 
     process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
     (commit_hash, err) = process.communicate()
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8','ignore')
 
-    # set up logging 
+    # Set Up logging 
     logfile = args.logfile[:-4]
     print("logfile: {}".format(logfile))
     logfile = "{}-{}.log".format(logfile,current_time)
