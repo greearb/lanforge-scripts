@@ -12,6 +12,7 @@ The config file name can be passed in as a configuraiton parameter.
 EXAMPLE:
 lf_check.py  # this will use the defaults
 lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file>
+lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file> --production
 
 NOTES:
 Before using lf_check.py
@@ -52,7 +53,6 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path,os.pardir))
 sys.path.insert(0, parent_dir_path)
 
-#sys.path.append('../')
 from lf_report import lf_report
 sys.path.append('/')
 
@@ -121,7 +121,7 @@ class lf_check():
         report_url=report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
             report_url = report_url[1:]
-        # Following recommendation 
+        # following recommendation 
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
@@ -196,8 +196,8 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 <br>
                 """
 
-    # Functions in this section are/can be overridden by descendants
-    # This code reads the lf_check_config.ini file to populate the test variables
+    # functions in this section are/can be overridden by descendants
+    # this code reads the lf_check_config.ini file to populate the test variables
     def read_config_contents(self):
         self.logger.info("read_config_contents {}".format(self.config_ini))
         config_file = configparser.ConfigParser()
@@ -283,7 +283,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         out, err = process.communicate()
         errcode = process.returncode
 
-    # Not currently used
+    # not currently used
     def load_blank_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
         try:
@@ -320,10 +320,10 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 self.logger.info("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
-                # Make the command replace ment a separate method call.
+                # make the command replace ment a separate method call.
                 # loop through radios
                 for radio in self.radio_dict:
-                    # Replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
+                    # replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
                     # not "KEY" is just a word to refer to the RADIO define (e.g. RADIO_0_CFG) to get the vlaues
                     # --num_stations needs to be int not string (no double quotes)
                     if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
@@ -395,7 +395,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 print("running {}".format(command))
                 try:
                     process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
-                    # If there is a better solution please propose,  the TIMEOUT Result is different then FAIL
+                    # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                     try:
                         #out, err = process.communicate()
                         process.wait(timeout=int(self.test_timeout))
@@ -472,14 +472,14 @@ for running scripts listed in lf_check_config.ini
 
     args = parser.parse_args()   
 
-    # Load test config file information
+    # load test config file information
     config_ini = os.getcwd() + '/' + args.ini
     if os.path.exists(config_ini):
         print("TEST CONFIG : {}".format(config_ini))
     else:
         print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
         exit(1)
-    # Select test suite 
+    # select test suite 
     test_suite = args.suite
     
     if args.production:
@@ -489,8 +489,7 @@ for running scripts listed in lf_check_config.ini
         production = False
         print("Email to email list")
 
-
-    # Create Report Class for reporting
+    # create report class for reporting
     report = lf_report(_results_dir_name="lf_check",
                        _output_html="lf_check.html",
                        _output_pdf="lf-check.pdf")
@@ -508,13 +507,13 @@ for running scripts listed in lf_check_config.ini
                     _csv_results = csv_results,
                     _outfile = outfile_path)
 
-    # Get git sha 
+    # get git sha
     process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
     (commit_hash, err) = process.communicate()
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8','ignore')
 
-    # Set Up logging 
+    # set up logging
     logfile = args.logfile[:-4]
     print("logfile: {}".format(logfile))
     logfile = "{}-{}.log".format(logfile,current_time)
@@ -531,11 +530,11 @@ for running scripts listed in lf_check_config.ini
     logger.info("commit_hash: {}".format(commit_hash))
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
-    # READ Config and RUN Tests
+    # read config and run tests
     check.read_config_contents() 
     check.run_script_test()
 
-    # Generate Ouptput reports
+    # generate output reports
     report.set_title("LF Check: lf_check.py")
     report.build_banner()
     report.start_content_div()
@@ -550,7 +549,6 @@ for running scripts listed in lf_check_config.ini
     print("html report: {}".format(html_report))
     report.write_pdf_with_timestamp()
 
-
     report_path = os.path.dirname(html_report)
     parent_report_dir = os.path.dirname(report_path)
 
@@ -559,7 +557,6 @@ for running scripts listed in lf_check_config.ini
     # duplicates html_report file up one directory
     lf_check_html_report = parent_report_dir + "/{}.html".format(outfile)
 
-    # 
     banner_src_png =  report_path + "/banner.png"
     banner_dest_png = parent_report_dir + "/banner.png"
     CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
