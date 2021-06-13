@@ -5,20 +5,23 @@ NAME:
 lf_check.py
 
 PURPOSE:
-lf_check.py will run a series of tests based on the test TEST_DICTIONARY listed in lf_check_config.ini.
-The lf_check_config.ini file is copied from lf_check_config_template.ini and local configuration is made
-to the lf_check_config.ini.
+lf_check.py will run a series of tests based on TEST_DICTIONARY or test suite passed in  listed in lf_check_config.ini.
+The config file may be copied from lf_check_config_template.ini, or can be generated.   
+The config file name can be passed in as a configuraiton parameter.
 
 EXAMPLE:
-lf_check.py
+lf_check.py  # this will use the defaults
+lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file>
 
 NOTES:
 Before using lf_check.py
 1. copy lf_check_config_template.ini to the lf_check_config.ini
-2. update lf_check_config.ini to enable (TRUE) tests to be run in the TEST_DICTIONARY , the TEST_DICTIONARY needs to be passed in
+2. update lf_check_config.ini to enable (TRUE) tests to be run in the test suite, the default suite is the TEST_DICTIONARY 
 
 TO DO NOTES:
-6/4/2021 :  add server (telnet localhost 4001) build info,  GUI build shaw, and Kernel version to the output. 
+6/13/2021 :  
+1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
+2. allow for json or config.ini file
 
 '''
 import datetime
@@ -60,9 +63,11 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 class lf_check():
     def __init__(self,
                 _config_ini,
+                _test_suite,
                 _csv_results,
                 _outfile):
         self.config_ini = _config_ini
+        self.test_suite = _test_suite
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -250,14 +255,14 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
             self.logger.info("self.radio_dict {}".format(self.radio_dict))
 
-        if 'TEST_DICTIONARY' in config_file.sections():
-            section = config_file['TEST_DICTIONARY']
+        if self.test_suite in config_file.sections():
+            section = config_file[self.test_suite]
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
             try:            
                 self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
-                self.logger.info("TEST_DICTIONARY:  {}".format(self.test_dict))
+                self.logger.info("{}:  {}".format(self.test_suite,self.test_dict))
             except:
-                self.logger.info("Excpetion loading TEST_DICTIONARY, is there comma after the last entry?  Check syntax")                
+                self.logger.info("Excpetion loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))                
 
     def load_factory_default_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
@@ -455,7 +460,8 @@ Summary :
 for running scripts listed in lf_check_config.ini
             ''')
 
-    parser.add_argument('--ini', help="--ini <config.ini file>  ", default="lf_check_config.ini")
+    parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
+    parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
@@ -467,6 +473,8 @@ for running scripts listed in lf_check_config.ini
     else:
         print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
         exit(1)
+
+    test_suite = args.suite
 
     # output report.
     report = lf_report(_results_dir_name="lf_check",
@@ -481,6 +489,7 @@ for running scripts listed in lf_check_config.ini
 
     # lf_check() class created
     check = lf_check(_config_ini = config_ini,
+                    _test_suite = test_suite,
                     _csv_results = csv_results,
                     _outfile = outfile_path)
 
