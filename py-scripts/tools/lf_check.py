@@ -144,7 +144,7 @@ http://{ip}/{report}
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 """.format(hostname=hostname, ip=ip, report=report_url)
 
-        mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname,
+        mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
         try:
             if self.production_run == True:
                 msg = message_txt.format(ip=self.host_ip_production)
