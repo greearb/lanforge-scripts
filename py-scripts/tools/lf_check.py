@@ -615,7 +615,7 @@ def main():
         prog='lf_check.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            lf_check.py : for running scripts listed in lf_check_config.ini file
+            lf_check.py : running scripts listed in <config>.ini or <config>.json 
             ''',
         description='''\
 lf_check.py
@@ -623,7 +623,7 @@ lf_check.py
 
 Summary :
 ---------
-for running scripts listed in <config>.ini or <config>.json 
+running scripts listed in <config>.ini or <config>.json 
 
 Example :  
 ./lf_check.py --ini lf_check_test.ini --suite suite_one
