@@ -623,7 +623,7 @@ lf_check.py
 
 Summary :
 ---------
-for running scripts listed in lf_check_config.ini
+for running scripts listed in <config>.ini or <config>.json 
             ''')
 
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
