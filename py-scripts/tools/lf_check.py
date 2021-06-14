@@ -5,33 +5,44 @@ NAME:
 lf_check.py
 
 PURPOSE:
-lf_check.py will run a series of tests based on TEST_DICTIONARY or test suite passed in  listed in lf_check_config.ini.
+lf_check.py will tests based on .ini file or .json file. 
 The config file may be copied from lf_check_config_template.ini, or can be generated.   
 The config file name can be passed in as a configuraiton parameter.
+The json file may be copied from lf_check.json and updated.  Currently all the parameters are needed to be set to a value
+
+The --production flag determine the email list for results 
 
 EXAMPLE:
 lf_check.py  # this will use the defaults
 lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file>
 lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file> --production
 
+lf_check.py --use_json --json <unique json file> --test_suite 
+lf_check.py --use_json --json <unique json file> --production 
+
 NOTES:
 Before using lf_check.py
-1. copy lf_check_config_template.ini to the lf_check_config.ini
-2. update lf_check_config.ini to enable (TRUE) tests to be run in the test suite, the default suite is the TEST_DICTIONARY 
+Using .ini:
+1. copy lf_check_config_template.ini to <file name>.ini ,  this will avoid .ini being overwritten on git pull
+2. update <file name>.ini to enable (TRUE) tests to be run in the test suite, the default suite is the TEST_DICTIONARY
+3. update other configuration to specific test bed for example radios 
+
+Using .json:
+1. copy lf_check.json to <file name>.json this will avoide .json being overwritten on git pull
+2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
 TO DO NOTES:
-6/13/2021 :  
+6/14/2021 :  
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
-2. allow for json or config.ini file
+2. add unique database prior to each run
 
 '''
 import datetime
-#import pprint
+import pprint
 import sys
 if sys.version_info[0]  != 3:
     print("This script requires Python3")
     exit()
-
 
 import os
 import socket
@@ -45,7 +56,6 @@ import subprocess
 import csv
 import shutil
 from os import path
-
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -134,9 +144,7 @@ http://{ip}/{report}
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 """.format(hostname=hostname, ip=ip, report=report_url)
 
-
         mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname,
-                                                                    date=datetime.datetime.now())
         try:
             if self.production_run == True:
                 msg = message_txt.format(ip=self.host_ip_production)
@@ -243,7 +251,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             if self.test_suite in self.json_data["test_suites"]:
                 self.test_dict = self.json_data["test_suites"][self.test_suite]
                 self.logger.info("self.test_dict {}".format(self.test_dict))
-
             else:
                 self.logger.info("EXITING test_suite {} Not Present in json test_suites: {}".format(self.test_suite, self.json_data["test_suites"]))
                 exit(1)
@@ -298,7 +305,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.logger.info("host_ip_test not in test_parameters json")
             exit(1)
 
-
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
             self.http_test_ip = self.json_data["test_network"]["http_test_ip"]
@@ -352,9 +358,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         else:
             self.logger.info("upstream_port not in test_generic json")
             exit(1)
-
-
-
 
     # functions in this section are/can be overridden by descendants
     # this code reads the lf_check_config.ini file to populate the test variables
@@ -411,7 +414,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.upstream_port = section['UPSTREAM_PORT']
             self.logger.info("upstream_port {}".format(self.upstream_port))
 
-
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
             self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
@@ -428,7 +430,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         else:
             self.logger.info("EXITING... NOT FOUND Test Suite with name : {}".format(self.test_suite))   
             exit(1)
-
 
     def load_factory_default_db(self):
         #self.logger.info("file_wd {}".format(self.scripts_wd))
@@ -531,8 +532,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 else:
                     self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
 
-                sleep(1) # the sleep is to allow for the database to stablize
-
+                sleep(1) # DO NOT REMOVE the sleep is to allow for the database to stablize
                 try:
                     os.chdir(self.scripts_wd)
                     #self.logger.info("Current Working Directory {}".format(os.getcwd()))
@@ -606,7 +606,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 
             else:
                 self.logger.info("enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'],test))
-
         self.finish_html_results()        
 
 def main():
@@ -705,6 +704,7 @@ for running scripts listed in lf_check_config.ini
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout)) # allows to logging to file and stdout
 
+    # logger setup print out sha
     logger.info("commit_hash: {}".format(commit_hash))
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
@@ -766,6 +766,7 @@ for running scripts listed in lf_check_config.ini
     shutil.copyfile(custom_src_css,         custom_dest_css)
     shutil.copyfile(font_src_woff,          font_dest_woff)
 
+    # print out locations of results
     print("lf_check_latest.html: "+lf_check_latest_html)
     print("lf_check_html_report: "+lf_check_html_report)
 
