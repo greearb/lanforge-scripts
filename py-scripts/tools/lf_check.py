@@ -216,30 +216,34 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
     # there is probably a more efficient way to do this in python
     # Keeping it obvious for now, may be refactored later
     def read_config_json(self):
-        self.logger.info("read_config_json_contents {}".format(self.json_data))
+        #self.logger.info("read_config_json_contents {}".format(self.json_data))
         if "test_parameters" in self.json_data:
-            self.logger.info("test_parameters {}".format(self.json_data["test_parameters"]))
+            self.logger.info("json: read test_parameters")
+            #self.logger.info("test_parameters {}".format(self.json_data["test_parameters"]))
             self.read_test_parameters()
         else:
             self.logger.info("EXITING test_parameters not in json {}".format(self.json_data))
             exit(1)
 
         if "test_network" in self.json_data:
-            self.logger.info("test_network {}".format(self.json_data["test_network"]))
+            self.logger.info("json: read test_network")
+            #self.logger.info("test_network {}".format(self.json_data["test_network"]))
             self.read_test_network()
         else:
             self.logger.info("EXITING test_network not in json {}".format(self.json_data))
             exit(1)
 
         if "test_generic" in self.json_data:
-            self.logger.info("test_generic {}".format(self.json_data["test_generic"]))
+            self.logger.info("json: read test_generic")
+            #self.logger.info("test_generic {}".format(self.json_data["test_generic"]))
             self.read_test_generic()
         else:
             self.logger.info("EXITING test_generic not in json {}".format(self.json_data))
             exit(1)
 
         if "radio_dict" in self.json_data:
-            self.logger.info("radio_dict {}".format(self.json_data["radio_dict"]))
+            self.logger.info("json: read radio_dict")
+            #self.logger.info("radio_dict {}".format(self.json_data["radio_dict"]))
             self.radio_dict = self.json_data["radio_dict"]
             self.logger.info("self.radio_dict {}".format(self.radio_dict))
         else:
@@ -247,10 +251,11 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             exit(1)
 
         if "test_suites" in self.json_data:
-            self.logger.info("test_suites {}".format(self.json_data["test_suites"]))
+            self.logger.info("json: read test_suites looking for: {}".format(self.test_suite))
+            #self.logger.info("test_suites {}".format(self.json_data["test_suites"]))
             if self.test_suite in self.json_data["test_suites"]:
                 self.test_dict = self.json_data["test_suites"][self.test_suite]
-                self.logger.info("self.test_dict {}".format(self.test_dict))
+                #self.logger.info("self.test_dict {}".format(self.test_dict))
             else:
                 self.logger.info("EXITING test_suite {} Not Present in json test_suites: {}".format(self.test_suite, self.json_data["test_suites"]))
                 exit(1)
@@ -362,7 +367,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
     # functions in this section are/can be overridden by descendants
     # this code reads the lf_check_config.ini file to populate the test variables
     def read_config_ini(self):
-        self.logger.info("read_config_ini_contents {}".format(self.config_ini))
+        #self.logger.info("read_config_ini_contents {}".format(self.config_ini))
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(self.config_ini)
@@ -448,10 +453,8 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 
     # not currently used
     def load_blank_db(self):
-        #self.logger.info("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            #self.logger.info("Current Working Directory {}".format(os.getcwd()))
         except:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
@@ -460,10 +463,8 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     def load_custom_db(self,custom_db):
-        #self.logger.info("file_wd {}".format(self.scripts_wd))
         try:
             os.chdir(self.scripts_wd)
-            #self.logger.info("Current Working Directory {}".format(os.getcwd()))
         except:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
