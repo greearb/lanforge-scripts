@@ -26,7 +26,7 @@ TO DO NOTES:
 
 '''
 import datetime
-import pprint
+#import pprint
 import sys
 if sys.version_info[0]  != 3:
     print("This script requires Python3")
@@ -44,7 +44,6 @@ import configparser
 import subprocess
 import csv
 import shutil
-import os.path
 from os import path
 
 
@@ -62,11 +61,15 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 # lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
+                _use_json,
                 _config_ini,
+                _json_data,
                 _test_suite,
                 _production,
                 _csv_results,
                 _outfile):
+        self.use_json = _use_json
+        self.json_data = _json_data
         self.config_ini = _config_ini
         self.test_suite = _test_suite
         self.production_run  = _production
@@ -196,21 +199,191 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 <br>
                 """
 
+    def read_config(self):
+        if self.use_json:
+            self.read_config_json()
+        else:
+            self.read_config_ini()
+
+    # there is probably a more efficient way to do this in python
+    # Keeping it obvious for now, may be refactored later
+    def read_config_json(self):
+        self.logger.info("read_config_json_contents {}".format(self.json_data))
+        if "test_parameters" in self.json_data:
+            self.logger.info("test_parameters {}".format(self.json_data["test_parameters"]))
+            self.read_test_parameters()
+        else:
+            self.logger.info("EXITING test_parameters not in json {}".format(self.json_data))
+            exit(1)
+
+        if "test_network" in self.json_data:
+            self.logger.info("test_network {}".format(self.json_data["test_network"]))
+            self.read_test_network()
+        else:
+            self.logger.info("EXITING test_network not in json {}".format(self.json_data))
+            exit(1)
+
+        if "test_generic" in self.json_data:
+            self.logger.info("test_generic {}".format(self.json_data["test_generic"]))
+            self.read_test_generic()
+        else:
+            self.logger.info("EXITING test_generic not in json {}".format(self.json_data))
+            exit(1)
+
+        if "radio_dict" in self.json_data:
+            self.logger.info("radio_dict {}".format(self.json_data["radio_dict"]))
+            self.radio_dict = self.json_data["radio_dict"]
+            self.logger.info("self.radio_dict {}".format(self.radio_dict))
+        else:
+            self.logger.info("EXITING radio_dict not in json {}".format(self.json_data))
+            exit(1)
+
+        if "test_suites" in self.json_data:
+            self.logger.info("test_suites {}".format(self.json_data["test_suites"]))
+            if self.test_suite in self.json_data["test_suites"]:
+                self.test_dict = self.json_data["test_suites"][self.test_suite]
+                self.logger.info("self.test_dict {}".format(self.test_dict))
+
+            else:
+                self.logger.info("EXITING test_suite {} Not Present in json test_suites: {}".format(self.test_suite, self.json_data["test_suites"]))
+                exit(1)
+        else:
+            self.logger.info("EXITING test_suites not in json {}".format(self.json_data))
+            exit(1)
+
+    def read_test_parameters(self):
+        if "test_timeout" in self.json_data["test_parameters"]:
+            self.test_timeout = self.json_data["test_parameters"]["test_timeout"]
+        else:
+            self.logger.info("test_timeout not in test_parameters json")
+            exit(1)
+        if "load_blank_db" in self.json_data["test_parameters"]:
+            self.load_blank_db = self.json_data["test_parameters"]["load_blank_db"]
+        else:
+            self.logger.info("load_blank_db not in test_parameters json")
+            exit(1)
+        if "load_factory_default_db" in self.json_data["test_parameters"]:
+            self.load_factory_default_db = self.json_data["test_parameters"]["load_factory_default_db"]
+        else:
+            self.logger.info("load_factory_default_db not in test_parameters json")
+            exit(1)
+        if "load_custom_db" in self.json_data["test_parameters"]:
+            self.load_custom_db = self.json_data["test_parameters"]["load_custom_db"]
+        else:
+            self.logger.info("load_custom_db not in test_parameters json")
+            exit(1)
+        if "custom_db" in self.json_data["test_parameters"]:
+            self.custom_db = self.json_data["test_parameters"]["custom_db"]
+        else:
+            self.logger.info("custom_db not in test_parameters json, if not using custom_db just put in a name")
+            exit(1)
+        if "email_list_production" in self.json_data["test_parameters"]:
+            self.email_list_production = self.json_data["test_parameters"]["email_list_production"]
+        else:
+            self.logger.info("email_list_production not in test_parameters json")
+            exit(1)
+        if "host_ip_production" in self.json_data["test_parameters"]:
+            self.host_ip_production = self.json_data["test_parameters"]["host_ip_production"]
+        else:
+            self.logger.info("host_ip_production not in test_parameters json")
+            exit(1)
+        if "email_list_test" in self.json_data["test_parameters"]:
+            self.email_list_test = self.json_data["test_parameters"]["email_list_test"]
+        else:
+            self.logger.info("email_list_test not in test_parameters json")
+            exit(1)
+        if "host_ip_test" in self.json_data["test_parameters"]:
+            self.email_list_test = self.json_data["test_parameters"]["host_ip_test"]
+        else:
+            self.logger.info("host_ip_test not in test_parameters json")
+            exit(1)
+
+
+    def read_test_network(self):
+        if "http_test_ip" in self.json_data["test_network"]:
+            self.http_test_ip = self.json_data["test_network"]["http_test_ip"]
+        else:
+            self.logger.info("http_test_ip not in test_network json")
+            exit(1)
+        if "ftp_test_ip" in self.json_data["test_network"]:
+            self.ftp_test_ip = self.json_data["test_network"]["ftp_test_ip"]
+        else:
+            self.logger.info("ftp_test_ip not in test_network json")
+            exit(1)
+        if "test_ip" in self.json_data["test_network"]:
+            self.ftp_test_ip = self.json_data["test_network"]["test_ip"]
+        else:
+            self.logger.info("test_ip not in test_network json")
+            exit(1)
+
+    def read_test_generic(self):
+        if "radio_used" in self.json_data["test_generic"]:
+            self.radio_lf = self.json_data["test_generic"]["radio_used"]
+        else:
+            self.logger.info("radio_used not in test_generic json")
+            exit(1)
+        if "ssid_used" in self.json_data["test_generic"]:
+            self.ssid = self.json_data["test_generic"]["ssid_used"]
+        else:
+            self.logger.info("ssid_used not in test_generic json")
+            exit(1)
+        if "ssid_pw_used" in self.json_data["test_generic"]:
+            self.ssid_pw = self.json_data["test_generic"]["ssid_pw_used"]
+        else:
+            self.logger.info("ssid_pw_used not in test_generic json")
+            exit(1)
+        if "security_used" in self.json_data["test_generic"]:
+            self.security = self.json_data["test_generic"]["security_used"]
+        else:
+            self.logger.info("security_used not in test_generic json")
+            exit(1)
+        if "num_sta" in self.json_data["test_generic"]:
+            self.num_sta = self.json_data["test_generic"]["num_sta"]
+        else:
+            self.logger.info("num_sta not in test_generic json")
+            exit(1)
+        if "col_names" in self.json_data["test_generic"]:
+            self.num_sta = self.json_data["test_generic"]["col_names"]
+        else:
+            self.logger.info("col_names not in test_generic json")
+            exit(1)
+        if "upstream_port" in self.json_data["test_generic"]:
+            self.num_sta = self.json_data["test_generic"]["upstream_port"]
+        else:
+            self.logger.info("upstream_port not in test_generic json")
+            exit(1)
+
+
+
+
     # functions in this section are/can be overridden by descendants
     # this code reads the lf_check_config.ini file to populate the test variables
-    def read_config_contents(self):
-        self.logger.info("read_config_contents {}".format(self.config_ini))
+    def read_config_ini(self):
+        self.logger.info("read_config_ini_contents {}".format(self.config_ini))
         config_file = configparser.ConfigParser()
         success = True
         success = config_file.read(self.config_ini)
-        self.logger.info("logger worked")
+        self.logger.info("config_file.read result {}".format(success))
 
+        # LF_MGR parameters not used yet
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
             self.lf_mgr_ip = section['LF_MGR_IP']
             self.lf_mgr_port = section['LF_MGR_PORT']
             self.logger.info("lf_mgr_ip {}".format(self.lf_mgr_ip))
             self.logger.info("lf_mgr_port {}".format(self.lf_mgr_port))
+
+        if 'TEST_PARAMETERS' in config_file.sections():
+            section = config_file['TEST_PARAMETERS']
+            self.test_timeout = section['TEST_TIMEOUT']
+            self.use_blank_db = section['LOAD_BLANK_DB']
+            self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
+            self.use_custom_db = section['LOAD_CUSTOM_DB']
+            self.custom_db = section['CUSTOM_DB']
+            self.email_list_production = section['EMAIL_LIST_PRODUCTION']
+            self.host_ip_production = section['HOST_IP_PRODUCTION']
+            self.email_list_test = section['EMAIL_LIST_TEST']
+            self.host_ip_test = section['HOST_IP_TEST']
 
         if 'TEST_NETWORK' in config_file.sections():
             section = config_file['TEST_NETWORK']
@@ -238,17 +411,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.upstream_port = section['UPSTREAM_PORT']
             self.logger.info("upstream_port {}".format(self.upstream_port))
 
-        if 'TEST_PARAMETERS' in config_file.sections():
-            section = config_file['TEST_PARAMETERS']
-            self.test_timeout = section['TEST_TIMEOUT']
-            self.use_blank_db = section['LOAD_BLANK_DB']
-            self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
-            self.use_custom_db = section['LOAD_CUSTOM_DB']
-            self.custom_db = section['CUSTOM_DB']
-            self.email_list_production = section['EMAIL_LIST_PRODUCTION']
-            self.host_ip_production = section['HOST_IP_PRODUCTION']
-            self.email_list_test = section['EMAIL_LIST_TEST']
-            self.host_ip_test = section['HOST_IP_TEST']
 
         if 'RADIO_DICTIONARY' in config_file.sections():
             section = config_file['RADIO_DICTIONARY']
@@ -465,6 +627,8 @@ for running scripts listed in lf_check_config.ini
             ''')
 
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
+    parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
+    parser.add_argument('--use_json', help="--use_json ", action='store_true')
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list", action='store_true')
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
@@ -472,13 +636,25 @@ for running scripts listed in lf_check_config.ini
 
     args = parser.parse_args()   
 
-    # load test config file information
-    config_ini = os.getcwd() + '/' + args.ini
-    if os.path.exists(config_ini):
-        print("TEST CONFIG : {}".format(config_ini))
+    # load test config file information either <config>.json or <config>.ini
+    use_json = False
+    json_data = ""
+    config_ini = ""
+    if args.use_json:
+        use_json = True
+        try:
+            print("args.json {}".format(args.json))
+            with open(args.json, 'r') as json_config:
+                json_data = json.load(json_config)
+        except:
+            print("Error reading {}".format(args.json))
     else:
-        print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
-        exit(1)
+        config_ini = os.getcwd() + '/' + args.ini
+        if os.path.exists(config_ini):
+            print("TEST CONFIG : {}".format(config_ini))
+        else:
+            print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
+            exit(1)
     # select test suite 
     test_suite = args.suite
     
@@ -501,7 +677,9 @@ for running scripts listed in lf_check_config.ini
     outfile_path = report.file_add_path(outfile)
 
     # lf_check() class created
-    check = lf_check(_config_ini = config_ini,
+    check = lf_check(_use_json = use_json,
+                    _config_ini = config_ini,
+                    _json_data = json_data,
                     _test_suite = test_suite,
                     _production = production,
                     _csv_results = csv_results,
@@ -531,7 +709,7 @@ for running scripts listed in lf_check_config.ini
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
     # read config and run tests
-    check.read_config_contents() 
+    check.read_config() 
     check.run_script_test()
 
     # generate output reports
