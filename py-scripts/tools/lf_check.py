@@ -624,6 +624,11 @@ lf_check.py
 Summary :
 ---------
 for running scripts listed in <config>.ini or <config>.json 
+
+Example :  
+./lf_check.py --ini lf_check_test.ini --suite suite_one
+./lf_check.py --use_json --json lf_check_test.json --suite suite_two
+---------
             ''')
 
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
