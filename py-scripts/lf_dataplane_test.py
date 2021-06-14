@@ -215,11 +215,9 @@ class DataplaneTest(cv_test):
 
 
 def main():
-    parser = argparse.ArgumentParser("""
+    parser = argparse.ArgumentParser(description="""
     Open this file in an editor and read the top notes for more details.
-
     Example:
-
     ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 \
       --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
@@ -233,7 +231,6 @@ def main():
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
       --influx_tag testbed Ferndale-01
-    
       """
                                      )
 
@@ -247,7 +244,7 @@ def main():
     parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
+                        help="""Specify requested download speed.  Percentage of theoretical is also supported. Default: 85""")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
