@@ -19,6 +19,13 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 
 import sys
 import os
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
+import pandas as pd
+import pdfkit
+from lf_report import lf_report
+from lf_graph import lf_bar_graph
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -204,6 +211,22 @@ class ThroughputQOS(Realm):
                         self.station_profile.mode = 11
                         self.station_profile.create(radio=self.radios[1], sta_names_=self.sta_list[split:],
                                                     debug=self.debug)
+                    else:
+                        if self.ssid is None:
+                            self.station_profile.use_security(self.security_2g, self.ssid_2g, self.password_2g)
+                        else:
+                            self.station_profile.use_security(self.security, self.ssid, self.password)
+                        self.station_profile.mode = 11
+                        self.station_profile.create(radio=self.radios[0], sta_names_=self.sta_list[:split],
+                                                    debug=self.debug)
+                        if self.ssid is None:
+                            self.station_profile.use_security(self.security_5g, self.ssid_5g, self.password_5g)
+                        else:
+                            self.station_profile.use_security(self.security, self.ssid, self.password)
+                        self.station_profile.mode = 9
+                        self.station_profile.create(radio=self.radios[1], sta_names_=self.sta_list[split:],
+                                                    debug=self.debug)
+
                 else:
                     self.station_profile.create(radio=self.radio[0], sta_names_=self.sta_list, debug=self.debug)
                 self._pass("PASS: Station build finished")
@@ -226,6 +249,10 @@ class ThroughputQOS(Realm):
     def evaluate_throughput(self):
         tos_upload = {'video': [], 'voice': [], 'bk': [], 'be': []}
         tos_download = {'video': [], 'voice': [], 'bk': [], 'be': []}
+        if self.cx_profile.side_a_min_bps != 0:
+            case = str(int(self.cx_profile.side_a_min_bps) // 1000000)
+        else:
+            case = str(int(self.cx_profile.side_b_min_bps) // 1000000)
         if self.cx_profile.get_cx_count() > 0:
             for sta in self.cx_profile.created_cx.keys():
                 temp = int(sta[12:])
@@ -245,17 +272,110 @@ class ThroughputQOS(Realm):
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
                     tos_upload['video'].append(data['bps rx a'])
                     tos_download['video'].append(data['bps rx b'])
-            tos_upload.update({"videoQOS": sum(tos_upload['video'])})
-            tos_upload.update({"voiceQOS": sum(tos_upload['voice'])})
-            tos_upload.update({"bkQOS": sum(tos_upload['bk'])})
-            tos_upload.update({"beQOS": sum(tos_upload['be'])})
-            tos_download.update({"videoQOS": sum(tos_download['video'])})
-            tos_download.update({"voiceQOS": sum(tos_download['voice'])})
-            tos_download.update({"bkQOS": sum(tos_download['bk'])})
-            tos_download.update({"beQOS": sum(tos_download['be'])})
+            tos_upload.update({"videoQOS": sum(tos_upload['video']) / 100000})
+            tos_upload.update({"voiceQOS": sum(tos_upload['voice']) / 100000})
+            tos_upload.update({"bkQOS": sum(tos_upload['bk']) / 1000000})
+            tos_upload.update({"beQOS": sum(tos_upload['be']) / 1000000})
+            tos_download.update({"videoQOS": sum(tos_download['video']) / 1000000})
+            tos_download.update({"voiceQOS": sum(tos_download['voice']) / 1000000})
+            tos_download.update({"bkQOS": sum(tos_download['bk']) / 1000000})
+            tos_download.update({"beQOS": sum(tos_download['be']) / 1000000})
         else:
             print("no connections available to evaluate QOS")
-        return tos_upload, tos_download
+        key = case + " " + "Mbps"
+        return {key: {"tos_upload": tos_upload, "tos_download": tos_download}}
+
+    def generate_report(self, data):
+        print(data)
+        res = {}
+        if data is not None:
+            for i in range(len(data)):
+                res.update(data[i])
+        else:
+            print("No Data found to generate report!")
+            exit(1)
+        report = lf_report()
+        report_path = report.get_path()
+        report_path_date_time = report.get_path_date_time()
+        print("path: {}".format(report_path))
+        print("path_date_time: {}".format(report_path_date_time))
+        report.set_title("Throughput QOS")
+        report.build_banner()
+        # objective title and description
+        report.set_obj_html(_obj_title="Objective",
+                            _obj="Through this test we can evaluate the throughput for given number of clients which"
+                                 " runs the traffic with a particular Type of Service i.e BK,BE,VI,VO")
+        report.build_objective()
+        report.set_table_title("Overall Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+        report.build_table_title()
+
+        t_1mb = []
+        t_2mb = []
+        t_3mb = []
+        t_4mb = []
+        t_5mb = []
+        new = {}
+        table_df = [t_1mb, t_2mb, t_3mb, t_4mb, t_5mb]
+
+        for key in res:
+            for i in table_df:
+                i.append(res[key]['tos_upload']['bkQOS'])
+                i.append(res[key]['tos_upload']['beQOS'])
+                i.append(res[key]['tos_upload']['videoQOS'])
+                i.append(res[key]['tos_upload']['voiceQOS'])
+
+        table_df2 = []
+        for i in range(len(table_df)):
+            table_df2.append(f'BK: {table_df[i][0]} | BE: {table_df[i][1]} | VI: {table_df[i][2]} | VO: {table_df[i][3]}')
+
+        df_throughput = pd.DataFrame({
+            'Mode()': ['bgn-AC'], "No.of.clients": [len(self.sta_list)],
+            'Throughput for Load (1 Mbps)': [table_df2[0]],
+            'Throughput for Load (2 Mbps)': [table_df2[1]],
+            'Throughput for Load (3 Mbps)': [table_df2[2]],
+            'Throughput for Load (4 Mbps)': [table_df2[3]],
+            'Throughput for Load (5 Mbps)': [table_df2[4]],
+        })
+        report.set_table_dataframe(df_throughput)
+        report.build_table()
+
+        report.set_graph_title("Overall upload Throughput for 2.4G clients for various TOS.")
+        report.build_graph_title()
+
+        y_1mb = []
+        y_2mb = []
+        y_3mb = []
+        y_4mb = []
+        y_5mb = []
+
+        graph_df = [y_1mb, y_2mb, y_3mb, y_4mb, y_5mb]
+        for key in res:
+            for i in graph_df:
+                i.append(res[key]['tos_upload']['beQOS'])
+                i.append(res[key]['tos_upload']['bkQOS'])
+                i.append(res[key]['tos_upload']['videoQOS'])
+                i.append(res[key]['tos_upload']['voiceQOS'])
+
+        graph = lf_bar_graph(_data_set=graph_df,
+                             _xaxis_name="TOS (Type of Service)",
+                             _yaxis_name="Throughput (Mbps)",
+                             _xaxis_categories=["BK", "BE", "VI", "VO"],
+                             _graph_image_name="Bi-single_radio_2.4GHz",
+                             _label=["1 Mbps", "2 Mbps", "3 Mbps", "4 Mbps", "5 Mbps"],
+                             _color=['red', 'yellow', 'green', 'purple', 'thistle'],
+                             _color_edge='black')
+
+        graph_png = graph.build_bar_graph()
+
+        print("graph name {}".format(graph_png))
+
+        report.set_graph_image(graph_png)
+        # need to move the graph image to the results
+        report.move_graph_image()
+
+        report.build_graph()
+        report.write_html()
+        report.write_pdf()
 
 
 def main():
@@ -334,9 +454,14 @@ python3 ./throughput_QOS.py
     radios = []
     station_list = []
     if (args.a_min is not None) and (args.b_min is not None):
-        args.a_min = args.a_min.split(',')
-        args.b_min = args.b_min.split(',')
-        loads = {"a_min": args.a_min, "b_min": args.b_min}
+        if (type(args.a_min) is not int) and (type(args.b_min) is not int):
+            args.a_min = args.a_min.split(',')
+            args.b_min = args.b_min.split(',')
+            loads = {"a_min": args.a_min, "b_min": args.b_min}
+        else:
+            args.a_min = str(args.a_min).split(",")
+            args.b_min = str(args.b_min).split(",")
+            loads = {"a_min": args.a_min, "b_min": args.b_min}
 
     if args.bands is not None:
         bands = args.bands.split(',')
@@ -395,6 +520,9 @@ python3 ./throughput_QOS.py
                                                            radio=radios[1]))
             else:
                 station_list = args.sta_names.split(",")
+        else:
+            print("Band " + bands[i] + " Not Exist")
+            exit(1)
         print("-----------------")
         # print(bands[i])
         print(args.radio)
@@ -456,9 +584,9 @@ python3 ./throughput_QOS.py
                 if throughput_qos.passes():
                     throughput_qos.success()
             throughput_qos.cleanup()
-    print('+++++++++++++++++')
-    print(test_results)
-    print('+++++++++++++++++')
+
+    data = test_results
+    throughput_qos.generate_report(data=data)
 
 
 if __name__ == "__main__":
