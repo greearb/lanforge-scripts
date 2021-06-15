@@ -33,7 +33,7 @@ if 'py-json' not in sys.path:
 from GhostRequest import GhostRequest
 
 
-class UseGhost():
+class UseGhost:
     def __init__(self,
                  _ghost_token=None,
                  host="localhost",
@@ -79,7 +79,12 @@ class UseGhost():
                       password_push,
                       customer,
                       testbed,
-                      test_run):
+                      test_run,
+                      grafana_dashboard,
+                      grafana_token,
+                      grafana_host,
+                      grafana_port):
+        target_folders = list()
         return self.GP.wifi_capacity_to_ghost(authors,
                                               folders,
                                               title,
@@ -92,7 +97,12 @@ class UseGhost():
                                               password_push,
                                               customer,
                                               testbed,
-                                              test_run)
+                                              test_run,
+                                              target_folders,
+                                              grafana_dashboard,
+                                              grafana_token,
+                                              grafana_host,
+                                              grafana_port)
 
 
 def main():
@@ -132,6 +142,10 @@ def main():
     optional.add_argument('--customer')
     optional.add_argument('--testbed')
     optional.add_argument('--test_run', default=None)
+    optional.add_argument('--grafana_dashboard')
+    optional.add_argument('--grafana_token', default=None)
+    optional.add_argument('--grafana_host', default=None)
+    optional.add_argument('--grafana_port', default=3000)
     optional.add_argument('--debug')
     args = parser.parse_args()
 
@@ -170,7 +184,11 @@ def main():
                             args.password_push,
                             args.customer,
                             args.testbed,
-                            args.test_run)
+                            args.test_run,
+                            args.grafana_dashboard,
+                            args.grafana_token,
+                            args.grafana_host,
+                            args.grafana_port)
 
 
 if __name__ == "__main__":

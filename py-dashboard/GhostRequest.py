@@ -19,22 +19,25 @@ import json
 import subprocess
 from scp import SCPClient
 import paramiko
+from GrafanaRequest import GrafanaRequest
 
 
 class CSVReader:
     def read_csv(self,
                  file,
                  sep=','):
-        csv = open(file).read().split('\n')
+        df = open(file).read().split('\n')
         rows = list()
-        for x in csv:
+        for x in df:
             if len(x) > 0:
                 rows.append(x.split(sep))
         length = list(range(0, len(df[0])))
         columns = dict(zip(df[0], length))
         return rows
 
-    def get_column(df, value):
+    def get_column(self,
+                   df,
+                   value):
         index = df[0].index(value)
         values = []
         for row in df[1:]:
@@ -147,7 +150,7 @@ class GhostRequest:
     def wifi_capacity_to_ghost(self,
                                authors,
                                folders,
-                               title='Wifi Capacity',
+                               title=None,
                                server_pull=None,
                                ghost_host=None,
                                port='22',
@@ -156,21 +159,19 @@ class GhostRequest:
                                user_push=None,
                                password_push=None,
                                customer=None,
-                               testbed=None,
-                               test_run=None):
-        text = '''The Candela WiFi Capacity test is designed to measure performance of an Access Point when handling 
-        different amounts of WiFi Stations. The test allows the user to increase the number of stations in user 
-        defined steps for each test iteration and measure the per station and the overall throughput for each trial. 
-        Along with throughput other measurements made are client connection times, Fairness, % packet loss, 
-        DHCP times and more. The expected behavior is for the AP to be able to handle several stations (within the 
-        limitations of the AP specs) and make sure all stations get a fair amount of airtime both in the upstream and 
-        downstream. An AP that scales well will not show a significant over-all throughput decrease as more stations 
-        are added. 
-        Realtime Graph shows summary download and upload RX bps of connections created by this test.<br />'''
-
+                               testbed='Unknown Testbed',
+                               test_run=None,
+                               target_folders=list(),
+                               grafana_dashboard=None,
+                               grafana_token=None,
+                               grafana_host=None,
+                               grafana_port=3000):
+        text = ''
+        csvreader = CSVReader()
         if test_run is None:
-            test_run = sorted(folders)[0].split('/')[-1]
+            test_run = sorted(folders)[0].split('/')[-1].strip('/')
         for folder in folders:
+            print(folder)
             ssh_pull = paramiko.SSHClient()
             ssh_pull.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
             ssh_pull.connect(server_pull,
@@ -181,6 +182,24 @@ class GhostRequest:
                              look_for_keys=False)
             scp_pull = SCPClient(ssh_pull.get_transport())
             scp_pull.get(folder, recursive=True)
+            target_folder = str(folder).rstrip('/').split('/')[-1]
+            target_folders.append(target_folder)
+            print(target_folder)
+            try:
+                target_file = '%s/kpi.csv' % target_folder
+                print('target file %s' % target_file)
+                df = csvreader.read_csv(file=target_file, sep='\t')
+                csv_testbed = csvreader.get_column(df, 'test-rig')[0]
+                print(csv_testbed)
+            except:
+                pass
+            if len(csv_testbed) > 2:
+                testbed = csv_testbed
+                text = text + 'Testbed: %s<br />' % testbed
+            if testbed == 'Unknown Testbed':
+                raise UserWarning('Please define your testbed')
+            print('testbed %s' % testbed)
+
             ssh_push = paramiko.SSHClient()
             ssh_push.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
             ssh_push.connect(ghost_host,
@@ -195,32 +214,44 @@ class GhostRequest:
             transport.connect(None, user_push, password_push)
             sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
             print(local_path)
-            sftp.mkdir(local_path)
-            target_folder = folder.split('/')[-1]
-            print(target_folder)
+            try:
+                sftp.mkdir(local_path)
+            except:
+                print('folder %s already exists' % local_path)
             scp_push.put(target_folder, recursive=True, remote_path=local_path)
             files = sftp.listdir(local_path + '/' + target_folder)
-            print('Files: %s' % files)
+            # print('Files: %s' % files)
             for file in files:
                 if 'pdf' in file:
-                    self.pdfs.append(file)
-
-            #df = CSVReader.read_csv(local_path + '/' + target_folder + '/' + 'kpi.csv')
-            #testbed = CSVReader.get_column(df, 'test-rig')[0]
-
-            print('PDFs %s' % self.pdfs)
+                    url = 'http://%s/%s/%s/%s/%s/%s' % (
+                        ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
+                    text = text + 'PDF of results: <a href="%s">%s</a><br />' % (url, file)
+                    print(url)
             scp_pull.close()
             scp_push.close()
             self.upload_images(target_folder)
+            for image in self.images:
+                if 'kpi-' in image:
+                    if '-print' not in image:
+                        text = text + '<img src="%s"></img>' % image
+            self.images = []
 
-        for pdf in self.pdfs:
-            url = 'http://%s/%s/%s/%s/%s/%s' % (ghost_host, customer, testbed, test_run, target_folder, pdf)
-            text = text + 'PDF of results: <a href="%s">%s</a>' % (url, url)
+            if grafana_token is not None:
+                GR = GrafanaRequest(grafana_token,
+                                    grafana_host,
+                                    grafanajson_port=grafana_port
+                                    )
+                GR.create_snapshot(title=grafana_dashboard)
+                snapshot = GR.list_snapshots()[-1]
+                text = text + '<iframe src="%s" width="100%s" height=500></iframe>' % (snapshot['externalUrl'], '%')
 
-        for image in self.images:
-            if 'kpi-' in image:
-                if '-print' not in image:
-                    text = text + '<img src="%s"></img>' % image
+        now = date.now()
+
+        if title is None:
+            title = "%s %s %s %s:%s report" % (now.day, now.month, now.year, now.hour, now.minute)
+
+        if grafana_dashboard is not None:
+            pass
 
         self.create_post(title=title,
                          text=text,
