@@ -216,6 +216,13 @@ class DataplaneTest(cv_test):
 
 def main():
     parser = argparse.ArgumentParser(description="""
+
+    IMPORTANT: Start lanforge with socket 3990 :  ./lfclient.bash -cli-socket 3990
+        lfclient.bash is located in the LANforgeGUI_X.X.X directory
+        
+        On local or remote system: ./lfclient.bash -cli-socket 3990 -s LF_MGR 
+        On local system the -s LF_MGR will be local_host if not provided
+
     Open this file in an editor and read the top notes for more details.
     Example:
     ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
