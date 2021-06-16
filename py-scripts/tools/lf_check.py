@@ -515,23 +515,33 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('COL_NAMES',self.col_names)
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
-                if self.use_factory_default_db == "TRUE":
-                    self.load_factory_default_db()
-                    sleep(3)
-                    self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
-                if self.use_blank_db == "TRUE":
-                    self.load_blank_db()
-                    sleep(1)
-                    self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
-                if self.use_custom_db == "TRUE":
-                    try:
-                        self.load_custom_db(self.custom_db)
+
+                if 'load_db' in self.test_dict[test]:
+                    self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
+                    if str(self.test_dict[test]['load_db']).lower() != "none" and str(self.test_dict[test]['load_db']).lower() != "skip":
+                        try:
+                            self.load_custom_db(self.test_dict[test]['load_db'])
+                        except:
+                            self.logger.info("custom database failed to load check existance and location: {}".format(self.test_dict[test]['load_db']))
+                else:    
+                    self.logger.info("no load_db present in dictionary, load db normally")
+                    if self.use_factory_default_db == "TRUE":
+                        self.load_factory_default_db()
+                        sleep(3)
+                        self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
+                    if self.use_blank_db == "TRUE":
+                        self.load_blank_db()
                         sleep(1)
-                        self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
-                    except:
-                        self.logger.info("custom database failed to load check existance and location")
-                else:
-                    self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
+                        self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
+                    if self.use_custom_db == "TRUE":
+                        try:
+                            self.load_custom_db(self.custom_db)
+                            sleep(1)
+                            self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
+                        except:
+                            self.logger.info("custom database failed to load check existance and location: {}".format(self.custom_db))
+                    else:
+                        self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
 
                 sleep(1) # DO NOT REMOVE the sleep is to allow for the database to stablize
                 try:
