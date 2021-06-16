@@ -26,7 +26,7 @@ if sys.version_info[0] != 3:
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+    sys.path.append('../../py-json')
 
 import argparse
 from LANforge.lfcli_base import LFCliBase
