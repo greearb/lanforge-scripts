@@ -258,20 +258,44 @@ class ThroughputQOS(Realm):
                 temp = int(sta[12:])
                 if temp % 4 == 0:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['bk'].append(data['bps rx a'])
-                    tos_download['bk'].append(data['bps rx b'])
+                    if int(self.cx_profile.side_a_min_bps) != 0:
+                        tos_upload['bk'].append(data['bps rx a'] / 1000000)
+                    else:
+                        tos_upload['bk'].append(data['bps rx a'])
+                    if int(self.cx_profile.side_b_min_bps) != 0:
+                        tos_download['bk'].append(data['bps rx b'] / 1000000)
+                    else:
+                        tos_upload['bk'].append(data['bps rx b'])
                 elif temp % 4 == 1:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['be'].append(data['bps rx a'])
-                    tos_download['be'].append(data['bps rx b'])
+                    if int(self.cx_profile.side_a_min_bps) != 0:
+                        tos_upload['be'].append(data['bps rx a'] / 1000000)
+                    else:
+                        tos_upload['be'].append(data['bps rx a'])
+                    if int(self.cx_profile.side_b_min_bps) != 0:
+                        tos_download['be'].append(data['bps rx b'] / 1000000)
+                    else:
+                        tos_upload['be'].append(data['bps rx b'])
                 elif temp % 4 == 2:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['voice'].append(data['bps rx a'])
-                    tos_download['voice'].append(data['bps rx b'])
+                    if int(self.cx_profile.side_a_min_bps) != 0:
+                        tos_upload['voice'].append(data['bps rx a'] / 1000000)
+                    else:
+                        tos_upload['voice'].append(data['bps rx a'])
+                    if int(self.cx_profile.side_b_min_bps) != 0:
+                        tos_download['voice'].append(data['bps rx b'] / 1000000)
+                    else:
+                        tos_upload['voice'].append(data['bps rx b'])
                 elif temp % 4 == 3:
                     data = list(self.json_get('/cx/%s?fields=bps+rx+a,bps+rx+b' % sta).values())[2]
-                    tos_upload['video'].append(data['bps rx a'])
-                    tos_download['video'].append(data['bps rx b'])
+                    if int(self.cx_profile.side_a_min_bps) != 0:
+                        tos_upload['video'].append(data['bps rx a'] / 1000000)
+                    else:
+                        tos_upload['video'].append(data['bps rx a'])
+                    if int(self.cx_profile.side_b_min_bps) != 0:
+                        tos_download['video'].append(data['bps rx b'] / 1000000)
+                    else:
+                        tos_upload['video'].append(data['bps rx b'])
             tos_upload.update({"videoQOS": sum(tos_upload['video']) / 100000})
             tos_upload.update({"voiceQOS": sum(tos_upload['voice']) / 100000})
             tos_upload.update({"bkQOS": sum(tos_upload['bk']) / 1000000})
@@ -314,22 +338,41 @@ class ThroughputQOS(Realm):
         t_3mb = []
         t_4mb = []
         t_5mb = []
-        new = {}
+
         table_df = [t_1mb, t_2mb, t_3mb, t_4mb, t_5mb]
 
         for key in res:
-            for i in table_df:
-                i.append(res[key]['tos_upload']['bkQOS'])
-                i.append(res[key]['tos_upload']['beQOS'])
-                i.append(res[key]['tos_upload']['videoQOS'])
-                i.append(res[key]['tos_upload']['voiceQOS'])
-
+            if key == '1 Mbps':
+                table_df[0].append(res[key]['tos_upload']['bkQOS'])
+                table_df[0].append(res[key]['tos_upload']['beQOS'])
+                table_df[0].append(res[key]['tos_upload']['videoQOS'])
+                table_df[0].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '2 Mbps':
+                table_df[1].append(res[key]['tos_upload']['bkQOS'])
+                table_df[1].append(res[key]['tos_upload']['beQOS'])
+                table_df[1].append(res[key]['tos_upload']['videoQOS'])
+                table_df[1].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '3 Mbps':
+                table_df[2].append(res[key]['tos_upload']['bkQOS'])
+                table_df[2].append(res[key]['tos_upload']['beQOS'])
+                table_df[2].append(res[key]['tos_upload']['videoQOS'])
+                table_df[2].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '4 Mbps':
+                table_df[3].append(res[key]['tos_upload']['bkQOS'])
+                table_df[3].append(res[key]['tos_upload']['beQOS'])
+                table_df[3].append(res[key]['tos_upload']['videoQOS'])
+                table_df[3].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '5 Mbps':
+                table_df[4].append(res[key]['tos_upload']['bkQOS'])
+                table_df[4].append(res[key]['tos_upload']['beQOS'])
+                table_df[4].append(res[key]['tos_upload']['videoQOS'])
+                table_df[4].append(res[key]['tos_upload']['voiceQOS'])
         table_df2 = []
         for i in range(len(table_df)):
             table_df2.append(f'BK: {table_df[i][0]} | BE: {table_df[i][1]} | VI: {table_df[i][2]} | VO: {table_df[i][3]}')
 
         df_throughput = pd.DataFrame({
-            'Mode()': ['bgn-AC'], "No.of.clients": [len(self.sta_list)],
+            'Mode': ['bgn-AC'], "No.of.clients": [len(self.sta_list)],
             'Throughput for Load (1 Mbps)': [table_df2[0]],
             'Throughput for Load (2 Mbps)': [table_df2[1]],
             'Throughput for Load (3 Mbps)': [table_df2[2]],
@@ -342,28 +385,48 @@ class ThroughputQOS(Realm):
         report.set_graph_title("Overall upload Throughput for 2.4G clients for various TOS.")
         report.build_graph_title()
 
-        y_1mb = []
-        y_2mb = []
-        y_3mb = []
-        y_4mb = []
-        y_5mb = []
+        y_bk = []
+        y_be = []
+        y_vi = []
+        y_vo = []
 
-        graph_df = [y_1mb, y_2mb, y_3mb, y_4mb, y_5mb]
+        graph_df = [y_bk, y_be, y_vi, y_vo]
         for key in res:
-            for i in graph_df:
-                i.append(res[key]['tos_upload']['beQOS'])
-                i.append(res[key]['tos_upload']['bkQOS'])
-                i.append(res[key]['tos_upload']['videoQOS'])
-                i.append(res[key]['tos_upload']['voiceQOS'])
+            if key == '1 Mbps':
+                graph_df[0].append(res[key]['tos_upload']['bkQOS'])
+                graph_df[1].append(res[key]['tos_upload']['beQOS'])
+                graph_df[2].append(res[key]['tos_upload']['videoQOS'])
+                graph_df[3].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '2 Mbps':
+                graph_df[0].append(res[key]['tos_upload']['bkQOS'])
+                graph_df[1].append(res[key]['tos_upload']['beQOS'])
+                graph_df[2].append(res[key]['tos_upload']['videoQOS'])
+                graph_df[3].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '3 Mbps':
+                graph_df[0].append(res[key]['tos_upload']['bkQOS'])
+                graph_df[1].append(res[key]['tos_upload']['beQOS'])
+                graph_df[2].append(res[key]['tos_upload']['videoQOS'])
+                graph_df[3].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '4 Mbps':
+                graph_df[0].append(res[key]['tos_upload']['bkQOS'])
+                graph_df[1].append(res[key]['tos_upload']['beQOS'])
+                graph_df[2].append(res[key]['tos_upload']['videoQOS'])
+                graph_df[3].append(res[key]['tos_upload']['voiceQOS'])
+            if key == '5 Mbps':
+                graph_df[0].append(res[key]['tos_upload']['bkQOS'])
+                graph_df[1].append(res[key]['tos_upload']['beQOS'])
+                graph_df[2].append(res[key]['tos_upload']['videoQOS'])
+                graph_df[3].append(res[key]['tos_upload']['voiceQOS'])
 
         graph = lf_bar_graph(_data_set=graph_df,
-                             _xaxis_name="TOS (Type of Service)",
+                             _xaxis_name="Load (Mbps) per Type of Service",
                              _yaxis_name="Throughput (Mbps)",
-                             _xaxis_categories=["BK", "BE", "VI", "VO"],
+                             _xaxis_categories=[1, 2, 3, 4, 5],
                              _graph_image_name="Bi-single_radio_2.4GHz",
-                             _label=["1 Mbps", "2 Mbps", "3 Mbps", "4 Mbps", "5 Mbps"],
-                             _color=['red', 'yellow', 'green', 'purple', 'thistle'],
-                             _color_edge='black')
+                             _label=["BE", "BK", "VI", "VO"],
+                             _color=['blue', 'yellow', 'green', 'purple'],
+                             _color_edge='black',
+                             _bar_width=0.15)
 
         graph_png = graph.build_bar_graph()
 
