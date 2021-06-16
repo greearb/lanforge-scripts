@@ -336,6 +336,8 @@ def main():
             args.download_speed = json_data["download_speed"]
         if "upload_speed" in json_data:
             args.upload_speed = json_data["upload_speed"]
+        if "pull_report" in json_data:
+            args.pull_report = json_data["pull_report"]
         if "raw_line" in json_data:
             # the json_data is a list , need to make into a list of lists, to match command line raw_line paramaters
             # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
