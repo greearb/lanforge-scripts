@@ -136,18 +136,16 @@ class IPVariableTime(Realm):
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
-        for sta in self.sta_list:
-            self.local_realm.rm_port(sta, check_exists=True, debug_=self.debug)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                           port_list=self.sta_list,
-                                           debug=self.debug)
+        if self.create_sta:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
-        self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                           port_list=self.station_profile.station_names,
-                                           debug=self.debug)
+        if self.create_sta:
+            self.station_profile.cleanup()
+            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
+                                               debug=self.debug)
 
     def build(self):
         if self.create_sta:
