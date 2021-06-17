@@ -5,6 +5,7 @@ NAME: test_ip_variable_time.py
 
 PURPOSE:
 test_ip_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
+This script replaces the functionality of test_ipv4_variable_time.py and test_ipv6_variable_time.py
 This Script has two working modes:
     Mode 1:
         When station is not available,
