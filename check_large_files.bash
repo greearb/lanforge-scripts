@@ -460,13 +460,17 @@ compress_report_data() {
     note "compress report data..."
     cd /home/lanforge
     # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
-    while read f; do
-        (( $verbose > 0 )) && echo "    compressing $f"
-        xz -7 "$f"
-    done < <(find html-reports/ lf_reports/ report-data/ tmp/ -type f \
-     -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \) )
+    local vile_list=(`find html-reports/ lf_reports/ report-data/ tmp/ -type f \
+         -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \)`)
+    counter=1
+    for f in "${vile_list[@]}"; do
+        (( $verbose > 0 )) && echo "    compressing $f" || echo -n " ${counter}/${#vile_list[@]}"
+        nice xz -T0 -5 "$f"
+        (( counter+=1 ))
+    done
     totals[r]=0
     cd -
+    echo ""
 }
 
 clean_var_tmp() {
