@@ -284,7 +284,7 @@ kernel_to_relnum() {
 }
 
 empty_trash_can() {
-    set -vux
+    #set -vux
     if [ -x /usr/bin/trash-empty ]; then
         for can in "${trash_cans[@]}"; do
             if [[ $can = /home* ]]; then
