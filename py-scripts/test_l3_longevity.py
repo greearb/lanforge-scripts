@@ -1219,7 +1219,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         ap_umsched_file.close()
 
         ap_msched_data = ip_var_test.get_ap_msched()
-        ap_msched =  report.file_add_path("ap_msched.txt")
+        ap_msched =  "{}-{}".format(file_date,"ap_msched.txt")
         ap_msched =  report.file_add_path(ap_msched)
         ap_msched_file = open(ap_msched, "w")
         ap_msched_file.write(str(ap_msched_data))
