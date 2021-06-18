@@ -88,7 +88,7 @@ class CreateStation(Realm):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = LFCliBase.create_basic_argparse( # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -101,6 +101,7 @@ def main():
 Command example:
 ./create_station.py
     --radio wiphy0
+    --start_id 2
     --num_stations 3
     --security open
     --ssid netgear
@@ -108,7 +109,7 @@ Command example:
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    # required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    required.add_argument('--start_id', help='--start_id <value> default 0', default=0)
 
     args = parser.parse_args()
     # if args.debug:
@@ -117,16 +118,22 @@ Command example:
     if (args.radio is None):
         raise ValueError("--radio required")
 
+    start_id = 0
+    if (args.start_id != 0):
+        start_id = int(args.start_id)
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
     station_list = LFUtils.port_name_series(prefix="sta",
-                                            start_id=0,
-                                            end_id=num_sta - 1,
+                                            start_id=start_id,
+                                            end_id=start_id + num_sta - 1,
                                             padding_number=10000,
                                             radio=args.radio)
+
+    print("station_list {}".format(station_list))
     set_txo_data={
         "txo_enable": 1,
         "txpower": 255,
