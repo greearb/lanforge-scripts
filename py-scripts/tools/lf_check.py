@@ -599,7 +599,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 # print("running {}".format(command))
                 # need to take into account --raw_line parameters
                 command = shlex.split(command)
-                print("running {command}".format(command=command))
+                self.logger.info("running {command}".format(command=command))
                 try:
                     process = subprocess.Popen(command, shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                     # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
@@ -630,7 +630,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     background = self.background_purple
 
                 self.html_results += """
-                    <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
+                <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
                 <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
                 <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>"""
                 if self.test_result == "Failure":
