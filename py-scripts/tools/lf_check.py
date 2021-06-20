@@ -125,6 +125,10 @@ class lf_check():
         self.host_ip_production = None
         self.email_list_test = ""
         self.host_ip_test = None
+        self.email_title_txt = ""
+        self.email_txt = ""
+        self.lf_mgr = "" # lanforge tests are run against if passed in
+        
 
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
@@ -139,12 +143,23 @@ class lf_check():
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-        message_txt = """Results from {hostname}:
+        if(self.email_txt != ""):
+            message_txt = """{email_txt} lanforge target {lf_mgr}
+Results from {hostname}:
+http://{ip}/{report}
+NOTE: for now to see stdout and stderr remove /home/lanforge from path.
+""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr=self.lf_mgr)
+
+        else:
+            message_txt = """Results from {hostname}:
 http://{ip}/{report}
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 """.format(hostname=hostname, ip=ip, report=report_url)
 
-        mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
+        if(self.email_title_txt != ""):
+            mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt,hostname=hostname, date=datetime.datetime.now())
+        else:
+            mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
         try:
             if self.production_run == True:
                 msg = message_txt.format(ip=self.host_ip_production)
@@ -301,14 +316,28 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             exit(1)
         if "email_list_test" in self.json_data["test_parameters"]:
             self.email_list_test = self.json_data["test_parameters"]["email_list_test"]
+            print(self.email_list_test)
         else:
             self.logger.info("email_list_test not in test_parameters json")
             exit(1)
         if "host_ip_test" in self.json_data["test_parameters"]:
-            self.email_list_test = self.json_data["test_parameters"]["host_ip_test"]
+            self.host_ip_test = self.json_data["test_parameters"]["host_ip_test"]
         else:
             self.logger.info("host_ip_test not in test_parameters json")
             exit(1)
+        if "email_title_txt" in self.json_data["test_parameters"]:
+            self.email_title_txt = self.json_data["test_parameters"]["email_title_txt"]
+        else:
+            self.logger.info("email_title_txt not in test_parameters json")
+        if "email_txt" in self.json_data["test_parameters"]:
+            self.email_txt = self.json_data["test_parameters"]["email_txt"]
+        else:
+            self.logger.info("email_txt not in test_parameters json")
+        if "lf_mgr" in self.json_data["test_parameters"]:
+            self.lf_mgr_port = self.json_data["test_parameters"]["lf_mgr"]
+        else:
+            self.logger.info("lf_mgr not in test_parameters json")
+
 
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
@@ -392,6 +421,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             self.host_ip_production = section['HOST_IP_PRODUCTION']
             self.email_list_test = section['EMAIL_LIST_TEST']
             self.host_ip_test = section['HOST_IP_TEST']
+            self.logger.info("self.email_list_test:{}".format(self.email_list_test))
 
         if 'TEST_NETWORK' in config_file.sections():
             section = config_file['TEST_NETWORK']

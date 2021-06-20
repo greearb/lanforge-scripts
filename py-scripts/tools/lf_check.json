@@ -8,7 +8,10 @@
         "email_list_production": "chuck.rekiere@candelatech.com",
         "host_ip_production": "192.168.95.6",
         "email_list_test": "chuck.rekiere@candelatech.com",
-        "host_ip_test": "192.168.95.6"
+        "host_ip_test": "192.168.95.6",
+        "lf_mgr": "192.168.100.116",
+        "email_title_txt": "Dataplane Test",
+        "email_txt": "Dataplane Regression testing "
     },
     "test_network":{
         "http_test_ip": "10.40.0.10",
@@ -37,10 +40,17 @@
         "suite_two":{
                 "test_l3_longevity":{"enabled":"TRUE","command":"test_l3_longevity.py","args":"--test_duration 15s --polling_interval 5s --upstream_port eth1 --radio 'radio==wiphy1,stations==4,ssid==ct523c-vap,ssid_pw==ct523c-vap,security==wpa2' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"}
         },
-
-        "TEST_DICTONARY":{
-            "create_l3":{"enabled":"TRUE","command":"create_l4.py","args":"--radio RADIO_USED --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"},
-            "test_l3_longevity":{"enabled":"TRUE","command":"test_l3_longevity.py","args":"--test_duration 15s --polling_interval 5s --upstream_port eth1 --radio 'radio==wiphy1,stations==4,ssid==ct523c-vap,ssid_pw==ct523c-vap,security==wpa2' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"}
+        "suite_dp":{
+            "create_station":{"enabled":"TRUE","command":"create_station.py","args":"--radio RADIO_USED --start_id 2 --num_stations 1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"},
+            "data_plane_0":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"},
+            "data_plane_1":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"},
+            "data_plane_2":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"}
+        },
+        "TEST_DICTIONARY":{
+            "create_station":{"enabled":"TRUE","command":"create_station.py","args":"--radio RADIO_USED --start_id 2 --num_stations 1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"},
+            "data_plane_0":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"},
+            "data_plane_1":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"},
+            "data_plane_2":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"--json lf_dp.json --influx_json lf_influx_db.json"}
         }
     }
 }
