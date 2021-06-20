@@ -267,6 +267,8 @@ class TTLSTest(LFCliBase):
         self.collect_endp_stats(self.l3_cx_obj_udp.cx_profile.created_cx, traffic_type="UDP")
 
     def cleanup(self, sta_list):
+        self.l3_cx_obj_udp.cleanup()
+        self.l3_cx_obj_tcp.cleanup()
         self.station_profile.cleanup(sta_list)
         if self.vap:
             self.vap_profile.cleanup(1)

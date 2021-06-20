@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 """
-NAME: test_ip_variable_time.py
+NAME: test_ipv4_variable_time.py
 
 PURPOSE:
-test_ip_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
-This script replaces the functionality of test_ipv4_variable_time.py and test_ipv6_variable_time.py
+test_ipv4_variable_time.py will create stations and endpoints to generate and verify layer-3 traffic.
 This Script has two working modes:
     Mode 1:
         When station is not available,
@@ -20,7 +19,7 @@ This Script has two working modes:
         create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
         This test will pass if all stations increase traffic over the full test duration.
 
-Use './test_ip_variable_time.py --help' to see command line usage and options
+Use './test_ipv4_variable_time.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -42,7 +41,7 @@ import time
 import datetime
 
 
-class IPVariableTime(Realm):
+class IPV4VariableTime(Realm):
     def __init__(self,
                  ssid=None,
                  security=None,
@@ -62,7 +61,6 @@ class IPVariableTime(Realm):
                  number_template="00000",
                  test_duration="5m",
                  use_ht160=False,
-                 ipv6=False,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -109,7 +107,6 @@ class IPVariableTime(Realm):
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
-        self.ipv6 = ipv6
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
@@ -122,7 +119,7 @@ class IPVariableTime(Realm):
             # to-do- check here if upstream port got IP
             temp_stas = self.station_profile.station_names.copy()
 
-            if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6):
+            if self.wait_for_ip(temp_stas):
                 self._pass("All stations got IPs")
             else:
                 self._fail("Stations failed to get IPs")
@@ -162,21 +159,19 @@ class IPVariableTime(Realm):
                                side_b=self.upstream,
                                sleep_time=0)
 
-
 def main():
     parser = Realm.create_basic_argparse(
-        prog='test_ip_variable_time.py',
+        prog='test_ipv4_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
             Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
-            over ipv4 or ipv6
             ''',
         description='''\
-test_ip_variable_time.py:
+test_ipv4_variable_time.py:
 --------------------
 Generic command layout:
 
-python3 ./test_ip_variable_time.py
+python3 ./test_ipv4_variable_time.py
     --upstream_port eth1
     --radio wiphy0
     --num_stations 32
@@ -210,15 +205,15 @@ python3 ./test_ip_variable_time.py
     --layer3_cols 'name','tx bytes','rx bytes','dropped'          (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --port_mgr_cols 'ap','ip'                                    (column names from the GUI to print on report -  please read below to know what to put here according to preferences)
     --debug
-
-    python3 ./test_ip_variable_time.py
-    --upstream_port eth1        (upstream Port)
-    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp) 
+    
+    python3 ./test_ipv4_variable_time.py
+    --upstream_port eth1        (upstream POrt)
+    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp)
     --test_duration 5m          (duration to run traffic 5m --> 5 Minutes)
     --create_sta False          (False, means it will not create stations and use the sta_names specified below)
     --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
-
-
+        
+    
 ===============================================================================
  ** FURTHER INFORMATION **
     Using the layer3_cols flag:
@@ -287,9 +282,7 @@ python3 ./test_ip_variable_time.py
 
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
-                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag'
-                        , required=True)
+    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=True)
     parser.add_argument('--output_format', help='choose either csv or xlsx')
     parser.add_argument('--report_file', help='where you want to store results', default=None)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -304,7 +297,6 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--monitor_interval',
                         help='how frequently do you want your monitor function to take measurements; \, 35s, 2h',
                         default='10s')
-    parser.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
     parser.add_argument('--influx_token', help='Username for your Influx database')
     parser.add_argument('--influx_bucket', help='Password for your Influx database')
     parser.add_argument('--influx_org', help='Name of your Influx database')
@@ -328,12 +320,12 @@ python3 ./test_ip_variable_time.py
     # Create directory
 
     # if file path with output file extension is not given...
-    # check if home/lanforge/report-data exists. if not, save
+    # check if home/lanforge/report-data exists. if not, save 
     # in new folder based in current file's directory
 
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
-                                                                                                 '-') + '_test_ip_variable_time'  # create path name
+                                                                                                 '-') + '_test_ipv4_variable_time'  # create path name
         try:
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
@@ -349,8 +341,7 @@ python3 ./test_ip_variable_time.py
             output = args.output_format
         else:
             print(
-                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file '
-                'output type, naming it data.csv.')
+                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
 
@@ -361,7 +352,7 @@ python3 ./test_ip_variable_time.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
-    print("IP Test Report Data: {}".format(report_f))
+    print("IPv4 Test Report Data: {}".format(report_f))
 
     # Retrieve last data file
     compared_rept = None
@@ -379,44 +370,25 @@ python3 ./test_ip_variable_time.py
                                               radio=args.radio)
     else:
         station_list = args.sta_names.split(",")
-
-    CX_TYPES = ("tcp", "udp", "lf_tcp", "lf_udp")
-
-    if (args.traffic_type is None) or (args.traffic_type not in CX_TYPES):
-        print("cx_type needs to be lf_tcp, lf_udp, tcp, or udp, bye")
-        exit(1)
-
-    if args.ipv6:
-        if args.traffic_type == "tcp" or args.traffic_type == "lf_tcp":
-            args.traffic_type = "lf_tcp6"
-        if args.traffic_type == "udp" or args.traffic_type == "lf_udp":
-            args.traffic_type = "lf_udp6"
-    else:
-        if args.traffic_type == "tcp":
-            args.traffic_type = "lf_tcp"
-        if args.traffic_type == "udp":
-            args.traffic_type = "lf_udp"
-
-    ip_var_test = IPVariableTime(host=args.mgr,
-                                 port=args.mgr_port,
-                                 number_template="0000",
-                                 sta_list=station_list,
-                                 create_sta=create_sta,
-                                 name_prefix="VT",
-                                 upstream=args.upstream_port,
-                                 ssid=args.ssid,
-                                 password=args.passwd,
-                                 radio=args.radio,
-                                 security=args.security,
-                                 test_duration=args.test_duration,
-                                 use_ht160=False,
-                                 side_a_min_rate=args.a_min,
-                                 side_b_min_rate=args.b_min,
-                                 mode=args.mode,
-                                 ap=args.ap,
-                                 ipv6=args.ipv6,
-                                 traffic_type=args.traffic_type,
-                                 _debug_on=args.debug)
+    ip_var_test = IPV4VariableTime(host=args.mgr,
+                                   port=args.mgr_port,
+                                   number_template="0000",
+                                   sta_list=station_list,
+                                   create_sta=create_sta,
+                                   name_prefix="VT",
+                                   upstream=args.upstream_port,
+                                   ssid=args.ssid,
+                                   password=args.passwd,
+                                   radio=args.radio,
+                                   security=args.security,
+                                   test_duration=args.test_duration,
+                                   use_ht160=False,
+                                   side_a_min_rate=args.a_min,
+                                   side_b_min_rate=args.b_min,
+                                   mode=args.mode,
+                                   ap=args.ap,
+                                   traffic_type=args.traffic_type,
+                                   _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
 
@@ -478,7 +450,7 @@ python3 ./test_ip_variable_time.py
             _influx_bucket=args.influx_bucket)
         devices = [station.split('.')[-1] for station in station_list]
         tags = dict()
-        tags['script'] = 'test_ip_variable_time'
+        tags['script'] = 'test_ipv4_variable_time'
         try:
             for k in args.influx_tag:
                 tags[k[0]] = k[1]
@@ -499,7 +471,7 @@ python3 ./test_ip_variable_time.py
                                    created_cx=layer3connections,
                                    output_format=output,
                                    compared_report=compared_rept,
-                                   script_name='test_ip_variable_time',
+                                   script_name='test_ipv4_variable_time',
                                    arguments=args,
                                    debug=args.debug)
 
@@ -510,10 +482,11 @@ python3 ./test_ip_variable_time.py
             ip_var_test.exit_fail()
         LFUtils.wait_until_ports_admin_up(port_list=station_list)
 
+
         if ip_var_test.passes():
             ip_var_test.success()
     ip_var_test.cleanup()
-    print("IP Variable Time Test Report Data: {}".format(report_f))
+    print("IPv4 Variable Time Test Report Data: {}".format(report_f))
 
 
 if __name__ == "__main__":

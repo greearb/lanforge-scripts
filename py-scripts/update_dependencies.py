@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # INCLUDE_IN_README
 '''
-NAME: update_dependencies.py
+NAME: update_dependencies.py 
 
 PURPOSE:  Installs python3 script package dependencies
 
@@ -18,10 +18,10 @@ def main():
     packages_installed = []
     packages_failed =[]
     for package in packages:
-        command = "pip3 install {} >/tmp/pip3-stdout 2>/tmp/pip3-stderr".format(package)
+        command = "pip3 install {} ".format(package)
         res = subprocess.call(command, shell = True)
         if res == 0:
-            #print("Package {} install SUCCESS Returned Value: {} ".format(package, res))
+            print("Package {} install SUCCESS Returned Value: {} ".format(package, res))
             packages_installed.append(package)
         else:
             print("Package {} install FAILED Returned Value: {} ".format(package, res))
@@ -30,8 +30,6 @@ def main():
 
     print("Install Complete")
     print("Packages Installed Success: {}\n".format(packages_installed))
-    if not packages_failed:
-        return
     print("Packages Failed (Some scripts may not need these packages): {}".format(packages_failed))
 
 if __name__ == "__main__":

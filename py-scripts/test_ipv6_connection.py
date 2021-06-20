@@ -4,7 +4,6 @@
 NAME: test_ipv6_connection.py
 
 PURPOSE:
-This scripts functionality has been replaced by test_ip_connection.py, consider this script deprecated
 test_ipv6_connection.py will create stations and attempt to connect to an SSID using IPv6. WPA, WPA2, WPA3, WEP, and Open connection types are supported
 
 Script for creating a variable number of stations and attempting to connect them to an SSID using IPv6.
@@ -27,7 +26,7 @@ if sys.version_info[0] != 3:
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('../..'), 'py-json'))
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils

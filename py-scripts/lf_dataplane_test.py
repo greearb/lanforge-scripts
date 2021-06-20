@@ -10,7 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running Dataplane tests.  You
 may need to view a Dataplane test configured through the GUI to understand
 the options and how best to input data.
-
+    
     ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 \
       --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
@@ -40,7 +40,7 @@ port_sorting: 0
 kpi_id: Dataplane Pkt-Size
 notes0: ec5211 in bridge mode, wpa2 auth.
 bg: 0xE0ECF8
-test_rig:
+test_rig: 
 show_scan: 1
 auto_helper: 0
 skip_2: 0
@@ -88,7 +88,7 @@ show_1m: 1
 pause_iter: 0
 outer_loop_atten: 0
 show_realtime: 1
-operator:
+operator: 
 mconn: 1
 mpkt: 1000
 tos: 0
@@ -215,16 +215,11 @@ class DataplaneTest(cv_test):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
-
-    IMPORTANT: Start lanforge with socket 3990 :  ./lfclient.bash -cli-socket 3990
-        lfclient.bash is located in the LANforgeGUI_X.X.X directory
-
-        On local or remote system: ./lfclient.bash -cli-socket 3990 -s LF_MGR 
-        On local system the -s LF_MGR will be local_host if not provided
-
+    parser = argparse.ArgumentParser("""
     Open this file in an editor and read the top notes for more details.
+
     Example:
+
     ./lf_dataplane_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name dataplane-instance --config_name test_con --upstream 1.1.eth2 \
       --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
@@ -238,53 +233,12 @@ def main():
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
       --influx_tag testbed Ferndale-01
-
-
-    Example 2:
-    ./lf_dataplane_test.py --json <name>.json
-
-    see sample json file: lf_dataplane_config.json
-
-    Sample <name>.json between using eth1 and eth2 
-    {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"dataplane-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.eth2",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
-    }
-
-    Sample <name>.json between using eth1 and station 1.1.sta0002
-    {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"dataplane-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.sta0002",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
-    }
-
+    
       """
                                      )
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument('--json', help="--json <config.json> json input file", default="")
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="",
@@ -293,7 +247,7 @@ def main():
     parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported. Default: 85%%.")
+                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
@@ -303,69 +257,28 @@ def main():
 
     args = parser.parse_args()
 
-    # use json config file
-    if args.json != "":
-        try:
-            with open(args.json, 'r') as json_config:
-                json_data = json.load(json_config)
-        except:
-            print("Error reading {}".format(args.json))
-        # json configuation takes presidence to command line
-        # TODO see if there is easier way to search presence, look at parser args
-        if "mgr" in json_data:
-            args.mgr = json_data["mgr"]
-        if "port" in json_data:
-            args.port = json_data["port"]
-        if "lf_user" in json_data:
-            args.lf_user = json_data["lf_user"]
-        if "lf_password" in json_data:
-            args.lf_password = json_data["lf_password"]
-        if "instance_name" in json_data:
-            args.instance_name = json_data["instance_name"]
-        if "config_name" in json_data:
-            args.config_name = json_data["config_name"]
-        if "upstream" in json_data:
-            args.upstream = json_data["upstream"]
-        if "dut" in json_data:
-            args.dut = json_data["dut"]
-        if "duration" in json_data:
-            args.duration = json_data["duration"]
-        if "station" in json_data:
-            args.station = json_data["station"]
-        if "download_speed" in json_data:
-            args.download_speed = json_data["download_speed"]
-        if "upload_speed" in json_data:
-            args.upload_speed = json_data["upload_speed"]
-        if "pull_report" in json_data:
-            args.pull_report = json_data["pull_report"]
-        if "raw_line" in json_data:
-            # the json_data is a list , need to make into a list of lists, to match command line raw_line paramaters
-            # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
-            json_data_tmp = [[x] for x in json_data["raw_line"]]
-            args.raw_line = json_data_tmp
-
     cv_base_adjust_parser(args)
 
-    CV_Test = DataplaneTest(lf_host=args.mgr,
-                            lf_port=args.port,
-                            lf_user=args.lf_user,
-                            lf_password=args.lf_password,
-                            instance_name=args.instance_name,
-                            config_name=args.config_name,
-                            upstream=args.upstream,
-                            pull_report=args.pull_report,
-                            load_old_cfg=args.load_old_cfg,
-                            download_speed=args.download_speed,
-                            upload_speed=args.upload_speed,
-                            duration=args.duration,
-                            dut=args.dut,
-                            station=args.station,
-                            enables=args.enable,
-                            disables=args.disable,
-                            raw_lines=args.raw_line,
-                            raw_lines_file=args.raw_lines_file,
-                            sets=args.set,
-                            graph_groups=args.graph_groups
+    CV_Test = DataplaneTest(lf_host = args.mgr,
+                            lf_port = args.port,
+                            lf_user = args.lf_user,
+                            lf_password = args.lf_password,
+                            instance_name = args.instance_name,
+                            config_name = args.config_name,
+                            upstream = args.upstream,
+                            pull_report = args.pull_report,
+                            load_old_cfg = args.load_old_cfg,
+                            download_speed = args.download_speed,
+                            upload_speed = args.upload_speed,
+                            duration = args.duration,
+                            dut = args.dut,
+                            station = args.station,
+                            enables = args.enable,
+                            disables = args.disable,
+                            raw_lines = args.raw_line,
+                            raw_lines_file = args.raw_lines_file,
+                            sets = args.set,
+                            graph_groups = args.graph_groups
                             )
     CV_Test.setup()
     CV_Test.run()

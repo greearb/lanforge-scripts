@@ -143,7 +143,6 @@ class StaConnect2(LFCliBase):
                 pprint.pprint(upstream_json)
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url(), print_=True)
             return False
-
         # remove old stations
         if self.clean_all_sta:
             print("Removing all stations on resource.")
