@@ -934,7 +934,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2',default='eth2')
+    parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
     parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
@@ -1219,7 +1219,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         ap_umsched_file.close()
 
         ap_msched_data = ip_var_test.get_ap_msched()
-        ap_msched =  report.file_add_path("ap_msched.txt")
+        ap_msched =  "{}-{}".format(file_date,"ap_msched.txt")
         ap_msched =  report.file_add_path(ap_msched)
         ap_msched_file = open(ap_msched, "w")
         ap_msched_file.write(str(ap_msched_data))

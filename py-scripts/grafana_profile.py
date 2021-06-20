@@ -24,36 +24,37 @@ import string
 import random
 
 
-class UseGrafana(LFCliBase):
-    def __init__(self,
-                 _grafana_token,
-                 host="localhost",
-                 _grafana_host="localhost",
-                 port=8080,
-                 _debug_on=False,
-                 _exit_on_fail=False,
-                 _grafana_port=3000):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
-        self.grafana_token = _grafana_token
-        self.grafana_port = _grafana_port
-        self.grafana_host = _grafana_host
-        self.GR = GrafanaRequest(self.grafana_host, str(self.grafana_port), _folderID=0, _api_token=self.grafana_token)
+#!/usr/bin/env python3
 
-    def create_dashboard(self,
-                         dashboard_name):
-        return self.GR.create_dashboard(dashboard_name)
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Class holds default settings for json requests to Grafana     -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+import sys
 
-    def delete_dashboard(self,
-                         dashboard_uid):
-        return self.GR.delete_dashboard(dashboard_uid)
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
 
-    def list_dashboards(self):
-        return self.GR.list_dashboards()
+import requests
 
-    def create_dashboard_from_data(self,
-                                   json_file):
-        return self.GR.create_dashboard_from_data(json_file=json_file)
+import json
 
+#!/usr/bin/env python3
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Class holds default settings for json requests to Grafana     -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+import requests
+
+import json
+
+class UseGrafana(GrafanaRequest):
     def groupby(self, params, grouptype):
         dic = dict()
         dic['params'] = list()
@@ -301,7 +302,6 @@ class UseGrafana(LFCliBase):
         return dict(zip(graph_group, units))
 
 
-
 def main():
     parser = LFCliBase.create_basic_argparse(
         prog='grafana_profile.py',
@@ -353,11 +353,13 @@ def main():
     optional.add_argument('--from_date', help='Date you want to start your Grafana dashboard from', default='now-1y')
     optional.add_argument('--graph_height', help='Custom height for the graph on grafana dashboard', default=8)
     optional.add_argument('--graph_width', help='Custom width for the graph on grafana dashboard', default=12)
+    optional.add_argument('--create_snapshot', action='store_true')
+    optional.add_argument('--list_snapshots', action='store_true')
     args = parser.parse_args()
 
     Grafana = UseGrafana(args.grafana_token,
-                         args.grafana_port,
-                         args.grafana_host
+                         args.grafana_host,
+                         grafanajson_port=args.grafana_port
                          )
     if args.dashboard_name is not None:
         Grafana.create_dashboard(args.dashboard_name)
@@ -385,6 +387,13 @@ def main():
                                         from_date=args.from_date,
                                         graph_height=args.graph_height,
                                         graph__width=args.graph_width)
+
+    if args.create_snapshot:
+        Grafana.create_snapshot(args.title)
+
+    if args.list_snapshots:
+        Grafana.list_snapshots()
+
 
 
 if __name__ == "__main__":

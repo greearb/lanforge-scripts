@@ -1,14 +1,14 @@
 #!/bin/bash
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-#      Check for large files and purge the ones requested                 #
-#                                                                         #
-# The -a switch will automatically purge core files when there            #
-# is only 5GB of space left on filesystem.                                #
-#                                                                         #
-# To install as a cron-job, add the following line to /etc/crontab:       #
-# 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files
-#                                                                         #
-# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
+#      Check for large files and purge the ones requested                                               #
+#                                                                                                       #
+# The -a switch will automatically purge core files when there                                          #
+# is only 5GB of space left on filesystem.                                                              #
+#                                                                                                       #
+# To install as a cron-job, add the following line to /etc/crontab:                                     #
+# 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files     #
+#                                                                                                       #
+# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 # set -x
 # set -e
 # these are default selections
@@ -284,7 +284,7 @@ kernel_to_relnum() {
 }
 
 empty_trash_can() {
-    set -vux
+    #set -vux
     if [ -x /usr/bin/trash-empty ]; then
         for can in "${trash_cans[@]}"; do
             if [[ $can = /home* ]]; then
@@ -460,13 +460,17 @@ compress_report_data() {
     note "compress report data..."
     cd /home/lanforge
     # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
-    while read f; do
-        (( $verbose > 0 )) && echo "    compressing $f"
-        xz -7 "$f"
-    done < <(find html-reports/ lf_reports/ report-data/ tmp/ -type f \
-     -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \) )
+    local vile_list=(`find html-reports/ lf_reports/ report-data/ tmp/ -type f \
+         -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \)`)
+    counter=1
+    for f in "${vile_list[@]}"; do
+        (( $verbose > 0 )) && echo "    compressing $f" || echo -n " ${counter}/${#vile_list[@]}"
+        nice xz -T0 -5 "$f"
+        (( counter+=1 ))
+    done
     totals[r]=0
     cd -
+    echo ""
 }
 
 clean_var_tmp() {
@@ -567,7 +571,7 @@ survey_kernel_files() {
         fi
     done
 
-    if (( $verbose > 0 )) && (( ${#libmod_sort_names[@]} > 0 )); then
+    if (( ${#libmod_sort_names[@]} > 0 )); then
         # debug "Removable libmod dirs: "
         while read ser; do
             file="${libmod_sort_names[$ser]}"
