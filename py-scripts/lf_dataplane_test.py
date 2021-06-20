@@ -285,6 +285,7 @@ def main():
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
     parser.add_argument('--json', help="--json <config.json> json input file", default="")
+    parser.add_argument('--influx_json', help="--influx_json <influx_config.json> influx config json input file", default="")
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="",
@@ -311,7 +312,6 @@ def main():
         except:
             print("Error reading {}".format(args.json))
         # json configuation takes presidence to command line 
-        # TODO see if there is easier way to search presence, look at parser args
         if "mgr" in json_data:
             args.mgr = json_data["mgr"]
         if "port" in json_data:
@@ -343,6 +343,27 @@ def main():
             # https://www.tutorialspoint.com/convert-list-into-list-of-lists-in-python
             json_data_tmp = [[x] for x in json_data["raw_line"]]
             args.raw_line = json_data_tmp
+
+
+    # use influx json config file
+    if args.influx_json != "":
+        try:
+            with open(args.influx_json, 'r') as influx_json_config:
+                influx_json_data = json.load(influx_json_config)
+        except:
+            print("Error reading {}".format(args.influx_json))
+        # json configuation takes presidence to command line 
+        # influx DB configuration
+        if "influx_host" in influx_json_data:
+            args.influx_host = influx_json_data["influx_host"]
+        if "influx_port" in influx_json_data:
+            args.influx_port = influx_json_data["influx_port"]
+        if "influx_org" in influx_json_data:
+            args.influx_org = influx_json_data["influx_org"]
+        if "influx_token" in influx_json_data:
+            args.influx_token = influx_json_data["influx_token"]
+        if "influx_bucket" in influx_json_data:
+            args.influx_bucket = influx_json_data["influx_bucket"]
 
     cv_base_adjust_parser(args)
 
