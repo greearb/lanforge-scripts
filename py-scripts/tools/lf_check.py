@@ -56,6 +56,7 @@ import subprocess
 import csv
 import shutil
 from os import path
+import shlex
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -595,12 +596,14 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     stderr_log = open(stderr_log_txt, 'a')
 
                 # HERE is thwere the test is run
-                print("running {}".format(command))
+                # print("running {}".format(command))
+                # need to take into account --raw_line parameters
+                command = shlex.split(command)
+                print("running {command}".format(command=command))
                 try:
-                    process = subprocess.Popen((command).split(' '), shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                    process = subprocess.Popen(command, shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                     # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                     try:
-                        #out, err = process.communicate()
                         process.wait(timeout=int(self.test_timeout))
                     except subprocess.TimeoutExpired:
                         process.terminate()
