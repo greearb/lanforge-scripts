@@ -764,7 +764,7 @@ Example :
     report.start_content_div()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    report.set_text("git sha: {}".format(git_sha))
+    report.set_text("lanforge-scripts git sha: {}".format(git_sha))
     report.build_text()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
