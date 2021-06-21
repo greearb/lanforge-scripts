@@ -595,12 +595,13 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
-                # need to take into account --raw_line parameters
-                command = shlex.split(command)
-                # do NOT pass command into self.logger.info will modify formatting
-                print("running {command}".format(command=command))
+                # need to take into account --raw_line parameters thus need to use shlex.split 
+                # need to preserve command to have correct command syntax in command output
+                command_to_run = command
+                command_to_run = shlex.split(command_to_run)
+                print("running {command_to_run}".format(command_to_run=command_to_run))
                 try:
-                    process = subprocess.Popen(command, shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
+                    process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log, universal_newlines=True)
                     # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                     try:
                         process.wait(timeout=int(self.test_timeout))
