@@ -12,7 +12,34 @@ if sys.version_info[0] != 3:
 import requests
 
 import json
+import string
+import random
 
+class CSVReader:
+    def __init__(self):
+        self.shape = None
+
+    def read_csv(self,
+                 file,
+                 sep='\t'):
+        df = open(file).read().split('\n')
+        rows = list()
+        for x in df:
+            if len(x) > 0:
+                rows.append(x.split(sep))
+        length = list(range(0, len(df[0])))
+        columns = dict(zip(df[0], length))
+        self.shape = (length, columns)
+        return rows
+
+    def get_column(self,
+                   df,
+                   value):
+        index = df[0].index(value)
+        values = []
+        for row in df[1:]:
+            values.append(row[index])
+        return values
 
 class GrafanaRequest:
     def __init__(self,
@@ -35,6 +62,7 @@ class GrafanaRequest:
         self.grafanajson_url = "http://%s:%s" % (_grafanajson_host, grafanajson_port)
         self.data = dict()
         self.data['overwrite'] = _overwrite
+        self.csvreader = CSVReader()
 
     def create_bucket(self,
                       bucket_name=None):
@@ -45,7 +73,7 @@ class GrafanaRequest:
     def list_dashboards(self):
         url = self.grafanajson_url + '/api/search'
         print(url)
-        return json.loads(requests.get(url,headers=self.headers).text)
+        return json.loads(requests.get(url, headers=self.headers).text)
 
     def create_dashboard(self,
                          dashboard_name=None,
@@ -77,31 +105,226 @@ class GrafanaRequest:
         datastore['dashboard'] = dashboard
         datastore['overwrite'] = False
         data = json.dumps(datastore, indent=4)
-        #return print(data)
         return requests.post(grafanajson_url, headers=self.headers, data=data, verify=False)
 
     def create_dashboard_from_dict(self,
-                                   dictionary=None):
+                                   dictionary=None,
+                                   overwrite=False):
         grafanajson_url = self.grafanajson_url + '/api/dashboards/db'
         datastore = dict()
         dashboard = dict(json.loads(dictionary))
         datastore['dashboard'] = dashboard
-        datastore['overwrite'] = False
+        datastore['overwrite'] = overwrite
         data = json.dumps(datastore, indent=4)
-        #return print(data)
         return requests.post(grafanajson_url, headers=self.headers, data=data, verify=False)
 
+    def get_graph_groups(self, target_csvs):  # Get the unique values in the Graph-Group column
+        dictionary = dict()
+        for target_csv in target_csvs:
+            if len(target_csv) > 1:
+                csv = self.csvreader.read_csv(target_csv)
+                # Unique values in the test-id column
+                scripts = list(set(self.csvreader.get_column(csv, 'test-id')))
+                # we need to make sure we match each Graph Group to the script it occurs in
+                for script in scripts:
+                    # Unique Graph Groups for each script
+                    dictionary[script] = list(set(self.csvreader.get_column(csv, 'Graph-Group')))
+        print(dictionary)
+        return dictionary
 
     def create_custom_dashboard(self,
-                                datastore=None):
-        data = json.dumps(datastore, indent=4)
-        return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
+                                scripts=None,
+                                title=None,
+                                bucket=None,
+                                graph_groups=None,
+                                graph_groups_file=None,
+                                target_csvs=None,
+                                testbed=None,
+                                datasource='InfluxDB',
+                                from_date='now-1y',
+                                to_date='now',
+                                graph_height=8,
+                                graph__width=12):
+        options = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        uid = ''.join(random.choice(options) for i in range(9))
+        input1 = dict()
+        annotations = dict()
+        annotations['builtIn'] = 1
+        annotations['datasource'] = '-- Grafana --'
+        annotations['enable'] = True
+        annotations['hide'] = True
+        annotations['iconColor'] = 'rgba(0, 211, 255, 1)'
+        annotations['name'] = 'Annotations & Alerts'
+        annotations['type'] = 'dashboard'
+        annot = dict()
+        annot['list'] = list()
+        annot['list'].append(annotations)
+
+        templating = dict()
+        templating['list'] = list()
+
+        timedict = dict()
+        timedict['from'] = from_date
+        timedict['to'] = to_date
+
+        panels = list()
+        index = 1
+        if graph_groups_file:
+            print("graph_groups_file: %s" % graph_groups_file)
+            target_csvs = open(graph_groups_file).read().split('\n')
+            graph_groups = self.get_graph_groups(
+                target_csvs)  # Get the list of graph groups which are in the tests we ran
+            unit_dict = dict()
+            for csv in target_csvs:
+                if len(csv) > 1:
+                    print(csv)
+                    unit_dict.update(self.get_units(csv))
+        if target_csvs:
+            print('Target CSVs: %s' % target_csvs)
+            graph_groups = self.get_graph_groups(
+                target_csvs)  # Get the list of graph groups which are in the tests we ran
+            unit_dict = dict()
+            for csv in target_csvs:
+                if len(csv) > 1:
+                    print(csv)
+                    unit_dict.update(self.get_units(csv))
+        for scriptname in graph_groups.keys():
+            for graph_group in graph_groups[scriptname]:
+                panel = dict()
+
+                gridpos = dict()
+                gridpos['h'] = graph_height
+                gridpos['w'] = graph__width
+                gridpos['x'] = 0
+                gridpos['y'] = 0
+
+                legend = dict()
+                legend['avg'] = False
+                legend['current'] = False
+                legend['max'] = False
+                legend['min'] = False
+                legend['show'] = True
+                legend['total'] = False
+                legend['values'] = False
+
+                options = dict()
+                options['alertThreshold'] = True
+
+                #groupBy = list()
+                #groupBy.append(self.groupby('$__interval', 'time'))
+                #groupBy.append(self.groupby('null', 'fill'))
+
+                #targets = list()
+                #counter = 0
+                #new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
+                #targets.append(new_target)
+
+                fieldConfig = dict()
+                fieldConfig['defaults'] = dict()
+                fieldConfig['overrides'] = list()
+
+                transformation = dict()
+                transformation['id'] = "renameByRegex"
+                transformation_options = dict()
+                transformation_options['regex'] = "(.*) value.*"
+                transformation_options['renamePattern'] = "$1"
+                transformation['options'] = transformation_options
+
+                xaxis = dict()
+                xaxis['buckets'] = None
+                xaxis['mode'] = "time"
+                xaxis['name'] = None
+                xaxis['show'] = True
+                xaxis['values'] = list()
+
+                yaxis = dict()
+                yaxis['format'] = 'short'
+                #yaxis['label'] = unit_dict[graph_group]
+                yaxis['logBase'] = 1
+                yaxis['max'] = None
+                yaxis['min'] = None
+                yaxis['show'] = True
+
+                yaxis1 = dict()
+                yaxis1['align'] = False
+                yaxis1['alignLevel'] = None
+
+                panel['aliasColors'] = dict()
+                panel['bars'] = False
+                panel['dashes'] = False
+                panel['dashLength'] = 10
+                panel['datasource'] = datasource
+                panel['fieldConfig'] = fieldConfig
+                panel['fill'] = 0
+                panel['fillGradient'] = 0
+                panel['gridPos'] = gridpos
+                panel['hiddenSeries'] = False
+                panel['id'] = index
+                panel['legend'] = legend
+                panel['lines'] = True
+                panel['linewidth'] = 1
+                panel['nullPointMode'] = 'null'
+                panel['options'] = options
+                panel['percentage'] = False
+                panel['pluginVersion'] = '7.5.4'
+                panel['pointradius'] = 2
+                panel['points'] = True
+                panel['renderer'] = 'flot'
+                panel['seriesOverrides'] = list()
+                panel['spaceLength'] = 10
+                panel['stack'] = False
+                panel['steppedLine'] = False
+                #panel['targets'] = targets
+                panel['thresholds'] = list()
+                panel['timeFrom'] = None
+                panel['timeRegions'] = list()
+                panel['timeShift'] = None
+                if graph_group is not None:
+                    panel['title'] = scriptname + ' ' + graph_group
+                else:
+                    panel['title'] = scriptname
+                panel['transformations'] = list()
+                panel['transformations'].append(transformation)
+                panel['type'] = "graph"
+                panel['xaxis'] = xaxis
+                panel['yaxes'] = list()
+                panel['yaxes'].append(yaxis)
+                panel['yaxes'].append(yaxis)
+                panel['yaxis'] = yaxis1
+
+                panels.append(panel)
+                index = index + 1
+        input1['annotations'] = annot
+        input1['editable'] = True
+        input1['gnetId'] = None
+        input1['graphTooltip'] = 0
+        input1['links'] = list()
+        input1['panels'] = panels
+        input1['refresh'] = False
+        input1['schemaVersion'] = 27
+        input1['style'] = 'dark'
+        input1['tags'] = list()
+        input1['templating'] = templating
+        input1['time'] = timedict
+        input1['timepicker'] = dict()
+        input1['timezone'] = ''
+        input1['title'] = ("Testbed: %s" % title)
+        input1['uid'] = uid
+        input1['version'] = 11
+        return self.create_dashboard_from_dict(dictionary=json.dumps(input1))
+
+    #    def create_custom_dashboard(self,
+    #                               datastore=None):
+    #      data = json.dumps(datastore, indent=4)
+    #     return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
 
     def create_snapshot(self, title):
+        print('create snapshot')
         grafanajson_url = self.grafanajson_url + '/api/snapshots'
-        data=self.get_dashboard(title)
+        data = self.get_dashboard(title)
         data['expires'] = 3600
-        data['external'] = True
+        data['external'] = False
+        data['timeout'] = 15
         print(data)
         return requests.post(grafanajson_url, headers=self.headers, json=data, verify=False).text
 
@@ -112,9 +335,21 @@ class GrafanaRequest:
 
     def get_dashboard(self, target):
         dashboards = self.list_dashboards()
+        print(target)
         for dashboard in dashboards:
             if dashboard['title'] == target:
                 uid = dashboard['uid']
         grafanajson_url = self.grafanajson_url + '/api/dashboards/uid/' + uid
         print(grafanajson_url)
         return json.loads(requests.get(grafanajson_url, headers=self.headers, verify=False).text)
+
+    def get_units(self, csv):
+        df = self.csvreader.read_csv(csv)
+        units = self.csvreader.get_column(df, 'Units')
+        test_id = self.csvreader.get_column(df, 'test-id')
+        maxunit = max(set(units), key = units.count)
+        maxtest = max(set(test_id), key = test_id.count)
+        d = dict()
+        d[maxunit] = maxtest
+        print(maxunit, maxtest)
+        return d

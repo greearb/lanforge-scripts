@@ -20,6 +20,7 @@ import subprocess
 from scp import SCPClient
 import paramiko
 from GrafanaRequest import GrafanaRequest
+import time
 
 
 class CSVReader:
@@ -168,6 +169,11 @@ class GhostRequest:
                                grafana_port=3000):
         text = ''
         csvreader = CSVReader()
+        if grafana_token is not None:
+            grafana = GrafanaRequest(grafana_token,
+                                     grafana_host,
+                                     grafanajson_port=grafana_port
+                                     )
         if test_run is None:
             test_run = sorted(folders)[0].split('/')[-1].strip('/')
         for folder in folders:
@@ -184,7 +190,7 @@ class GhostRequest:
             scp_pull.get(folder, recursive=True)
             target_folder = str(folder).rstrip('/').split('/')[-1]
             target_folders.append(target_folder)
-            print(target_folder)
+            print('Target folder: %s' % target_folder)
             try:
                 target_file = '%s/kpi.csv' % target_folder
                 print('target file %s' % target_file)
@@ -216,9 +222,10 @@ class GhostRequest:
             print(local_path)
             try:
                 sftp.mkdir(local_path)
+                scp_push.put(target_folder, recursive=True, remote_path=local_path)
             except:
                 print('folder %s already exists' % local_path)
-            scp_push.put(target_folder, recursive=True, remote_path=local_path)
+            print(target_folder)
             files = sftp.listdir(local_path + '/' + target_folder)
             # print('Files: %s' % files)
             for file in files:
@@ -237,21 +244,26 @@ class GhostRequest:
             self.images = []
 
             if grafana_token is not None:
-                GR = GrafanaRequest(grafana_token,
-                                    grafana_host,
-                                    grafanajson_port=grafana_port
-                                    )
-                GR.create_snapshot(title=grafana_dashboard)
-                snapshot = GR.list_snapshots()[-1]
-                text = text + '<iframe src="%s" width="100%s" height=500></iframe>' % (snapshot['externalUrl'], '%')
+                # get the details of the dashboard through the API, and set the end date to the youngest KPI
+                grafana.list_dashboards()
+
+                grafana.create_snapshot(title=grafana_dashboard)
+                time.sleep(3)
+                snapshot = grafana.list_snapshots()[-1]
+                print(snapshot)
+                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=500></iframe>' % (grafana_host, snapshot['key'], '%')
 
         now = date.now()
 
         if title is None:
             title = "%s %s %s %s:%s report" % (now.day, now.month, now.year, now.hour, now.minute)
 
-        if grafana_dashboard is not None:
-            pass
+        # create Grafana Dashboard
+        target_files = []
+        for folder in folders:
+            target_files.append(folder.strip('/home/lanforge/html-reports/') + '/kpi.csv')
+        grafana.create_custom_dashboard(target_csvs=target_files,
+                                        title=title)
 
         self.create_post(title=title,
                          text=text,

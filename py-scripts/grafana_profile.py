@@ -19,40 +19,7 @@ if 'py-json' not in sys.path:
 
 from GrafanaRequest import GrafanaRequest
 from LANforge.lfcli_base import LFCliBase
-import json
 import string
-import random
-
-
-#!/usr/bin/env python3
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Class holds default settings for json requests to Grafana     -
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-import sys
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
-
-import requests
-
-import json
-
-#!/usr/bin/env python3
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Class holds default settings for json requests to Grafana     -
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-import sys
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
-
-import requests
-
-import json
 
 class UseGrafana(GrafanaRequest):
     def groupby(self, params, grouptype):
@@ -97,174 +64,6 @@ class UseGrafana(GrafanaRequest):
         targets['tags'] = list()
         return targets
 
-    def create_custom_dashboard(self,
-                                scripts=None,
-                                title=None,
-                                bucket=None,
-                                graph_groups=None,
-                                graph_groups_file=None,
-                                testbed=None,
-                                datasource='InfluxDB',
-                                from_date='now-1y',
-                                graph_height=8,
-                                graph__width=12):
-        options = string.ascii_lowercase + string.ascii_uppercase + string.digits
-        uid = ''.join(random.choice(options) for i in range(9))
-        input1 = dict()
-        annotations = dict()
-        annotations['builtIn'] = 1
-        annotations['datasource'] = '-- Grafana --'
-        annotations['enable'] = True
-        annotations['hide'] = True
-        annotations['iconColor'] = 'rgba(0, 211, 255, 1)'
-        annotations['name'] = 'Annotations & Alerts'
-        annotations['type'] = 'dashboard'
-        annot = dict()
-        annot['list'] = list()
-        annot['list'].append(annotations)
-
-        templating = dict()
-        templating['list'] = list()
-
-        timedict = dict()
-        timedict['from'] = from_date
-        timedict['to'] = 'now'
-
-        panels = list()
-        index = 1
-        if graph_groups_file:
-            print("graph_groups_file: %s" % graph_groups_file)
-            target_csvs = open(graph_groups_file).read().split('\n')
-            graph_groups = self.get_graph_groups(target_csvs)  # Get the list of graph groups which are in the tests we ran
-            unit_dict = dict()
-            for csv in target_csvs:
-                if len(csv)>1:
-                    print(csv)
-                    unit_dict.update(self.get_units(csv))
-        for scriptname in graph_groups.keys():
-            for graph_group in graph_groups[scriptname]:
-                panel = dict()
-
-                gridpos = dict()
-                gridpos['h'] = graph_height
-                gridpos['w'] = graph__width
-                gridpos['x'] = 0
-                gridpos['y'] = 0
-
-                legend = dict()
-                legend['avg'] = False
-                legend['current'] = False
-                legend['max'] = False
-                legend['min'] = False
-                legend['show'] = True
-                legend['total'] = False
-                legend['values'] = False
-
-                options = dict()
-                options['alertThreshold'] = True
-
-                groupBy = list()
-                groupBy.append(self.groupby('$__interval', 'time'))
-                groupBy.append(self.groupby('null', 'fill'))
-
-                targets = list()
-                counter = 0
-                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group,testbed)
-                targets.append(new_target)
-
-                fieldConfig = dict()
-                fieldConfig['defaults'] = dict()
-                fieldConfig['overrides'] = list()
-
-                transformation = dict()
-                transformation['id'] = "renameByRegex"
-                transformation_options = dict()
-                transformation_options['regex'] = "(.*) value.*"
-                transformation_options['renamePattern'] = "$1"
-                transformation['options'] = transformation_options
-
-                xaxis = dict()
-                xaxis['buckets'] = None
-                xaxis['mode'] = "time"
-                xaxis['name'] = None
-                xaxis['show'] = True
-                xaxis['values'] = list()
-
-                yaxis = dict()
-                yaxis['format'] = 'short'
-                yaxis['label'] = unit_dict[graph_group]
-                yaxis['logBase'] = 1
-                yaxis['max'] = None
-                yaxis['min'] = None
-                yaxis['show'] = True
-
-                yaxis1 = dict()
-                yaxis1['align'] = False
-                yaxis1['alignLevel'] = None
-
-                panel['aliasColors'] = dict()
-                panel['bars'] = False
-                panel['dashes'] = False
-                panel['dashLength'] = 10
-                panel['datasource'] = datasource
-                panel['fieldConfig'] = fieldConfig
-                panel['fill'] = 0
-                panel['fillGradient'] = 0
-                panel['gridPos'] = gridpos
-                panel['hiddenSeries'] = False
-                panel['id'] = index
-                panel['legend'] = legend
-                panel['lines'] = True
-                panel['linewidth'] = 1
-                panel['nullPointMode'] = 'null'
-                panel['options'] = options
-                panel['percentage'] = False
-                panel['pluginVersion'] = '7.5.4'
-                panel['pointradius'] = 2
-                panel['points'] = True
-                panel['renderer'] = 'flot'
-                panel['seriesOverrides'] = list()
-                panel['spaceLength'] = 10
-                panel['stack'] = False
-                panel['steppedLine'] = False
-                panel['targets'] = targets
-                panel['thresholds'] = list()
-                panel['timeFrom'] = None
-                panel['timeRegions'] = list()
-                panel['timeShift'] = None
-                if graph_group is not None:
-                    panel['title'] = scriptname + ' ' + graph_group
-                else:
-                    panel['title'] = scriptname
-                panel['transformations'] = list()
-                panel['transformations'].append(transformation)
-                panel['type'] = "graph"
-                panel['xaxis'] = xaxis
-                panel['yaxes'] = list()
-                panel['yaxes'].append(yaxis)
-                panel['yaxes'].append(yaxis)
-                panel['yaxis'] = yaxis1
-
-                panels.append(panel)
-                index = index + 1
-        input1['annotations'] = annot
-        input1['editable'] = True
-        input1['gnetId'] = None
-        input1['graphTooltip'] = 0
-        input1['links'] = list()
-        input1['panels'] = panels
-        input1['refresh'] = False
-        input1['schemaVersion'] = 27
-        input1['style'] = 'dark'
-        input1['tags'] = list()
-        input1['templating'] = templating
-        input1['time'] = timedict
-        input1['timepicker'] = dict()
-        input1['timezone'] = ''
-        input1['title'] = ("Testbed: %s" % title)
-        input1['uid'] = uid
-        input1['version'] = 11
-        return self.GR.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
     def read_csv(self, file):
         csv = open(file).read().split('\n')
@@ -281,19 +80,6 @@ class UseGrafana(GrafanaRequest):
             results.append(row[value])
         return results
 
-    def get_graph_groups(self,target_csvs): # Get the unique values in the Graph-Group column
-        dictionary = dict()
-        for target_csv in target_csvs:
-            if len(target_csv) > 1:
-                csv = self.read_csv(target_csv)
-                # Unique values in the test-id column
-                scripts = list(set(self.get_values(csv,'test-id')))
-                # we need to make sure we match each Graph Group to the script it occurs in
-                for script in scripts:
-                    # Unique Graph Groups for each script
-                    dictionary[script] = list(set(self.get_values(csv,'Graph-Group')))
-        print(dictionary)
-        return dictionary
 
     def get_units(self, target_csv):
         csv = self.read_csv(target_csv)
@@ -324,6 +110,12 @@ def main():
                             --graph_groups 'Per Stations Rate DL'
                             --graph_groups 'Per Stations Rate UL'
                             --graph_groups 'Per Stations Rate UL+DL'
+        
+        Create a snapshot of a dashboard:
+        ./grafana_profile.py --grafana_token TOKEN
+                             --grafana_host HOST
+                             --create_snapshot
+                             --title TITLE_OF_DASHBOARD
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--grafana_token', help='token to access your Grafana database', required=True)

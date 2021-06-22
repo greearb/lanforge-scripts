@@ -14,6 +14,12 @@ EXAMPLE: ./ghost_profile.py --ghost_token TOKEN --ghost_host 192.168.100.147
 --user_pull lanforge --password_pull lanforge --customer candela --testbed heather --test_run test-run-6
 --user_push matt --password_push PASSWORD
 
+EXAMPLE 2: ./ghost_profile.py --ghost_token TOKEN
+--ghost_host 192.168.100.147 --server 192.168.93.51 --user_pull lanforge --password_pull lanforge --customer candela
+--testbed heather --user_push matt --password_push "amount%coverage;Online" --wifi_capacity app
+--folders /home/lanforge/html-reports/wifi-capacity-2021-06-14-10-42-29 --grafana_token TOKEN
+--grafana_host 192.168.100.201 --grafana_dashboard 'Stidmatt-02'
+
  Matthew Stidham
  Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
@@ -33,7 +39,7 @@ if 'py-json' not in sys.path:
 from GhostRequest import GhostRequest
 
 
-class UseGhost:
+class UseGhost(GhostRequest):
     def __init__(self,
                  _ghost_token=None,
                  host="localhost",
@@ -42,29 +48,17 @@ class UseGhost:
                  _exit_on_fail=False,
                  _ghost_host="localhost",
                  _ghost_port=2368, ):
+        super().__init__(_ghost_host,
+                         str(_ghost_port),
+                         _api_token=_ghost_token,
+                         debug_=_debug_on)
         self.ghost_host = _ghost_host
         self.ghost_port = _ghost_port
         self.ghost_token = _ghost_token
-        self.GP = GhostRequest(self.ghost_host,
-                               str(self.ghost_port),
-                               _api_token=self.ghost_token,
-                               debug_=_debug_on)
-
-    def create_post(self, title, text, tags, authors):
-        return self.GP.create_post(title=title, text=text, tags=tags, authors=authors)
 
     def create_post_from_file(self, title, file, tags, authors):
         text = open(file).read()
-        return self.GP.create_post(title=title, text=text, tags=tags, authors=authors)
-
-    def upload_image(self, image):
-        return self.GP.upload_image(image)
-
-    def upload_images(self, folder):
-        return self.GP.upload_images(folder)
-
-    def custom_post(self, folder, authors):
-        return self.GP.custom_post(folder, authors)
+        return self.create_post(title=title, text=text, tags=tags, authors=authors)
 
     def wifi_capacity(self,
                       authors,
@@ -85,24 +79,24 @@ class UseGhost:
                       grafana_host,
                       grafana_port):
         target_folders = list()
-        return self.GP.wifi_capacity_to_ghost(authors,
-                                              folders,
-                                              title,
-                                              server_pull,
-                                              ghost_host,
-                                              port,
-                                              user_pull,
-                                              password_pull,
-                                              user_push,
-                                              password_push,
-                                              customer,
-                                              testbed,
-                                              test_run,
-                                              target_folders,
-                                              grafana_dashboard,
-                                              grafana_token,
-                                              grafana_host,
-                                              grafana_port)
+        return self.wifi_capacity_to_ghost(authors,
+                                           folders,
+                                           title,
+                                           server_pull,
+                                           ghost_host,
+                                           port,
+                                           user_pull,
+                                           password_pull,
+                                           user_push,
+                                           password_push,
+                                           customer,
+                                           testbed,
+                                           test_run,
+                                           target_folders,
+                                           grafana_dashboard,
+                                           grafana_token,
+                                           grafana_host,
+                                           grafana_port)
 
 
 def main():

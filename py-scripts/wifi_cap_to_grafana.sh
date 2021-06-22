@@ -5,11 +5,11 @@
 # into influxdb.  As final step, it builds a grafana dashboard for the KPI information.
 
 # Define some common variables.  This will need to be changed to match your own testbed.
-MGR=10.0.0.202
+MGR=192.168.93.51
 INFLUX_MGR=192.168.100.201
 #INFLUXTOKEN=Tdxwq5KRbj1oNbZ_ErPL5tw_HUH2wJ1VR4dwZNugJ-APz__mEFIwnqHZdoobmQpt2fa1VdWMlHQClR8XNotwbg==
 INFLUXTOKEN=31N9QDhjJHBu4eMUlMBwbK3sOjXLRAhZuCzZGeO8WVCj-xvR8gZWWvRHOcuw-5RHeB7xBFnLs7ZV023k4koR1A==
-TESTBED=Stidmatt-01
+TESTBED=Heather
 INFLUXBUCKET=stidmatt
 #GRAFANATOKEN=eyJrIjoiZTJwZkZlemhLQVNpY3hiemRjUkNBZ3k2RWc3bWpQWEkiLCJuIjoibWFzdGVyIiwiaWQiOjF9
 GRAFANATOKEN=eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ==

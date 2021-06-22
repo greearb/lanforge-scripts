@@ -229,6 +229,9 @@ class StationProfile:
                 self.set_command_param("add_sta", "ieee80211w", 2)
             # self.add_sta_data["key"] = passwd
 
+    def station_mode_to_number(self,mode):
+        modes = ['a','b','g','abg','an','abgn','bgn','bg','abgn-AC','bgn-AC','an-AC']
+
     def add_security_extra(self, security):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
         if self.desired_add_sta_flags.__contains__(types[security]) and \
