@@ -69,6 +69,7 @@ import realm
 import time
 import datetime
 from realm import TestGroupProfile
+from port_utils import PortUtils
 
 
 class IPV4L4(LFCliBase):
@@ -93,6 +94,8 @@ class IPV4L4(LFCliBase):
                  _debug_on=False,
                  upstream_port="eth1",
                  ftp=False,
+                 source=None,
+                 dest=None,
                  test_type=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -117,10 +120,10 @@ class IPV4L4(LFCliBase):
         self.target_requests_per_ten = int(target_requests_per_ten)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.l4cxprofile = realm.L4CXProfile(lfclient_host=host,
-                                             lfclient_port=port, local_realm=self.local_realm)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l4_cx_profile()
+
+        self.port_util = PortUtils(self.local_realm)
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -131,18 +134,23 @@ class IPV4L4(LFCliBase):
         self.test_type = test_type
         self.ftp_user = ftp_user
         self.ftp_passwd = ftp_passwd
+        self.source = source
+        self.dest = dest
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
 
         self.cx_profile.url = self.url
+        self.cx_profile.test_type = self.test_type
         self.cx_profile.requests_per_ten = self.requests_per_ten
+        self.cx_profile.target_requests_per_ten = self.target_requests_per_ten
 
         self.ftp = ftp
         if self.ftp and 'ftp://' not in self.url:
             print("WARNING! FTP test chosen, but ftp:// not present in url!")
 
         if self.test_type != 'urls/s' and self.test_type != 'bytes-wr' and self.test_type != 'bytes-rd':
-            raise ValueError("Unknown test type: %s\nValid test types are urls/s, bytes-rd, or bytes-wr" % self.test_type)
+            raise ValueError(
+                "Unknown test type: %s\nValid test types are urls/s, bytes-rd, or bytes-wr" % self.test_type)
 
     def build(self):
         # Build stations
@@ -154,56 +162,26 @@ class IPV4L4(LFCliBase):
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self._pass("PASS: Station build finished")
 
+        temp_url = self.url.split(" ")
+        if temp_url[0] == 'ul' or temp_url[0] == 'dl':
+            if len(temp_url) == 2:
+                if self.url.startswith("ul") and self.source not in self.url:
+                    self.cx_profile.url += " " + self.source
+                elif self.url.startswith("dl") and self.dest not in self.url:
+                    self.cx_profile.url += " " + self.dest
+        else:
+            raise ValueError("ul or dl required in url to indicate direction")
         if self.ftp:
+            if self.ftp_user is not None and self.ftp_passwd is not None:
+                if ("%s:%s" % (self.ftp_user, self.ftp_passwd)) not in self.url:
+                    temp_url = self.url.split("//")
+                    temp_url = ("//%s:%s@" % (self.ftp_user, self.ftp_passwd)).join(temp_url)
+                    self.cx_profile.url = temp_url
             self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
-                                   suppress_related_commands_=True, ftp=self.ftp,
-                                   user=self.ftp_user, passwd=self.ftp_passwd,
-                                   source=self.source)
+                                   suppress_related_commands_=True)
         else:
             self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
                                    suppress_related_commands_=None)
-
-    def __check_request_rate(self):
-        endp_list = self.json_get("layer4/list?fields=urls/s")
-        expected_passes = 0
-        passes = 0
-        if endp_list is not None and endp_list['endpoint'] is not None:
-            endp_list = endp_list['endpoint']
-            for item in endp_list:
-                for name, info in item.items():
-                    if name in self.cx_profile.created_cx.keys():
-                        expected_passes += 1
-                        if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
-                            passes += 1
-        return passes == expected_passes
-
-    def __compare_vals(self, old_list, new_list):
-        passes = 0
-        expected_passes = 0
-        if len(old_list) == len(new_list):
-            for item, value in old_list.items():
-                expected_passes += 1
-                if new_list[item] > old_list[item]:
-                    passes += 1
-            if passes == expected_passes:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def __get_bytes(self):
-        time.sleep(1)
-        cx_list = self.json_get("layer4/list?fields=name,%s" % self.test_type, debug_=self.debug)
-        # print("==============\n", cx_list, "\n==============")
-        cx_map = {}
-        for cx_name in cx_list['endpoint']:
-            if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                        if item in self.cx_profile.created_cx.keys() and value_name == self.test_type:
-                            cx_map[item] = value_rx
-        return cx_map
 
     def start(self, print_pass=False, print_fail=False):
         if self.ftp:
@@ -216,45 +194,9 @@ class IPV4L4(LFCliBase):
         else:
             self._fail("Stations failed to get IPs", print_fail)
             exit(1)
+
         self.cx_profile.start_cx()
         print("Starting test")
-        curr_time = datetime.datetime.now()
-        if self.test_type != 'urls/s':
-            old_rx_values = self.__get_bytes()
-        end_time = self.local_realm.parse_time(self.test_duration) + curr_time
-        sleep_interval = self.local_realm.parse_time(self.test_duration) // 5
-        passes = 0
-        expected_passes = 0
-
-        for test in range(self.num_tests):
-            expected_passes += 1
-            while curr_time < end_time:
-                time.sleep(sleep_interval.total_seconds())
-                curr_time = datetime.datetime.now()
-
-            if self.test_type == 'urls/s':
-                if self.cx_profile.check_errors(self.debug):
-                    if self.__check_request_rate():
-                        passes += 1
-                    else:
-                        self._fail("FAIL: Request rate did not exceed target rate", print_fail)
-                        break
-                else:
-                    self._fail("FAIL: Errors found getting to %s " % self.url, print_fail)
-                    break
-
-            else:
-                new_rx_values = self.__get_bytes()
-                expected_passes += 1
-                if self.__compare_vals(old_rx_values, new_rx_values):
-                    passes += 1
-                else:
-                    self._fail("FAIL: Not all stations increased traffic", print_fail)
-                    break
-                old_rx_values = new_rx_values
-                cur_time = datetime.datetime.now()
-        if passes == expected_passes:
-            self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
         self.cx_profile.stop_cx()
@@ -267,6 +209,8 @@ class IPV4L4(LFCliBase):
         self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
+
+
 def main():
     parser = LFCliBase.create_basic_argparse(
         prog='test_l4',
@@ -337,9 +281,16 @@ python3 ./test_l4.py
         optional.add_argument('--report_file', help='where you want to store results')
         optional.add_argument('--output_format', help='choose csv or xlsx')  # update once other forms are completed
         optional.add_argument('--ftp', help='Use ftp for the test', action='store_true')
-        optional.add_argument('--test_type', help='Choose type of test to run {url/s, bytes-rd, bytes-wr}', default='bytes-rd')
-        optional.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default="lanforge")
-        optional.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default="lanforge")
+        optional.add_argument('--test_type', help='Choose type of test to run {url/s, bytes-rd, bytes-wr}',
+                              default='bytes-rd')
+        optional.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
+        optional.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
+        optional.add_argument('--dest',
+                              help='--dest specifies the destination for the file, should be used when downloading',
+                              default="/dev/null")
+        optional.add_argument('--source',
+                              help='--source specifies the source of the file, should be used when uploading',
+                              default="/tmp/data_slug_4K.bin")
 
     args = parser.parse_args()
 
@@ -410,6 +361,8 @@ python3 ./test_l4.py
                      ftp=args.ftp,
                      ftp_user=args.ftp_user,
                      ftp_passwd=args.ftp_passwd,
+                     source=args.source,
+                     dest=args.dest,
                      test_type=args.test_type,
                      _debug_on=args.debug,
                      test_duration=args.test_duration,
@@ -424,22 +377,22 @@ python3 ./test_l4.py
         layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     except:
         pass
-    ip_test.l4cxprofile.monitor(col_names=['bytes-rd', 'urls/s', 'bytes-wr'],
-                                report_file=rpt_file,
-                                duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
-                                created_cx=layer4traffic,
-                                output_format=output_form,
-                                script_name='test_l4',
-                                arguments=args,
-                                debug=args.debug)
+    ip_test.cx_profile.monitor(col_names=['bytes-rd', 'urls/s', 'bytes-wr'],
+                               report_file=rpt_file,
+                               duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                               created_cx=layer4traffic,
+                               output_format=output_form,
+                               script_name='test_l4',
+                               arguments=args,
+                               debug=args.debug)
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    ip_test.cleanup(station_list)
+    # ip_test.cleanup(station_list)
     if ip_test.passes():
-        print("Full test passed, all endpoints met or exceeded 90 percent of the target rate")
+        print("Full test passed")
 
 
 if __name__ == "__main__":
