@@ -21,6 +21,7 @@ class L4CXProfile(LFCliBase):
         self.local_realm = local_realm
         self.created_cx = {}
         self.created_endp = []
+        self.test_type = "urls/s"
         self.lfclient_port = lfclient_port
         self.lfclient_host = lfclient_host
 
@@ -69,6 +70,34 @@ class L4CXProfile(LFCliBase):
             print(".", end='')
         print("")
 
+    def compare_vals(self, old_list, new_list):
+        passes = 0
+        expected_passes = 0
+        if len(old_list) == len(new_list):
+            for item, value in old_list.items():
+                expected_passes += 1
+                if new_list[item] > old_list[item]:
+                    passes += 1
+            if passes == expected_passes:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def get_bytes(self):
+        time.sleep(1)
+        cx_list = self.json_get("layer4/list?fields=name,%s" % self.test_type, debug_=self.debug)
+        # print("==============\n", cx_list, "\n==============")
+        cx_map = {}
+        for cx_name in cx_list['endpoint']:
+            if cx_name != 'uri' and cx_name != 'handler':
+                for item, value in cx_name.items():
+                    for value_name, value_rx in value.items():
+                        if item in self.created_cx.keys() and value_name == self.test_type:
+                            cx_map[item] = value_rx
+        return cx_map
+
     def check_request_rate(self):
         endp_list = self.json_get("layer4/list?fields=urls/s")
         expected_passes = 0
@@ -87,7 +116,6 @@ class L4CXProfile(LFCliBase):
                             passes += 1
 
         return passes == expected_passes
-
 
     def cleanup(self):
         print("Cleaning up cxs and endpoints")
@@ -110,7 +138,7 @@ class L4CXProfile(LFCliBase):
     def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
         cx_post_data = []
         for port_name in ports:
-            print("port_name: {} len: {} self.local_realm.name_to_eid(port_name): {}".format(port_name,len(self.local_realm.name_to_eid(port_name)),self.local_realm.name_to_eid(port_name),))
+            print("port_name: {} len: {} self.local_realm.name_to_eid(port_name): {}".format(port_name, len(self.local_realm.name_to_eid(port_name)), self.local_realm.name_to_eid(port_name)))
             shelf = self.local_realm.name_to_eid(port_name)[0]
             resource = self.local_realm.name_to_eid(port_name)[1]
             name = self.local_realm.name_to_eid(port_name)[2]
@@ -186,7 +214,6 @@ class L4CXProfile(LFCliBase):
             print(header_row)
 
         # Step 2 - Monitor columns
-
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
         sleep_interval =  round(duration_sec // 5)
@@ -198,6 +225,9 @@ class L4CXProfile(LFCliBase):
         passes = 0
         expected_passes = 0
         timestamps = []
+        if self.test_type != 'urls/s':
+            old_rx_values = self.get_bytes()
+
         for test in range(1+iterations):
             while datetime.datetime.now() < end_time:
                 if col_names is None:
@@ -219,14 +249,25 @@ class L4CXProfile(LFCliBase):
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
-                if self.check_errors(debug):
-                    if self.check_request_rate():
+                if self.test_type == 'urls/s':
+                    if self.check_errors(self.debug):
+                        if self.check_request_rate():
+                            passes += 1
+                        else:
+                            self._fail("FAIL: Request rate did not exceed target rate")
+                            break
+                    else:
+                        self._fail("FAIL: Errors found getting to %s " % self.url)
+                        break
+
+                else:
+                    new_rx_values = self.get_bytes()
+                    expected_passes += 1
+                    if self.compare_vals(old_rx_values, new_rx_values):
                         passes += 1
                     else:
-                        self._fail("FAIL: Request rate did not exceed 90% target rate")
-                        self.exit_fail()
-                else:
-                    self._fail("FAIL: Errors found getting to %s " % self.url)
+                        self._fail("FAIL: Not all stations increased traffic")
+
                     self.exit_fail()
                 time.sleep(monitor_interval)
         print(value_map)
