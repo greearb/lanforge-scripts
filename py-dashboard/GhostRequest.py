@@ -251,7 +251,7 @@ class GhostRequest:
                 time.sleep(3)
                 snapshot = grafana.list_snapshots()[-1]
                 print(snapshot)
-                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=500></iframe>' % (grafana_host, snapshot['key'], '%')
+                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=1500></iframe>' % (grafana_host, snapshot['key'], '%')
 
         now = date.now()
 
