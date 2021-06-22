@@ -27,6 +27,7 @@ class CreateStation(Realm):
                  _password=None,
                  _host=None,
                  _port=None,
+                 _mode=0,
                  _sta_list=None,
                  _number_template="00000",
                  _radio="wiphy0",
@@ -43,6 +44,7 @@ class CreateStation(Realm):
         self.ssid = _ssid
         self.security = _security
         self.password = _password
+        self.mode = _mode
         self.sta_list = _sta_list
         self.radio = _radio
         self.timeout = 120
@@ -56,7 +58,7 @@ class CreateStation(Realm):
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.station_profile.mode = self.mode
         if self.debug:
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
@@ -111,6 +113,9 @@ Command example:
     required = parser.add_argument_group('required arguments')
     required.add_argument('--start_id', help='--start_id <value> default 0', default=0)
 
+    optional = parser.add_argument_group('Optional arguments')
+    optional.add_argument('--mode', help='Mode for your station (as a number)',default=0)
+
     args = parser.parse_args()
     # if args.debug:
     #    pprint.pprint(args)
@@ -151,6 +156,7 @@ Command example:
                                    _password=args.passwd,
                                    _security=args.security,
                                    _sta_list=station_list,
+                                   _mode=args.mode,
                                    _radio=args.radio,
                                    _set_txo_data=None,
                                    _proxy_str=args.proxy,
