@@ -594,14 +594,14 @@ class L3VariableTime(Realm):
                                 "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
                                 "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
                                 print("ap_stats {}".format(ap_stats))
-                            # read from the AP
                             else:
+                                # read from the AP
                                 ap_stats = self.read_ap_stats()
     
                             #ap_stats_rows = [] # Array of Arrays
     
                             ap_stats_rows = ap_stats.splitlines()
-                            print("ap_stats_rows {}".format(ap_stats_rows))
+                            print("From AP: ap_stats_rows {}".format(ap_stats_rows))
     
                             # Query all of our ports
                             # Note: the endp eid is the shelf.resource.port.endp-id
@@ -609,16 +609,18 @@ class L3VariableTime(Realm):
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
                                 url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
                                     print("query-port: %s: incomplete response:"%(url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
-                                    # pprint(response)
+                                    pprint(response)
                                     p = response['interface']
-                                    #print("#### p, response['insterface']:{}".format(p))
+                                    print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
+                                    print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
     
                                     for row in ap_stats_rows:
                                         split_row = row.split()
@@ -628,10 +630,15 @@ class L3VariableTime(Realm):
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
                                         else:
-                                            if split_row[0].lower() == mac.lower():
-                                                ap_row = split_row
+                                            try:
+                                                # split_row[0].lower() , mac from AP 
+                                                # mac.lower() , mac from LANforge
+                                                if split_row[0].lower() == mac.lower():
+                                                    ap_row = split_row
+                                            except:
+                                                print(" 'No stations are currently associated.'? from AP")
+                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")    
                                     print("selected ap_row (from split_row): {}".format(ap_row))
-    
     
                                     # Find latency, jitter for connections using this port.
                                     latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
