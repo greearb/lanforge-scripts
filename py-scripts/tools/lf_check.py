@@ -775,7 +775,10 @@ Example :
     report.build_custom()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
-    report.write_pdf_with_timestamp()
+    try:
+        report.write_pdf_with_timestamp()
+    except:
+        print("exception write_pdf_with_timestamp()")
 
     report_path = os.path.dirname(html_report)
     parent_report_dir = os.path.dirname(report_path)
