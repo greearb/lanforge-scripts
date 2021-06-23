@@ -164,6 +164,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         try:
             if self.production_run == True:
                 msg = message_txt.format(ip=self.host_ip_production)
+                # for postfix from command line  echo "My message" | mail -s subject user@candelatech.com
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=msg,
                     subject=mail_subject,
@@ -805,7 +806,10 @@ Example :
     #])
 
     # copy one directory above
-    shutil.copyfile(html_report,            lf_check_latest_html)
+    try:
+        shutil.copyfile(html_report,            lf_check_latest_html)
+    except:
+        print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))        
     shutil.copyfile(html_report,            lf_check_html_report)
 
     # copy banner and logo
