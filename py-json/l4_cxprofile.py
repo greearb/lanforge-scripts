@@ -112,7 +112,7 @@ class L4CXProfile(LFCliBase):
                     if name in self.created_cx.keys():
                         expected_passes += 1
                         if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
-                            print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                            # print(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
                             passes += 1
 
         return passes == expected_passes
@@ -262,14 +262,14 @@ class L4CXProfile(LFCliBase):
 
                 else:
                     new_rx_values = self.get_bytes()
-                    expected_passes += 1
                     if self.compare_vals(old_rx_values, new_rx_values):
                         passes += 1
                     else:
                         self._fail("FAIL: Not all stations increased traffic")
 
-                    self.exit_fail()
+                    # self.exit_fail()
                 time.sleep(monitor_interval)
+
         print(value_map)
 
     #[further] post-processing data, after test completion
