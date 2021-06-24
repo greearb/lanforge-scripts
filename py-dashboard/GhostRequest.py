@@ -21,6 +21,7 @@ from scp import SCPClient
 import paramiko
 from GrafanaRequest import GrafanaRequest
 import time
+from collections import Counter
 
 
 class CSVReader:
@@ -44,6 +45,50 @@ class CSVReader:
         for row in df[1:]:
             values.append(row[index])
         return values
+
+    def get_columns(self, df, targets):
+        target_index = []
+        for item in targets:
+            target_index.append(df[0].index(item))
+        results = []
+        for row in df:
+            row_data = []
+            for x in target_index:
+                row_data.append(row[x])
+            results.append(row_data)
+        return results
+
+    def to_html(self, df):
+        html = ''
+        html = html + ('<table style="border:1px solid #ddd"><tr>')
+        for row in df:
+            for item in row:
+                html = html + ('<td style="border:1px solid #ddd">%s</td>' % item)
+            html = html + ('</tr>\n<tr>')
+        html = html + ('</table>')
+        return html
+
+    def filter_df(self, df, column, expression, target):
+        target_index = df[0].index(column)
+        counter = 0
+        targets = [0]
+        for row in df:
+            try:
+                if expression == 'less than':
+                    if float(row[target_index]) <= target:
+                        targets.append(counter)
+                        counter += 1
+                    else:
+                        counter += 1
+                if expression == 'greater than':
+                    if float(row[target_index]) >= target:
+                        targets.append(counter)
+                        counter += 1
+                    else:
+                        counter += 1
+            except:
+                counter += 1
+        return list(map(df.__getitem__, targets))
 
 
 class GhostRequest:
@@ -176,6 +221,7 @@ class GhostRequest:
                                      )
         if test_run is None:
             test_run = sorted(folders)[0].split('/')[-1].strip('/')
+        print(folders)
         for folder in folders:
             print(folder)
             ssh_pull = paramiko.SSHClient()
@@ -196,6 +242,13 @@ class GhostRequest:
                 print('target file %s' % target_file)
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 csv_testbed = csvreader.get_column(df, 'test-rig')[0]
+                pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
+                if pass_fail['PASS'] + pass_fail['FAIL'] > 0:
+                    text = text + 'Tests passed: %s<br />' % pass_fail['PASS']
+                    text = text + 'Tests failed: %s<br />' % pass_fail['FAIL']
+                    text = text + 'Percentage of tests passed: %s<br />' % (
+                            pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
+
                 print(csv_testbed)
             except:
                 pass
@@ -215,17 +268,17 @@ class GhostRequest:
                              allow_agent=False,
                              look_for_keys=False)
             scp_push = SCPClient(ssh_push.get_transport())
-            local_path = '/home/%s/%s/%s/%s' % (user_push, customer, testbed, test_run)
+            local_path = '/home/%s/%s/%s' % (user_push, customer, testbed)
             transport = paramiko.Transport((ghost_host, port))
             transport.connect(None, user_push, password_push)
             sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
-            print(local_path)
+            print('Local Path: %s' % local_path)
             try:
                 sftp.mkdir(local_path)
-                scp_push.put(target_folder, recursive=True, remote_path=local_path)
             except:
                 print('folder %s already exists' % local_path)
-            print(target_folder)
+            scp_push.put(target_folder, recursive=True, remote_path=local_path)
+            print(local_path + '/' + target_folder)
             files = sftp.listdir(local_path + '/' + target_folder)
             # print('Files: %s' % files)
             for file in files:
@@ -251,7 +304,17 @@ class GhostRequest:
                 time.sleep(3)
                 snapshot = grafana.list_snapshots()[-1]
                 print(snapshot)
-                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=1500></iframe>' % (grafana_host, snapshot['key'], '%')
+                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=1500></iframe><br />' % (
+                    grafana_host, snapshot['key'], '%')
+
+            results = csvreader.get_columns(df,['short-description','numeric-score','test details','test-priority'])
+
+            low_priority = csvreader.to_html(csvreader.filter_df(results, 'test-priority', 'less than', 94))
+            high_priority = csvreader.to_html(csvreader.filter_df(results, 'test-priority', 'greater than', 95))
+
+            text = text + 'High priority results: %s' % high_priority
+
+            text = text + 'Low priority results: %s' % low_priority
 
         now = date.now()
 
@@ -261,7 +324,8 @@ class GhostRequest:
         # create Grafana Dashboard
         target_files = []
         for folder in folders:
-            target_files.append(folder.strip('/home/lanforge/html-reports/') + '/kpi.csv')
+            print(folder)
+            target_files.append(folder.split('/')[-1] + '/kpi.csv')
         grafana.create_custom_dashboard(target_csvs=target_files,
                                         title=title)
 

@@ -9,7 +9,7 @@ class lanforge_reports:
         ssh = paramiko.SSHClient()
         ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=hostname, username=username, password=password, port=port)
+        ssh.connect(hostname=hostname, username=username, password=password, port=port, allow_agent=False, look_for_keys=False)
 
         with SCPClient(ssh.get_transport()) as scp:
             scp.get(remote_path=report_location, local_path=local_path, recursive=True)

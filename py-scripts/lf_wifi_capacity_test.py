@@ -353,7 +353,8 @@ class WiFiCapacityTest(cv_test):
                  influx_host="localhost",
                  influx_port=8086,
                  report_dir="",
-                 graph_groups=None
+                 graph_groups=None,
+                 test_rig=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -390,6 +391,7 @@ class WiFiCapacityTest(cv_test):
         self.influx_port = influx_port
         self.report_dir = report_dir
         self.graph_groups = graph_groups
+        self.test_rig = test_rig
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -445,6 +447,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("ul_rate: " + self.upload_rate)
         if self.download_rate != "":
             cfg_options.append("dl_rate: " + self.download_rate)
+        if self.test_rig != "":
+            cfg_options.append("test_rig: " + self.test_rig)
 
         cfg_options.append("save_csv: 1")
 
@@ -550,7 +554,8 @@ def main():
                                 raw_lines=args.raw_line,
                                 raw_lines_file=args.raw_lines_file,
                                 sets=args.set,
-                                graph_groups=args.graph_groups
+                                graph_groups=args.graph_groups,
+                                test_rig=args.test_rig
                                 )
     WFC_Test.setup()
     WFC_Test.run()
