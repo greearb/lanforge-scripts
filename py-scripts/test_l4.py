@@ -390,7 +390,7 @@ python3 ./test_l4.py
         print(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    # ip_test.cleanup(station_list)
+    ip_test.cleanup(station_list)
     if ip_test.passes():
         print("Full test passed")
 
