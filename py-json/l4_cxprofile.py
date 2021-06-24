@@ -21,7 +21,7 @@ class L4CXProfile(LFCliBase):
         self.local_realm = local_realm
         self.created_cx = {}
         self.created_endp = []
-        self.test_type = "urls/s"
+        self.test_type = "urls"
         self.lfclient_port = lfclient_port
         self.lfclient_host = lfclient_host
 
@@ -225,7 +225,7 @@ class L4CXProfile(LFCliBase):
         passes = 0
         expected_passes = 0
         timestamps = []
-        if self.test_type != 'urls/s':
+        if self.test_type != 'urls':
             old_rx_values = self.get_bytes()
 
         for test in range(1+iterations):
@@ -249,7 +249,7 @@ class L4CXProfile(LFCliBase):
                 timestamps.append(t)
                 value_map[t] = response
                 expected_passes += 1
-                if self.test_type == 'urls/s':
+                if self.test_type == 'urls':
                     if self.check_errors(self.debug):
                         if self.check_request_rate():
                             passes += 1
