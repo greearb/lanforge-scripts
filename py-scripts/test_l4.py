@@ -148,7 +148,8 @@ class IPV4L4(LFCliBase):
         if self.ftp and 'ftp://' not in self.url:
             print("WARNING! FTP test chosen, but ftp:// not present in url!")
 
-        if self.test_type != 'urls' and self.test_type != 'bytes-wr' and self.test_type != 'bytes-rd':
+        test_types = {'urls', 'bytes-wr', 'bytes-rd'}
+        if self.test_type not in test_types:
             raise ValueError(
                 "Unknown test type: %s\nValid test types are urls, bytes-rd, or bytes-wr" % self.test_type)
 
