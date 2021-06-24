@@ -15,7 +15,7 @@ test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_te
 
 EXAMPLE (urls/s):
     ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
-                 --ssid netgear --passwd admin123 --requests_per_ten 600 --mode   1 --num_tests 1 --test_type 'urls/s'
+                 --ssid netgear --passwd admin123 --requests_per_ten 600 --mode   1 --num_tests 1 --test_type 'urls'
                  --url "dl http://10.40.0.1 /dev/null" --ap "00:0e:8e:78:e1:76" --target_per_ten 600 --output_format csv
                  --report_file ~/Documents/results.csv --test_duration 2m --debug
 
@@ -33,7 +33,7 @@ EXAMPLE (bytes-rd):
 EXAMPLE (ftp urls/s):
     ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
                  --ssid netgear --passwd admin123 --test_duration 2m --interval 1s --mode 1 --ap "00:0e:8e:78:e1:76"
-                 --requests_per_ten 600 --num_tests 1 --ftp --test_type 'urls/s'
+                 --requests_per_ten 600 --num_tests 1 --ftp --test_type 'urls'
                  --url "ul ftp://lanforge:lanforge@10.40.0.1/example.txt  /home/lanforge/example.txt" --debug
 
 EXAMPLE (ftp bytes-wr):
@@ -148,9 +148,9 @@ class IPV4L4(LFCliBase):
         if self.ftp and 'ftp://' not in self.url:
             print("WARNING! FTP test chosen, but ftp:// not present in url!")
 
-        if self.test_type != 'urls/s' and self.test_type != 'bytes-wr' and self.test_type != 'bytes-rd':
+        if self.test_type != 'urls' and self.test_type != 'bytes-wr' and self.test_type != 'bytes-rd':
             raise ValueError(
-                "Unknown test type: %s\nValid test types are urls/s, bytes-rd, or bytes-wr" % self.test_type)
+                "Unknown test type: %s\nValid test types are urls, bytes-rd, or bytes-wr" % self.test_type)
 
     def build(self):
         # Build stations
@@ -281,7 +281,7 @@ python3 ./test_l4.py
         optional.add_argument('--report_file', help='where you want to store results')
         optional.add_argument('--output_format', help='choose csv or xlsx')  # update once other forms are completed
         optional.add_argument('--ftp', help='Use ftp for the test', action='store_true')
-        optional.add_argument('--test_type', help='Choose type of test to run {url/s, bytes-rd, bytes-wr}',
+        optional.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
                               default='bytes-rd')
         optional.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
         optional.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
