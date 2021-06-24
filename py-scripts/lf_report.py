@@ -448,7 +448,7 @@ class lf_report():
         self.graph_html_obj = """
               <img align='center' style='padding:15px;margin:5px 5px 2em 5px;width:1000px;' src='{image}' border='1' />
             """.format(image=self.graph_image)
-        self.html +=self.graph_html_obj
+        self.html += self.graph_html_obj
 
     def end_content_div(self):
         self.html += "\n</div><!-- end contentDiv -->\n"

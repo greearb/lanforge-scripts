@@ -31,10 +31,12 @@ from matplotlib.colors import ListedColormap
 
 # graph reporting classes
 class lf_bar_graph():
-    def __init__(self, _data_set=[[30, 55, 69, 37], [45, 67, 34, 22], [22, 45, 12, 34]],
+    def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4],
+                 _xaxis_categories=[1, 2, 3, 4, 5],
+                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _step_size=5,
                  _graph_image_name="image_name",
                  _label=["bi-downlink", "bi-uplink", 'uplink'],
                  _color=None,
@@ -53,6 +55,8 @@ class lf_bar_graph():
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
         self.xaxis_categories = _xaxis_categories
+        self.xaxis_label = _xaxis_label
+        self.step_size = _step_size
         self.graph_image_name = _graph_image_name
         self.label = _label
         self.color = _color
@@ -102,6 +106,10 @@ class lf_bar_graph():
                 i = i + 1
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+        """plt.xticks([r + self.bar_width for r in range(len(self.data_set[0]))],
+                   self.xaxis_categories)"""
+        plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.step_size), labels=self.xaxis_label)
+        plt.legend()
 
         if self.xaxis_categories[0] == 0:
             plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step),fontsize = self.xticks_font)
