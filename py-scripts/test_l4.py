@@ -378,7 +378,7 @@ python3 ./test_l4.py
         layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     except:
         pass
-    ip_test.cx_profile.monitor(col_names=['bytes-rd', 'urls/s', 'bytes-wr'],
+    ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=rpt_file,
                                duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
                                created_cx=layer4traffic,
