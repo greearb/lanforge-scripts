@@ -291,7 +291,7 @@ python3 ./test_l4.py
                               default="/dev/null")
         optional.add_argument('--source',
                               help='--source specifies the source of the file, should be used when uploading',
-                              default="/tmp/data_slug_4K.bin")
+                              default="/var/www/html/data_slug_4K.bin")
 
     args = parser.parse_args()
 
