@@ -35,6 +35,7 @@ TO DO NOTES:
 6/14/2021 :  
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
 2. add unique database prior to each run
+3. note the symbolic link at 192.168.100.201:/var/www/html/html-reports is pointing to /home/lanforge/html-reports
 
 '''
 import datetime
@@ -141,6 +142,8 @@ class lf_check():
             report_url = report_url[1:]
         # following recommendation 
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
+        # Mail
+        # command to check if mail running : systemctl status postfix
         #command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
@@ -629,16 +632,17 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     self.logger.info("TIMEOUT FAILURE,  Check LANforge Radios")
                     self.test_result = "Time Out"
                     background = self.background_purple
-
+                # stdout_log_link is used for the email reporting to have the corrected path
+                stdout_log_link = str(stdout_log_txt).replace('/home/lanforge','')
+                stderr_log_link = str(stderr_log_txt).replace('/home/lanforge','')
                 self.html_results += """
                 <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
                 <td style="""+ str(background) + """>""" + str(self.test_result) + """ 
-                <td><a href=""" + str(stdout_log_txt) + """ target=\"_blank\">STDOUT</a></td>"""
+                <td><a href=""" + str(stdout_log_link) + """ target=\"_blank\">STDOUT</a></td>"""
                 if self.test_result == "Failure":
-                    self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
+                    self.html_results += """<td><a href=""" + str(stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
                 elif self.test_result == "Time Out":
-                    self.html_results += """<td><a href=""" + str(stderr_log_txt) + """ target=\"_blank\">STDERR</a></td>"""
-                    #self.html_results += """<td></td>"""
+                    self.html_results += """<td><a href=""" + str(stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
                 else:
                     self.html_results += """<td></td>"""
                 self.html_results += """</tr>""" 
