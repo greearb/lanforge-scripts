@@ -354,7 +354,8 @@ class WiFiCapacityTest(cv_test):
                  influx_port=8086,
                  report_dir="",
                  graph_groups=None,
-                 test_rig=""
+                 test_rig="",
+                 local_path=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -392,6 +393,7 @@ class WiFiCapacityTest(cv_test):
         self.report_dir = report_dir
         self.graph_groups = graph_groups
         self.test_rig = test_rig
+        self.local_path = local_path
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -469,7 +471,7 @@ class WiFiCapacityTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups)
+                                 cv_cmds, graph_groups_file=self.graph_groups, local_path=self.local_path)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -523,6 +525,8 @@ def main():
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
+    parser.add_argument("--local_path", help="--local_path <where to pull reports to>  default '' put where dataplane script run from",default="")
+
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
@@ -555,7 +559,8 @@ def main():
                                 raw_lines_file=args.raw_lines_file,
                                 sets=args.set,
                                 graph_groups=args.graph_groups,
-                                test_rig=args.test_rig
+                                test_rig=args.test_rig,
+                                local_path=args.local_path
                                 )
     WFC_Test.setup()
     WFC_Test.run()
