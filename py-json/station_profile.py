@@ -230,7 +230,8 @@ class StationProfile:
             # self.add_sta_data["key"] = passwd
 
     def station_mode_to_number(self,mode):
-        modes = ['a','b','g','abg','an','abgn','bgn','bg','abgn-AC','bgn-AC','an-AC']
+        modes = ['a', 'b', 'g', 'abg', 'an', 'abgn', 'bgn', 'bg', 'abgn-AC', 'bgn-AC', 'an-AC']
+        return modes.index(mode) + 1
 
     def add_security_extra(self, security):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}

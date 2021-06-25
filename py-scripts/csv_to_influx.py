@@ -42,7 +42,7 @@ class CSVtoInflux():
                  target_csv=None,
                  sep='\t'):
         self.influxdb = influxdb
-        self.target_csv = target_csv.replace('/home/lanforge/html-reports/', '')
+        self.target_csv = target_csv
         self.influx_tag = _influx_tag
         self.sep = sep
 
