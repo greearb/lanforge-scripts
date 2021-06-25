@@ -305,6 +305,8 @@ def main():
                         help="Specify duration of each traffic run")
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
+    parser.add_argument("--local_path", help="--local_path <where to pull reports to>  default '' put where dataplane script run from",default="")
+
 
     args = parser.parse_args()
 
@@ -379,6 +381,7 @@ def main():
                             config_name = args.config_name,
                             upstream = args.upstream,
                             pull_report = args.pull_report,
+                            local_path = args.local_path,
                             load_old_cfg = args.load_old_cfg,
                             download_speed = args.download_speed,
                             upload_speed = args.upload_speed,
