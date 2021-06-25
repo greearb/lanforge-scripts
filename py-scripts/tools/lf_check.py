@@ -31,10 +31,11 @@ Using .json:
 1. copy lf_check.json to <file name>.json this will avoide .json being overwritten on git pull
 2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
-TO DO NOTES:
-6/14/2021 :  
+GENERIC NOTES: 
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
-2. add unique database prior to each run
+    A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
+    B. for the kernel version uname -r (just verion ), uname -a build date
+2. Use json to pass in influx config and ghost config
 3. note the symbolic link at 192.168.100.201:/var/www/html/html-reports is pointing to /home/lanforge/html-reports
 
 '''
