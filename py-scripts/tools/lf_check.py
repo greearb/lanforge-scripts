@@ -134,7 +134,33 @@ class lf_check():
         self.email_title_txt = ""
         self.email_txt = ""
         self.lf_mgr = "" # lanforge tests are run against if passed in
-        
+
+        # influx database configuration
+        self.influx_json = ""
+        self.influx_config = False
+        self.influx_host = ""
+        self.influx_port = ""
+        self.influx_org = ""
+        self.influx_token = ""
+        self.influx_bucket = ""
+        self.influx_tag = ""
+
+        # ghost configuration
+        self.ghost_json = ""
+        self.ghost_config = False
+        self.ghost_token = ""
+        self.ghost_host = ""
+        self.grafana_host = ""
+        self.grafana_token = ""
+        self.parent_folder = ""
+        self.server = ""
+        self.user_push = ""
+        self.password_push = ""
+        self.customer = ""
+        self.user_pull = ""
+        self.password_pull = ""
+        self.grafana_dashboard = ""
+        self.test_run = ""
 
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
@@ -230,6 +256,55 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 <br>
                 <br>
                 """
+
+    def read_influx_json(self):
+        # use influx json config file
+        if self.influx_json == "":
+            self.influx_config = False
+        else:
+            self.influx_config = True
+            try:
+                with open(self.influx_json, 'r') as influx_json_config:
+                    influx_json_data = json.load(influx_json_config)
+            except:
+                print("Error reading {}".format(self.influx_json))
+            # json configuation takes presidence to command line 
+            # influx DB configuration
+            if "influx_host" in influx_json_data:
+                self.influx_host = influx_json_data["influx_host"]
+            else:
+                self.logger.info("WARNING influx_host not in json {}".format(influx_json_data))
+                self.influx_config = False
+            if "influx_port" in influx_json_data:
+                self.influx_port = influx_json_data["influx_port"]
+            else:
+                self.logger.info("WARNING influx_port not in json {}".format(influx_json_data))
+                self.influx_config = False
+            if "influx_org" in influx_json_data:
+                self.influx_org = influx_json_data["influx_org"]
+            else:
+                self.logger.info("WARNING influx_org not in json {}".format(influx_json_data))
+                self.influx_config = False
+            if "influx_token" in influx_json_data:
+                self.influx_token = influx_json_data["influx_token"]
+            else:
+                self.logger.info("WARNING influx_token not in json {}".format(influx_json_data))
+                self.influx_config = False
+            if "influx_bucket" in influx_json_data:
+                self.influx_bucket = influx_json_data["influx_bucket"]
+            else:
+                self.logger.info("WARNING influx_bucket not in json {}".format(influx_json_data))
+                self.influx_config = False
+            if "influx_tag" in influx_json_data:
+                self.influx_tag = influx_json_data["influx_tag"]
+            else:
+                self.logger.info("WARNING influx_tag not in json {}".format(influx_json_data))
+                self.influx_config = False
+
+    #def read_ghost_json(self):
+        
+
+
 
     def read_config(self):
         if self.use_json:
