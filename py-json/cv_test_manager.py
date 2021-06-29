@@ -68,11 +68,11 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 report_dir=""
+                 lf_report_dir=""
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
-        self.report_dir = report_dir
+        self.lf_report_dir = lf_report_dir
         self.report_name = None
 
     # Add a config line to a text blob.  Will create new text blob
@@ -287,7 +287,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_path="", ssh_port=22,
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir="", ssh_port=22,
                             graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
@@ -350,12 +350,12 @@ class cv_test(Realm):
                         filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
                 print(location)
-                self.report_dir = location
+                self.lf_report_dir = location
                 if pull_report:
                     try:
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
-                                            port=ssh_port, local_path=local_path,
+                                            port=ssh_port, local_lf_report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
                         print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
@@ -386,7 +386,7 @@ class cv_test(Realm):
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
     def check_influx_kpi(self, args):
-        if self.report_dir == "":
+        if self.lf_report_dir == "":
             # Nothing to report on.
             print("Not submitting to influx, no report-dir.\n")
             return
@@ -409,12 +409,12 @@ class cv_test(Realm):
                                 _influx_bucket=args.influx_bucket)
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
-        # the local_path is data is stored,  if there is no local_path then the test is run directly on lanforge
-        if self.local_path == "":
-            path = "%s/kpi.csv" % (self.report_dir)
+        # the local_lf_report_dir is data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
+        if self.local_lf_report_dir == "":
+            path = "%s/kpi.csv" % (self.lf_report_dir)
         else:
-            kpi_location = self.local_path + "/" + os.path.basename(self.report_dir)
-            # the local_path is the parent directory,  need to get the directory name
+            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the local_lf_report_dir is the parent directory,  need to get the directory name
             path = "%s/kpi.csv" % (kpi_location)
         
         print("Attempt to submit kpi: ", path)
