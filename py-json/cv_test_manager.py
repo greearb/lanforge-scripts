@@ -12,6 +12,7 @@ from pprint import pprint
 import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
 from csv_to_influx import *
+import os.path
 
 
 def cv_base_adjust_parser(args):
@@ -407,8 +408,15 @@ class cv_test(Realm):
                                 _influx_token=args.influx_token,
                                 _influx_bucket=args.influx_bucket)
 
-        path = "%s/kpi.csv" % (self.report_dir)
-
+        # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
+        # the local_path is data is stored,  if there is no local_path then the test is run directly on lanforge
+        if self.local_path == "":
+            path = "%s/kpi.csv" % (self.report_dir)
+        else:
+            kpi_location = self.local_path + "/" + os.path.basename(self.report_dir)
+            # the local_path is the parent directory,  need to get the directory name
+            path = "%s/kpi.csv" % (kpi_location)
+        
         print("Attempt to submit kpi: ", path)
         csvtoinflux = CSVtoInflux(influxdb=influxdb,
                                   target_csv=path,
