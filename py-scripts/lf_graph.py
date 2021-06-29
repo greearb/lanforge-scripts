@@ -43,6 +43,8 @@ class lf_bar_graph():
                  _font_weight='bold',
                  _color_name=['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y'],
                  _figsize=(10, 5),
+                 _show_bar_value=False,
+                 _xaxis_step=5,
                  _dpi=96):
 
         self.data_set = _data_set
@@ -57,6 +59,8 @@ class lf_bar_graph():
         self.font_weight = _font_weight
         self.color_name = _color_name
         self.figsize = _figsize
+        self.show_bar_value = _show_bar_value
+        self.xaxis_step = _xaxis_step
 
     def build_bar_graph(self):
         if self.color is None:
@@ -68,24 +72,39 @@ class lf_bar_graph():
 
         fig = plt.subplots(figsize=self.figsize)
         i = 0
+
+        def show_value(rects):
+            for rect in rects:
+                h = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2., h + 0.05, '%d' % int(h),
+                         ha='center', va='bottom')
+
         for data in self.data_set:
             if i > 0:
                 br = br1
                 br2 = [x + self.bar_width for x in br]
-                plt.bar(br2, self.data_set[i], color=self.color[i], width=self.bar_width,
-                        edgecolor=self.color_edge, label=self.label[i])
+                rects = plt.bar(br2, self.data_set[i], color=self.color[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
                 br1 = br2
                 i = i + 1
             else:
                 br1 = np.arange(len(self.data_set[i]))
-                plt.bar(br1, self.data_set[i], color=self.color[i], width=self.bar_width,
-                        edgecolor=self.color_edge, label=self.label[i])
+                rects = plt.bar(br1, self.data_set[i], color=self.color[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
                 i = i + 1
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
-        """plt.xticks([r + self.bar_width for r in range(len(self.data_set[0]))],
-                   self.xaxis_categories)"""
-        plt.xticks(np.arange(0, len(self.xaxis_categories), step=5))
+
+        if isinstance(self.xaxis_categories[0], int):
+            plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step))
+        else:
+            plt.xticks(np.arange(0, len(self.xaxis_categories)),self.xaxis_categories)
+
+
         plt.legend()
 
         fig = plt.gcf()
