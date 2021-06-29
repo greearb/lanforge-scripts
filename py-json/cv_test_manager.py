@@ -355,7 +355,7 @@ class cv_test(Realm):
                     try:
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
-                                            port=ssh_port, local_lf_report_dir=local_lf_report_dir,
+                                            port=ssh_port, report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
                         print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
