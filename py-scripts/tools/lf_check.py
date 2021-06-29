@@ -80,12 +80,14 @@ class lf_check():
                 _test_suite,
                 _production,
                 _csv_results,
-                _outfile):
+                _outfile,
+                _report_path):
         self.use_json = _use_json
         self.json_data = _json_data
         self.config_ini = _config_ini
         self.test_suite = _test_suite
         self.production_run  = _production
+        self.report_path = _report_path
         self.lf_mgr_ip = ""
         self.lf_mgr_port = "" 
         self.radio_dict = {}
@@ -552,6 +554,11 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
 
+                # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location 
+                # of the reports when the reports are pulled.
+                if 'REPORT_PATH' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('REPORT_PATH',self.report_path)
+
                 if 'load_db' in self.test_dict[test]:
                     self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
                     if str(self.test_dict[test]['load_db']).lower() != "none" and str(self.test_dict[test]['load_db']).lower() != "skip":
@@ -729,6 +736,7 @@ Example :
     csv_results = report.file_add_path(csv_results)
     outfile = "lf_check-{}-{}".format(args.outfile,current_time)
     outfile_path = report.file_add_path(outfile)
+    report_path = report.get_report_path()
 
     # lf_check() class created
     check = lf_check(_use_json = use_json,
@@ -737,7 +745,8 @@ Example :
                     _test_suite = test_suite,
                     _production = production,
                     _csv_results = csv_results,
-                    _outfile = outfile_path)
+                    _outfile = outfile_path,
+                    _report_path = report_path)
 
     # get git sha
     process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
