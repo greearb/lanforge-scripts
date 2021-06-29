@@ -102,7 +102,7 @@ class lf_bar_graph():
         if isinstance(self.xaxis_categories[0], int):
             plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step))
         else:
-            plt.xticks(np.arange(0, len(self.xaxis_categories)),self.xaxis_categories)
+            plt.xticks(np.arange(0, len(self.xaxis_categories)), self.xaxis_categories)
 
 
         plt.legend()
