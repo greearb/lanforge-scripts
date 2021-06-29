@@ -22,6 +22,7 @@ import paramiko
 from GrafanaRequest import GrafanaRequest
 import time
 from collections import Counter
+import shutil
 
 
 class CSVReader:
@@ -232,8 +233,6 @@ class GhostRequest:
                                      grafana_host,
                                      grafanajson_port=grafana_port
                                      )
-        #if parent_folder is None:
-            #test_run = sorted(folders)[0].split('/')[-1].strip('/')
         print('Folders: %s' % folders)
 
         ssh_push = paramiko.SSHClient()
@@ -251,9 +250,8 @@ class GhostRequest:
             files = os.listdir(parent_folder)
             print(files)
             for file in files:
-                if os.path.isdir(parent_folder+'/'+file) is True:
-                    import shutil
-                    shutil.move(parent_folder+'/'+file, file)
+                if os.path.isdir(parent_folder + '/' + file) is True:
+                    shutil.copytree(parent_folder + '/' + file, file)
                     target_folders.append(file)
             print('Target folders: %s' % target_folders)
         else:
@@ -370,3 +368,6 @@ class GhostRequest:
                          text=text,
                          tags='custom',
                          authors=authors)
+
+        for folder in target_folders:
+            shutil.rmtree(folder)
