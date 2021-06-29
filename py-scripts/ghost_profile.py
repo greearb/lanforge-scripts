@@ -6,17 +6,17 @@ PURPOSE: modify ghost database from the command line.
 SETUP: A Ghost installation which the user has admin access to.
 EXAMPLE: ./ghost_profile.py --article_text_file text.txt --title Test --authors Matthew --ghost_token SECRET_KEY --host 192.168.1.1
 
-There is a specific class for uploading wifi capacity graphs called wifi_capacity.
+There is a specific class for uploading kpi graphs called kpi_to_ghost.
 
 EXAMPLE: ./ghost_profile.py --ghost_token TOKEN --ghost_host 192.168.100.147
 --folders /home/lanforge/html-reports/wifi-capacity-2021-06-04-02-51-07
---wifi_capacity appl --authors Matthew --title 'wifi capacity 2021 06 04 02 51 07' --server 192.168.93.51
+--kpi_to_ghost appl --authors Matthew --title 'wifi capacity 2021 06 04 02 51 07' --server 192.168.93.51
 --user_pull lanforge --password_pull lanforge --customer candela --testbed heather --test_run test-run-6
 --user_push matt --password_push PASSWORD
 
 EXAMPLE 2: ./ghost_profile.py --ghost_token TOKEN
 --ghost_host 192.168.100.147 --server 192.168.93.51 --user_pull lanforge --password_pull lanforge --customer candela
---testbed heather --user_push matt --password_push "amount%coverage;Online" --wifi_capacity app
+--testbed heather --user_push matt --password_push "amount%coverage;Online" --kpi_to_ghost app
 --folders /home/lanforge/html-reports/wifi-capacity-2021-06-14-10-42-29 --grafana_token TOKEN
 --grafana_host 192.168.100.201 --grafana_dashboard 'Stidmatt-02'
 
@@ -60,43 +60,45 @@ class UseGhost(GhostRequest):
         text = open(file).read()
         return self.create_post(title=title, text=text, tags=tags, authors=authors)
 
-    def wifi_capacity(self,
-                      authors,
-                      folders,
-                      title,
-                      server_pull,
-                      ghost_host,
-                      port,
-                      user_pull,
-                      password_pull,
-                      user_push,
-                      password_push,
-                      customer,
-                      testbed,
-                      test_run,
-                      grafana_dashboard,
-                      grafana_token,
-                      grafana_host,
-                      grafana_port):
+    def kpi(self,
+            authors,
+            folders,
+            parent_folder,
+            title,
+            server_pull,
+            ghost_host,
+            port,
+            user_push,
+            password_push,
+            customer,
+            testbed,
+            test_run,
+            grafana_dashboard,
+            grafana_token,
+            grafana_host,
+            grafana_port,
+            datasource,
+            grafana_bucket):
         target_folders = list()
-        return self.wifi_capacity_to_ghost(authors,
-                                           folders,
-                                           title,
-                                           server_pull,
-                                           ghost_host,
-                                           port,
-                                           user_pull,
-                                           password_pull,
-                                           user_push,
-                                           password_push,
-                                           customer,
-                                           testbed,
-                                           test_run,
-                                           target_folders,
-                                           grafana_dashboard,
-                                           grafana_token,
-                                           grafana_host,
-                                           grafana_port)
+        return self.kpi_to_ghost(authors,
+                                 folders,
+                                 parent_folder,
+                                 title,
+                                 server_pull,
+                                 ghost_host,
+                                 port,
+                                 user_push,
+                                 password_push,
+                                 customer,
+                                 testbed,
+                                 test_run,
+                                 target_folders,
+                                 grafana_dashboard,
+                                 grafana_token,
+                                 grafana_host,
+                                 grafana_port,
+                                 datasource,
+                                 grafana_bucket)
 
 
 def main():
@@ -125,12 +127,10 @@ def main():
     optional.add_argument('--image', default=None)
     optional.add_argument('--folder', default=None)
     optional.add_argument('--custom_post', default=None)
-    optional.add_argument('--wifi_capacity', default=None)
+    optional.add_argument('--kpi_to_ghost', help='Generate a Ghost report from KPI spreadsheets', action="store_true")
     optional.add_argument('--folders', action='append', default=None)
     optional.add_argument('--server_pull')
     optional.add_argument('--port', default=22)
-    optional.add_argument('--user_pull', default='lanforge')
-    optional.add_argument('--password_pull', default='lanforge')
     optional.add_argument('--user_push')
     optional.add_argument('--password_push')
     optional.add_argument('--customer')
@@ -140,6 +140,9 @@ def main():
     optional.add_argument('--grafana_token', default=None)
     optional.add_argument('--grafana_host', default=None)
     optional.add_argument('--grafana_port', default=3000)
+    optional.add_argument('--parent_folder', default=None)
+    optional.add_argument('--datasource', default='InfluxDB')
+    optional.add_argument('--grafana_bucket', default=None)
     optional.add_argument('--debug')
     args = parser.parse_args()
 
@@ -165,24 +168,25 @@ def main():
         if args.folder is not None:
             Ghost.upload_images(args.folder)
 
-    if args.wifi_capacity is not None:
-        Ghost.wifi_capacity(args.authors,
-                            args.folders,
-                            args.title,
-                            args.server_pull,
-                            args.ghost_host,
-                            args.port,
-                            args.user_pull,
-                            args.password_pull,
-                            args.user_push,
-                            args.password_push,
-                            args.customer,
-                            args.testbed,
-                            args.test_run,
-                            args.grafana_dashboard,
-                            args.grafana_token,
-                            args.grafana_host,
-                            args.grafana_port)
+    if args.kpi_to_ghost is True:
+        Ghost.kpi(args.authors,
+                  args.folders,
+                  args.parent_folder,
+                  args.title,
+                  args.server_pull,
+                  args.ghost_host,
+                  args.port,
+                  args.user_push,
+                  args.password_push,
+                  args.customer,
+                  args.testbed,
+                  args.test_run,
+                  args.grafana_dashboard,
+                  args.grafana_token,
+                  args.grafana_host,
+                  args.grafana_port,
+                  args.datasource,
+                  args.grafana_bucket)
 
 
 if __name__ == "__main__":

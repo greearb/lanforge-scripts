@@ -132,6 +132,49 @@ class GrafanaRequest:
         print(dictionary)
         return dictionary
 
+    def maketargets(self,
+                    bucket,
+                    scriptname,
+                    groupBy,
+                    index,
+                    graph_group,
+                    testbed):
+        query = (
+                'from(bucket: "%s")\n  '
+                '|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  '
+                '|> filter(fn: (r) => r["script"] == "%s")\n   '
+                '|> group(columns: ["_measurement"])\n '
+                % (bucket, scriptname))
+        queryend = ('|> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  '
+                    '|> yield(name: "mean")\n  ')
+        if graph_group is not None:
+            graphgroup = ('|> filter(fn: (r) => r["Graph-Group"] == "%s")\n' % graph_group)
+            query += graphgroup
+        if testbed is not None:
+            query += ('|> filter(fn: (r) => r["testbed"] == "%s")\n' % testbed)
+        targets = dict()
+        targets['delimiter'] = ','
+        targets['groupBy'] = groupBy
+        targets['header'] = True
+        targets['ignoreUnknown'] = False
+        targets['orderByTime'] = 'ASC'
+        targets['policy'] = 'default'
+        targets['query'] = query + queryend
+        targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index + 1]
+        targets['resultFormat'] = "time_series"
+        targets['schema'] = list()
+        targets['skipRows'] = 0
+        targets['tags'] = list()
+        return targets
+
+    def groupby(self, params, grouptype):
+        dic = dict()
+        dic['params'] = list()
+        dic['params'].append(params)
+        dic['type'] = grouptype
+        return dic
+
+
     def create_custom_dashboard(self,
                                 scripts=None,
                                 title=None,
@@ -174,20 +217,10 @@ class GrafanaRequest:
             target_csvs = open(graph_groups_file).read().split('\n')
             graph_groups = self.get_graph_groups(
                 target_csvs)  # Get the list of graph groups which are in the tests we ran
-            unit_dict = dict()
-            for csv in target_csvs:
-                if len(csv) > 1:
-                    print(csv)
-                    unit_dict.update(self.get_units(csv))
         if target_csvs:
             print('Target CSVs: %s' % target_csvs)
             graph_groups = self.get_graph_groups(
                 target_csvs)  # Get the list of graph groups which are in the tests we ran
-            unit_dict = dict()
-            for csv in target_csvs:
-                if len(csv) > 1:
-                    print(csv)
-                    unit_dict.update(self.get_units(csv))
         for scriptname in graph_groups.keys():
             for graph_group in graph_groups[scriptname]:
                 panel = dict()
@@ -210,14 +243,14 @@ class GrafanaRequest:
                 options = dict()
                 options['alertThreshold'] = True
 
-                #groupBy = list()
-                #groupBy.append(self.groupby('$__interval', 'time'))
-                #groupBy.append(self.groupby('null', 'fill'))
+                groupBy = list()
+                groupBy.append(self.groupby('$__interval', 'time'))
+                groupBy.append(self.groupby('null', 'fill'))
 
-                #targets = list()
-                #counter = 0
-                #new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
-                #targets.append(new_target)
+                targets = list()
+                counter = 0
+                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
+                targets.append(new_target)
 
                 fieldConfig = dict()
                 fieldConfig['defaults'] = dict()
@@ -274,7 +307,7 @@ class GrafanaRequest:
                 panel['spaceLength'] = 10
                 panel['stack'] = False
                 panel['steppedLine'] = False
-                #panel['targets'] = targets
+                panel['targets'] = targets
                 panel['thresholds'] = list()
                 panel['timeFrom'] = None
                 panel['timeRegions'] = list()

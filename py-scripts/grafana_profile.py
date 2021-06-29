@@ -22,47 +22,6 @@ from LANforge.lfcli_base import LFCliBase
 import string
 
 class UseGrafana(GrafanaRequest):
-    def groupby(self, params, grouptype):
-        dic = dict()
-        dic['params'] = list()
-        dic['params'].append(params)
-        dic['type'] = grouptype
-        return dic
-
-    def maketargets(self,
-                    bucket,
-                    scriptname,
-                    groupBy,
-                    index,
-                    graph_group,
-                    testbed):
-        query = (
-                'from(bucket: "%s")\n  '
-                '|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  '
-                '|> filter(fn: (r) => r["script"] == "%s")\n   '
-                '|> group(columns: ["_measurement"])\n '
-                % (bucket, scriptname))
-        queryend = ('|> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  '
-                    '|> yield(name: "mean")\n  ')
-        if graph_group is not None:
-            graphgroup = ('|> filter(fn: (r) => r["Graph-Group"] == "%s")\n' % graph_group)
-            query += graphgroup
-        if testbed is not None:
-            query += ('|> filter(fn: (r) => r["testbed"] == "%s")\n' % testbed)
-        targets = dict()
-        targets['delimiter'] = ','
-        targets['groupBy'] = groupBy
-        targets['header'] = True
-        targets['ignoreUnknown'] = False
-        targets['orderByTime'] = 'ASC'
-        targets['policy'] = 'default'
-        targets['query'] = query + queryend
-        targets['refId'] = dict(enumerate(string.ascii_uppercase, 1))[index + 1]
-        targets['resultFormat'] = "time_series"
-        targets['schema'] = list()
-        targets['skipRows'] = 0
-        targets['tags'] = list()
-        return targets
 
 
     def read_csv(self, file):

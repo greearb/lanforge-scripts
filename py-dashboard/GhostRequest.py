@@ -61,7 +61,7 @@ class CSVReader:
     def to_html(self, df):
         html = ''
         html = html + ('<table style="border:1px solid #ddd"><tr>')
-        for row in df:
+        for row in df[1:]:
             for item in row:
                 html = html + ('<td style="border:1px solid #ddd">%s</td>' % item)
             html = html + ('</tr>\n<tr>')
@@ -75,12 +75,18 @@ class CSVReader:
         for row in df:
             try:
                 if expression == 'less than':
-                    if float(row[target_index]) <= target:
+                    if float(row[target_index]) < target:
                         targets.append(counter)
                         counter += 1
                     else:
                         counter += 1
                 if expression == 'greater than':
+                    if float(row[target_index]) > target:
+                        targets.append(counter)
+                        counter += 1
+                    else:
+                        counter += 1
+                if expression == 'greater than or equal to':
                     if float(row[target_index]) >= target:
                         targets.append(counter)
                         counter += 1
@@ -89,6 +95,12 @@ class CSVReader:
             except:
                 counter += 1
         return list(map(df.__getitem__, targets))
+
+    def concat(self, dfs):
+        final_df = dfs[0]
+        for df in dfs[1:]:
+            final_df = final_df + df[1:]
+        return final_df
 
 
 class GhostRequest:
@@ -193,25 +205,26 @@ class GhostRequest:
                          tags='custom',
                          authors=authors)
 
-    def wifi_capacity_to_ghost(self,
-                               authors,
-                               folders,
-                               title=None,
-                               server_pull=None,
-                               ghost_host=None,
-                               port='22',
-                               user_pull='lanforge',
-                               password_pull='lanforge',
-                               user_push=None,
-                               password_push=None,
-                               customer=None,
-                               testbed='Unknown Testbed',
-                               test_run=None,
-                               target_folders=list(),
-                               grafana_dashboard=None,
-                               grafana_token=None,
-                               grafana_host=None,
-                               grafana_port=3000):
+    def kpi_to_ghost(self,
+                     authors,
+                     folders,
+                     parent_folder=None,
+                     title=None,
+                     server_pull=None,
+                     ghost_host=None,
+                     port=22,
+                     user_push=None,
+                     password_push=None,
+                     customer=None,
+                     testbed='Unknown Testbed',
+                     test_run=None,
+                     target_folders=list(),
+                     grafana_dashboard=None,
+                     grafana_token=None,
+                     grafana_host=None,
+                     grafana_port=3000,
+                     grafana_datasource='InfluxDB',
+                     grafana_bucket=None):
         text = ''
         csvreader = CSVReader()
         if grafana_token is not None:
@@ -219,27 +232,44 @@ class GhostRequest:
                                      grafana_host,
                                      grafanajson_port=grafana_port
                                      )
-        if test_run is None:
-            test_run = sorted(folders)[0].split('/')[-1].strip('/')
-        print(folders)
-        for folder in folders:
-            print(folder)
-            ssh_pull = paramiko.SSHClient()
-            ssh_pull.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
-            ssh_pull.connect(server_pull,
-                             port,
-                             username=user_pull,
-                             password=password_pull,
-                             allow_agent=False,
-                             look_for_keys=False)
-            scp_pull = SCPClient(ssh_pull.get_transport())
-            scp_pull.get(folder, recursive=True)
-            target_folder = str(folder).rstrip('/').split('/')[-1]
-            target_folders.append(target_folder)
-            print('Target folder: %s' % target_folder)
+        #if parent_folder is None:
+            #test_run = sorted(folders)[0].split('/')[-1].strip('/')
+        print('Folders: %s' % folders)
+
+        ssh_push = paramiko.SSHClient()
+        ssh_push.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
+        ssh_push.connect(ghost_host,
+                         port,
+                         username=user_push,
+                         password=password_push,
+                         allow_agent=False,
+                         look_for_keys=False)
+        scp_push = SCPClient(ssh_push.get_transport())
+
+        if parent_folder is not None:
+            print("parent_folder %s" % parent_folder)
+            files = os.listdir(parent_folder)
+            print(files)
+            for file in files:
+                if os.path.isdir(parent_folder+'/'+file) is True:
+                    import shutil
+                    shutil.move(parent_folder+'/'+file, file)
+                    target_folders.append(file)
+            print('Target folders: %s' % target_folders)
+        else:
+            for folder in folders:
+                print(folder)
+                target_folders.append(folder)
+
+        testbeds = list()
+        pdfs = list()
+        high_priority_list = list()
+        low_priority_list = list()
+        images = list()
+
+        for target_folder in target_folders:
             try:
                 target_file = '%s/kpi.csv' % target_folder
-                print('target file %s' % target_file)
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 csv_testbed = csvreader.get_column(df, 'test-rig')[0]
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
@@ -249,85 +279,92 @@ class GhostRequest:
                     text = text + 'Percentage of tests passed: %s<br />' % (
                             pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
 
-                print(csv_testbed)
             except:
-                pass
+                print("Failure")
+                target_folders.remove(target_folder)
+                break
             if len(csv_testbed) > 2:
                 testbed = csv_testbed
-                text = text + 'Testbed: %s<br />' % testbed
+                testbeds.append(testbed)
             if testbed == 'Unknown Testbed':
                 raise UserWarning('Please define your testbed')
-            print('testbed %s' % testbed)
 
-            ssh_push = paramiko.SSHClient()
-            ssh_push.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
-            ssh_push.connect(ghost_host,
-                             port,
-                             username=user_push,
-                             password=password_push,
-                             allow_agent=False,
-                             look_for_keys=False)
-            scp_push = SCPClient(ssh_push.get_transport())
             local_path = '/home/%s/%s/%s' % (user_push, customer, testbed)
-            transport = paramiko.Transport((ghost_host, port))
+
+            transport = paramiko.Transport(ghost_host, port)
             transport.connect(None, user_push, password_push)
             sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
-            print('Local Path: %s' % local_path)
-            try:
-                sftp.mkdir(local_path)
-            except:
-                print('folder %s already exists' % local_path)
-            scp_push.put(target_folder, recursive=True, remote_path=local_path)
-            print(local_path + '/' + target_folder)
+
+            print(local_path)
+            print(target_folder)
+            scp_push.put(target_folder, local_path, recursive=True)
             files = sftp.listdir(local_path + '/' + target_folder)
-            # print('Files: %s' % files)
             for file in files:
                 if 'pdf' in file:
-                    url = 'http://%s/%s/%s/%s/%s/%s' % (
-                        ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
-                    text = text + 'PDF of results: <a href="%s">%s</a><br />' % (url, file)
-                    print(url)
-            scp_pull.close()
+                    url = 'http://%s/%s/%s/%s/%s' % (
+                        ghost_host, customer.strip('/'), testbed, test_run, file)
+                    pdfs.append('PDF of results: <a href="%s">%s</a><br />' % (url, file))
             scp_push.close()
             self.upload_images(target_folder)
             for image in self.images:
                 if 'kpi-' in image:
                     if '-print' not in image:
-                        text = text + '<img src="%s"></img>' % image
+                        images.append('<img src="%s"></img>' % image)
             self.images = []
 
-            if grafana_token is not None:
-                # get the details of the dashboard through the API, and set the end date to the youngest KPI
-                grafana.list_dashboards()
+            results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'test-priority'])
 
-                grafana.create_snapshot(title=grafana_dashboard)
-                time.sleep(3)
-                snapshot = grafana.list_snapshots()[-1]
-                print(snapshot)
-                text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=1500></iframe><br />' % (
-                    grafana_host, snapshot['key'], '%')
+            low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
+            high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
+            high_priority_list.append(high_priority)
 
-            results = csvreader.get_columns(df,['short-description','numeric-score','test details','test-priority'])
-
-            low_priority = csvreader.to_html(csvreader.filter_df(results, 'test-priority', 'less than', 94))
-            high_priority = csvreader.to_html(csvreader.filter_df(results, 'test-priority', 'greater than', 95))
-
-            text = text + 'High priority results: %s' % high_priority
-
-            text = text + 'Low priority results: %s' % low_priority
+            low_priority_list.append(low_priority)
 
         now = date.now()
+
+        high_priority = csvreader.concat(high_priority_list)
+        low_priority = csvreader.concat(low_priority_list)
+
+        high_priority = csvreader.get_columns(high_priority, ['short-description', 'numeric-score', 'test details'])
+        low_priority = csvreader.get_columns(low_priority, ['short-description', 'numeric-score', 'test details'])
 
         if title is None:
             title = "%s %s %s %s:%s report" % (now.day, now.month, now.year, now.hour, now.minute)
 
         # create Grafana Dashboard
         target_files = []
-        for folder in folders:
-            print(folder)
+        for folder in target_folders:
             target_files.append(folder.split('/')[-1] + '/kpi.csv')
+        print('Target files: %s' % target_files)
         grafana.create_custom_dashboard(target_csvs=target_files,
-                                        title=title)
+                                        title=title,
+                                        datasource=grafana_datasource,
+                                        bucket=grafana_bucket)
+
+        try:
+            text = 'Testbed: %s<br />' % testbeds[0]
+        except:
+            text = ''
+
+        for pdf in pdfs:
+            text = text + pdf
+
+        for image in images:
+            text = text + image
+
+        text = text + 'High priority results: %s' % csvreader.to_html(high_priority)
+
+        if grafana_token is not None:
+            # get the details of the dashboard through the API, and set the end date to the youngest KPI
+            grafana.list_dashboards()
+
+            grafana.create_snapshot(title='Testbed: ' + title)
+            time.sleep(3)
+            snapshot = grafana.list_snapshots()[-1]
+            text = text + '<iframe src="http://%s:3000/dashboard/snapshot/%s" width="100%s" height=1500></iframe><br />' % (
+                grafana_host, snapshot['key'], '%')
+
+        text = text + 'Low priority results: %s' % csvreader.to_html(low_priority)
 
         self.create_post(title=title,
                          text=text,
