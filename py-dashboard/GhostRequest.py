@@ -220,7 +220,6 @@ class GhostRequest:
                      testbed='Unknown Testbed',
                      test_run=None,
                      target_folders=list(),
-                     grafana_dashboard=None,
                      grafana_token=None,
                      grafana_host=None,
                      grafana_port=3000,
@@ -251,6 +250,8 @@ class GhostRequest:
             print(files)
             for file in files:
                 if os.path.isdir(parent_folder + '/' + file) is True:
+                    if os.path.exists(file):
+                        shutil.rmtree(file)
                     shutil.copytree(parent_folder + '/' + file, file)
                     target_folders.append(file)
             print('Target folders: %s' % target_folders)

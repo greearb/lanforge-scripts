@@ -18,8 +18,9 @@ EXAMPLE 2: ./ghost_profile.py --ghost_token TOKEN
 --ghost_host 192.168.100.147 --server 192.168.93.51 --user_pull lanforge --password_pull lanforge --customer candela
 --testbed heather --user_push matt --password_push "amount%coverage;Online" --kpi_to_ghost app
 --folders /home/lanforge/html-reports/wifi-capacity-2021-06-14-10-42-29 --grafana_token TOKEN
---grafana_host 192.168.100.201 --grafana_dashboard 'Stidmatt-02'
+--grafana_host 192.168.100.201
 
+this scripts uses pyjwt. If you get the issue module 'jwt' has no attribute 'encode', run this: pip3 uninstall jwt pyjwt && pip install pyjwt
  Matthew Stidham
  Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
@@ -73,7 +74,6 @@ class UseGhost(GhostRequest):
             customer,
             testbed,
             test_run,
-            grafana_dashboard,
             grafana_token,
             grafana_host,
             grafana_port,
@@ -93,7 +93,6 @@ class UseGhost(GhostRequest):
                                  testbed,
                                  test_run,
                                  target_folders,
-                                 grafana_dashboard,
                                  grafana_token,
                                  grafana_host,
                                  grafana_port,
@@ -136,7 +135,6 @@ def main():
     optional.add_argument('--customer')
     optional.add_argument('--testbed')
     optional.add_argument('--test_run', default=None)
-    optional.add_argument('--grafana_dashboard')
     optional.add_argument('--grafana_token', default=None)
     optional.add_argument('--grafana_host', default=None)
     optional.add_argument('--grafana_port', default=3000)
@@ -181,7 +179,6 @@ def main():
                   args.customer,
                   args.testbed,
                   args.test_run,
-                  args.grafana_dashboard,
                   args.grafana_token,
                   args.grafana_host,
                   args.grafana_port,
