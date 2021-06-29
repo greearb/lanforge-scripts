@@ -79,7 +79,7 @@ def usage():
     print("-s|--scheme (serial|telnet|ssh): connect to controller via serial, ssh or telnet")
     print("--tty Serial port for accessing AP")
     print("-l|--log file: log messages here")
-    print("-b|--band:  a (5Ghz) or b (2.4Ghz) or abgn for dual-band 2.4Ghz AP")
+    print("-b|--baud:  serial baud rate")
     print("-z|--action: action")
     print("-h|--help")
 
