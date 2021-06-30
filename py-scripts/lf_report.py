@@ -28,6 +28,7 @@ INCLUDE_IN_README
 import datetime
 import os
 import shutil
+import datetime
 
 import pandas as pd
 import pdfkit
@@ -278,36 +279,40 @@ class lf_report():
     def build_banner(self):
         # NOTE: {{ }} are the ESCAPED curly braces
         self.banner_html = """<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1' />
-    <style>
-    body {{ margin: 0; padding: 0; }}
-    </style>
-    <link rel='stylesheet' href='report.css' />
-    <link rel='stylesheet' href='custom.css' />
-    <title>{title}</title>
-</head>
-<body>
-<div id='BannerBack'>
-    <div id='Banner'>
-        <br/>
-        <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0' />
-        <div class='HeaderStyle'>
-            <h1 class='TitleFontPrint'>{title}</h1>
-            <h4 class='TitleFontPrintSub'>{date}</h4>
-        </div>
-    </div>
-</div>
-""".format(
+                        <html lang='en'>
+                        <head>
+                            <meta charset='UTF-8'>
+                            <meta name='viewport' content='width=device-width, initial-scale=1' />
+                            <style>
+                            body {{ margin: 0; padding: 0; }}
+                            </style>
+                            <link rel='stylesheet' href='report.css' />
+                            <link rel='stylesheet' href='custom.css' />
+                            <title>{title}</title>
+                        </head>
+                        <body>
+                        <div id='BannerBack'>
+                            <div id='Banner'>
+                                <br/>
+                                <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
+                                <div class='HeaderStyle'>
+                                    <br>
+                                    <h1 class='TitleFontPrint' style='color:darkgreen;'> {title} </h1>
+                                    <h3 class='TitleFontPrint' style='color:darkgreen;'>{date}</h3>
+                                    </div>
+                            </div>
+                        </div>
+                 """.format(
             title=self.title,
             date=self.date,
         )
         self.html += self.banner_html
 
     def build_table_title(self):
-        self.table_title_html = "<h2 class='TitleFontPrint''>{title}</h2>".format(title=self.table_title)
+        self.table_title_html = """
+                    <!-- Table Title-->
+                    <h3 align='left'>{title}</h3> 
+                    """.format(title=self.table_title)
         self.html += self.table_title_html
 
     def start_content_div(self):
@@ -335,8 +340,34 @@ class lf_report():
             os.mkdir(self.path_date_time)       
 
     def build_table(self):
-        self.dataframe_html = self.dataframe.to_html(index=False, justify='center')  # have the index be able to be passed in.
+        self.dataframe_html = self.dataframe.to_html(index=False, justify='left')  # have the index be able to be passed in.
         self.html += self.dataframe_html
+
+    def test_setup_table(self,test_setup_data, value):
+        if test_setup_data is None:
+            return None
+        else:
+            var = ""
+            for i in test_setup_data:
+                var = var + "<tr><td>" + i + "</td><td colspan='3'>" + str(test_setup_data[i]) + "</td></tr>"
+
+        setup_information = """
+                            <!-- Test Setup Information -->
+                            <table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+                                
+                                <tr>
+                                  <td>"""+ str(value) + """</td>
+                                  <td>
+                                    <table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+                                      """ + var + """
+                                    </table>
+                                  </td>
+                                </tr>
+                            </table>
+
+                            <br>
+                            """
+        self.html += setup_information
 
     def build_custom(self):
         self.html += self.custom_html
@@ -410,3 +441,4 @@ if __name__ == "__main__":
     report.write_pdf()
 
     print("report path {}".format(report.get_path()))
+
