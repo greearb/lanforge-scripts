@@ -45,6 +45,8 @@ class lf_bar_graph():
                  _figsize=(10, 5),
                  _show_bar_value=False,
                  _xaxis_step=5,
+                 _xticks_font = None,
+                 _grp_title = "",
                  _dpi=96):
 
         self.data_set = _data_set
@@ -61,6 +63,8 @@ class lf_bar_graph():
         self.figsize = _figsize
         self.show_bar_value = _show_bar_value
         self.xaxis_step = _xaxis_step
+        self.xticks_font = _xticks_font
+        self.grp_title = _grp_title
 
     def build_bar_graph(self):
         if self.color is None:
@@ -99,14 +103,14 @@ class lf_bar_graph():
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
 
-        if isinstance(self.xaxis_categories[0], int):
-            plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step))
+        if self.xaxis_categories[0] == 0:
+            plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step),fontsize = self.xticks_font)
         else:
-            plt.xticks(np.arange(0, len(self.xaxis_categories)), self.xaxis_categories)
-
+            plt.xticks(np.arange(0, len(self.data_set[0]), step=self.xaxis_step), self.xaxis_categories,
+                       fontsize = self.xticks_font)
 
         plt.legend()
-
+        plt.title(self.grp_title)
         fig = plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
