@@ -103,6 +103,7 @@ class lf_check():
         self.background_green = "background-color:green"
         self.background_red = "background-color:red"
         self.background_purple = "background-color:purple"
+        self.background_blue = "background-color:blue"
 
         self.http_test_ip = ""
         self.ftp_test_ip = ""
@@ -640,6 +641,13 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     self.logger.info("TIMEOUT FAILURE,  Check LANforge Radios")
                     self.test_result = "Time Out"
                     background = self.background_purple
+
+                # Ghost will put data in stderr 
+                if('ghost' in command):
+                    if(self.test_result != "TIMEOUT"):
+                        self.test_result = "Success"
+                        background = self.background_blue
+                
                 # stdout_log_link is used for the email reporting to have the corrected path
                 stdout_log_link = str(stdout_log_txt).replace('/home/lanforge','')
                 stderr_log_link = str(stderr_log_txt).replace('/home/lanforge','')
