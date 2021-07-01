@@ -6,7 +6,7 @@ NAME: throughput_qos.py
 PURPOSE: throughput_qos.py will create stations and endpoints which evaluates  l3 traffic for a particular type of service.
 
 EXAMPLE:
-python3 throughput_qos.py --mgr 192.168.200.240 --mgr_port 8080 -u eth1 --num_stations 1
+python3 throughput_qos.py --mgr 192.168.200.37 --mgr_port 8080 -u eth1 --num_stations 1
 --radio wiphy1 --ssid TestAP5-71 --passwd lanforge --security wpa2 --mode 11 --a_min 1000000 --b_min 1000000 --traffic_type lf_udp
 
 python3 throughput_qos.py --num_stations 1 --radio wiphy1 --ssid ct523c-vap --passwd ct523c-vap --security wpa2 --mode 11 --a_min 1000000 --b_min 1000000 --traffic_type lf_udp
@@ -62,6 +62,7 @@ class ThroughputQOS(Realm):
                  port=8080,
                  mode=0,
                  ap=None,
+                 ap_name="",
                  traffic_type=None,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
@@ -93,6 +94,7 @@ class ThroughputQOS(Realm):
         self.create_sta = create_sta
         self.mode = mode
         self.ap = ap
+        self.ap_name = ap_name
         self.traffic_type = traffic_type
         self.tos = tos.split(",")
         self.bands = bands.split(",")
@@ -275,8 +277,8 @@ class ThroughputQOS(Realm):
                     if int(self.cx_profile.side_b_min_bps) != 0:
                         tos_download['bk'].append(float(
                             f"{list((self.json_get('/cx/%s?fields=bps+rx+a' % sta)).values())[2]['bps rx a'] / 1000000:.2f}"))
-                        tx_b['bk'].append(int(f"{tx_endps['%s-B' %sta]['tx pkts ll']}"))
-                        rx_a['bk'].append(int(f"{rx_endps['%s-A' %sta]['rx pkts ll']}"))
+                        tx_b['bk'].append(int(f"{tx_endps['%s-B' % sta]['tx pkts ll']}"))
+                        rx_a['bk'].append(int(f"{rx_endps['%s-A' % sta]['rx pkts ll']}"))
                     else:
                         tos_download['bk'].append(float(0))
                         tx_b['bk'].append(int(0))
@@ -316,18 +318,23 @@ class ThroughputQOS(Realm):
             tos_download.update({"videoQOS": float(f"{sum(tos_download['video']):.2f}")})
             tos_download.update({"voiceQOS": float(f"{sum(tos_download['voice']):.2f}")})
             if sum(tx_b['bk']) != 0 or sum(tx_b['be']) != 0 or sum(tx_b['video']) != 0 or sum(tx_b['voice']) != 0:
-                pkt_loss.update({"bkLOSS": float(f"{((sum(tx_b['bk']) - sum(rx_a['bk']))/sum(tx_b['bk']))*100:.2f}")})
-                pkt_loss.update({"beLOSS": float(f"{((sum(tx_b['be']) - sum(rx_a['be']))/sum(tx_b['be']))*100:.2f}")})
-                pkt_loss.update({"videoLOSS": float(f"{((sum(tx_b['video']) - sum(rx_a['video']))/sum(tx_b['video']))*100:.2f}")})
-                pkt_loss.update({"voiceLOSS": float(f"{((sum(tx_b['voice']) - sum(rx_a['voice']))/sum(tx_b['voice']))*100:.2f}")})
+                tos_download.update(
+                    {"bkLOSS": float(f"{((sum(tx_b['bk']) - sum(rx_a['bk'])) / sum(tx_b['bk'])) * 100:.2f}")})
+                tos_download.update(
+                    {"beLOSS": float(f"{((sum(tx_b['be']) - sum(rx_a['be'])) / sum(tx_b['be'])) * 100:.2f}")})
+                tos_download.update({"videoLOSS": float(
+                    f"{((sum(tx_b['video']) - sum(rx_a['video'])) / sum(tx_b['video'])) * 100:.2f}")})
+                tos_download.update({"voiceLOSS": float(
+                    f"{((sum(tx_b['voice']) - sum(rx_a['voice'])) / sum(tx_b['voice'])) * 100:.2f}")})
+            tos_download.update({'tx_b': tx_b})
+            tos_download.update({'rx_a': rx_a})
         else:
             print("no RX values available to evaluate QOS")
         key = case + " " + "Mbps"
         print(tos_download)
-        print(pkt_loss)
-        return {key: tos_download}, pkt_loss
+        return {key: tos_download}
 
-    def generate_report(self, data):
+    def generate_report(self, data, test_setup_info, input_setup_info):
         print(data)
         res = {}
         if data is not None:
@@ -336,7 +343,7 @@ class ThroughputQOS(Realm):
         else:
             print("No Data found to generate report!")
             exit(1)
-        report = lf_report()
+        report = lf_report(_output_pdf="throughput_qos.pdf", _output_html="throughput_qos.html")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         print("path: {}".format(report_path))
@@ -348,18 +355,15 @@ class ThroughputQOS(Realm):
                             _obj="Through this test we can evaluate the throughput for given number of clients which"
                                  " runs the traffic with a particular Type of Service i.e BK,BE,VI,VO")
         report.build_objective()
-
+        report.set_custom_html(_custom_html=self.test_setup_information(test_setup_data=test_setup_info,
+                                                                   colmn="Device Under Test"))
+        report.build_custom()
         report.set_table_title(
             "Overall download Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO) in 2.4Ghz")
         report.build_table_title()
 
-        t_1mb = []
-        t_2mb = []
-        t_3mb = []
-        t_4mb = []
-        t_5mb = []
-
-        table_df = [t_1mb, t_2mb, t_3mb, t_4mb, t_5mb]
+        table_df = [[], [], [], [], []]
+        pkt_loss = [[], [], [], [], []]
 
         for key in res:
             if key == '1 Mbps':
@@ -367,26 +371,46 @@ class ThroughputQOS(Realm):
                 table_df[0].append(res[key]['beQOS'])
                 table_df[0].append(res[key]['videoQOS'])
                 table_df[0].append(res[key]['voiceQOS'])
+                pkt_loss[0].append(res[key]['bkLOSS'])
+                pkt_loss[0].append(res[key]['beLOSS'])
+                pkt_loss[0].append(res[key]['videoLOSS'])
+                pkt_loss[0].append(res[key]['voiceLOSS'])
             if key == '2 Mbps':
                 table_df[1].append(res[key]['bkQOS'])
                 table_df[1].append(res[key]['beQOS'])
                 table_df[1].append(res[key]['videoQOS'])
                 table_df[1].append(res[key]['voiceQOS'])
+                pkt_loss[1].append(res[key]['bkLOSS'])
+                pkt_loss[1].append(res[key]['beLOSS'])
+                pkt_loss[1].append(res[key]['videoLOSS'])
+                pkt_loss[1].append(res[key]['voiceLOSS'])
             if key == '3 Mbps':
                 table_df[2].append(res[key]['bkQOS'])
                 table_df[2].append(res[key]['beQOS'])
                 table_df[2].append(res[key]['videoQOS'])
                 table_df[2].append(res[key]['voiceQOS'])
+                pkt_loss[2].append(res[key]['bkLOSS'])
+                pkt_loss[2].append(res[key]['beLOSS'])
+                pkt_loss[2].append(res[key]['videoLOSS'])
+                pkt_loss[2].append(res[key]['voiceLOSS'])
             if key == '4 Mbps':
                 table_df[3].append(res[key]['bkQOS'])
                 table_df[3].append(res[key]['beQOS'])
                 table_df[3].append(res[key]['videoQOS'])
                 table_df[3].append(res[key]['voiceQOS'])
+                pkt_loss[3].append(res[key]['bkLOSS'])
+                pkt_loss[3].append(res[key]['beLOSS'])
+                pkt_loss[3].append(res[key]['videoLOSS'])
+                pkt_loss[3].append(res[key]['voiceLOSS'])
             if key == '5 Mbps':
                 table_df[4].append(res[key]['bkQOS'])
                 table_df[4].append(res[key]['beQOS'])
                 table_df[4].append(res[key]['videoQOS'])
                 table_df[4].append(res[key]['voiceQOS'])
+                pkt_loss[4].append(res[key]['bkLOSS'])
+                pkt_loss[4].append(res[key]['beLOSS'])
+                pkt_loss[4].append(res[key]['videoLOSS'])
+                pkt_loss[4].append(res[key]['voiceLOSS'])
         table_df2 = []
         for i in range(len(table_df)):
             table_df2.append(
@@ -402,55 +426,102 @@ class ThroughputQOS(Realm):
         })
         report.set_table_dataframe(df_throughput)
         report.build_table()
-
-        report.set_graph_title("Overall download Throughput for all 2.4G clients with different TOS.")
-        report.set_obj_html(_obj_title="", _obj="This graph represents the download throughput for Bk, BE, Video, Voice"
-                                                " services when stations are running the traffic with load 1 Mbps, "
-                                                "2 Mbps, 3 Mbps, 4 Mbps")
-        report.build_graph_title()
-        report.build_objective()
-
-        y_bk = []
-        y_be = []
-        y_vi = []
-        y_vo = []
-
-        graph_df = [y_bk, y_be, y_vi, y_vo]
+        graph_df = [[], [], [], []]
+        pkt_loss_df = [[], [], [], []]
         for key in res:
             if key == '1 Mbps':
                 graph_df[0].append(res[key]['bkQOS'])
                 graph_df[1].append(res[key]['beQOS'])
                 graph_df[2].append(res[key]['videoQOS'])
                 graph_df[3].append(res[key]['voiceQOS'])
+                pkt_loss_df[0].append(res[key]['bkLOSS'])
+                pkt_loss_df[1].append(res[key]['beLOSS'])
+                pkt_loss_df[2].append(res[key]['videoLOSS'])
+                pkt_loss_df[3].append(res[key]['voiceLOSS'])
             if key == '2 Mbps':
                 graph_df[0].append(res[key]['bkQOS'])
                 graph_df[1].append(res[key]['beQOS'])
                 graph_df[2].append(res[key]['videoQOS'])
                 graph_df[3].append(res[key]['voiceQOS'])
+                pkt_loss_df[0].append(res[key]['bkLOSS'])
+                pkt_loss_df[1].append(res[key]['beLOSS'])
+                pkt_loss_df[2].append(res[key]['videoLOSS'])
+                pkt_loss_df[3].append(res[key]['voiceLOSS'])
             if key == '3 Mbps':
                 graph_df[0].append(res[key]['bkQOS'])
                 graph_df[1].append(res[key]['beQOS'])
                 graph_df[2].append(res[key]['videoQOS'])
                 graph_df[3].append(res[key]['voiceQOS'])
+                pkt_loss_df[0].append(res[key]['bkLOSS'])
+                pkt_loss_df[1].append(res[key]['beLOSS'])
+                pkt_loss_df[2].append(res[key]['videoLOSS'])
+                pkt_loss_df[3].append(res[key]['voiceLOSS'])
             if key == '4 Mbps':
                 graph_df[0].append(res[key]['bkQOS'])
                 graph_df[1].append(res[key]['beQOS'])
                 graph_df[2].append(res[key]['videoQOS'])
                 graph_df[3].append(res[key]['voiceQOS'])
+                pkt_loss_df[0].append(res[key]['bkLOSS'])
+                pkt_loss_df[1].append(res[key]['beLOSS'])
+                pkt_loss_df[2].append(res[key]['videoLOSS'])
+                pkt_loss_df[3].append(res[key]['voiceLOSS'])
             if key == '5 Mbps':
                 graph_df[0].append(res[key]['bkQOS'])
                 graph_df[1].append(res[key]['beQOS'])
                 graph_df[2].append(res[key]['videoQOS'])
                 graph_df[3].append(res[key]['voiceQOS'])
+                pkt_loss_df[0].append(res[key]['bkLOSS'])
+                pkt_loss_df[1].append(res[key]['beLOSS'])
+                pkt_loss_df[2].append(res[key]['videoLOSS'])
+                pkt_loss_df[3].append(res[key]['voiceLOSS'])
+
+        report.set_graph_title(f"Overall Download throughput for all {self.bands[0]} clients with different TOS.")
+        report.set_obj_html(_obj_title="", _obj="The below graph represents overall download throughput for all "
+                                                "connected stations running BK, BE, VO, VI traffic with different "
+                                                "intended loads per station – 1 Mbps, 2 Mbps, 3 Mbps, 4 Mbps, 5 Mbps.")
+        report.build_graph_title()
+        report.build_objective()
 
         graph = lf_bar_graph(_data_set=graph_df,
                              _xaxis_name="Load per Type of Service",
                              _yaxis_name="Throughput (Mbps)",
                              _xaxis_categories=[1, 2, 3, 4, 5, 6],
                              _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
-                             _graph_image_name="tos_download_2.4GHz",
-                             _label=["BE", "BK", "VI", "VO"],
+                             _graph_image_name=f"tos_download_{self.bands[0]}Hz",
+                             _label=["BK", "BE", "VI", "VO"],
                              _step_size=1,
+                             _graph_title="Overall download throughput – BK,BE,VO,VI traffic streams",
+                             _title_size=16,
+                             _color=['orangered', 'greenyellow', 'steelblue', 'blueviolet'],
+                             _color_edge='black',
+                             _bar_width=0.15,
+                             _dpi=96,
+                             _color_name=['orangered', 'greenyellow', 'steelblue', 'blueviolet'])
+        graph_png = graph.build_bar_graph()
+
+        print("graph name {}".format(graph_png))
+
+        report.set_graph_image(graph_png)
+        # need to move the graph image to the results
+        report.move_graph_image()
+        report.build_graph()
+        report.set_graph_title(f"Overall Packet loss for all {self.bands[0]} clients with different TOS.")
+        report.set_obj_html(_obj_title="", _obj="This graph shows the overall packet loss for the connected stations "
+                                                "for BK,BE,VO,VI traffic with intended load per station – 1 Mbps, "
+                                                "2 Mbps, 3 Mbps, 4 Mbps, 5 Mbps")
+        report.build_graph_title()
+        report.build_objective()
+
+        graph = lf_bar_graph(_data_set=pkt_loss_df,
+                             _xaxis_name="Load per Type of Service",
+                             _yaxis_name="Packet Loss (%)",
+                             _xaxis_categories=[1, 2, 3, 4, 5, 6],
+                             _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
+                             _graph_image_name=f"pkt_loss_{self.bands[0]}Hz",
+                             _label=["BK", "BE", "VI", "VO"],
+                             _step_size=1,
+                             _graph_title="Load vs Packet Loss",
+                             _title_size=16,
                              _color=['orangered', 'greenyellow', 'steelblue', 'blueviolet'],
                              _color_edge='black',
                              _bar_width=0.15,
@@ -465,6 +536,8 @@ class ThroughputQOS(Realm):
         report.move_graph_image()
         report.build_graph()
         self.generate_individual_graph(data, report)
+        report.set_custom_html(_custom_html=self.test_setup_information(test_setup_data=input_setup_info, colmn="Information"))
+        report.build_custom()
         report.write_html()
         report.write_pdf()
 
@@ -476,18 +549,23 @@ class ThroughputQOS(Realm):
         if len(res.keys()) > 0:
             count = 1
             for key in res:
-                report.set_graph_title(_graph_title="Individual stations Download Throughput for the service Bk(WIFI) of load {}.".format(key))
+                report.set_graph_title(
+                    _graph_title=f"Individual download throughput with intended load {key}/station for traffic BK(WiFi).")
                 report.set_obj_html(_obj_title="",
-                                    _obj="This is the individual throughput for {} number of clients running service BK".format(
-                                        len(self.sta_list)))
+                                    _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BK "
+                                         f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows “"
+                                         f"Throughput in Mbps”.")
                 report.build_graph_title()
                 report.build_objective()
                 graph = lf_bar_graph(_data_set=[res[key]['bk']], _xaxis_name="Clients running - BK",
                                      _yaxis_name="Throughput in Mbps",
-                                     _xaxis_categories=[i for i in range(len(self.sta_list))],
-                                     _xaxis_label=[i for i in range(len(self.sta_list))],
+                                     _xaxis_categories=[i+1 for i in range(len(self.sta_list))],
+                                     _xaxis_label=[i+1 for i in range(len(self.sta_list))],
                                      _label=["BK"],
                                      _step_size=1,
+                                     _xticks_font=8,
+                                     _graph_title="Individual download throughput for BK(WIFI) traffic - {} clients".format(self.bands[0]),
+                                     _title_size=16,
                                      _bar_width=0.15, _color_name=['orangered'],
                                      _graph_image_name="{}_bk_{}".format(self.bands[0], count), _color_edge=['black'],
                                      _color=['orangered'])
@@ -497,18 +575,23 @@ class ThroughputQOS(Realm):
                 # need to move the graph image to the results
                 report.move_graph_image()
                 report.build_graph()
-                report.set_graph_title(_graph_title="Individual stations Download Throughput for the service BE(WIFI) of load {}.".format(key))
+                report.set_graph_title(
+                    _graph_title=f"Individual download throughput with intended load {key}/station for traffic BE(WiFi).")
                 report.set_obj_html(_obj_title="",
-                                    _obj="This is the individual throughput for {} number of clients running service BE".format(
-                                        len(self.sta_list)))
+                                    _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running BE "
+                                         f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
+                                         f"“Throughput in Mbps”.")
                 report.build_graph_title()
                 report.build_objective()
                 graph = lf_bar_graph(_data_set=[res[key]['be']], _xaxis_name="Clients running - BE",
                                      _yaxis_name="Throughput in Mbps",
-                                     _xaxis_categories=[i for i in range(len(self.sta_list))],
-                                     _xaxis_label=[i for i in range(len(self.sta_list))],
+                                     _xaxis_categories=[i+1 for i in range(len(self.sta_list))],
+                                     _xaxis_label=[i+1 for i in range(len(self.sta_list))],
                                      _label=["BE"],
                                      _step_size=1,
+                                     _xticks_font=8,
+                                     _graph_title="Individual download throughput for BE(WIFI) traffic - {} clients".format(self.bands[0]),
+                                     _title_size=16,
                                      _bar_width=0.15, _color_name=['greenyellow'],
                                      _graph_image_name="{}_be_{}".format(self.bands[0], count), _color_edge=['black'],
                                      _color=['greenyellow'])
@@ -518,20 +601,26 @@ class ThroughputQOS(Realm):
                 # need to move the graph image to the results
                 report.move_graph_image()
                 report.build_graph()
-                report.set_graph_title(_graph_title="Individual stations Download Throughput for the service VI(WIFI) of load {}.".format(key))
+                report.set_graph_title(
+                    _graph_title=f"Individual download throughput with intended load {key}/station for traffic VI(WiFi).")
                 report.set_obj_html(_obj_title="",
-                                    _obj="This is the individual throughput for {} number of clients running service VI".format(
-                                        len(self.sta_list)))
+                                    _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VI "
+                                         f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
+                                         f"“Throughput in Mbps”.")
                 report.build_graph_title()
                 report.build_objective()
                 graph = lf_bar_graph(_data_set=[res[key]['video']], _xaxis_name="Clients running - VI",
                                      _yaxis_name="Throughput in Mbps",
-                                     _xaxis_categories=[i for i in range(len(self.sta_list))],
-                                     _xaxis_label=[i for i in range(len(self.sta_list))],
+                                     _xaxis_categories=[i+1 for i in range(len(self.sta_list))],
+                                     _xaxis_label=[i+1 for i in range(len(self.sta_list))],
                                      _label=["Video"],
                                      _step_size=1,
+                                     _xticks_font=8,
+                                     _graph_title="Individual download throughput for VI(WIFI) traffic - {} clients".format(self.bands[0]),
+                                     _title_size=16,
                                      _bar_width=0.15, _color_name=['steelblue'],
-                                     _graph_image_name="{}_video_{}".format(self.bands[0], count), _color_edge=['black'],
+                                     _graph_image_name="{}_video_{}".format(self.bands[0], count),
+                                     _color_edge=['black'],
                                      _color=['steelblue'])
                 graph_png = graph.build_bar_graph()
                 print("graph name {}".format(graph_png))
@@ -539,20 +628,26 @@ class ThroughputQOS(Realm):
                 # need to move the graph image to the results
                 report.move_graph_image()
                 report.build_graph()
-                report.set_graph_title(_graph_title="Individual stations Download Throughput for the service VO(WIFI) of load {}.".format(key))
+                report.set_graph_title(
+                    _graph_title=f"Individual download throughput with intended load {key}/station for traffic VO(WiFi).")
                 report.set_obj_html(_obj_title="",
-                                    _obj="This is the individual throughput for {} number of clients running service VO".format(
-                                        len(self.sta_list)))
+                                    _obj=f"The below graph represents individual throughput for {len(self.sta_list)} clients running VO "
+                                         f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
+                                         f"“Throughput in Mbps”.")
                 report.build_graph_title()
                 report.build_objective()
                 graph = lf_bar_graph(_data_set=[res[key]['voice']], _xaxis_name="Clients running - VO",
                                      _yaxis_name="Throughput in Mbps",
-                                     _xaxis_categories=[i for i in range(len(self.sta_list))],
-                                     _xaxis_label=[i for i in range(len(self.sta_list))],
+                                     _xaxis_categories=[i+1 for i in range(len(self.sta_list))],
+                                     _xaxis_label=[i+1 for i in range(len(self.sta_list))],
                                      _label=['Voice'],
                                      _step_size=1,
+                                     _xticks_font=8,
+                                     _graph_title="Individual download throughput for VO(WIFI) traffic - {} clients".format(self.bands[0]),
+                                     _title_size=16,
                                      _bar_width=0.15, _color_name=['blueviolet'],
-                                     _graph_image_name="{}_voice_{}".format(self.bands[0], count), _color_edge=['black'],
+                                     _graph_image_name="{}_voice_{}".format(self.bands[0], count),
+                                     _color_edge=['black'],
                                      _color=['blueviolet'])
                 graph_png = graph.build_bar_graph()
                 print("graph name {}".format(graph_png))
@@ -563,6 +658,34 @@ class ThroughputQOS(Realm):
                 count += 1
         else:
             print("No individual graph to generate.")
+
+    def test_setup_information(self, test_setup_data=None, colmn="Setup Information"):
+        # custom table for test-setup/input-setup information
+        if test_setup_data is None:
+            return None
+        else:
+            var = ""
+            for i in test_setup_data:
+                var = var + "<tr><td>" + i + "</td><td colspan='3'>" + str(test_setup_data[i]) + "</td></tr>"
+        setup_information = """
+                            <!-- Test Setup Information -->
+                            <br><br>
+                            <table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+                                <tr>
+                                  <th colspan='2'> Test Setup Information </th>
+                                </tr>
+                                <tr>
+                                  <td>""" + colmn + """</td>
+                                  <td>
+                                    <table width='100%' border='0' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
+                                      """ + str(var) + """
+                                    </table>
+                                  </td>
+                                </tr>
+                            </table>
+                            <br><br>
+                            """
+        return str(setup_information)
 
 
 def main():
@@ -605,6 +728,7 @@ python3 ./throughput_QOS.py
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --debug
+    --ap_name Netgear RC6700
     --upstream_port eth1        (upstream Port)
     --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp)
     --test_duration 5m          (duration to run traffic 5m --> 5 Minutes)
@@ -622,6 +746,7 @@ python3 ./throughput_QOS.py
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     parser.add_argument('--tos', help='used to provide different ToS settings: BK | BE | VI | VO | numeric',
                         default="Best Effort")
+    parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     parser.add_argument('--bands', help='used to run on multiple radio bands,can be used with multiple stations',
                         default="2,4G, 5G, BOTH", required=True)
     parser.add_argument('--ssid_2g', help="ssid for  2.4Ghz band")
@@ -640,6 +765,7 @@ python3 ./throughput_QOS.py
     bands = []
     radios = []
     station_list = []
+
     if (args.a_min is not None) and (args.b_min is not None):
         if (type(args.a_min) is not int) and (type(args.b_min) is not int):
             args.a_min = args.a_min.split(',')
@@ -660,6 +786,9 @@ python3 ./throughput_QOS.py
 
     if args.test_duration is not None:
         args.test_duration = args.test_duration.strip('m')
+
+    test_start_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
+    print("Test started at: ", test_start_time)
 
     for i in range(len(bands)):
         if bands[i] == "2.4G" or bands[i] == "2.4g":
@@ -722,6 +851,7 @@ python3 ./throughput_QOS.py
             throughput_qos = ThroughputQOS(host=args.mgr,
                                            port=args.mgr_port,
                                            number_template="0000",
+                                           ap_name=args.ap_name,
                                            sta_list=station_list,
                                            create_sta=args.create_sta,
                                            name_prefix="TOS-",
@@ -754,10 +884,10 @@ python3 ./throughput_QOS.py
                 if not throughput_qos.passes():
                     print(throughput_qos.get_fail_message())
                     throughput_qos.exit_fail()
-            # try:
-            #     layer3connections = ','.join([[*x.keys()][0] for x in throughput_qos.json_get('endp')['endpoint']])
-            # except:
-            #     raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+            try:
+                layer3connections = ','.join([[*x.keys()][0] for x in throughput_qos.json_get('endp')['endpoint']])
+            except:
+                raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
             throughput_qos.start(False, False)
             time.sleep(int(args.test_duration) * 60)
@@ -772,8 +902,27 @@ python3 ./throughput_QOS.py
                     throughput_qos.success()
             throughput_qos.cleanup()
 
+    test_end_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
+    print("Test ended at: ", test_end_time)
+    test_setup_info = {
+        "AP Model": throughput_qos.ap_name,
+        "SSID": throughput_qos.ssid,
+        "SSID - 2.4 Ghz": throughput_qos.ssid_2g,
+        "SSID - 5 Ghz": throughput_qos.ssid_5g,
+        "Test Duration": datetime.datetime.strptime(test_end_time, "%b %d %H:%M:%S") - datetime.datetime.strptime(test_start_time, "%b %d %H:%M:%S")
+    }
+    if throughput_qos.ssid is None:
+        test_setup_info.pop("SSID")
+    else:
+        if throughput_qos.ssid_2g is None:
+            test_setup_info.pop("SSID - 2.4 Ghz")
+        if throughput_qos.ssid_5g is None:
+            test_setup_info.pop("SSID - 5 Ghz")
+    input_setup_info = {
+        "contact": "support@candelatech.com"
+    }
     data = test_results
-    #throughput_qos.generate_report(data=data)
+    throughput_qos.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info)
 
 
 if __name__ == "__main__":
