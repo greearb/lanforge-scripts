@@ -96,7 +96,7 @@ if __name__ == "__main__":
                          _xaxis_categories=x_axis_values,
                          _graph_image_name="Bi-single_radio_2.4GHz",
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
-                         _color=None,
+                         _color=['darkorange', 'forestgreen','blueviolet'],
                          _color_edge='red')
 
     graph_png = graph.build_bar_graph()

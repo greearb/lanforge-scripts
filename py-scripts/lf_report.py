@@ -146,6 +146,8 @@ class lf_report():
         print("graph_src_file: {}".format(graph_src_file))
         print("graph_dst_file: {}".format(graph_dst_file))
         shutil.move(graph_src_file, graph_dst_file)
+    def move_csv_file(self):
+        csv_src_file = str(self.fil)
 
     def set_path(self,_path):
         self.path = _path
