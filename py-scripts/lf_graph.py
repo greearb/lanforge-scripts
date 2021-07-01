@@ -53,7 +53,6 @@ class lf_bar_graph():
                  _grp_title = "",
                  _dpi=96,
                  _enable_csv=True):
->>>>>>> 6dd9cef... lf_csv - creates csv for graph data
 
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
