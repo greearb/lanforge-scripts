@@ -206,6 +206,9 @@ class GhostRequest:
                          tags='custom',
                          authors=authors)
 
+    def list_append(self, list_1, value):
+        list_1.append(value)
+
     def kpi_to_ghost(self,
                      authors,
                      folders,
@@ -272,6 +275,10 @@ class GhostRequest:
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 csv_testbed = csvreader.get_column(df, 'test-rig')[0]
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
+                dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
+                dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
+                dut_model = csvreader.get_column(df, 'dut-model-num')[0]
+                dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
                 if pass_fail['PASS'] + pass_fail['FAIL'] > 0:
                     text = text + 'Tests passed: %s<br />' % pass_fail['PASS']
                     text = text + 'Tests failed: %s<br />' % pass_fail['FAIL']
@@ -282,9 +289,7 @@ class GhostRequest:
                 print("Failure")
                 target_folders.remove(target_folder)
                 break
-            if len(csv_testbed) > 2:
-                testbed = csv_testbed
-                testbeds.append(testbed)
+            testbeds.append(csv_testbed)
             if testbed == 'Unknown Testbed':
                 raise UserWarning('Please define your testbed')
 
@@ -340,10 +345,10 @@ class GhostRequest:
                                         datasource=grafana_datasource,
                                         bucket=grafana_bucket)
 
-        try:
-            text = 'Testbed: %s<br />' % testbeds[0]
-        except:
-            text = ''
+        text = 'Testbed: %s<br />' % testbeds[0]
+        dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td></tr>' \
+                    '<tr><td>%s</td><td>%s</td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial)
+        text = text + dut_table
 
         for pdf in pdfs:
             text = text + pdf
@@ -370,5 +375,3 @@ class GhostRequest:
                          tags='custom',
                          authors=authors)
 
-        for folder in target_folders:
-            shutil.rmtree(folder)
