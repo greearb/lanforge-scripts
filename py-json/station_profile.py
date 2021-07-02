@@ -373,10 +373,11 @@ class StationProfile:
                suppress_related_commands_=True,
                use_radius=False,
                hs20_enable=False,
-               sleep_time=0.02):
+               sleep_time=0.02,
+               resource=None):
         if (radio is None) or (radio == ""):
             raise ValueError("station_profile.create: will not create stations without radio")
-        radio_eid = self.local_realm.name_to_eid(radio)
+        radio_eid = self.local_realm.name_to_eid(radio, resource=resource)
         radio_shelf = radio_eid[0]
         radio_resource = radio_eid[1]
         radio_port = radio_eid[2]

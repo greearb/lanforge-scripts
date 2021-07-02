@@ -152,8 +152,8 @@ class GenCXProfile(LFCliBase):
                 count = 40
             for i in range(0, count):
                 port_info = self.local_realm.name_to_eid(sta_port)
-                resource = port_info[0]
-                shelf = port_info[1]
+                resource = port_info[1]
+                shelf = port_info[0]
                 name = port_info[2]
 
                 gen_name_a = "%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
@@ -167,8 +167,8 @@ class GenCXProfile(LFCliBase):
                 for i in range(0, 5):
                     port_info = self.local_realm.name_to_eid(port_name)
                     try:
-                        resource = port_info[0]
-                        shelf = port_info[1]
+                        resource = port_info[1]
+                        shelf = port_info[0]
                         name = port_info[2]
                     except:
                         raise ValueError("Unexpected name for port_name %s" % port_name)
@@ -279,8 +279,8 @@ class GenCXProfile(LFCliBase):
         endp_tpls = []
         for port_name in ports:
             port_info = self.local_realm.name_to_eid(port_name)
-            resource = port_info[0]
-            shelf = port_info[1]
+            resource = port_info[1]
+            shelf = port_info[0]
             name = port_info[2]
 
             # this naming convention follows what you see when you use
