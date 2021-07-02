@@ -270,7 +270,7 @@ def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
     return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_, radio=radio)
 
 
-def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
+def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None, resource=None):
     """
     This produces a named series similar to "sta000, sta001, sta002...sta0(end_id)"
     the padding_number is added to the start and end numbers and the resulting sum
@@ -285,7 +285,7 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
 
     eid = None
     if radio is not None:
-        eid = name_to_eid(radio)
+        eid = name_to_eid(radio, resource=resource)
     
     name_list = []
     for i in range((padding_number + start_id), (padding_number + end_id + 1)):
