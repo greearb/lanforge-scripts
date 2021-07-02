@@ -136,7 +136,6 @@ class MACVLANProfile(LFCliBase):
                                                                    set_port.set_port_current_flags)
         self.set_port_data["interest"] = self.add_named_flags(self.desired_set_port_interest_flags,
                                                               set_port.set_port_interest_flags)
-        self.set_port_data["resource"] = self.resource
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
         for i in range(len(self.desired_macvlans)):

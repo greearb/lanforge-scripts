@@ -582,12 +582,12 @@ class Realm(LFCliBase):
 
         return matched_map
 
-    def name_to_eid(self, eid, debug=False, non_port=False, resource=None):
+    def name_to_eid(self, eid, debug=False, non_port=False):
         if debug:
             self.logg(level="debug", mesg="name_to_eid: "+str(eid))
         if (type(eid) is list) or (type(eid) is tuple):
             return eid
-        return LFUtils.name_to_eid(eid, non_port=non_port, resource=resource)
+        return LFUtils.name_to_eid(eid, non_port=non_port)
 
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=360, debug=False):
         if not (ipv4 or ipv6):
