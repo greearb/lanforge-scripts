@@ -25,7 +25,7 @@ Note: This is a test file which will run a wifi capacity test.
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,5,25 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
              --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01
+             --test_rig Testbed-01 --set DUT_NAME linksys-8450
 
 
 Note:
@@ -33,6 +33,8 @@ Note:
                     from where you are running this code
 
     --stations == Enter stations to use for wifi capacity
+
+    --set DUT_NAME XXXX == Determines which DUT the wifi capacity test should use to get details on
 
 Example of raw text config for Capacity, to show other possible options:
 

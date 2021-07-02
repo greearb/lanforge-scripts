@@ -15,12 +15,12 @@ EXAMPLE: ./ghost_profile.py --ghost_token TOKEN --ghost_host 192.168.100.147
 --user_push matt --password_push PASSWORD
 
 EXAMPLE 2: ./ghost_profile.py --ghost_token TOKEN
---ghost_host 192.168.100.147 --server 192.168.93.51 --user_pull lanforge --password_pull lanforge --customer candela
+--ghost_host 192.168.100.147 --server 192.168.93.51 --customer candela
 --testbed heather --user_push matt --password_push "amount%coverage;Online" --kpi_to_ghost app
 --folders /home/lanforge/html-reports/wifi-capacity-2021-06-14-10-42-29 --grafana_token TOKEN
 --grafana_host 192.168.100.201
 
-this scripts uses pyjwt. If you get the issue module 'jwt' has no attribute 'encode', run this: pip3 uninstall jwt pyjwt && pip install pyjwt
+this script uses pyjwt. If you get the issue module 'jwt' has no attribute 'encode', run this: pip3 uninstall jwt pyjwt && pip install pyjwt
  Matthew Stidham
  Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
