@@ -202,7 +202,7 @@ class L3VariableTime(Realm):
 
         # TODO:  cmd-line arg to enable/disable these stats.
         self.ap_stats_col_titles = ["Station Address", "PHY Mbps", "Data Mbps", "Air Use", "Data Use",
-                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo"]
+                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo", "channel utilization"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
                                                             
