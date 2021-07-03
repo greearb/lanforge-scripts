@@ -692,6 +692,8 @@ class L3VariableTime(Realm):
                                                 print("Error reading xtop")
                                     # ap information is passed with ap_row so all information needs to be contained in ap_row
                                     ap_row.append(str(channel_utilization))
+                                    print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                    print("ap_row {ap_row}".format(ap_row=ap_row))
     
                                     ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
     
