@@ -625,10 +625,10 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats = self.read_ap_chanim_stats()
     
                             ap_stats_rows = ap_stats.splitlines()
-                            print("From AP: ap_stats_rows {}".format(ap_stats_rows))
+                            print("From AP stats: ap_stats_rows {}".format(ap_stats_rows))
 
                             ap_chanim_stats_rows = ap_chanim_stats.splitlines()
-                            print("From AP: ap_chanim_stats_rows {}".format(ap_chanim_stats_rows))
+                            print("From AP chanim: ap_chanim_stats_rows {}".format(ap_chanim_stats_rows))
                             channel_utilization = 0
     
                             # Query all of our ports
@@ -644,11 +644,11 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
-                                    pprint(response)
+                                    # pprint(response)
                                     p = response['interface']
-                                    print("#### From LANforge: p, response['insterface']:{}".format(p))
+                                    #print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    #print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
     
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_rows:
