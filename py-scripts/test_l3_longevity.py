@@ -105,6 +105,7 @@ class L3VariableTime(Realm):
                  debug=False,
                  influxdb=None,
                  ap_scheduler_stats=False,
+                 ap_ofdma_stats=False,
                  ap_read=False,
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
@@ -187,6 +188,7 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
 
         self.ap_scheduler_stats = ap_scheduler_stats
+        self.ap_ofdma_stats = ap_ofdma_stats
         self.ap_read = ap_read
         self.ap_port = ap_port
         self.ap_baud = ap_baud
@@ -195,6 +197,8 @@ class L3VariableTime(Realm):
         self.ap_test_mode = ap_test_mode
         self.ap_umsched = ""
         self.ap_msched = ""
+        self.ap_ofdma_5g = ""
+        self.ap_ofdma_24g = ""
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -248,6 +252,13 @@ class L3VariableTime(Realm):
 
     def get_ap_msched(self):
         return self.ap_msched
+
+    def get_ap_ofdma_5g(self):
+        return self.ap_ofdma_5g
+
+    def get_ap_ofdma_24g(self):
+        return self.ap_ofdma_24g
+
 
     def get_kpi_csv(self):
         #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
@@ -555,8 +566,9 @@ class L3VariableTime(Realm):
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
-                if self.ap_scheduler_stats:
+                if self.ap_scheduler_stats or self.ap_ofdma_stats:
                     self.ap_custom_cmd('wl -i wl1 dump_clear')
+                    self.ap_custom_cmd('wl -i wl0 dump_clear')
 
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
@@ -729,6 +741,12 @@ class L3VariableTime(Realm):
                         # get the (DL) Download schduler staticstics
                         self.ap_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
 
+                    if self.ap_ofdma_stats:
+                        # provide OFDMA stats 5GHz
+                        self.ap_ofdma_5g += self.ap_custom_cmd('wl -i wl1 muinfo -v')
+
+                        # provide OFDMA stats 2.4GHz
+                        self.ap_ofdma_24g += self.ap_custom_cmd('wl -i wl0 muinfo -v')
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -1006,6 +1024,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_cmd', help='ap_cmd \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
     parser.add_argument('--ap_chanim_cmd', help='ap_chanim_cmd \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
     parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file on ap', action='store_true')
+    parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file', action='store_true')
+    parser.add_argument('--ap_ofdma_stats', help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file', action='store_true')
     
 
     parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
@@ -1050,6 +1070,10 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     else:
         ap_scheduler_stats = False
 
+    if args.ap_ofdma_stats:
+        ap_ofdma_stats = args.ap_ofdma_stats
+    else:
+        ap_ofdma_stats = False
 
     if args.ap_test_mode:
         ap_test_mode = args.ap_test_mode
@@ -1231,6 +1255,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     debug=debug,
                                     influxdb=influxdb,
                                     ap_scheduler_stats=ap_scheduler_stats,
+                                    ap_ofdma_stats=ap_ofdma_stats,
                                     ap_read=ap_read,
                                     ap_port=ap_port,
                                     ap_baud=ap_baud,
@@ -1288,9 +1313,28 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         ap_msched_file.write(str(ap_msched_data))
         ap_msched_file.close()
 
+    # ap scheduler results and write to a file
+    if ap_ofdma_stats:
+        print("getting ofdma ap data and writing to a file")
+        file_date = report.get_date()
+
+        ap_ofdma_5g_data = ip_var_test.get_ap_ofdma_5g()
+        ap_ofdma_5g =  "{}-{}".format(file_date,"ap_ofdma_5g_data.txt")
+        ap_ofdma_5g =  report.file_add_path(ap_ofdma_5g)
+        ap_ofdma_5g_data = open(ap_ofdma_5g, "w")
+        ap_ofdma_5g_data.write(str(ap_ofdma_5g_data))
+        ap_ofdma_5g_data.close()
+
+        ap_ofdma_24g_data = ip_var_test.get_ap_ofdma_24g()
+        ap_ofdma_24g =  "{}-{}".format(file_date,"ap_ofdma_24g_data.txt")
+        ap_ofdma_24g =  report.file_add_path(ap_ofdma_24g)
+        ap_ofdma_24g_data = open(ap_ofdma_24g, "w")
+        ap_ofdma_24g_data.write(str(ap_ofdma_24g_data))
+        ap_ofdma_24g_data.close()
+
+
     #for csv_file in csv_list:
     #    print("Ouptput reports CSV list value: {}".format(str(csv_file)))
-
 
 if __name__ == "__main__":
     main()
