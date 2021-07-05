@@ -79,6 +79,7 @@ class lf_report():
             self.output_pdf=_output_pdf
             self.write_output_pdf = ""
             self.banner_html = ""
+            self.footer_html = ""
             self.graph_titles=""
             self.graph_image=""
             self.html = ""
@@ -369,6 +370,29 @@ class lf_report():
                             """
         self.html += setup_information
 
+    def build_footer(self):
+        self.footer_html = """<!DOCTYPE html>
+                            <html lang='en'>
+                            <footer>
+                                <meta charset='UTF-8'>
+                                <meta name='viewport' content='width=device-width, initial-scale=1' />
+                                <style>
+                                body {{ margin: 0; padding: 0; }}
+                                </style>
+                                <link rel='stylesheet' href='report.css' />
+                                <link rel='stylesheet' href='custom.css' />
+                                <title>{title}</title>
+                            </footer>
+                        <body>
+                            <div class='FooterStyle'>
+                                <p>Generate by Candela Technologies LANforge network testing tool</p>
+                                <p><a href="wwwlcandelatech.com">www.candelatech.com</a><p>
+                            </div>
+                        </body>
+
+                        """
+        self.html += self.footer_html
+
     def build_custom(self):
         self.html += self.custom_html
 
@@ -434,6 +458,7 @@ if __name__ == "__main__":
     report.build_table()
 
     #report.build_all()
+    report.build_footer()
 
     html_file = report.write_html() 
     print("returned file ")
