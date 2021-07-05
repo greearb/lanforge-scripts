@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 '''
+NAME: test_l3_longevity.py
+
+PURPOSE:  
+
  Supports creating user-specified amount stations on multiple radios
  Supports configuring upload and download requested rates and PDU sizes.
  Supports generating KPI data for storing in influxdb (used by Graphana)
@@ -10,7 +14,7 @@
  Supports iterating over attenuation values.
  Supports testing connection between two ethernet connection - L3 dataplane
 
- Example config
+EXAMPLE:
 
  10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
  Configured to submit KPI info to influxdb-version2.
@@ -22,19 +26,24 @@
   --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
   --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
 
- Sample command using attenuator
+Example command using attenuator
 ./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
     --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --endp_type lf_udp --ap_read --ap_stats --side_a_min_bps=20000 --side_b_min_bps=400000000 \
+    --endp_type lf_udp --ap_read --ap_scheduler_stats --ap_ofdma_stats --side_a_min_bps=20000 --side_b_min_bps=400000000 \
     --attenuators 1.1.<serial number>.1 \
     --atten_vals 20,21,40,41
 
-Sample using upsteam eth1 downstream eth2 
+Example using upsteam eth1 downstream eth2 
     ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2 
     --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
+
+COPYRIGHT:
+Copyright 2021 Candela Technologies Inc
+
+INCLUDE_IN_README
 
 '''
 
@@ -1033,7 +1042,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_chanim_cmd', help='ap_chanim_cmd \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
     parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file', action='store_true')
     parser.add_argument('--ap_ofdma_stats', help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file', action='store_true')
-    
 
     parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
 
