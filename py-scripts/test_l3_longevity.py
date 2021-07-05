@@ -195,8 +195,10 @@ class L3VariableTime(Realm):
         self.ap_cmd = ap_cmd
         self.ap_chanim_cmd = ap_chanim_cmd
         self.ap_test_mode = ap_test_mode
-        self.ap_umsched = ""
-        self.ap_msched = ""
+        self.ap_5g_umsched = ""
+        self.ap_5g_msched = ""
+        self.ap_24g_umsched = ""
+        self.ap_24g_msched = ""
         self.ap_ofdma_5g = ""
         self.ap_ofdma_24g = ""
 
@@ -247,11 +249,17 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
-    def get_ap_umsched(self):
-        return self.ap_umsched
+    def get_ap_5g_umsched(self):
+        return self.ap_5g_umsched
 
-    def get_ap_msched(self):
-        return self.ap_msched
+    def get_ap_5g_msched(self):
+        return self.ap_5g_msched
+
+    def get_ap_24g_umsched(self):
+        return self.ap_5g_umsched
+
+    def get_ap_24g_msched(self):
+        return self.ap_5g_msched
 
     def get_ap_ofdma_5g(self):
         return self.ap_ofdma_5g
@@ -1299,19 +1307,34 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         print("getting umsched and msched ap data and writing to a file")
         file_date = report.get_date()
 
-        ap_umsched_data = ip_var_test.get_ap_umsched()
-        ap_umsched =  "{}-{}".format(file_date,"ap_umsched.txt")
-        ap_umsched =  report.file_add_path(ap_umsched)
-        ap_umsched_file = open(ap_umsched, "w")
-        ap_umsched_file.write(str(ap_umsched_data))
-        ap_umsched_file.close()
+        ap_5g_umsched_data = ip_var_test.get_ap_5g_umsched()
+        ap_5g_umsched =  "{}-{}".format(file_date,"ap_5g_umsched.txt")
+        ap_5g_umsched =  report.file_add_path(ap_5g_umsched)
+        ap_5g_umsched_file = open(ap_5g_umsched, "w")
+        ap_5g_umsched_file.write(str(ap_5g_umsched_data))
+        ap_5g_umsched_file.close()
 
-        ap_msched_data = ip_var_test.get_ap_msched()
-        ap_msched =  "{}-{}".format(file_date,"ap_msched.txt")
-        ap_msched =  report.file_add_path(ap_msched)
-        ap_msched_file = open(ap_msched, "w")
-        ap_msched_file.write(str(ap_msched_data))
-        ap_msched_file.close()
+        ap_5g_msched_data = ip_var_test.get_ap_5g_msched()
+        ap_5g_msched =  "{}-{}".format(file_date,"ap_5g_msched.txt")
+        ap_5g_msched =  report.file_add_path(ap_5g_msched)
+        ap_5g_msched_file = open(ap_5g_msched, "w")
+        ap_5g_msched_file.write(str(ap_5g_msched_data))
+        ap_5g_msched_file.close()
+
+        ap_24g_umsched_data = ip_var_test.get_ap_24g_umsched()
+        ap_24g_umsched =  "{}-{}".format(file_date,"ap_24g_umsched.txt")
+        ap_24g_umsched =  report.file_add_path(ap_24g_umsched)
+        ap_24g_umsched_file = open(ap_24g_umsched, "w")
+        ap_24g_umsched_file.write(str(ap_24g_umsched_data))
+        ap_24g_umsched_file.close()
+
+        ap_24g_msched_data = ip_var_test.get_ap_24g_msched()
+        ap_24g_msched =  "{}-{}".format(file_date,"ap_24g_msched.txt")
+        ap_24g_msched =  report.file_add_path(ap_24g_msched)
+        ap_24g_msched_file = open(ap_24g_msched, "w")
+        ap_24g_msched_file.write(str(ap_24g_msched_data))
+        ap_24g_msched_file.close()
+
 
     # ap scheduler results and write to a file
     if ap_ofdma_stats:
