@@ -1016,8 +1016,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
         ''')
 
-    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP')
-    parser.add_argument('--baud', help='--baud \"9600\"   baud rate for the serial interface',default="9600")
+    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite',default="")
+    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+
+    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP',default="")
+    parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface',default="9600")
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
@@ -1029,7 +1032,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                         default='lf_udp', type=valid_endp_types)
     parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
     parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
     parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
@@ -1044,9 +1046,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_ofdma_stats', help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file', action='store_true')
 
     parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
-
-    parser.add_argument('-tty',  help='-tty <port> serial interface to AP -tty \"/dev/ttyUSB2\"',default="")
-    parser.add_argument('-baud', help='-baud <rate> serial interface baud rate to AP -baud ',default='9600')
 
     parser.add_argument('-amr','--side_a_min_bps',
                         help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k', default="256000")
@@ -1074,6 +1073,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     #print("args: {}".format(args))
     debug = args.debug
+
+    if args.local_lf_report_dir != "":
+        local_lf_report_dir = args.local_lf_report_dir
+    else:
+        local_lf_report_dir = ""
 
     if args.ap_read:
         ap_read = args.ap_read
@@ -1132,8 +1136,13 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     else:
         radios = None
 
-    # Create report, instanciate a reporting class
-    report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+    # Create report, when running with the test framework (lf_check.py) results need to be in the same directory
+    if local_lf_report_dir != "":
+        report = lf_report(_path=local_lf_report_dir, _results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+    else:
+        report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+
+
 
     if args.csv_outfile != None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
