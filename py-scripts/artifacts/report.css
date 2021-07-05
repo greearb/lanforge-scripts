@@ -188,6 +188,13 @@ li {
    width:      200px;
    border:     none;
 }
+#BannerLogoFooter {
+   text-align: right;
+   padding:    5px;
+   margin:     5px;
+   width:      200px;
+   border:     none;
+}
 .TitleFontScreen {
    margin-left:   auto;
    margin-right:  auto;

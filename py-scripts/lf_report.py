@@ -25,7 +25,6 @@ LICENSE:
 INCLUDE_IN_README
 '''
 
-import datetime
 import os
 import shutil
 import datetime
@@ -92,6 +91,7 @@ class lf_report():
             self.banner_file_name = "banner.png"    # does this need to be configurable
             self.logo_directory = "artifacts"       
             self.logo_file_name = "CandelaLogo2-90dpi-200x90-trans.png"      # does this need to be configurable.
+            self.logo_footer_file_name = "candela_swirl_small-72h.png"      # does this need to be configurable.
             self.current_path = os.path.dirname(os.path.abspath(__file__))
             self.custom_css = _custom_css
             # pass in _date to allow to change after construction
@@ -103,6 +103,7 @@ class lf_report():
             self.copy_banner()
             self.copy_css()
             self.copy_logo()
+            self.copy_logo_footer()
     
     def copy_banner(self):
         banner_src_file = str(self.current_path)+'/'+str(self.banner_directory)+'/'+str(self.banner_file_name)
@@ -131,6 +132,13 @@ class lf_report():
         #print("logo_src_file: {}".format(logo_src_file))
         #print("logo_dst_file: {}".format(logo_dst_file))
         shutil.copy(logo_src_file, logo_dst_file)
+
+    def copy_logo_footer(self):
+        logo_footer_src_file = str(self.current_path)+'/'+str(self.logo_directory)+'/'+str(self.logo_footer_file_name)
+        logo_footer_dst_file = str(self.path_date_time)+'/'+ str(self.logo_footer_file_name)
+        #print("logo_footer_src_file: {}".format(logo_footer_src_file))
+        #print("logo_footer_dst_file: {}".format(logo_footer_dst_file))
+        shutil.copy(logo_footer_src_file, logo_footer_dst_file)
 
     def move_graph_image(self,):
         graph_src_file = str(self.graph_image)
@@ -385,6 +393,7 @@ class lf_report():
                             </footer>
                         <body>
                             <div class='FooterStyle'>
+                                <img id='BannerLogoFooter' align='right' src="candela_swirl_small-72h.png" border='0'/>
                                 <p>Generate by Candela Technologies LANforge network testing tool</p>
                                 <p><a href="wwwlcandelatech.com">www.candelatech.com</a><p>
                             </div>
