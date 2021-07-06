@@ -389,13 +389,13 @@ class lf_report():
                                 </style>
                                 <link rel='stylesheet' href='report.css' />
                                 <link rel='stylesheet' href='custom.css' />
-                                <title>{title}</title>
                             </footer>
                         <body>
                             <div class='FooterStyle'>
+                                <a href="https://www.candelatech.com/">
                                 <img id='BannerLogoFooter' align='right' src="candela_swirl_small-72h.png" border='0'/>
                                 <p>Generate by Candela Technologies LANforge network testing tool</p>
-                                <p><a href="wwwlcandelatech.com">www.candelatech.com</a><p>
+                                <p><a href="https://www.candelatech.com">www.candelatech.com</a><p>
                             </div>
                         </body>
 
