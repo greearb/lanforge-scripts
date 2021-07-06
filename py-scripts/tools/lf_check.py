@@ -88,8 +88,6 @@ class lf_check():
         self.test_suite = _test_suite
         self.production_run  = _production
         self.report_path = _report_path
-        self.lf_mgr_ip = ""
-        self.lf_mgr_port = "" 
         self.radio_dict = {}
         self.test_dict = {}
         path_parent = os.path.dirname(os.getcwd())
@@ -133,7 +131,9 @@ class lf_check():
         self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
-        self.lf_mgr = "" # lanforge tests are run against if passed in
+        self.lf_mgr = "" 
+        self.lf_mgr_port = "" 
+
 
         # influx database configuration
         self.influx_json = ""
@@ -256,7 +256,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 <br>
                 <br>
                 """
-
+    # inprogress
     def read_influx_json(self):
         # use influx json config file
         if self.influx_json == "":
@@ -418,7 +418,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         else:
             self.logger.info("email_txt not in test_parameters json")
         if "lf_mgr" in self.json_data["test_parameters"]:
-            self.lf_mgr_port = self.json_data["test_parameters"]["lf_mgr"]
+            self.lf_mgr = self.json_data["test_parameters"]["lf_mgr"]
         else:
             self.logger.info("lf_mgr not in test_parameters json")
 
@@ -489,9 +489,9 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         # LF_MGR parameters not used yet
         if 'LF_MGR' in config_file.sections():
             section = config_file['LF_MGR']
-            self.lf_mgr_ip = section['LF_MGR_IP']
+            self.lf_mgr = section['LF_MGR_IP']
             self.lf_mgr_port = section['LF_MGR_PORT']
-            self.logger.info("lf_mgr_ip {}".format(self.lf_mgr_ip))
+            self.logger.info("lf_mgr {}".format(self.lf_mgr))
             self.logger.info("lf_mgr_port {}".format(self.lf_mgr_port))
 
         if 'TEST_PARAMETERS' in config_file.sections():
@@ -614,6 +614,11 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('FTP_TEST_IP',self.ftp_test_ip)
                 if 'TEST_IP' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_IP',self.test_ip)
+
+                if 'LF_MGR' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR',self.lf_mgr)
+                if 'LF_MGR_PORT' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT',self.lf_mgr_port)
 
                 if 'RADIO_USED' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED',self.radio_lf)
