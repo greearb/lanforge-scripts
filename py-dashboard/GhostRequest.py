@@ -306,7 +306,7 @@ class GhostRequest:
             for file in files:
                 if 'pdf' in file:
                     url = 'http://%s/%s/%s/%s/%s' % (
-                        ghost_host, customer.strip('/'), testbed, test_run, file)
+                        ghost_host, customer.strip('/'), testbed, target_folder, file)
                     pdfs.append('PDF of results: <a href="%s">%s</a><br />' % (url, file))
             scp_push.close()
             self.upload_images(target_folder)
