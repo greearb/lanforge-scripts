@@ -347,7 +347,7 @@ class GhostRequest:
 
         text = 'Testbed: %s<br />' % testbeds[0]
         dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td></tr>' \
-                    '<tr><td>%s</td><td>%s</td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial)
+                    '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial)
         text = text + dut_table
 
         for pdf in pdfs:
