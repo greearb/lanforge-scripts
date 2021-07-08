@@ -187,7 +187,8 @@ class GrafanaRequest:
                                 from_date='now-1y',
                                 to_date='now',
                                 graph_height=8,
-                                graph__width=12):
+                                graph__width=12,
+                                pass_fail=None):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -221,6 +222,9 @@ class GrafanaRequest:
             print('Target CSVs: %s' % target_csvs)
             graph_groups = self.get_graph_groups(
                 target_csvs)  # Get the list of graph groups which are in the tests we ran
+        if pass_fail is not None:
+            graph_groups[pass_fail] = ['PASS', 'FAIL']
+
         for scriptname in graph_groups.keys():
             for graph_group in graph_groups[scriptname]:
                 panel = dict()
@@ -358,7 +362,8 @@ class GrafanaRequest:
         data['expires'] = 360000
         data['external'] = False
         data['timeout'] = 15
-        print(data)
+        if self.debug:
+            print(data)
         return requests.post(grafanajson_url, headers=self.headers, json=data, verify=False).text
 
     def list_snapshots(self):

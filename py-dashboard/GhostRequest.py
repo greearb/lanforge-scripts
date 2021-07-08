@@ -3,7 +3,7 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Class holds default settings for json requests to Ghost     -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-import ast
+
 import os
 import sys
 
@@ -14,12 +14,13 @@ if sys.version_info[0] != 3:
 import requests
 
 import jwt
-from datetime import datetime as date
+from datetime import datetime
 import json
 import subprocess
 from scp import SCPClient
 import paramiko
 from GrafanaRequest import GrafanaRequest
+from influx2 import RecordInflux
 import time
 from collections import Counter
 import shutil
@@ -111,7 +112,12 @@ class GhostRequest:
                  _api_token=None,
                  _overwrite='false',
                  debug_=False,
-                 die_on_error_=False):
+                 die_on_error_=False,
+                 influx_host=None,
+                 influx_port=8086,
+                 influx_org=None,
+                 influx_token=None,
+                 influx_bucket=None):
         self.debug = debug_
         self.die_on_error = die_on_error_
         self.ghost_json_host = _ghost_json_host
@@ -123,6 +129,11 @@ class GhostRequest:
         self.api_token = _api_token
         self.images = list()
         self.pdfs = list()
+        self.influx_host = influx_host
+        self.influx_port = influx_port
+        self.influx_org = influx_org
+        self.influx_token = influx_token
+        self.influx_bucket = influx_bucket
 
     def encode_token(self):
 
@@ -130,7 +141,7 @@ class GhostRequest:
         key_id, secret = self.api_token.split(':')
 
         # Prepare header and payload
-        iat = int(date.now().timestamp())
+        iat = int(datetime.now().timestamp())
 
         header = {'alg': 'HS256', 'typ': 'JWT', 'kid': key_id}
         payload = {
@@ -228,6 +239,7 @@ class GhostRequest:
                      grafana_port=3000,
                      grafana_datasource='InfluxDB',
                      grafana_bucket=None):
+        global dut_hw, dut_sw, dut_model, dut_serial
         text = ''
         csvreader = CSVReader()
         if grafana_token is not None:
@@ -268,6 +280,8 @@ class GhostRequest:
         high_priority_list = list()
         low_priority_list = list()
         images = list()
+        times = list()
+        test_pass_fail = list()
 
         for target_folder in target_folders:
             try:
@@ -275,15 +289,23 @@ class GhostRequest:
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 csv_testbed = csvreader.get_column(df, 'test-rig')[0]
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
+                test_pass_fail.append(pass_fail)
                 dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
                 dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
                 dut_model = csvreader.get_column(df, 'dut-model-num')[0]
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
+                times_append = csvreader.get_column(df, 'Date')
+                for target_time in times_append:
+                    times.append(float(target_time)/1000)
                 if pass_fail['PASS'] + pass_fail['FAIL'] > 0:
                     text = text + 'Tests passed: %s<br />' % pass_fail['PASS']
                     text = text + 'Tests failed: %s<br />' % pass_fail['FAIL']
                     text = text + 'Percentage of tests passed: %s<br />' % (
-                            pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
+                        pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
+                else:
+                    text = text + 'Tests passed: 0<br />' \
+                                  'Tests failed : 0<br />' \
+                                  'Percentage of tests passed: Not Applicable<br />'
 
             except:
                 print("Failure")
@@ -324,7 +346,13 @@ class GhostRequest:
 
             low_priority_list.append(low_priority)
 
-        now = date.now()
+        now = datetime.now()
+
+        print(times)
+
+        end_time = max(times)
+        start_time = '2021-07-01'
+        end_time = datetime.utcfromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
 
         high_priority = csvreader.concat(high_priority_list)
         low_priority = csvreader.concat(low_priority_list)
@@ -333,7 +361,7 @@ class GhostRequest:
         low_priority = csvreader.get_columns(low_priority, ['short-description', 'numeric-score', 'test details'])
 
         if title is None:
-            title = "%s %s %s %s:%s report" % (now.day, now.month, now.year, now.hour, now.minute)
+            title = now.strftime('%B %d, %Y %I:%M %p report')
 
         # create Grafana Dashboard
         target_files = []
@@ -343,11 +371,42 @@ class GhostRequest:
         grafana.create_custom_dashboard(target_csvs=target_files,
                                         title=title,
                                         datasource=grafana_datasource,
-                                        bucket=grafana_bucket)
+                                        bucket=grafana_bucket,
+                                        from_date=start_time,
+                                        to_date=end_time,
+                                        pass_fail='GhostRequest')
+
+
+        test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
+        if self.influx_token is not None:
+            influxdb = RecordInflux(_influx_host=self.influx_host,
+                                    _influx_port=self.influx_port,
+                                    _influx_org=self.influx_org,
+                                    _influx_token=self.influx_token,
+                                    _influx_bucket=self.influx_bucket)
+            short_description = 'Ghost Post Tests passed'#variable name
+            numeric_score = test_pass_fail_results['PASS'] #value
+            print(numeric_score)
+            tags = dict()
+            tags['testbed'] = csv_testbed
+            tags['script'] = 'GhostRequest'
+            tags['Graph-Group'] = 'PASS'
+            date = now.isoformat() #date
+            influxdb.post_to_influx(short_description, numeric_score, tags, date)
+
+            short_description = 'Ghost Post Tests failed'#variable name
+            numeric_score = test_pass_fail_results['FAIL'] #value
+            print(numeric_score)
+            tags = dict()
+            tags['testbed'] = csv_testbed
+            tags['script'] = 'GhostRequest'
+            tags['Graph-Group'] = 'FAIL'
+            date = now.isoformat() #date
+            influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
-        dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td></tr>' \
-                    '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial)
+        dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td><td>Tests passed</td><td>Tests failed</td></tr>' \
+                    '<tr><td style="white-space:nowrap">%s</td><td style="white-space:nowrap">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial, test_pass_fail_results['PASS'], test_pass_fail_results['FAIL'])
         text = text + dut_table
 
         for pdf in pdfs:

@@ -48,14 +48,29 @@ class UseGhost(GhostRequest):
                  _debug_on=False,
                  _exit_on_fail=False,
                  _ghost_host="localhost",
-                 _ghost_port=2368, ):
+                 _ghost_port=2368,
+                 influx_host=None,
+                 influx_port=None,
+                 influx_org=None,
+                 influx_token=None,
+                 influx_bucket=None):
         super().__init__(_ghost_host,
                          str(_ghost_port),
                          _api_token=_ghost_token,
+                         influx_host=influx_host,
+                         influx_port=influx_port,
+                         influx_org=influx_org,
+                         influx_token=influx_token,
+                         influx_bucket=influx_bucket,
                          debug_=_debug_on)
         self.ghost_host = _ghost_host
         self.ghost_port = _ghost_port
         self.ghost_token = _ghost_token
+        self.influx_host = influx_host
+        self.influx_port = influx_port
+        self.influx_org = influx_org
+        self.influx_token = influx_token
+        self.influx_bucket = influx_bucket
 
     def create_post_from_file(self, title, file, tags, authors):
         text = open(file).read()
@@ -141,12 +156,27 @@ def main():
     optional.add_argument('--parent_folder', default=None)
     optional.add_argument('--datasource', default='InfluxDB')
     optional.add_argument('--grafana_bucket', default=None)
+    optional.add_argument('--influx_host')
+    optional.add_argument('--influx_token', help='Username for your Influx database')
+    optional.add_argument('--influx_bucket', help='Password for your Influx database')
+    optional.add_argument('--influx_org', help='Name of your Influx database')
+    optional.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
+    optional.add_argument('--influx_tag', action='append', nargs=2,
+                          help='--influx_tag <key> <val>   Can add more than one of these.')
+    optional.add_argument('--influx_mgr',
+                          help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
+                          default=None)
     optional.add_argument('--debug')
     args = parser.parse_args()
 
     Ghost = UseGhost(_ghost_token=args.ghost_token,
                      _ghost_port=args.ghost_port,
                      _ghost_host=args.ghost_host,
+                     influx_host=args.influx_host,
+                     influx_port=args.influx_port,
+                     influx_org=args.influx_org,
+                     influx_token=args.influx_token,
+                     influx_bucket=args.influx_bucket,
                      _debug_on=args.debug)
 
     if args.create_post is not None:
