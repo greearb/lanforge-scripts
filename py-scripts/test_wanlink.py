@@ -21,14 +21,14 @@ class LANtoWAN(Realm):
         self.args = args
         self.lan_port="eth2"
         self.wan_port="eth3"
-        self.prefix='sta'
-        self.number_template="00000"
+        # self.prefix='sta'
+        # self.number_template="00000"
         self.radio="wiphy0"
-        self.sta_list = []
-        self.side_a_min_rate=0
-        self.side_a_max_rate=56
-        self.side_b_min_rate=0
-        self.side_b_max_rate=56
+        # self.sta_list = []
+        # self.side_a_min_rate=0
+        # self.side_a_max_rate=56
+        # self.side_b_min_rate=0
+        # self.side_b_max_rate=56
         self._debug_on=False
         self._exit_on_error=False
         self._exit_on_fail=False
@@ -65,7 +65,7 @@ class LANtoWAN(Realm):
             "resource": resource,
             "port": "rd0a",
             "latency": self.args['latency_A'],
-            "max_rate": max_rate
+            "max_rate": self.args['rate_A']
         }
         self.json_post(url, data)
 
@@ -76,7 +76,7 @@ class LANtoWAN(Realm):
             "resource": resource,
             "port": "rd1a",
             "latency": self.args['latency_B'],
-            "max_rate": max_rate
+            "max_rate": self.args['rate_B']
         }
         self.json_post(url, data)
         create_wanlink.main('http://'+self.args['host']+':8080', self.args)
@@ -100,11 +100,14 @@ def main():
     if optional_args is not None:
         # optional_args.add_argument('--lanport', help='Select the port you want for lanport', default='wiphy0')
         # optional_args.add_argument('--wanport', help='Select the port you want for wanport', default='wiphy1'
+        optional_args.add_argument('--rate', help='The maximum rate of transfer at both endpoints (bits/s)', default=1000000)
+        optional_args.add_argument('--rate_A', help='The max rate of transfer at endpoint A (bits/s)', default=None)
+        optional_args.add_argument('--rate_B', help='The maximum rate of transfer (bits/s)', default=None)
         optional_args.add_argument('--latency', help='The delay of both ports', default=20)
         optional_args.add_argument('--latency_A', help='The delay of port A', default=None)
-        optional_args.add_argument('--latency_B', help='The delay of port B', default=None)        
-        # todo: bandwidth
-        # todo: packet loss
+        optional_args.add_argument('--latency_B', help='The delay of port B', default=None)
+        # todo: packet loss A and B
+        # todo: jitter A and B
         for group in parser._action_groups:
             if group.title == "optional arguments":
                 optional_args=group
@@ -118,7 +121,10 @@ def main():
         "password": parseargs.passwd,
         "latency": parseargs.latency,
         "latency_A": (parseargs.latency_A if parseargs.latency_A is not None else parseargs.latency),
-        "latency_B": (parseargs.latency_B if parseargs.latency_B is not None else parseargs.latency)
+        "latency_B": (parseargs.latency_B if parseargs.latency_B is not None else parseargs.latency),
+        "rate": (parseargs.rate),
+        "rate_A": (parseargs.rate_A if parseargs.rate_A is not None else parseargs.rate),
+        "rate_B": (parseargs.rate_B if parseargs.rate_B is not None else parseargs.rate)
     }
     ltw=LANtoWAN(args)
     ltw.create_wanlinks()

@@ -17,7 +17,7 @@ from LANforge import LFUtils
 from LANforge.LFUtils import NA
 
 j_printer = pprint.PrettyPrinter(indent=2)
-# typically you're using resource 1 in stand alone realm
+# todo: this needs to change
 resource_id = 1
 
 def main(base_url="http://localhost:8080", args={}): 
@@ -69,13 +69,12 @@ def main(base_url="http://localhost:8080", args={}):
    # create wanlink 1a
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
    lf_r.addPostData({
-      'alias': 'wl_eg1-A',
-      'shelf': 1,
-      'resource': '1',
-      'port': port_a,
-      'latency': args['latency_A'],
-      'max_rate': '128000',
-      'description': 'cookbook-example'
+       'alias': 'wl_eg1-A',
+       'shelf': 1,
+       'resource': '1',
+       'port': port_a,
+       'latency': args['latency_A'],
+       'max_rate': args['rate_A']
    })
    lf_r.jsonPost()
    sleep(0.05)
@@ -83,13 +82,12 @@ def main(base_url="http://localhost:8080", args={}):
    # create wanlink 1b
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
    lf_r.addPostData({
-      'alias': 'wl_eg1-B',
-      'shelf': 1,
-      'resource': '1',
-      'port': port_b,
+       'alias': 'wl_eg1-B',
+       'shelf': 1,
+       'resource': '1',
+       'port': port_b,
        'latency': args['latency_B'],
-      'max_rate': '256000',
-      'description': 'cookbook-example'
+       'max_rate': args['rate_B']
    })
    lf_r.jsonPost()
    sleep(0.05)
