@@ -62,12 +62,20 @@ class CSVReader:
 
     def to_html(self, df):
         html = ''
-        html = html + ('<table style="border:1px solid #ddd"><tr>')
-        for row in df[1:]:
+        html = html + ('<table style="border:1px solid #ddd">'
+                       '<colgroup>'
+                       '<col style="width:25%">'
+                       '<col style="width:25%">'
+                       '<col style="width:50%">'
+                       '</colgroup>'
+                       '<tbody>'
+                       '<tr>')
+        for row in df:
             for item in row:
                 html = html + ('<td style="border:1px solid #ddd">%s</td>' % item)
             html = html + ('</tr>\n<tr>')
-        html = html + ('</table>')
+        html = html + ('</tbody>'
+                       '</table>')
         return html
 
     def filter_df(self, df, column, expression, target):
@@ -341,6 +349,8 @@ class GhostRequest:
 
             results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'test-priority'])
 
+            results[0] = ['Short Description', 'Score', 'Test Details', 'test-priority']
+
             low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
             high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
             high_priority_list.append(high_priority)
@@ -356,8 +366,8 @@ class GhostRequest:
         high_priority = csvreader.concat(high_priority_list)
         low_priority = csvreader.concat(low_priority_list)
 
-        high_priority = csvreader.get_columns(high_priority, ['short-description', 'numeric-score', 'test details'])
-        low_priority = csvreader.get_columns(low_priority, ['short-description', 'numeric-score', 'test details'])
+        high_priority = csvreader.get_columns(high_priority, ['Short Description', 'Score', 'Test Details'])
+        low_priority = csvreader.get_columns(low_priority, ['Short Description', 'Score', 'Test Details'])
 
         if title is None:
             title = now.strftime('%B %d, %Y %I:%M %p report')
