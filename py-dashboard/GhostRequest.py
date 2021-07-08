@@ -374,7 +374,8 @@ class GhostRequest:
                                         bucket=grafana_bucket,
                                         from_date=start_time,
                                         to_date=end_time,
-                                        pass_fail='GhostRequest')
+                                        pass_fail='GhostRequest',
+                                        testbed=testbeds[0])
 
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
@@ -387,7 +388,7 @@ class GhostRequest:
             short_description = 'Ghost Post Tests passed'#variable name
             numeric_score = test_pass_fail_results['PASS'] #value
             tags = dict()
-            tags['testbed'] = csv_testbed
+            tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'PASS'
             date = now.astimezone().isoformat() #date
@@ -396,7 +397,7 @@ class GhostRequest:
             short_description = 'Ghost Post Tests failed'#variable name
             numeric_score = test_pass_fail_results['FAIL'] #value
             tags = dict()
-            tags['testbed'] = csv_testbed
+            tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'FAIL'
             date = now.astimezone().isoformat() #date
