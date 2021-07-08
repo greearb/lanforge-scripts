@@ -321,8 +321,9 @@ class GhostRequest:
             transport.connect(None, user_push, password_push)
             sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
 
-            print(local_path)
-            print(target_folder)
+            if self.debug:
+                print(local_path)
+                print(target_folder)
             scp_push.put(target_folder, local_path, recursive=True)
             files = sftp.listdir(local_path + '/' + target_folder)
             for file in files:
@@ -348,8 +349,6 @@ class GhostRequest:
 
         now = datetime.now()
 
-        print(times)
-
         end_time = max(times)
         start_time = '2021-07-01'
         end_time = datetime.utcfromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -367,7 +366,8 @@ class GhostRequest:
         target_files = []
         for folder in target_folders:
             target_files.append(folder.split('/')[-1] + '/kpi.csv')
-        print('Target files: %s' % target_files)
+        if self.debug:
+            print('Target files: %s' % target_files)
         grafana.create_custom_dashboard(target_csvs=target_files,
                                         title=title,
                                         datasource=grafana_datasource,
@@ -386,22 +386,20 @@ class GhostRequest:
                                     _influx_bucket=self.influx_bucket)
             short_description = 'Ghost Post Tests passed'#variable name
             numeric_score = test_pass_fail_results['PASS'] #value
-            print(numeric_score)
             tags = dict()
             tags['testbed'] = csv_testbed
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'PASS'
-            date = now.isoformat() #date
+            date = now.astimezone().isoformat() #date
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
             short_description = 'Ghost Post Tests failed'#variable name
             numeric_score = test_pass_fail_results['FAIL'] #value
-            print(numeric_score)
             tags = dict()
             tags['testbed'] = csv_testbed
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'FAIL'
-            date = now.isoformat() #date
+            date = now.astimezone().isoformat() #date
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
