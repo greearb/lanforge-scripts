@@ -400,9 +400,7 @@ class cv_test(Realm):
               (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
-        influxdb = RecordInflux(_lfjson_host="",
-                                _lfjson_port="",
-                                _influx_host=args.influx_host,
+        influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,
                                 _influx_token=args.influx_token,

@@ -1154,9 +1154,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     influxdb = None
     if args.influx_bucket is not None:
         from influx2 import RecordInflux
-        influxdb = RecordInflux(_lfjson_host=lfjson_host,
-                                _lfjson_port=lfjson_port,
-                                _influx_host=args.influx_host,
+        influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,
                                 _influx_token=args.influx_token,

@@ -305,6 +305,7 @@ python3 ./test_ip_variable_time.py
                         help='how frequently do you want your monitor function to take measurements; \, 35s, 2h',
                         default='10s')
     parser.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
+    parser.add_argument('--influx_host')
     parser.add_argument('--influx_token', help='Username for your Influx database')
     parser.add_argument('--influx_bucket', help='Password for your Influx database')
     parser.add_argument('--influx_org', help='Name of your Influx database')
@@ -471,11 +472,11 @@ python3 ./test_ip_variable_time.py
 
     if args.influx_org is not None:
         from influx2 import RecordInflux
-        grapher = RecordInflux(  # _influx_host=manager,
-            _influx_port=args.influx_port,
-            _influx_org=args.influx_org,
-            _influx_token=args.influx_token,
-            _influx_bucket=args.influx_bucket)
+        grapher = RecordInflux(_influx_host=args.influx_host,
+                               _influx_port=args.influx_port,
+                               _influx_org=args.influx_org,
+                               _influx_token=args.influx_token,
+                               _influx_bucket=args.influx_bucket)
         devices = [station.split('.')[-1] for station in station_list]
         tags = dict()
         tags['script'] = 'test_ip_variable_time'

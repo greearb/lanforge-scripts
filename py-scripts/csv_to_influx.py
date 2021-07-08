@@ -146,9 +146,7 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
 
     args = parser.parse_args()
 
-    influxdb = RecordInflux(_lfjson_host=lfjson_host,
-                            _lfjson_port=lfjson_port,
-                            _influx_host=args.influx_host,
+    influxdb = RecordInflux(_influx_host=args.influx_host,
                             _influx_port=args.influx_port,
                             _influx_org=args.influx_org,
                             _influx_token=args.influx_token,
