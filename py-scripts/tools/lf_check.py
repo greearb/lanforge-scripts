@@ -134,32 +134,36 @@ class lf_check():
         self.lf_mgr = "" 
         self.lf_mgr_port = "" 
 
+        #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
+        # --influx_token=
 
-        # influx database configuration
-        self.influx_json = ""
-        self.influx_config = False
-        self.influx_host = ""
-        self.influx_port = ""
-        self.influx_org = ""
-        self.influx_token = ""
-        self.influx_bucket = ""
-        self.influx_tag = ""
+        # database configuration  # database
+        self.database_json = ""
+        self.database_config = False
+        self.database_host = "c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
+        self.database_port = "8086"
+        self.database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
+        self.database_org = "Candela"
+        self.database_bucket = "lanforge_qa_testing"
+        self.database_tag = 'testbed CT-US-001' # due to the space will need to single quote below
+        self.dut_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U
 
-        # ghost configuration
-        self.ghost_json = ""
-        self.ghost_config = False
-        self.ghost_token = ""
-        self.ghost_host = ""
-        self.grafana_host = ""
-        self.grafana_token = ""
-        self.parent_folder = ""
-        self.server = ""
-        self.user_push = ""
-        self.password_push = ""
-        self.customer = ""
-        self.user_pull = ""
-        self.password_pull = ""
-        self.grafana_dashboard = ""
+        # grafana configuration  #dashboard
+        self.dashboard_json = ""
+        self.dashboard_host = "c7-grafana.candelatech.com" # 192.168.100.201
+        self.dashboard_token = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
+
+        # ghost configuration 
+        self.blog_json = ""
+        self.blog_config = False
+        self.blog_host = "192.168.100.153"
+        self.blog_token = "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742"
+        self.blog_authors = "Matthew"
+        self.blog_customer = "candela"
+        self.blog_user_push = "lanforge"
+        self.blog_password_push = "lanforge"
+        self.blog_flag = "--kpi_to_ghost"
+
         self.test_run = ""
 
     # NOT complete : will send the email results
@@ -598,7 +602,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 self.logger.info("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
-                # make the command replace ment a separate method call.
+                # Configure Tests
                 # loop through radios
                 for radio in self.radio_dict:
                     # replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
@@ -639,6 +643,44 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 # of the reports when the reports are pulled.
                 if 'REPORT_PATH' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('REPORT_PATH',self.report_path)
+
+                # database configuration
+                if 'DATABASE_HOST' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_HOST',self.database_host)
+                if 'DATABASE_PORT' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_PORT',self.database_port)
+                if 'DATABASE_TOKEN' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TOKEN',self.database_token)
+                if 'DATABASE_ORG' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_ORG',self.database_org)
+                if 'DATABASE_BUCKET' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_BUCKET',self.database_org)
+                if 'DATABASE_TAG' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TAG',self.database_tag)
+                if 'DUT_NAME' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_name)
+
+                # dashboard configuration
+                if 'DASHBOARD_HOST' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DASHBOARD_HOST',self.dashboard_host)
+                if 'DASHBOARD_TOKEN' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DASHBOARD_TOKEN',self.dashboard_token)
+
+                # blog configuration
+                if 'BLOG_HOST' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_HOST',self.blog_host)
+                if 'BLOG_TOKEN' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_TOKEN',self.blog_token)
+                if 'BLOG_AUTHORS' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_AUTHORS',self.blog_authors)
+                if 'BLOG_CUSTOMER' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_CUSTOMER',self.blog_customer)
+                if 'BLOG_USER_PUSH' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_USER_PUSH',self.blog_user_push)
+                if 'BLOG_PASSWORD_PUSH' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_PASSWORD_PUSH',self.blog_password_push)
+                if 'BLOG_FLAG' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_FLAG',self.blog_flag)
 
                 if 'load_db' in self.test_dict[test]:
                     self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
