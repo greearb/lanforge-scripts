@@ -146,7 +146,7 @@ class lf_check():
         self.database_org = "Candela"
         self.database_bucket = "lanforge_qa_testing"
         self.database_tag = 'testbed CT-US-001' # due to the space will need to single quote below
-        self.dut_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U
+        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U
 
         # grafana configuration  #dashboard
         self.dashboard_json = ""
@@ -644,6 +644,10 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 if 'REPORT_PATH' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('REPORT_PATH',self.report_path)
 
+                # The TEST_BED is the database tag
+                if 'TEST_BED' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_BED',self.database_tag)
+
                 # database configuration
                 if 'DATABASE_HOST' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_HOST',self.database_host)
@@ -654,11 +658,11 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 if 'DATABASE_ORG' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_ORG',self.database_org)
                 if 'DATABASE_BUCKET' in self.test_dict[test]['args']:
-                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_BUCKET',self.database_org)
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_BUCKET',self.database_bucket)
                 if 'DATABASE_TAG' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TAG',self.database_tag)
-                if 'DUT_NAME' in self.test_dict[test]['args']:
-                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_name)
+                if 'DUT_SET_NAME' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_set_name)
 
                 # dashboard configuration
                 if 'DASHBOARD_HOST' in self.test_dict[test]['args']:
