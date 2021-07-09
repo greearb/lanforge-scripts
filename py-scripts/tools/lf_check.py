@@ -662,7 +662,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 if 'DATABASE_TAG' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TAG',self.database_tag)
                 if 'DUT_SET_NAME' in self.test_dict[test]['args']:
-                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_set_name)
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SET_NAME',self.dut_set_name)
 
                 # dashboard configuration
                 if 'DASHBOARD_HOST' in self.test_dict[test]['args']:
