@@ -137,6 +137,9 @@ class lf_check():
         #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
+        # DUT , Test rig must match testbed
+        self.test_rig = "CT-US-001"
+
         # database configuration  # database
         self.database_json = ""
         self.database_config = False
@@ -145,8 +148,9 @@ class lf_check():
         self.database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
         self.database_org = "Candela"
         self.database_bucket = "lanforge_qa_testing"
-        self.database_tag = 'testbed CT-US-001' # due to the space will need to single quote below
+        self.database_tag = 'testbed CT-US-001' # the test_rig needs to match
         self.dut_set_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U
+
 
         # grafana configuration  #dashboard
         self.dashboard_json = ""
@@ -663,6 +667,9 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TAG',self.database_tag)
                 if 'DUT_SET_NAME' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SET_NAME',self.dut_set_name)
+
+                if 'TEST_RIG' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_RIG',self.test_rig)
 
                 # dashboard configuration
                 if 'DASHBOARD_HOST' in self.test_dict[test]['args']:
