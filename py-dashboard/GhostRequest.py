@@ -292,7 +292,7 @@ class GhostRequest:
         images = list()
         times = list()
         test_pass_fail = list()
-        devices = dict()
+        duts = dict()
 
         for target_folder in target_folders:
             try:
@@ -305,7 +305,7 @@ class GhostRequest:
                 dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
                 dut_model = csvreader.get_column(df, 'dut-model-num')[0]
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
-                devices[csv_testbed] = [dut_hw, dut_sw, dut_model, dut_serial]
+                duts[csv_testbed] = [dut_hw, dut_sw, dut_model, dut_serial]
                 times_append = csvreader.get_column(df, 'Date')
                 for target_time in times_append:
                     times.append(float(target_time) / 1000)
@@ -424,27 +424,31 @@ class GhostRequest:
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
-        dut_table = '<table style="border:1px solid #ddd"><tr>' \
-                    '<td>Device</td>' \
-                    '<td>DUT_HW</td>' \
-                    '<td>DUT_SW</td>' \
-                    '<td>DUT model</td>' \
-                    '<td>DUT Serial</td>' \
-                    '<td>Tests passed</td>' \
-                    '<td>Tests failed</td></tr>'
-        for device, data in devices.items():
-            dut_table = dut_table + '<tr><td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
-                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td></tr></table>' % (
+        dut_table = '<table width="700px" border="1" cellpadding="2" cellspacing="0" ' \
+                    'style="border-color: gray; border-style: solid; border-width: 1px; "><tbody>' \
+                    '<tr><th colspan="2">Ghost Request requested values</th></tr>'
+        for device, data in duts.items():
+            dut_table = dut_table + '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Device</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_HW</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_SW</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT model</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT Serial</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests passed</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests failed</td>' \
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                                    '</tbody></table>' % (
                     device, data[0], data[1], data[2], data[3], test_pass_fail_results['PASS'],
                     test_pass_fail_results['FAIL'])
         text = text + dut_table
 
         for pdf in pdfs:
+            print(pdf)
             text = text + pdf
 
         for image in images:
