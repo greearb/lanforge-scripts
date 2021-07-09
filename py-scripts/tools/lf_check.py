@@ -142,8 +142,8 @@ class lf_check():
 
         # database configuration  # database
         self.database_json = ""
-        self.database_config = False
-        self.database_host = "c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
+        self.database_config = "True" # default to False once testing done
+        self.database_host = "192.168.100.201" #"c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
         self.database_port = "8086"
         self.database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
         self.database_org = "Candela"
@@ -154,7 +154,8 @@ class lf_check():
 
         # grafana configuration  #dashboard
         self.dashboard_json = ""
-        self.dashboard_host = "c7-grafana.candelatech.com" # 192.168.100.201
+        self.dashboard_config = "True" # default to False once testing done
+        self.dashboard_host = "192.168.100.201" #"c7-grafana.candelatech.com" # 192.168.100.201
         self.dashboard_token = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
 
         # ghost configuration 
@@ -189,14 +190,17 @@ class lf_check():
             message_txt = """{email_txt} lanforge target {lf_mgr}
 Results from {hostname}:
 http://{ip}/{report}
+Blog:
+http://{blog}
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
-""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr=self.lf_mgr)
+""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr=self.lf_mgr,blog=self.blog_host)
 
         else:
             message_txt = """Results from {hostname}:
 http://{ip}/{report}
-NOTE: for now to see stdout and stderr remove /home/lanforge from path.
-""".format(hostname=hostname, ip=ip, report=report_url)
+Blog:
+blog: http://{blog}
+""".format(hostname=hostname, ip=ip, report=report_url,blog=self.blog_host)
 
         if(self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt,hostname=hostname, date=datetime.datetime.now())
@@ -264,54 +268,6 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
                 <br>
                 <br>
                 """
-    # inprogress
-    def read_influx_json(self):
-        # use influx json config file
-        if self.influx_json == "":
-            self.influx_config = False
-        else:
-            self.influx_config = True
-            try:
-                with open(self.influx_json, 'r') as influx_json_config:
-                    influx_json_data = json.load(influx_json_config)
-            except:
-                print("Error reading {}".format(self.influx_json))
-            # json configuation takes presidence to command line 
-            # influx DB configuration
-            if "influx_host" in influx_json_data:
-                self.influx_host = influx_json_data["influx_host"]
-            else:
-                self.logger.info("WARNING influx_host not in json {}".format(influx_json_data))
-                self.influx_config = False
-            if "influx_port" in influx_json_data:
-                self.influx_port = influx_json_data["influx_port"]
-            else:
-                self.logger.info("WARNING influx_port not in json {}".format(influx_json_data))
-                self.influx_config = False
-            if "influx_org" in influx_json_data:
-                self.influx_org = influx_json_data["influx_org"]
-            else:
-                self.logger.info("WARNING influx_org not in json {}".format(influx_json_data))
-                self.influx_config = False
-            if "influx_token" in influx_json_data:
-                self.influx_token = influx_json_data["influx_token"]
-            else:
-                self.logger.info("WARNING influx_token not in json {}".format(influx_json_data))
-                self.influx_config = False
-            if "influx_bucket" in influx_json_data:
-                self.influx_bucket = influx_json_data["influx_bucket"]
-            else:
-                self.logger.info("WARNING influx_bucket not in json {}".format(influx_json_data))
-                self.influx_config = False
-            if "influx_tag" in influx_json_data:
-                self.influx_tag = influx_json_data["influx_tag"]
-            else:
-                self.logger.info("WARNING influx_tag not in json {}".format(influx_json_data))
-                self.influx_config = False
-
-    #def read_ghost_json(self):
-        
-
 
 
     def read_config(self):
@@ -339,6 +295,27 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         else:
             self.logger.info("EXITING test_network not in json {}".format(self.json_data))
             exit(1)
+
+        if "test_database" in self.json_data:
+            self.logger.info("json: read test_database")
+            #self.logger.info("test_database {}".format(self.json_data["test_database"]))
+            self.read_test_database()
+        else:
+            self.logger.info("NOTE: test_database not found in json")
+        
+        if "test_dashboard" in self.json_data:
+            self.logger.info("json: read test_dashboard")
+            #self.logger.info("test_dashboard {}".format(self.json_data["test_dashboard"]))
+            self.read_test_dashboard()
+        else:
+            self.logger.info("NOTE: test_dashboard not found in json")
+
+        if "test_blog" in self.json_data:
+            self.logger.info("json: read test_blog")
+            #self.logger.info("test_blog {}".format(self.json_data["test_blog"]))
+            self.read_test_blog()
+        else:
+            self.logger.info("NOTE: test_blog not found in json")
 
         if "test_generic" in self.json_data:
             self.logger.info("json: read test_generic")
@@ -447,6 +424,97 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
         else:
             self.logger.info("test_ip not in test_network json")
             exit(1)
+
+    def read_test_database(self):
+        if "database_config" in self.json_data["test_database"]:
+            self.database_config = self.json_data["test_database"]["database_config"]
+        else:
+            self.logger.info("database_config not in test_database json")
+        if "database_host" in self.json_data["test_database"]:
+            self.database_host = self.json_data["test_database"]["database_host"]
+        else:
+            self.logger.info("database_host not in test_database json")
+        if "database_port" in self.json_data["test_database"]:
+            self.database_port = self.json_data["test_database"]["database_port"]
+        else:
+            self.logger.info("database_port not in test_database json")
+        if "database_token" in self.json_data["test_database"]:
+            self.database_token = self.json_data["test_database"]["database_token"]
+        else:
+            self.logger.info("database_token not in test_database json")
+        if "database_org" in self.json_data["test_database"]:
+            self.database_org = self.json_data["test_database"]["database_org"]
+        else:
+            self.logger.info("database_org not in test_database json")
+        if "database_bucket" in self.json_data["test_database"]:
+            self.database_bucket = self.json_data["test_database"]["database_bucket"]
+        else:
+            self.logger.info("database_bucket not in test_database json")
+        if "database_tag" in self.json_data["test_database"]:
+            self.database_tag = self.json_data["test_database"]["database_tag"]
+        else:
+            self.logger.info("database_tag not in test_database json")
+        if "dut_set_name" in self.json_data["test_database"]:
+            self.dut_set_name = self.json_data["test_database"]["dut_set_name"]
+        else:
+            self.logger.info("dut_set_name not in test_database json")
+
+    def read_test_dashboard(self):
+        if "dashboard_config" in self.json_data["test_dashboard"]:
+            self.dashboard_config = self.json_data["test_dashboard"]["dashboard_config"]
+        else:
+            self.logger.info("dashboard_config not in test_dashboard json")
+
+        if "dashboard_host" in self.json_data["test_dashboard"]:
+            self.dashboard_host = self.json_data["test_dashboard"]["dashboard_host"]
+        else:
+            self.logger.info("dashboard_host not in test_dashboard json")
+
+        if "dashboard_token" in self.json_data["test_dashboard"]:
+            self.dashboard_token = self.json_data["test_dashboard"]["dashboard_token"]
+        else:
+            self.logger.info("dashboard_token not in test_dashboard json")
+
+    def read_test_blog(self):
+        if "blog_config" in self.json_data["test_blog"]:
+            self.blog_config = self.json_data["test_blog"]["blog_config"]
+        else:
+            self.logger.info("blog_config not in test_blog json")
+
+        if "blog_host" in self.json_data["test_blog"]:
+            self.blog_host = self.json_data["test_blog"]["blog_host"]
+        else:
+            self.logger.info("blog_host not in test_blog json")
+
+        if "blog_token" in self.json_data["test_blog"]:
+            self.blog_token = self.json_data["test_blog"]["blog_token"]
+        else:
+            self.logger.info("blog_token not in test_blog json")
+
+        if "blog_authors" in self.json_data["test_blog"]:
+            self.blog_authors = self.json_data["test_blog"]["blog_authors"]
+        else:
+            self.logger.info("blog_authors not in test_blog json")
+
+        if "blog_customer" in self.json_data["test_blog"]:
+            self.blog_customer = self.json_data["test_blog"]["blog_customer"]
+        else:
+            self.logger.info("blog_customer not in test_blog json")
+
+        if "blog_user_push" in self.json_data["test_blog"]:
+            self.blog_user_push = self.json_data["test_blog"]["blog_user_push"]
+        else:
+            self.logger.info("blog_user_push not in test_blog json")
+
+        if "blog_password_push" in self.json_data["test_blog"]:
+            self.blog_password_push = self.json_data["test_blog"]["blog_password_push"]
+        else:
+            self.logger.info("blog_password_push not in test_blog json")
+
+        if "blog_flag" in self.json_data["test_blog"]:
+            self.blog_flag = self.json_data["test_blog"]["blog_flag"]
+        else:
+            self.logger.info("blog_flag not in test_blog json")
 
     def read_test_generic(self):
         if "radio_used" in self.json_data["test_generic"]:
