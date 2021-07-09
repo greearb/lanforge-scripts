@@ -441,10 +441,11 @@ class GhostRequest:
                                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests passed</td>' \
                                     '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
                                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests failed</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '</tbody></table>' % (
+                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % (
                     device, data[0], data[1], data[2], data[3], test_pass_fail_results['PASS'],
                     test_pass_fail_results['FAIL'])
+
+        dut_table = dut_table + '</tbody></table>'
         text = text + dut_table
 
         for pdf in pdfs:
