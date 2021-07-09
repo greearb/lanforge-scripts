@@ -320,6 +320,10 @@ class GrafanaRequest:
                     panel['title'] = scriptname + ' ' + graph_group
                 else:
                     panel['title'] = scriptname
+                if 'PASS' in panel['title']:
+                    panel['title'] = 'Total Passed'
+                if 'FAIL' in panel['title']:
+                    panel['title'] = 'Total Failed'
                 panel['transformations'] = list()
                 panel['transformations'].append(transformation)
                 panel['type'] = "graph"

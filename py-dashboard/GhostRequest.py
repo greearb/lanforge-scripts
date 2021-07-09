@@ -255,7 +255,8 @@ class GhostRequest:
                                      grafana_host,
                                      grafanajson_port=grafana_port
                                      )
-        print('Folders: %s' % folders)
+        if self.debug:
+            print('Folders: %s' % folders)
 
         ssh_push = paramiko.SSHClient()
         ssh_push.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
@@ -280,7 +281,8 @@ class GhostRequest:
             print('Target folders: %s' % target_folders)
         else:
             for folder in folders:
-                print(folder)
+                if self.debug:
+                    print(folder)
                 target_folders.append(folder)
 
         testbeds = list()
@@ -304,12 +306,12 @@ class GhostRequest:
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
                 times_append = csvreader.get_column(df, 'Date')
                 for target_time in times_append:
-                    times.append(float(target_time)/1000)
+                    times.append(float(target_time) / 1000)
                 if pass_fail['PASS'] + pass_fail['FAIL'] > 0:
                     text = text + 'Tests passed: %s<br />' % pass_fail['PASS']
                     text = text + 'Tests failed: %s<br />' % pass_fail['FAIL']
                     text = text + 'Percentage of tests passed: %s<br />' % (
-                        pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
+                            pass_fail['PASS'] / (pass_fail['PASS'] + pass_fail['FAIL']))
                 else:
                     text = text + 'Tests passed: 0<br />' \
                                   'Tests failed : 0<br />' \
@@ -347,9 +349,10 @@ class GhostRequest:
                         images.append('<img src="%s"></img>' % image)
             self.images = []
 
-            results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'test-priority'])
+            results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'pass/fail',
+                                                 'test-priority'])
 
-            results[0] = ['Short Description', 'Score', 'Test Details', 'test-priority']
+            results[0] = ['Short Description', 'Score', 'Test Details', 'Pass or Fail', 'test-priority']
 
             low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
             high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
@@ -359,6 +362,8 @@ class GhostRequest:
 
         now = datetime.now()
 
+        test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
+
         end_time = max(times)
         start_time = '2021-07-01'
         end_time = datetime.utcfromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -366,8 +371,12 @@ class GhostRequest:
         high_priority = csvreader.concat(high_priority_list)
         low_priority = csvreader.concat(low_priority_list)
 
-        high_priority = csvreader.get_columns(high_priority, ['Short Description', 'Score', 'Test Details'])
-        low_priority = csvreader.get_columns(low_priority, ['Short Description', 'Score', 'Test Details'])
+        high_priority = csvreader.get_columns(high_priority,
+                                              ['Short Description', 'Score', 'Test Details'])
+        low_priority = csvreader.get_columns(low_priority,
+                                             ['Short Description', 'Score', 'Test Details'])
+        high_priority.append(['Total Passed', test_pass_fail_results['PASS'], 'Total subtests passed during this run'])
+        high_priority.append(['Total Failed', test_pass_fail_results['FAIL'], 'Total subtests failed during this run'])
 
         if title is None:
             title = now.strftime('%B %d, %Y %I:%M %p report')
@@ -387,35 +396,36 @@ class GhostRequest:
                                         pass_fail='GhostRequest',
                                         testbed=testbeds[0])
 
-
-        test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
         if self.influx_token is not None:
             influxdb = RecordInflux(_influx_host=self.influx_host,
                                     _influx_port=self.influx_port,
                                     _influx_org=self.influx_org,
                                     _influx_token=self.influx_token,
                                     _influx_bucket=self.influx_bucket)
-            short_description = 'Ghost Post Tests passed'#variable name
-            numeric_score = test_pass_fail_results['PASS'] #value
+            short_description = 'Ghost Post Tests passed'  # variable name
+            numeric_score = test_pass_fail_results['PASS']  # value
             tags = dict()
+            print(datetime.utcfromtimestamp(max(times)))
             tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'PASS'
-            date = now.astimezone().isoformat() #date
+            date = datetime.utcfromtimestamp(max(times)).isoformat()
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
-            short_description = 'Ghost Post Tests failed'#variable name
-            numeric_score = test_pass_fail_results['FAIL'] #value
+            short_description = 'Ghost Post Tests failed'  # variable name
+            numeric_score = test_pass_fail_results['FAIL']  # value
             tags = dict()
             tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'FAIL'
-            date = now.astimezone().isoformat() #date
+            date = datetime.utcfromtimestamp(max(times)).isoformat()
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
         dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td><td>Tests passed</td><td>Tests failed</td></tr>' \
-                    '<tr><td style="white-space:nowrap">%s</td><td style="white-space:nowrap">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (dut_hw, dut_sw, dut_model, dut_serial, test_pass_fail_results['PASS'], test_pass_fail_results['FAIL'])
+                    '<tr><td style="white-space:nowrap">%s</td><td style="white-space:nowrap">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (
+                    dut_hw, dut_sw, dut_model, dut_serial, test_pass_fail_results['PASS'],
+                    test_pass_fail_results['FAIL'])
         text = text + dut_table
 
         for pdf in pdfs:
@@ -442,4 +452,3 @@ class GhostRequest:
                          text=text,
                          tags='custom',
                          authors=authors)
-
