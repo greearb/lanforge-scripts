@@ -98,6 +98,13 @@ class GenTest(LFCliBase):
         if (speedtest_max_ping is not None):
             self.generic_endps_profile.speedtest_max_ping = float(speedtest_max_ping)
 
+    def check_tab_exists(self):
+        response = self.json_get("generic")
+        if response is None:
+            return False
+        else:
+            return True
+
     def start(self, print_pass=False, print_fail=False):
         self.station_profile.admin_up()
         temp_stas = []
@@ -290,6 +297,8 @@ python3 ./test_generic.py
                            client=args.client,
                            _debug_on=args.debug)
 
+    if not generic_test.check_tab_exists():
+        raise ValueError("Error received from GUI, please ensure generic tab is enabled")
     generic_test.cleanup(station_list)
     generic_test.build()
     if not generic_test.passes():
