@@ -35,8 +35,6 @@ GENERIC NOTES:
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
-2. Use json to pass in influx config and ghost config
-3. note the symbolic link at 192.168.100.201:/var/www/html/html-reports is pointing to /home/lanforge/html-reports
 
 '''
 import datetime
@@ -199,7 +197,7 @@ NOTE: for now to see stdout and stderr remove /home/lanforge from path.
             message_txt = """Results from {hostname}:
 http://{ip}/{report}
 Blog:
-blog: http://{blog}
+blog: http://{blog}:2368
 """.format(hostname=hostname, ip=ip, report=report_url,blog=self.blog_host)
 
         if(self.email_title_txt != ""):
@@ -996,6 +994,7 @@ Example :
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
+    report.build_footer()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:
