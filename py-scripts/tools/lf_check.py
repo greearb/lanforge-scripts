@@ -452,6 +452,10 @@ blog: http://{blog}:2368
             self.database_tag = self.json_data["test_database"]["database_tag"]
         else:
             self.logger.info("database_tag not in test_database json")
+        if "test_rig" in self.json_data["test_database"]:
+            self.test_rig = self.json_data["test_database"]["test_rig"]
+        else:
+            self.logger.info("test_rig not in test_database json")
         if "dut_set_name" in self.json_data["test_database"]:
             self.dut_set_name = self.json_data["test_database"]["dut_set_name"]
         else:
@@ -994,7 +998,6 @@ Example :
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
-    report.build_footer()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:
