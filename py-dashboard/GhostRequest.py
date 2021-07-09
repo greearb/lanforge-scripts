@@ -292,6 +292,7 @@ class GhostRequest:
         images = list()
         times = list()
         test_pass_fail = list()
+        devices = dict()
 
         for target_folder in target_folders:
             try:
@@ -304,6 +305,7 @@ class GhostRequest:
                 dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
                 dut_model = csvreader.get_column(df, 'dut-model-num')[0]
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
+                devices[csv_testbed] = [dut_hw, dut_sw, dut_model, dut_serial]
                 times_append = csvreader.get_column(df, 'Date')
                 for target_time in times_append:
                     times.append(float(target_time) / 1000)
@@ -422,9 +424,23 @@ class GhostRequest:
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
-        dut_table = '<table><tr><td>DUT_HW</td><td>DUT_SW</td><td>DUT model</td><td>DUT Serial</td><td>Tests passed</td><td>Tests failed</td></tr>' \
-                    '<tr><td style="white-space:nowrap">%s</td><td style="white-space:nowrap">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr></table>' % (
-                    dut_hw, dut_sw, dut_model, dut_serial, test_pass_fail_results['PASS'],
+        dut_table = '<table style="border:1px solid #ddd"><tr>' \
+                    '<td>Device</td>' \
+                    '<td>DUT_HW</td>' \
+                    '<td>DUT_SW</td>' \
+                    '<td>DUT model</td>' \
+                    '<td>DUT Serial</td>' \
+                    '<td>Tests passed</td>' \
+                    '<td>Tests failed</td></tr>'
+        for device, data in devices.items():
+            dut_table = dut_table + '<tr><td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td>' \
+                                    '<td style="white-space:nowrap; border:1px solid #ddd">%s</td></tr></table>' % (
+                    device, data[0], data[1], data[2], data[3], test_pass_fail_results['PASS'],
                     test_pass_fail_results['FAIL'])
         text = text + dut_table
 
