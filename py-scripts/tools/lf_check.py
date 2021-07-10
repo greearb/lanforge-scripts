@@ -676,6 +676,11 @@ blog: http://{blog}:2368
                 self.logger.info("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
+                # if args key has a value of an empty scring then need to manipulate the args_list to args 
+                # list does not have replace only stings do to args_list will be joined and  converted to a string and placed
+                # in args.  Then the replace below will work.
+                if self.test_dict[test]['args'] == "":
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],''.join(self.test_dict[test]['args_list']))
                 # Configure Tests
                 # loop through radios
                 for radio in self.radio_dict:
