@@ -998,6 +998,7 @@ Example :
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
+    report.build_footer_no_png()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:

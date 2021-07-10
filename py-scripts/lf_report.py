@@ -402,6 +402,29 @@ class lf_report():
                         """
         self.html += self.footer_html
 
+    def build_footer_no_png(self):
+        self.footer_html = """<!DOCTYPE html>
+                            <html lang='en'>
+                            <footer>
+                                <meta charset='UTF-8'>
+                                <meta name='viewport' content='width=device-width, initial-scale=1' />
+                                <style>
+                                body {{ margin: 0; padding: 0; }}
+                                </style>
+                                <link rel='stylesheet' href='report.css' />
+                                <link rel='stylesheet' href='custom.css' />
+                            </footer>
+                        <body>
+                            <div class='FooterStyle'>
+                                <p>Generate by Candela Technologies LANforge network testing tool</p>
+                                <p><a href="https://www.candelatech.com">www.candelatech.com</a><p>
+                            </div>
+                        </body>
+
+                        """
+        self.html += self.footer_html
+
+
     def build_custom(self):
         self.html += self.custom_html
 
@@ -467,7 +490,8 @@ if __name__ == "__main__":
     report.build_table()
 
     #report.build_all()
-    report.build_footer()
+    #report.build_footer()
+    report.build_footer_no_png()
 
     html_file = report.write_html() 
     print("returned file ")
