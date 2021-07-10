@@ -131,6 +131,8 @@ class lf_check():
         self.email_txt = ""
         self.lf_mgr = "" 
         self.lf_mgr_port = "" 
+        self.dut_name = "" # "ASUSRT-AX88U" note this is not dut_set_name
+        self.dut_bssid = "" #"3c:7c:3f:55:4d:64" - this is the mac for the radio this may be seen with a scan 
 
         #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
@@ -147,7 +149,7 @@ class lf_check():
         self.database_org = "Candela"
         self.database_bucket = "lanforge_qa_testing"
         self.database_tag = 'testbed CT-US-001' # the test_rig needs to match
-        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U
+        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U' # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
 
 
         # grafana configuration  #dashboard
@@ -404,7 +406,18 @@ blog: http://{blog}:2368
             self.lf_mgr = self.json_data["test_parameters"]["lf_mgr"]
         else:
             self.logger.info("lf_mgr not in test_parameters json")
-
+        if "lf_mgr_port" in self.json_data["test_parameters"]:
+            self.lf_mgr_port = self.json_data["test_parameters"]["lf_mgr_port"]
+        else:
+            self.logger.info("lf_mgr_port not in test_parameters json")
+        if "dut_name" in self.json_data["test_parameters"]:
+            self.dut_name = self.json_data["test_parameters"]["dut_name"]
+        else:
+            self.logger.info("dut_name not in test_parameters json")
+        if "dut_bssid" in self.json_data["test_parameters"]:
+            self.dut_bssid = self.json_data["test_parameters"]["dut_bssid"]
+        else:
+            self.logger.info("dut_bssid not in test_parameters json")
 
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
@@ -702,6 +715,8 @@ blog: http://{blog}:2368
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR',self.lf_mgr)
                 if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT',self.lf_mgr_port)
+                if 'DUT_NAME' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_name)
 
                 if 'RADIO_USED' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED',self.radio_lf)
