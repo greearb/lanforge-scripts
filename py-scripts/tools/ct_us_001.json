@@ -68,7 +68,7 @@
         },
         "suite_wc_dp_00":{
             "CT-US-001_wifi_capacity_ATH10K(9984)":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
-                "argslist":[
+                "args_list":[
                     " --mgr 192.168.100.116 --port 8080 --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan1",
