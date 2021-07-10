@@ -189,7 +189,7 @@ class lf_check():
 Results from {hostname}:
 http://{ip}/{report}
 Blog:
-http://{blog}
+http://{blog}:2368
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
 """.format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr=self.lf_mgr,blog=self.blog_host)
 
