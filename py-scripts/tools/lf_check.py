@@ -563,7 +563,7 @@ blog: http://{blog}:2368
             self.logger.info("col_names not in test_generic json")
             exit(1)
         if "upstream_port" in self.json_data["test_generic"]:
-            self.num_sta = self.json_data["test_generic"]["upstream_port"]
+            self.upstream_port = self.json_data["test_generic"]["upstream_port"]
         else:
             self.logger.info("upstream_port not in test_generic json")
             exit(1)
@@ -731,7 +731,7 @@ blog: http://{blog}:2368
                 if 'COL_NAMES' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('COL_NAMES',self.col_names)
                 if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
-                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.col_names)
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',self.upstream_port)
 
                 # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location 
                 # of the reports when the reports are pulled.
