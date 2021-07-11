@@ -88,9 +88,9 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ct-us-001-scenario ",
-                    " --raw_line 'profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA' ",
-                    " --raw_line 'profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA' ",
-                    " --raw_line 'profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA'"                    
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
             "CT-US-001_wifi_capacity_ATH10K(9984)":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
@@ -125,9 +125,9 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ct-us-001-scenario ",
-                    " --raw_line 'profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA' ",
-                    " --raw_line 'profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA' ",
-                    " --raw_line 'profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA'"                    
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
                 ]
             },    
             "CT-US-001_wifi_capacity_AX210":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
