@@ -1,7 +1,17 @@
 {
+    "ct_us_002":{
+        "Notes":[
+            "The json is used to orchastrate the tests to be run on testbed ct_us_001",
+            "This json file is used as an input to the ./lf_check.py file",
+            "The variables that are all capitalized below are replaced with configuration",
+            "from the json file. so LF_MGR in the test below is replaced by the json lf_mgr",
+            "The replacement is loosely coupled so the upper and lower case convention is used",
+            "to identify replaced strings in the lf_check.py code."  
+        ]  
+    },
     "test_parameters":{
         "test_bed": "CT-US-002",
-        "lf_mgr": "192.168.100.201",
+        "lf_mgr": "192.168.100.200",
         "lf_mgr_port": "8080",
         "dut_name": "Ruckus-R750",
         "dut_bssid": "4c:b1:cd:18:e8:ec",
@@ -21,6 +31,15 @@
         "http_test_ip": "10.40.0.10",
         "ftp_test_ip": "10.40.0.10",
         "test_ip": "192.168.0.104"
+    },
+    "test_generic":{
+        "radio_used": "wiphy1",
+        "ssid_used": "ruckus-r750-5g",
+        "ssid_pw_used": "hello123",
+        "security_used": "wpa2",
+        "num_sta": 4,
+        "col_names": "name,tx_byptes,rx_bytes,dropped",
+        "upstream_port": "eth2"
     },
     "test_database":{
         "database_config": "True",
@@ -47,15 +66,6 @@
         "blog_user_push": "lanforge",
         "blog_password_push": "lanforge",
         "blog_flag": "--kpi_to_ghost"
-    },
-    "test_generic":{
-        "radio_used": "wiphy1",
-        "ssid_used": "ruckus-r750-5g",
-        "ssid_pw_used": "hello123",
-        "security_used": "wpa2",
-        "num_sta": 4,
-        "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "eth2"
     },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"ruckus-r750-5g","PASSWD":"hello123","SECURITY":"wpa2"},
