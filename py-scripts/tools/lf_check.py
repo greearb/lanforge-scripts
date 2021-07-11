@@ -129,7 +129,7 @@ class lf_check():
         self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
-        self.lf_mgr = "" 
+        self.lf_mgr_ip = "" 
         self.lf_mgr_port = "" 
         self.dut_name = "" # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_bssid = "" #"3c:7c:3f:55:4d:64" - this is the mac for the radio this may be seen with a scan 
@@ -402,10 +402,10 @@ blog: http://{blog}:2368
             self.email_txt = self.json_data["test_parameters"]["email_txt"]
         else:
             self.logger.info("email_txt not in test_parameters json")
-        if "lf_mgr" in self.json_data["test_parameters"]:
-            self.lf_mgr = self.json_data["test_parameters"]["lf_mgr"]
+        if "lf_mgr_ip" in self.json_data["test_parameters"]:
+            self.lf_mgr = self.json_data["test_parameters"]["lf_mgr_ip"]
         else:
-            self.logger.info("lf_mgr not in test_parameters json")
+            self.logger.info("lf_mgr_ip not in test_parameters json")
         if "lf_mgr_port" in self.json_data["test_parameters"]:
             self.lf_mgr_port = self.json_data["test_parameters"]["lf_mgr_port"]
         else:
@@ -711,8 +711,8 @@ blog: http://{blog}:2368
                 if 'TEST_IP' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_IP',self.test_ip)
 
-                if 'LF_MGR' in self.test_dict[test]['args']:
-                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR',self.lf_mgr)
+                if 'LF_MGR_IP' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_IP',self.lf_mgr_ip)
                 if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT',self.lf_mgr_port)
                 if 'DUT_NAME' in self.test_dict[test]['args']:
