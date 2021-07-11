@@ -78,7 +78,7 @@
         "suite_wc_dp":{
             "CT-US-002_create_chamberview_dut_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
                 "args_list":[
-                    "--lfmgr LF_MGR_IP--port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
@@ -94,7 +94,7 @@
             },
             "CT-US-002_wifi_capacity_ATH10k(9984)":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
                 "args_list":[
-                    "--mgr 192.168.100.200 --port 8080 --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan1",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
@@ -103,7 +103,7 @@
             },
             "CT-US-002_dataplane_ATH10k(9984) CT-US-002":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"",
                 "args_list":[
-                    "--mgr 192.168.100.200 --port 8080 --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
                     " --config_name test_con --upstream 1.1.eth2 --dut DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' ",
@@ -114,7 +114,7 @@
             },
             "CT-US-002_create_chamberview_dut_2":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
                 "args_list":[
-                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
@@ -130,7 +130,7 @@
             },
             "CT-US-002_wifi_capacity_AX200 CT-US-002":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
                 "args_list":[
-                    " --mgr LF_MGR --port LF_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan4 ",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",

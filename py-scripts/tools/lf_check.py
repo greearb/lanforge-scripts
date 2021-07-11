@@ -187,13 +187,13 @@ class lf_check():
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
         if(self.email_txt != ""):
-            message_txt = """{email_txt} lanforge target {lf_mgr}
+            message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 http://{ip}/{report}
 Blog:
 http://{blog}:2368
 NOTE: for now to see stdout and stderr remove /home/lanforge from path.
-""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr=self.lf_mgr,blog=self.blog_host)
+""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,blog=self.blog_host)
 
         else:
             message_txt = """Results from {hostname}:
@@ -403,7 +403,7 @@ blog: http://{blog}:2368
         else:
             self.logger.info("email_txt not in test_parameters json")
         if "lf_mgr_ip" in self.json_data["test_parameters"]:
-            self.lf_mgr = self.json_data["test_parameters"]["lf_mgr_ip"]
+            self.lf_mgr_ip = self.json_data["test_parameters"]["lf_mgr_ip"]
         else:
             self.logger.info("lf_mgr_ip not in test_parameters json")
         if "lf_mgr_port" in self.json_data["test_parameters"]:
