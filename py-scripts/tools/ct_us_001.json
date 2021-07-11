@@ -81,7 +81,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=3c:7c:3f:55:4d:64'",
                     " --ssid 'ssid_idx=1 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=3c:7c:3f:55:4d:64'",
-                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
+                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]
             },
             "CT-US-001_create_chamberview_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
@@ -118,7 +118,7 @@
                     "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=3c:7c:3f:55:4d:64'",
                     " --ssid 'ssid_idx=1 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=3c:7c:3f:55:4d:64'",
-                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
+                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]
             },
             "CT-US-001_create_chamberview_2":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",

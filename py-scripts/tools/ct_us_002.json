@@ -81,7 +81,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
-                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
+                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
                 "args_list":[
@@ -117,7 +117,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=4c:b1:cd:18:e8:ec'",
-                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num 'ct523c'"
+                    " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_2":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
                 "args_list":[
