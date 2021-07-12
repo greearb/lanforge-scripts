@@ -109,8 +109,8 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
                     " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH ",
-                    " --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG --influx_token=DATABASE_TOKEN",
-                    " --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
             "CT-US-001_create_chamberview_dut_2":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
@@ -146,8 +146,8 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
                     " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH",
-                    " --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG --influx_token=DATABASE_TOKEN",
-                    " --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
             "GHOST":{"enabled":"TRUE","load_db":"skip","command":"ghost_profile.py","args":"",
