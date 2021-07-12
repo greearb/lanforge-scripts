@@ -15,6 +15,7 @@ import json
 import string
 import random
 
+
 class CSVReader:
     def __init__(self):
         self.shape = None
@@ -41,6 +42,7 @@ class CSVReader:
             values.append(row[index])
         return values
 
+
 class GrafanaRequest:
     def __init__(self,
                  _grafana_token,
@@ -63,6 +65,7 @@ class GrafanaRequest:
         self.data = dict()
         self.data['overwrite'] = _overwrite
         self.csvreader = CSVReader()
+        self.units = dict()
 
     def create_bucket(self,
                       bucket_name=None):
@@ -128,7 +131,12 @@ class GrafanaRequest:
                 # we need to make sure we match each Graph Group to the script it occurs in
                 for script in scripts:
                     # Unique Graph Groups for each script
-                    dictionary[script] = list(set(self.csvreader.get_column(csv, 'Graph-Group')))
+                    graph_groups = self.csvreader.get_column(csv, 'Graph-Group')
+                    dictionary[script] = list(set(graph_groups))
+                    units = self.csvreader.get_column(csv, 'Units')
+                    self.units[script] = dict()
+                    for index in range(0, len(graph_groups)):
+                        self.units[script][graph_groups[index]] = units[index]
         print(dictionary)
         return dictionary
 
@@ -173,7 +181,6 @@ class GrafanaRequest:
         dic['params'].append(params)
         dic['type'] = grouptype
         return dic
-
 
     def create_custom_dashboard(self,
                                 scripts=None,
@@ -226,6 +233,7 @@ class GrafanaRequest:
             graph_groups[pass_fail] = ['PASS', 'FAIL']
 
         for scriptname in graph_groups.keys():
+            print(scriptname)
             for graph_group in graph_groups[scriptname]:
                 panel = dict()
 
@@ -276,7 +284,10 @@ class GrafanaRequest:
 
                 yaxis = dict()
                 yaxis['format'] = 'short'
-                #yaxis['label'] = unit_dict[graph_group]
+                try:
+                    yaxis['label'] = self.units[scriptname][graph_group]
+                except:
+                    pass
                 yaxis['logBase'] = 1
                 yaxis['max'] = None
                 yaxis['min'] = None
@@ -389,8 +400,8 @@ class GrafanaRequest:
         df = self.csvreader.read_csv(csv)
         units = self.csvreader.get_column(df, 'Units')
         test_id = self.csvreader.get_column(df, 'test-id')
-        maxunit = max(set(units), key = units.count)
-        maxtest = max(set(test_id), key = test_id.count)
+        maxunit = max(set(units), key=units.count)
+        maxtest = max(set(test_id), key=test_id.count)
         d = dict()
         d[maxunit] = maxtest
         print(maxunit, maxtest)

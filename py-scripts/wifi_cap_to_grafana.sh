@@ -37,18 +37,25 @@ echo "Build Chamber View Scenario"
 echo "run wifi capacity test"
 ./lf_wifi_capacity_test.py --config_name Custom --create_stations --radio wiphy1 --pull_report --influx_host ${INFLUX_MGR} \
 --influx_port 8086 --influx_org Candela --influx_token  ${INFLUXTOKEN} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} \
---instance_name testing --upstream eth1 --test_rig ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s
+--instance_name testing --upstream eth1 --test_rig ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s --local_lf_report_dir ${REPORT_PATH}
+
 
 
 #config_name doesn't matter, change the influx_host to your LANforge device,
 echo "run Dataplane test"
 ./lf_dataplane_test.py --mgr ${MGR} --instance_name dataplane-instance --config_name test_config --upstream 1.1.eth1 \
 --station 1.1.06 --dut linksys-8450 --influx_host ${INFLUX_MGR} --influx_port 8086 --influx_org Candela --influx_token ${INFLUXTOKEN} \
---influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s
+--influx_bucket ${INFLUXBUCKET} --influx_tag testbed ${TESTBED} --graph_groups lf_cv_rpt_filelocation.txt --duration 15s --pull_report --local_lf_report_dir ${REPORT_PATH}
+
 
 # Build grafana dashboard and graphs view for the KPI in the capacity test.
-./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token \
-${GRAFANATOKEN} --grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph_groups_file lf_cv_rpt_filelocation.txt \
---scripts Dataplane --datasource 'InfluxDB stidmatt bucket'
+#./grafana_profile.py --create_custom --title ${TESTBED} --influx_bucket ${INFLUXBUCKET} --mgr ${MGR} --grafana_token \
+#${GRAFANATOKEN} --grafana_host ${INFLUX_MGR} --testbed ${TESTBED} --graph_groups_file lf_cv_rpt_filelocation.txt \
+#--scripts Dataplane --datasource 'InfluxDB stidmatt bucket'
+
+./ghost_profile.py --ghost_token ${GHOST_TOKEN} --ghost_host ${GHOST_MGR} --authors ${AUTHOR} --customer ${CUSTOMER} \
+--user_push ${USER_PUSH} --password_push ${PASSWORD_PUSH} --kpi_to_ghost --grafana_token ${GRAFANATOKEN} --grafana_host ${INFLUX_MGR} \
+--grafana_bucket ${INFLUXBUCKET} --influx_host ${INFLUX_MGR} --influx_org Candela --influx_token ${INFLUXTOKEN} \
+--influx_bucket ${INFLUXBUCKET} --parent_folder ${REPORT_PATH}
 
 rm lf_cv_rpt_filelocation.txt

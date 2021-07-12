@@ -166,7 +166,7 @@ def main():
     optional.add_argument('--influx_mgr',
                           help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
                           default=None)
-    optional.add_argument('--debug')
+    optional.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     args = parser.parse_args()
 
     Ghost = UseGhost(_ghost_token=args.ghost_token,

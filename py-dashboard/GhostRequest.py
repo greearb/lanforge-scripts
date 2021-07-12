@@ -15,6 +15,7 @@ import requests
 
 import jwt
 from datetime import datetime
+from dateutil import tz
 import json
 import subprocess
 from scp import SCPClient
@@ -239,7 +240,7 @@ class GhostRequest:
                      user_push=None,
                      password_push=None,
                      customer=None,
-                     testbed='Unknown Testbed',
+                     testbed=None,
                      test_run=None,
                      target_folders=list(),
                      grafana_token=None,
@@ -248,6 +249,9 @@ class GhostRequest:
                      grafana_datasource='InfluxDB',
                      grafana_bucket=None):
         global dut_hw, dut_sw, dut_model, dut_serial
+
+        now = datetime.now()
+
         text = ''
         csvreader = CSVReader()
         if grafana_token is not None:
@@ -292,20 +296,19 @@ class GhostRequest:
         images = list()
         times = list()
         test_pass_fail = list()
-        duts = dict()
 
         for target_folder in target_folders:
             try:
                 target_file = '%s/kpi.csv' % target_folder
                 df = csvreader.read_csv(file=target_file, sep='\t')
-                csv_testbed = csvreader.get_column(df, 'test-rig')[0]
+                test_rig = csvreader.get_column(df, 'test-rig')[0]
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
                 test_pass_fail.append(pass_fail)
                 dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
                 dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
                 dut_model = csvreader.get_column(df, 'dut-model-num')[0]
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
-                duts[csv_testbed] = [dut_hw, dut_sw, dut_model, dut_serial]
+                duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig]
                 times_append = csvreader.get_column(df, 'Date')
                 for target_time in times_append:
                     times.append(float(target_time) / 1000)
@@ -323,11 +326,14 @@ class GhostRequest:
                 print("Failure")
                 target_folders.remove(target_folder)
                 break
-            testbeds.append(csv_testbed)
-            if testbed == 'Unknown Testbed':
-                raise UserWarning('Please define your testbed')
+            testbeds.append(test_rig)
+            if testbed is None:
+                testbed = test_rig
 
-            local_path = '/home/%s/%s/%s' % (user_push, customer, testbed)
+            if test_run is None:
+                test_run = now.strftime('%B-%d-%Y-%I-%M-%p-report')
+
+            local_path = '/home/%s/%s/%s/%s' % (user_push, customer, testbed, test_run)
 
             transport = paramiko.Transport(ghost_host, port)
             transport.connect(None, user_push, password_push)
@@ -336,12 +342,22 @@ class GhostRequest:
             if self.debug:
                 print(local_path)
                 print(target_folder)
+
+            try:
+                sftp.mkdir('/home/%s/%s/%s' % (user_push, customer, testbed))
+            except:
+                pass
+
+            try:
+                sftp.mkdir(local_path)
+            except:
+                pass
             scp_push.put(target_folder, local_path, recursive=True)
             files = sftp.listdir(local_path + '/' + target_folder)
             for file in files:
                 if 'pdf' in file:
-                    url = 'http://%s/%s/%s/%s/%s' % (
-                        ghost_host, customer.strip('/'), testbed, target_folder, file)
+                    url = 'http://%s/%s/%s/%s/%s/%s' % (
+                        ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
                     pdfs.append('PDF of results: <a href="%s">%s</a><br />' % (url, file))
             scp_push.close()
             self.upload_images(target_folder)
@@ -362,13 +378,15 @@ class GhostRequest:
 
             low_priority_list.append(low_priority)
 
-        now = datetime.now()
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
 
         end_time = max(times)
         start_time = '2021-07-01'
-        end_time = datetime.utcfromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.utcfromtimestamp(end_time)#.strftime('%Y-%m-%d %H:%M:%S')
+        now = time.time()
+        offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
+        end_time = end_time + offset
 
         high_priority = csvreader.concat(high_priority_list)
         low_priority = csvreader.concat(low_priority_list)
@@ -381,7 +399,7 @@ class GhostRequest:
         high_priority.append(['Total Failed', test_pass_fail_results['FAIL'], 'Total subtests failed during this run'])
 
         if title is None:
-            title = now.strftime('%B %d, %Y %I:%M %p report')
+            title = end_time.strftime('%B %d, %Y %I:%M %p report')
 
         # create Grafana Dashboard
         target_files = []
@@ -394,7 +412,7 @@ class GhostRequest:
                                         datasource=grafana_datasource,
                                         bucket=grafana_bucket,
                                         from_date=start_time,
-                                        to_date=end_time,
+                                        to_date=end_time.strftime('%Y-%m-%d %H:%M:%S'),
                                         pass_fail='GhostRequest',
                                         testbed=testbeds[0])
 
@@ -426,24 +444,23 @@ class GhostRequest:
         text = 'Testbed: %s<br />' % testbeds[0]
         dut_table = '<table width="700px" border="1" cellpadding="2" cellspacing="0" ' \
                     'style="border-color: gray; border-style: solid; border-width: 1px; "><tbody>' \
-                    '<tr><th colspan="2">Ghost Request requested values</th></tr>'
-        for device, data in duts.items():
-            dut_table = dut_table + '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Device</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_HW</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_SW</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT model</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT Serial</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests passed</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
-                                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests failed</td>' \
-                                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % (
-                    device, data[0], data[1], data[2], data[3], test_pass_fail_results['PASS'],
-                    test_pass_fail_results['FAIL'])
+                    '<tr><th colspan="2">Test Information</th></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Testbed</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_HW</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_SW</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT model</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT Serial</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests passed</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests failed</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % (
+                        duts[4], duts[1], duts[2], duts[3], duts[0], test_pass_fail_results['PASS'],
+                        test_pass_fail_results['FAIL'])
 
         dut_table = dut_table + '</tbody></table>'
         text = text + dut_table

@@ -28,8 +28,7 @@ the options and how best to input data.
       --set 'Multiple Assoc Stability' 0 \
       --set 'Downlink MU-MIMO' 0 \
       --set 'AP Coexistence' 0 \
-      --set 'Long Term Stability' 0 \
-      --test_rig Testbed-01
+      --set 'Long Term Stability' 0
 
 Note:
     --raw_line 'line contents' will add any setting to the test config.  This is
@@ -61,7 +60,6 @@ notes1: smaller CT810a chamber.  CT704b and CT714 4-module attenuators are used.
 notes2: mounted on the sides of the DUT chamber are used to communicate to the DUT.   DUT is facing forward at
 notes3: the zero-rotation angle.
 bg: 0xE0ECF8
-test_rig: TR-398 test bed
 show_scan: 1
 auto_helper: 1
 skip_2: 0
@@ -278,8 +276,7 @@ def main():
       --set 'Multiple Assoc Stability' 0 \
       --set 'Downlink MU-MIMO' 0 \
       --set 'AP Coexistence' 0 \
-      --set 'Long Term Stability' 0 \
-      --test_rig Testbed-01
+      --set 'Long Term Stability' 0
 
       """
                                      )
