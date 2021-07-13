@@ -52,7 +52,7 @@ class lf_bar_graph():
                  _xticks_font = None,
                  _grp_title = "",
                  _dpi=96,
-                 _enable_csv=True):
+                 _enable_csv=False):
 
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
@@ -304,11 +304,11 @@ class lf_horizontal_stacked_graph():
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
-        # if self.enable_csv:
-        #     self.lf_csv.columns = self.label
-        #     self.lf_csv.rows = self.data_set
-        #     self.lf_csv.filename = f"{self.graph_image_name}.csv"
-        #     self.lf_csv.generate_csv()
+        if self.enable_csv:
+            self.lf_csv.columns = self.label
+            self.lf_csv.rows = self.data_set
+            self.lf_csv.filename = f"{self.graph_image_name}.csv"
+            self.lf_csv.generate_csv()
         return "%s.png" % self.graph_image_name
 
 

@@ -81,6 +81,7 @@ class lf_report():
             self.footer_html = ""
             self.graph_titles=""
             self.graph_image=""
+            self.csv_file_name=""
             self.html = ""
             self.custom_html = ""
             self.objective = _obj
@@ -146,8 +147,13 @@ class lf_report():
         print("graph_src_file: {}".format(graph_src_file))
         print("graph_dst_file: {}".format(graph_dst_file))
         shutil.move(graph_src_file, graph_dst_file)
+
     def move_csv_file(self):
-        csv_src_file = str(self.fil)
+        csv_src_file = str(self.csv_file_name)
+        csv_dst_file = str(self.path_date_time)+'/'+str(self.csv_file_name)
+        print("csv_src_file: {}".format(csv_src_file))
+        print("csv_dst_file: {}".format(csv_dst_file))
+        shutil.move(csv_src_file, csv_dst_file)
 
     def set_path(self,_path):
         self.path = _path
@@ -186,6 +192,11 @@ class lf_report():
 
     def set_graph_title(self,_graph_title):
         self.graph_title = _graph_title
+
+    # sets the csv file name as graph title
+    def set_csv_filename(self, _graph_title):
+        fname, ext = os.path.splitext(_graph_title)
+        self.csv_file_name = fname + ".csv"
 
     # The _date is set when class is enstanciated / created so this set_date should be used with caution, used to synchronize results
     def set_date(self,_date):
@@ -275,7 +286,6 @@ class lf_report():
             self.write_output_pdf = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
             pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
 
-
     def generate_report(self):
         self.write_html()            
         self.write_pdf()
@@ -351,7 +361,7 @@ class lf_report():
             os.mkdir(self.path_date_time)       
 
     def build_table(self):
-        self.dataframe_html = self.dataframe.to_html(index=False, justify='left')  # have the index be able to be passed in.
+        self.dataframe_html = self.dataframe.to_html(index=False, justify='center')  # have the index be able to be passed in.
         self.html += self.dataframe_html
 
     def test_setup_table(self,test_setup_data, value):

@@ -9,7 +9,7 @@ SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
 
 EXAMPLE:
-see: /py-scritps/lf_csv_test.py for example
+see: /py-scritps/lf_report_test.py for example
 
 COPYWRITE
     Copyright 2021 Candela Technologies Inc
@@ -41,7 +41,7 @@ class LfCSV:
             df[self.columns[i]] = self.rows[i]
         csv_df = pd.DataFrame(df)
         print(csv_df)
-        csv_df.to_csv(self.filename, encoding='utf-8', na_rep='NA', float_format='%.2f')
+        csv_df.to_csv(self.filename, index=False, encoding='utf-8', na_rep='NA', float_format='%.2f')
 
 
 if __name__ == "__main__":
