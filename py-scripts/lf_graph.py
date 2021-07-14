@@ -50,6 +50,8 @@ class lf_bar_graph():
                  _show_bar_value=False,
                  _xaxis_step=5,
                  _xticks_font = None,
+                 _text_font=None,
+                 _text_rotation=None,
                  _grp_title = "",
                  _dpi=96,
                  _enable_csv=False):
@@ -72,6 +74,8 @@ class lf_bar_graph():
         self.show_bar_value = _show_bar_value
         self.xaxis_step = _xaxis_step
         self.xticks_font = _xticks_font
+        self.text_font = _text_font
+        self.text_rotation = _text_rotation
         self.grp_title = _grp_title
         self.enable_csv = _enable_csv
         self.lf_csv = LfCSV()
@@ -90,8 +94,8 @@ class lf_bar_graph():
         def show_value(rects):
             for rect in rects:
                 h = rect.get_height()
-                plt.text(rect.get_x() + rect.get_width() / 2., h + 0.05, '%d' % int(h),
-                         ha='center', va='bottom')
+                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                         ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
 
         for data in self.data_set:
             if i > 0:
@@ -323,7 +327,7 @@ if __name__ == "__main__":
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>
         """
-    # 
+    #
     test_file = open(output_html_1, "w")
     test_file.write(graph_html_obj)
     test_file.close()
@@ -355,7 +359,7 @@ if __name__ == "__main__":
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>
         """
-    # 
+    #
     test_file = open(output_html_2, "w")
     test_file.write(graph_html_obj)
     test_file.close()
