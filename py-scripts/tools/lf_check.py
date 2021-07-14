@@ -921,7 +921,7 @@ Example :
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
     parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
     parser.add_argument('--use_json', help="--use_json ", action='store_true')
-    parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
+    parser.add_argument('--suite', '--test_suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list", action='store_true')
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")

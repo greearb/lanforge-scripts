@@ -186,6 +186,7 @@ class ApAutoTest(cvtest):
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
+                 local_lf_report_dir="",
                  instance_name="ap_auto_instance",
                  config_name="ap_auto_config",
                  upstream="1.1.eth1",
@@ -230,6 +231,7 @@ class ApAutoTest(cvtest):
         self.raw_lines_file = raw_lines_file
         self.sets = sets
         self.graph_groups = graph_groups
+        self.local_lf_report_dir = local_lf_report_dir
 
     def setup(self):
         # Nothing to do at this time.
@@ -282,7 +284,7 @@ class ApAutoTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups)
+                                 cv_cmds, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -332,6 +334,7 @@ def main():
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
 
     args = parser.parse_args()
 
@@ -345,6 +348,7 @@ def main():
                          config_name = args.config_name,
                          upstream = args.upstream,
                          pull_report = args.pull_report,
+                         local_lf_report_dir = args.local_lf_report_dir,
                          dut5_0 = args.dut5_0,
                          dut2_0 = args.dut2_0,
                          load_old_cfg = args.load_old_cfg,
