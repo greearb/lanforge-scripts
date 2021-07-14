@@ -57,6 +57,7 @@ import csv
 import shutil
 from os import path
 import shlex
+import paramiko 
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -129,8 +130,10 @@ class lf_check():
         self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
-        self.lf_mgr_ip = "" 
+        self.lf_mgr_ip = "192.168.0.102" 
         self.lf_mgr_port = "" 
+        self.lf_mgr_user = "lanforge"
+        self.lf_mgr_pass =  "lanforge"
         self.dut_name = "" # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_bssid = "" #"3c:7c:3f:55:4d:64" - this is the mac for the radio this may be seen with a scan 
 
@@ -170,6 +173,39 @@ class lf_check():
         self.blog_flag = "--kpi_to_ghost"
 
         self.test_run = ""
+
+    def get_scripts_git_sha(self):
+        # get git sha
+        process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
+        (commit_hash, err) = process.communicate()
+        exit_code = process.wait()
+        scripts_git_sha = commit_hash.decode('utf-8','ignore')
+        return scripts_git_sha
+
+    def get_lanforge_kernel_version(self):
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('uname -r')
+        output = stdout.readlines()
+        # print('\n'.join(output))
+        ssh.close()
+        time.sleep(1)
+        return output
+
+    def get_lanforge_gui_version(self):
+        output = ""
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
+        output = stdout.readlines()
+        # print('\n'.join(output))
+        ssh.close()
+        time.sleep(1)
+        return output
+        
 
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
@@ -921,7 +957,7 @@ Example :
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini", default="lf_check_config.ini")
     parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
     parser.add_argument('--use_json', help="--use_json ", action='store_true')
-    parser.add_argument('--suite', '--test_suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
+    parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list", action='store_true')
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
@@ -985,6 +1021,24 @@ Example :
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8','ignore')
 
+    try:
+        scripts_git_sha = check.get_scripts_git_sha()
+        print("git_sha {sha}".format(sha=scripts_git_sha))
+    except:
+        print("git_sha read exception ")        
+
+    try:
+        lanforge_kernel_version = check.get_lanforge_kernel_version()
+        print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
+    except:
+        print("lanforge_kernel_version exception")        
+
+    try:
+        lanforge_gui_version = check.get_lanforge_gui_version()
+        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
+    except:
+        print("lanforge_gui_version exception")        
+
     # set up logging
     logfile = args.logfile[:-4]
     print("logfile: {}".format(logfile))
@@ -1006,6 +1060,9 @@ Example :
     # read config and run tests
     check.read_config() 
     check.run_script_test()
+
+    # read lanforge
+
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
