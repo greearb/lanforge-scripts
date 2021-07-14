@@ -69,7 +69,10 @@ class CSVtoInflux():
             tags = dict()
             print("row: %s" % row)
             short_description = row[columns['short-description']]
-            numeric_score = float(row[columns['numeric-score']])
+            if row[columns['numeric-score']] == 'NaN':
+                numeric_score = '0x0'
+            else:
+                numeric_score = float(row[columns['numeric-score']])
             date = row[columns['Date']]
             date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
             for variable in csv_variables:

@@ -30,7 +30,7 @@ import shutil
 class CSVReader:
     def read_csv(self,
                  file,
-                 sep=','):
+                 sep='\t'):
         df = open(file).read().split('\n')
         rows = list()
         for x in df:
