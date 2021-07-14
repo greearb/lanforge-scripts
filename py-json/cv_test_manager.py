@@ -5,11 +5,9 @@ Note: This script is working as library for chamberview tests.
 
 import time
 
-from LANforge.lfcli_base import LFCliBase
 from realm import Realm
 import json
 from pprint import pprint
-import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
 from csv_to_influx import *
 import os.path
@@ -68,12 +66,14 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 lf_report_dir=""
+                 lf_report_dir="",
+                 debug=False
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
         self.lf_report_dir = lf_report_dir
         self.report_name = None
+        self.debug = debug
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
@@ -128,7 +128,7 @@ class cv_test(Realm):
             "cmd": command
         }
         debug_par = ""
-        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
+        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=self.debug, response_json_list_=response_json)
         try:
             if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
                 print("Unknown command?\n");

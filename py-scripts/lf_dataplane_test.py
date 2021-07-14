@@ -139,7 +139,8 @@ class DataplaneTest(cv_test):
                  sets=[],
                  graph_groups=None,
                  report_dir="",
-                 test_rig=""
+                 test_rig="",
+                 debug=False
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -168,6 +169,7 @@ class DataplaneTest(cv_test):
         self.ssh_port = ssh_port
         self.local_lf_report_dir = local_lf_report_dir
         self.test_rig = test_rig
+        self.debug = debug
 
     def setup(self):
         # Nothing to do at this time.
@@ -214,7 +216,7 @@ class DataplaneTest(cv_test):
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
                                  cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_lf_report_dir,
-                                 graph_groups_file=self.graph_groups)
+                                 graph_groups_file=self.graph_groups, debug=self.debug)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
@@ -306,6 +308,7 @@ def main():
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument("--debug", default=False)
 
 
     args = parser.parse_args()
@@ -394,7 +397,8 @@ def main():
                             raw_lines_file = args.raw_lines_file,
                             sets = args.set,
                             graph_groups = args.graph_groups,
-                            test_rig=args.test_rig
+                            test_rig=args.test_rig,
+                            debug=args.debug
                             )
     CV_Test.setup()
     CV_Test.run()
