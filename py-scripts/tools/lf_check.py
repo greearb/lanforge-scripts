@@ -131,13 +131,22 @@ class lf_check():
         self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
+
+        # lanforge configuration 
         self.lf_mgr_ip = "192.168.0.102" 
         self.lf_mgr_port = "" 
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass =  "lanforge"
-        self.dut_name = "" # "ASUSRT-AX88U" note this is not dut_set_name
-        self.dut_bssid = "" #"3c:7c:3f:55:4d:64" - this is the mac for the radio this may be seen with a scan 
 
+        # dut configuration 
+        self.dut_name = "DUT_NAME" # "ASUSRT-AX88U" note this is not dut_set_name
+        self.dut_hw = "DUT_HW"
+        self.dut_sw = "DUT_SW"
+        self.dut_model = "DUT_MODEL"
+        self.dut_serial = "DUT_SERIAL"
+        self.dut_bssid_2G = "BSSID_2G" #"3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan 
+        self.dut_bssid_5G = "BSSID_5G" #"3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan 
+        self.dut_bssid_6G = "BSSID_6G" #"3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan 
         #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
@@ -452,10 +461,34 @@ blog: http://{blog}:2368
             self.dut_name = self.json_data["test_parameters"]["dut_name"]
         else:
             self.logger.info("dut_name not in test_parameters json")
-        if "dut_bssid" in self.json_data["test_parameters"]:
-            self.dut_bssid = self.json_data["test_parameters"]["dut_bssid"]
+        if "dut_hw" in self.json_data["test_parameters"]:
+            self.dut_hw = self.json_data["test_parameters"]["dut_hw"]
         else:
-            self.logger.info("dut_bssid not in test_parameters json")
+            self.logger.info("dut_hw not in test_parameters json")
+        if "dut_sw" in self.json_data["test_parameters"]:
+            self.dut_sw = self.json_data["test_parameters"]["dut_sw"]
+        else:
+            self.logger.info("dut_sw not in test_parameters json")
+        if "dut_model" in self.json_data["test_parameters"]:
+            self.dut_model = self.json_data["test_parameters"]["dut_model"]
+        else:
+            self.logger.info("dut_model not in test_parameters json")
+        if "dut_serial" in self.json_data["test_parameters"]:
+            self.dut_serial = self.json_data["test_parameters"]["dut_serial"]
+        else:
+            self.logger.info("dut_serial not in test_parameters json")
+        if "dut_bssid_2G" in self.json_data["test_parameters"]:
+            self.dut_bssid_2G = self.json_data["test_parameters"]["dut_bssid_2G"]
+        else:
+            self.logger.info("dut_bssid_2G not in test_parameters json")
+        if "dut_bssid_5G" in self.json_data["test_parameters"]:
+            self.dut_bssid_5G = self.json_data["test_parameters"]["dut_bssid_5G"]
+        else:
+            self.logger.info("dut_bssid_5G not in test_parameters json")
+        if "dut_bssid_6G" in self.json_data["test_parameters"]:
+            self.dut_bssid_6G = self.json_data["test_parameters"]["dut_bssid_6G"]
+        else:
+            self.logger.info("dut_bssid_6G not in test_parameters json")
 
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
@@ -753,8 +786,23 @@ blog: http://{blog}:2368
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_IP',self.lf_mgr_ip)
                 if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT',self.lf_mgr_port)
+
                 if 'DUT_NAME' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME',self.dut_name)
+                if 'DUT_HW' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_HW',self.dut_hw)
+                if 'DUT_SW' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SW',self.dut_sw)
+                if 'DUT_MODEL' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_MODEL',self.dut_model)
+                if 'DUT_SERIAL' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SERIAL',self.dut_serial)
+                if 'DUT_BSSID_2G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_2G',self.dut_bssid_2g)
+                if 'DUT_BSSID_5G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_5G',self.dut_bssid_5g)
+                if 'DUT_BSSID_6G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_6G',self.dut_bssid_6g)
 
                 if 'RADIO_USED' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED',self.radio_lf)
