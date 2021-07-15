@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 
-class LfCSV:
+class lf_csv:
     def __init__(self,
                  _columns=['Stations', 'bk', 'be', 'vi', 'vo'],
                  _rows=[['sta0001', 'sta0002', 'sta0003', 'sta0004', 'sta0005'],
@@ -45,5 +45,5 @@ class LfCSV:
 
 
 if __name__ == "__main__":
-    test = LfCSV()
+    test = lf_csv()
     test.generate_csv()
