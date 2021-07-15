@@ -25,7 +25,7 @@ import pandas as pd
 import pdfkit
 import math
 from matplotlib.colors import ListedColormap
-from lf_csv import LfCSV
+from lf_csv import lf_csv
 
 
 # internal candela references included during intial phases, to be deleted at future date
@@ -78,7 +78,7 @@ class lf_bar_graph():
         self.text_rotation = _text_rotation
         self.grp_title = _grp_title
         self.enable_csv = _enable_csv
-        self.lf_csv = LfCSV()
+        self.lf_csv = lf_csv()
 
     def build_bar_graph(self):
         if self.color is None:
@@ -162,7 +162,7 @@ class lf_scatter_graph():
         self.label = _label
         self.values = _values
         self.enable_csv = _enable_csv
-        self.lf_csv = LfCSV()
+        self.lf_csv = lf_csv()
 
     def build_scatter_graph(self):
         if self.color is None:
@@ -214,7 +214,7 @@ class lf_stacked_graph():
         self.label = _label
         self.color = _color
         self.enable_csv = _enable_csv
-        self.lf_csv = LfCSV()
+        self.lf_csv = lf_csv()
 
     def build_stacked_graph(self):
         fig = plt.subplots(figsize=self.figsize)
@@ -266,7 +266,7 @@ class lf_horizontal_stacked_graph():
         self.color = _color
         self.disable_xaxis = _disable_xaxis
         self.enable_csv = _enable_csv
-        self.lf_csv = LfCSV()
+        self.lf_csv = lf_csv()
 
     def build_horizontal_stacked_graph(self):
         def sumzip(items):
