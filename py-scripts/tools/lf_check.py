@@ -121,6 +121,7 @@ class lf_check():
         self.csv_results_column_headers = ""
         self.logger = logging.getLogger(__name__)
         self.test_timeout = 120
+        self.test_timeout_default = 120
         self.use_blank_db = "FALSE"
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
@@ -386,6 +387,7 @@ blog: http://{blog}:2368
     def read_test_parameters(self):
         if "test_timeout" in self.json_data["test_parameters"]:
             self.test_timeout = self.json_data["test_parameters"]["test_timeout"]
+            self.test_timeout_default = self.test_timeout
         else:
             self.logger.info("test_timeout not in test_parameters json")
             exit(1)
@@ -725,7 +727,7 @@ blog: http://{blog}:2368
                 self.logger.info("test: {}  skipped".format(test))
             # load the default database 
             elif self.test_dict[test]['enabled'] == "TRUE":
-                # if args key has a value of an empty scring then need to manipulate the args_list to args 
+                # if args key has a value of an empty string then need to manipulate the args_list to args 
                 # list does not have replace only stings do to args_list will be joined and  converted to a string and placed
                 # in args.  Then the replace below will work.
                 if self.test_dict[test]['args'] == "":
@@ -818,6 +820,12 @@ blog: http://{blog}:2368
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_PASSWORD_PUSH',self.blog_password_push)
                 if 'BLOG_FLAG' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_FLAG',self.blog_flag)
+
+                if 'timeout' in self.test_dict[test]:
+                    self.logger.info("timeout : {}".format(self.test_dict[test]['timeout']))
+                    self.test_timeout = int(self.test_dict[test]['timeout'])
+                else:
+                    self.test_timeout = self.test_timeout_default                    
 
                 if 'load_db' in self.test_dict[test]:
                     self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
