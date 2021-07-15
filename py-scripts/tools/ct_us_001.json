@@ -15,7 +15,7 @@
         "lf_mgr_port": "8080",
         "dut_name": "ASUSRT-AX88U",
         "dut_bssid": "3c:7c:3f:55:4d:64",
-        "test_timeout": 360,
+        "test_timeout": 300,
         "load_blank_db": false,
         "load_factory_default_db": true,
         "load_custom_db": false,
@@ -84,7 +84,7 @@
                     " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]
             },
-            "CT-US-001_create_chamberview_wiphy1_sta16":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-001_create_chamberview_wiphy1_sta64":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ct-us-001-scenario ",
@@ -92,7 +92,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "CT-US-001_wifi_capacity_wiphy1_ATH10K(9984)_sta16":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
+            "CT-US-001_wifi_capacity_wiphy1_ATH10K(9984)_sta64":{"enabled":"TRUE","timeout":"360","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
