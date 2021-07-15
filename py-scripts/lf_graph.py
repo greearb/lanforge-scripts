@@ -25,16 +25,20 @@ import pandas as pd
 import pdfkit
 import math
 from matplotlib.colors import ListedColormap
+from lf_csv import LfCSV
 
 
 # internal candela references included during intial phases, to be deleted at future date
 
 # graph reporting classes
 class lf_bar_graph():
-    def __init__(self, _data_set=[[30, 55, 69, 37], [45, 67, 34, 22], [22, 45, 12, 34]],
+    def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4],
+                 _xaxis_categories=[1, 2, 3, 4, 5],
+                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _graph_title="",
+                 _title_size=16,
                  _graph_image_name="image_name",
                  _label=["bi-downlink", "bi-uplink", 'uplink'],
                  _color=None,
@@ -43,12 +47,22 @@ class lf_bar_graph():
                  _font_weight='bold',
                  _color_name=['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y'],
                  _figsize=(10, 5),
-                 _dpi=96):
+                 _show_bar_value=False,
+                 _xaxis_step=5,
+                 _xticks_font = None,
+                 _text_font=None,
+                 _text_rotation=None,
+                 _grp_title = "",
+                 _dpi=96,
+                 _enable_csv=False):
 
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
         self.xaxis_categories = _xaxis_categories
+        self.xaxis_label = _xaxis_label
+        self.title = _graph_title
+        self.title_size = _title_size
         self.graph_image_name = _graph_image_name
         self.label = _label
         self.color = _color
@@ -57,6 +71,14 @@ class lf_bar_graph():
         self.font_weight = _font_weight
         self.color_name = _color_name
         self.figsize = _figsize
+        self.show_bar_value = _show_bar_value
+        self.xaxis_step = _xaxis_step
+        self.xticks_font = _xticks_font
+        self.text_font = _text_font
+        self.text_rotation = _text_rotation
+        self.grp_title = _grp_title
+        self.enable_csv = _enable_csv
+        self.lf_csv = LfCSV()
 
     def build_bar_graph(self):
         if self.color is None:
@@ -68,31 +90,53 @@ class lf_bar_graph():
 
         fig = plt.subplots(figsize=self.figsize)
         i = 0
+
+        def show_value(rects):
+            for rect in rects:
+                h = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                         ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
+
         for data in self.data_set:
             if i > 0:
                 br = br1
                 br2 = [x + self.bar_width for x in br]
-                plt.bar(br2, self.data_set[i], color=self.color[i], width=self.bar_width,
-                        edgecolor=self.color_edge, label=self.label[i])
+                rects = plt.bar(br2, self.data_set[i], color=self.color[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
                 br1 = br2
                 i = i + 1
             else:
                 br1 = np.arange(len(self.data_set[i]))
-                plt.bar(br1, self.data_set[i], color=self.color[i], width=self.bar_width,
-                        edgecolor=self.color_edge, label=self.label[i])
+                rects = plt.bar(br1, self.data_set[i], color=self.color[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label[i])
+                if self.show_bar_value:
+                    show_value(rects)
                 i = i + 1
         plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
-        """plt.xticks([r + self.bar_width for r in range(len(self.data_set[0]))],
-                   self.xaxis_categories)"""
-        plt.xticks(np.arange(0, len(self.xaxis_categories), step=5))
+        if self.xaxis_categories[0] == 0:
+            plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step),fontsize = self.xticks_font)
+        else:
+            plt.xticks(np.arange(0, len(self.data_set[0]), step=self.xaxis_step), self.xaxis_categories,
+                       fontsize = self.xticks_font)
         plt.legend()
-
+        plt.suptitle(self.title, fontsize=self.title_size)
+        plt.title(self.grp_title)
         fig = plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
-
+        if self.enable_csv:
+            if self.data_set is not None:
+                self.lf_csv.columns = self.label
+                self.lf_csv.rows = self.data_set
+                self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                self.lf_csv.generate_csv()
+            else:
+                print("No Dataset Found")
+        print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -104,9 +148,10 @@ class lf_scatter_graph():
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
                  _label=["num1", "num2"],
-                 _graph_image_name="image_name",
+                 _graph_image_name="image_name1",
                  _color=["r", "y"],
-                 _figsize=(9, 4)):
+                 _figsize=(9, 4),
+                 _enable_csv=True):
         self.x_data_set = _x_data_set
         self.y_data_set = _y_data_set
         self.xaxis_name = _xaxis_name
@@ -116,6 +161,8 @@ class lf_scatter_graph():
         self.color = _color
         self.label = _label
         self.values = _values
+        self.enable_csv = _enable_csv
+        self.lf_csv = LfCSV()
 
     def build_scatter_graph(self):
         if self.color is None:
@@ -140,6 +187,11 @@ class lf_scatter_graph():
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
+        if self.enable_csv:
+            self.lf_csv.columns = self.label
+            self.lf_csv.rows = self.y_data_set
+            self.lf_csv.filename = f"{self.graph_image_name}.csv"
+            self.lf_csv.generate_csv()
 
         return "%s.png" % self.graph_image_name
 
@@ -150,9 +202,10 @@ class lf_stacked_graph():
                  _xaxis_name="Stations",
                  _yaxis_name="Numbers",
                  _label=['Success', 'Fail'],
-                 _graph_image_name="image_name",
+                 _graph_image_name="image_name2",
                  _color=["b", "g"],
-                 _figsize=(9, 4)):
+                 _figsize=(9, 4),
+                 _enable_csv=True):
         self.data_set = _data_set  # [x_axis,y1_axis,y2_axis]
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
@@ -160,6 +213,8 @@ class lf_stacked_graph():
         self.graph_image_name = _graph_image_name
         self.label = _label
         self.color = _color
+        self.enable_csv = _enable_csv
+        self.lf_csv = LfCSV()
 
     def build_stacked_graph(self):
         fig = plt.subplots(figsize=self.figsize)
@@ -177,7 +232,11 @@ class lf_stacked_graph():
         plt.savefig("%s.png" % (self.graph_image_name), dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
-
+        if self.enable_csv:
+            self.lf_csv.columns = self.label
+            self.lf_csv.rows = self.data_set
+            self.lf_csv.filename = f"{self.graph_image_name}.csv"
+            self.lf_csv.generate_csv()
         return "%s.png" % (self.graph_image_name)
 
 
@@ -190,10 +249,11 @@ class lf_horizontal_stacked_graph():
                  _unit="%",
                  _xaxis_name="Stations",
                  _label=['Success', 'Fail'],
-                 _graph_image_name="image_name",
+                 _graph_image_name="image_name3",
                  _color=["success", "Fail"],
                  _figsize=(9, 4),
-                 _disable_xaxis=False):
+                 _disable_xaxis=False,
+                 _enable_csv=True):
         self.unit = _unit
         self.seg = _seg
         self.xaxis_set1 = _xaxis_set1
@@ -205,6 +265,8 @@ class lf_horizontal_stacked_graph():
         self.label = _label
         self.color = _color
         self.disable_xaxis = _disable_xaxis
+        self.enable_csv = _enable_csv
+        self.lf_csv = LfCSV()
 
     def build_horizontal_stacked_graph(self):
         def sumzip(items):
@@ -246,7 +308,11 @@ class lf_horizontal_stacked_graph():
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
-
+        if self.enable_csv:
+            self.lf_csv.columns = self.label
+            self.lf_csv.rows = self.data_set
+            self.lf_csv.filename = f"{self.graph_image_name}.csv"
+            self.lf_csv.generate_csv()
         return "%s.png" % self.graph_image_name
 
 
@@ -261,7 +327,7 @@ if __name__ == "__main__":
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>
         """
-    # 
+    #
     test_file = open(output_html_1, "w")
     test_file.write(graph_html_obj)
     test_file.close()
@@ -293,7 +359,7 @@ if __name__ == "__main__":
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>
         """
-    # 
+    #
     test_file = open(output_html_2, "w")
     test_file.write(graph_html_obj)
     test_file.close()

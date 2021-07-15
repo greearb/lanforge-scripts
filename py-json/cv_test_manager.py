@@ -5,13 +5,12 @@ Note: This script is working as library for chamberview tests.
 
 import time
 
-from LANforge.lfcli_base import LFCliBase
 from realm import Realm
 import json
 from pprint import pprint
-import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
 from csv_to_influx import *
+import os.path
 
 
 def cv_base_adjust_parser(args):
@@ -67,12 +66,14 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 report_dir=""
+                 lf_report_dir="",
+                 debug=False
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
-        self.report_dir = report_dir
+        self.lf_report_dir = lf_report_dir
         self.report_name = None
+        self.debug = debug
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
@@ -127,7 +128,7 @@ class cv_test(Realm):
             "cmd": command
         }
         debug_par = ""
-        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
+        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=self.debug, response_json_list_=response_json)
         try:
             if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
                 print("Unknown command?\n");
@@ -286,7 +287,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_path="", ssh_port=22,
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir="", ssh_port=22,
                             graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
@@ -349,12 +350,12 @@ class cv_test(Realm):
                         filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
                 print(location)
-                self.report_dir = location
+                self.lf_report_dir = location
                 if pull_report:
                     try:
                         print(lf_host)
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
-                                            port=ssh_port, local_path=local_path,
+                                            port=ssh_port, report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
                         print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
@@ -385,7 +386,7 @@ class cv_test(Realm):
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
     def check_influx_kpi(self, args):
-        if self.report_dir == "":
+        if self.lf_report_dir == "":
             # Nothing to report on.
             print("Not submitting to influx, no report-dir.\n")
             return
@@ -399,16 +400,21 @@ class cv_test(Realm):
               (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
-        influxdb = RecordInflux(_lfjson_host="",
-                                _lfjson_port="",
-                                _influx_host=args.influx_host,
+        influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,
                                 _influx_token=args.influx_token,
                                 _influx_bucket=args.influx_bucket)
 
-        path = "%s/kpi.csv" % (self.report_dir)
-
+        # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
+        # the local_lf_report_dir is data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
+        if self.local_lf_report_dir == "":
+            path = "%s/kpi.csv" % (self.lf_report_dir)
+        else:
+            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the local_lf_report_dir is the parent directory,  need to get the directory name
+            path = "%s/kpi.csv" % (kpi_location)
+        
         print("Attempt to submit kpi: ", path)
         csvtoinflux = CSVtoInflux(influxdb=influxdb,
                                   target_csv=path,

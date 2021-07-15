@@ -27,12 +27,14 @@ class CreateStation(Realm):
                  _password=None,
                  _host=None,
                  _port=None,
+                 _mode=0,
                  _sta_list=None,
                  _number_template="00000",
                  _radio="wiphy0",
                  _proxy_str=None,
                  _debug_on=False,
                  _up=True,
+                 _set_txo_data=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(_host,
@@ -42,24 +44,25 @@ class CreateStation(Realm):
         self.ssid = _ssid
         self.security = _security
         self.password = _password
+        self.mode = _mode
         self.sta_list = _sta_list
         self.radio = _radio
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
         self.up = _up
+        self.set_txo_data = _set_txo_data
         self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password,
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.mode = 0
+        self.station_profile.mode = self.mode
         if self.debug:
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
-
 
     def build(self):
         # Build stations
@@ -70,6 +73,15 @@ class CreateStation(Realm):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        if self.set_txo_data is not None:
+            self.station_profile.set_wifi_txo(txo_ena=self.set_txo_data["txo_enable"],
+                                              tx_power=self.set_txo_data["txpower"],
+                                              pream=self.set_txo_data["pream"],
+                                              mcs=self.set_txo_data["mcs"],
+                                              nss=self.set_txo_data["nss"],
+                                              bw=self.set_txo_data["bw"],
+                                              retries=self.set_txo_data["retries"],
+                                              sgi=self.set_txo_data["sgi"], )
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         if self.up:
             self.station_profile.admin_up()
@@ -78,7 +90,7 @@ class CreateStation(Realm):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = LFCliBase.create_basic_argparse( # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -91,6 +103,7 @@ def main():
 Command example:
 ./create_station.py
     --radio wiphy0
+    --start_id 2
     --num_stations 3
     --security open
     --ssid netgear
@@ -98,14 +111,21 @@ Command example:
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    required.add_argument('--start_id', help='--start_id <value> default 0', default=0)
+
+    optional = parser.add_argument_group('Optional arguments')
+    optional.add_argument('--mode', help='Mode for your station (as a number)',default=0)
 
     args = parser.parse_args()
-    #if args.debug:
+    # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
     if (args.radio is None):
-       raise ValueError("--radio required")
+        raise ValueError("--radio required")
+
+    start_id = 0
+    if (args.start_id != 0):
+        start_id = int(args.start_id)
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -113,20 +133,34 @@ Command example:
         num_sta = num_stations_converted
 
     station_list = LFUtils.port_name_series(prefix="sta",
-                           start_id=0,
-                           end_id=num_sta-1,
-                           padding_number=10000,
-                           radio=args.radio)
+                                            start_id=start_id,
+                                            end_id=start_id + num_sta - 1,
+                                            padding_number=10000,
+                                            radio=args.radio)
+
+    print("station_list {}".format(station_list))
+    set_txo_data={
+        "txo_enable": 1,
+        "txpower": 255,
+        "pream": 0,
+        "mcs": 0,
+        "nss": 0,
+        "bw": 3,
+        "retries": 1,
+        "sgi": 0
+    }
 
     create_station = CreateStation(_host=args.mgr,
-                       _port=args.mgr_port,
-                       _ssid=args.ssid,
-                       _password=args.passwd,
-                       _security=args.security,
-                       _sta_list=station_list,
-                       _radio=args.radio,
-                       _proxy_str=args.proxy,
-                       _debug_on=args.debug)
+                                   _port=args.mgr_port,
+                                   _ssid=args.ssid,
+                                   _password=args.passwd,
+                                   _security=args.security,
+                                   _sta_list=station_list,
+                                   _mode=args.mode,
+                                   _radio=args.radio,
+                                   _set_txo_data=None,
+                                   _proxy_str=args.proxy,
+                                   _debug_on=args.debug)
 
     create_station.build()
     print('Created %s stations' % num_sta)

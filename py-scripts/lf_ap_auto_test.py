@@ -23,7 +23,7 @@ the options and how best to input data.
       --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
       --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
       --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
-      --test_rig Testbed-01 --pull_report \
+      --pull_report \
       --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
@@ -46,7 +46,6 @@ show_log: 0
 port_sorting: 0
 kpi_id: AP Auto
 bg: 0xE0ECF8
-test_rig: Ferndale-01-Basic
 show_scan: 1
 auto_helper: 1
 skip_2: 1
@@ -187,6 +186,7 @@ class ApAutoTest(cvtest):
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
+                 local_lf_report_dir="",
                  instance_name="ap_auto_instance",
                  config_name="ap_auto_config",
                  upstream="1.1.eth1",
@@ -231,6 +231,7 @@ class ApAutoTest(cvtest):
         self.raw_lines_file = raw_lines_file
         self.sets = sets
         self.graph_groups = graph_groups
+        self.local_lf_report_dir = local_lf_report_dir
 
     def setup(self):
         # Nothing to do at this time.
@@ -283,7 +284,7 @@ class ApAutoTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups)
+                                 cv_cmds, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -333,6 +334,7 @@ def main():
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
 
     args = parser.parse_args()
 
@@ -346,6 +348,7 @@ def main():
                          config_name = args.config_name,
                          upstream = args.upstream,
                          pull_report = args.pull_report,
+                         local_lf_report_dir = args.local_lf_report_dir,
                          dut5_0 = args.dut5_0,
                          dut2_0 = args.dut2_0,
                          load_old_cfg = args.load_old_cfg,

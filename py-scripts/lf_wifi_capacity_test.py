@@ -25,7 +25,7 @@ Note: This is a test file which will run a wifi capacity test.
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,5,25 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
              --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01
+             --test_rig Testbed-01 --set DUT_NAME linksys-8450
 
 
 Note:
@@ -33,6 +33,8 @@ Note:
                     from where you are running this code
 
     --stations == Enter stations to use for wifi capacity
+
+    --set DUT_NAME XXXX == Determines which DUT the wifi capacity test should use to get details on
 
 Example of raw text config for Capacity, to show other possible options:
 
@@ -353,7 +355,10 @@ class WiFiCapacityTest(cv_test):
                  influx_host="localhost",
                  influx_port=8086,
                  report_dir="",
-                 graph_groups=None
+                 graph_groups=None,
+                 test_rig="",
+                 local_lf_report_dir="",
+                 debug=False,
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -390,6 +395,9 @@ class WiFiCapacityTest(cv_test):
         self.influx_port = influx_port
         self.report_dir = report_dir
         self.graph_groups = graph_groups
+        self.test_rig = test_rig
+        self.local_lf_report_dir = local_lf_report_dir
+        self.debug = debug
 
     def setup(self):
         if self.create_stations and self.stations != "":
@@ -445,6 +453,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("ul_rate: " + self.upload_rate)
         if self.download_rate != "":
             cfg_options.append("dl_rate: " + self.download_rate)
+        if self.test_rig != "":
+            cfg_options.append("test_rig: " + self.test_rig)
 
         cfg_options.append("save_csv: 1")
 
@@ -465,7 +475,8 @@ class WiFiCapacityTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups)
+                                 cv_cmds, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir,
+                                 debug=self.debug)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -519,6 +530,9 @@ def main():
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument("--debug", default=False)
+
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
@@ -550,7 +564,10 @@ def main():
                                 raw_lines=args.raw_line,
                                 raw_lines_file=args.raw_lines_file,
                                 sets=args.set,
-                                graph_groups=args.graph_groups
+                                graph_groups=args.graph_groups,
+                                test_rig=args.test_rig,
+                                local_lf_report_dir=args.local_lf_report_dir,
+                                debug=args.debug
                                 )
     WFC_Test.setup()
     WFC_Test.run()

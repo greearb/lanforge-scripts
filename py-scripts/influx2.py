@@ -21,13 +21,11 @@ import json
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
 import datetime
-from LANforge.lfcli_base import LFCliBase
+#from LANforge.lfcli_base import LFCliBase
 import time
 
-class RecordInflux(LFCliBase):
+class RecordInflux:
     def __init__(self,
-                 _lfjson_host="lanforge",
-                 _lfjson_port=8080,
                  _influx_host="localhost",
                  _influx_port=8086,
                  _influx_org=None,
@@ -35,9 +33,6 @@ class RecordInflux(LFCliBase):
                  _influx_bucket=None,
                  _debug_on=False,
                  _exit_on_fail=False):
-        super().__init__(_lfjson_host, _lfjson_port,
-                         _debug=_debug_on,
-                         _exit_on_fail=_exit_on_fail)
         self.influx_host = _influx_host
         self.influx_port = _influx_port
         self.influx_org = _influx_org
@@ -49,10 +44,6 @@ class RecordInflux(LFCliBase):
                                                      org=self.influx_org,
                                                      debug=_debug_on)
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
-        #print("org: ", self.influx_org)
-        #print("token: ", self.influx_token)
-        #print("bucket: ", self.influx_bucket)
-        #exit(0)
 
     def post_to_influx(self, key, value, tags, time):
         p = influxdb_client.Point(key)

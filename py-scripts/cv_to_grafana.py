@@ -16,7 +16,6 @@ Influx from this script.
 --line "Resource=1.1 Profile=default Amount=4 Uses-1=wiphy1 DUT=DUT_TO_GRAFANA_DUT Traffic=wiphy1 Freq=-1"
 --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 DUT=DUT_TO_GRAFANA_DUT Traffic=eth1 Freq=-1"
 --dut DUT_TO_GRAFANA
---test_rig Stidmatt-01
 --create_scenario DUT_TO_GRAFANA_SCENARIO
 --station 1.1.sta00002
 --duration 15s
@@ -103,7 +102,6 @@ def main():
             --line 
             --line
             --dut 
-            --test_rig
             --create_scenario
             --station 
             --influx_tag 

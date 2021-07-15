@@ -1,17 +1,12 @@
 #!/usr/bin/python3
-
 # Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python
-
 # Written by Candela Technologies Inc.
-# Updated by:
-
+# Updated by: Erin Grimes
 import sys
 import urllib
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
-
 import time
 from time import sleep
 from urllib import error
@@ -22,19 +17,22 @@ from LANforge import LFUtils
 from LANforge.LFUtils import NA
 
 j_printer = pprint.PrettyPrinter(indent=2)
-# typically you're using resource 1 in stand alone realm
+# todo: this needs to change
 resource_id = 1
 
-def main(base_url="http://localhost:8080"):
+def main(base_url="http://localhost:8080", args={}): 
    json_post = ""
    json_response = ""
    num_wanlinks = -1
+   
    # see if there are old wanlinks to remove
    lf_r = LFRequest.LFRequest(base_url+"/wl/list")
    print(lf_r.get_as_json())
 
+   # ports to set as endpoints
    port_a ="rd0a"
    port_b ="rd1a"
+   
    try:
       json_response = lf_r.getAsJson()
       LFUtils.debug_printer.pprint(json_response)
@@ -71,13 +69,12 @@ def main(base_url="http://localhost:8080"):
    # create wanlink 1a
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
    lf_r.addPostData({
-      'alias': 'wl_eg1-A',
-      'shelf': 1,
-      'resource': '1',
-      'port': port_a,
-      'latency': '75',
-      'max_rate': '128000',
-      'description': 'cookbook-example'
+       'alias': 'wl_eg1-A',
+       'shelf': 1,
+       'resource': '1',
+       'port': port_a,
+       'latency': args['latency_A'],
+       'max_rate': args['rate_A']
    })
    lf_r.jsonPost()
    sleep(0.05)
@@ -85,13 +82,12 @@ def main(base_url="http://localhost:8080"):
    # create wanlink 1b
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
    lf_r.addPostData({
-      'alias': 'wl_eg1-B',
-      'shelf': 1,
-      'resource': '1',
-      'port': port_b,
-      'latency': '95',
-      'max_rate': '256000',
-      'description': 'cookbook-example'
+       'alias': 'wl_eg1-B',
+       'shelf': 1,
+       'resource': '1',
+       'port': port_b,
+       'latency': args['latency_B'],
+       'max_rate': args['rate_B']
    })
    lf_r.jsonPost()
    sleep(0.05)
@@ -134,6 +130,7 @@ def main(base_url="http://localhost:8080"):
          continue
 
    print("starting wanlink:")
+   # print("the latency is {laten}".format(laten=latency))
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
    lf_r.addPostData({
       'test_mgr': 'all',
@@ -163,25 +160,7 @@ def main(base_url="http://localhost:8080"):
          print("Error code "+error.code)
          continue
 
-   print("Wanlink is running, wait one sec...")
-   sleep(1)
-   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   # Now we can alter the delay and speed of the wanlink by
-   # updating its endpoints see https://www.candelatech.com/lfcli_ug.php#set_wanlink_info
-   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   print("Updating Wanlink...")
-   lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_wanlink_info")
-   lf_r.addPostData({
-      'name': 'wl_eg1-A',
-      'speed': 265333,
-      'latency': 30,
-      'reorder_freq': 3200,   # thats 3200/1000000
-      'drop_freq': 2000,      #  2000/1000000
-      'dup_freq': 1325,       #  1325/1000000
-      'jitter_freq': 25125,   # 25125/1000000
-   })
-   lf_r.jsonPost()
-   sleep(1)
+   print("Wanlink is running")
 
    # stop wanlink
    lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
@@ -214,22 +193,19 @@ def main(base_url="http://localhost:8080"):
 
    print("Wanlink is stopped.")
 
-   print("Wanlink info:")
-   lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1")
-   json_response = lf_r.getAsJson()
-   LFUtils.debug_printer.pprint(json_response)
+   # print("Wanlink info:")
+   # lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1")
+   # json_response = lf_r.getAsJson()
+   # LFUtils.debug_printer.pprint(json_response)
 
-   lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-A")
-   json_response = lf_r.getAsJson()
-   LFUtils.debug_printer.pprint(json_response)
+   # lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-A")
+   # json_response = lf_r.getAsJson()
+   # LFUtils.debug_printer.pprint(json_response)
 
-   lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-B")
-   json_response = lf_r.getAsJson()
-   LFUtils.debug_printer.pprint(json_response)
+   # lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-B")
+   # json_response = lf_r.getAsJson()
+   # LFUtils.debug_printer.pprint(json_response)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if __name__ == '__main__':
     main()
-
-###
-###

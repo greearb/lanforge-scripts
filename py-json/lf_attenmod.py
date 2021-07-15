@@ -57,7 +57,7 @@ class ATTENUATORProfile(LFCliBase):
     def create(self, debug=False):
         if len(self.atten_serno) == 0 or len(self.atten_idx) == 0 or len(self.atten_val) == 0:
             print("ERROR:  Must specify atten_serno, atten_idx, and atten_val when setting attenuator.\n")
-        print("Creating Attenuator...")
+        print("Setting Attenuator...")
         self.set_command_param("set_attenuator", "serno", self.atten_serno)
         self.set_command_param("set_attenuator", "atten_idx", self.atten_idx)
         self.set_command_param("set_attenuator", "val", self.atten_val)

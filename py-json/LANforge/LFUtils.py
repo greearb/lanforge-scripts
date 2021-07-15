@@ -746,4 +746,58 @@ def exec_wrap(cmd):
         print("\nError with '" + cmd + "', bye\n")
         exit(1)
 
+
+def expand_endp_histogram(distribution_payload=None):
+    """
+    Layer 3 endpoints can contain DistributionPayloads that appear like
+     "rx-silence-5m" : {
+               # "histo_category_width" : 1,
+               # "histogram" : [
+               #    221,
+               #    113,
+               #    266,
+               #    615,
+               #    16309,
+               #    56853,
+               #    7954,
+               #    1894,
+               #    29246,
+               #    118,
+               #    12,
+               #    2,
+               #    0,
+               #    0,
+               #    0,
+               #    0
+               # ],
+               # "time window ms" : 300000,
+               # "window avg" : 210.285,
+               # "window max" : 228,
+               # "window min" : 193
+
+    These histogbrams are a set of linear categorys roughly power-of-two categories.
+    :param distribution_payload: dictionary requiring histo_category_width and histogram
+    :return: dictionary containing expanded category ranges and values for categories
+    """
+    if distribution_payload is None:
+        return None
+    if ("histogram" not in distribution_payload) \
+            or ("histo_category_width" not in distribution_payload):
+        raise ValueError("Unexpected histogram format.")
+    multiplier = int(distribution_payload["histo_category_width"])
+    formatted_dict = {
+        #"00000 <= x <= 00001" : "0"
+    }
+    for bucket_index in range(len(distribution_payload["histogram"]) - 1):
+        pow1 = (2**bucket_index) * multiplier
+        pow2 = (2**(bucket_index+1)) * multiplier
+        if bucket_index == 0:
+            category_name = "00000 <= x <= {:-05.0f}".format(pow2)
+        else:
+            category_name = "{:-05.0f} < x <= {:-05.0f}".format(pow1, pow2)
+        formatted_dict[category_name] = distribution_payload["histogram"][bucket_index]
+
+    pprint.pprint([("historgram", distribution_payload["histogram"]),
+                   ("formatted", formatted_dict)])
+    return formatted_dict
 ###

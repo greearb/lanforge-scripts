@@ -10,7 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running Rate-vs-Range tests.  You
 may need to view a Rate-vs-Range test configured through the GUI to understand
 the options and how best to input data.
-    
+
     ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \
       --dut RootAP --duration 15s --station 1.1.wlan0 \
@@ -30,7 +30,7 @@ the options and how best to input data.
 Note:
     attenuator_mod: selects the attenuator modules, bit-field.
        This example uses 3, which is first two attenuator modules on Attenuator ID 1040.
-    
+
     --raw_line 'line contents' will add any setting to the test config.  This is
         useful way to support any options not specifically enabled by the
         command options.
@@ -45,7 +45,7 @@ show_log: 0
 port_sorting: 0
 kpi_id: Rate vs Range
 bg: 0xE0ECF8
-test_rig: 
+test_rig:
 show_scan: 1
 auto_helper: 0
 skip_2: 0
@@ -83,7 +83,7 @@ attenuations: 0..+50..950
 attenuations2: 0..+50..950
 chamber: 0
 tt_deg: 0..+45..359
-cust_pkt_sz: 
+cust_pkt_sz:
 show_bar_labels: 1
 show_prcnt_tput: 0
 show_3s: 0
@@ -93,7 +93,7 @@ show_1m: 1
 pause_iter: 0
 outer_loop_atten: 0
 show_realtime: 1
-operator: 
+operator:
 mconn: 1
 mpkt: 1000
 tos: 0
@@ -118,10 +118,14 @@ if 'py-json' not in sys.path:
 from cv_test_manager import cv_test as cvtest
 from cv_test_manager import *
 
+
 class RvrTest(cvtest):
     def __init__(self,
                  lf_host="localhost",
                  lf_port=8080,
+                 ssh_port=22,
+                 local_path="",
+                 graph_groups=None,
                  lf_user="lanforge",
                  lf_password="lanforge",
                  instance_name="rvr_instance",
@@ -145,7 +149,7 @@ class RvrTest(cvtest):
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
         self.dut = dut
@@ -162,11 +166,13 @@ class RvrTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
+        self.ssh_port = ssh_port
+        self.local_path = local_path
+        self.graph_groups = graph_groups
 
     def setup(self):
         # Nothing to do at this time.
         return
-
 
     def run(self):
         self.sync_cv()
@@ -206,18 +212,18 @@ class RvrTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds)
+                                 cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_path,
+                                 graph_groups_file=self.graph_groups)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
 def main():
-
     parser = argparse.ArgumentParser("""
     Open this file in an editor and read the top notes for more details.
 
     Example:
 
-    
+
       """
                                      )
 
@@ -236,35 +242,40 @@ def main():
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
+    parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
+    parser.add_argument("--report_dir", default="")
 
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
-    CV_Test = RvrTest(lf_host = args.mgr,
-                      lf_port = args.port,
-                      lf_user = args.lf_user,
-                      lf_password = args.lf_password,
-                      instance_name = args.instance_name,
-                      config_name = args.config_name,
-                      upstream = args.upstream,
-                      pull_report = args.pull_report,
-                      load_old_cfg = args.load_old_cfg,
-                      download_speed = args.download_speed,
-                      upload_speed = args.upload_speed,
-                      duration = args.duration,
-                      dut = args.dut,
-                      station = args.station,
-                      enables = args.enable,
-                      disables = args.disable,
-                      raw_lines = args.raw_line,
-                      raw_lines_file = args.raw_lines_file,
-                      sets = args.set
+    CV_Test = RvrTest(lf_host=args.mgr,
+                      lf_port=args.port,
+                      lf_user=args.lf_user,
+                      lf_password=args.lf_password,
+                      instance_name=args.instance_name,
+                      config_name=args.config_name,
+                      upstream=args.upstream,
+                      pull_report=args.pull_report,
+                      load_old_cfg=args.load_old_cfg,
+                      download_speed=args.download_speed,
+                      upload_speed=args.upload_speed,
+                      duration=args.duration,
+                      dut=args.dut,
+                      station=args.station,
+                      enables=args.enable,
+                      disables=args.disable,
+                      raw_lines=args.raw_line,
+                      raw_lines_file=args.raw_lines_file,
+                      sets=args.set,
+                      graph_groups=args.graph_groups
                       )
     CV_Test.setup()
     CV_Test.run()
 
     CV_Test.check_influx_kpi(args)
 
+
 if __name__ == "__main__":
     main()
+

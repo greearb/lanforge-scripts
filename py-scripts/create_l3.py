@@ -3,6 +3,8 @@
 """
     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
 
+    If you want to
+
     Use './create_l3.py --help' to see command line usage and options
 """
 
@@ -164,7 +166,7 @@ python3 ./test_ipv4_variable_time.py
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template), end_id_=num_sta+int(args.number_template) - 1, padding_number_=10000,
                                           radio=args.radio)
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,

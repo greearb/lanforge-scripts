@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 '''
+NAME: test_l3_longevity.py
+
+PURPOSE:  
+
  Supports creating user-specified amount stations on multiple radios
  Supports configuring upload and download requested rates and PDU sizes.
  Supports generating KPI data for storing in influxdb (used by Graphana)
@@ -10,7 +14,7 @@
  Supports iterating over attenuation values.
  Supports testing connection between two ethernet connection - L3 dataplane
 
- Example config
+EXAMPLE:
 
  10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
  Configured to submit KPI info to influxdb-version2.
@@ -22,19 +26,24 @@
   --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
   --influx_tag testbed ath11k --influx_tag DUT ROG -o longevity.csv
 
- Sample command using attenuator
+Example command using attenuator
 ./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
     --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --endp_type lf_udp --ap_read --side_a_min_bps=20000 --side_b_min_bps=400000000 \
+    --endp_type lf_udp --ap_read --ap_scheduler_stats --ap_ofdma_stats --side_a_min_bps=20000 --side_b_min_bps=400000000 \
     --attenuators 1.1.<serial number>.1 \
     --atten_vals 20,21,40,41
 
-Sample using upsteam eth1 downstream eth2 
-    ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2 
+Example using upsteam eth1 downstream eth2
+    ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2
     --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
+
+COPYRIGHT:
+Copyright 2021 Candela Technologies Inc
+
+INCLUDE_IN_README
 
 '''
 
@@ -56,35 +65,36 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 import argparse
-#from LANforge.lfcli_base import LFCliBase
+# from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-#import realm
+# import realm
 from realm import Realm
 import time
 import datetime
 import subprocess
 import csv
 
+
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
-    def __init__(self, 
-                 endp_types, 
-                 args, 
-                 tos, 
+    def __init__(self,
+                 endp_types,
+                 args,
+                 tos,
                  side_b,
-                 side_a, 
-                 radio_name_list, 
+                 side_a,
+                 radio_name_list,
                  number_of_stations_per_radio_list,
-                 ssid_list, 
-                 ssid_password_list, 
-                 ssid_security_list, 
-                 station_lists, 
-                 name_prefix, 
+                 ssid_list,
+                 ssid_password_list,
+                 ssid_security_list,
+                 station_lists,
+                 name_prefix,
                  outfile,
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
-                 side_a_min_rate=[56000], 
+                 side_a_min_rate=[56000],
                  side_a_max_rate=[0],
                  side_b_min_rate=[56000],
                  side_b_max_rate=[0],
@@ -97,17 +107,20 @@ class L3VariableTime(Realm):
                  mconn=1,
                  attenuators=[],
                  atten_vals=[],
-                 number_template="00", 
+                 number_template="00",
                  test_duration="256s",
                  polling_interval="60s",
-                 lfclient_host="localhost", 
-                 lfclient_port=8080, 
+                 lfclient_host="localhost",
+                 lfclient_port=8080,
                  debug=False,
                  influxdb=None,
+                 ap_scheduler_stats=False,
+                 ap_ofdma_stats=False,
                  ap_read=False,
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
                  ap_cmd='wl -i wl1 bs_data',
+                 ap_chanim_cmd='wl -i wl1 chanim_stats',
                  ap_test_mode=False,
                  _exit_on_error=False,
                  _exit_on_fail=False,
@@ -132,7 +145,7 @@ class L3VariableTime(Realm):
             self.dataplane = False
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
-        self.station_lists = station_lists       
+        self.station_lists = station_lists
         self.ssid_security_list = ssid_security_list
         self.reset_port_enable_list = reset_port_enable_list
         self.reset_port_time_min_list = reset_port_time_min_list
@@ -141,8 +154,8 @@ class L3VariableTime(Realm):
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
-        self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
+        # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
@@ -155,8 +168,6 @@ class L3VariableTime(Realm):
         self.debug = debug
         self.mconn = mconn
         self.user_tags = user_tags
-        
-
 
         self.side_a_min_rate = side_a_min_rate
         self.side_a_max_rate = side_a_max_rate
@@ -184,11 +195,20 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
 
+        self.ap_scheduler_stats = ap_scheduler_stats
+        self.ap_ofdma_stats = ap_ofdma_stats
         self.ap_read = ap_read
         self.ap_port = ap_port
         self.ap_baud = ap_baud
         self.ap_cmd = ap_cmd
+        self.ap_chanim_cmd = ap_chanim_cmd
         self.ap_test_mode = ap_test_mode
+        self.ap_5g_umsched = ""
+        self.ap_5g_msched = ""
+        self.ap_24g_umsched = ""
+        self.ap_24g_msched = ""
+        self.ap_ofdma_5g = ""
+        self.ap_ofdma_24g = ""
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -196,10 +216,10 @@ class L3VariableTime(Realm):
 
         # TODO:  cmd-line arg to enable/disable these stats.
         self.ap_stats_col_titles = ["Station Address", "PHY Mbps", "Data Mbps", "Air Use", "Data Use",
-                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo"]
+                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo", "channel utilization"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
-                                                            
+
         if (self.polling_interval_seconds > dur + 1):
             self.polling_interval_seconds = dur - 1
 
@@ -209,13 +229,13 @@ class L3VariableTime(Realm):
             kpi = kpi + "-kpi.csv"
             self.csv_kpi_file = open(kpi, "w")
             self.csv_kpi_writer = csv.writer(self.csv_kpi_file, delimiter=",")
-        
+
         # if side_a is None then side_a is radios
         if self.dataplane == False:
-            for (radio_, ssid_, ssid_password_, ssid_security_,\
-                reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-                in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,\
-                reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+            for (radio_, ssid_, ssid_password_, ssid_security_, \
+                 reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
+                    in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list, \
+                           reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = ssid_
@@ -223,22 +243,41 @@ class L3VariableTime(Realm):
                 self.station_profile.security = ssid_security_
                 self.station_profile.number_template = self.number_template
                 self.station_profile.mode = 0
-                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,\
-                    test_duration=self.duration_time_to_seconds(self.test_duration),\
-                    reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),\
-                    reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_, \
+                                                     test_duration=self.duration_time_to_seconds(self.test_duration), \
+                                                     reset_port_min_time=self.duration_time_to_seconds(
+                                                         reset_port_time_min_), \
+                                                     reset_port_max_time=self.duration_time_to_seconds(
+                                                         reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
         else:
             pass
-
 
         self.multicast_profile.host = self.lfclient_host
         self.cx_profile.host = self.lfclient_host
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+    def get_ap_5g_umsched(self):
+        return self.ap_5g_umsched
+
+    def get_ap_5g_msched(self):
+        return self.ap_5g_msched
+
+    def get_ap_24g_umsched(self):
+        return self.ap_5g_umsched
+
+    def get_ap_24g_msched(self):
+        return self.ap_5g_msched
+
+    def get_ap_ofdma_5g(self):
+        return self.ap_ofdma_5g
+
+    def get_ap_ofdma_24g(self):
+        return self.ap_ofdma_24g
+
     def get_kpi_csv(self):
-        #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
+        # print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
         return self.csv_kpi_file.name
 
     # Find avg latency, jitter for connections using specified port.
@@ -248,7 +287,7 @@ class L3VariableTime(Realm):
         tput = 0
         count = 0
 
-        #print("endp-stats-for-port, port-eid: {}".format(eid_name))
+        # print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
 
         # Convert all eid elements to strings
@@ -257,13 +296,13 @@ class L3VariableTime(Realm):
         eid[2] = str(eid[2])
 
         for e in endps:
-            #pprint(e)
+            # pprint(e)
             eid_endp = e["eid"].split(".")
             print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
             # Then read the eid_endp to get the delay, jitter and rx rate
-            # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as 
+            # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
                 lat += int(e["delay"])
@@ -303,7 +342,7 @@ class L3VariableTime(Realm):
                         endps.append(value)
                         print("endpoint: ", item, " value:\n")
                         pprint(value)
-                    
+
                         for value_name, value in value.items():
                             if value_name == 'rx bytes':
                                 endp_rx_map[item] = value
@@ -311,13 +350,13 @@ class L3VariableTime(Realm):
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
-                                #print("item: ", item, " rx-bps: ", value_rx_bps)
+                                # print("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value)
                                 else:
                                     total_ul += int(value)
 
-        #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
+        # print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
 
     # Common code to generate timestamp for CSV files.
@@ -350,7 +389,7 @@ class L3VariableTime(Realm):
 
     def gather_port_eids(self):
         rv = [self.side_b]
-        
+
         for station_profile in self.station_profiles:
             rv = rv + station_profile.station_names
 
@@ -370,20 +409,21 @@ class L3VariableTime(Realm):
             # stations, so allow skipping it.
             # Do clean cx lists so that when we re-apply them we get same endp name
             # as we had previously
-            #print("rebuild: Clearing cx profile lists.\n")
+            # print("rebuild: Clearing cx profile lists.\n")
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
         if self.dataplane:
             for etype in self.endp_types:
                 for _tos in self.tos:
-                    print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
+                    print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+                    etype, _tos, self.cx_profile.get_cx_count()))
                     # use brackes on [self.side_a] to make it a list
                     these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=[self.side_a],
-                                                                      side_b=self.side_b, sleep_time=0, tos=_tos)
+                                                                  side_b=self.side_b, sleep_time=0, tos=_tos)
                     if (etype == "lf_udp" or etype == "lf_udp6"):
                         self.udp_endps = self.udp_endps + these_endp
-                    elif(etype=="lf"):
+                    elif (etype == "lf"):
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
@@ -391,11 +431,13 @@ class L3VariableTime(Realm):
         else:
             for station_profile in self.station_profiles:
                 if not rebuild:
-                    station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
+                    station_profile.use_security(station_profile.security, station_profile.ssid,
+                                                 station_profile.ssid_pass)
                     station_profile.set_number_template(station_profile.number_template)
-                    print("Creating stations on radio %s"%(self.radio_name_list[index]))
+                    print("Creating stations on radio %s" % (self.radio_name_list[index]))
 
-                    station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+                    station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index],
+                                           debug=self.debug, sleep_time=0)
                     index += 1
 
                 self.station_count += len(station_profile.station_names)
@@ -403,14 +445,16 @@ class L3VariableTime(Realm):
                 # Build/update connection types
                 for etype in self.endp_types:
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        print("Creating Multicast connections for endpoint type: %s"%(etype))
+                        print("Creating Multicast connections for endpoint type: %s" % (etype))
                         self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
                         self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
-                            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s"%(etype, _tos, self.cx_profile.get_cx_count()))
-                            these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
-                                                                      side_b=self.side_b, sleep_time=0, tos=_tos)
+                            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
+                            etype, _tos, self.cx_profile.get_cx_count()))
+                            these_cx, these_endp = self.cx_profile.create(endp_type=etype,
+                                                                          side_a=station_profile.station_names,
+                                                                          side_b=self.side_b, sleep_time=0, tos=_tos)
                             if (etype == "lf_udp" or etype == "lf_udp6"):
                                 self.udp_endps = self.udp_endps + these_endp;
                             else:
@@ -419,9 +463,25 @@ class L3VariableTime(Realm):
         self.cx_count = self.cx_profile.get_cx_count()
 
         if self.dataplane == True:
-            self._pass("PASS: CX build finished: created/updated:  %s connections."%(self.cx_count))        
+            self._pass("PASS: CX build finished: created/updated:  %s connections." % (self.cx_count))
         else:
-            self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections."%(self.station_count, self.cx_count))        
+            self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections." % (
+            self.station_count, self.cx_count))
+
+    def ap_custom_cmd(self, ap_custom_cmd):
+        ap_results = ""
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+            ss = SerialSpawn(ser)
+            ss.sendline(str(ap_custom_cmd))
+            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            ap_results = ss.before.decode('utf-8', 'ignore')
+            print("ap_custom_cmd: {} ap_results {}".format(ap_custom_cmd, ap_results))
+        except:
+            print("ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
+
+        return ap_results
 
     def read_ap_stats(self):
         #  5ghz:  wl -i wl1 bs_data  2.4ghz# wl -i wl0 bs_data
@@ -431,22 +491,39 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd))
-            ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
-            ap_stats = ss.before.decode('utf-8','ignore')
+            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            ap_stats = ss.before.decode('utf-8', 'ignore')
             print("ap_stats {}".format(ap_stats))
 
         except:
             print("WARNING unable to read AP")
-        
+
         return ap_stats
+
+    def read_ap_chanim_stats(self):
+        #  5ghz:  wl -i wl1 chanim_stats  2.4ghz# wl -i wl0 chanim_stats
+        ap_chanim_stats = ""
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+            ss = SerialSpawn(ser)
+            ss.sendline(str(self.ap_chanim_cmd))
+            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            ap_chanim_stats = ss.before.decode('utf-8', 'ignore')
+            print("ap_stats {}".format(ap_chanim_stats))
+
+        except:
+            print("WARNING unable to read AP")
+
+        return ap_chanim_stats
 
     # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
-        self.admin_up(self.side_b) 
+        self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
-                print("Bringing up station %s"%(sta))
+                print("Bringing up station %s" % (sta))
                 self.admin_up(sta)
 
         temp_stations_list = []
@@ -461,7 +538,7 @@ class L3VariableTime(Realm):
             print("print failed to get IP's")
 
         csv_header = self.csv_generate_column_headers()
-        #print(csv_header)
+        # print(csv_header)
         self.csv_add_column_headers(csv_header)
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
@@ -495,8 +572,9 @@ class L3VariableTime(Realm):
                 if (dl_pdu == "AUTO" or dl_pdu == "MTU"):
                     dl_pdu = "-1"
 
-                print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n"%(ul, dl, self.cx_count, self.rates_are_totals))
-                
+                print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" % (
+                ul, dl, self.cx_count, self.rates_are_totals))
+
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
                 self.cx_profile.side_a_max_bps = ul
@@ -510,6 +588,10 @@ class L3VariableTime(Realm):
 
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
+
+                if self.ap_scheduler_stats or self.ap_ofdma_stats:
+                    self.ap_custom_cmd('wl -i wl1 dump_clear')
+                    self.ap_custom_cmd('wl -i wl0 dump_clear')
 
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
@@ -529,7 +611,7 @@ class L3VariableTime(Realm):
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
-                    print("Monitoring throughput for duration: %s"%(self.test_duration))
+                    print("Monitoring throughput for duration: %s" % (self.test_duration))
 
                     # Monitor test for the interval duration.
                     passes = 0
@@ -540,12 +622,10 @@ class L3VariableTime(Realm):
                     ap_row = []
                     ap_stats_col_titles = []
 
-
-
                     while cur_time < end_time:
-                        #interval_time = cur_time + datetime.timedelta(seconds=5)
+                        # interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-                        #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        # print("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
@@ -554,66 +634,113 @@ class L3VariableTime(Realm):
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
-                        #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
+                        # print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
 
                         # AP OUTPUT
                         if self.ap_read:
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
-                                ap_stats="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
-                                "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                                "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                                "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                                "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
-                                "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+                                ap_stats = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                                                                 "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+                                                                 "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+                                                                 "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+                                                                 "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+                                                                 "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
+                                                                 "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
                                 print("ap_stats {}".format(ap_stats))
-                            # read from the AP
+
+                                # Create the test data as a continuous string
+                                ap_chanim_stats = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
+                                                                    "version: 3\n",
+                                                                    "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
+                                                                    "0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
                             else:
+                                # read from the AP
                                 ap_stats = self.read_ap_stats()
-    
-                            #ap_stats_rows = [] # Array of Arrays
-    
+                                ap_chanim_stats = self.read_ap_chanim_stats()
+
                             ap_stats_rows = ap_stats.splitlines()
-                            print("ap_stats_rows {}".format(ap_stats_rows))
-    
+                            print("From AP stats: ap_stats_rows {}".format(ap_stats_rows))
+
+                            ap_chanim_stats_rows = ap_chanim_stats.splitlines()
+                            print("From AP chanim: ap_chanim_stats_rows {}".format(ap_chanim_stats_rows))
+                            channel_utilization = 0
+
                             # Query all of our ports
                             # Note: the endp eid is the shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:"%(url))
+                                    print("query-port: %s: incomplete response:" % (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     # pprint(response)
                                     p = response['interface']
-                                    #print("#### p, response['insterface']:{}".format(p))
+                                    # print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-    
+                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+
+                                    # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
                                         else:
-                                            if split_row[0].lower() == mac.lower():
-                                                ap_row = split_row
+                                            try:
+                                                # split_row[0].lower() , mac from AP
+                                                # mac.lower() , mac from LANforge
+                                                if split_row[0].lower() == mac.lower():
+                                                    ap_row = split_row
+                                            except:
+                                                print(" 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    " since possibly no stations: excption on compare split_row[0].lower() ")
                                     print("selected ap_row (from split_row): {}".format(ap_row))
-    
-    
+
                                     # Find latency, jitter for connections using this port.
                                     latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
-    
-                                    ap_stats_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo']
-    
-                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                        latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
+
+                                    # now report the ap_chanim_stats along side of the ap_stats
+                                    xtop_reported = False
+                                    for row in ap_chanim_stats_rows:
+                                        split_row = row.split()
+                                        if xtop_reported:
+                                            try:
+                                                xtop = split_row[7]
+                                                channel_utilization = 100 - int(xtop)
+                                            except:
+                                                print(
+                                                    "detected chanspec with reading chanim_stats, failed reading xtop")
+                                            # should be only one channel utilization
+                                            break
+                                        else:
+                                            try:
+                                                if split_row[0].lower() == 'chanspec':
+                                                    xtop_reported = True
+                                            except:
+                                                print("Error reading xtop")
+                                    # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                    ap_row.append(str(channel_utilization))
+                                    print("channel_utilization {channel_utilization}".format(
+                                        channel_utilization=channel_utilization))
+                                    print("ap_row {ap_row}".format(ap_row=ap_row))
+
+                                    ap_stats_col_titles = ['Station Address', 'PHY Mbps', 'Data Mbps', 'Air Use',
+                                                           'Data Use', 'Retries', 'bw', 'mcs', 'Nss', 'ofdma',
+                                                           'mu-mimo', 'channel_utilization']
+
+                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str,
+                                                        atten_val, eid_name, p,
+                                                        latency, jitter, tput, ap_row,
+                                                        ap_stats_col_titles)  # ap_stats_col_titles used as a length
                         else:
 
                             # Query all of our ports
@@ -621,21 +748,37 @@ class L3VariableTime(Realm):
                             port_eids = self.gather_port_eids()
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:"%(url))
+                                    print("query-port: %s: incomplete response:" % (url))
                                     pprint(response)
                                 else:
                                     p = response['interface']
                                     latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
-                                
-                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                        latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
 
+                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str,
+                                                        atten_val, eid_name, p,
+                                                        latency, jitter, tput, ap_row,
+                                                        ap_stats_col_titles)  # ap_stats_col_titles used as a length
 
                     # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps,
+                                    total_ul_bps)
+
+                    # At end of test if requested store upload and download stats
+                    if self.ap_scheduler_stats:
+                        # get the (UL) Upload scheduler statistics
+                        self.ap_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        # get the (DL) Download schduler staticstics
+                        self.ap_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+
+                    if self.ap_ofdma_stats:
+                        # provide OFDMA stats 5GHz
+                        self.ap_ofdma_5g += self.ap_custom_cmd('wl -i wl1 muinfo -v')
+
+                        # provide OFDMA stats 2.4GHz
+                        self.ap_ofdma_24g += self.ap_custom_cmd('wl -i wl0 muinfo -v')
 
                     # Stop connections.
                     self.cx_profile.stop_cx();
@@ -644,7 +787,8 @@ class L3VariableTime(Realm):
                     cur_time = datetime.datetime.now()
 
                     if passes == expected_passes:
-                            self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
+                        self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (
+                        ul, dl, ul_pdu, dl_pdu), print_pass)
 
     def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput,
                        ap_row, ap_stats_col_titles):
@@ -656,20 +800,19 @@ class L3VariableTime(Realm):
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
 
-        #Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
-        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
-        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
             i = 0
-            #print("ap_row {}".format(ap_row))
+            # print("ap_row {}".format(ap_row))
             for col in ap_row:
-                #print("col {}".format(col))
+                # print("col {}".format(col))
                 row.append(col)
 
         writer = self.port_csv_writers[eid_name]
         writer.writerow(row)
         self.port_csv_files[eid_name].flush()
-
 
     # Submit data to the influx db if configured to do so.
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
@@ -689,7 +832,8 @@ class L3VariableTime(Realm):
 
         now = str(datetime.datetime.utcnow().isoformat())
 
-        print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n"%(total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
+        print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" % (
+        total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
 
         if self.influxdb is not None:
             self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, now)
@@ -725,17 +869,17 @@ class L3VariableTime(Realm):
             station_profile.cleanup()
 
     def csv_generate_column_headers(self):
-        csv_rx_headers = ['Time epoch','Time','Monitor',
-                          'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
-                          'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU',
+        csv_rx_headers = ['Time epoch', 'Time', 'Monitor',
+                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
+                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU',
                           ]
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
     def csv_generate_port_column_headers(self):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
-                          'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
+                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
+                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
                           'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
                           'Rx-Latency', 'Rx-Jitter', 'Rx-Goodput-Bps'
                           ]
@@ -747,8 +891,8 @@ class L3VariableTime(Realm):
 
     def csv_generate_kpi_column_headers(self):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
-                          'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
+                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
+                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
                           'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps'
                           ]
         for k in self.user_tags:
@@ -757,43 +901,45 @@ class L3VariableTime(Realm):
         return csv_rx_headers
 
     # Write initial headers to csv file.
-    def csv_add_column_headers(self,headers):
+    def csv_add_column_headers(self, headers):
         if self.csv_kpi_file is not None:
             self.csv_kpi_writer.writerow(self.csv_generate_kpi_column_headers())
             self.csv_kpi_file.flush()
 
     # Write initial headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
-        #if self.csv_file is not None:
+        # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
         fname = fname + "-" + eid_name + ".csv"
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
         self.port_csv_files[eid_name] = pfile
         self.port_csv_writers[eid_name] = port_csv_writer
-            
+
         port_csv_writer.writerow(headers)
         pfile.flush()
 
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
-            csv_list = csv_list + [('no data','no data')] * (length - len(csv_list))
+            csv_list = csv_list + [('no data', 'no data')] * (length - len(csv_list))
         return csv_list
 
-    def csv_add_row(self,row,writer,csv_file):
+    def csv_add_row(self, row, writer, csv_file):
         if csv_file is not None:
             writer.writerow(row)
             csv_file.flush()
 
     # End of the main class.
 
+
 # Check some input values.
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split(',')
     for endp_type in etypes:
-        valid_endp_type=['lf','lf_udp','lf_udp6','lf_tcp','lf_tcp6','mc_udp','mc_udp6']
+        valid_endp_type = ['lf', 'lf_udp', 'lf_udp6', 'lf_tcp', 'lf_tcp6', 'mc_udp', 'mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            print('invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
+            print(
+                'invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
             exit(1)
     return _endp_type
 
@@ -807,7 +953,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         prog='test_l3_longevity.py',
-        #formatter_class=argparse.RawDescriptionHelpFormatter,
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
         Useful Information:
@@ -816,7 +962,7 @@ def main():
             3. The tx/rx rates are fixed at 256000 bits per second
             4. Maximum stations per radio based on radio
             ''',
-        
+
         description='''\
 test_l3_longevity.py:
 --------------------
@@ -888,66 +1034,108 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
         ''')
 
-    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP')
-    parser.add_argument('--baud', help='--baud \"9600\"   baud rate for the serial interface',default="9600")
-    parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
-    parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
+    parser.add_argument('--local_lf_report_dir',
+                        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+                        default="")
+    parser.add_argument('-o', '--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
 
-    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
-    parser.add_argument('--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
-    parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
-    parser.add_argument('--debug', help='--debug flag present debug on  enable debugging',action='store_true')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
+    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
+    parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface', default="9600")
+    parser.add_argument('--amount_ports_to_reset',
+                        help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
+    parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ',
+                        default="10 30")
+
+    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
+    parser.add_argument('--test_duration',
+                        help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
+                        default='3m')
+    parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',
+                        default="BE")
+    parser.add_argument('--debug', help='--debug flag present debug on  enable debugging', action='store_true')
+    parser.add_argument('-t', '--endp_type',
+                        help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
                         default='lf_udp', type=valid_endp_types)
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',default='eth1')
-    parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2',default='eth2')
-    parser.add_argument('-o','--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+    parser.add_argument('-u', '--upstream_port',
+                        help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',
+                        default='eth1')
+    parser.add_argument('--downstream_port',
+                        help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
-    parser.add_argument('-r','--radio', action='append', nargs=1, help='--radio  \
+    parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio  \
                         \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ')
 
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
-    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
-    parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
+    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
+    parser.add_argument('--ap_baud', help='--ap_baud \'115200\'', default='115200')
     parser.add_argument('--ap_cmd', help='ap_cmd \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
+    parser.add_argument('--ap_chanim_cmd', help='ap_chanim_cmd \'wl -i wl1 chanim_stats\'',
+                        default="wl -i wl1 chanim_stats")
+    parser.add_argument('--ap_scheduler_stats',
+                        help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file',
+                        action='store_true')
+    parser.add_argument('--ap_ofdma_stats',
+                        help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file',
+                        action='store_true')
 
     parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
 
-    parser.add_argument('-tty',  help='-tty <port> serial interface to AP -tty \"/dev/ttyUSB2\"',default="")
-    parser.add_argument('-baud', help='-baud <rate> serial interface baud rate to AP -baud ',default='9600')
-
-    parser.add_argument('-amr','--side_a_min_bps',
-                        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k', default="256000")
-    parser.add_argument('-amp','--side_a_min_pdu',
-                        help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU', default="MTU")
-    parser.add_argument('-bmr','--side_b_min_bps',
-                        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000', default="256000")
-    parser.add_argument('-bmp','--side_b_min_pdu',
-                        help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU', default="MTU")
+    parser.add_argument('-amr', '--side_a_min_bps',
+                        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k',
+                        default="256000")
+    parser.add_argument('-amp', '--side_a_min_pdu',
+                        help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU',
+                        default="MTU")
+    parser.add_argument('-bmr', '--side_b_min_bps',
+                        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000',
+                        default="256000")
+    parser.add_argument('-bmp', '--side_b_min_pdu',
+                        help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU',
+                        default="MTU")
     parser.add_argument("--rates_are_totals", default=False,
-                        help="Treat configured rates as totals instead of using the un-modified rate for every connection.", action='store_true')
+                        help="Treat configured rates as totals instead of using the un-modified rate for every connection.",
+                        action='store_true')
     parser.add_argument("--multiconn", default=1,
                         help="Configure multi-conn setting for endpoints.  Default is 1 (auto-helper is enabled by default as well).")
 
-    parser.add_argument('--attenuators', help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx', default="")
-    parser.add_argument('--atten_vals', help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
+    parser.add_argument('--attenuators',
+                        help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx',
+                        default="")
+    parser.add_argument('--atten_vals',
+                        help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)',
+                        default="")
 
     influx_add_parser_args(parser)
 
-    parser.add_argument("--cap_ctl_out",  help="--cap_ctl_out, switch the controller output will be captured", action='store_true')
-    parser.add_argument("--wait",  help="--wait <time> , time to wait at the end of the test", default='0')
-
+    parser.add_argument("--cap_ctl_out", help="--cap_ctl_out, switch the controller output will be captured",
+                        action='store_true')
+    parser.add_argument("--wait", help="--wait <time> , time to wait at the end of the test", default='0')
 
     args = parser.parse_args()
 
-    #print("args: {}".format(args))
+    # print("args: {}".format(args))
     debug = args.debug
+
+    if args.local_lf_report_dir != "":
+        local_lf_report_dir = args.local_lf_report_dir
+    else:
+        local_lf_report_dir = ""
 
     if args.ap_read:
         ap_read = args.ap_read
     else:
         ap_read = False
+
+    if args.ap_scheduler_stats:
+        ap_scheduler_stats = args.ap_scheduler_stats
+    else:
+        ap_scheduler_stats = False
+
+    if args.ap_ofdma_stats:
+        ap_ofdma_stats = args.ap_ofdma_stats
+    else:
+        ap_ofdma_stats = False
 
     if args.ap_test_mode:
         ap_test_mode = args.ap_test_mode
@@ -962,6 +1150,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     if args.ap_cmd:
         ap_cmd = args.ap_cmd
+
+    if args.ap_chanim_cmd:
+        ap_chanim_cmd = args.ap_chanim_cmd
 
     if args.test_duration:
         test_duration = args.test_duration
@@ -983,36 +1174,36 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     else:
         side_a = None
 
-
     if args.radio:
         radios = args.radio
     else:
         radios = None
 
-    # Create report, instanciate a reporting class
-    report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+    # Create report, when running with the test framework (lf_check.py) results need to be in the same directory
+    if local_lf_report_dir != "":
+        report = lf_report(_path=local_lf_report_dir, _results_dir_name="test_l3_longevity",
+                           _output_html="test_l3_longevity.html", _output_pdf="test_l3_longevity.pdf")
+    else:
+        report = lf_report(_results_dir_name="test_l3_longevity", _output_html="test_l3_longevity.html",
+                           _output_pdf="test_l3_longevity.pdf")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_l3_longevity.csv".format(args.csv_outfile,current_time)
+        csv_outfile = "{}_{}-test_l3_longevity.csv".format(args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
-
 
     influxdb = None
     if args.influx_bucket is not None:
         from influx2 import RecordInflux
-        influxdb = RecordInflux(_lfjson_host=lfjson_host,
-                                _lfjson_port=lfjson_port,
-                                _influx_host=args.influx_host,
+        influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,
                                 _influx_token=args.influx_token,
                                 _influx_bucket=args.influx_bucket)
 
-
     MAX_NUMBER_OF_STATIONS = 1000
-    
+
     radio_name_list = []
     number_of_stations_per_radio_list = []
     ssid_list = []
@@ -1020,7 +1211,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     ssid_security_list = []
     station_lists = []
 
-    #optional radio configuration
+    # optional radio configuration
     reset_port_enable_list = []
     reset_port_time_min_list = []
     reset_port_time_max_list = []
@@ -1028,14 +1219,18 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if radios != None:
         print("radios {}".format(radios))
         for radio_ in radios:
-            radio_keys = ['radio','stations','ssid','ssid_pw','security']
+            radio_keys = ['radio', 'stations', 'ssid', 'ssid_pw', 'security']
             print("radio_dict before format {}".format(radio_))
-            radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"','').replace('[','').replace(']','').replace("'","").replace(","," ").split()))
+            radio_info_dict = dict(map(lambda x: x.split('=='),
+                                       str(radio_).replace('"', '').replace('[', '').replace(']', '').replace("'",
+                                                                                                              "").replace(
+                                           ",", " ").split()))
             print("radio_dict {}".format(radio_info_dict))
 
             for key in radio_keys:
                 if key not in radio_info_dict:
-                    print("missing config, for the {}, all of the following need to be present {} ".format(key,radio_keys))
+                    print("missing config, for the {}, all of the following need to be present {} ".format(key,
+                                                                                                           radio_keys))
                     exit(1)
 
             radio_name_list.append(radio_info_dict['radio'])
@@ -1048,7 +1243,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             radio_reset_found = True
             for key in optional_radio_reset_keys:
                 if key not in radio_info_dict:
-                    #print("port reset test not enabled")
+                    # print("port reset test not enabled")
                     radio_reset_found = False
                     break
 
@@ -1061,19 +1256,19 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                 reset_port_time_min_list.append('0s')
                 reset_port_time_max_list.append('0s')
 
-
         index = 0
-        for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list,number_of_stations_per_radio_list):
+        for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list, number_of_stations_per_radio_list):
             number_of_stations = int(number_of_stations_per_radio_)
             if number_of_stations > MAX_NUMBER_OF_STATIONS:
                 print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
                 quit(1)
-            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_= 1 + index*1000, end_id_= number_of_stations + index*1000,
+            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=1 + index * 1000,
+                                                  end_id_=number_of_stations + index * 1000,
                                                   padding_number_=10000, radio=radio_name_)
             station_lists.append(station_list)
             index += 1
 
-    #print("endp-types: %s"%(endp_types))
+    # print("endp-types: %s"%(endp_types))
 
     ul_rates = args.side_a_min_bps.split(",")
     dl_rates = args.side_b_min_bps.split(",")
@@ -1089,48 +1284,51 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         atten_vals = args.atten_vals.split(",")
 
     if (len(ul_rates) != len(dl_rates)):
-        print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %(len(ul_rates), len(dl_rates)))
+        print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
     if (len(ul_pdus) != len(dl_pdus)):
-        print("ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %(len(ul_rates), len(dl_rates)))
-    
+        print("ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
+
     ip_var_test = L3VariableTime(
-                                    endp_types=endp_types,
-                                    args=args,
-                                    tos=args.tos,
-                                    side_b=side_b,
-                                    side_a=side_a,
-                                    radio_name_list=radio_name_list,
-                                    number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                    ssid_list=ssid_list,
-                                    ssid_password_list=ssid_password_list,
-                                    ssid_security_list=ssid_security_list, 
-                                    station_lists= station_lists,
-                                    name_prefix="LT-",
-                                    outfile=csv_outfile,
-                                    reset_port_enable_list=reset_port_enable_list,
-                                    reset_port_time_min_list=reset_port_time_min_list,
-                                    reset_port_time_max_list=reset_port_time_max_list,
-                                    side_a_min_rate=ul_rates,
-                                    side_b_min_rate=dl_rates,
-                                    side_a_min_pdu=ul_pdus,
-                                    side_b_min_pdu=dl_pdus,
-                                    user_tags=args.influx_tag,
-                                    rates_are_totals=args.rates_are_totals,
-                                    mconn=args.multiconn,
-                                    attenuators=attenuators,
-                                    atten_vals=atten_vals,
-                                    number_template="00", 
-                                    test_duration=test_duration,
-                                    polling_interval= polling_interval,
-                                    lfclient_host=lfjson_host,
-                                    lfclient_port=lfjson_port,
-                                    debug=debug,
-                                    influxdb=influxdb,
-                                    ap_read=ap_read,
-                                    ap_port=ap_port,
-                                    ap_baud=ap_baud,
-                                    ap_cmd=ap_cmd,
-                                    ap_test_mode=ap_test_mode)
+        endp_types=endp_types,
+        args=args,
+        tos=args.tos,
+        side_b=side_b,
+        side_a=side_a,
+        radio_name_list=radio_name_list,
+        number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+        ssid_list=ssid_list,
+        ssid_password_list=ssid_password_list,
+        ssid_security_list=ssid_security_list,
+        station_lists=station_lists,
+        name_prefix="LT-",
+        outfile=csv_outfile,
+        reset_port_enable_list=reset_port_enable_list,
+        reset_port_time_min_list=reset_port_time_min_list,
+        reset_port_time_max_list=reset_port_time_max_list,
+        side_a_min_rate=ul_rates,
+        side_b_min_rate=dl_rates,
+        side_a_min_pdu=ul_pdus,
+        side_b_min_pdu=dl_pdus,
+        user_tags=args.influx_tag,
+        rates_are_totals=args.rates_are_totals,
+        mconn=args.multiconn,
+        attenuators=attenuators,
+        atten_vals=atten_vals,
+        number_template="00",
+        test_duration=test_duration,
+        polling_interval=polling_interval,
+        lfclient_host=lfjson_host,
+        lfclient_port=lfjson_port,
+        debug=debug,
+        influxdb=influxdb,
+        ap_scheduler_stats=ap_scheduler_stats,
+        ap_ofdma_stats=ap_ofdma_stats,
+        ap_read=ap_read,
+        ap_port=ap_port,
+        ap_baud=ap_baud,
+        ap_cmd=ap_cmd,
+        ap_chanim_cmd=ap_chanim_cmd,
+        ap_test_mode=ap_test_mode)
 
     ip_var_test.pre_cleanup()
 
@@ -1138,13 +1336,13 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if not ip_var_test.passes():
         print("build step failed.")
         print(ip_var_test.get_fail_message())
-        exit(1) 
+        exit(1)
     ip_var_test.start(False, False)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print("Test Ended: There were Failures")
         print(ip_var_test.get_fail_message())
-         
+
     print("Pausing {} seconds after run for manual inspection before we clean up.".format(args.wait))
     time.sleep(int(args.wait))
     ip_var_test.cleanup()
@@ -1160,10 +1358,62 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     report.set_table_dataframe_from_csv(csv_kpi_file)
     report.build_table()
     report.write_html_with_timestamp()
-    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    report.write_pdf_with_timestamp(_page_size = 'A4', _orientation='Portrait')
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
-    #for csv_file in csv_list:
+    # ap scheduler results and write to a file
+    if ap_scheduler_stats:
+        print("getting umsched and msched ap data and writing to a file")
+        file_date = report.get_date()
+
+        ap_5g_umsched_data = ip_var_test.get_ap_5g_umsched()
+        ap_5g_umsched = "{}-{}".format(file_date, "ap_5g_umsched.txt")
+        ap_5g_umsched = report.file_add_path(ap_5g_umsched)
+        ap_5g_umsched_file = open(ap_5g_umsched, "w")
+        ap_5g_umsched_file.write(str(ap_5g_umsched_data))
+        ap_5g_umsched_file.close()
+
+        ap_5g_msched_data = ip_var_test.get_ap_5g_msched()
+        ap_5g_msched = "{}-{}".format(file_date, "ap_5g_msched.txt")
+        ap_5g_msched = report.file_add_path(ap_5g_msched)
+        ap_5g_msched_file = open(ap_5g_msched, "w")
+        ap_5g_msched_file.write(str(ap_5g_msched_data))
+        ap_5g_msched_file.close()
+
+        ap_24g_umsched_data = ip_var_test.get_ap_24g_umsched()
+        ap_24g_umsched = "{}-{}".format(file_date, "ap_24g_umsched.txt")
+        ap_24g_umsched = report.file_add_path(ap_24g_umsched)
+        ap_24g_umsched_file = open(ap_24g_umsched, "w")
+        ap_24g_umsched_file.write(str(ap_24g_umsched_data))
+        ap_24g_umsched_file.close()
+
+        ap_24g_msched_data = ip_var_test.get_ap_24g_msched()
+        ap_24g_msched = "{}-{}".format(file_date, "ap_24g_msched.txt")
+        ap_24g_msched = report.file_add_path(ap_24g_msched)
+        ap_24g_msched_file = open(ap_24g_msched, "w")
+        ap_24g_msched_file.write(str(ap_24g_msched_data))
+        ap_24g_msched_file.close()
+
+    # ap scheduler results and write to a file
+    if ap_ofdma_stats:
+        print("getting ofdma ap data and writing to a file")
+        file_date = report.get_date()
+
+        ap_ofdma_5g_data = ip_var_test.get_ap_ofdma_5g()
+        ap_ofdma_5g = "{}-{}".format(file_date, "ap_ofdma_5g_data.txt")
+        ap_ofdma_5g = report.file_add_path(ap_ofdma_5g)
+        ap_ofdma_5g_data = open(ap_ofdma_5g, "w")
+        ap_ofdma_5g_data.write(str(ap_ofdma_5g_data))
+        ap_ofdma_5g_data.close()
+
+        ap_ofdma_24g_data = ip_var_test.get_ap_ofdma_24g()
+        ap_ofdma_24g = "{}-{}".format(file_date, "ap_ofdma_24g_data.txt")
+        ap_ofdma_24g = report.file_add_path(ap_ofdma_24g)
+        ap_ofdma_24g_data = open(ap_ofdma_24g, "w")
+        ap_ofdma_24g_data.write(str(ap_ofdma_24g_data))
+        ap_ofdma_24g_data.close()
+
+    # for csv_file in csv_list:
     #    print("Ouptput reports CSV list value: {}".format(str(csv_file)))
 
 

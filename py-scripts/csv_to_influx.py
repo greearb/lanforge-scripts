@@ -42,7 +42,7 @@ class CSVtoInflux():
                  target_csv=None,
                  sep='\t'):
         self.influxdb = influxdb
-        self.target_csv = target_csv.replace('/home/lanforge/html-reports/', '')
+        self.target_csv = target_csv
         self.influx_tag = _influx_tag
         self.sep = sep
 
@@ -69,7 +69,10 @@ class CSVtoInflux():
             tags = dict()
             print("row: %s" % row)
             short_description = row[columns['short-description']]
-            numeric_score = float(row[columns['numeric-score']])
+            if row[columns['numeric-score']] == 'NaN':
+                numeric_score = '0x0'
+            else:
+                numeric_score = float(row[columns['numeric-score']])
             date = row[columns['Date']]
             date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
             for variable in csv_variables:
@@ -146,9 +149,7 @@ python3 csv_to_influx.py --influx_host localhost --influx_org Candela --influx_t
 
     args = parser.parse_args()
 
-    influxdb = RecordInflux(_lfjson_host=lfjson_host,
-                            _lfjson_port=lfjson_port,
-                            _influx_host=args.influx_host,
+    influxdb = RecordInflux(_influx_host=args.influx_host,
                             _influx_port=args.influx_port,
                             _influx_org=args.influx_org,
                             _influx_token=args.influx_token,
