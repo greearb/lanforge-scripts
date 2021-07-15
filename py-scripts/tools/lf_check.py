@@ -144,9 +144,9 @@ class lf_check():
         self.dut_sw = "DUT_SW"
         self.dut_model = "DUT_MODEL"
         self.dut_serial = "DUT_SERIAL"
-        self.dut_bssid_2G = "BSSID_2G" #"3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan 
-        self.dut_bssid_5G = "BSSID_5G" #"3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan 
-        self.dut_bssid_6G = "BSSID_6G" #"3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan 
+        self.dut_bssid_2g = "BSSID_2G" #"3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan 
+        self.dut_bssid_5g = "BSSID_5G" #"3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan 
+        self.dut_bssid_6g = "BSSID_6G" #"3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan 
         #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
@@ -477,18 +477,18 @@ blog: http://{blog}:2368
             self.dut_serial = self.json_data["test_parameters"]["dut_serial"]
         else:
             self.logger.info("dut_serial not in test_parameters json")
-        if "dut_bssid_2G" in self.json_data["test_parameters"]:
+        if "dut_bssid_2g" in self.json_data["test_parameters"]:
             self.dut_bssid_2G = self.json_data["test_parameters"]["dut_bssid_2G"]
         else:
             self.logger.info("dut_bssid_2G not in test_parameters json")
-        if "dut_bssid_5G" in self.json_data["test_parameters"]:
-            self.dut_bssid_5G = self.json_data["test_parameters"]["dut_bssid_5G"]
+        if "dut_bssid_5g" in self.json_data["test_parameters"]:
+            self.dut_bssid_5G = self.json_data["test_parameters"]["dut_bssid_5g"]
         else:
-            self.logger.info("dut_bssid_5G not in test_parameters json")
-        if "dut_bssid_6G" in self.json_data["test_parameters"]:
-            self.dut_bssid_6G = self.json_data["test_parameters"]["dut_bssid_6G"]
+            self.logger.info("dut_bssid_5g not in test_parameters json")
+        if "dut_bssid_6g" in self.json_data["test_parameters"]:
+            self.dut_bssid_6g = self.json_data["test_parameters"]["dut_bssid_6g"]
         else:
-            self.logger.info("dut_bssid_6G not in test_parameters json")
+            self.logger.info("dut_bssid_6g not in test_parameters json")
 
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
