@@ -4,6 +4,7 @@ NAME: lf_csv.py
 
 PURPOSE:
 Common Library for generating csv for LANforge output
+KPI - Key Performance Indicators
 
 SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
@@ -18,9 +19,7 @@ COPYWRITE
 INCLUDE_IN_README
 '''
 
-import numpy as np
 import pandas as pd
-
 
 class lf_csv:
     def __init__(self,
@@ -43,6 +42,18 @@ class lf_csv:
         print(csv_df)
         csv_df.to_csv(self.filename, index=False, encoding='utf-8', na_rep='NA', float_format='%.2f')
 
+# this layout may need to change
+class lf_kpi_csv:
+    def __init__(self,
+                _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
+                                'test-priority','test-id','short-description','pass/fail','numberic-score'
+                                'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
+                _kpi_filename='kpi.csv' #Currently this is the only file name accepted
+                ):
+        self.kpi_headers = _kpi_headers
+        self.kpi_rows = ""
+        self.kpi_filename = _kpi_filename
+                
 
 if __name__ == "__main__":
     test = lf_csv()
