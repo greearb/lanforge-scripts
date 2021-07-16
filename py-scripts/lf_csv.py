@@ -48,11 +48,11 @@ class lf_kpi_csv:
                 _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
                                 'test-priority','test-id','short-description','pass/fail','numberic-score'
                                 'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
-                _kpi_filename='kpi.csv' #Currently this is the only file name accepted
+                _kpi_file='kpi.csv' #Currently this is the only file name accepted
                 ):
         self.kpi_headers = _kpi_headers
         self.kpi_rows = ""
-        self.kpi_filename = _kpi_filename
+        self.kpi_filename = _kpi_file
                 
 
 if __name__ == "__main__":
