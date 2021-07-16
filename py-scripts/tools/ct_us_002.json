@@ -76,14 +76,22 @@
                 "test_l3_longevity":{"enabled":"TRUE","command":"test_l3_longevity.py","args":"--test_duration 15s --polling_interval 5s --upstream_port UPSTREAM_PORT --radio 'radio==wiphy1,stations==4,ssid==ct523c-vap,ssid_pw==ct523c-vap,security==wpa2' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"}
         },
         "auto_suite":{
-            "CT-US-002_create_chamberview_dut_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
+            "CT-US-002_create_chamberview_dut_1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --sw_version '3.5.4' --hw_version 5.12.14+ --serial_num ct523c-3b7b --model_num DUT_NAME"
                 ]},
-            "CT-US-002_create_chamberview_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-002_create_chamberview_1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
@@ -109,7 +117,11 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "GHOST":{"enabled":"TRUE","load_db":"skip","command":"ghost_profile.py","args":"",
+            "GHOST":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"ghost_profile.py",
+                "args":"",
                 "args_list":[
                     " --ghost_token BLOG_TOKEN --ghost_host BLOG_HOST --authors BLOG_AUTHORS --customer BLOG_CUSTOMER",
                     " --user_push BLOG_USER_PUSH --password BLOG_PASSWORD_PUSH BLOG_FLAG --grafana_token DASHBOARD_TOKEN",
@@ -120,14 +132,22 @@
             }
         },
         "suite_wc_dp":{
-            "CT-US-002_create_chamberview_dut_1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
+            "CT-US-002_create_chamberview_dut_1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
-            "CT-US-002_create_chamberview_ATH10k_sta64":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-002_create_chamberview_ATH10k_sta64":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
@@ -135,7 +155,11 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
                 ]
             },
-            "CT-US-002_wifi_capacity_ATH10k(9984)":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
+            "CT-US-002_wifi_capacity_ATH10k(9984)":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream UPSTREAM_PORT --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
@@ -144,7 +168,11 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-002_create_chamberview_ATH10k_sta01":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-002_create_chamberview_ATH10k_sta01":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
@@ -152,7 +180,11 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
                 ]
             },
-            "CT-US-002_dataplane_ATH10k(9984) CT-US-002":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"",
+            "CT-US-002_dataplane_ATH10k(9984) CT-US-002":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_dataplane_test.py",
+                "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan1",
@@ -163,14 +195,22 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-002_create_chamberview_dut_2":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
+            "CT-US-002_create_chamberview_dut_2":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
-            "CT-US-002_create_chamberview_AX200_sta1":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-002_create_chamberview_AX200_sta1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
@@ -178,7 +218,11 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
                 ]
             },
-            "CT-US-002_wifi_capacity_AX200 CT-US-002":{"enabled":"TRUE","load_db":"skip","command":"lf_wifi_capacity_test.py","args":"",
+            "CT-US-002_wifi_capacity_AX200 CT-US-002":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream UPSTREAM_PORT --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
@@ -187,7 +231,11 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-002_dataplane_AX200":{"enabled":"TRUE","load_db":"skip","command":"lf_dataplane_test.py","args":"",
+            "CT-US-002_dataplane_AX200":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_dataplane_test.py",
+                "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan4",
@@ -198,14 +246,22 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-002_create_chamberview_dut_auto":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview_dut.py","args":"",
+            "CT-US-002_create_chamberview_dut_auto":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
-            "CT-US-002_create_chamberview_auto":{"enabled":"TRUE","load_db":"skip","command":"create_chamberview.py","args":"",
+            "CT-US-002_create_chamberview_auto":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
@@ -215,7 +271,7 @@
                 ]
             },
             "CT-US-002_lf_ap_auto_test": {
-                "enabled": "TRUE",
+                "enabled": "FALSE",
                 "command": "lf_ap_auto_test.py",
                 "args": "",
                 "args_list":[
