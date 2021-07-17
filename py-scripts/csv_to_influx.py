@@ -57,6 +57,8 @@ class CSVtoInflux():
     # Submit data to the influx db if configured to do so.
     def post_to_influx(self):
         df = self.read_csv(self.target_csv)
+        for row in df:
+            row =[sub.replace('NaN','0') for sub in row]
         length = list(range(0, len(df[0])))
         columns = dict(zip(df[0], length))
         print('columns: %s' % columns)
