@@ -169,7 +169,18 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-002_create_chamberview_ATH10k_sta01":{
+            "CT-US-002_create_chamberview_dut_ATH10K_wan1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                ]},
+            "CT-US-002_create_chamberview_ATH10k_wan1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -230,6 +241,29 @@
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan4 ",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                ]
+            },
+            "CT-US-002_create_chamberview_dut_AX200_wan1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                ]},
+            "CT-US-002_create_chamberview_AX200_wan1":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ucentral-scenario ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy4,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
                 ]
             },
             "CT-US-002_dataplane_AX200":{
