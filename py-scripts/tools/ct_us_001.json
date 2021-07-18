@@ -103,6 +103,7 @@
             "CT-US-001_lf_ap_auto_test": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
+                "timeout":"4800",
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
@@ -120,6 +121,7 @@
             "CT-US-001_lf_ap_auto_test_2": {
                 "enabled": "FALSE",
                 "command": "lf_ap_auto_test.py",
+                "timeout":"4800",
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
