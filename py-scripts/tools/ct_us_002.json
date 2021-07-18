@@ -111,8 +111,8 @@
                     " --dut5_0 'DUT_NAME lanforge DUT_BSSID_5G (1)' --dut2_0 'DUT_NAME lanforge DUT_BSSID_5G (1)'",
                     " --max_stations_2 32 --max_stations_5 32 --max_stations_dual 100 --radio2 1.1.wiphy1",
                     " --radio5 1.1.wiphy2 --set 'Basic Client Connectivity' 1",
-                    " --set 'Multi Band Performance'  --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
-                    " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
+                    " --set 'Multi Band Performance' 1 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  1,",
+                    " --set 'Throughput vs Pkt Size' 1 --set 'Capacity' 0 --set 'Band-Steering' 1 --set 'Skip 2.4 Ghz Tests' 1",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
