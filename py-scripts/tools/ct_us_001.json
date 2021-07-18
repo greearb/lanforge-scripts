@@ -15,6 +15,7 @@
         "lf_mgr_port": "8080",
         "dut_name": "ASUSRT-AX88U",
         "dut_bssid_5G": "3c:7c:3f:55:4d:64",
+        "dut_sw": "3.0.0.4.386_42820",
         "test_timeout": 300,
         "load_blank_db": false,
         "load_factory_default_db": true,
