@@ -137,6 +137,7 @@ class GhostRequest:
         self.ghost_json_login = self.ghost_json_url + '/admin/session/'
         self.api_token = _api_token
         self.images = list()
+        self.webpages = list()
         self.pdfs = list()
         self.influx_host = influx_host
         self.influx_port = influx_port
@@ -290,7 +291,8 @@ class GhostRequest:
                 target_folders.append(folder)
 
         testbeds = list()
-        pdfs = list()
+        webpages = self.webpages
+        pdfs = self.pdfs
         high_priority_list = list()
         low_priority_list = list()
         images = list()
@@ -359,6 +361,10 @@ class GhostRequest:
                     url = 'http://%s/%s/%s/%s/%s/%s' % (
                         ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
                     pdfs.append('PDF of results: <a href="%s">%s</a><br />' % (url, file))
+            if 'index.html' in files:
+                url = 'http://%s/%s/%s/%s/%s' % (
+                    ghost_host, customer.strip('/'), testbed, target_folder, 'index.html')
+                webpages.append('Results webpage: <a href="%s">Index of report</a><br />' % url)
             scp_push.close()
             self.upload_images(target_folder)
             for image in self.images:
@@ -468,6 +474,10 @@ class GhostRequest:
         for pdf in pdfs:
             print(pdf)
             text = text + pdf
+
+        for page in webpages:
+            print(page)
+            text = text + page
 
         for image in images:
             text = text + image
