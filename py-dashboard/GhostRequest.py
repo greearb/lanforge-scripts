@@ -362,8 +362,8 @@ class GhostRequest:
                         ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
                     pdfs.append('PDF of results: <a href="%s">%s</a>' % (url, file))
             if 'index.html' in files:
-                url = 'http://%s/%s/%s/%s/%s' % (
-                    ghost_host, customer.strip('/'), testbed, target_folder, 'index.html')
+                url = 'http://%s/%s/%s/%s/%s/%s' % (
+                    ghost_host, customer.strip('/'), testbed, test_run, target_folder, 'index.html')
                 webpages.append('Results webpage: <a href="%s">%s</a><br />' % (url % target_folder))
             scp_push.close()
             self.upload_images(target_folder)
@@ -387,6 +387,8 @@ class GhostRequest:
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
 
+        if self.debug:
+            print(times)
         end_time = max(times)
         start_time = '2021-07-01'
         end_time = datetime.utcfromtimestamp(end_time)#.strftime('%Y-%m-%d %H:%M:%S')
