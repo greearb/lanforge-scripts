@@ -53,7 +53,7 @@ A blank entry is a valid entry in some cases.
     dut-hw-version : hardware version of the device under test
     dut-sw-version : software version of the device under test
     dut-model-num : model number / name of the device under test
-    test-priority : ??
+    test-priority : test-priority is arbitrary number, choosing under 95 means it goes down at bottom of blog report, and higher priority goes at top.
     test-id : script or test name ,  AP Auto, wifi capacity, data plane, dfs
     short-description : short description of the test
     pass/fail : set blank for performance tests
