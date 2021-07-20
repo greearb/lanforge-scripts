@@ -364,7 +364,7 @@ class GhostRequest:
             if 'index.html' in files:
                 url = 'http://%s/%s/%s/%s/%s/%s' % (
                     ghost_host, customer.strip('/'), testbed, test_run, target_folder, 'index.html')
-                webpages.append('Results webpage: <a href="%s">%s</a><br />' % (url % target_folder))
+                webpages.append('Results webpage: <a href="%s">%s</a><br />' % (url, target_folder))
             scp_push.close()
             self.upload_images(target_folder)
             for image in self.images:
