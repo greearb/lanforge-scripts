@@ -178,7 +178,7 @@
             },
             "CT-US-004_wifi_capacity_wiphy1_ATH10K(9984)_wiphy3_ATH10K(9984)_sta128":{
                 "enabled":"TRUE",
-                "timeout":"360",
+                "timeout":"600",
                 "load_db":"skip",
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
