@@ -163,7 +163,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
-            "CT-US-004_create_chamberview_wiphy1_wiphy3_sta128":{
+            "CT-US-004_create_chamberview_wiphy1_sta64":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -172,11 +172,10 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CT-US-004-scenario ",
                     " --raw_line \"profile_link 1.1 STA-AC 64 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 STA-AC 64 'DUT: DUT_NAME Radio-1' NA wiphy3,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "CT-US-004_wifi_capacity_wiphy1_ATH10K(9984)_wiphy3_ATH10K(9984)_sta128":{
+            "CT-US-004_wifi_capacity_wiphy1_ATH10K(9984)_sta64":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
