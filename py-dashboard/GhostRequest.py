@@ -360,10 +360,10 @@ class GhostRequest:
                 if 'pdf' in file:
                     url = 'http://%s/%s/%s/%s/%s/%s' % (
                         ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
-                    pdfs.append('PDF of results: <a href="%s">%s</a><br />' % (url, file))
+                    pdfs.append('PDF of results: <a href="%s">%s</a>' % (url, file))
             if 'index.html' in files:
                 url = 'http://%s/%s/%s/%s/%s' % (
-                    ghost_host, customer.strip('/'), testbed, target_folder, 'index.html')
+                    ghost_host, customer.strip('/'), testbed, target_folder, target_folder)
                 webpages.append('Results webpage: <a href="%s">Index of report</a><br />' % url)
             scp_push.close()
             self.upload_images(target_folder)
@@ -471,13 +471,10 @@ class GhostRequest:
         dut_table = dut_table + '</tbody></table>'
         text = text + dut_table
 
-        for pdf in pdfs:
-            print(pdf)
-            text = text + pdf
-
-        for page in webpages:
-            print(page)
-            text = text + page
+        for article in zip(pdfs, webpages):
+            if self.debug:
+                print(article)
+            text = text + article[0] + ' | ' + article[1]
 
         for image in images:
             text = text + image
