@@ -363,8 +363,8 @@ class GhostRequest:
                     pdfs.append('PDF of results: <a href="%s">%s</a>' % (url, file))
             if 'index.html' in files:
                 url = 'http://%s/%s/%s/%s/%s' % (
-                    ghost_host, customer.strip('/'), testbed, target_folder, target_folder)
-                webpages.append('Results webpage: <a href="%s">Index of report</a><br />' % url)
+                    ghost_host, customer.strip('/'), testbed, target_folder, 'index.html')
+                webpages.append('Results webpage: <a href="%s">%s</a><br />' % (url % target_folder))
             scp_push.close()
             self.upload_images(target_folder)
             for image in self.images:
