@@ -35,6 +35,7 @@ GENERIC NOTES:
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
+    C. for getting the radio firmware:  ethtool -i wlan0 
 
 '''
 import datetime
