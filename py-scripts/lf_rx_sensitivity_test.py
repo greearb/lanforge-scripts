@@ -216,7 +216,7 @@ class RxSensitivityTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, ssh_port=self.ssh_port, local_path=self.local_path,
+                                 cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_path,
                                  graph_groups_file=self.graph_groups)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
