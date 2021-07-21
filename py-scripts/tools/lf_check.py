@@ -37,6 +37,15 @@ GENERIC NOTES:
     B. for the kernel version uname -r (just verion ), uname -a build date
     C. for getting the radio firmware:  ethtool -i wlan0 
 
+# may need to build in a testbed reboot at the beginning of a day's testing...
+# seeing some dhcp exhaustion and high latency values for testbeds that have been running 
+# for a while that appear to clear up once the entire testbed is power cycled
+
+# issue a shutdown command on the lanforge(s)
+#  ssh root@lanforgex reboot (need to verify)  or do a shutdown 
+# send curl command to remote power switch to reboot testbed
+#   curl -s http://admin:lanforge@192.168.100.237/outlet?1=CCL -o /dev/null 2>&1
+# 
 '''
 import datetime
 import pprint
