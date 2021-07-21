@@ -1179,7 +1179,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_cmd_5g', help='ap_cmd_5g \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
     parser.add_argument('--ap_cmd_2g', help='ap_cmd_2g \'wl -i wl0 bs_data\'', default="wl -i wl0 bs_data")
     parser.add_argument('--ap_chanim_cmd_5g', help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
-    parser.add_argument('--ap_chanim_cmd_2g', help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'', default="wl -i w0 chanim_stats")
+    parser.add_argument('--ap_chanim_cmd_2g', help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'', default="wl -i wl0 chanim_stats")
     parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file', action='store_true')
     parser.add_argument('--ap_ofdma_stats', help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file', action='store_true')
 
