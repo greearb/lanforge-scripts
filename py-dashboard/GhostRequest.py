@@ -291,8 +291,7 @@ class GhostRequest:
                 target_folders.append(folder)
 
         testbeds = list()
-        webpages = self.webpages
-        pdfs = self.pdfs
+        webpagesandpdfs = list()
         high_priority_list = list()
         low_priority_list = list()
         images = list()
@@ -304,6 +303,7 @@ class GhostRequest:
                 target_file = '%s/kpi.csv' % target_folder
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 test_rig = csvreader.get_column(df, 'test-rig')[0]
+                test_id = csvreader.get_column(df, 'test-id')[0]
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
                 test_pass_fail.append(pass_fail)
                 dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
@@ -323,66 +323,78 @@ class GhostRequest:
                     text = text + 'Tests passed: 0<br />' \
                                   'Tests failed : 0<br />' \
                                   'Percentage of tests passed: Not Applicable<br />'
+                testbeds.append(test_rig)
+                if testbed is None:
+                    testbed = test_rig
+
+                if test_run is None:
+                    test_run = now.strftime('%B-%d-%Y-%I-%M-%p-report')
+
+                local_path = '/home/%s/%s/%s/%s' % (user_push, customer, testbed, test_run)
+
+                transport = paramiko.Transport(ghost_host, port)
+                transport.connect(None, user_push, password_push)
+                sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
+
+                if self.debug:
+                    print(local_path)
+                    print(target_folder)
+
+                try:
+                    sftp.mkdir('/home/%s/%s/%s' % (user_push, customer, testbed))
+                except:
+                    pass
+
+                try:
+                    sftp.mkdir(local_path)
+                except:
+                    pass
+                scp_push.put(target_folder, local_path, recursive=True)
+                files = sftp.listdir(local_path + '/' + target_folder)
+                pdfs = list()
+                webpages = list()
+                for file in files:
+                    if 'pdf' in file:
+                        url = 'http://%s/%s/%s/%s/%s/%s' % (
+                            ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
+                        pdfs.append('<a href="%s">PDF</a>' % url)
+                if 'index.html' in files:
+                    url = 'http://%s/%s/%s/%s/%s/%s' % (
+                        ghost_host, customer.strip('/'), testbed, test_run, target_folder, 'index.html')
+                    webpages.append('<a href="%s">HTML</a>' % url)
+                webpagesandpdfsappend = dict()
+                webpagesandpdfsappend[test_id] = pdfs + webpages
+                webpagesandpdfs.append(webpagesandpdfsappend)
+                scp_push.close()
+                self.upload_images(target_folder)
+                for image in self.images:
+                    if 'kpi-' in image:
+                        if '-print' not in image:
+                            images.append('<img src="%s"></img>' % image)
+                self.images = []
+
+                results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'pass/fail',
+                                                     'test-priority'])
+
+                results[0] = ['Short Description', 'Score', 'Test Details', 'Pass or Fail', 'test-priority']
+                for row in results:
+                    try:
+                        row[1] = round(float(row[1]), 2)
+                    except:
+                        pass
+
+                low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
+                high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
+                high_priority_list.append(high_priority)
+
+                low_priority_list.append(low_priority)
 
             except:
                 print("Failure")
                 target_folders.remove(target_folder)
-                break
-            testbeds.append(test_rig)
-            if testbed is None:
-                testbed = test_rig
-
-            if test_run is None:
-                test_run = now.strftime('%B-%d-%Y-%I-%M-%p-report')
-
-            local_path = '/home/%s/%s/%s/%s' % (user_push, customer, testbed, test_run)
-
-            transport = paramiko.Transport(ghost_host, port)
-            transport.connect(None, user_push, password_push)
-            sftp = paramiko.sftp_client.SFTPClient.from_transport(transport)
-
-            if self.debug:
-                print(local_path)
-                print(target_folder)
-
-            try:
-                sftp.mkdir('/home/%s/%s/%s' % (user_push, customer, testbed))
-            except:
-                pass
-
-            try:
-                sftp.mkdir(local_path)
-            except:
-                pass
-            scp_push.put(target_folder, local_path, recursive=True)
-            files = sftp.listdir(local_path + '/' + target_folder)
-            for file in files:
-                if 'pdf' in file:
-                    url = 'http://%s/%s/%s/%s/%s/%s' % (
-                        ghost_host, customer.strip('/'), testbed, test_run, target_folder, file)
-                    pdfs.append('PDF of results: <a href="%s">%s</a>' % (url, file))
-            if 'index.html' in files:
-                url = 'http://%s/%s/%s/%s/%s/%s' % (
-                    ghost_host, customer.strip('/'), testbed, test_run, target_folder, 'index.html')
-                webpages.append('Results webpage: <a href="%s">%s</a><br />' % (url, target_folder))
-            scp_push.close()
-            self.upload_images(target_folder)
-            for image in self.images:
-                if 'kpi-' in image:
-                    if '-print' not in image:
-                        images.append('<img src="%s"></img>' % image)
-            self.images = []
-
-            results = csvreader.get_columns(df, ['short-description', 'numeric-score', 'test details', 'pass/fail',
-                                                 'test-priority'])
-
-            results[0] = ['Short Description', 'Score', 'Test Details', 'Pass or Fail', 'test-priority']
-
-            low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
-            high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
-            high_priority_list.append(high_priority)
-
-            low_priority_list.append(low_priority)
+                failuredict = dict()
+                failuredict[target_folder] = ['Failure']
+                webpagesandpdfs.append(failuredict)
 
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
@@ -391,7 +403,7 @@ class GhostRequest:
             print(times)
         end_time = max(times)
         start_time = '2021-07-01'
-        end_time = datetime.utcfromtimestamp(end_time)#.strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.utcfromtimestamp(end_time)  # .strftime('%Y-%m-%d %H:%M:%S')
         now = time.time()
         offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
         end_time = end_time + offset
@@ -473,10 +485,14 @@ class GhostRequest:
         dut_table = dut_table + '</tbody></table>'
         text = text + dut_table
 
-        for article in zip(pdfs, webpages):
-            if self.debug:
-                print(article)
-            text = text + article[0] + ' | ' + article[1]
+        for dictionary in webpagesandpdfs:
+            text += list(dictionary.keys())[0] + ' report: '
+            for value in dictionary.values():
+                for webpage in value:
+                    text += webpage
+                    if value.index(webpage) + 1 != len(value):
+                        text += ' | '
+            text += '<br />'
 
         for image in images:
             text = text + image
