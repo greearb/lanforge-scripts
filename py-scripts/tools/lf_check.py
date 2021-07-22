@@ -32,6 +32,10 @@ Using .json:
 2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
 GENERIC NOTES: 
+Starting LANforge:
+    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
+    On local system the -s LF_MGR will be local_host if not provided
+
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
