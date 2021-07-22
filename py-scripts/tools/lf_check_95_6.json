@@ -40,7 +40,7 @@
         "security_used": "wpa2",
         "num_sta": 4,
         "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "eth1"
+        "upstream_port": "eth2"
     },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"asus11ax-5","PASSWD":"hello123","SECURITY":"wpa2"},
