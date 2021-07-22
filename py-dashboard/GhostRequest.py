@@ -194,7 +194,8 @@ class GhostRequest:
 
     def upload_image(self,
                      image):
-        print(image)
+        if self.debug:
+            print(image)
         ghost_json_url = self.ghost_json_url + '/admin/images/upload/'
 
         token = self.encode_token()
@@ -202,7 +203,8 @@ class GhostRequest:
 
         proc = subprocess.Popen(bashCommand, shell=True, stdout=subprocess.PIPE)
         output = proc.stdout.read().decode('utf-8')
-        print(output)
+        if self.debug:
+            print(output)
         self.images.append(json.loads(output)['images'][0]['url'])
 
     def upload_images(self,
@@ -211,7 +213,8 @@ class GhostRequest:
             if 'kpi' in image:
                 if 'png' in image:
                     self.upload_image(folder + '/' + image)
-        print('images %s' % self.images)
+        if self.debug:
+            print('images %s' % self.images)
 
     def custom_post(self,
                     folder,
@@ -274,16 +277,18 @@ class GhostRequest:
         scp_push = SCPClient(ssh_push.get_transport())
 
         if parent_folder is not None:
-            print("parent_folder %s" % parent_folder)
             files = os.listdir(parent_folder)
-            print(files)
+            if self.debug:
+                print("parent_folder %s" % parent_folder)
+                print(files)
             for file in files:
                 if os.path.isdir(parent_folder + '/' + file) is True:
                     if os.path.exists(file):
                         shutil.rmtree(file)
                     shutil.copytree(parent_folder + '/' + file, file)
                     target_folders.append(file)
-            print('Target folders: %s' % target_folders)
+            if self.debug:
+                print('Target folders: %s' % target_folders)
         else:
             for folder in folders:
                 if self.debug:
@@ -297,6 +302,10 @@ class GhostRequest:
         images = list()
         times = list()
         test_pass_fail = list()
+        subtest_pass_fail = list()
+        subtest_pass_total = 0
+        subtest_fail_total = 0
+        test_tag = dict()
 
         for target_folder in target_folders:
             try:
@@ -304,13 +313,24 @@ class GhostRequest:
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 test_rig = csvreader.get_column(df, 'test-rig')[0]
                 test_id = csvreader.get_column(df, 'test-id')[0]
+                test_tag[test_id] = (csvreader.get_column(df, 'test-tag')[0])
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
                 test_pass_fail.append(pass_fail)
                 dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
                 dut_sw = csvreader.get_column(df, 'dut-sw-version')[0]
                 dut_model = csvreader.get_column(df, 'dut-model-num')[0]
                 dut_serial = csvreader.get_column(df, 'dut-serial-num')[0]
-                duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig]
+                subtest_pass = csvreader.get_column(df, 'Subtest-Pass')
+                subtest_fail = csvreader.get_column(df, 'Subtest-Fail')
+                for result in subtest_pass:
+                    subtest_pass_total += int(result)
+                for result in subtest_fail:
+                    subtest_fail_total += int(result)
+                subtest_pass_fail_list = dict()
+                subtest_pass_fail_list['PASS'] = subtest_pass_total
+                subtest_pass_fail_list['FAIL'] = subtest_fail_total
+                subtest_pass_fail.append(subtest_pass_fail_list)
+                duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig, test_tag]
                 times_append = csvreader.get_column(df, 'Date')
                 for target_time in times_append:
                     times.append(float(target_time) / 1000)
@@ -398,12 +418,13 @@ class GhostRequest:
 
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
+        subtest_pass_fail_results = sum((Counter(test) for test in subtest_pass_fail), Counter())
 
         if self.debug:
             print(times)
         end_time = max(times)
         start_time = '2021-07-01'
-        end_time = datetime.utcfromtimestamp(end_time)  # .strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.utcfromtimestamp(end_time)
         now = time.time()
         offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
         end_time = end_time + offset
@@ -417,6 +438,8 @@ class GhostRequest:
                                              ['Short Description', 'Score', 'Test Details'])
         high_priority.append(['Total Passed', test_pass_fail_results['PASS'], 'Total subtests passed during this run'])
         high_priority.append(['Total Failed', test_pass_fail_results['FAIL'], 'Total subtests failed during this run'])
+        high_priority.append(['Subtests Passed', subtest_pass_fail_results['PASS'], 'Total subtests passed during this run'])
+        high_priority.append(['Subtests Failed', subtest_pass_fail_results['FAIL'], 'Total subtests failed during this run'])
 
         if title is None:
             title = end_time.strftime('%B %d, %Y %I:%M %p report')
@@ -434,7 +457,8 @@ class GhostRequest:
                                         from_date=start_time,
                                         to_date=end_time.strftime('%Y-%m-%d %H:%M:%S'),
                                         pass_fail='GhostRequest',
-                                        testbed=testbeds[0])
+                                        testbed=testbeds[0],
+                                        test_tag=test_tag)
 
         if self.influx_token is not None:
             influxdb = RecordInflux(_influx_host=self.influx_host,
@@ -442,7 +466,7 @@ class GhostRequest:
                                     _influx_org=self.influx_org,
                                     _influx_token=self.influx_token,
                                     _influx_bucket=self.influx_bucket)
-            short_description = 'Ghost Post Tests passed'  # variable name
+            short_description = 'Tests passed'  # variable name
             numeric_score = test_pass_fail_results['PASS']  # value
             tags = dict()
             print(datetime.utcfromtimestamp(max(times)))
@@ -452,7 +476,7 @@ class GhostRequest:
             date = datetime.utcfromtimestamp(max(times)).isoformat()
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
-            short_description = 'Ghost Post Tests failed'  # variable name
+            short_description = 'Tests failed'  # variable name
             numeric_score = test_pass_fail_results['FAIL']  # value
             tags = dict()
             tags['testbed'] = testbeds[0]
@@ -461,12 +485,38 @@ class GhostRequest:
             date = datetime.utcfromtimestamp(max(times)).isoformat()
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
+            short_description = 'Subtests passed'  # variable name
+            numeric_score = subtest_pass_fail_results['PASS']  # value
+            tags = dict()
+            print(datetime.utcfromtimestamp(max(times)))
+            tags['testbed'] = testbeds[0]
+            tags['script'] = 'GhostRequest'
+            tags['Graph-Group'] = 'Subtest PASS'
+            date = datetime.utcfromtimestamp(max(times)).isoformat()
+            influxdb.post_to_influx(short_description, numeric_score, tags, date)
+
+            short_description = 'Subtests failed'  # variable name
+            numeric_score = subtest_pass_fail_results['FAIL']  # value
+            tags = dict()
+            tags['testbed'] = testbeds[0]
+            tags['script'] = 'GhostRequest'
+            tags['Graph-Group'] = 'Subtest FAIL'
+            date = datetime.utcfromtimestamp(max(times)).isoformat()
+            influxdb.post_to_influx(short_description, numeric_score, tags, date)
+
         text = 'Testbed: %s<br />' % testbeds[0]
+        test_tag_table = ''
+        for tag in list(set(test_tag.values())):
+            print(tag)
+            test_tag_table += (
+                '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Test Tag</td>' \
+                '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % tag)
         dut_table = '<table width="700px" border="1" cellpadding="2" cellspacing="0" ' \
                     'style="border-color: gray; border-style: solid; border-width: 1px; "><tbody>' \
                     '<tr><th colspan="2">Test Information</th></tr>' \
                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Testbed</td>' \
                     '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '%s' \
                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_HW</td>' \
                     '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">DUT_SW</td>' \
@@ -478,9 +528,13 @@ class GhostRequest:
                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests passed</td>' \
                     '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
                     '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Tests failed</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Subtests passed</td>' \
+                    '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' \
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Subtests failed</td>' \
                     '<td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % (
-                        duts[4], duts[1], duts[2], duts[3], duts[0], test_pass_fail_results['PASS'],
-                        test_pass_fail_results['FAIL'])
+                        duts[4], test_tag_table, duts[1], duts[2], duts[3], duts[0], test_pass_fail_results['PASS'],
+                        test_pass_fail_results['FAIL'], subtest_pass_total, subtest_fail_total)
 
         dut_table = dut_table + '</tbody></table>'
         text = text + dut_table

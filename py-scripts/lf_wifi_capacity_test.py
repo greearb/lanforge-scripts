@@ -318,7 +318,6 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-from cv_test_manager import cv_test
 from cv_test_manager import *
 from LANforge import LFUtils
 
@@ -357,6 +356,7 @@ class WiFiCapacityTest(cv_test):
                  report_dir="",
                  graph_groups=None,
                  test_rig="",
+                 test_tag="",
                  local_lf_report_dir=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
@@ -395,6 +395,7 @@ class WiFiCapacityTest(cv_test):
         self.report_dir = report_dir
         self.graph_groups = graph_groups
         self.test_rig = test_rig
+        self.test_tag = test_tag
         self.local_lf_report_dir = local_lf_report_dir
 
     def setup(self):
@@ -453,6 +454,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("dl_rate: " + self.download_rate)
         if self.test_rig != "":
             cfg_options.append("test_rig: " + self.test_rig)
+        if self.test_tag != "":
+            cfg_options.append("test_tag: " + self.test_tag)
 
         cfg_options.append("save_csv: 1")
 
@@ -487,7 +490,7 @@ def main():
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
              --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01 \
+             --test_rig Testbed-01 -test_tag TAG\
              --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
              --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              --influx_bucket ben \
@@ -562,6 +565,7 @@ def main():
                                 sets=args.set,
                                 graph_groups=args.graph_groups,
                                 test_rig=args.test_rig,
+                                test_tag=args.test_tag,
                                 local_lf_report_dir=args.local_lf_report_dir
                                 )
     WFC_Test.setup()

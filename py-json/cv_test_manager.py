@@ -20,6 +20,9 @@ def cv_base_adjust_parser(args):
         # TODO:  In future, can use TestRig once that GUI update has propagated
         args.set.append(["Test Rig ID:", args.test_rig])
 
+    if args.test_tag != "":
+        args.set.append(["TestTag", args.test_tag])
+
     if args.influx_host is not None:
         if not args.pull_report:
             print("Specified influx host without pull_report, will enabled pull_request.")
@@ -60,6 +63,8 @@ def cv_add_base_parser(parser):
     # Reporting info
     parser.add_argument("--test_rig", default="",
                         help="Specify the test rig info for reporting purposes, for instance:  testbed-01")
+    parser.add_argument("--test_tag", default="",
+                        help="Specify the test tag info for reporting purposes, for instance:  testbed-01")
 
     influx_add_parser_args(parser)  # csv_to_influx
 

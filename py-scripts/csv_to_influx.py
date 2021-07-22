@@ -61,9 +61,9 @@ class CSVtoInflux():
         columns = dict(zip(df[0], length))
         print('columns: %s' % columns)
         influx_variables = ['script', 'short-description', 'test_details', 'Graph-Group',
-                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Units']
+                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Test Tag', 'Units']
         csv_variables = ['test-id', 'short-description', 'test details', 'Graph-Group',
-                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'Units']
+                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'test-tag', 'Units']
         csv_vs_influx = dict(zip(csv_variables, influx_variables))
         for row in df[1:]:
             row = [sub.replace('NaN', '0') for sub in row]
