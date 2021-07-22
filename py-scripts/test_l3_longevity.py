@@ -654,6 +654,8 @@ class L3VariableTime(Realm):
                     endps = []
                     ap_row = []
                     ap_stats_col_titles = []
+                    mac_found_5g = False
+                    mac_found_2g = False
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -712,7 +714,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
-                                    # pprint(response)
+                                    pprint(response)
                                     p = response['interface']
                                     #print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
@@ -726,47 +728,51 @@ class L3VariableTime(Realm):
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
+                                                mac_found_5g = True
                                         else:
                                             try:
                                                 # split_row[0].lower() , mac from AP 
                                                 # mac.lower() , mac from LANforge
                                                 if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row
+                                                    mac_found_5g = True
                                             except:
                                                 print(" 'No stations are currently associated.'? from AP")
                                                 print(" since possibly no stations: excption on compare split_row[0].lower() ")    
-                                    print("selected ap_row (from split_row): {}".format(ap_row))
+                                    if mac_found_5g == True:
+                                        mac_found_5g = False                                                
+                                        print("selected ap_row (from split_row): {}".format(ap_row))
 
-                                    # Find latency, jitter for connections using this port.
-                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        # Find latency, jitter for connections using this port.
+                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
 
-                                    # now report the ap_chanim_stats along side of the ap_stats_5g
-                                    xtop_reported = False
-                                    for row in ap_chanim_stats_rows_5g:
-                                        split_row = row.split()
-                                        if xtop_reported:
-                                            try:
-                                                xtop = split_row[7]
-                                                channel_utilization = 100 - int(xtop)
-                                            except:
-                                                print("detected chanspec with reading chanim_stats, failed reading xtop")
-                                            # should be only one channel utilization    
-                                            break                                                
-                                        else:
-                                            try:
-                                                if split_row[0].lower() == 'chanspec':
-                                                    xtop_reported = True
-                                            except:
-                                                print("Error reading xtop")
-                                    # ap information is passed with ap_row so all information needs to be contained in ap_row
-                                    ap_row.append(str(channel_utilization))
-                                    print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                    print("ap_row {ap_row}".format(ap_row=ap_row))
-    
-                                    ap_stats_5g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
-    
-                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                        latency, jitter, tput, ap_row, ap_stats_5g_col_titles) #ap_stats_5g_col_titles used as a length
+                                        # now report the ap_chanim_stats along side of the ap_stats_5g
+                                        xtop_reported = False
+                                        for row in ap_chanim_stats_rows_5g:
+                                            split_row = row.split()
+                                            if xtop_reported:
+                                                try:
+                                                    xtop = split_row[7]
+                                                    channel_utilization = 100 - int(xtop)
+                                                except:
+                                                    print("detected chanspec with reading chanim_stats, failed reading xtop")
+                                                # should be only one channel utilization    
+                                                break                                                
+                                            else:
+                                                try:
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        xtop_reported = True
+                                                except:
+                                                    print("Error reading xtop")
+                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                        ap_row.append(str(channel_utilization))
+                                        print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        print("ap_row {ap_row}".format(ap_row=ap_row))
+
+                                        ap_stats_5g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
+
+                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                            latency, jitter, tput, ap_row, ap_stats_5g_col_titles) #ap_stats_5g_col_titles used as a length
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
                                 ap_stats_2g="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
@@ -808,7 +814,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
-                                    # pprint(response)
+                                    pprint(response)
                                     p = response['interface']
                                     #print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
@@ -822,47 +828,51 @@ class L3VariableTime(Realm):
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
+                                                mac_found_2g = True
                                         else:
                                             try:
                                                 # split_row[0].lower() , mac from AP 
                                                 # mac.lower() , mac from LANforge
                                                 if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row
+                                                    mac_found_2g = True
                                             except:
                                                 print(" 'No stations are currently associated.'? from AP")
-                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")    
-                                    print("selected ap_row (from split_row): {}".format(ap_row))
+                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")  
+                                    if mac_found_2g == True:
+                                        mac_found_2g = False                                                  
+                                        print("selected ap_row (from split_row): {}".format(ap_row))
 
-                                    # Find latency, jitter for connections using this port.
-                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        # Find latency, jitter for connections using this port.
+                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
 
-                                    # now report the ap_chanim_stats along side of the ap_stats_2g
-                                    xtop_reported = False
-                                    for row in ap_chanim_stats_rows_2g:
-                                        split_row = row.split()
-                                        if xtop_reported:
-                                            try:
-                                                xtop = split_row[7]
-                                                channel_utilization = 100 - int(xtop)
-                                            except:
-                                                print("detected chanspec with reading chanim_stats, failed reading xtop")
-                                            # should be only one channel utilization    
-                                            break                                                
-                                        else:
-                                            try:
-                                                if split_row[0].lower() == 'chanspec':
-                                                    xtop_reported = True
-                                            except:
-                                                print("Error reading xtop")
-                                    # ap information is passed with ap_row so all information needs to be contained in ap_row
-                                    ap_row.append(str(channel_utilization))
-                                    print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                    print("ap_row {ap_row}".format(ap_row=ap_row))
-    
-                                    ap_stats_2g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
-    
-                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                        latency, jitter, tput, ap_row, ap_stats_2g_col_titles) #ap_stats_2g_col_titles used as a length
+                                        # now report the ap_chanim_stats along side of the ap_stats_2g
+                                        xtop_reported = False
+                                        for row in ap_chanim_stats_rows_2g:
+                                            split_row = row.split()
+                                            if xtop_reported:
+                                                try:
+                                                    xtop = split_row[7]
+                                                    channel_utilization = 100 - int(xtop)
+                                                except:
+                                                    print("detected chanspec with reading chanim_stats, failed reading xtop")
+                                                # should be only one channel utilization    
+                                                break                                                
+                                            else:
+                                                try:
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        xtop_reported = True
+                                                except:
+                                                    print("Error reading xtop")
+                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                        ap_row.append(str(channel_utilization))
+                                        print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        print("ap_row {ap_row}".format(ap_row=ap_row))
+
+                                        ap_stats_2g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
+
+                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                            latency, jitter, tput, ap_row, ap_stats_2g_col_titles) #ap_stats_2g_col_titles used as a length
 
                         else:
 
