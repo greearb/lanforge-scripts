@@ -31,6 +31,10 @@ Using .json:
 1. copy lf_check.json to <file name>.json this will avoide .json being overwritten on git pull
 2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
+NOTES: getting radio information:
+1. curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp | less 
+2. response = self.json_get("/radiostatus/all")
+
 GENERIC NOTES: 
 Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
