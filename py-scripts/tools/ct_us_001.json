@@ -114,7 +114,6 @@
                     " --radio5 1.1.wiphy2 --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
-                    " --test-tag 'ap_auto 32 stations'",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
@@ -133,7 +132,6 @@
                     " --radio5 1.1.wiphy2 --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
-                    " --test-tag 'ap_auto'",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
@@ -178,7 +176,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "CT-US-001_wifi_capacity_wiphy1_ATH10K(9984)_sta128":{
+            "CT-US-001_wifi_capacity_wiphy0_wiphy1_ATH10K(9984)_sta128":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
@@ -187,7 +185,6 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
-                    " --test-tag 'wifi_capacity 64 stations'",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
@@ -216,13 +213,12 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
                     " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH ",
-                    " --test-tag 'dataplane_wiphy1_ATH10K(9984)'",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
             "CT-US-001_create_chamberview_dut_asus11ax_5_2":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
                 "args":"",
@@ -234,7 +230,7 @@
                 ]
             },
             "CT-US-001_create_chamberview_wiphy3_AX210_sta1":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
@@ -246,21 +242,20 @@
                 ]
             },    
             "CT-US-001_wifi_capacity_wiphy3_AX210_sta1":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
-                    " --test-tag 'dataplane_wiphy3_AX210'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan3",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
             "CT-US-001_dataplane_wiphy3_AX210_sta1":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"lf_dataplane_test.py",
                 "args":"",
@@ -269,9 +264,7 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
-                    " --raw_line 'spatial_streams: 1'",
-                    " --test-tag 'dataplane_wiphy3_AX210'",
-                    " --pull_report --local_lf_report_dir REPORT_PATH",
+                    " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
@@ -313,7 +306,6 @@
                     " --radio5 1.1.wiphy2 --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
-                    " --test-tag 'ap_auto_wiphy2'",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
