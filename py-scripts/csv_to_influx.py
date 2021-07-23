@@ -77,9 +77,10 @@ class CSVtoInflux():
             date = row[columns['Date']]
             date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
             for variable in csv_variables:
-                index = columns[variable]
-                influx_variable = csv_vs_influx[variable]
-                tags[influx_variable] = row[index]
+                if variable in columns.keys():
+                    index = columns[variable]
+                    influx_variable = csv_vs_influx[variable]
+                    tags[influx_variable] = row[index]
             self.influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
     def script_name(self):
