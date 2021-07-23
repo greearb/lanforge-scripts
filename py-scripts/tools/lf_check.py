@@ -1141,7 +1141,7 @@ Example :
     # generate output reports
     report.set_title("LF Check: lf_check.py")
     report.build_banner()
-    report.start_content_div()
+    report.start_content_div2()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
     report.set_text("lanforge-scripts git sha: {}".format(git_sha))

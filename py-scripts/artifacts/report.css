@@ -84,6 +84,12 @@ th {
 li {
   line-height: 1.5;
 }
+.contentDiv2 {
+   min-width: 800px;
+   max-width: 8in;
+   margin: 1em;
+   padding: 0;
+}
 .contentDiv {
    min-width: 800px;
    max-width: 8in;

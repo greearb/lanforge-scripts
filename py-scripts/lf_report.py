@@ -336,6 +336,9 @@ class lf_report():
                     """.format(title=self.table_title)
         self.html += self.table_title_html
 
+    def start_content_div2(self):
+        self.html += "\n<div class='contentDiv2'>\n"
+
     def start_content_div(self):
         self.html += "\n<div class='contentDiv'>\n"
 
