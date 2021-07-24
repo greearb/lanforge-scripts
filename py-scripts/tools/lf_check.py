@@ -76,6 +76,7 @@ import shutil
 from os import path
 import shlex
 import paramiko 
+import pandas as pd
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -216,11 +217,11 @@ class lf_check():
         #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
-        output = stdout.readlines()
+        lanforge_kernel_verion = stdout.readlines()
         # print('\n'.join(output))
         ssh.close()
         time.sleep(1)
-        return output
+        return lanforge_kernel_version
 
     def get_lanforge_gui_version(self):
         output = ""
@@ -228,11 +229,11 @@ class lf_check():
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
-        output = stdout.readlines()
+        lanforge_gui_version = stdout.readlines()
         # print('\n'.join(output))
         ssh.close()
         time.sleep(1)
-        return output
+        return lanforge_gui_version
         
 
     # NOT complete : will send the email results
@@ -1057,6 +1058,12 @@ Example :
         else:
             print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
             exit(1)
+
+    # Test-rig information information
+    scripts_git_sha = 'NO_GIT_SHA'
+    lanforge_kernel_version = 'NO_KERNEL_VER'
+    lanforge_gui_version = 'NO_LF_GUI_VER'
+
     # select test suite 
     test_suite = args.suite
     
@@ -1135,13 +1142,22 @@ Example :
     check.read_config() 
     check.run_script_test()
 
-    # read lanforge
-
+    # LANforge and scripts config
+    lf_test_setup = pd.DataFrame({
+        'LANforge Config': [""],
+        'kernel version': [lanforge_kernel_version],
+        'GUI version': [lanforge_gui_version],
+        'scripts git sha': [scripts_git_sha]
+    })
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
     report.build_banner_left()
     report.start_content_div2()
+    report.set_obj_html("Objective","Run QA Tests")
+    report.build_objective()
+    report.set_table_dataframe(lf_test_setup)
+    report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
     report.set_text("lanforge-scripts git sha: {}".format(git_sha))
