@@ -1102,24 +1102,6 @@ Example :
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8','ignore')
 
-    try:
-        scripts_git_sha = check.get_scripts_git_sha()
-        print("git_sha {sha}".format(sha=scripts_git_sha))
-    except:
-        print("git_sha read exception ")        
-
-    try:
-        lanforge_kernel_version = check.get_lanforge_kernel_version()
-        print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
-    except:
-        print("lanforge_kernel_version exception")        
-
-    try:
-        lanforge_gui_version = check.get_lanforge_gui_version()
-        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
-    except:
-        print("lanforge_gui_version exception")        
-
     # set up logging
     logfile = args.logfile[:-4]
     print("logfile: {}".format(logfile))
@@ -1141,6 +1123,28 @@ Example :
     # read config and run tests
     check.read_config() 
     check.run_script_test()
+
+    # get sha and lanforge informaiton for results
+    # Need to do this after reading the configuration
+    try:
+        scripts_git_sha = check.get_scripts_git_sha()
+        print("git_sha {sha}".format(sha=scripts_git_sha))
+    except:
+        print("git_sha read exception ")        
+
+    try:
+        lanforge_kernel_version = check.get_lanforge_kernel_version()
+        print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
+    except:
+        print("lanforge_kernel_version exception")        
+
+    try:
+        lanforge_gui_version = check.get_lanforge_gui_version()
+        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
+    except:
+        print("lanforge_gui_version exception")        
+#  
+
 
     # LANforge and scripts config
     lf_test_setup = pd.DataFrame({
