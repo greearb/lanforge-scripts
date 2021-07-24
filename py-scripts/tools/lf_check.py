@@ -1169,6 +1169,8 @@ Example :
     banner_dest_png = parent_report_dir + "/banner.png"
     CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
     CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
+    CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
+    CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
     report_src_css = report_path + "/report.css"
     report_dest_css = parent_report_dir + "/report.css"
     custom_src_css = report_path + "/custom.css"
@@ -1192,12 +1194,13 @@ Example :
         print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))        
     shutil.copyfile(html_report,            lf_check_html_report)
 
-    # copy banner and logo
-    shutil.copyfile(banner_src_png,         banner_dest_png)
-    shutil.copyfile(CandelaLogo_src_png,    CandelaLogo_dest_png)
-    shutil.copyfile(report_src_css,         report_dest_css)
-    shutil.copyfile(custom_src_css,         custom_dest_css)
-    shutil.copyfile(font_src_woff,          font_dest_woff)
+    # copy banner and logo up one directory, 
+    shutil.copyfile(banner_src_png,             banner_dest_png)
+    shutil.copyfile(CandelaLogo_src_png,        CandelaLogo_dest_png)
+    shutil.copyfile(report_src_css,             report_dest_css)
+    shutil.copyfile(custom_src_css,             custom_dest_css)
+    shutil.copyfile(font_src_woff,              font_dest_woff)
+    shutil.copyfile(CandelaLogo_small_src_png,  CandelaLogo_small_dest_png)
 
     # print out locations of results
     print("lf_check_latest.html: "+lf_check_latest_html)
