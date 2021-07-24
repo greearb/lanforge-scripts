@@ -217,7 +217,7 @@ class lf_check():
         #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
-        lanforge_kernel_verion = stdout.readlines()
+        lanforge_kernel_version = stdout.readlines()
         # print('\n'.join(output))
         ssh.close()
         time.sleep(1)
