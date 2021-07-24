@@ -1,17 +1,22 @@
 {
     "test_parameters":{
-        "test_timeout": 200,
+        "test_bed": "CT-US-001",
+        "lf_mgr_ip": "192.168.100.116",
+        "lf_mgr_port": "8080",
+        "dut_name": "ASUSRT-AX88U",
+        "dut_bssid_5g": "3c:7c:3f:55:4d:64",
+        "dut_sw": "3.0.0.4.386_42820",
+        "test_timeout": 300,
         "load_blank_db": false,
         "load_factory_default_db": true,
         "load_custom_db": false,
         "custom_db": "DFLT_ETH1_GEN",
         "email_list_production": "konikofi@candelatech.com,greearb@candelatech.com,logan.lipke@candelatech.com,dipti.dhond@candelatech.com,chuck.rekiere@candelatech.com,matthew@candelatech.com,iain.davidson@candelatech.com,jreynolds@candelatech.com",
         "host_ip_production": "192.168.95.6",
-        "email_list_test": "chuck.rekiere@candelatech.com,logan.lipke@candelatech.com",
+        "email_list_test": "chuck.rekiere@candelatech.com",
         "host_ip_test": "192.168.95.6",
-        "lf_mgr": "192.168.100.116",
-        "email_title_txt": "Lanforge QA Testing CT-US-001 - Scripts",
-        "email_txt": "Lanforge QA Testing CT-US-001 - Scripts"
+        "email_title_txt": "Lanforge QA Testing CT-US-001 Scripting",
+        "email_txt": "Lanforge QA Testing CT-US-001 Scripting"
     },
     "test_network":{
         "http_test_ip": "10.40.0.10",
