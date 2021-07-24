@@ -329,6 +329,39 @@ class lf_report():
         )
         self.html += self.banner_html
 
+    def build_banner_left(self):
+        # NOTE: {{ }} are the ESCAPED curly braces
+        self.banner_html = """<!DOCTYPE html>
+                        <html lang='en'>
+                        <head>
+                            <meta charset='UTF-8'>
+                            <meta name='viewport' content='width=device-width, initial-scale=1' />
+                            <style>
+                            body {{ margin: 0; padding: 0; }}
+                            </style>
+                            <link rel='stylesheet' href='report.css' />
+                            <link rel='stylesheet' href='custom.css' />
+                            <title>{title}</title>
+                        </head>
+                        <body>
+                        <div id='BannerBack'>
+                            <div id='BannerLeft'>
+                                <br/>
+                                <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
+                                <div class='HeaderStyle'>
+                                    <br>
+                                    <h1 class='TitleFontPrint' style='color:darkgreen;'> {title} </h1>
+                                    <h3 class='TitleFontPrint' style='color:darkgreen;'>{date}</h3>
+                                    </div>
+                            </div>
+                        </div>
+                 """.format(
+            title=self.title,
+            date=self.date,
+        )
+        self.html += self.banner_html
+
+
     def build_table_title(self):
         self.table_title_html = """
                     <!-- Table Title-->

@@ -1140,7 +1140,7 @@ Example :
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
-    report.build_banner()
+    report.build_banner_left()
     report.start_content_div2()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
@@ -1149,7 +1149,7 @@ Example :
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
-    report.build_footer_no_png()
+    report.build_footer()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:
