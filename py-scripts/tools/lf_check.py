@@ -218,6 +218,7 @@ class lf_check():
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
         lanforge_kernel_version = stdout.readlines()
+        lanforge_kernel_version = lanforge_kernel_version.replace('\n','')
         # print('\n'.join(output))
         ssh.close()
         time.sleep(1)
@@ -230,6 +231,7 @@ class lf_check():
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
         lanforge_gui_version = stdout.readlines()
+        lanforge_gui_version = lanforge_gui_version.replace('\n','')
         # print('\n'.join(output))
         ssh.close()
         time.sleep(1)
@@ -1143,15 +1145,13 @@ Example :
         print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
     except:
         print("lanforge_gui_version exception")        
-#  
-
 
     # LANforge and scripts config
     lf_test_setup = pd.DataFrame({
         'LANforge Config': [""],
-        'kernel version': [lanforge_kernel_version],
-        'GUI version': [lanforge_gui_version],
-        'scripts git sha': [scripts_git_sha]
+        'kernel version': lanforge_kernel_version,
+        'GUI version': lanforge_gui_version,
+        'scripts git sha': scripts_git_sha
     })
 
     # generate output reports
