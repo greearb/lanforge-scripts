@@ -211,6 +211,19 @@ class lf_check():
         scripts_git_sha = commit_hash.decode('utf-8','ignore')
         return scripts_git_sha
 
+    def get_lanforge_node_version(self):
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('uname -n')
+        lanforge_node_version = stdout.readlines()
+        # print('\n'.join(output))
+        lanforge_node_version =[line.replace('\n','') for line in lanforge_node_version]
+        ssh.close()
+        time.sleep(1)
+        return lanforge_node_version
+
     def get_lanforge_kernel_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
@@ -219,6 +232,7 @@ class lf_check():
         stdin, stdout, stderr = ssh.exec_command('uname -r')
         lanforge_kernel_version = stdout.readlines()
         # print('\n'.join(output))
+        lanforge_kernel_version =[line.replace('\n','') for line in lanforge_kernel_version]
         ssh.close()
         time.sleep(1)
         return lanforge_kernel_version
@@ -231,6 +245,7 @@ class lf_check():
         stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
         lanforge_gui_version = stdout.readlines()
         # print('\n'.join(output))
+        lanforge_gui_version =[line.replace('\n','') for line in lanforge_gui_version]
         ssh.close()
         time.sleep(1)
         return lanforge_gui_version
@@ -1060,6 +1075,7 @@ Example :
             exit(1)
 
     # Test-rig information information
+    lanforge_node_version = 'NO_LF_NODE_VER'
     scripts_git_sha = 'NO_GIT_SHA'
     lanforge_kernel_version = 'NO_KERNEL_VER'
     lanforge_gui_version = 'NO_LF_GUI_VER'
@@ -1125,12 +1141,18 @@ Example :
     check.run_script_test()
 
     # get sha and lanforge informaiton for results
-    # Need to do this after reading the configuration
+    # Need to do this after reading the configuration    
     try:
         scripts_git_sha = check.get_scripts_git_sha()
         print("git_sha {sha}".format(sha=scripts_git_sha))
     except:
         print("git_sha read exception ")        
+
+    try:
+        lanforge_node_version = check.get_lanforge_node_version()
+        print("lanforge_node_version {node_ver}".format(node_node=lanforge_node_version))
+    except:
+        print("lanforge_node_version exception")        
 
     try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
@@ -1146,7 +1168,7 @@ Example :
 
     # LANforge and scripts config
     lf_test_setup = pd.DataFrame({
-        'LANforge Config': [""],
+        'LANforge': lanforge_node_version,
         'kernel version': lanforge_kernel_version,
         'GUI version': lanforge_gui_version,
         'scripts git sha': scripts_git_sha
@@ -1158,12 +1180,14 @@ Example :
     report.start_content_div2()
     report.set_obj_html("Objective","Run QA Tests")
     report.build_objective()
+    report.set_text("LANforge")
+    report.build_text()
     report.set_table_dataframe(lf_test_setup)
     report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    report.set_text("lanforge-scripts git sha: {}".format(git_sha))
-    report.build_text()
+    # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
+    # report.build_text()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
