@@ -40,6 +40,9 @@ Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
     On local system the -s LF_MGR will be local_host if not provided
 
+    On LANforge ~lanforge/.config/autostart/LANforge-auto.desktop is used to restart lanforge on boot.
+        http://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login
+
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
@@ -54,6 +57,8 @@ Starting LANforge:
 # send curl command to remote power switch to reboot testbed
 #   curl -s http://admin:lanforge@192.168.100.237/outlet?1=CCL -o /dev/null 2>&1
 # 
+ 
+
 '''
 import datetime
 import pprint
