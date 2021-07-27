@@ -162,14 +162,17 @@ Example:
     parser.add_argument("-c", "--cv_scenario", type=str, help="Name of Chamber View test scenario (see CV Manage Scenarios)")
     parser.add_argument("-n", "--cv_test", type=str, help="Chamber View test")
     parser.add_argument("-s", "--test_profile", type=str, help="Name of the saved CV test profile")
+    parser.add_argument("--debug", help='Enable debugging', default=False, action="store_true")
 
     args = parser.parse_args()
     if args.lfmgr is not None:
         lfjson_host = args.lfmgr
     if args.port is not None:
         lfjson_port = args.port
-
-    run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port)
+    debug = False
+    if args.debug is not None:
+        debug = args.debug
+    run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port, debug_=debug)
 
     if args.lanforge_db is not None:
         run_cv_scenario.lanforge_db = args.lanforge_db
