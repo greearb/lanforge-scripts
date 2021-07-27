@@ -18,11 +18,17 @@ append_df = pd.read_csv('http://192.168.95.6/html-reports/2021-07-24-03-00-01_lf
 
 df = df.append(append_df, ignore_index=True)
 
-print(df)
+#print(df)
+                 
+fig = (px.scatter(df, x="Date", y="numeric-score",
+                 color="short-description", hover_name="short-description",
+                 size_max=60)).update_traces(mode='lines+markers')
 
+'''
 fig = px.scatter(df, x="Date", y="numeric-score",
                  color="short-description", hover_name="short-description",
                  size_max=60)
+'''              
 '''
 fig = px.scatter(df, x="short-description", y="numeric-score",
                  color="short-description", hover_name="short-description",
