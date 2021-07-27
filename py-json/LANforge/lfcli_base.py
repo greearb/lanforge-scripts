@@ -272,8 +272,13 @@ class LFCliBase:
                                        die_on_error_=self.exit_on_error)
             json_response = lf_r.get_as_json(debug_=debug_, die_on_error_=False)
             #debug_printer.pprint(json_response)
-            if (json_response is None) and debug_:
-                print("LFCliBase.json_get: no entity/response, probabily status 404")
+            if (json_response is None):
+                if debug_:
+                    if hasattr(lf_r, 'print_errors'):
+                        lf_r.print_errors()
+                    else:
+                        print("LFCliBase.json_get: no entity/response, check other errors")
+                        time.sleep(10)
                 return None
         except ValueError as ve:
             if debug_ or self.exit_on_error:
