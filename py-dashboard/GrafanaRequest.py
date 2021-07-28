@@ -137,6 +137,17 @@ class GrafanaRequest:
                     self.units[script] = dict()
                     for index in range(0, len(graph_groups)):
                         self.units[script][graph_groups[index]] = units[index]
+                subtests = 0
+                for score in list(self.csvreader.get_column(csv, 'Subtest-Pass')):
+                    subtests += int(score)
+                for score in list(self.csvreader.get_column(csv, 'Subtest-Fail')):
+                    subtests += int(score)
+                if subtests > 0:
+                    dictionary[script].append('Subtests passed')
+                    dictionary[script].append('Subtests failed')
+                print(subtests)
+                for item in dictionary[script]:
+                    print('%s, %s' % (item, type(item)))
         print(dictionary)
         return dictionary
 
@@ -146,7 +157,8 @@ class GrafanaRequest:
                     groupBy,
                     index,
                     graph_group,
-                    testbed):
+                    testbed,
+                    test_tag=None):
         query = (
                 'from(bucket: "%s")\n  '
                 '|> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  '
@@ -157,6 +169,9 @@ class GrafanaRequest:
                     '|> yield(name: "mean")\n  ')
         if graph_group is not None:
             graphgroup = ('|> filter(fn: (r) => r["Graph-Group"] == "%s")\n' % graph_group)
+            query += graphgroup
+        if test_tag is not None:
+            graphgroup = ('|> filter(fn: (r) => r["Test-Tag"] == "%s")\n' % test_tag)
             query += graphgroup
         if testbed is not None:
             query += ('|> filter(fn: (r) => r["testbed"] == "%s")\n' % testbed)
@@ -195,7 +210,8 @@ class GrafanaRequest:
                                 to_date='now',
                                 graph_height=8,
                                 graph__width=12,
-                                pass_fail=None):
+                                pass_fail=None,
+                                test_tag=None):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
         uid = ''.join(random.choice(options) for i in range(9))
         input1 = dict()
@@ -261,7 +277,16 @@ class GrafanaRequest:
 
                 targets = list()
                 counter = 0
-                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
+                try:
+                    new_target = self.maketargets(bucket,
+                                                  scriptname,
+                                                  groupBy,
+                                                  counter,
+                                                  graph_group,
+                                                  testbed,
+                                                  test_tag=test_tag[scriptname])
+                except:
+                    new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
                 targets.append(new_target)
 
                 fieldConfig = dict()
@@ -331,10 +356,7 @@ class GrafanaRequest:
                     panel['title'] = scriptname + ' ' + graph_group
                 else:
                     panel['title'] = scriptname
-                if 'PASS' in panel['title']:
-                    panel['title'] = 'Total Passed'
-                if 'FAIL' in panel['title']:
-                    panel['title'] = 'Total Failed'
+                print(panel['title'])
                 panel['transformations'] = list()
                 panel['transformations'].append(transformation)
                 panel['type'] = "graph"

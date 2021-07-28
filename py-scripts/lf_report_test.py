@@ -97,7 +97,17 @@ if __name__ == "__main__":
                          _graph_image_name="Bi-single_radio_2.4GHz",
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
                          _color=['darkorange', 'forestgreen','blueviolet'],
-                         _color_edge='red')
+                         _color_edge='red',
+                         _grp_title="Throughput for each clients",
+                         _xaxis_step=5,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1,1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None)
 
     graph_png = graph.build_bar_graph()
 
@@ -114,7 +124,8 @@ if __name__ == "__main__":
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name1",
                               _color=None,
-                              _label=["s1", "s2", "s3"])
+                              _label=["s1", "s2", "s3"],
+                              _enable_csv = False)
     graph_png = graph2.build_scatter_graph()
 
     print("graph name {}".format(graph_png))
@@ -129,7 +140,8 @@ if __name__ == "__main__":
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name_map",
                               _color=None,
-                              _label=["s1", "s2"])
+                              _label=["s1", "s2"],
+                              _enable_csv = False)
     graph_png = graph2.build_scatter_graph()
 
     print("graph name {}".format(graph_png))
@@ -144,7 +156,8 @@ if __name__ == "__main__":
                              _yaxis_name="Login PASS/FAIL",
                              _label=['Success', 'Fail', 'both'],
                              _graph_image_name="login_pass_fail1",
-                             _color=None)
+                             _color=None,
+                             _enable_csv = False)
 
     graph_png = graph.build_stacked_graph()
 
@@ -163,7 +176,8 @@ if __name__ == "__main__":
                                         _label=['Success', 'Fail'],
                                         _graph_image_name="image_name_pass_fail",
                                         _color=["r", "g"],
-                                        _figsize=(9, 4))
+                                        _figsize=(9, 4),
+                                        _enable_csv = False)
 
     graph_png = graph.build_horizontal_stacked_graph()
 

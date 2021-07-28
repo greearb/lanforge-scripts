@@ -84,6 +84,12 @@ th {
 li {
   line-height: 1.5;
 }
+.contentDiv2 {
+   min-width: 800px;
+   max-width: 8in;
+   margin: 1em;
+   padding: 0;
+}
 .contentDiv {
    min-width: 800px;
    max-width: 8in;
@@ -181,6 +187,20 @@ li {
    max-width:  1000px;
    max-height: 205px;
 }
+
+#BannerLeft {
+   background-image:url("banner.png");
+   background-repeat:no-repeat;
+   padding:    0;
+   margin:     1em;
+   min-width:  1000px;
+   min-height: 205px;
+   width:      1000px;
+   height:     205px;
+   max-width:  1000px;
+   max-height: 205px;
+}
+
 #BannerLogo {
    text-align: right;
    padding:    25px;

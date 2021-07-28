@@ -61,11 +61,12 @@ class CSVtoInflux():
         columns = dict(zip(df[0], length))
         print('columns: %s' % columns)
         influx_variables = ['script', 'short-description', 'test_details', 'Graph-Group',
-                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Units']
+                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Test Tag', 'Units']
         csv_variables = ['test-id', 'short-description', 'test details', 'Graph-Group',
-                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'Units']
+                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'test-tag', 'Units']
         csv_vs_influx = dict(zip(csv_variables, influx_variables))
         for row in df[1:]:
+            row = [sub.replace('NaN', '0') for sub in row]
             tags = dict()
             print("row: %s" % row)
             short_description = row[columns['short-description']]
@@ -76,9 +77,10 @@ class CSVtoInflux():
             date = row[columns['Date']]
             date = datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() #convert to datetime so influx can read it, this is required
             for variable in csv_variables:
-                index = columns[variable]
-                influx_variable = csv_vs_influx[variable]
-                tags[influx_variable] = row[index]
+                if variable in columns.keys():
+                    index = columns[variable]
+                    influx_variable = csv_vs_influx[variable]
+                    tags[influx_variable] = row[index]
             self.influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
     def script_name(self):

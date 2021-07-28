@@ -31,10 +31,33 @@ Using .json:
 1. copy lf_check.json to <file name>.json this will avoide .json being overwritten on git pull
 2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
+NOTES: getting radio information:
+1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp | less
+2. (using Python) response = self.json_get("/radiostatus/all")
+
 GENERIC NOTES:
+Starting LANforge:
+    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR
+    On local system the -s LF_MGR will be local_host if not provided
+
+    On LANforge ~lanforge/.config/autostart/LANforge-auto.desktop is used to restart lanforge on boot.
+        http://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login
+
 1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output.
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
+    C. for getting the radio firmware:  ethtool -i wlan0
+
+# may need to build in a testbed reboot at the beginning of a day's testing...
+# seeing some dhcp exhaustion and high latency values for testbeds that have been running
+# for a while that appear to clear up once the entire testbed is power cycled
+
+# issue a shutdown command on the lanforge(s)
+#  ssh root@lanforge reboot (need to verify)  or do a shutdown
+# send curl command to remote power switch to reboot testbed
+#   curl -s http://admin:lanforge@192.168.100.237/outlet?1=CCL -o /dev/null 2>&1
+#
+
 
 '''
 import datetime
@@ -59,6 +82,7 @@ import shutil
 from os import path
 import shlex
 import paramiko
+import pandas as pd
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -124,6 +148,7 @@ class lf_check():
         self.csv_results_column_headers = ""
         self.logger = logging.getLogger(__name__)
         self.test_timeout = 120
+        self.test_timeout_default = 120
         self.use_blank_db = "FALSE"
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
@@ -133,13 +158,22 @@ class lf_check():
         self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
+
+        # lanforge configuration
         self.lf_mgr_ip = "192.168.0.102"
         self.lf_mgr_port = ""
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
-        self.dut_name = ""  # "ASUSRT-AX88U" note this is not dut_set_name
-        self.dut_bssid = ""  # "3c:7c:3f:55:4d:64" - this is the mac for the radio this may be seen with a scan
 
+        # dut configuration
+        self.dut_name = "DUT_NAME_NOT_SET"  # "ASUSRT-AX88U" note this is not dut_set_name
+        self.dut_hw = "DUT_HW_NOT_SET"
+        self.dut_sw = "DUT_SW_NOT_SET"
+        self.dut_model = "DUT_MODEL_NOT_SET"
+        self.dut_serial = "DUT_SERIAL_NOT_SET"
+        self.dut_bssid_2g = "BSSID_2G_NOT_SET"  # "3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
+        self.dut_bssid_5g = "BSSID_5G_NOT_SET"  # "3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
+        self.dut_bssid_6g = "BSSID_6G_NOT_SET"  # "3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
         # NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
@@ -184,6 +218,20 @@ class lf_check():
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
         return scripts_git_sha
 
+    def get_lanforge_node_version(self):
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        # ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
+                    banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('uname -n')
+        lanforge_node_version = stdout.readlines()
+        # print('\n'.join(output))
+        lanforge_node_version = [line.replace('\n', '') for line in lanforge_node_version]
+        ssh.close()
+        time.sleep(1)
+        return lanforge_node_version
+
     def get_lanforge_kernel_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
@@ -191,11 +239,12 @@ class lf_check():
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
                     banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
-        output = stdout.readlines()
+        lanforge_kernel_version = stdout.readlines()
         # print('\n'.join(output))
+        lanforge_kernel_version = [line.replace('\n', '') for line in lanforge_kernel_version]
         ssh.close()
         time.sleep(1)
-        return output
+        return lanforge_kernel_version
 
     def get_lanforge_gui_version(self):
         output = ""
@@ -204,11 +253,12 @@ class lf_check():
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
                     banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
-        output = stdout.readlines()
+        lanforge_gui_version = stdout.readlines()
         # print('\n'.join(output))
+        lanforge_gui_version = [line.replace('\n', '') for line in lanforge_gui_version]
         ssh.close()
         time.sleep(1)
-        return output
+        return lanforge_gui_version
 
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
@@ -393,6 +443,7 @@ blog: http://{blog}:2368
     def read_test_parameters(self):
         if "test_timeout" in self.json_data["test_parameters"]:
             self.test_timeout = self.json_data["test_parameters"]["test_timeout"]
+            self.test_timeout_default = self.test_timeout
         else:
             self.logger.info("test_timeout not in test_parameters json")
             exit(1)
@@ -457,10 +508,34 @@ blog: http://{blog}:2368
             self.dut_name = self.json_data["test_parameters"]["dut_name"]
         else:
             self.logger.info("dut_name not in test_parameters json")
-        if "dut_bssid" in self.json_data["test_parameters"]:
-            self.dut_bssid = self.json_data["test_parameters"]["dut_bssid"]
+        if "dut_hw" in self.json_data["test_parameters"]:
+            self.dut_hw = self.json_data["test_parameters"]["dut_hw"]
         else:
-            self.logger.info("dut_bssid not in test_parameters json")
+            self.logger.info("dut_hw not in test_parameters json")
+        if "dut_sw" in self.json_data["test_parameters"]:
+            self.dut_sw = self.json_data["test_parameters"]["dut_sw"]
+        else:
+            self.logger.info("dut_sw not in test_parameters json")
+        if "dut_model" in self.json_data["test_parameters"]:
+            self.dut_model = self.json_data["test_parameters"]["dut_model"]
+        else:
+            self.logger.info("dut_model not in test_parameters json")
+        if "dut_serial" in self.json_data["test_parameters"]:
+            self.dut_serial = self.json_data["test_parameters"]["dut_serial"]
+        else:
+            self.logger.info("dut_serial not in test_parameters json")
+        if "dut_bssid_2g" in self.json_data["test_parameters"]:
+            self.dut_bssid_2g = self.json_data["test_parameters"]["dut_bssid_2g"]
+        else:
+            self.logger.info("dut_bssid_2G not in test_parameters json")
+        if "dut_bssid_5g" in self.json_data["test_parameters"]:
+            self.dut_bssid_5g = self.json_data["test_parameters"]["dut_bssid_5g"]
+        else:
+            self.logger.info("dut_bssid_5g not in test_parameters json")
+        if "dut_bssid_6g" in self.json_data["test_parameters"]:
+            self.dut_bssid_6g = self.json_data["test_parameters"]["dut_bssid_6g"]
+        else:
+            self.logger.info("dut_bssid_6g not in test_parameters json")
 
     def read_test_network(self):
         if "http_test_ip" in self.json_data["test_network"]:
@@ -737,7 +812,7 @@ blog: http://{blog}:2368
                 self.logger.info("test: {}  skipped".format(test))
             # load the default database
             elif self.test_dict[test]['enabled'] == "TRUE":
-                # if args key has a value of an empty scring then need to manipulate the args_list to args
+                # if args key has a value of an empty string then need to manipulate the args_list to args
                 # list does not have replace only stings do to args_list will be joined and  converted to a string and placed
                 # in args.  Then the replace below will work.
                 if self.test_dict[test]['args'] == "":
@@ -770,8 +845,26 @@ blog: http://{blog}:2368
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_IP', self.lf_mgr_ip)
                 if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT', self.lf_mgr_port)
+
                 if 'DUT_NAME' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME', self.dut_name)
+                if 'DUT_HW' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_HW', self.dut_hw)
+                if 'DUT_SW' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SW', self.dut_sw)
+                if 'DUT_MODEL' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_MODEL', self.dut_model)
+                if 'DUT_SERIAL' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SERIAL', self.dut_serial)
+                if 'DUT_BSSID_2G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_2G',
+                                                                                        self.dut_bssid_2g)
+                if 'DUT_BSSID_5G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_5G',
+                                                                                        self.dut_bssid_5g)
+                if 'DUT_BSSID_6G' in self.test_dict[test]['args']:
+                    self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_6G',
+                                                                                        self.dut_bssid_6g)
 
                 if 'RADIO_USED' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED', self.radio_lf)
@@ -851,6 +944,12 @@ blog: http://{blog}:2368
                                                                                         self.blog_password_push)
                 if 'BLOG_FLAG' in self.test_dict[test]['args']:
                     self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_FLAG', self.blog_flag)
+
+                if 'timeout' in self.test_dict[test]:
+                    self.logger.info("timeout : {}".format(self.test_dict[test]['timeout']))
+                    self.test_timeout = int(self.test_dict[test]['timeout'])
+                else:
+                    self.test_timeout = self.test_timeout_default
 
                 if 'load_db' in self.test_dict[test]:
                     self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
@@ -1029,6 +1128,13 @@ Example :
         else:
             print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
             exit(1)
+
+    # Test-rig information information
+    lanforge_node_version = 'NO_LF_NODE_VER'
+    scripts_git_sha = 'NO_GIT_SHA'
+    lanforge_kernel_version = 'NO_KERNEL_VER'
+    lanforge_gui_version = 'NO_LF_GUI_VER'
+
     # select test suite
     test_suite = args.suite
 
@@ -1067,25 +1173,7 @@ Example :
     exit_code = process.wait()
     git_sha = commit_hash.decode('utf-8', 'ignore')
 
-    try:
-        scripts_git_sha = check.get_scripts_git_sha()
-        print("git_sha {sha}".format(sha=scripts_git_sha))
-    except:
-        print("git_sha read exception ")
-
-    try:
-        lanforge_kernel_version = check.get_lanforge_kernel_version()
-        print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
-    except:
-        print("lanforge_kernel_version exception")
-
-    try:
-        lanforge_gui_version = check.get_lanforge_gui_version()
-        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
-    except:
-        print("lanforge_gui_version exception")
-
-        # set up logging
+    # set up logging
     logfile = args.logfile[:-4]
     print("logfile: {}".format(logfile))
     logfile = "{}-{}.log".format(logfile, current_time)
@@ -1107,20 +1195,58 @@ Example :
     check.read_config()
     check.run_script_test()
 
-    # read lanforge
+    # get sha and lanforge informaiton for results
+    # Need to do this after reading the configuration
+    try:
+        scripts_git_sha = check.get_scripts_git_sha()
+        print("git_sha {sha}".format(sha=scripts_git_sha))
+    except:
+        print("git_sha read exception ")
+
+    try:
+        lanforge_node_version = check.get_lanforge_node_version()
+        print("lanforge_node_version {node_ver}".format(node_node=lanforge_node_version))
+    except:
+        print("lanforge_node_version exception")
+
+    try:
+        lanforge_kernel_version = check.get_lanforge_kernel_version()
+        print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
+    except:
+        print("lanforge_kernel_version exception")
+
+    try:
+        lanforge_gui_version = check.get_lanforge_gui_version()
+        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
+    except:
+        print("lanforge_gui_version exception")
+
+        # LANforge and scripts config
+    lf_test_setup = pd.DataFrame({
+        'LANforge': lanforge_node_version,
+        'kernel version': lanforge_kernel_version,
+        'GUI version': lanforge_gui_version,
+        'scripts git sha': scripts_git_sha
+    })
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
-    report.build_banner()
-    report.start_content_div()
+    report.build_banner_left()
+    report.start_content_div2()
+    report.set_obj_html("Objective", "Run QA Tests")
+    report.build_objective()
+    report.set_text("LANforge")
+    report.build_text()
+    report.set_table_dataframe(lf_test_setup)
+    report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    report.set_text("lanforge-scripts git sha: {}".format(git_sha))
-    report.build_text()
+    # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
+    # report.build_text()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
-    report.build_footer_no_png()
+    report.build_footer()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:
@@ -1140,6 +1266,8 @@ Example :
     banner_dest_png = parent_report_dir + "/banner.png"
     CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
     CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
+    CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
+    CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
     report_src_css = report_path + "/report.css"
     report_dest_css = parent_report_dir + "/report.css"
     custom_src_css = report_path + "/custom.css"
@@ -1163,12 +1291,13 @@ Example :
         print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))
     shutil.copyfile(html_report, lf_check_html_report)
 
-    # copy banner and logo
+    # copy banner and logo up one directory,
     shutil.copyfile(banner_src_png, banner_dest_png)
     shutil.copyfile(CandelaLogo_src_png, CandelaLogo_dest_png)
     shutil.copyfile(report_src_css, report_dest_css)
     shutil.copyfile(custom_src_css, custom_dest_css)
     shutil.copyfile(font_src_woff, font_dest_woff)
+    shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
 
     # print out locations of results
     print("lf_check_latest.html: " + lf_check_latest_html)
