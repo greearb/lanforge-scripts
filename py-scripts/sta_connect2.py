@@ -320,7 +320,7 @@ class StaConnect2(LFCliBase):
 
     def collect_endp_stats(self, endp_map):
         print("Collecting Data")
-        fields="?fields=name,tx+bytes,rx+bytes"
+        fields="/all"
         for (cx_name, endps) in endp_map.items():
             try:
                 endp_url = "/endp/%s%s" % (endps[0], fields)
