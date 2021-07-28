@@ -53,6 +53,11 @@ class lf_bar_graph():
                  _text_font=None,
                  _text_rotation=None,
                  _grp_title = "",
+                 _legend_handles=None,
+                 _legend_loc="best",
+                 _legend_box=None,
+                 _legend_ncol=1,
+                 _legend_fontsize=None,
                  _dpi=96,
                  _enable_csv=False):
 
@@ -79,6 +84,11 @@ class lf_bar_graph():
         self.grp_title = _grp_title
         self.enable_csv = _enable_csv
         self.lf_csv = lf_csv()
+        self.legend_handles = _legend_handles
+        self.legend_loc = _legend_loc
+        self.legend_box = _legend_box
+        self.legend_ncol = _legend_ncol
+        self.legend_fontsize = _legend_fontsize
 
     def build_bar_graph(self):
         if self.color is None:
@@ -121,7 +131,7 @@ class lf_bar_graph():
         else:
             plt.xticks(np.arange(0, len(self.data_set[0]), step=self.xaxis_step), self.xaxis_categories,
                        fontsize = self.xticks_font)
-        plt.legend()
+        plt.legend(handles=self.legend_handles, loc=self.legend_loc, bbox_to_anchor=self.legend_box, ncol=self.legend_ncol, fontsize=self.legend_fontsize)
         plt.suptitle(self.title, fontsize=self.title_size)
         plt.title(self.grp_title)
         fig = plt.gcf()

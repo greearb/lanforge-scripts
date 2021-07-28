@@ -103,7 +103,11 @@ if __name__ == "__main__":
                          _show_bar_value=True,
                          _text_font=7,
                          _text_rotation=45,
-                         _xticks_font=7)
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1,1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None)
 
     graph_png = graph.build_bar_graph()
 
