@@ -313,7 +313,10 @@ class GhostRequest:
                 df = csvreader.read_csv(file=target_file, sep='\t')
                 test_rig = csvreader.get_column(df, 'test-rig')[0]
                 test_id = csvreader.get_column(df, 'test-id')[0]
-                test_tag[test_id] = (csvreader.get_column(df, 'test-tag')[0])
+                try:
+                    test_tag[test_id] = (csvreader.get_column(df, 'test-tag')[0])
+                except:
+                    notesttag = True
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
                 test_pass_fail.append(pass_fail)
                 dut_hw = csvreader.get_column(df, 'dut-hw-version')[0]
@@ -330,8 +333,14 @@ class GhostRequest:
                 subtest_pass_fail_list['PASS'] = subtest_pass_total
                 subtest_pass_fail_list['FAIL'] = subtest_fail_total
                 subtest_pass_fail.append(subtest_pass_fail_list)
-                duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig, test_tag]
+                if notesttag:
+                    duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig, test_tag]
+                else:
+                    duts = [dut_serial, dut_hw, dut_sw, dut_model, test_rig]
                 times_append = csvreader.get_column(df, 'Date')
+                if len(times_append) == 0:
+                    print(LookupError("%s/kpi.csv has no time points" % target_folder))
+                    break
                 for target_time in times_append:
                     times.append(float(target_time) / 1000)
                 if pass_fail['PASS'] + pass_fail['FAIL'] > 0:
@@ -415,6 +424,8 @@ class GhostRequest:
                 failuredict = dict()
                 failuredict[target_folder] = ['Failure']
                 webpagesandpdfs.append(failuredict)
+        if len(times) == 0:
+            return ArithmeticError("There are no datapoints in any folders passed into Ghost")
 
 
         test_pass_fail_results = sum((Counter(test) for test in test_pass_fail), Counter())
