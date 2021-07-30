@@ -13,7 +13,7 @@
         "test_bed": "CT-US-004",
         "lf_mgr_ip": "192.168.100.194",
         "lf_mgr_port": "8080",
-        "dut_name": "Asus RT-AX88U",
+        "dut_name": "Asus-RT-AX88U",
         "dut_bssid_5g": "d4:5d:64:a0:7f:7c",
         "test_timeout": 300,
         "load_blank_db": false,
@@ -48,7 +48,7 @@
         "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
         "database_org": "Candela",
         "database_bucket": "lanforge_qa_testing",
-        "dut_set_name": "DUT_NAME Asus RT-AX88U",
+        "dut_set_name": "DUT_NAME Asus-RT-AX88U",
         "database_tag": "testbed CT-US-004",
         "test_rig": "CT-US-004"
     },
