@@ -14,7 +14,7 @@
         "lf_mgr_ip": "192.168.100.194",
         "lf_mgr_port": "8080",
         "dut_name": "NetgearAX12",
-        "dut_bssid_5g": "94:a6:7e:54:d4:33",
+        "dut_bssid_5g": "d4:5d:64:a0:7f:7c",
         "test_timeout": 300,
         "load_blank_db": false,
         "load_factory_default_db": true,
