@@ -170,8 +170,8 @@ class GrafanaRequest:
         if graph_group is not None:
             graphgroup = ('|> filter(fn: (r) => r["Graph-Group"] == "%s")\n' % graph_group)
             query += graphgroup
-        if test_tag is not None:
-            graphgroup = ('|> filter(fn: (r) => r["Test-Tag"] == "%s")\n' % test_tag)
+        if test_tag is not None and len(test_tag) > 0:
+            graphgroup = ('|> filter(fn: (r) => r["Test Tag"] == "%s")\n' % test_tag)
             query += graphgroup
         if testbed is not None:
             query += ('|> filter(fn: (r) => r["testbed"] == "%s")\n' % testbed)
