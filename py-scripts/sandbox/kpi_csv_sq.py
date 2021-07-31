@@ -18,7 +18,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 path = Path('./2021-07-31-03-00-01_lf_check')
 
 kpi_list = list(path.glob('**/kpi.csv'))
-print(kpi_list)
+#print(kpi_list)
 
 df = pd.DataFrame()
 
@@ -27,7 +27,7 @@ for kpi in kpi_list:
     append_df = pd.read_csv(kpi, sep='\t')
     df = df.append(append_df, ignore_index=True)
 
-print("df {data}".format(data=df))
+#print("df {data}".format(data=df))
 
 # information on sqlite database
 # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -42,9 +42,9 @@ conn.close()
 #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html
 conn = sqlite3.connect("qa_db")
 df2 = pd.read_sql_query("SELECT * from dp_table" ,conn)
-print(df2.head())
+#print(df2.head())
 conn.close()
-print(df2)
+#print(df2)
 
 
 conn = sqlite3.connect("qa_db")
@@ -57,28 +57,73 @@ conn.close()
 # works print(str(df3['test-tag']))
 
 # works df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') & ('ATH10K' in str(df3['test-tag']) )]
+df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') & ('ATH10K' in str(df3['test-tag']) )]
 
-print("df4: {}".format(df4))
+graph_group_list = list(df3['Graph-Group'])
+graph_group_list = list(set(graph_group_list))  #remove duplicates 
 
-#print(df3['Graph-Group'],df3['Date'])
+test_tag_list = list(df3['test-tag'])
+test_tag_list = list(set(test_tag_list))
 
-exit(1)
-                 
-fig = (px.scatter(df2, x="Date", y="numeric-score",
+i = 0 
+plot_figure = []
+for test_tag in test_tag_list:
+    for group in graph_group_list:
+        df_tmp = df3.loc[(df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
+        #print("test_tag: {} group: {} ".format(test_tag,group))
+        #print("df_tmp[{}]: {}".format(i,df_tmp))
+        i = i + 1 
+
+        if df_tmp.empty == False:
+            append_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
+                 color="short-description", hover_name="short-description",
+                 size_max=60)).update_traces(mode='lines+markers')
+            print("{}".format(df_tmp['Graph-Group']))
+
+            #print('{}'.format(type(append_fig)))
+
+            test_rig_list = list(df_tmp['test-rig'])
+            test_rig = list(set(test_rig_list))
+
+            test_id_list = list(df_tmp['test-id'])
+            test_id = list(set(test_id_list))
+
+            # get graph labels from dataframe
+            units_list = list(df_tmp['Units'])
+            units = list(set(units_list))
+
+            append_fig.update_layout(
+                title="{} : {} : {} : {}".format(test_id[0], group, test_tag, test_rig[0]),
+                xaxis_title="Time",
+                yaxis_title="{}".format(units[0]),
+                xaxis = {'type' : 'date'}
+            )
+            plot_figure.append(append_fig)
+
+'''
+            append_fig.update_layout(
+                title="Throughput vs Packet size",
+                xaxis_title="Packet Size",
+                yaxis_title="Mbps",
+                xaxis = {'type' : 'date'}
+            )
+            plot_figure.append(append_fig)
+'''
+# there may be more layout with html.Div 
+# Maybe a be more OO
+
+images_div = []
+for plot_fig in plot_figure:
+    images_div.append(dcc.Graph(figure=plot_fig))
+
+app.layout = html.Div(images_div)
+
+'''
+fig2 = (px.scatter(df2, x="Date", y="numeric-score",
                  color="short-description", hover_name="short-description",
                  size_max=60)).update_traces(mode='lines+markers')
 
-'''
-fig = px.scatter(df, x="Date", y="numeric-score",
-                 color="short-description", hover_name="short-description",
-                 size_max=60)
-'''              
-'''
-fig = px.scatter(df, x="short-description", y="numeric-score",
-                 color="short-description", hover_name="short-description",
-                 size_max=60)
-'''
-fig.update_layout(
+fig2.update_layout(
     title="Throughput vs Packet size",
     xaxis_title="Packet Size",
     yaxis_title="Mbps",
@@ -89,14 +134,11 @@ fig.update_layout(
 app.layout = html.Div([
     dcc.Graph(
         id='packet-size vs rate',
-        figure=fig
-    ),
-    #dcc.Graph(
-    #    id='packet-size vs rate2',
-    #    figure=fig
-    #)
-
+        figure=fig2
+    )
 ])
+
+'''
 
 if __name__ == '__main__':
     app.run_server(debug=True)
