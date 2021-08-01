@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Run this app with `python app.py` and
 # visit http://127.0.0.1:8050/ in your web browser.
 
@@ -100,15 +102,6 @@ for test_tag in test_tag_list:
             )
             plot_figure.append(append_fig)
 
-'''
-            append_fig.update_layout(
-                title="Throughput vs Packet size",
-                xaxis_title="Packet Size",
-                yaxis_title="Mbps",
-                xaxis = {'type' : 'date'}
-            )
-            plot_figure.append(append_fig)
-'''
 # there may be more layout with html.Div 
 # Maybe a be more OO
 
@@ -116,30 +109,43 @@ images_div = []
 for plot_fig in plot_figure:
     images_div.append(dcc.Graph(figure=plot_fig))
 
-app.layout = html.Div(images_div)
 
-'''
-fig2 = (px.scatter(df2, x="Date", y="numeric-score",
-                 color="short-description", hover_name="short-description",
-                 size_max=60)).update_traces(mode='lines+markers')
-
-fig2.update_layout(
-    title="Throughput vs Packet size",
-    xaxis_title="Packet Size",
-    yaxis_title="Mbps",
-    xaxis = {'type' : 'date'}
-)
+# access from server
+# https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
 
 
 app.layout = html.Div([
-    dcc.Graph(
-        id='packet-size vs rate',
-        figure=fig2
-    )
+    #  first instance 
+    html.H1(children= "LANforge Testing",className="lanforge",
+    #style={'color':'#00361c','text-align':'center'}),
+    style={'color':'green','text-align':'center'}),
+    html.H2(children= "Test Set #1",className="ts1",
+    style={'color':'#00361c','text-align':'left'}),
+    html.Div(children= images_div ), # images_div is already a list, the children = a list
+    html.H2(children= "Test Set #2",className="ts2",
+    style={'color':'#00361c','text-align':'left'}),
+    html.Div(children= images_div, style={"maxHeight": "480px","overflow": "scroll"})
+])
+
+
+# scroll bars
+'''
+app.layout = html.Div([
+    #  first instance 
+    html.H1(children= "LANforge Testing",className="lanforge",
+    #style={'color':'#00361c','text-align':'center'}),
+    style={'color':'green','text-align':'center'}),
+    html.H2(children= "Test Set #1",className="ts1",
+    style={'color':'#00361c','text-align':'left'}),
+    html.Div(children= images_div, style={"maxHeight": "480px","overflow": "scroll"} ), # images_div is already a list , the children = a list
+    html.H2(children= "Test Set #2",className="ts2",
+    style={'color':'#00361c','text-align':'left'}),
+    html.Div(children= images_div, style={"maxHeight": "480px","overflow": "scroll"})
 ])
 
 '''
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    #app.run_server(debug=True)
+    app.run_server(host= '0.0.0.0', debug=True)  # host = '0.0.0.0'  allows for remote access
     
