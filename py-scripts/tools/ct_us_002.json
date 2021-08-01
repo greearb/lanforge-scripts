@@ -13,8 +13,8 @@
         "test_bed": "CT-US-002",
         "lf_mgr_ip": "192.168.100.200",
         "lf_mgr_port": "8080",
-        "dut_name": "Ruckus-R750",
-        "dut_bssid_5g": "4c:b1:cd:18:e8:ec",
+        "dut_name": "NETGEAR-AX12",
+        "dut_bssid_5g": "94:a6:7e:54:d4:33",
         "test_timeout": 1200,
         "load_blank_db": false,
         "load_factory_default_db": true,
@@ -34,8 +34,8 @@
     },
     "test_generic":{
         "radio_used": "wiphy1",
-        "ssid_used": "ruckus-r750-5g",
-        "ssid_pw_used": "hello123",
+        "ssid_used": "NETGEAR59-5G",
+        "ssid_pw_used": "crispynest798",
         "security_used": "wpa2",
         "num_sta": 4,
         "col_names": "name,tx_byptes,rx_bytes,dropped",
@@ -48,7 +48,7 @@
         "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
         "database_org": "Candela",
         "database_bucket": "lanforge_qa_testing",
-        "dut_set_name": "DUT_NAME Ruckus-R750",
+        "dut_set_name": "DUT_NAME NETGEAR59-5G",
         "database_tag": "testbed CT-US-002",
         "test_rig": "CT-US-002"
     },
@@ -68,8 +68,8 @@
         "blog_flag": "--kpi_to_ghost"
     },
     "radio_dict":{
-        "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"ruckus-r750-5g","PASSWD":"hello123","SECURITY":"wpa2"},
-        "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"4","SSID":"ruckus-r750-5g","PASSWD":"hello123","SECURITY":"wpa2"}        
+        "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"NETGEAR59-5G","PASSWD":"crispynest798","SECURITY":"wpa2"},
+        "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"4","SSID":"NETGEAR59-5G","PASSWD":"crispynest798","SECURITY":"wpa2"}        
     },
     "test_suites":{
         "suite_two":{
@@ -83,8 +83,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_1":{
@@ -140,8 +140,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_ATH10k_sta64":{
@@ -176,8 +176,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_ATH10k_wan1":{
@@ -214,8 +214,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_AX200_sta1":{
@@ -250,8 +250,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_AX200_wan1":{
@@ -288,8 +288,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=ruckus-r750-5g security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-002_create_chamberview_auto":{
