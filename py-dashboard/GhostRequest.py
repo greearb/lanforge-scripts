@@ -492,7 +492,7 @@ class GhostRequest:
         text = 'Testbed: %s<br />' % testbeds[0]
         raw_test_tags = list()
         test_tag_table = ''
-        for tag in list(set(test_tag.values())):
+        for tag in test_tag.values():
             for value in tag:
                 raw_test_tags.append(value)
         for value in list(set(raw_test_tags)):
