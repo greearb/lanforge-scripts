@@ -280,7 +280,7 @@ class GhostRequest:
         subtest_pass_fail = list()
         subtest_pass_total = 0
         subtest_fail_total = 0
-        test_tag = dict()
+        test_tag_1 = list()
         columns = ['test-rig', 'dut-hw-version', 'dut-sw-version',
                    'dut-model-num', 'dut-serial-num']
         duts = dict()
@@ -296,10 +296,7 @@ class GhostRequest:
                         duts[column] = column_data
                     except:
                         print('no column named %s' % column)
-                try:
-                    test_tag[test_id] = csvreader.get_column(df, 'test-tag')[0]
-                except:
-                    print('no test-id')
+                    test_tag_1.append([test_id, list(set(csvreader.get_column(df, 'test-tag')))])
                 pass_fail = Counter(csvreader.get_column(df, 'pass/fail'))
                 test_pass_fail.append(pass_fail)
                 subtest_pass = csvreader.get_column(df, 'Subtest-Pass')
@@ -387,17 +384,25 @@ class GhostRequest:
                         pass
 
                 low_priority = csvreader.filter_df(results, 'test-priority', 'less than', 94)
-                print('Low Priority results %s' % len(low_priority))
+                if self.debug:
+                    print('Low Priority results %s' % len(low_priority))
                 high_priority = csvreader.filter_df(results, 'test-priority', 'greater than or equal to', 95)
                 high_priority_list.append(high_priority)
                 low_priority_list.append(low_priority)
 
             except:
-                print("Failure")
+                print("Failed to process %s" % target_folder)
                 target_folders.remove(target_folder)
                 failuredict = dict()
                 failuredict[target_folder] = ['Failure']
                 web_pages_and_pdfs.append(failuredict)
+        test_tag = dict()
+        for x in list(set([x[0] for x in test_tag_1])):
+            l3 = list()
+            for sublist in test_tag_1:
+                if sublist[0] == x:
+                    l3 += sublist[1]
+            test_tag[x] = l3
         if len(times) == 0:
             return ArithmeticError("There are no datapoints in any folders passed into Ghost")
 
@@ -447,7 +452,8 @@ class GhostRequest:
             short_description = 'Tests passed'  # variable name
             numeric_score = test_pass_fail_results['PASS']  # value
             tags = dict()
-            print(datetime.utcfromtimestamp(max(times)))
+            if self.debug:
+                print(datetime.utcfromtimestamp(max(times)))
             tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'PASS'
@@ -466,7 +472,8 @@ class GhostRequest:
             short_description = 'Subtests passed'  # variable name
             numeric_score = subtest_pass_fail_results['PASS']  # value
             tags = dict()
-            print(datetime.utcfromtimestamp(max(times)))
+            if self.debug:
+                print(datetime.utcfromtimestamp(max(times)))
             tags['testbed'] = testbeds[0]
             tags['script'] = 'GhostRequest'
             tags['Graph-Group'] = 'Subtest PASS'
@@ -483,11 +490,14 @@ class GhostRequest:
             influxdb.post_to_influx(short_description, numeric_score, tags, date)
 
         text = 'Testbed: %s<br />' % testbeds[0]
+        raw_test_tags = list()
         test_tag_table = ''
         for tag in list(set(test_tag.values())):
-            print(tag)
+            for value in tag:
+                raw_test_tags.append(value)
+        for value in list(set(raw_test_tags)):
             test_tag_table += (
-                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Test Tag</td><td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % tag)
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">Test Tag</td><td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % value)
         dut_table_column_names = {'test-rig': 'Testbed',
                                   'dut-hw-version': 'DUT HW',
                                   'dut-sw-version': 'DUT SW',
@@ -540,9 +550,11 @@ class GhostRequest:
         if grafana_token is not None:
             grafana = GrafanaRequest(grafana_token,
                                      grafana_host,
-                                     grafanajson_port=grafana_port
+                                     grafanajson_port=grafana_port,
+                                     debug_=self.debug
                                      )
-            print(test_tag)
+            if self.debug:
+                print('Test Tag: %s' % test_tag)
             grafana.create_custom_dashboard(target_csvs=target_files,
                                             title=title,
                                             datasource=grafana_datasource,
