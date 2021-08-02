@@ -209,7 +209,7 @@ class GrafanaRequest:
                                 from_date='now-1y',
                                 to_date='now',
                                 graph_height=8,
-                                graph__width=12,
+                                graph_width=12,
                                 pass_fail=None,
                                 test_tag=None):
         options = string.ascii_lowercase + string.ascii_uppercase + string.digits
@@ -248,126 +248,37 @@ class GrafanaRequest:
         if pass_fail is not None:
             graph_groups[pass_fail] = ['PASS', 'FAIL']
 
+        print('Test Tag in Grafana: %s' % test_tag)
+
         for scriptname in graph_groups.keys():
             print(scriptname)
-            for graph_group in graph_groups[scriptname]:
-                panel = dict()
-
-                gridpos = dict()
-                gridpos['h'] = graph_height
-                gridpos['w'] = graph__width
-                gridpos['x'] = 0
-                gridpos['y'] = 0
-
-                legend = dict()
-                legend['avg'] = False
-                legend['current'] = False
-                legend['max'] = False
-                legend['min'] = False
-                legend['show'] = True
-                legend['total'] = False
-                legend['values'] = False
-
-                options = dict()
-                options['alertThreshold'] = True
-
-                groupBy = list()
-                groupBy.append(self.groupby('$__interval', 'time'))
-                groupBy.append(self.groupby('null', 'fill'))
-
-                targets = list()
-                counter = 0
-                try:
-                    new_target = self.maketargets(bucket,
-                                                  scriptname,
-                                                  groupBy,
-                                                  counter,
-                                                  graph_group,
-                                                  testbed,
-                                                  test_tag=test_tag[scriptname])
-                except:
-                    new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
-                targets.append(new_target)
-
-                fieldConfig = dict()
-                fieldConfig['defaults'] = dict()
-                fieldConfig['overrides'] = list()
-
-                transformation = dict()
-                transformation['id'] = "renameByRegex"
-                transformation_options = dict()
-                transformation_options['regex'] = "(.*) value.*"
-                transformation_options['renamePattern'] = "$1"
-                transformation['options'] = transformation_options
-
-                xaxis = dict()
-                xaxis['buckets'] = None
-                xaxis['mode'] = "time"
-                xaxis['name'] = None
-                xaxis['show'] = True
-                xaxis['values'] = list()
-
-                yaxis = dict()
-                yaxis['format'] = 'short'
-                try:
-                    yaxis['label'] = self.units[scriptname][graph_group]
-                except:
-                    pass
-                yaxis['logBase'] = 1
-                yaxis['max'] = None
-                yaxis['min'] = None
-                yaxis['show'] = True
-
-                yaxis1 = dict()
-                yaxis1['align'] = False
-                yaxis1['alignLevel'] = None
-
-                panel['aliasColors'] = dict()
-                panel['bars'] = False
-                panel['dashes'] = False
-                panel['dashLength'] = 10
-                panel['datasource'] = datasource
-                panel['fieldConfig'] = fieldConfig
-                panel['fill'] = 0
-                panel['fillGradient'] = 0
-                panel['gridPos'] = gridpos
-                panel['hiddenSeries'] = False
-                panel['id'] = index
-                panel['legend'] = legend
-                panel['lines'] = True
-                panel['linewidth'] = 1
-                panel['nullPointMode'] = 'null'
-                panel['options'] = options
-                panel['percentage'] = False
-                panel['pluginVersion'] = '7.5.4'
-                panel['pointradius'] = 2
-                panel['points'] = True
-                panel['renderer'] = 'flot'
-                panel['seriesOverrides'] = list()
-                panel['spaceLength'] = 10
-                panel['stack'] = False
-                panel['steppedLine'] = False
-                panel['targets'] = targets
-                panel['thresholds'] = list()
-                panel['timeFrom'] = None
-                panel['timeRegions'] = list()
-                panel['timeShift'] = None
-                if graph_group is not None:
-                    panel['title'] = scriptname + ' ' + graph_group
-                else:
-                    panel['title'] = scriptname
-                print(panel['title'])
-                panel['transformations'] = list()
-                panel['transformations'].append(transformation)
-                panel['type'] = "graph"
-                panel['xaxis'] = xaxis
-                panel['yaxes'] = list()
-                panel['yaxes'].append(yaxis)
-                panel['yaxes'].append(yaxis)
-                panel['yaxis'] = yaxis1
-
+            if scriptname in test_tag.keys():
+                for tag in test_tag[scriptname]:
+                    print('Script: %s, Tag: %s' % (scriptname, tag))
+                    panel = self.create_panel(graph_groups,
+                                              graph_height,
+                                              graph_width,
+                                              scriptname,
+                                              bucket,
+                                              testbed,
+                                              tag,
+                                              datasource,
+                                              index)
+                    panels.append(panel)
+                    index = index + 1
+            else:
+                panel = self.create_panel(graph_groups,
+                                          graph_height,
+                                          graph_width,
+                                          scriptname,
+                                          bucket,
+                                          testbed,
+                                          None,
+                                          datasource,
+                                          index)
                 panels.append(panel)
                 index = index + 1
+
         input1['annotations'] = annot
         input1['editable'] = True
         input1['gnetId'] = None
@@ -387,10 +298,138 @@ class GrafanaRequest:
         input1['version'] = 11
         return self.create_dashboard_from_dict(dictionary=json.dumps(input1))
 
-    #    def create_custom_dashboard(self,
-    #                               datastore=None):
-    #      data = json.dumps(datastore, indent=4)
-    #     return requests.post(self.grafanajson_url, headers=self.headers, data=data, verify=False)
+    def create_panel(self,
+                     graph_groups,
+                     graph_height,
+                     graph_width,
+                     scriptname,
+                     bucket,
+                     testbed,
+                     test_tag,
+                     datasource,
+                     index):
+        print('Test Tag: %s' % test_tag)
+        for graph_group in graph_groups[scriptname]:
+            panel = dict()
+
+            gridpos = dict()
+            gridpos['h'] = graph_height
+            gridpos['w'] = graph_width
+            gridpos['x'] = 0
+            gridpos['y'] = 0
+
+            legend = dict()
+            legend['avg'] = False
+            legend['current'] = False
+            legend['max'] = False
+            legend['min'] = False
+            legend['show'] = True
+            legend['total'] = False
+            legend['values'] = False
+
+            options = dict()
+            options['alertThreshold'] = True
+
+            groupBy = list()
+            groupBy.append(self.groupby('$__interval', 'time'))
+            groupBy.append(self.groupby('null', 'fill'))
+
+            targets = list()
+            counter = 0
+            try:
+                new_target = self.maketargets(bucket,
+                                              scriptname,
+                                              groupBy,
+                                              counter,
+                                              graph_group,
+                                              testbed,
+                                              test_tag=test_tag)
+            except:
+                new_target = self.maketargets(bucket, scriptname, groupBy, counter, graph_group, testbed)
+            targets.append(new_target)
+
+            fieldConfig = dict()
+            fieldConfig['defaults'] = dict()
+            fieldConfig['overrides'] = list()
+
+            transformation = dict()
+            transformation['id'] = "renameByRegex"
+            transformation_options = dict()
+            transformation_options['regex'] = "(.*) value.*"
+            transformation_options['renamePattern'] = "$1"
+            transformation['options'] = transformation_options
+
+            xaxis = dict()
+            xaxis['buckets'] = None
+            xaxis['mode'] = "time"
+            xaxis['name'] = None
+            xaxis['show'] = True
+            xaxis['values'] = list()
+
+            yaxis = dict()
+            yaxis['format'] = 'short'
+            try:
+                yaxis['label'] = self.units[scriptname][graph_group]
+            except:
+                pass
+            yaxis['logBase'] = 1
+            yaxis['max'] = None
+            yaxis['min'] = None
+            yaxis['show'] = True
+
+            yaxis1 = dict()
+            yaxis1['align'] = False
+            yaxis1['alignLevel'] = None
+
+            panel['aliasColors'] = dict()
+            panel['bars'] = False
+            panel['dashes'] = False
+            panel['dashLength'] = 10
+            panel['datasource'] = datasource
+            panel['fieldConfig'] = fieldConfig
+            panel['fill'] = 0
+            panel['fillGradient'] = 0
+            panel['gridPos'] = gridpos
+            panel['hiddenSeries'] = False
+            panel['id'] = index
+            panel['legend'] = legend
+            panel['lines'] = True
+            panel['linewidth'] = 1
+            panel['nullPointMode'] = 'null'
+            panel['options'] = options
+            panel['percentage'] = False
+            panel['pluginVersion'] = '7.5.4'
+            panel['pointradius'] = 2
+            panel['points'] = True
+            panel['renderer'] = 'flot'
+            panel['seriesOverrides'] = list()
+            panel['spaceLength'] = 10
+            panel['stack'] = False
+            panel['steppedLine'] = False
+            panel['targets'] = targets
+            panel['thresholds'] = list()
+            panel['timeFrom'] = None
+            panel['timeRegions'] = list()
+            panel['timeShift'] = None
+
+            if graph_group is not None:
+                scriptname = '%s: %s' % (scriptname, graph_group)
+            if test_tag is not None:
+                scriptname = '%s: %s' % (scriptname, test_tag)
+            scriptname = '%s: %s' % (scriptname, testbed)
+            panel['title'] = scriptname
+
+            if self.debug:
+                print(panel['title'])
+            panel['transformations'] = list()
+            panel['transformations'].append(transformation)
+            panel['type'] = "graph"
+            panel['xaxis'] = xaxis
+            panel['yaxes'] = list()
+            panel['yaxes'].append(yaxis)
+            panel['yaxes'].append(yaxis)
+            panel['yaxis'] = yaxis1
+            return panel
 
     def create_snapshot(self, title):
         print('create snapshot')
