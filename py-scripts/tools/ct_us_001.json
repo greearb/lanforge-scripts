@@ -228,7 +228,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
-                    " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.7.wlan1",
+                    " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
                     " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
