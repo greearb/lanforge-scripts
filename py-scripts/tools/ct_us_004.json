@@ -153,7 +153,7 @@
             }
         },
         "suite_wc_dp":{
-            "CT-US-004_create_chamberview_dut_NetgearAX12":{
+            "CT-US-004_create_chamberview_dut_0":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -165,7 +165,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
-            "CT-US-004_create_chamberview_wiphy1_sta64":{
+            "CT-US-004_create_chamberview_ATH10K(9984)_sta50":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -173,11 +173,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario CT-US-004-scenario ",
-                    " --raw_line \"profile_link 1.1 STA-AC 32 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 50 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "CT-US-004_wifi_capacity_wiphy1_ATH10K(9984)_sta64":{
+            "CT-US-004_wifi_capacity_ATH10K(9984)":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
@@ -191,7 +191,7 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-004_create_chamberview_wiphy1_ATH10K(9984)_sta1":{
+            "CT-US-004_create_chamberview_ATH10K(9984)_sta1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -203,7 +203,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "CT-US-004_dataplane_wiphy1_ATH10K(9984)_sta1":{
+            "CT-US-004_dataplane_ATH10K(9984)_sta1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"lf_dataplane_test.py",
@@ -213,12 +213,12 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
-                    " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH ",
+                    " --raw_line 'spatial_streams: 1' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-004_create_chamberview_dut_NetgearAX12_5_2":{
+            "CT-US-004_create_chamberview_dut_1":{
                 "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -270,7 +270,7 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
             },
-            "CT-US-004_create_chamberview_dut_ap":{
+            "CT-US-004_create_chamberview_dut_2":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -290,6 +290,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ucentral-scenario ",
                     " --raw_line \"profile_link 1.1 STA-AC 32 'DUT: DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-1' NA wiphy4,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "
                 ]
             },
@@ -306,7 +307,7 @@
                     " --radio5 1.1.wiphy1 --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
-                    " --pull_report --local_lf_report_dir REPORT_PATH",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
                 ]
