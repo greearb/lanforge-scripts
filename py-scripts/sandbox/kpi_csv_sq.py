@@ -17,8 +17,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # get a list of the kpi.csv files not the path needs to be bassed in
-#path = Path('./2021-07-31-03-00-01_lf_check')
-path = Path('./test_data3')
+path = Path('./2021-07-31-03-00-01_lf_check')
 
 kpi_list = list(path.glob('**/kpi.csv'))
 #print(kpi_list)
@@ -101,10 +100,7 @@ for test_tag in test_tag_list:
                 yaxis_title="{}".format(units[0]),
                 xaxis = {'type' : 'date'}
             )
-            # save the figure - this may need to be re-written
-            # uncomment after testing append_fig.write_image("{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]),scale=1,width=1200,height=350)
             plot_figure.append(append_fig)
-
 
 # there may be more layout with html.Div 
 # Maybe a be more OO
