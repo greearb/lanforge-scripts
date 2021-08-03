@@ -3,6 +3,7 @@
 # Run this app with `python app.py` and
 # visit http://127.0.0.1:8050/ in your web browser.
 
+import os
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -17,20 +18,25 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # get a list of the kpi.csv files not the path needs to be bassed in
-#path = Path('./2021-07-31-03-00-01_lf_check')
-path = Path('./test_data3')
+path = Path('./2021-07-31-03-00-01_lf_check')
+#path = Path('./test_data3')
 
 kpi_list = list(path.glob('**/kpi.csv'))
-#print(kpi_list)
+print("kpi_list {}".format(kpi_list))
 
 df = pd.DataFrame()
 
 for kpi in kpi_list:
     # load data
-    append_df = pd.read_csv(kpi, sep='\t')
-    df = df.append(append_df, ignore_index=True)
+    print("kpi {}".format(kpi))
+    df_kpi_tmp = pd.read_csv(kpi, sep='\t')  # remove the index
+    df_kpi_tmp['kpi_file'] = str(kpi).replace('kpi.csv','') 
+    df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
+    df = df.append(df_kpi_tmp, ignore_index=True)
 
-#print("df {data}".format(data=df))
+#df.reset_index(drop=True)
+print("df {data}".format(data=df))
+
 
 # information on sqlite database
 # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -44,23 +50,9 @@ conn.close()
 
 #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html
 conn = sqlite3.connect("qa_db")
-df2 = pd.read_sql_query("SELECT * from dp_table" ,conn)
-#print(df2.head())
-conn.close()
-#print(df2)
-
-
-conn = sqlite3.connect("qa_db")
 df3 = pd.read_sql_query("SELECT * from  dp_table" ,conn)
 #print(df3.head())
 conn.close()
-
-# works df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') & (df3['test-tag'] == 'ATH10K(9984)')]
-# works df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') ]
-# works print(str(df3['test-tag']))
-
-# works df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') & ('ATH10K' in str(df3['test-tag']) )]
-df4 = df3.loc[(df3['Graph-Group'] == 'CX-Time') & ('ATH10K' in str(df3['test-tag']) )]
 
 graph_group_list = list(df3['Graph-Group'])
 graph_group_list = list(set(graph_group_list))  #remove duplicates 
@@ -84,12 +76,15 @@ for test_tag in test_tag_list:
             print("{}".format(df_tmp['Graph-Group']))
 
             #print('{}'.format(type(append_fig)))
-
+            # remove duplicates 
             test_rig_list = list(df_tmp['test-rig'])
             test_rig = list(set(test_rig_list))
 
             test_id_list = list(df_tmp['test-id'])
             test_id = list(set(test_id_list))
+
+            kpi_file_list = list(df_tmp['kpi_file'])
+            kpi_file = list(set(kpi_file_list))
 
             # get graph labels from dataframe
             units_list = list(df_tmp['Units'])
@@ -102,9 +97,13 @@ for test_tag in test_tag_list:
                 xaxis = {'type' : 'date'}
             )
             # save the figure - this may need to be re-written
-            # uncomment after testing append_fig.write_image("{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]),scale=1,width=1200,height=350)
+            print("kpi_file:{}".format(df_tmp['kpi_file']))
+            #exit(1)
+            png_path = os.path.join(kpi_file[0],"{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]))
+            print("png_path {}".format(png_path))
+            append_fig.write_image(png_path,scale=1,width=1200,height=350)
+            #append_fig.write_image("{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]),scale=1,width=1200,height=350)
             plot_figure.append(append_fig)
-
 
 # there may be more layout with html.Div 
 # Maybe a be more OO
