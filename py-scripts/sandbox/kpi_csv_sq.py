@@ -18,8 +18,9 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # get a list of the kpi.csv files not the path needs to be bassed in
-path = Path('./2021-07-31-03-00-01_lf_check')
+#path = Path('./2021-07-31-03-00-01_lf_check')
 #path = Path('./test_data3')
+path = Path('./lf_check_2')
 
 kpi_list = list(path.glob('**/kpi.csv'))
 print("kpi_list {}".format(kpi_list))
@@ -99,7 +100,7 @@ for test_tag in test_tag_list:
             # save the figure - this may need to be re-written
             print("kpi_file:{}".format(df_tmp['kpi_file']))
             #exit(1)
-            png_path = os.path.join(kpi_file[0],"{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]))
+            png_path = os.path.join(kpi_file[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
             print("png_path {}".format(png_path))
             append_fig.write_image(png_path,scale=1,width=1200,height=350)
             #append_fig.write_image("{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]),scale=1,width=1200,height=350)
