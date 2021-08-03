@@ -19,7 +19,7 @@ the options and how best to input data.
       --raw_line 'cust_pkt_sz: 88 1200' \
       --raw_line 'directions: DUT Transmit;DUT Receive' \
       --raw_line 'traffic_types: UDP;TCP' \
-      --test_rig Testbed-01 --pull_report \
+      --test_rig Testbed-01 --test_tag ATH10K --pull_report \
       --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
@@ -41,6 +41,7 @@ kpi_id: Dataplane Pkt-Size
 notes0: ec5211 in bridge mode, wpa2 auth.
 bg: 0xE0ECF8
 test_rig: 
+test_tag: 
 show_scan: 1
 auto_helper: 0
 skip_2: 0
@@ -139,7 +140,8 @@ class DataplaneTest(cv_test):
                  sets=[],
                  graph_groups=None,
                  report_dir="",
-                 test_rig=""
+                 test_rig="",
+                 test_tag="",
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -168,6 +170,7 @@ class DataplaneTest(cv_test):
         self.ssh_port = ssh_port
         self.local_lf_report_dir = local_lf_report_dir
         self.test_rig = test_rig
+        self.test_tag = test_tag
 
     def setup(self):
         # Nothing to do at this time.
@@ -204,6 +207,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("selected_dut: " + self.dut)
         if self.test_rig != "":
             cfg_options.append("test_rig: " + self.test_rig)
+        if self.test_tag != "":
+            cfg_options.append("test_tag: " + self.test_tag)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
 
@@ -237,7 +242,7 @@ def main():
       --raw_line 'cust_pkt_sz: 88 1200' \
       --raw_line 'directions: DUT Transmit;DUT Receive' \
       --raw_line 'traffic_types: UDP;TCP' \
-      --test_rig Testbed-01 --pull_report \
+      --test_rig Testbed-01 --test_tag ATH10K --pull_report \
       --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben \
@@ -394,7 +399,8 @@ def main():
                             raw_lines_file = args.raw_lines_file,
                             sets = args.set,
                             graph_groups = args.graph_groups,
-                            test_rig=args.test_rig
+                            test_rig=args.test_rig,
+                            test_tag=args.test_tag
                             )
     CV_Test.setup()
     CV_Test.run()
