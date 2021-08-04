@@ -115,28 +115,20 @@ class csv_sqlite_dash():
                     png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
                     print("png_path {}".format(png_path))
                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
-                    
+
                     #TODO the link must be to a server to display html
                     # WARNING: os.path.join will use the path for where the script is RUN which can be container.
                     # need to construct path to server manually. DO NOT USE os.path.join
                     #TODO need to work out the reporting paths - pass in path adjust
                     index_html_path = self.server + kpi_path[0] + "index.html"
-                    index_html_path = index_html_path.replace('/home/lanforge/html-reports','')
-                    kpi_path_simple = self.server + kpi_path[0]
-
-                    print("kpi_path[0]: {}".format(kpi_path[0]))
-                    print("index_html_path: {}".format(index_html_path))
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_1'.format(test_id[0], group, test_tag, test_rig[0]),
+                    index_html_path = index_html_path.replace('/home/lanforge/','')
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
                         href=index_html_path, target='_blank'))
                     self.children_div.append(html.Br())
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_2'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href=kpi_path_simple, target='_blank'))
-                    self.children_div.append(html.Br())
-                    self.children_div.append(html.A('html_reports all', href=self.server_html_reports, target='_blank'))
+                    self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
 
                     # use image from above to creat html display
-                    self.children_div.append(dcc.Graph(figure=kpi_fig))
-
+                    self.children_div.append(dcc.Graph(figure=kpi_fig))                    
 
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
@@ -154,7 +146,7 @@ class csv_sqlite_dash():
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
-            html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
+            html.Div(children= self.children_div, style={"maxHeight": "480px", "overflow": "scroll"} ), 
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
