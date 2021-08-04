@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 '''
-File: will search sub diretories for kpi.csv and place the data into an sqllite database 
+File: will search sub diretories for kpi.csv and place the data into an sqlite database
 
-Usage:
+File: will search path recursivly for kpi.csv and place into sqlite database
+Usage: csv_sqlite.py --path <path to directories to traverse> --database <name of database>
 '''
 
 import sys
@@ -43,15 +44,13 @@ class csv_to_sqlite():
             # load data
             append_df = pd.read_csv(kpi, sep='\t')
             df = df.append(append_df, ignore_index=True)
-            #print("df {data}".format(data=df))
 
         # information on sqlite database
         # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
 
         print(self.database)
         conn = sqlite3.connect(self.database) 
-        #conn = sqlite3.connect("qa_db") 
-        #df.to_sql("dp_table",conn,if_exists='append')
+        #data may be appended setting if_exists='append'
         df.to_sql("dp_table",conn,if_exists='replace')
         conn.close()
 
@@ -61,16 +60,16 @@ def main():
         prog='csv_sqlite.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        read kpi.csv into sqlit database:
-            1. Useful Information goes here
+        read kpi.csv into sqlit database
+
             ''',
         
         description='''\
 File: will search path recursivly for kpi.csv and place into sqlite database
-Usage: csv_sqlite.py --path <path> --database <name>
+Usage: csv_sqlite.py --path <path to directories to traverse> --database <name of database>
 
         ''')
-    parser.add_argument('--path', help='--path ./path_to_kpi',required=True)
+    parser.add_argument('--path', help='--path ./top directory path to kpi',required=True)
     parser.add_argument('--file', help='--file kpi.csv',default='kpi.csv')
     parser.add_argument('--database', help='--database qa_test_db',default='qa_test_db')
     

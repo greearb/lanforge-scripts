@@ -117,13 +117,15 @@ for test_tag in test_tag_list:
             #html_src  = os.path.join(kpi_path[0],"index.html")
             # need to have a share available 
             #local_share = 'file://LAPTOP-T8B2MBJD/Users/chuck/git/lanforge-scripts/py-scripts/sandbox/lf_check_2'
-            local_share = 'file://LAPTOP-T8B2MBJD/Users/chuck/git/lanforge-scripts/py-scripts/sandbox/'
+            #local_share = 'file://LAPTOP-T8B2MBJD/Users/chuck/git/lanforge-scripts/py-scripts/sandbox/'
+            local_share = 'http:/127.0.0.1:8080/Users/chuck/git/lanforge-scripts/py-scripts/sandbox/'
 
             html_src  = os.path.join(local_share,kpi_path[0],"index.html")
-            #children_div.append(html.A('link{}'.format(i), href='http://192.168.95.6/html-reports/lf_check--2021-08-03-12-47-01.html', target='_blank'))
+            children_div.append(html.A('link{}'.format(i), href='http://192.168.95.6/html-reports/lf_check--2021-08-03-12-47-01.html', target='_blank'))
+            children_div.append(html.Br())
             children_div.append(html.A(html_src, href=html_src, target='_blank'))
-            #children_div.append(html.Br())
-            #children_div.append(html.A('Navigate to google.com {}'.format(i), href='http://google.com', target='_blank'))
+            children_div.append(html.Br())
+            children_div.append(html.A('Navigate to google.com {}'.format(i), href='http://google.com', target='_blank'))
             #children_div.append(dcc.Location(id='dog',refresh=False))
             #children_div.append(dcc.Link('Link', href=html_src, target="_blank" ))
             # can add other information 
