@@ -34,7 +34,8 @@ class csv_sqlite_dash():
         self.df = pd.DataFrame()
         self.plot_figure = []
         self.children_div = []
-        self.server = 'http://192.168.95.6/html-reports/' #TODO add the server
+        self.server_html_reports = 'http://192.168.95.6/html-reports/' #TODO pass in server
+        self.server = 'http://192.168.95.6/' #TODO pass in server
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -116,9 +117,12 @@ class csv_sqlite_dash():
                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
                     
                     #TODO the link must be to a server to display html
-                    index_html_path = os.path.join(self.server,kpi_path[0],"index.html")
-                    index_html_path = index_html_path.replace('/home/lanforge/','')
-                    kpi_test_path = os.path.join(kpi_path[0].replace('/home/lanforge/',''),"index.html")
+                    # WARNING: os.path.join will use the path for where the script is RUN which can be container.
+                    # need to construct path to server manually. DO NOT USE os.path.join
+                    #TODO need to work out the reporting paths - pass in path adjust
+                    index_html_path = self.server + kpi_path[0] + "index.html"
+                    index_html_path = index_html_path.replace('/home/lanforge/html-reports','')
+                    kpi_path_simple = self.server + kpi_path[0]
 
                     print("kpi_path[0]: {}".format(kpi_path[0]))
                     print("index_html_path: {}".format(index_html_path))
@@ -126,13 +130,9 @@ class csv_sqlite_dash():
                         href=index_html_path, target='_blank'))
                     self.children_div.append(html.Br())
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html_2'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href='http://192.168.95.6/html-reports/{}'.format(kpi_test_path), target='_blank'))
+                        href=kpi_path_simple, target='_blank'))
                     self.children_div.append(html.Br())
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_3'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href='http://192.168.95.6/html-reports/', target='_blank'))
-                    self.children_div.append(html.Br())
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_4'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href=self.server, target='_blank'))
+                    self.children_div.append(html.A('html_reports all', href=self.server_html_reports, target='_blank'))
 
                     # use image from above to creat html display
                     self.children_div.append(dcc.Graph(figure=kpi_fig))
