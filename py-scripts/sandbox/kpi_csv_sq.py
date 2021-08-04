@@ -117,12 +117,15 @@ class csv_sqlite_dash():
                     
                     #TODO the link must be to a server to display html
                     index_html_path = os.path.join(self.server,kpi_path[0],"index.html")
+                    index_html_path = index_html_path.replace('/home/lanforge/','')
+                    kpi_test_path = os.path.join(kpi_path[0].replace('/home/lanforge/',''),"index.html")
+
                     print("kpi_path[0]: {}".format(kpi_path[0]))
                     print("index_html_path: {}".format(index_html_path))
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
                         href=index_html_path, target='_blank'))
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href='http://192.168.95.6/html-reports/{}'.format(kpi_path[0]), target='_blank'))
+                        href='http://192.168.95.6/html-reports/{}'.format(kpi_test_path), target='_blank'))
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
                         href='http://192.168.95.6/html-reports/', target='_blank'))
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
