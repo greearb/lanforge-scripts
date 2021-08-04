@@ -116,6 +116,9 @@ class csv_sqlite_dash():
                     print("png_path {}".format(png_path))
                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
 
+                    # use image from above to creat html display
+                    self.children_div.append(dcc.Graph(figure=kpi_fig))                    
+
                     #TODO the link must be to a server to display html
                     # WARNING: os.path.join will use the path for where the script is RUN which can be container.
                     # need to construct path to server manually. DO NOT USE os.path.join
@@ -126,9 +129,8 @@ class csv_sqlite_dash():
                         href=index_html_path, target='_blank'))
                     self.children_div.append(html.Br())
                     self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
-
-                    # use image from above to creat html display
-                    self.children_div.append(dcc.Graph(figure=kpi_fig))                    
+                    self.children_div.append(html.Br())
+                    self.children_div.append(html.Br())
 
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
