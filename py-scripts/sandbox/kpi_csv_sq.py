@@ -34,7 +34,7 @@ class csv_sqlite_dash():
         self.df = pd.DataFrame()
         self.plot_figure = []
         self.children_div = []
-        self.server = 'http://192.168.95.6/' #TODO add the server
+        self.server = 'http://192.168.95.6/html-reports/' #TODO add the server
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -115,12 +115,22 @@ class csv_sqlite_dash():
                     print("png_path {}".format(png_path))
                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
                     
-                    # creating html display
-                    self.children_div.append(dcc.Graph(figure=kpi_fig))
                     #TODO the link must be to a server to display html
-                    index_html_path = os.path.join(kpi_path[0],"index.html")
+                    index_html_path = os.path.join(self.server,kpi_path[0],"index.html")
+                    print("kpi_path[0]: {}".format(kpi_path[0]))
+                    print("index_html_path: {}".format(index_html_path))
                     self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
                         href=index_html_path, target='_blank'))
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                        href='http://192.168.95.6/html-reports/{}'.format(kpi_path[0]), target='_blank'))
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                        href='http://192.168.95.6/html-reports/', target='_blank'))
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                        href=self.server, target='_blank'))
+
+                    # use image from above to creat html display
+                    self.children_div.append(dcc.Graph(figure=kpi_fig))
+
 
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
@@ -138,7 +148,7 @@ class csv_sqlite_dash():
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
-            html.Div(children= self.children_div, style={"maxHeight": "480px", "overflow": "scroll"} ), 
+            html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
