@@ -25,13 +25,20 @@ path = Path('./lf_check_2')
 kpi_list = list(path.glob('**/kpi.csv'))
 print("kpi_list {}".format(kpi_list))
 
+html_list = list(path.glob('**/index.html')) # the html is only index.html
+print("html_list: {}".format(html_list))
+
 df = pd.DataFrame()
 
+
+# if there is no KPI then there is not an indication that
+# a test was run so need to fix
+#not if there is a kpi then there is an index.html
 for kpi in kpi_list:
     # load data
     print("kpi {}".format(kpi))
     df_kpi_tmp = pd.read_csv(kpi, sep='\t')  # remove the index
-    df_kpi_tmp['kpi_file'] = str(kpi).replace('kpi.csv','') 
+    df_kpi_tmp['kpi_path'] = str(kpi).replace('kpi.csv','')  # only store the path to the kpi.csv file
     df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
     df = df.append(df_kpi_tmp, ignore_index=True)
 
@@ -63,6 +70,7 @@ test_tag_list = list(set(test_tag_list))
 
 i = 0 
 plot_figure = []
+children_div = []
 for test_tag in test_tag_list:
     for group in graph_group_list:
         df_tmp = df3.loc[(df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
@@ -84,8 +92,8 @@ for test_tag in test_tag_list:
             test_id_list = list(df_tmp['test-id'])
             test_id = list(set(test_id_list))
 
-            kpi_file_list = list(df_tmp['kpi_file'])
-            kpi_file = list(set(kpi_file_list))
+            kpi_path_list = list(df_tmp['kpi_path'])
+            kpi_path = list(set(kpi_path_list))
 
             # get graph labels from dataframe
             units_list = list(df_tmp['Units'])
@@ -98,20 +106,18 @@ for test_tag in test_tag_list:
                 xaxis = {'type' : 'date'}
             )
             # save the figure - this may need to be re-written
-            print("kpi_file:{}".format(df_tmp['kpi_file']))
+            print("kpi_path:{}".format(df_tmp['kpi_path']))
             #exit(1)
-            png_path = os.path.join(kpi_file[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
+            png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
             print("png_path {}".format(png_path))
             append_fig.write_image(png_path,scale=1,width=1200,height=350)
-            #append_fig.write_image("{}_{}_{}_{}.png".format(test_id[0], group, test_tag, test_rig[0]),scale=1,width=1200,height=350)
-            plot_figure.append(append_fig)
-
-# there may be more layout with html.Div 
-# Maybe a be more OO
-
-images_div = []
-for plot_fig in plot_figure:
-    images_div.append(dcc.Graph(figure=plot_fig))
+            children_div.append(dcc.Graph(figure=append_fig))
+            # for now it was designed if there is a kpi.csv then there is an index.html
+            #https://dash.plotly.com/urls
+            #html_src  = os.path.join(kpi_path[0],"index.html")
+            #children_div.append(dcc.Location(id='dog',refresh=False))
+            #children_div.append(dcc.Link('Link', href=html_src, target="_blank" ))
+            # can add other information 
 
 
 # access from server
@@ -125,10 +131,13 @@ app.layout = html.Div([
     style={'color':'green','text-align':'center'}),
     html.H2(children= "Test Set #1",className="ts1",
     style={'color':'#00361c','text-align':'left'}),
-    html.Div(children= images_div ), # images_div is already a list, the children = a list
+    #test html.Div(children= images_div ), # images_div is already a list, the children = a list
+    html.Div(children= children_div ), # images_div is already a list, the children = a list
     html.H2(children= "Test Set #2",className="ts2",
     style={'color':'#00361c','text-align':'left'}),
-    html.Div(children= images_div, style={"maxHeight": "480px","overflow": "scroll"})
+    #test html.Div(children= images_div, style={"maxHeight": "480px","overflow": "scroll"})
+    # danger::: this will cause components to show up twice
+    #html.Div(children= children_div, style={"maxHeight": "480px","overflow": "scroll"})
 ])
 
 
