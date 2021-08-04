@@ -128,11 +128,11 @@ class csv_sqlite_dash():
         app.layout = html.Div([
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
-            html.H2(children= "Test Set #1",className="ts1",
+            html.H2(children= "Results:",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
             html.Div(children= self.children_div, style={"maxHeight": "480px", "overflow": "scroll"} ), 
-            html.H2(children= "Test Set #2",className="ts2",
+            html.H3(children= "www.candelatech.com",className="ts2",
             style={'color':'#00361c','text-align':'left'}),
         ])
         app.run_server(host= '0.0.0.0', debug=True)
