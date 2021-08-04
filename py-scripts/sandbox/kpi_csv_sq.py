@@ -73,7 +73,9 @@ class csv_sqlite_dash():
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
         # df3 is just a name
-        df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn)
+        df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn) #current connection is sqlite3 /TODO move to SQLAlchemy
+        # sort by date column
+        df3 = df3.sort_values(by='Date')
         #print(df3.head())
         self.conn.close()
 
