@@ -44,11 +44,6 @@ class csv_sqlite_dash():
         path = Path(self.path)
         #self.kpi_list = list(path.glob('**/{}'.format(self.file)))
         self.kpi_list = list(path.glob('**/kpi.csv'))
-        print("kpi_list: {}".format(self.kpi_list))
-
-        #TODO this list may not be needed as the kpi_path is saved 
-        self.html_list = list(path.glob('**/index.html')) # the html is only index.html
-        print("html_list: {}".format(self.html_list))
 
         for kpi in self.kpi_list: #TODO note empty kpi.csv failed test 
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')  
@@ -67,8 +62,7 @@ class csv_sqlite_dash():
         if not self.kpi_list:
             self.store()
         if not self.kpi_list:
-            print("no kpi.csv found, check input paths, exiting")
-            exit(1)
+            print("no new kpi.csv found, check input paths, will read database")
 
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
@@ -127,7 +121,7 @@ class csv_sqlite_dash():
                         # WARNING: os.path.join will use the path for where the script is RUN which can be container.
                         # need to construct path to server manually. DO NOT USE os.path.join
                         #TODO need to work out the reporting paths - pass in path adjust
-                        index_html_path = self.server + kpi_path[0] + "index.html"
+                        index_html_path = self.server + kpi_path[-1] + "index.html"
                         index_html_path = index_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig),
                             href=index_html_path, target='_blank'))
