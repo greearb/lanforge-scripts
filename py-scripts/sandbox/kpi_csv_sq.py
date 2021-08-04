@@ -83,55 +83,56 @@ class csv_sqlite_dash():
 
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
+        
+        test_rig_list = list(df3['test-rig'])
+        test_rig_list = list(set(test_rig_list))
 
-        for test_tag in test_tag_list:
-            for group in graph_group_list:
-                df_tmp = df3.loc[(df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
-                if df_tmp.empty == False:
-                    kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
-                         color="short-description", hover_name="short-description",
-                         size_max=60)).update_traces(mode='lines+markers')
+        for test_rig in test_rig_list:
+            for test_tag in test_tag_list:
+                for group in graph_group_list:
+                    df_tmp = df3.loc[(df3['test-rig'] == test_rig) & (df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
+                    if df_tmp.empty == False:
+                        kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
+                             color="short-description", hover_name="short-description",
+                             size_max=60)).update_traces(mode='lines+markers')
 
-                    # remove duplicates from 
-                    test_rig_list = list(df_tmp['test-rig'])
-                    test_rig = list(set(test_rig_list))
+                        # remove duplicates from 
+                        test_id_list = list(df_tmp['test-id'])
+                        test_id = list(set(test_id_list))
 
-                    test_id_list = list(df_tmp['test-id'])
-                    test_id = list(set(test_id_list))
+                        kpi_path_list = list(df_tmp['kpi_path'])
+                        kpi_path = list(set(kpi_path_list))
 
-                    kpi_path_list = list(df_tmp['kpi_path'])
-                    kpi_path = list(set(kpi_path_list))
+                        units_list = list(df_tmp['Units'])
+                        units = list(set(units_list))
 
-                    units_list = list(df_tmp['Units'])
-                    units = list(set(units_list))
+                        kpi_fig.update_layout(
+                            title="{} : {} : {} : {}".format(test_id[0], group, test_tag, test_rig),
+                            xaxis_title="Time",
+                            yaxis_title="{}".format(units[0]),
+                            xaxis = {'type' : 'date'}
+                        )
+                        # save the figure - this may need to be re-written
+                        print("kpi_path:{}".format(df_tmp['kpi_path']))
+                        png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig))
+                        print("png_path {}".format(png_path))
+                        kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
 
-                    kpi_fig.update_layout(
-                        title="{} : {} : {} : {}".format(test_id[0], group, test_tag, test_rig[0]),
-                        xaxis_title="Time",
-                        yaxis_title="{}".format(units[0]),
-                        xaxis = {'type' : 'date'}
-                    )
-                    # save the figure - this may need to be re-written
-                    print("kpi_path:{}".format(df_tmp['kpi_path']))
-                    png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
-                    print("png_path {}".format(png_path))
-                    kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                        # use image from above to creat html display
+                        self.children_div.append(dcc.Graph(figure=kpi_fig))                    
 
-                    # use image from above to creat html display
-                    self.children_div.append(dcc.Graph(figure=kpi_fig))                    
-
-                    #TODO the link must be to a server to display html
-                    # WARNING: os.path.join will use the path for where the script is RUN which can be container.
-                    # need to construct path to server manually. DO NOT USE os.path.join
-                    #TODO need to work out the reporting paths - pass in path adjust
-                    index_html_path = self.server + kpi_path[0] + "index.html"
-                    index_html_path = index_html_path.replace('/home/lanforge/','')
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
-                        href=index_html_path, target='_blank'))
-                    self.children_div.append(html.Br())
-                    self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
-                    self.children_div.append(html.Br())
-                    self.children_div.append(html.Br())
+                        #TODO the link must be to a server to display html
+                        # WARNING: os.path.join will use the path for where the script is RUN which can be container.
+                        # need to construct path to server manually. DO NOT USE os.path.join
+                        #TODO need to work out the reporting paths - pass in path adjust
+                        index_html_path = self.server + kpi_path[0] + "index.html"
+                        index_html_path = index_html_path.replace('/home/lanforge/','')
+                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig),
+                            href=index_html_path, target='_blank'))
+                        self.children_div.append(html.Br())
+                        self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
+                        self.children_div.append(html.Br())
+                        self.children_div.append(html.Br())
 
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
