@@ -33,7 +33,7 @@ class csv_sqlite_dash():
         self.conn = None
         self.df = pd.DataFrame()
         self.plot_figure = []
-        children_div = []
+        self.children_div = []
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -58,7 +58,7 @@ class csv_sqlite_dash():
         self.conn.close()
 
     # duplicates the store since the the png are put back into the directory where the kpi are gathered
-    def generate_png(self):
+    def generate_graph_png(self):
         print("generating png files")
         if not self.kpi_list:
             self.store()
@@ -69,7 +69,7 @@ class csv_sqlite_dash():
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html
         self.conn = sqlite3.connect(self.database)
         # df3 is just a name
-        df3 = pd.read_sql_query("SELECT * from  dp_table" ,self.conn)
+        df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn)
         #print(df3.head())
         self.conn.close()
 
@@ -118,6 +118,11 @@ class csv_sqlite_dash():
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
     def show(self):
+        if not self.children_div:
+            self.generate_graph_png()
+        if not self.children_div:
+            print("no graph data from kpi.csv found, check input paths, will continue")
+
         app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
         app.layout = html.Div([
@@ -152,6 +157,7 @@ Usage: kpi_csv_sq.py --path <path to directories to traverse> --database <name o
     parser.add_argument('--path', help='--path ./top directory path to kpi',required=True)
     parser.add_argument('--file', help='--file kpi.csv',default='kpi.csv') #TODO is this needed
     parser.add_argument('--database', help='--database qa_test_db',default='qa_test_db')
+    parser.add_argument('--table', help='--table qa_table',default='qa_table')
     parser.add_argument('--store', help='--store , store kpi to db',action='store_true')
     parser.add_argument('--png', help='--png,  may store kpi to db and generate png',action='store_true')
     parser.add_argument('--show', help='--show',action='store_true')
@@ -161,18 +167,25 @@ Usage: kpi_csv_sq.py --path <path to directories to traverse> --database <name o
     __path = args.path
     __file = args.file
     __database = args.database
+    __table = args.table
+
+    print("config: path:{} file:{} database:{} table:{} store:{} png:{} show:{} "
+        .format(__path,__file,__database,__table,args.store, args.png,args.show))
 
     csv_dash = csv_sqlite_dash(
                 _path = __path,
                 _file = __file,
-                _database = __database)
+                _database = __database,
+                _table = __table)
     if args.store:
         csv_dash.store()
     if args.png:
-        csv_dash.generate_png()
+        csv_dash.generate_graph_png()
     if args.show:        
         csv_dash.show()
 
+    if args.store == False and args.png == False and args.show == False:
+        print("Need to enter an action of --store  --png --show ")
 
 if __name__ == '__main__':
     main()
