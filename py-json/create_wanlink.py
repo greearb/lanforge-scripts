@@ -4,6 +4,7 @@
 # Updated by: Erin Grimes
 import sys
 import urllib
+import importlib
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
@@ -11,7 +12,7 @@ import time
 from time import sleep
 from urllib import error
 import pprint
-import LANforge
+LANforge=importlib.import_module("lanforge-scripts.py-json.create_wanlink")
 from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge.LFUtils import NA
@@ -20,7 +21,7 @@ j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change
 resource_id = 1
 
-def main(base_url="http://localhost:8080", args={}): 
+def create(base_url="http://localhost:8080", args={}):
    json_post = ""
    json_response = ""
    num_wanlinks = -1
