@@ -52,8 +52,7 @@ class csv_sqlite_dash():
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
         self.conn = sqlite3.connect(self.database) 
-        #data may be appended setting if_exists='append'
-        self.df.to_sql(self.table,self.conn,if_exists='replace')
+        self.df.to_sql(self.table,self.conn,if_exists='append')
         self.conn.close()
 
     # duplicates the store since the the png are put back into the directory where the kpi are gathered
