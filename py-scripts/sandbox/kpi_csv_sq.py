@@ -97,19 +97,22 @@ class csv_sqlite_dash():
 
                         kpi_path_list = list(df_tmp['kpi_path'])
                         kpi_path = list(set(kpi_path_list))
+                        print("kpi_path {}".format(kpi_path))
+                        print("kpi_path[0]: {}".format(kpi_path[0]))
+                        print("kpi_path[-1]: {}".format(kpi_path[-1]))
 
                         units_list = list(df_tmp['Units'])
                         units = list(set(units_list))
 
                         kpi_fig.update_layout(
-                            title="{} : {} : {} : {}".format(test_id[0], group, test_tag, test_rig),
+                            title="{} : {} : {} : {}".format(test_id[-1], group, test_tag, test_rig),
                             xaxis_title="Time",
                             yaxis_title="{}".format(units[0]),
                             xaxis = {'type' : 'date'}
                         )
                         # save the figure - this may need to be re-written
                         print("kpi_path:{}".format(df_tmp['kpi_path']))
-                        png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig))
+                        png_path = os.path.join(kpi_path[-1],"{}_{}_{}_{}_kpi.png".format(test_id[-1], group, test_tag, test_rig))
                         print("png_path {}".format(png_path))
                         kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
 
@@ -122,7 +125,7 @@ class csv_sqlite_dash():
                         #TODO need to work out the reporting paths - pass in path adjust
                         index_html_path = self.server + kpi_path[-1] + "index.html"
                         index_html_path = index_html_path.replace('/home/lanforge/','')
-                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig),
+                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[-1], group, test_tag, test_rig),
                             href=index_html_path, target='_blank'))
                         self.children_div.append(html.Br())
                         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
