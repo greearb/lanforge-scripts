@@ -122,13 +122,16 @@ class csv_sqlite_dash():
 
                     print("kpi_path[0]: {}".format(kpi_path[0]))
                     print("index_html_path: {}".format(index_html_path))
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_1'.format(test_id[0], group, test_tag, test_rig[0]),
                         href=index_html_path, target='_blank'))
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                    self.children_div.append(html.Br())
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_2'.format(test_id[0], group, test_tag, test_rig[0]),
                         href='http://192.168.95.6/html-reports/{}'.format(kpi_test_path), target='_blank'))
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                    self.children_div.append(html.Br())
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_3'.format(test_id[0], group, test_tag, test_rig[0]),
                         href='http://192.168.95.6/html-reports/', target='_blank'))
-                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                    self.children_div.append(html.Br())
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html_4'.format(test_id[0], group, test_tag, test_rig[0]),
                         href=self.server, target='_blank'))
 
                     # use image from above to creat html display
