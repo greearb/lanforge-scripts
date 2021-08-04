@@ -44,6 +44,7 @@ class csv_sqlite_dash():
         path = Path(self.path)
         #self.kpi_list = list(path.glob('**/{}'.format(self.file)))
         self.kpi_list = list(path.glob('**/kpi.csv'))
+        print("kpi_list: {}".format(self.kpi_list))
 
         #TODO this list may not be needed as the kpi_path is saved 
         self.html_list = list(path.glob('**/index.html')) # the html is only index.html
@@ -138,7 +139,7 @@ class csv_sqlite_dash():
         if not self.children_div:
             self.generate_graph_png()
         if not self.children_div:
-            print("no graph data from kpi.csv found, check input paths, will continue")
+            print("NOTE: test-tag may not be present in the kpi thus no results generated")
 
         app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
