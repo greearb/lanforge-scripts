@@ -44,13 +44,13 @@ class csv_sqlite_dash():
         self.kpi_list = list(path.glob('**/kpi.csv'))
 
         self.html_list = list(path.glob('**/index.html')) # the html is only index.html
-        print("html_list: {}".format(html_list))
+        print("html_list: {}".format(self.html_list))
 
         for kpi in self.kpi_list: #TODO note empty kpi.csv failed test 
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')  
             df_kpi_tmp['kpi_path'] = str(kpi).replace('kpi.csv','')  # only store the path to the kpi.csv file
             df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
-            self.df = df.append(df_kpi_tmp, ignore_index=True)
+            self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
         self.conn = sqlite3.connect(self.database) 
         #data may be appended setting if_exists='append'
@@ -130,6 +130,10 @@ class csv_sqlite_dash():
             html.H2(children= "Test Set #2",className="ts2",
             style={'color':'#00361c','text-align':'left'}),
         ])
+        app.run_server(host= '0.0.0.0', debug=True)
+        # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
+        # app.run_server(host= '0.0.0.0', debug=True) 
+
 
 def main():
 
@@ -158,20 +162,18 @@ Usage: kpi_csv_sq.py --path <path to directories to traverse> --database <name o
     __file = args.file
     __database = args.database
 
-    csv_sqlite_dash = csv_sqlite_dash(
+    csv_dash = csv_sqlite_dash(
                 _path = __path,
                 _file = __file,
                 _database = __database)
     if args.store:
-        csv_sqlite_dash.store()
+        csv_dash.store()
     if args.png:
-        csv_sqlite_dash.generate_png()
+        csv_dash.generate_png()
     if args.show:        
-        csv_sqlite_dash.show()
+        csv_dash.show()
 
 
 if __name__ == '__main__':
     main()
-    # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
-    # app.run_server(host= '0.0.0.0', debug=True) 
     
