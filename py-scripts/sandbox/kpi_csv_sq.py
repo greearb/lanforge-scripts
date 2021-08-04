@@ -34,6 +34,7 @@ class csv_sqlite_dash():
         self.df = pd.DataFrame()
         self.plot_figure = []
         self.children_div = []
+        self.server = 'http://192.168.95.6/' #TODO add the server
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -43,6 +44,7 @@ class csv_sqlite_dash():
         #self.kpi_list = list(path.glob('**/{}'.format(self.file)))
         self.kpi_list = list(path.glob('**/kpi.csv'))
 
+        #TODO this list may not be needed as the kpi_path is saved 
         self.html_list = list(path.glob('**/index.html')) # the html is only index.html
         print("html_list: {}".format(self.html_list))
 
@@ -66,7 +68,7 @@ class csv_sqlite_dash():
             print("no kpi.csv found, check input paths, exiting")
             exit(1)
 
-        #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html
+        #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
         # df3 is just a name
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn)
@@ -112,8 +114,13 @@ class csv_sqlite_dash():
                     png_path = os.path.join(kpi_path[0],"{}_{}_{}_{}_kpi.png".format(test_id[0], group, test_tag, test_rig[0]))
                     print("png_path {}".format(png_path))
                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
-                    # store the image so it may be displayed
+                    
+                    # creating html display
                     self.children_div.append(dcc.Graph(figure=kpi_fig))
+                    #TODO the link must be to a server to display html
+                    index_html_path = os.path.join(kpi_path[0],"index.html")
+                    self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[0], group, test_tag, test_rig[0]),
+                        href=index_html_path, target='_blank'))
 
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
@@ -132,7 +139,7 @@ class csv_sqlite_dash():
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
             html.Div(children= self.children_div, style={"maxHeight": "480px", "overflow": "scroll"} ), 
-            html.H3(children= "www.candelatech.com",className="ts3",
+            html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
         app.run_server(host= '0.0.0.0', debug=True)
