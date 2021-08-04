@@ -80,7 +80,7 @@ import csv
 import shutil
 from os import path
 import shlex
-import paramiko 
+import paramiko
 import pandas as pd
 
 # lf_report is from the parent of the current file
@@ -157,8 +157,8 @@ class lf_check():
         self.email_txt = ""
 
         # lanforge configuration 
-        self.lf_mgr_ip = "192.168.0.102" 
-        self.lf_mgr_port = "" 
+        self.lf_mgr_ip = "192.168.0.102"
+        self.lf_mgr_port = ""
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass =  "lanforge"
 
@@ -168,9 +168,9 @@ class lf_check():
         self.dut_sw = "DUT_SW_NOT_SET"
         self.dut_model = "DUT_MODEL_NOT_SET"
         self.dut_serial = "DUT_SERIAL_NOT_SET"
-        self.dut_bssid_2g = "BSSID_2G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan 
-        self.dut_bssid_5g = "BSSID_5G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan 
-        self.dut_bssid_6g = "BSSID_6G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan 
+        self.dut_bssid_2g = "BSSID_2G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
+        self.dut_bssid_5g = "BSSID_5G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
+        self.dut_bssid_6g = "BSSID_6G_NOT_SET" #"3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
         #NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
@@ -220,7 +220,7 @@ class lf_check():
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
-        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -n')
         lanforge_node_version = stdout.readlines()
         # print('\n'.join(output))
@@ -233,7 +233,7 @@ class lf_check():
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         #ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
-        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
         lanforge_kernel_version = stdout.readlines()
         # print('\n'.join(output))
@@ -246,7 +246,7 @@ class lf_check():
         output = ""
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
-        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('./btserver --version | grep  Version')
         lanforge_gui_version = stdout.readlines()
         # print('\n'.join(output))
@@ -254,7 +254,7 @@ class lf_check():
         ssh.close()
         time.sleep(1)
         return lanforge_gui_version
-        
+
 
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
@@ -315,7 +315,7 @@ blog: http://{blog}:2368
         except subprocess.TimeoutExpired:
             print("send email timed out")
             process.terminate()
-    
+
     def get_csv_results(self):
         return self.csv_file.name
 
@@ -323,7 +323,7 @@ blog: http://{blog}:2368
         print("self.csv_results")
         self.csv_results_file = open(self.csv_results, "w")
         self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
-        self.csv_results_column_headers = ['Test','Command','Result','STDOUT','STDERR'] 
+        self.csv_results_column_headers = ['Test','Command','Result','STDOUT','STDERR']
         self.csv_results_writer.writerow(self.csv_results_column_headers)
         self.csv_results_file.flush()
 
@@ -387,7 +387,7 @@ blog: http://{blog}:2368
             self.read_test_database()
         else:
             self.logger.info("NOTE: test_database not found in json")
-        
+
         if "test_dashboard" in self.json_data:
             self.logger.info("json: read test_dashboard")
             #self.logger.info("test_dashboard {}".format(self.json_data["test_dashboard"]))
@@ -742,13 +742,13 @@ blog: http://{blog}:2368
         if self.test_suite in config_file.sections():
             section = config_file[self.test_suite]
             # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
-            try:            
+            try:
                 self.test_dict = json.loads(section.get('TEST_DICT', self.test_dict).replace('\n',' ').replace('\r',' '))
                 self.logger.info("{}:  {}".format(self.test_suite,self.test_dict))
             except:
-                self.logger.info("Excpetion loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))   
+                self.logger.info("Excpetion loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))
         else:
-            self.logger.info("EXITING... NOT FOUND Test Suite with name : {}".format(self.test_suite))   
+            self.logger.info("EXITING... NOT FOUND Test Suite with name : {}".format(self.test_suite))
             exit(1)
 
     def load_factory_default_db(self):
@@ -791,7 +791,7 @@ blog: http://{blog}:2368
         errcode = process.returncode
 
     def run_script_test(self):
-        self.start_html_results() 
+        self.start_html_results()
         self.start_csv_results()
 
         for test in self.test_dict:
@@ -912,7 +912,7 @@ blog: http://{blog}:2368
                     self.logger.info("timeout : {}".format(self.test_dict[test]['timeout']))
                     self.test_timeout = int(self.test_dict[test]['timeout'])
                 else:
-                    self.test_timeout = self.test_timeout_default                    
+                    self.test_timeout = self.test_timeout_default
 
                 if 'load_db' in self.test_dict[test]:
                     self.logger.info("load_db : {}".format(self.test_dict[test]['load_db']))
@@ -921,7 +921,7 @@ blog: http://{blog}:2368
                             self.load_custom_db(self.test_dict[test]['load_db'])
                         except:
                             self.logger.info("custom database failed to load check existance and location: {}".format(self.test_dict[test]['load_db']))
-                else:    
+                else:
                     self.logger.info("no load_db present in dictionary, load db normally")
                     if self.use_factory_default_db == "TRUE":
                         self.load_factory_default_db()
@@ -958,7 +958,7 @@ blog: http://{blog}:2368
                     #self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
                     stderr_log_txt = self.outfile
-                    stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)                    
+                    stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)
                     #self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
@@ -999,9 +999,15 @@ blog: http://{blog}:2368
                 # Ghost will put data in stderr 
                 if('ghost' in command):
                     if(self.test_result != "TIMEOUT"):
-                        self.test_result = "Success"
-                        background = self.background_blue
-                
+                        text = open(stderr_log_txt).read()
+                        if 'Error' in text:
+                            self.test_result = "Failure"
+                            background = self.background_red
+                        else:
+                            self.test_result = "Success"
+                            background = self.background_blue
+
+
                 # stdout_log_link is used for the email reporting to have the corrected path
                 stdout_log_link = str(stdout_log_txt).replace('/home/lanforge','')
                 stderr_log_link = str(stderr_log_txt).replace('/home/lanforge','')
@@ -1015,7 +1021,7 @@ blog: http://{blog}:2368
                     self.html_results += """<td><a href=""" + str(stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
                 else:
                     self.html_results += """<td></td>"""
-                self.html_results += """</tr>""" 
+                self.html_results += """</tr>"""
 
                 row = [test,command,self.test_result,stdout_log_txt,stderr_log_txt]
                 self.csv_results_writer.writerow(row)
@@ -1025,7 +1031,7 @@ blog: http://{blog}:2368
 
             else:
                 self.logger.info("enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'],test))
-        self.finish_html_results()        
+        self.finish_html_results()
 
 def main():
     # arguments
@@ -1057,7 +1063,7 @@ Example :
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated", default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script", default="lf_check.log")
 
-    args = parser.parse_args()   
+    args = parser.parse_args()
 
     # load test config file information either <config>.json or <config>.ini
     use_json = False
@@ -1087,7 +1093,7 @@ Example :
 
     # select test suite 
     test_suite = args.suite
-    
+
     if args.production:
         production = True
         print("Email to production list")
@@ -1142,7 +1148,7 @@ Example :
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8','ignore')))
 
     # read config and run tests
-    check.read_config() 
+    check.read_config()
     check.run_script_test()
 
     # get sha and lanforge informaiton for results
@@ -1151,33 +1157,32 @@ Example :
         scripts_git_sha = check.get_scripts_git_sha()
         print("git_sha {sha}".format(sha=scripts_git_sha))
     except:
-        print("git_sha read exception ")        
+        print("git_sha read exception ")
 
     try:
         lanforge_node_version = check.get_lanforge_node_version()
         print("lanforge_node_version {node_ver}".format(node_node=lanforge_node_version))
     except:
-        print("lanforge_node_version exception")        
+        print("lanforge_node_version exception")
 
     try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
         print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
     except:
-        print("lanforge_kernel_version exception")        
+        print("lanforge_kernel_version exception")
 
     try:
         lanforge_gui_version = check.get_lanforge_gui_version()
         print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
     except:
-        print("lanforge_gui_version exception")        
+        print("lanforge_gui_version exception")
 
     # LANforge and scripts config
-    lf_test_setup = pd.DataFrame({
-        'LANforge': lanforge_node_version,
-        'kernel version': lanforge_kernel_version,
-        'GUI version': lanforge_gui_version,
-        'scripts git sha': scripts_git_sha
-    })
+    lf_test_setup = pd.DataFrame()
+    lf_test_setup['LANforge'] = lanforge_node_version
+    lf_test_setup['kernel version'] = lanforge_kernel_version
+    lf_test_setup['GUI version'] = lanforge_gui_version
+    lf_test_setup['scripts git sha'] = scripts_git_sha
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
@@ -1238,7 +1243,7 @@ Example :
     try:
         shutil.copyfile(html_report,            lf_check_latest_html)
     except:
-        print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))        
+        print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))
     shutil.copyfile(html_report,            lf_check_html_report)
 
     # copy banner and logo up one directory, 
