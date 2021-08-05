@@ -170,8 +170,8 @@ Usage: csv_sqlite.py --path <path to directories to traverse> --database <name o
     parser.add_argument('--database', help='--database qa_test_db',default='qa_test_db')
     parser.add_argument('--table', help='--table qa_table',default='qa_table')
     parser.add_argument('--store', help='--store , store kpi to db',action='store_true')
-    parser.add_argument('--png', help='--png,  read db, generate png, generate display',action='store_true')
-    parser.add_argument('--show', help='--show generate png and show dashboard',action='store_true')
+    parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display',action='store_true')
+    parser.add_argument('--show', help='--show generate display and show dashboard',action='store_true')
     
     args = parser.parse_args()
 
