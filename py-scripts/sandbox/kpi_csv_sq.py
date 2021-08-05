@@ -91,28 +91,21 @@ class csv_sqlite_dash():
                              color="short-description", hover_name="short-description",
                              size_max=60)).update_traces(mode='lines+markers')
 
-                        # remove duplicates from 
+                        df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
-                        test_id = list(set(test_id_list))
-
                         kpi_path_list = list(df_tmp['kpi_path'])
-                        kpi_path = list(set(kpi_path_list))
-                        print("kpi_path {}".format(kpi_path))
-                        print("kpi_path[0]: {}".format(kpi_path[0]))
-                        print("kpi_path[-1]: {}".format(kpi_path[-1]))
 
                         units_list = list(df_tmp['Units'])
-                        units = list(set(units_list))
 
                         kpi_fig.update_layout(
-                            title="{} : {} : {} : {}".format(test_id[-1], group, test_tag, test_rig),
+                            title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
                             xaxis_title="Time",
-                            yaxis_title="{}".format(units[0]),
+                            yaxis_title="{}".format(units_list[-1]),
                             xaxis = {'type' : 'date'}
                         )
                         # save the figure - this may need to be re-written
                         print("kpi_path:{}".format(df_tmp['kpi_path']))
-                        png_path = os.path.join(kpi_path[-1],"{}_{}_{}_{}_kpi.png".format(test_id[-1], group, test_tag, test_rig))
+                        png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
                         print("png_path {}".format(png_path))
                         kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
 
@@ -123,9 +116,9 @@ class csv_sqlite_dash():
                         # WARNING: os.path.join will use the path for where the script is RUN which can be container.
                         # need to construct path to server manually. DO NOT USE os.path.join
                         #TODO need to work out the reporting paths - pass in path adjust
-                        index_html_path = self.server + kpi_path[-1] + "index.html"
+                        index_html_path = self.server + kpi_path_list[-1] + "index.html"
                         index_html_path = index_html_path.replace('/home/lanforge/','')
-                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id[-1], group, test_tag, test_rig),
+                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id_list[-1], group, test_tag, test_rig),
                             href=index_html_path, target='_blank'))
                         self.children_div.append(html.Br())
                         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
