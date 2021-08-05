@@ -14,9 +14,13 @@ import pandas as pd
 import sqlite3
 import argparse
 from  pathlib import Path
+from dash.dependencies import Input, Output
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
 
 class csv_sqlite_dash():
     def __init__(self,
@@ -38,6 +42,9 @@ class csv_sqlite_dash():
         self.children_div = []
         self.server_html_reports = 'http://192.168.95.6/html-reports/' #TODO pass in server
         self.server = 'http://192.168.95.6/' #TODO pass in server
+        self.server_started = False
+        
+
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -133,12 +140,13 @@ class csv_sqlite_dash():
         self.generate_graph_png()
         if not self.children_div:
             print("NOTE: test-tag may not be present in the kpi thus no results generated")
-
-        app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+        #moved app to more of a global
+        #app = dash.Dash(__name__, external_stylesheets=external_stylesheets) 
 
         app.layout = html.Div([
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
+            html.Button(id='recalculate',children='Recalculate'),
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
@@ -146,10 +154,19 @@ class csv_sqlite_dash():
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
-        app.run_server(host= '0.0.0.0', debug=True)
-        # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
-        # app.run_server(host= '0.0.0.0', debug=True) 
 
+        if self.server_started:
+            pass
+        else:
+            app.run_server(host= '0.0.0.0', debug=True)
+            self.server_started = True
+
+            # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
+            # app.run_server(host= '0.0.0.0', debug=True) 
+
+    #@app.callback(Input('recalculate'))
+    #def recalculate_output(self):
+    #    self.show()
 
 def main():
 
