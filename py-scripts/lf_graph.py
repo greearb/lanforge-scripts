@@ -35,8 +35,8 @@ class lf_bar_graph():
     def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4, 5],
-                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _xaxis_categories=[1, 2, 3, 4],
+                 _xaxis_label=["a", "b", "c", "d"],
                  _graph_title="",
                  _title_size=16,
                  _graph_image_name="image_name",
@@ -48,7 +48,7 @@ class lf_bar_graph():
                  _color_name=['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y'],
                  _figsize=(10, 5),
                  _show_bar_value=False,
-                 _xaxis_step=5,
+                 _xaxis_step=1,
                  _xticks_font = None,
                  _text_font=None,
                  _text_rotation=None,
@@ -139,11 +139,18 @@ class lf_bar_graph():
         plt.close()
         print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
-            if self.data_set is not None:
-                self.lf_csv.columns = self.label
-                self.lf_csv.rows = self.data_set
-                self.lf_csv.filename = f"{self.graph_image_name}.csv"
-                self.lf_csv.generate_csv()
+            if self.data_set is not None and self.xaxis_categories is not None:
+                if len(self.xaxis_categories) == len(self.data_set[0]):
+                    self.lf_csv.columns = []
+                    self.lf_csv.rows = []
+                    self.lf_csv.columns.append(self.xaxis_name)
+                    self.lf_csv.columns.extend(self.label)
+                    self.lf_csv.rows.append(self.xaxis_categories)
+                    self.lf_csv.rows.extend(self.data_set)
+                    self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                    self.lf_csv.generate_csv()
+                else:
+                    raise ValueError("Length and x-axis values and y-axis values should be same.")
             else:
                 print("No Dataset Found")
         print("{}.csv".format(self.graph_image_name))
@@ -364,7 +371,8 @@ if __name__ == "__main__":
                          _graph_image_name="Bi-single_radio_2.4GHz",
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
                          _color=None,
-                         _color_edge='red')
+                         _color_edge='red',
+                         _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>

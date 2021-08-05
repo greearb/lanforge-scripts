@@ -107,7 +107,8 @@ if __name__ == "__main__":
                          _legend_loc="best",
                          _legend_box=(1,1),
                          _legend_ncol=1,
-                         _legend_fontsize=None)
+                         _legend_fontsize=None,
+                         _enable_csv=True)
 
     graph_png = graph.build_bar_graph()
 
@@ -116,7 +117,9 @@ if __name__ == "__main__":
     report.set_graph_image(graph_png)
     # need to move the graph image to the results 
     report.move_graph_image()
-
+    if graph.enable_csv:
+        report.set_csv_filename(graph_png)
+        report.move_csv_file()
     report.build_graph()
     set1 = [1, 2, 3, 4]
     set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]
