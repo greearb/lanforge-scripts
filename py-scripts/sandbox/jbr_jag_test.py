@@ -56,7 +56,7 @@ def test_get_port(args=None):
                                             debug_=True,
                                             _exit_on_error=True)
 
-    result = get_request.get_port(eid_list="1.1.1",
+    result = get_request.get_port(eid_list="1.1.eth2",
                                   requested_col_names='list',
                                   debug_=True)
     pprint.pprint(result)
@@ -80,7 +80,6 @@ def test_set_port(args=None):
                                         current_flags=my_current_flags,  # See above, or NA.
                                         current_flags_msk=my_current_flags,
                                         # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
-                                        gateway=None,  # IP address of the gateway device - used for IP routing, or NA.
                                         interest=my_interest_flags,
                                         port='eth2',  # Port number for the port to be modified.
                                         report_timer=2000,
@@ -88,7 +87,24 @@ def test_set_port(args=None):
                                         shelf=1,  # Shelf number for the port to be modified.
                                         debug_=True)
     pprint.pprint(post_request)
+    my_current_flags.clear_flags(flag_names=LFJsonPost.set_port_current_flags.use_dhcp)
+    result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
+                                        current_flags=my_current_flags,  # See above, or NA.
+                                        current_flags_msk=my_current_flags,
+                                        # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
+                                        interest=my_interest_flags,
+                                        port='eth2',  # Port number for the port to be modified.
+                                        report_timer=2000,
+                                        resource=1,  # Resource number for the port to be modified.
+                                        shelf=1,  # Shelf number for the port to be modified.
+                                        debug_=True)
+    get_request = LFJsonGet(lfclient_host=args.host,
+                                        lfclient_port=8080,
+                                        debug_=True,
+                                        _exit_on_error=True)
 
+    result = get_request.get_port(eid_list="1.1.eth2", requested_col_names=['all'], debug_=True)
+    pprint.pprint(result)
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
