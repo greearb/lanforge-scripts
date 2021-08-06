@@ -1222,8 +1222,7 @@ Example :
         if value[1] is None:
             print(UserWarning('Check your %s IP address, %s is unreachable' % (key, value[0])))
         else:
-            if args.debug:
-                print('%s IP address %s accessible' % (key, value[1]))
+            print('%s IP address %s accessible' % (key, value[1]))
 
     if ping_result['LANforge Manager'][1] is None:
         pass
