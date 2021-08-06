@@ -163,7 +163,7 @@ class csv_sqlite_dash():
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
-            html.Div(children= self.children_div, style={"maxHeight": "540px", "overflow": "scroll"} ), 
+            html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
