@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png  --store
-Example: lf_dash.py --show  (will show the current database generated)
+Usage: lf_dash.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Example: lf_dash.py --show  (show dashboard generated from database)
+Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi.csv store to database, write png, show dashboard )
 
 '''
 # visit http://127.0.0.1:8050/ in your web browser.
@@ -175,8 +176,9 @@ def main():
             ''',
         description='''\
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png --store
-Example: lf_dash.py --show  (will show the current database generated)
+Usage: lf_dash.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Example: lf_dash.py --show  (show dashboard generated from database)
+Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi.csv store to database, write png, show dashboard )
 
         ''')
     parser.add_argument('--path', help='--path top directory path to kpi if regererating database or png files',default='')
@@ -202,7 +204,12 @@ Example: lf_dash.py --show  (will show the current database generated)
         .format(__path,__file,__database,__table,args.store, args.png,args.show))
 
     if(__path == '' and args.store == True):
-        print("--path <path of kpi.csv> must be entered if --store")
+        print("--path <path of kpi.csv> must be entered if --store ,  exiting")
+        exit(1)
+
+    if(args.png == True and args.store == False):
+        print("if --png set to create png files then --store must also be set, exiting")
+        exit(1)
 
     csv_dash = csv_sqlite_dash(
                 _path = __path,
