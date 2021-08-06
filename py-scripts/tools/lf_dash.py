@@ -176,7 +176,7 @@ class csv_sqlite_dash():
 def main():
 
     parser = argparse.ArgumentParser(
-        prog='kpi_csv_sq.py',
+        prog='lf_dash.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
         read kpi.csv into sqlite database , save png of history and preset on dashboard
