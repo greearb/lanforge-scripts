@@ -56,8 +56,8 @@ def test_get_port(args=None):
                                             debug_=True,
                                             _exit_on_error=True)
 
-    result = get_request.get_port(eid_list=["1.1.eth2"],
-                                  requested_col_names='all',
+    result = get_request.get_port(eid_list=["1.1.eth0", "1.1.eth1", "1.1.eth2"],
+                                  requested_col_names=(),
                                   debug_=True)
     pprint.pprint(result)
 
@@ -103,7 +103,7 @@ def test_set_port(args=None):
                                         debug_=True,
                                         _exit_on_error=True)
 
-    result = get_request.get_port(eid_list="1.1.eth2", requested_col_names=['all'], debug_=True)
+    result = get_request.get_port(eid_list=["1.1.eth1", "1.1.eth2"], requested_col_names=(), debug_=True)
     pprint.pprint(result)
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
