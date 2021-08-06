@@ -76,8 +76,9 @@ class csv_sqlite_dash():
         self.conn.close()
 
         # graph group and test-tag are used for detemining the graphs, can use any columns
+        # the following list manipulation removes the duplicates
         graph_group_list = list(df3['Graph-Group'])
-        graph_group_list = list(set(graph_group_list))  #remove duplicates 
+        graph_group_list = list(set(graph_group_list)) 
 
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
@@ -140,7 +141,7 @@ class csv_sqlite_dash():
             html.Div(id='my-output'),
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
-            html.Button('Submit',id='submit-val', n_clicks=0),
+            html.Button('Submit Recalculate',id='submit-val', n_clicks=0),
             html.Div(id='container-button-basic', children='to recalculate hit submit'),
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
