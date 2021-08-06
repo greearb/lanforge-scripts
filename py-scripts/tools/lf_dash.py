@@ -197,7 +197,7 @@ class csv_sqlite_dash():
             self.server_started = True
             print("self.server_started {}".format(self.server_started))
             ts = time.time()
-            print("6": {}".format(ts))
+            print("6: {}".format(ts))
             self.app.run_server(host= '0.0.0.0', debug=True)
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
