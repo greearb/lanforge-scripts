@@ -46,8 +46,8 @@ class csv_sqlite_dash():
         self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
         # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
         #https://dash.plotly.com/dash-html-components/button
-        self.app.callback(dash.dependencies.Output('container-button-basic', 'children'),
-                        [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
+        #self.app.callback(dash.dependencies.Output('container-button-basic', 'children'),
+        #                [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -150,8 +150,9 @@ class csv_sqlite_dash():
         
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
-    def show(self,n_clicks):
-        print("refreshes: {}".format(n_clicks))
+    #def show(self,n_clicks):
+    def show(self):
+        #print("refreshes: {}".format(n_clicks))
         self.generate_graph_png()
         if not self.children_div:
             print("NOTE: test-tag may not be present in the kpi thus no results generated")
@@ -159,8 +160,8 @@ class csv_sqlite_dash():
             html.Div(id='my-output'),
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
-            html.Button('Submit Recalculate',id='submit-val', n_clicks=0),
-            html.Div(id='container-button-basic', children='to recalculate hit submit'),
+            #html.Button('Submit Recalculate',id='submit-val', n_clicks=0),
+            #html.Div(id='container-button-basic', children='to recalculate hit submit'),
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
