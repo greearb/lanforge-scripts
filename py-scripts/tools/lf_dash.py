@@ -168,6 +168,9 @@ class csv_sqlite_dash():
             style={'color':'#00361c','text-align':'left'}),
         ])
 
+        # save as standalone files
+        #https://plotly.com/python/static-image-export/
+        
         if self.server_started:
             print("refresh complete")
             pass
