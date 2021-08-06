@@ -134,6 +134,7 @@ class csv_sqlite_dash():
                         # use image from above to creat html display
                         self.children_div.append(dcc.Graph(figure=kpi_fig))                    
 
+
                         #TODO the link must be to a server to display html
                         # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
                         # need to construct path to server manually. 
@@ -163,7 +164,8 @@ class csv_sqlite_dash():
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
-            html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
+            # remove scrolling : html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
+            html.Div(children= self.children_div ), 
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
