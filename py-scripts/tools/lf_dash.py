@@ -56,7 +56,7 @@ class csv_sqlite_dash():
         self.kpi_list = list(path.glob('**/kpi.csv'))  # Hard code for now 
 
         if not self.kpi_list:
-            print("no new kpi.csv found, check input paths")
+            print("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
 
         for kpi in self.kpi_list: #TODO note empty kpi.csv failed test 
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')  
@@ -75,7 +75,11 @@ class csv_sqlite_dash():
         self.conn = sqlite3.connect(self.database)
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn) #current connection is sqlite3 /TODO move to SQLAlchemy
         # sort by date column
-        df3 = df3.sort_values(by='Date')
+        try:
+            df3 = df3.sort_values(by='Date')
+        except:
+            print("Database empty: KeyError(key) when sorting by Date, check Database name or path to kpi , Exiting")
+            exit(1)
         self.conn.close()
 
         # graph group and test-tag are used for detemining the graphs, can use any columns
