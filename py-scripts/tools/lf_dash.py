@@ -65,7 +65,11 @@ class csv_sqlite_dash():
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
         self.conn = sqlite3.connect(self.database) 
-        self.df.to_sql(self.table,self.conn,if_exists='append')
+        try:
+            self.df.to_sql(self.table,self.conn,if_exists='append')
+        except:
+            print("attempt to append to database with different column layout, casused exception, input new name --database <new name>")            
+            exit(1)
         self.conn.close()
 
     def generate_graph_png(self):
