@@ -14,13 +14,9 @@ import pandas as pd
 import sqlite3
 import argparse
 from  pathlib import Path
-from dash.dependencies import Input, Output
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
 
 class csv_sqlite_dash():
     def __init__(self,
@@ -43,16 +39,18 @@ class csv_sqlite_dash():
         self.server_html_reports = 'http://192.168.95.6/html-reports/' #TODO pass in server
         self.server = 'http://192.168.95.6/' #TODO pass in server
         self.server_started = False
-        
-
+        self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+        # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
+        #https://dash.plotly.com/dash-html-components/button
+        self.app.callback(dash.dependencies.Output('container-button-basic', 'children'),
+                        [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
     def store(self):
         print("reading kpi and storing in db {}".format(self.database))
         path = Path(self.path)
-        #self.kpi_list = list(path.glob('**/{}'.format(self.file)))
-        self.kpi_list = list(path.glob('**/kpi.csv'))
+        self.kpi_list = list(path.glob('**/kpi.csv'))  # Hard code for now 
 
         if not self.kpi_list:
             print("no new kpi.csv found, check input paths")
@@ -67,20 +65,17 @@ class csv_sqlite_dash():
         self.df.to_sql(self.table,self.conn,if_exists='append')
         self.conn.close()
 
-    # duplicates the store since the the png are put back into the directory where the kpi are gathered
     def generate_graph_png(self):
         print("generating graphs to display")
 
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
-        # df3 is just a name
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn) #current connection is sqlite3 /TODO move to SQLAlchemy
         # sort by date column
         df3 = df3.sort_values(by='Date')
-        #print(df3.head())
         self.conn.close()
 
-        # graph group and test-tag are used for detemining the graphs
+        # graph group and test-tag are used for detemining the graphs, can use any columns
         graph_group_list = list(df3['Graph-Group'])
         graph_group_list = list(set(graph_group_list))  #remove duplicates 
 
@@ -133,20 +128,20 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
-
+        
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
-    def show(self):
+    def show(self,n_clicks):
+        print("refreshes: {}".format(n_clicks))
         self.generate_graph_png()
         if not self.children_div:
             print("NOTE: test-tag may not be present in the kpi thus no results generated")
-        #moved app to more of a global
-        #app = dash.Dash(__name__, external_stylesheets=external_stylesheets) 
-
-        app.layout = html.Div([
+        self.app.layout = html.Div([
+            html.Div(id='my-output'),
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
-            html.Button(id='recalculate',children='Recalculate'),
+            html.Button('Submit',id='submit-val', n_clicks=0),
+            html.Div(id='container-button-basic', children='to recalculate hit submit'),
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
@@ -156,17 +151,15 @@ class csv_sqlite_dash():
         ])
 
         if self.server_started:
+            print("refresh complete")
             pass
         else:
-            app.run_server(host= '0.0.0.0', debug=True)
+            print("self.server_started {}".format(self.server_started))
+            #NOTE: the server_started flag needs to be set prior to run_server (or you get to debug an infinite loop)
             self.server_started = True
-
+            self.app.run_server(host= '0.0.0.0', debug=True)
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
-
-    #@app.callback(Input('recalculate'))
-    #def recalculate_output(self):
-    #    self.show()
 
 def main():
 
@@ -198,6 +191,9 @@ Usage: csv_sqlite.py --path <path to directories to traverse> --database <name o
     __table = args.table
     __png   = args.png
 
+    # needed for refresh button 
+    n_clicks = 0
+
     print("config: path:{} file:{} database:{} table:{} store:{} png:{} show:{} "
         .format(__path,__file,__database,__table,args.store, args.png,args.show))
 
@@ -215,7 +211,7 @@ Usage: csv_sqlite.py --path <path to directories to traverse> --database <name o
     if args.png:
         csv_dash.generate_graph_png()
     if args.show:        
-        csv_dash.show()
+        csv_dash.show(n_clicks)
 
     if args.store == False and args.png == False and args.show == False:
         print("Need to enter an action of --store --png --show ")
