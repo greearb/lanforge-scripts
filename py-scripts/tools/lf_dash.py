@@ -33,6 +33,7 @@ class csv_sqlite_dash():
         self.database = _database
         self.table = _table
         self.png = _png
+        self.png_generated = False
         self.kpi_list = []
         self.html_list = []
         self.conn = None
@@ -118,12 +119,17 @@ class csv_sqlite_dash():
                             yaxis_title="{}".format(units_list[-1]),
                             xaxis = {'type' : 'date'}
                         )
-                        # save the figure - figures will be over written
+                        # save the figure - figures will be over written png 
                         if self.png:
-                            print("kpi_path:{}".format(df_tmp['kpi_path']))
-                            png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
-                            print("png_path {}".format(png_path))
-                            kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                            if self.png_generated:
+                                pass
+                            else:
+                                self.png_generated = True
+                                print("generating png files")
+                                print("kpi_path:{}".format(df_tmp['kpi_path']))
+                                png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                                print("png_path {}".format(png_path))
+                                kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
 
                         # use image from above to creat html display
                         self.children_div.append(dcc.Graph(figure=kpi_fig))                    
@@ -218,6 +224,9 @@ Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi
     if(args.png == True and args.store == False):
         print("if --png set to create png files then --store must also be set, exiting")
         exit(1)
+
+    if(args.png == True and args.show == True):
+        print("WARNING: generating png files will effect initial display performance")
 
     csv_dash = csv_sqlite_dash(
                 _path = __path,
