@@ -82,6 +82,7 @@ import shutil
 import shlex
 import paramiko
 import pandas as pd
+import requests
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -160,7 +161,7 @@ class lf_check():
 
         # lanforge configuration 
         self.lf_mgr_ip = "192.168.0.102"
-        self.lf_mgr_port = ""
+        self.lf_mgr_port = "8080"
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
 
@@ -194,12 +195,14 @@ class lf_check():
         self.dashboard_json = ""
         self.dashboard_config = "True"  # default to False once testing done
         self.dashboard_host = "192.168.100.201"  # "c7-grafana.candelatech.com" # 192.168.100.201
+        self.dashboard_port = "3000"
         self.dashboard_token = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
 
         # ghost configuration 
         self.blog_json = ""
         self.blog_config = False
         self.blog_host = "192.168.100.153"
+        self.blog_port = "2368"
         self.blog_token = "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742"
         self.blog_authors = "Matthew"
         self.blog_customer = "candela"
@@ -209,22 +212,20 @@ class lf_check():
 
         self.test_run = ""
 
-    def ping(self):
+    def check_if_port_exists(self):
         queries = dict()
-        queries['Lanforge Manager'] = self.lf_mgr_ip
-        queries['Blog Host'] = self.blog_host
-        queries['Influx Host'] = self.database_host
-        queries['Grafana Host'] = self.dashboard_host
+        queries['LANforge Manager'] = 'http://%s:%s' % (self.lf_mgr_ip, self.lf_mgr_port)
+        queries['Blog Host'] = 'http://%s:%s' % (self.blog_host, self.blog_port)
+        queries['Influx Host'] = 'http://%s:%s' % (self.database_host, self.database_port)
+        queries['Grafana Host'] = 'http://%s:%s' % (self.dashboard_host, self.dashboard_port)
         results = dict()
         for key, value in queries.items():
-            ping = subprocess.Popen(
-                ["ping", "-c", "4", value],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-
-            out, error = ping.communicate()
-            results[key] = [str(out), value]
+            try:
+                ping = requests.get(value).text
+                results[key] = [str(ping), value]
+            except:
+                print('%s not found' % value)
+                results[key] = [value, None]
         return results
 
     def get_scripts_git_sha(self):
@@ -823,6 +824,7 @@ blog: http://{blog}:2368
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
+        print(self.test_dict)
 
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
@@ -1213,17 +1215,20 @@ Example :
     logger.info("commit_hash: {}".format(commit_hash))
     logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8', 'ignore')))
 
-    ping_result = check.ping()
-    for key, value in ping_result.items():
-        if 'Destination Host Unreachable' or '100% packet loss' in value:
-            print(UserWarning('Check your %s IP address, %s is unreachable' % (key, value[1])))
-            print(UserWarning(value[0]))
-        else:
-            print('IP address %s accessible' % value[1])
-
     # read config and run tests
     check.read_config()
-    check.run_script_test()
+    ping_result = check.check_if_port_exists()
+    for key, value in ping_result.items():
+        if value[1] is None:
+            print(UserWarning('Check your %s IP address, %s is unreachable' % (key, value[0])))
+        else:
+            if args.debug:
+                print('%s IP address %s accessible' % (key, value[1]))
+
+    if ping_result['LANforge Manager'][1] is None:
+        pass
+    else:
+        check.run_script_test()
 
     # get sha and lanforge information for results
     # Need to do this after reading the configuration
