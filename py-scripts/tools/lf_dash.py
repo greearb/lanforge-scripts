@@ -218,7 +218,7 @@ Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi
     __png   = args.png
 
     # needed for refresh button 
-    n_clicks = 0
+    # n_clicks = 0
 
     print("config: path:{} file:{} database:{} table:{} store:{} png:{} show:{} "
         .format(__path,__file,__database,__table,args.store, args.png,args.show))
@@ -245,7 +245,8 @@ Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi
     if args.png:
         csv_dash.generate_graph_png()
     if args.show:        
-        csv_dash.show(n_clicks)
+        #csv_dash.show(n_clicks)
+        csv_dash.show()
 
     if args.store == False and args.png == False and args.show == False:
         print("Need to enter an action of --store --png --show ")
