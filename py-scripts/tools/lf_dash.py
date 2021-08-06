@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: kpi_csv_sq.py --path <path to directories to traverse> --database <name of database> --show --png  --store
+Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png  --store
 '''
 # visit http://127.0.0.1:8050/ in your web browser.
 
@@ -173,7 +173,7 @@ def main():
             ''',
         description='''\
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: kpi_csv_sq.py --path <path to directories to traverse> --database <name of database> --show --png --store
+Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png --store
 
         ''')
     parser.add_argument('--path', help='--path top directory path to kpi',default='')
