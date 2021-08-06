@@ -78,7 +78,7 @@ class csv_sqlite_dash():
         try:
             df3 = df3.sort_values(by='Date')
         except:
-            print("Database empty: KeyError(key) when sorting by Date, check Database name or path to kpi , Exiting")
+            print("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
         self.conn.close()
 
