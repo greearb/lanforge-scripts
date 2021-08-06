@@ -206,10 +206,10 @@ class GhostRequest:
                     authors,
                     title='custom'):
         self.upload_images(folder)
-        head = '''<p>This is a custom post created via a script</p>'''
+        head = '''This is a custom post created via a script'''
         for picture in self.images:
             head = head + '<img src="%s"></img>' % picture
-        head = head + '''<p>This is the end of the example</p>'''
+        head = head + '''This is the end of the example'''
         self.create_post(title=title,
                          text=head)
 
@@ -492,7 +492,11 @@ class GhostRequest:
                 influxdb.post_to_influx(short_description, numeric_score, tags, date)
             except Exception as err:
                 influx_error = err
-                text += ('<p style="color:red;">InfluxDB Error: %s</p><br />' % influx_error)
+                text += '''InfluxDB Error: %s<br />
+                Influx Host: %s<br />
+                Influx Port: %s<br />
+                Influx Organization: %s<br />
+                Influx Bucket: %s<br />''' % (influx_error, self.influx_host, self.influx_port, self.influx_org, self.influx_bucket)
 
         raw_test_tags = list()
         test_tag_table = ''
@@ -578,7 +582,11 @@ class GhostRequest:
                     grafana_host, snapshot['key'], '%')
             except Exception as err:
                 grafana_error = err
-                text = text + '<p style="color:red;">Grafana Error: %s</p><br />' % grafana_error
+                text = text + '''Grafana Error: %s<br />
+                Grafana credentials:<br />
+                Grafana Host: %s<br />
+                Grafana Bucket: %s<br />
+                Grafana Database: %s<br />''' % (grafana_error, grafana_host, grafana_bucket, grafana_datasource)
 
         text = text + 'Low priority results: %s' % csvreader.to_html(low_priority)
 
