@@ -2,6 +2,8 @@
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png  --store
+Example: lf_dash.py --show  (will show the current database generated)
+
 '''
 # visit http://127.0.0.1:8050/ in your web browser.
 
@@ -174,15 +176,16 @@ def main():
         description='''\
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_dash.py --path <path to directories to traverse> --database <name of database> --show --png --store
+Example: lf_dash.py --show  (will show the current database generated)
 
         ''')
-    parser.add_argument('--path', help='--path top directory path to kpi',default='')
-    parser.add_argument('--file', help='--file kpi.csv',default='kpi.csv') #TODO is this needed
-    parser.add_argument('--database', help='--database qa_test_db',default='qa_test_db')
-    parser.add_argument('--table', help='--table qa_table',default='qa_table')
-    parser.add_argument('--store', help='--store , store kpi to db',action='store_true')
-    parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display',action='store_true')
-    parser.add_argument('--show', help='--show generate display and show dashboard',action='store_true')
+    parser.add_argument('--path', help='--path top directory path to kpi if regererating database or png files',default='')
+    parser.add_argument('--file', help='--file kpi.csv  default: kpi.csv',default='kpi.csv') #TODO is this needed
+    parser.add_argument('--database', help='--database qa_test_db  default: qa_test_db',default='qa_test_db')
+    parser.add_argument('--table', help='--table qa_table  default: qa_table',default='qa_table')
+    parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
+    parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
+    parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
     
     args = parser.parse_args()
 
