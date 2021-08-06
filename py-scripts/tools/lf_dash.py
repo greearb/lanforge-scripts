@@ -10,6 +10,7 @@ Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi
 
 import os
 import dash
+from dash.development.base_component import _check_if_has_indexable_children
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
@@ -17,7 +18,7 @@ import pandas as pd
 import sqlite3
 import argparse
 from  pathlib import Path
-
+import time
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -98,6 +99,9 @@ class csv_sqlite_dash():
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
 
+        ts = time.time()
+        print("0: {}".format(ts))
+
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
                 for group in graph_group_list:
@@ -147,13 +151,22 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
+    ts = time.time()
+    print("1: {}".format(ts))
         
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
     #def show(self,n_clicks):
     def show(self):
         #print("refreshes: {}".format(n_clicks))
-        self.generate_graph_png()
+        ts = time.time()
+        print("2: {}".format(ts))
+        if not self.children_div:
+            ts = time.time()
+            print("3: {}".format(ts))
+            self.generate_graph_png()
+            ts = time.time()
+            print("4: {}".format(ts))
         if not self.children_div:
             print("NOTE: test-tag may not be present in the kpi thus no results generated")
         self.app.layout = html.Div([
@@ -170,6 +183,8 @@ class csv_sqlite_dash():
             html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
             style={'color':'#00361c','text-align':'left'}),
         ])
+        ts = time.time()
+        print("5: {}".format(ts))
 
         # save as standalone files
         #https://plotly.com/python/static-image-export/
@@ -178,9 +193,11 @@ class csv_sqlite_dash():
             print("refresh complete")
             pass
         else:
-            print("self.server_started {}".format(self.server_started))
             #NOTE: the server_started flag needs to be set prior to run_server (or you get to debug an infinite loop)
             self.server_started = True
+            print("self.server_started {}".format(self.server_started))
+            ts = time.time()
+            print("6": {}".format(ts))
             self.app.run_server(host= '0.0.0.0', debug=True)
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
