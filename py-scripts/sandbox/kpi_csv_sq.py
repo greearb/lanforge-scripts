@@ -128,8 +128,10 @@ class csv_sqlite_dash():
                                 print("generating png files")
                                 print("kpi_path:{}".format(df_tmp['kpi_path']))
                                 png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                                html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
                                 print("png_path {}".format(png_path))
                                 kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                                kpi_fig.write_html(html_path,scale=1,width=1200,height=350)
 
                         # use image from above to creat html display
                         self.children_div.append(dcc.Graph(figure=kpi_fig))                    
