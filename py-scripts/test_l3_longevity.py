@@ -492,7 +492,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_cmd_5g))
             ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
             ap_stats_5g = ss.before.decode('utf-8','ignore')
-            print("ap_stats_5g {}".format(ap_stats_5g))
+            print("ap_stats_5g from AP: {}".format(ap_stats_5g))
 
         except:
             print("WARNING unable to read AP")
@@ -508,8 +508,8 @@ class L3VariableTime(Realm):
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_2g))
             ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
-            ap_stats = ss.before.decode('utf-8','ignore')
-            print("ap_stats_2g {}".format(ap_stats_2g))
+            ap_stats_2g = ss.before.decode('utf-8','ignore')
+            print("ap_stats_2g from AP: {}".format(ap_stats_2g))
 
         except:
             print("WARNING unable to read AP")
