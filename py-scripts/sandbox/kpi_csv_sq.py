@@ -123,30 +123,25 @@ class csv_sqlite_dash():
                         # save the figure - figures will be over written png 
                         # for testing 
                         #png_path = ''
-                        #if self.png:
-                        #if self.png_generated:
-                        #pass
-                        #else:
-                        self.png_generated = True
-                        print("generating png files")
-                        print("kpi_path:{}".format(df_tmp['kpi_path']))
-                        png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple names {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
-                        html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
-                        print("png_path {}".format(png_path))
-                        kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
-                        #https://plotly.com/python/interactive-html-export/
-                        # kpi_fig.write_html(html_path,width=1200,height=3500)
-                        kpi_fig.write_html(html_path)
+                        if self.png:
+                            if self.png_generated:
+                                pass
+                            else:
+                               self.png_generated = True
+                               print("generating png files")
+                               print("kpi_path:{}".format(df_tmp['kpi_path']))
+                               png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple names {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                               html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
+                               print("png_path {}".format(png_path))
+                               kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                               #https://plotly.com/python/interactive-html-export/
+                               kpi_fig.write_html(html_path)
 
-                        # https://community.plotly.com/t/png-image-not-showing/15713/2    
-                        #test_png = png_path                
-                        #print("test_png {}".format(test_png))
-                        #test_base64 = base64.b64encode(open(test_png, 'rb').read()).decode('ascii')
-                        self.children_div.append(html.Img(src=png_path))
+                        # need to figure out how to add png
+                        #self.children_div.append(html.Img(src=png_path))
 
                         # use image from above to creat html display
-                        #self.children_div.append(dcc.Graph(figure=kpi_fig))
-
+                        self.children_div.append(dcc.Graph(figure=kpi_fig))
 
                         #TODO the link must be to a server to display html
                         # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
