@@ -1121,6 +1121,8 @@ Example :
 
     parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini",
                         default="lf_check_config.ini")
+    parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
+    parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
     parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
     parser.add_argument('--use_json', help="--use_json ", action='store_true')
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
@@ -1161,6 +1163,8 @@ Example :
 
     # select test suite 
     test_suite = args.suite
+    __dir = args.dir
+    __path = args.path
 
     if args.production:
         production = True
@@ -1170,7 +1174,8 @@ Example :
         print("Email to email list")
 
     # create report class for reporting
-    report = lf_report(_results_dir_name="lf_check",
+    report = lf_report(_path = __path,
+                       _results_dir_name=__dir,
                        _output_html="lf_check.html",
                        _output_pdf="lf-check.pdf")
 
