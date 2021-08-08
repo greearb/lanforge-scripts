@@ -17,7 +17,7 @@ import pandas as pd
 import sqlite3
 import argparse
 from  pathlib import Path
-import base64
+import time
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -76,6 +76,7 @@ class csv_sqlite_dash():
 
     def generate_graph_png(self):
         print("generating graphs to display")
+        print("generate_graph_png: {}".format(time.time()))
 
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
@@ -99,6 +100,7 @@ class csv_sqlite_dash():
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
 
+        self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
                 for group in graph_group_list:
@@ -123,44 +125,53 @@ class csv_sqlite_dash():
                         # save the figure - figures will be over written png 
                         # for testing 
                         png_server_img = ''
-                        #if self.png:
-                        #    if self.png_generated:
-                        #        pass
-                        #    else:
-                        self.png_generated = True
-                        print("generating png files")
-                        print("kpi_path:{}".format(df_tmp['kpi_path']))
-                        png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple names {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
-                        html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
-                        print("png_path {}".format(png_path))
-                        png_server_img = self.server + png_path.replace('/home/lanforge','')
-                        print("png_server_img {}".format(png_server_img))
-                        kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
-                        #https://plotly.com/python/interactive-html-export/
-                        kpi_fig.write_html(html_path)
-                        self.children_div.append(html.Img(src=png_server_img))
+                        if self.png:
+                            if self.png_generated:
+                                pass
+                            else:
+                                print("generating png files")
+                                print("kpi_path:{}".format(df_tmp['kpi_path']))
+                                png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple names {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                                html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
+                                print("png_path {}".format(png_path))
+                                png_server_img = self.server + png_path.replace('/home/lanforge','')
+                                print("png_server_img {}".format(png_server_img))
+                                kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                                #https://plotly.com/python/interactive-html-export/
+                                kpi_fig.write_html(html_path)
+                                # png of graph data to display
+                                self.children_div.append(html.Img(src=png_server_img))
 
-
-                        # need to figure out how to add png
-                        # need server path for images no os.path
-
-
-                        # use image from above to creat html display
+                        # use image from above to creat html display - this uses dynamic graphing
                         #self.children_div.append(dcc.Graph(figure=kpi_fig))
 
                         #TODO the link must be to a server to display html
                         # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
                         # need to construct path to server manually. 
                         #TODO need to work out the reporting paths - pass in path adjust
+                        self.children_div.append(html.Br())
+
+                        # link to interactive results
+                        index_html_path = self.server + kpi_path_list[-1] + "kpi.html"
+                        index_html_path = index_html_path.replace('/home/lanforge/','')
+                        self.children_div.append(html.Br())
+                        self.children_div.append(html.A('{}_{}_{}_{}_kpi.html'.format(test_id_list[-1], group, test_tag, test_rig),
+                            href=index_html_path, target='_blank'))
+
+                        # link to full test results
                         index_html_path = self.server + kpi_path_list[-1] + "index.html"
                         index_html_path = index_html_path.replace('/home/lanforge/','')
+                        self.children_div.append(html.Br())
                         self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id_list[-1], group, test_tag, test_rig),
                             href=index_html_path, target='_blank'))
                         self.children_div.append(html.Br())
-                        self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
         
+        # TODO see if this stops the regenration of the graphs each time
+        self.png_generated = True
+
+
     # access from server
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
     #def show(self,n_clicks):
@@ -169,6 +180,7 @@ class csv_sqlite_dash():
         self.generate_graph_png()
         if not self.children_div:
             print("NOTE: test-tag may not be present in the kpi thus no results generated")
+        print("show: {}".format(time.time()))
         self.app.layout = html.Div([
             html.Div(id='my-output'),
             html.H1(children= "LANforge Testing",className="lanforge",
@@ -191,9 +203,9 @@ class csv_sqlite_dash():
             print("refresh complete")
             pass
         else:
+            self.server_started = True
             print("self.server_started {}".format(self.server_started))
             #NOTE: the server_started flag needs to be set prior to run_server (or you get to debug an infinite loop)
-            self.server_started = True
             self.app.run_server(host= '0.0.0.0', debug=True)
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
