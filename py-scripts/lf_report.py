@@ -24,7 +24,7 @@ LICENSE:
 
 INCLUDE_IN_README
 '''
-
+# CAUTION: adding imports to this file which are not in update_dependencies.py is not advised
 import os
 import shutil
 import datetime
@@ -224,6 +224,11 @@ class lf_report():
 
     def get_path(self):
         return self.path
+
+    def get_parent_path(self):
+        parent_path = os.path.dirname(self.path)
+        return parent_path
+
     # get_path_date_time, get_report_path and need to be the same
     def get_path_date_time(self):
         return self.path_date_time
@@ -301,7 +306,6 @@ class lf_report():
             <a href={link}>{link_name}<a>
         """.format(link=_link,link_name=_link_name)
         self.html += self.link
-
 
     def generate_report(self):
         self.write_html()            
