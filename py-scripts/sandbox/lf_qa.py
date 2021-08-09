@@ -128,11 +128,17 @@ class csv_sqlite_dash():
                         df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
                         kpi_path_list = list(df_tmp['kpi_path'])
+                        # get Device Under Test Information
+                        dut_model_num_list = list(df_tmp['dut-model-num'])
+                        dut_sw_version_list = list(df_tmp['dut-sw-version'])
+                        dut_hw_version_list = list(df_tmp['dut-hw-version'])
+                        dut_serial_num_list = list(df_tmp['dut-serial-num'])
 
                         units_list = list(df_tmp['Units'])
 
                         kpi_fig.update_layout(
-                            title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
+                            title="{} : {} : {} : {} : {} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig, 
+                                dut_model_num_list[-1], dut_sw_version_list[-1],dut_hw_version_list[-1],dut_serial_num_list[-1]),
                             xaxis_title="Time",
                             yaxis_title="{}".format(units_list[-1]),
                             xaxis = {'type' : 'date'}
