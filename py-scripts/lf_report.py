@@ -292,13 +292,16 @@ class lf_report():
             self.write_output_pdf = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
             pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
 
-    def build_pdf_link(self):
+    def get_pdf_path(self):
         pdf_link_path = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
+        return pdf_link_path
+        
+    def build_pdf_link(self,_pdf_link_path):
         self.pdf_link_html = """
             <!-- pdf link -->
             <a href={pdf_link_path}>PDF_Report</a>
             <br>
-                        """.format(pdf_link_path=pdf_link_path)
+                        """.format(pdf_link_path=_pdf_link_path)
         self.html += self.pdf_link_html
 
     def build_link(self,_link,_link_name):

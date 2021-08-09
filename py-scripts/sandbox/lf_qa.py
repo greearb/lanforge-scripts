@@ -42,11 +42,13 @@ class csv_sqlite_dash():
                 _file = 'kpi.csv',
                 _database = 'qa_db',
                 _table = 'qa_table',
+                _server = 'http://192.168.95.6/',
                 _png = False):
         self.path = _path
         self.file = _file
         self.database = _database
         self.table = _table
+        self.server = _server
         self.png = _png
         self.png_generated = False
         self.kpi_list = []
@@ -56,8 +58,7 @@ class csv_sqlite_dash():
         self.plot_figure = []
         self.children_div = []
         self.html_results =""
-        self.server_html_reports = 'http://192.168.95.6/html-reports/' #TODO pass in server
-        self.server = 'http://192.168.95.6/' #TODO pass in server
+        self.server_html_reports = self.server + 'html-reports/' 
         self.server_started = False
         self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
         # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
@@ -269,6 +270,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--file', help='--file kpi.csv  default: kpi.csv',default='kpi.csv') #TODO is this needed
     parser.add_argument('--database', help='--database qa_test_db  default: qa_test_db',default='qa_test_db')
     parser.add_argument('--table', help='--table qa_table  default: qa_table',default='qa_table')
+    parser.add_argument('--server', help='--server http://<server ip>/   default: http://192.168.95.6/',default='http://192.168.95.6/')
     parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
@@ -281,14 +283,15 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     __file = args.file
     __database = args.database
     __table = args.table
-    __png   = args.png
-    __dir   = args.dir
+    __server = args.server
+    __png = args.png
+    __dir = args.dir
 
     # needed for refresh button 
     # n_clicks = 0
 
-    print("config: path:{} file:{} database:{} table:{} store:{} png:{} show:{} "
-        .format(__path,__file,__database,__table,args.store, args.png,args.show))
+    print("config: path:{} file:{} database:{} table:{} server:{} store:{} png:{} show:{} "
+        .format(__path,__file,__database,__table,__server,args.store, args.png,args.show))
 
     if(__path == '' and args.store == True):
         print("--path <path of kpi.csv> must be entered if --store ,  exiting")
@@ -321,6 +324,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
                 _file = __file,
                 _database = __database,
                 _table = __table,
+                _server = __server,
                 _png = __png)
     if args.store:
         csv_dash.store()
@@ -336,9 +340,13 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     report.start_content_div2()
     report.set_obj_html("Objective", "QA Verification")
     report.build_objective()
-    report.build_pdf_link()
-    #get_parent_path = report.get_parent_path()
-    report.build_link(report.get_parent_path(),"{}".format(report.get_parent_path()))
+    pdf_link_path = report.get_pdf_path()
+    pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
+    report.build_pdf_link(pdf_link_path)
+    parent_path = report.get_parent_path()
+    parent_path = __server + parent_path.replace('/home/lanforge/','')
+
+    report.build_link(parent_path,"{}".format(parent_path))
     report.set_table_title("QA Test Results")
     report.build_table_title()
     # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
