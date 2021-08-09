@@ -265,7 +265,6 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
-    parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
 
     
     args = parser.parse_args()
