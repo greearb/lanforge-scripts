@@ -182,14 +182,14 @@ class csv_sqlite_dash():
                         """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
 
                         # link to full test results
-                        index_html_path = self.server + kpi_path_list[-1] + "index.html"
-                        index_html_path = index_html_path.replace('/home/lanforge/','')
+                        report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+                        report_index_html_path = report_index_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
-                        self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id_list[-1], group, test_tag, test_rig),
-                            href=index_html_path, target='_blank'))
-                        self.html_results +="""<a href={index_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_kpi.html<a>
-                        """.format(index_html_path=index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+                        self.children_div.append(html.A('{}_{}_{}_{}_report.html'.format(test_id_list[-1], group, test_tag, test_rig),
+                            href=report_index_html_path, target='_blank'))
+                        self.html_results +="""<a href={report_index_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_report.html<a>
+                        """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
@@ -325,10 +325,10 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         csv_dash.show()
         
     # generate output reports
-    report.set_title("LF QA: ")
+    report.set_title("LF QA: Verification Test Run")
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "QA Results")
+    report.set_obj_html("Objective", "QA Verification")
     report.build_objective()
     report.set_text("LANforge")
     report.build_text()
