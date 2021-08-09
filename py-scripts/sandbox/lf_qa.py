@@ -301,7 +301,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
                        _output_pdf="lf_qa.pdf" )        
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_results = "lf_qa{}-{}.csv".format(args.outfile, current_time)
+    csv_results = "lf_qa-{}.csv".format(current_time)
     csv_results = report.file_add_path(csv_results)
     outfile = "lf_qa-{}".format(current_time)
     outfile_path = report.file_add_path(outfile)
