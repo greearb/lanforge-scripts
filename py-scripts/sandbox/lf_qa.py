@@ -308,7 +308,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
                        _output_html="lf_qa.html",
                        _output_pdf="lf_qa.pdf" )        
 
-    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    #current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     #csv_results = "lf_qa-{}.csv".format(current_time)
     #csv_results = report.file_add_path(csv_results)
 
@@ -337,10 +337,14 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     pdf_link_path = report.get_pdf_path()
     pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
     report.build_pdf_link(pdf_link_path)
-    parent_path = report.get_parent_path()
-    parent_path = __server + parent_path.replace('/home/lanforge/','')
 
-    report.build_link(parent_path,"{}".format(parent_path))
+    report_path = report.get_path()
+    report_path = __server + report_path.replace('/home/lanforge/','')
+    report.build_link(report_path,"{}".format(report_path))
+
+    report_parent_path = report.get_parent_path()
+    report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
+    report.build_link(report_parent_path,"{}".format(report_parent_path))
     report.set_table_title("QA Test Results")
     report.build_table_title()
     # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
