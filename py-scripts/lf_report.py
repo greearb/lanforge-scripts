@@ -297,6 +297,7 @@ class lf_report():
         self.pdf_link_html = """
             <!-- pdf link -->
             <a href={pdf_link_path}>PDF_Report</a>
+            <br>
                         """.format(pdf_link_path=pdf_link_path)
         self.html += self.pdf_link_html
 
@@ -304,6 +305,7 @@ class lf_report():
         self.link = """
             <!-- link -->
             <a href={link}>{link_name}</a>
+            <br>
         """.format(link=_link,link_name=_link_name)
         self.html += self.link
 
