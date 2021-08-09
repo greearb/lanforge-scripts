@@ -264,7 +264,8 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
-    parser.add_argument('--dir', help="--dir <results directory>", default="lf_qa")
+    parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
+    parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
 
     
     args = parser.parse_args()
@@ -303,7 +304,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_results = "lf_qa{}-{}.csv".format(args.outfile, current_time)
     csv_results = report.file_add_path(csv_results)
-    outfile = "lf_qa-{}-{}".format(args.outfile, current_time)
+    outfile = "lf_qa-{}".format(current_time)
     outfile_path = report.file_add_path(outfile)
     report_path = report.get_report_path()
 
