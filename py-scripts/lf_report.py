@@ -84,6 +84,7 @@ class lf_report():
             self.csv_file_name=""
             self.html = ""
             self.custom_html = ""
+            self.pdf_link_html = ""
             self.objective = _obj
             self.obj_title = _obj_title
             #self.systeminfopath = ""
@@ -285,6 +286,15 @@ class lf_report():
                         'page-size': _page_size}  # prevent error Blocked access to file
             self.write_output_pdf = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
             pdfkit.from_file(self.write_output_html, self.write_output_pdf, options=options)
+
+    def build_pdf_link(self):
+        pdf_link_path = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
+        self.pdf_link_html = """
+            <!-- pdf link -->
+            <a href={pdf_link_path}>PDF_Report<a>
+                        """.format(pdf_link_path=pdf_link_path)
+        self.html += self.pdf_link_html
+
 
     def generate_report(self):
         self.write_html()            
