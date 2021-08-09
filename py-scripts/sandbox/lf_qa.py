@@ -106,12 +106,15 @@ class csv_sqlite_dash():
         # the following list manipulation removes the duplicates
         graph_group_list = list(df3['Graph-Group'])
         graph_group_list = list(set(graph_group_list)) 
+        print("graph_group_list: {}".format(graph_group_list))
 
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
+        print("test_tag_list: {}".format(test_tag_list) )
         
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
+        print("test_rig_list: {}".format(test_rig_list) )
 
         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
         for test_rig in test_rig_list:
@@ -119,9 +122,6 @@ class csv_sqlite_dash():
                 for group in graph_group_list:
                     df_tmp = df3.loc[(df3['test-rig'] == test_rig) & (df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
                     if df_tmp.empty == False:
-                        kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
-                             color="short-description", hover_name="short-description",
-                             size_max=60)).update_traces(mode='lines+markers')
 
                         df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
@@ -133,6 +133,10 @@ class csv_sqlite_dash():
                         dut_serial_num_list = list(df_tmp['dut-serial-num'])
 
                         units_list = list(df_tmp['Units'])
+                        print("GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig,test_tag,group))
+                        kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
+                             color="short-description", hover_name="short-description",
+                             size_max=60)).update_traces(mode='lines+markers')
 
                         kpi_fig.update_layout(
                             title="{} : {} : {} : {} : {} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig, 
@@ -150,9 +154,13 @@ class csv_sqlite_dash():
                             else:
                                 print("generating png files")
                                 print("kpi_path:{}".format(df_tmp['kpi_path']))
-                                png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple names {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
-                                html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
+                                #png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple name {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                                png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.png".format( group, test_tag, test_rig))
+                                png_path = png_path.replace(' ','')
+                                #html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
+                                html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
                                 print("png_path {}".format(png_path))
+                                # html links to png do not like spaces
                                 png_server_img = self.server + png_path.replace('/home/lanforge','')
                                 print("png_server_img {}".format(png_server_img))
                                 kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
