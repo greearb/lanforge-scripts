@@ -8,6 +8,10 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
 '''
 # visit http://127.0.0.1:8050/ in your web browser.
 
+import datetime
+import pprint
+import sys
+
 import os
 import dash
 import dash_core_components as dcc
@@ -18,6 +22,16 @@ import sqlite3
 import argparse
 from  pathlib import Path
 import time
+
+# lf_report is from the parent of the current file
+dir_path = os.path.dirname(os.path.realpath(__file__))
+parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
+sys.path.insert(0, parent_dir_path)
+
+from lf_report import lf_report
+
+sys.path.append('/')
+
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -41,6 +55,7 @@ class csv_sqlite_dash():
         self.df = pd.DataFrame()
         self.plot_figure = []
         self.children_div = []
+        self.html_results =""
         self.server_html_reports = 'http://192.168.95.6/html-reports/' #TODO pass in server
         self.server = 'http://192.168.95.6/' #TODO pass in server
         self.server_started = False
@@ -141,6 +156,10 @@ class csv_sqlite_dash():
                                 kpi_fig.write_html(html_path)
                                 # png of graph data to display
                                 self.children_div.append(html.Img(src=png_server_img))
+                                # may need .css class for formatting the images
+                                self.html_results += """
+                                <img src={png_server_img}>
+                                """.format(png_server_img)
 
                         # use image from above to creat html display - this uses dynamic graphing
                         #self.children_div.append(dcc.Graph(figure=kpi_fig))
@@ -150,23 +169,32 @@ class csv_sqlite_dash():
                         # need to construct path to server manually. 
                         #TODO need to work out the reporting paths - pass in path adjust
                         self.children_div.append(html.Br())
+                        self.html_results +="""<br>"""
 
                         # link to interactive results
                         kpi_html_path = self.server + kpi_path_list[-1] + "kpi.html"
                         kpi_html_path = kpi_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
+                        self.html_results +="""<br>"""
                         self.children_div.append(html.A('{}_{}_{}_{}_kpi.html'.format(test_id_list[-1], group, test_tag, test_rig),
                             href=kpi_html_path, target='_blank'))
+                        self.html_results +="""<a href={}>{}_{}_{}_{}_kpi.html<a>""".format(kpi_html_path,test_id_list[-1], group, test_tag, test_rig)
 
                         # link to full test results
                         index_html_path = self.server + kpi_path_list[-1] + "index.html"
                         index_html_path = index_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
+                        self.html_results +="""<br>"""
                         self.children_div.append(html.A('{}_{}_{}_{}_index.html'.format(test_id_list[-1], group, test_tag, test_rig),
                             href=index_html_path, target='_blank'))
+                        self.html_results +="""<a href={}>{}_{}_{}_{}_kpi.html<a>""".format(index_html_path,test_id_list[-1], group, test_tag, test_rig)
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
+                        self.html_results +="""<br>"""
+                        self.html_results +="""<br>"""
+                        self.html_results +="""<br>"""
+
         
         # TODO see if this stops the regenration of the graphs each time
         self.png_generated = True
@@ -210,6 +238,9 @@ class csv_sqlite_dash():
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
 
+    def get_html_results(self):
+        return self.html_results
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -233,6 +264,8 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
+    parser.add_argument('--dir', help="--dir <results directory>", default="lf_qa")
+
     
     args = parser.parse_args()
 
@@ -241,6 +274,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     __database = args.database
     __table = args.table
     __png   = args.png
+    __dir   = args.dir
 
     # needed for refresh button 
     # n_clicks = 0
@@ -259,12 +293,30 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     if(args.png == True and args.show == True):
         print("WARNING: generating png files will effect initial display performance")
 
+
+    # create report class for reporting
+    report = lf_report(_path = __path,
+                       _results_dir_name =__dir,
+                       _output_html="lf_qa.html",
+                       _output_pdf="lf_qa.pdf" )        
+
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_results = "lf_qa{}-{}.csv".format(args.outfile, current_time)
+    csv_results = report.file_add_path(csv_results)
+    outfile = "lf_qa-{}-{}".format(args.outfile, current_time)
+    outfile_path = report.file_add_path(outfile)
+    report_path = report.get_report_path()
+
+
     csv_dash = csv_sqlite_dash(
                 _path = __path,
                 _file = __file,
                 _database = __database,
                 _table = __table,
-                _png = __png)
+                _png = __png,
+                _csv_results=csv_results,
+                _outfile=outfile_path,
+                _report_path=report_path,)
     if args.store:
         csv_dash.store()
     if args.png:
@@ -272,6 +324,31 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     if args.show:        
         #csv_dash.show(n_clicks)
         csv_dash.show()
+        
+    # generate output reports
+    report.set_title("LF QA: ")
+    report.build_banner_left()
+    report.start_content_div2()
+    report.set_obj_html("Objective", "QA Results")
+    report.build_objective()
+    report.set_text("LANforge")
+    report.build_text()
+    report.set_table_title("QA Test Results")
+    report.build_table_title()
+    # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
+    # report.build_text()
+    html_results = csv_dash.get_html_results()
+    report.set_custom_html(html_results)
+    report.build_custom()
+    report.build_footer()
+    html_report = report.write_html_with_timestamp()
+    print("html report: {}".format(html_report))
+    try:
+        report.write_pdf_with_timestamp()
+    except:
+        print("exception write_pdf_with_timestamp()")
+
+
 
     if args.store == False and args.png == False and args.show == False:
         print("Need to enter an action of --store --png --show ")
