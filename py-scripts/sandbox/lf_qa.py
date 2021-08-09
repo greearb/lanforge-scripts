@@ -336,8 +336,6 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     report.start_content_div2()
     report.set_obj_html("Objective", "QA Verification")
     report.build_objective()
-    report.set_text("LANforge")
-    report.build_text()
     report.set_table_title("QA Test Results")
     report.build_table_title()
     # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
