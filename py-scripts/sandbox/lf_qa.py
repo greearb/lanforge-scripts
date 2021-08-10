@@ -211,7 +211,7 @@ class csv_sqlite_dash():
                         self.html_results +="""<br>"""
 
                         # link to interactive results
-                        kpi_html_path = self.server + kpi_path_list[-1] + "kpi.html"
+                        kpi_html_path = self.server + html_path
                         kpi_html_path = kpi_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
