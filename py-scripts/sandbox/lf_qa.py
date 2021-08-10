@@ -365,7 +365,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report.build_objective()
         pdf_link_path = report.get_pdf_path()
         pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
-        report.build_pdf_link(pdf_link_path)
+        report.build_pdf_link("PDF_Report",pdf_link_path)
 
         report_path = report.get_path()
         report_path = __server + report_path.replace('/home/lanforge/','')
