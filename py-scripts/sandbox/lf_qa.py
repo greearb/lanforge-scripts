@@ -55,6 +55,7 @@ class csv_sqlite_dash():
         self.plot_figure = []
         self.children_div = []
         self.html_results =""
+        self.test_rig_list = []
         self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded
         self.server_started = False
         self.dut_model_num_list = "NA"
@@ -69,6 +70,12 @@ class csv_sqlite_dash():
         #                [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
 
     # Helper methods
+    def get_test_rig_list(self):
+        return self.test_rig_list
+
+    def get_html_results(self):
+        return self.html_results
+
     def get_dut_info(self):
         dut_info_df = pd.DataFrame()
         #try:
@@ -134,6 +141,7 @@ class csv_sqlite_dash():
         
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
+        self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list) )
 
         self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
@@ -274,8 +282,6 @@ class csv_sqlite_dash():
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
 
-    def get_html_results(self):
-        return self.html_results
 
 def main():
 
@@ -363,23 +369,29 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report.start_content_div2()
         report.set_obj_html("Objective", "QA Verification")
         report.build_objective()
-        pdf_link_path = report.get_pdf_path()
-        pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
-        report.build_pdf_link("PDF_Report",pdf_link_path)
-
-        report_path = report.get_path()
-        report_path = __server + report_path.replace('/home/lanforge/','')
-        report.build_link(report_path,"{}".format(report_path))
-
-        report_parent_path = report.get_parent_path()
-        report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
-        report.build_link(report_parent_path,"{}".format(report_parent_path))
         report.set_table_title("Device Under Test")
         report.build_table_title()
         dut_info_df = csv_dash.get_dut_info()
         print("dut_info_df {}".format(dut_info_df))
         report.set_table_dataframe(dut_info_df)
         report.build_table()
+
+        test_rig_list = csv_dash.get_test_rig_list()
+        report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1])) # keep the list, currently one test bed results
+        report.build_table_title()
+
+        pdf_link_path = report.get_pdf_path()
+        pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
+        report.build_pdf_link("PDF_Report",pdf_link_path)
+
+        report_path = report.get_path()
+        report_path = __server + report_path.replace('/home/lanforge/','')
+        report.build_link("Current Test Suite Results Directory",report_path)
+
+        report_parent_path = report.get_parent_path()
+        report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
+        report.build_link("All Test-Rig Test Suites Results Directory",report_parent_path)
+
         report.set_table_title("QA Test Results")
         report.build_table_title()
         # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
