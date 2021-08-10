@@ -88,13 +88,12 @@ class csv_sqlite_dash():
         self.conn.close()
 
     def generate_graph_png(self):
-        print("generating graphs to display")
-        print("generate_graph_png: {}".format(time.time()))
+        print("generate png and html to display, generate time: {}".format(time.time()))
 
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn) #current connection is sqlite3 /TODO move to SQLAlchemy
-        # sort by date column
+        # sort by date
         try:
             df3 = df3.sort_values(by='Date')
         except:
@@ -152,21 +151,20 @@ class csv_sqlite_dash():
                             if self.png_generated:
                                 pass
                             else:
-                                print("generating png files")
-                                print("kpi_path:{}".format(df_tmp['kpi_path']))
-                                #png_path = os.path.join(kpi_path_list[-1],"kpi.png") # use simple name {}_{}_{}_{}_kpi.png".format(test_id_list[-1], group, test_tag, test_rig))
+                                print("generate png and kpi images from kpi kpi_path:{}".format(df_tmp['kpi_path']))
+                                # generate png img path
                                 png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.png".format( group, test_tag, test_rig))
                                 png_path = png_path.replace(' ','')
-                                #html_path = os.path.join(kpi_path_list[-1],"kpi.html") # use simple names {}_{}_{}_{}_kpi.html".format(test_id_list[-1], group, test_tag, test_rig))
+                                # generate html graphics path
                                 html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
-                                print("png_path {}".format(png_path))
-                                # html links to png do not like spaces
+                                # NOTE: html links to png do not like spaces
                                 png_server_img = self.server + png_path.replace('/home/lanforge','')
-                                print("png_server_img {}".format(png_server_img))
+                                # generate png image
                                 kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
                                 #https://plotly.com/python/interactive-html-export/
+                                # generate html image (interactive)
                                 kpi_fig.write_html(html_path)
-                                # png of graph data to display
+                                # generate link for dashboard
                                 self.children_div.append(html.Img(src=png_server_img))
                                 # may need .css class for formatting the images
                                 self.html_results += """
@@ -176,10 +174,10 @@ class csv_sqlite_dash():
                         # use image from above to creat html display - this uses dynamic graphing
                         #self.children_div.append(dcc.Graph(figure=kpi_fig))
 
-                        #TODO the link must be to a server to display html
                         # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
-                        # need to construct path to server manually. 
-                        #TODO need to work out the reporting paths - pass in path adjust
+                        # Constructed path to server manually.  possibly better way
+
+                        # NOTE: generate,  display for server (html, pdf) and for dash.
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
 
@@ -188,7 +186,8 @@ class csv_sqlite_dash():
                         kpi_html_path = kpi_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
-                        self.children_div.append(html.A('{}_{}_{}_{}_kpi.html'.format(test_id_list[-1], group, test_tag, test_rig),
+                        self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
+                        .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=kpi_html_path, target='_blank'))
                         self.html_results +="""<a href={kpi_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_kpi.html<a>
                         """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
@@ -198,7 +197,8 @@ class csv_sqlite_dash():
                         report_index_html_path = report_index_html_path.replace('/home/lanforge/','')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
-                        self.children_div.append(html.A('{}_{}_{}_{}_report.html'.format(test_id_list[-1], group, test_tag, test_rig),
+                        self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_report.html'
+                        .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=report_index_html_path, target='_blank'))
                         self.html_results +="""<a href={report_index_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_report.html<a>
                         """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
@@ -218,6 +218,7 @@ class csv_sqlite_dash():
     # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
     #def show(self,n_clicks):
     def show(self):
+        # gererate dash display
         #print("refreshes: {}".format(n_clicks))
         self.generate_graph_png()
         if not self.children_div:
@@ -227,8 +228,8 @@ class csv_sqlite_dash():
             html.Div(id='my-output'),
             html.H1(children= "LANforge Testing",className="lanforge",
             style={'color':'green','text-align':'center'}),
-            #html.Button('Submit Recalculate',id='submit-val', n_clicks=0),
-            #html.Div(id='container-button-basic', children='to recalculate hit submit'),
+            #For dash refresh # html.Button('Submit Recalculate',id='submit-val', n_clicks=0),  
+            #For dash refresh # html.Div(id='container-button-basic', children='to recalculate hit submit'),
             html.H2(children= "Results",className="ts1",
             style={'color':'#00361c','text-align':'left'}),
             # images_div is already a list, children = a list of html components
@@ -307,7 +308,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         exit(1)
 
     if(args.png == True and args.show == True):
-        print("WARNING: generating png files will effect initial display performance")
+        print("generating png files will effect initial display performance")
 
 
     # create report class for reporting
