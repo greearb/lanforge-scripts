@@ -296,20 +296,20 @@ class lf_report():
         pdf_link_path = "{}/{}-{}".format(self.path_date_time,self.date,self.output_pdf)
         return pdf_link_path
         
-    def build_pdf_link(self,_pdf_link,_pdf_link_path):
+    def build_pdf_link(self,_pdf_link_name,_pdf_link_path):
         self.pdf_link_html = """
             <!-- pdf link -->
-            <a href={pdf_link}>{pdf_link_path}</a>
+            <a href={pdf_link_path}>{pdf_link_name}</a>
             <br>
-                        """.format(pdf_link=_pdf_link,pdf_link_path=_pdf_link_path)
+                        """.format(pdf_link_path=_pdf_link_path,pdf_link_name=_pdf_link_name)
         self.html += self.pdf_link_html
 
-    def build_link(self,_link,_link_name):
+    def build_link(self,_link_name,_link_path):
         self.link = """
             <!-- link -->
-            <a href={link}>{link_name}</a>
+            <a href={link_path}>{link_name}</a>
             <br>
-        """.format(link=_link,link_name=_link_name)
+        """.format(link_path=_link_path,link_name=_link_name)
         self.html += self.link
 
     def generate_report(self):
