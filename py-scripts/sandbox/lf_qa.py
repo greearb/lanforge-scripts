@@ -55,13 +55,34 @@ class csv_sqlite_dash():
         self.plot_figure = []
         self.children_div = []
         self.html_results =""
-        self.server_html_reports = self.server + 'html-reports/' 
+        self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded
         self.server_started = False
+        self.dut_model_num_list = "NA"
+        self.dut_sw_version_list = "NA"
+        self.dut_hw_version_list = "NA"
+        self.dut_serial_num_list = "NA"
+
         self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
         # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
         #https://dash.plotly.com/dash-html-components/button
         #self.app.callback(dash.dependencies.Output('container-button-basic', 'children'),
         #                [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
+
+    # Helper methods
+    def get_dut_info(self):
+        dut_info_df = pd.DataFrame()
+        #try:
+        dut_info_df['DUT'] = self.dut_model_num_list
+        dut_info_df['SW version'] = self.dut_sw_version_list[-1]
+        dut_info_df['HW version'] = self.dut_hw_version_list[-1]
+        dut_info_df['Serial'] = self.dut_serial_num_list[-1]
+        #except:
+        #    dut_info_df['DUT'] = 'NA'
+        #    dut_info_df['SW version'] = 'NA'
+        #    dut_info_df['HW version'] = 'NA'
+        #    dut_info_df['Serial'] = 'NA'
+            
+        return dut_info_df
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -125,11 +146,12 @@ class csv_sqlite_dash():
                         df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
                         kpi_path_list = list(df_tmp['kpi_path'])
-                        # get Device Under Test Information
-                        dut_model_num_list = list(df_tmp['dut-model-num'])
-                        dut_sw_version_list = list(df_tmp['dut-sw-version'])
-                        dut_hw_version_list = list(df_tmp['dut-hw-version'])
-                        dut_serial_num_list = list(df_tmp['dut-serial-num'])
+                        # get Device Under Test Information , 
+                        # the set reduces the redundency , list puts it back into a list
+                        self.dut_model_num_list = list(set(list(df_tmp['dut-model-num'])))
+                        self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
+                        self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
+                        self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
 
                         units_list = list(df_tmp['Units'])
                         print("GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig,test_tag,group))
@@ -138,8 +160,7 @@ class csv_sqlite_dash():
                              size_max=60)).update_traces(mode='lines+markers')
 
                         kpi_fig.update_layout(
-                            title="{} : {} : {} : {} : {} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig, 
-                                dut_model_num_list[-1], dut_sw_version_list[-1],dut_hw_version_list[-1],dut_serial_num_list[-1]),
+                            title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
                             xaxis_title="Time",
                             yaxis_title="{}".format(units_list[-1]),
                             xaxis = {'type' : 'date'}
@@ -282,7 +303,6 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
 
-    
     args = parser.parse_args()
 
     __path = args.path
@@ -325,7 +345,6 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     #csv_results = "lf_qa-{}.csv".format(current_time)
     #csv_results = report.file_add_path(csv_results)
 
-
     csv_dash = csv_sqlite_dash(
                 _path = __path,
                 _file = __file,
@@ -355,6 +374,12 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report_parent_path = report.get_parent_path()
         report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
         report.build_link(report_parent_path,"{}".format(report_parent_path))
+        report.set_table_title("Device Under Test")
+        report.build_table_title()
+        dut_info_df = csv_dash.get_dut_info()
+        print("dut_info_df {}".format(dut_info_df))
+        report.set_table_dataframe(dut_info_df)
+        report.build_table()
         report.set_table_title("QA Test Results")
         report.build_table_title()
         # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
@@ -373,7 +398,6 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     if args.show:        
         #csv_dash.show(n_clicks)
         csv_dash.show()
-
 
 if __name__ == '__main__':
     main()
