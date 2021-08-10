@@ -186,6 +186,7 @@ class csv_sqlite_dash():
                                 png_path = png_path.replace(' ','')
                                 # generate html graphics path
                                 html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
+                                html_path = html_path.replace(' ','')
                                 # NOTE: html links to png do not like spaces
                                 png_server_img = self.server + png_path.replace('/home/lanforge','')
                                 # generate png image
