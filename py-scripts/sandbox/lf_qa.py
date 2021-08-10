@@ -310,6 +310,10 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     if(args.png == True and args.show == True):
         print("generating png files will effect initial display performance")
 
+    if args.store == False and args.png == False and args.show == False:
+        print("Need to enter an action of --store --png --show ")
+
+
 
     # create report class for reporting
     report = lf_report(_path = __path,
@@ -333,46 +337,43 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         csv_dash.store()
     if args.png:
         csv_dash.generate_graph_png()
+        
+        # generate output reports
+        report.set_title("LF QA: Verification Test Run")
+        report.build_banner_left()
+        report.start_content_div2()
+        report.set_obj_html("Objective", "QA Verification")
+        report.build_objective()
+        pdf_link_path = report.get_pdf_path()
+        pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
+        report.build_pdf_link(pdf_link_path)
+
+        report_path = report.get_path()
+        report_path = __server + report_path.replace('/home/lanforge/','')
+        report.build_link(report_path,"{}".format(report_path))
+
+        report_parent_path = report.get_parent_path()
+        report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
+        report.build_link(report_parent_path,"{}".format(report_parent_path))
+        report.set_table_title("QA Test Results")
+        report.build_table_title()
+        # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
+        # report.build_text()
+        html_results = csv_dash.get_html_results()
+        report.set_custom_html(html_results)
+        report.build_custom()
+        report.build_footer()
+        html_report = report.write_html_with_timestamp()
+        print("html report: {}".format(html_report))
+        try:
+            report.write_pdf_with_timestamp()
+        except:
+            print("exception write_pdf_with_timestamp()")
+
     if args.show:        
         #csv_dash.show(n_clicks)
         csv_dash.show()
-        
-    # generate output reports
-    report.set_title("LF QA: Verification Test Run")
-    report.build_banner_left()
-    report.start_content_div2()
-    report.set_obj_html("Objective", "QA Verification")
-    report.build_objective()
-    pdf_link_path = report.get_pdf_path()
-    pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
-    report.build_pdf_link(pdf_link_path)
 
-    report_path = report.get_path()
-    report_path = __server + report_path.replace('/home/lanforge/','')
-    report.build_link(report_path,"{}".format(report_path))
-
-    report_parent_path = report.get_parent_path()
-    report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
-    report.build_link(report_parent_path,"{}".format(report_parent_path))
-    report.set_table_title("QA Test Results")
-    report.build_table_title()
-    # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
-    # report.build_text()
-    html_results = csv_dash.get_html_results()
-    report.set_custom_html(html_results)
-    report.build_custom()
-    report.build_footer()
-    html_report = report.write_html_with_timestamp()
-    print("html report: {}".format(html_report))
-    try:
-        report.write_pdf_with_timestamp()
-    except:
-        print("exception write_pdf_with_timestamp()")
-
-
-
-    if args.store == False and args.png == False and args.show == False:
-        print("Need to enter an action of --store --png --show ")
 
 if __name__ == '__main__':
     main()
