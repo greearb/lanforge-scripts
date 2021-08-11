@@ -423,17 +423,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         print("dut_info_df {}".format(dut_info_df))
         report.set_table_dataframe(dut_info_df)
         report.build_table()
-
-        # links table for tests TODO : can this be a table
-        report.set_table_title("Test Suite")
-        report.build_table_title()
-        suite_html = csv_dash.get_suite_html()
-        print("suite_html {}".format(suite_html))
-        report.set_custom_html(suite_html)
-        report.build_custom()
-
-
-
+        
         test_rig_list = csv_dash.get_test_rig_list()
         report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1])) # keep the list, currently one test bed results
         report.build_table_title()
@@ -449,6 +439,14 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report_parent_path = report.get_parent_path()
         report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
         report.build_link("All Test-Rig Test Suites Results Directory",report_parent_path)
+
+ # links table for tests TODO : can this be a table
+        report.set_table_title("Test Suite")
+        report.build_table_title()
+        suite_html = csv_dash.get_suite_html()
+        print("suite_html {}".format(suite_html))
+        report.set_custom_html(suite_html)
+        report.build_custom()
 
         report.set_table_title("QA Test Results")
         report.build_table_title()
