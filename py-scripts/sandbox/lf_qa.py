@@ -95,16 +95,19 @@ class csv_sqlite_dash():
         parent_path = os.path.dirname(_path)
         return parent_path
 
-    def get_test_tag(self,_kpi_path):
+    def get_test_id_test_tag(self,_kpi_path):
         test_tag = "NA"
         try:
             kpi_df = pd.read_csv(_kpi_path, sep='\t')
+            test_id_list = list(kpi_df['test-id']) 
+            test_id = list(set(test_id_list))
+            test_id = test_id[-1] # done to get element of list
             test_tag_list = list(kpi_df['test-tag']) 
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1] # done to get element of list
         except:
             print("exception reading csv _kpi_path {}".format(_kpi_path))
-        return test_tag
+        return test_id , test_tag
 
     #TODO pass in list to lf_report
     #  <table border="1" class="dataframe">
@@ -148,10 +151,10 @@ class csv_sqlite_dash():
                     html_path = self.server + html_path.replace('/home/lanforge/','')
                     base_name = os.path.basename(parent_path)
                     kpi_path = os.path.join(parent_path,"kpi.csv")
-                    test_tag = self.get_test_tag(kpi_path)
+                    test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
                     <tr><td><p>{}</td></p><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
-                    """.format(base_name,test_tag,html_path,pdf_path)
+                    """.format(test_id,test_tag,html_path,pdf_path)
         suite_html_results += """
                     </tbody>
                 </table>
@@ -168,6 +171,9 @@ class csv_sqlite_dash():
         path = Path(self.path)
         kpi_chart_list= list(path.glob('**/kpi-chart*.png'))  # Hard code for now 
         for kpi_chart in kpi_chart_list:
+            parent_path = os.path.dirname(kpi_chart)
+            kpi_path = os.path.join(parent_path,"kpi.csv")
+            test_tag , test_id = self.get_test_id_test_tag(kpi_path)
             kpi_chart = os.path.abspath(kpi_chart) # Path returns a list of objects
             kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
             if "print" in kpi_chart:
