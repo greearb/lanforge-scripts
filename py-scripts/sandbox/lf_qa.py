@@ -99,9 +99,18 @@ class csv_sqlite_dash():
     #  <table border="1" class="dataframe">
     def get_suite_html(self):
         suite_html_results =  """ 
-            <table border="1" ;class="dataframe"; style="width:40%>        
+            <table>
+                <style>
+                table, tr, td, th {
+                    border: 1px solid gray;
+                    padding: 0 0 0 0;
+                    margin: 0;
+                    border: 0;
+                    text-align: left;
+                }
+                </style>        
                     <thead>
-                        <tr style="text-align: left;">
+                        <tr>
                           <th>Test</th>
                           <th>Links</th>
                         </tr>
@@ -127,8 +136,7 @@ class csv_sqlite_dash():
                     html_path = self.server + html_path.replace('/home/lanforge/','')
                     base_name = os.path.basename(parent_path)
                     suite_html_results += """
-                    <tr style="text-align: left;width:50%;padding: 1px">
-                    <tr><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></p></td></tr>
+                    <tr><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
                     """.format(base_name,html_path,pdf_path)
         suite_html_results += """
                     </tbody>
@@ -137,6 +145,8 @@ class csv_sqlite_dash():
                 """
 
         return suite_html_results
+
+    
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
