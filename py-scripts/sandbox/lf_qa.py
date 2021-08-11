@@ -157,15 +157,18 @@ class csv_sqlite_dash():
         for kpi_chart in kpi_chart_list:
             kpi_chart = os.path.abspath(kpi_chart) # Path returns a list of objects
             kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
-            kpi_chart_html += """
-            <tr>
-                <td>
-                    <a href="{}">
-                        <img src="{}" style="width:400px;max-width:400px" title="{}">
-                    </a> 
-                </td>
-            </tr>
-            """.format(kpi_chart,kpi_chart,kpi_chart)
+            if "print" in kpi_chart:
+                pass
+            else:            
+                kpi_chart_html += """
+                <tr>
+                    <td>
+                        <a href="{}">
+                            <img src="{}" style="width:400px;max-width:400px" title="{}">
+                        </a> 
+                    </td>
+                </tr>
+                """.format(kpi_chart,kpi_chart,kpi_chart)
 
         kpi_chart_html += """</tbody></table>"""
         return kpi_chart_html
