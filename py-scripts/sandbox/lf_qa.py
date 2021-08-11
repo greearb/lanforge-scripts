@@ -99,7 +99,7 @@ class csv_sqlite_dash():
     #  <table border="1" class="dataframe">
     def get_suite_html(self):
         suite_html_results =  """ 
-                <table border="1">
+            <table border="1" ;class="dataframe"; style="width:40%>        
                     <thead>
                         <tr style="text-align: left;">
                           <th>Test</th>
@@ -116,16 +116,20 @@ class csv_sqlite_dash():
             if "lf_qa" in str(pdf_info):
                 pass
             else:
-                parent_path = os.path.dirname(pdf_info)
                 pdf_base_name = os.path.basename(pdf_info)
-                pdf_path = os.path.join(parent_path,pdf_base_name)
-                pdf_path = self.server + pdf_path.replace('/home/lanforge/','')
-                html_path = os.path.join(parent_path,"index.html")
-                html_path = self.server + html_path.replace('/home/lanforge/','')
-                base_name = os.path.basename(parent_path)
-                suite_html_results += """
-                <tr><td><p>{}</td> <td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></p></td></tr>
-                """.format(base_name,html_path,pdf_path)
+                if "check" in str(pdf_base_name):
+                    pass
+                else:
+                    parent_path = os.path.dirname(pdf_info)
+                    pdf_path = os.path.join(parent_path,pdf_base_name)
+                    pdf_path = self.server + pdf_path.replace('/home/lanforge/','')
+                    html_path = os.path.join(parent_path,"index.html")
+                    html_path = self.server + html_path.replace('/home/lanforge/','')
+                    base_name = os.path.basename(parent_path)
+                    suite_html_results += """
+                    <tr style="text-align: left;width:50%;padding: 1px">
+                    <tr><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></p></td></tr>
+                    """.format(base_name,html_path,pdf_path)
         suite_html_results += """
                     </tbody>
                 </table>
