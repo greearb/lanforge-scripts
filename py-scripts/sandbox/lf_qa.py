@@ -56,7 +56,7 @@ class csv_sqlite_dash():
         self.children_div = []
         self.html_results =""
         self.test_rig_list = []
-        self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded
+        self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded - is this needed? have server
         self.server_started = False
         self.dut_model_num_list = "NA"
         self.dut_sw_version_list = "NA"
@@ -90,6 +90,49 @@ class csv_sqlite_dash():
         #    dut_info_df['Serial'] = 'NA'
             
         return dut_info_df
+
+    def get_parent_path(self,_path):
+        parent_path = os.path.dirname(_path)
+        return parent_path
+
+    #TODO pass in list to lf_report
+    #  <table border="1" class="dataframe">
+    def get_suite_html(self):
+        suite_html_results =  """ 
+                <table border="1">
+                    <thead>
+                        <tr style="text-align: left;">
+                          <th>Test</th>
+                          <th>Links</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+        """
+               
+        path = Path(self.path)
+        pdf_info_list= list(path.glob('**/*.pdf'))  # Hard code for now 
+        print("pdf_info_list {}".format(pdf_info_list))
+        for pdf_info in pdf_info_list:
+            if "lf_qa" in str(pdf_info):
+                pass
+            else:
+                parent_path = os.path.dirname(pdf_info)
+                pdf_base_name = os.path.basename(pdf_info)
+                pdf_path = os.path.join(parent_path,pdf_base_name)
+                pdf_path = self.server + pdf_path.replace('/home/lanforge/','')
+                html_path = os.path.join(parent_path,"index.html")
+                html_path = self.server + html_path.replace('/home/lanforge/','')
+                base_name = os.path.basename(parent_path)
+                suite_html_results += """
+                <tr><td><p>{}</td> <td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></p></td></tr>
+                """.format(base_name,html_path,pdf_path)
+        suite_html_results += """
+                    </tbody>
+                </table>
+                <br> 
+                """
+
+        return suite_html_results
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -376,6 +419,16 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         print("dut_info_df {}".format(dut_info_df))
         report.set_table_dataframe(dut_info_df)
         report.build_table()
+
+        # links table for tests TODO : can this be a table
+        report.set_table_title("Test Suite")
+        report.build_table_title()
+        suite_html = csv_dash.get_suite_html()
+        print("suite_html {}".format(suite_html))
+        report.set_custom_html(suite_html)
+        report.build_custom()
+
+
 
         test_rig_list = csv_dash.get_test_rig_list()
         report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1])) # keep the list, currently one test bed results
