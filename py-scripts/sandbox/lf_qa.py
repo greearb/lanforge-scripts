@@ -170,6 +170,7 @@ class csv_sqlite_dash():
         """
         path = Path(self.path)
         kpi_chart_list= list(path.glob('**/kpi-chart*.png'))  # Hard code for now 
+        table_index = 0 
         for kpi_chart in kpi_chart_list:
             parent_path = os.path.dirname(kpi_chart)
             kpi_path = os.path.join(parent_path,"kpi.csv")
@@ -178,17 +179,24 @@ class csv_sqlite_dash():
             kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
             if "print" in kpi_chart:
                 pass
-            else:            
+            else: 
+                if (table_index %2) == 0:           
+                    kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
-                <tr>
+                    <td>
+                        <p>{}  {}</p>
+                    </td>
                     <td>
                         <a href="{}">
                             <img src="{}" style="width:400px;max-width:400px" title="{}">
                         </a> 
                     </td>
-                </tr>
-                """.format(kpi_chart,kpi_chart,kpi_chart)
-
+                """.format(test_tag,test_id,kpi_chart,kpi_chart,kpi_chart)
+                table_index += 1
+                if (table_index %2) == 0:
+                    kpi_chart_html += """</tr>"""
+        if (table_index %2) != 0:
+                    kpi_chart_html += """</tr>"""
         kpi_chart_html += """</tbody></table>"""
         return kpi_chart_html
 
