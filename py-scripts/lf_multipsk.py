@@ -39,33 +39,32 @@ import realm
 from realm import Realm
 
 
-
 class MultiPsk(Realm):
     def __init__(self,
-                 _host=None,
-                 _port=None,
-                 _ssid=None,
-                 _input=None,
-                 _security=None,
-                 _passwd=None,
-                 _radio=None,
-                 _num_sta=None,
-                 _start_id=0,
-                 _resource=1,
-                 _sta_prefix="sta",
+                 host=None,
+                 port=None,
+                 ssid=None,
+                 input=None,
+                 security=None,
+                 passwd=None,
+                 radio=None,
+                 num_sta=None,
+                 start_id=0,
+                 resource=1,
+                 sta_prefix="sta",
                  debug_=False,
                  ):
-        self.host = _host
-        self.port = _port
-        self.ssid = _ssid
-        self.input = _input
-        self.security = _security
-        self.passwd = _passwd
-        self.radio = _radio
-        self.num_sta = _num_sta
-        self.start_id = _start_id
-        self.resource = _resource
-        self.sta_prefix = _sta_prefix
+        self.host = host
+        self.port = port
+        self.ssid = ssid
+        self.input = input
+        self.security = security
+        self.passwd = passwd
+        self.radio = radio
+        self.num_sta = num_sta
+        self.start_id = start_id
+        self.resource = resource
+        self.sta_prefix = sta_prefix
         self.debug = debug_
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
@@ -131,6 +130,41 @@ class MultiPsk(Realm):
         self.cx_profile_udp.start_cx()
         self.l3_tcp_profile.start_cx()
 
+    def monitor_vlan_ip(self):
+        data = self.local_realm.json_get("ports/list?fields=IP")
+        # print(data)
+        for i in data["interfaces"]:
+            for j in i:
+                if "1.1.eth2.100" == j:
+                    ip_upstream = i["1.1.eth2.100"]['ip']
+                    # print(ip_upstream)
+        return ip_upstream
+
+    def get_sta_ip(self):
+        port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
+        # print("port list", port_list)
+        data = self.local_realm.json_get("ports/list?fields=IP")
+        # print(data)
+        for i in data["interfaces"]:
+            # print(i)
+            for j in i:
+                if j == "1.1.sta0":
+                    sta_ip = i["1.1.sta0"]['ip']
+        print(sta_ip)
+        return sta_ip
+
+    def compare_ip(self):
+        vlan_ip = self.monitor_vlan_ip()
+        station_ip = self.get_sta_ip()
+        vlan_ip_ = vlan_ip.split('.')
+        station_ip_ = station_ip.split('.')
+        if vlan_ip_[0] == station_ip_[0] and vlan_ip_[1] == station_ip_[1] and vlan_ip_[2] == station_ip_[2]:
+            print("station got ip from vlan")
+            return "Pass"
+        else:
+            print("station did not got ip from vlan")
+            return "Fail"
+
     def postcleanup(self):
         self.cx_profile_udp.cleanup()
         self.l3_tcp_profile.cleanup()
@@ -146,22 +180,24 @@ def main():
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--ssid', help='WiFi SSID for client to associate to')
     parser.add_argument('--security', help='WiFi Security protocol: {open|wep|wpa2|wpa3', default="wpa2")
-    parser.add_argument('--passwd', nargs="+", help='WiFi passphrase/password/key, here using list of passwords for single ssid')
-    parser.add_argument('--radio', help='specify WiFi radio')
-    parser.add_argument('--num_sta', type=int, help='specify number of stations you want to create', default=1)
-    parser.add_argument('--input', nargs="+")
+    parser.add_argument('--input', nargs="+", help="specify list of parameters like passwords,upstream,mac address, number of clients and radio as input, eg password@123,eth2.100,"",1,wiphy0  lanforge@123,eth2.100,"",1,wiphy1")
     args = parser.parse_args()
-    multi_obj = MultiPsk(_host=args.mgr,
-                         _port=args.mgr_port,
-                         _ssid=args.ssid,
-                         _input=args.input,
-                         _security=args.security,
-                         _passwd=args.passwd,
-                         _radio=args.radio,
-                         _num_sta=args.num_sta)
+    multi_obj = MultiPsk(host=args.mgr,
+                         port=args.mgr_port,
+                         ssid=args.ssid,
+                         input=args.input,
+                         security=args.security)
     multi_obj.build()
     multi_obj.start()
     time.sleep(60)
+    multi_obj.monitor_vlan_ip()
+    multi_obj.get_sta_ip()
+    result = multi_obj.compare_ip()
+    if result == "Pass":
+        print("Test pass")
+    else:
+        print("Test Fail")
+
     multi_obj.postcleanup()
 
 
