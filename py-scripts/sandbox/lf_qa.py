@@ -146,7 +146,29 @@ class csv_sqlite_dash():
 
         return suite_html_results
 
-    
+    def get_kpi_chart_html(self):
+        kpi_chart_html =  """ 
+            <table border="0">
+                <tbody>
+        """
+        path = Path(self.path)
+        kpi_chart_list= list(path.glob('**/kpi-chart*.png'))  # Hard code for now 
+        print("kpi_chart_png_list {}".format(kpi_chart_list))
+        for kpi_chart in kpi_chart_list:
+            kpi_chart = os.path.abspath(kpi_chart) # Path returns a list of objects
+            kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
+            kpi_chart_html += """
+            <tr>
+                <td>
+                    <a href="{}">
+                        <img src="{}" style="width:400px;max-width:400px" title="{}">
+                    </a> 
+                </td>
+            </tr>
+            """.format(kpi_chart,kpi_chart,kpi_chart)
+
+        kpi_chart_html += """</tbody></table>"""
+        return kpi_chart_html
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
@@ -457,6 +479,14 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         print("suite_html {}".format(suite_html))
         report.set_custom_html(suite_html)
         report.build_custom()
+
+        # png summary of test
+        report.set_table_title("Suite Summary")
+        report.build_table_title()
+        kpi_chart_html = csv_dash.get_kpi_chart_html()
+        report.set_custom_html(kpi_chart_html)
+        report.build_custom()
+        
 
         report.set_table_title("QA Test Results")
         report.build_table_title()
