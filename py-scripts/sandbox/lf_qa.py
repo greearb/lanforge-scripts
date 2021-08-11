@@ -95,6 +95,17 @@ class csv_sqlite_dash():
         parent_path = os.path.dirname(_path)
         return parent_path
 
+    def get_test_tag(self,_kpi_path):
+        test_tag = "NA"
+        try:
+            kpi_df = pd.read_csv(_kpi_path, sep='\t')
+            test_tag_list = list(kpi_df['test-tag']) 
+            test_tag = list(set(test_tag_list))
+            test_tag = test_tag[-1] # done to get element of list
+        except:
+            print("exception reading csv _kpi_path {}".format(_kpi_path))
+        return test_tag
+
     #TODO pass in list to lf_report
     #  <table border="1" class="dataframe">
     def get_suite_html(self):
@@ -103,15 +114,16 @@ class csv_sqlite_dash():
                 <style>
                 table, tr, td, th {
                     border: 1px solid gray;
-                    padding: 0 0 0 0;
+                    padding: 5 5 5 5;
                     margin: 0;
                     border: 0;
-                    text-align: left;
+                    text-align: center;
                 }
                 </style>        
                     <thead>
                         <tr>
                           <th>Test</th>
+                          <th>Test_Tag</th>
                           <th>Links</th>
                         </tr>
                       </thead>
@@ -135,9 +147,11 @@ class csv_sqlite_dash():
                     html_path = os.path.join(parent_path,"index.html")
                     html_path = self.server + html_path.replace('/home/lanforge/','')
                     base_name = os.path.basename(parent_path)
+                    kpi_path = os.path.join(parent_path,"kpi.csv")
+                    test_tag = self.get_test_tag(kpi_path)
                     suite_html_results += """
-                    <tr><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
-                    """.format(base_name,html_path,pdf_path)
+                    <tr><td><p>{}</td></p><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
+                    """.format(base_name,test_tag,html_path,pdf_path)
         suite_html_results += """
                     </tbody>
                 </table>
@@ -153,7 +167,6 @@ class csv_sqlite_dash():
         """
         path = Path(self.path)
         kpi_chart_list= list(path.glob('**/kpi-chart*.png'))  # Hard code for now 
-        print("kpi_chart_png_list {}".format(kpi_chart_list))
         for kpi_chart in kpi_chart_list:
             kpi_chart = os.path.abspath(kpi_chart) # Path returns a list of objects
             kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
