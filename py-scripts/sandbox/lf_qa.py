@@ -181,7 +181,7 @@ class csv_sqlite_dash():
                         {}  {}
                     </td>
                     <td>
-                        <a href="{}">
+                        <a href="{}"  target="_blank">
                             <img src="{}" style="width:400px;max-width:400px" title="{}">
                         </a> 
                     </td>
