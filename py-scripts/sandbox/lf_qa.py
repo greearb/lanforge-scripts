@@ -177,14 +177,14 @@ class csv_sqlite_dash():
                     kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
                     <td>
-                        {}  {}
+                        {test_tag}  {test_id}
                     </td>
                     <td>
-                        <a href="{}"  target="_blank">
-                            <img src="{}" style="width:400px;max-width:400px" title="{}">
+                        <a href="{kpi_chart_0}"  target="_blank">
+                            <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
                         </a> 
                     </td>
-                """.format(test_tag,test_id,kpi_chart,kpi_chart,kpi_chart)
+                """.format(test_tag=test_tag,test_id=test_id,kpi_chart_0=kpi_chart,kpi_chart_1=kpi_chart,kpi_chart_2=kpi_chart)
                 table_index += 1
                 if (table_index %2) == 0:
                     kpi_chart_html += """</tr>"""
@@ -278,6 +278,7 @@ class csv_sqlite_dash():
                         # save the figure - figures will be over written png 
                         # for testing 
                         png_server_img = ''
+                        #TODO work out when to generate the png files
                         if self.png:
                             if self.png_generated:
                                 pass
@@ -298,10 +299,15 @@ class csv_sqlite_dash():
                                 kpi_fig.write_html(html_path)
                                 # generate link for dashboard
                                 self.children_div.append(html.Img(src=png_server_img))
-                                # may need .css class for formatting the images
+                                #HERE add clickable link
+                                img_kpi_html_path = self.server + html_path
+                                img_kpi_html_path = img_kpi_html_path.replace(self.cut,'')
+
                                 self.html_results += """
-                                <img src={png_server_img}>
-                                """.format(png_server_img=png_server_img)
+                                <a href={img_kpi_html_path} target="_blank">
+                                    <img src={png_server_img}>
+                                </a>
+                                """.format(img_kpi_html_path=img_kpi_html_path,png_server_img=png_server_img)
 
                         # use image from above to creat html display - this uses dynamic graphing
                         #self.children_div.append(dcc.Graph(figure=kpi_fig))
