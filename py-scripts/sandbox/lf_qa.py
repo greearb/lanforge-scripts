@@ -142,7 +142,6 @@ class csv_sqlite_dash():
                     pdf_path = self.server + pdf_path.replace(self.cut,'')
                     html_path = os.path.join(parent_path,"index.html")
                     html_path = self.server + html_path.replace(self.cut,'')
-                    base_name = os.path.basename(parent_path)
                     kpi_path = os.path.join(parent_path,"kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
@@ -322,7 +321,7 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=kpi_html_path, target='_blank'))
-                        self.html_results +="""<a href={kpi_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_kpi.html target="_blank" </a>
+                        self.html_results +="""<a href={kpi_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_kpi.html </a>
                         """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
 
                         # link to full test results
@@ -333,7 +332,7 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_report.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=report_index_html_path, target='_blank'))
-                        self.html_results +="""<a href={report_index_html_path}>{test_id}_{group}_{test_tag}_{test_rig}_report.html target="_blank"</a>
+                        self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_report.html </a>
                         """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
