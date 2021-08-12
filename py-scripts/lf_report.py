@@ -188,7 +188,7 @@ class lf_report():
 
     def build_log_directory(self):
         if self.log_directory =="":
-            self.log_direcotry = os.path.join(self.path_date_time,"log")
+            self.log_directory = os.path.join(self.path_date_time,"log")
         try:
             os.makedirs(os.path.dirname(self.log_directory))
         except OSError as exec: # handle case where the directory was created between os.path.exists and os.mkedirs 
