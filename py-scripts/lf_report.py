@@ -26,7 +26,6 @@ INCLUDE_IN_README
 '''
 # CAUTION: adding imports to this file which are not in update_dependencies.py is not advised
 import os
-import errno
 import shutil
 import datetime
 
@@ -190,11 +189,11 @@ class lf_report():
         if self.log_directory =="":
             self.log_directory = os.path.join(self.path_date_time,"log")
         try:
-            os.makedirs(os.path.dirname(self.log_directory))
-        except OSError as exec: # handle case where the directory was created between os.path.exists and os.mkedirs 
-            if exec.errno != errno.EEXIST:
-                print("exec.errno {errno}".format(errno=exec.errno))
-                exit(1)
+            if not os.path.exists(self.log_directory):
+                os.mkdir(self.log_directory)
+        except:
+            print("exception making {}".format(self.log_directory))
+            exit(1)
 
     def set_text(self,_text):
         self.text = _text
