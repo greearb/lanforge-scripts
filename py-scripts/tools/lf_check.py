@@ -107,13 +107,16 @@ class lf_check():
                  _production,
                  _csv_results,
                  _outfile,
-                 _report_path):
+                 _outfile_name,
+                 _report_path,
+                 _log_path):
         self.use_json = _use_json
         self.json_data = _json_data
         self.config_ini = _config_ini
         self.test_suite = _test_suite
         self.production_run = _production
         self.report_path = _report_path
+        self.log_path = _log_path
         self.radio_dict = {}
         self.test_dict = {}
         path_parent = os.path.dirname(os.getcwd())
@@ -121,6 +124,7 @@ class lf_check():
         self.scripts_wd = os.getcwd()
         self.results = ""
         self.outfile = _outfile
+        self.outfile_name = _outfile_name
         self.test_result = "Failure"
         self.results_col_titles = ["Test", "Command", "Result", "STDOUT", "STDERR"]
         self.html_results = ""
@@ -1012,14 +1016,12 @@ blog: http://{blog}:2368
                 self.logger.info("command: {}".format(command))
                 self.logger.info("cmd_args {}".format(cmd_args))
 
-                if self.outfile is not None:
-                    stdout_log_txt = self.outfile
-                    stdout_log_txt = stdout_log_txt + "-{}-stdout.txt".format(test)
-                    # self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
+                if self.outfile_name is not None:
+                    stdout_log_txt = self.log_path + "{}-{}-stdout.txt".format(self.outfile_name,test)
+                    self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
-                    stderr_log_txt = self.outfile
-                    stderr_log_txt = stderr_log_txt + "-{}-stderr.txt".format(test)
-                    # self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
+                    stderr_log_txt = self.log_path + "{}-{}-stderr.txt".format(self.outfile_name,test)
+                    self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                     stderr_log = open(stderr_log_txt, 'a')
 
                 # need to take into account --raw_line parameters thus need to use shlex.split 
@@ -1182,9 +1184,10 @@ Example :
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_results = "lf_check{}-{}.csv".format(args.outfile, current_time)
     csv_results = report.file_add_path(csv_results)
-    outfile = "lf_check-{}-{}".format(args.outfile, current_time)
-    outfile_path = report.file_add_path(outfile)
+    outfile_name = "lf_check-{}-{}".format(args.outfile, current_time)
+    outfile = report.file_add_path(outfile_name)
     report_path = report.get_report_path()
+    log_path = report.get_log_path()
 
     # lf_check() class created
     check = lf_check(_use_json=use_json,
@@ -1193,8 +1196,10 @@ Example :
                      _test_suite=test_suite,
                      _production=production,
                      _csv_results=csv_results,
-                     _outfile=outfile_path,
-                     _report_path=report_path)
+                     _outfile=outfile,
+                     _outfile_name = outfile_name,
+                     _report_path=report_path,
+                     _log_path=log_path)
 
     # get git sha
     process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
