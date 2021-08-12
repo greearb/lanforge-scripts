@@ -113,24 +113,15 @@ class csv_sqlite_dash():
     #  <table border="1" class="dataframe">
     def get_suite_html(self):
         suite_html_results =  """ 
-            <table>
-                <style>
-                table, tr, td, th {
-                    border: 1px solid gray;
-                    padding: 5 5 5 5;
-                    margin: 0;
-                    border: 0;
-                    text-align: center;
-                }
-                </style>        
+            <table class="dataframe" border="1">
                     <thead>
-                        <tr>
+                        <tr style="text-align: center;">
                           <th>Test</th>
                           <th>Test_Tag</th>
                           <th>Links</th>
                         </tr>
-                      </thead>
-                      <tbody>
+                    </thead>
+                <tbody>
         """
                
         path = Path(self.path)
@@ -153,7 +144,8 @@ class csv_sqlite_dash():
                     kpi_path = os.path.join(parent_path,"kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
-                    <tr><td><p>{}</td></p><td><p>{}</td></p><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
+                    <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
+                        <td>{}</td><td>{}</td><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
                     """.format(test_id,test_tag,html_path,pdf_path)
         suite_html_results += """
                     </tbody>
