@@ -26,6 +26,7 @@ INCLUDE_IN_README
 '''
 # CAUTION: adding imports to this file which are not in update_dependencies.py is not advised
 import os
+import errno
 import shutil
 import datetime
 
@@ -89,6 +90,8 @@ class lf_report():
             self.obj_title = _obj_title
             #self.systeminfopath = ""
             self.date_time_directory = ""
+            self.log_directory = ""
+            
             self.banner_directory = "artifacts"
             self.banner_file_name = "banner.png"    # does this need to be configurable
             self.logo_directory = "artifacts"       
@@ -96,9 +99,10 @@ class lf_report():
             self.logo_footer_file_name = "candela_swirl_small-72h.png"      # does this need to be configurable.
             self.current_path = os.path.dirname(os.path.abspath(__file__))
             self.custom_css = _custom_css
-            # pass in _date to allow to change after construction
+            # note: the following 3 calls must be in order
             self.set_date_time_directory(_date,_results_dir_name)
             self.build_date_time_directory()
+            self.build_log_directory()
 
             self.font_file = "CenturyGothic.woff"
             # move the banners and candela images to report path
@@ -182,6 +186,16 @@ class lf_report():
                 os.mkdir(self.path_date_time)
         print("report path : {}".format(self.path_date_time))    
 
+    def build_log_directory(self):
+        if self.log_directory =="":
+            self.log_direcotry = os.path.join(self.path_date_time,"log")
+        try:
+            os.makedirs(os.path.dirname(self.log_directory))
+        except OSError as exec: # handle case where the directory was created between os.path.exists and os.mkedirs 
+            if exec.errno != errno.EEXIST:
+                print("exec.errno {errno}".format(errno=exec.errno))
+                exit(1)
+
     def set_text(self,_text):
         self.text = _text
 
@@ -235,6 +249,9 @@ class lf_report():
 
     def get_report_path(self):
         return self.path_date_time
+
+    def get_log_path(self):
+        return self.log_directory
 
     def file_add_path(self, file):
         output_file = str(self.path_date_time)+'/'+ str(file)
