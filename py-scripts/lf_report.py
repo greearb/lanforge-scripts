@@ -299,7 +299,7 @@ class lf_report():
     def build_pdf_link(self,_pdf_link_name,_pdf_link_path):
         self.pdf_link_html = """
             <!-- pdf link -->
-            <a href={pdf_link_path}>{pdf_link_name}</a>
+            <a href="{pdf_link_path}" target="_blank">{pdf_link_name}</a>
             <br>
                         """.format(pdf_link_path=_pdf_link_path,pdf_link_name=_pdf_link_name)
         self.html += self.pdf_link_html
@@ -307,7 +307,7 @@ class lf_report():
     def build_link(self,_link_name,_link_path):
         self.link = """
             <!-- link -->
-            <a href={link_path}>{link_name}</a>
+            <a href="{link_path}" target="_blank">{link_name} </a>
             <br>
         """.format(link_path=_link_path,link_name=_link_name)
         self.html += self.link
