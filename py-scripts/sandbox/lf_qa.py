@@ -26,13 +26,10 @@ parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
 
 from lf_report import lf_report
-
 sys.path.append('/')
-
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
 class csv_sqlite_dash():
     def __init__(self,
                 _path = '.',
@@ -309,16 +306,8 @@ class csv_sqlite_dash():
                                 </a>
                                 """.format(img_kpi_html_path=img_kpi_html_path,png_server_img=png_server_img)
 
-                        # use image from above to creat html display - this uses dynamic graphing
-                        #self.children_div.append(dcc.Graph(figure=kpi_fig))
-
                         # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
-                        # Constructed path to server manually.  possibly better way
-
-                        # NOTE: generate,  display for server (html, pdf) and for dash.
-                        #self.children_div.append(html.Br())
-                        #self.html_results +="""<br>"""
-
+                        # Constructed path to server manually.  
                         # link to interactive results
                         kpi_html_path = self.server + html_path
                         kpi_html_path = kpi_html_path.replace(self.cut,'')
@@ -327,8 +316,6 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=kpi_html_path, target='_blank'))
-                        # kpi graphs are links self.html_results +="""<a href={kpi_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_kpi.html </a>
-                        # kpi graphs are links """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
 
                         # link to full test results
                         report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
@@ -346,7 +333,6 @@ class csv_sqlite_dash():
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
-
         
         # TODO see if this stops the regenration of the graphs each time
         self.png_generated = True
@@ -387,10 +373,10 @@ class csv_sqlite_dash():
             self.server_started = True
             print("self.server_started {}".format(self.server_started))
             #NOTE: the server_started flag needs to be set prior to run_server (or you get to debug an infinite loop)
+            #NOTE: debug=False will prevent init going though twice, also stops auto reload when editing code
             self.app.run_server(host= '0.0.0.0', debug=True)
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
-
 
 def main():
 
@@ -450,17 +436,11 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     if args.store == False and args.png == False and args.show == False:
         print("Need to enter an action of --store --png --show ")
 
-
-
     # create report class for reporting
     report = lf_report(_path = __path,
                        _results_dir_name =__dir,
                        _output_html="lf_qa.html",
                        _output_pdf="lf_qa.pdf" )        
-
-    #current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    #csv_results = "lf_qa-{}.csv".format(current_time)
-    #csv_results = report.file_add_path(csv_results)
 
     csv_dash = csv_sqlite_dash(
                 _path = __path,
