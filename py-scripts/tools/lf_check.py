@@ -1017,7 +1017,7 @@ blog: http://{blog}:2368
                 self.logger.info("cmd_args {}".format(cmd_args))
 
                 if self.outfile_name is not None:
-                    stdout_log_txt = os.path.joing(self.log_path, "{}-{}-stdout.txt".format(self.outfile_name,test))
+                    stdout_log_txt = os.path.join(self.log_path, "{}-{}-stdout.txt".format(self.outfile_name,test))
                     self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
                     stdout_log = open(stdout_log_txt, 'a')
                     stderr_log_txt = os.path.join(self.log_path, "{}-{}-stderr.txt".format(self.outfile_name,test))
