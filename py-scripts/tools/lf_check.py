@@ -1284,8 +1284,6 @@ Example :
     report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
-    # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
-    # report.build_text()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
@@ -1297,56 +1295,8 @@ Example :
     except:
         print("exception write_pdf_with_timestamp()")
 
-    report_path = os.path.dirname(html_report)
-    parent_report_dir = os.path.dirname(report_path)
-
-    # copy results to lastest so someone may see the latest.
-    lf_check_latest_html = parent_report_dir + "/lf_check_latest.html"
-    # duplicates html_report file up one directory
-    lf_check_html_report = parent_report_dir + "/{}.html".format(outfile)
-
-    banner_src_png = report_path + "/banner.png"
-    banner_dest_png = parent_report_dir + "/banner.png"
-    CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
-    CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
-    CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
-    CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
-    report_src_css = report_path + "/report.css"
-    report_dest_css = parent_report_dir + "/report.css"
-    custom_src_css = report_path + "/custom.css"
-    custom_dest_css = parent_report_dir + "/custom.css"
-    font_src_woff = report_path + "/CenturyGothic.woff"
-    font_dest_woff = parent_report_dir + "/CenturyGothic.woff"
-
-    # pprint.pprint([
-    #    ('banner_src', banner_src_png),
-    #    ('banner_dest', banner_dest_png),
-    #    ('CandelaLogo_src_png', CandelaLogo_src_png),
-    #    ('CandelaLogo_dest_png', CandelaLogo_dest_png),
-    #    ('report_src_css', report_src_css),
-    #    ('custom_src_css', custom_src_css)
-    # ])
-
-    # copy one directory above
-    try:
-        shutil.copyfile(html_report, lf_check_latest_html)
-    except:
-        print("check permissions on {lf_check_latest_html}".format(lf_check_latest_html=lf_check_latest_html))
-    shutil.copyfile(html_report, lf_check_html_report)
-
-    # copy banner and logo up one directory,
-    shutil.copyfile(banner_src_png, banner_dest_png)
-    shutil.copyfile(CandelaLogo_src_png, CandelaLogo_dest_png)
-    shutil.copyfile(report_src_css, report_dest_css)
-    shutil.copyfile(custom_src_css, custom_dest_css)
-    shutil.copyfile(font_src_woff, font_dest_woff)
-    shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
-
-    # print out locations of results
-    print("lf_check_latest.html: " + lf_check_latest_html)
-    print("lf_check_html_report: " + lf_check_html_report)
-
-    check.send_results_email(report_file=lf_check_html_report)
+    print("lf_check_html_report: " + html_report)
+    check.send_results_email(report_file=html_report)
 
 
 if __name__ == '__main__':
