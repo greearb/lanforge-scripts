@@ -28,11 +28,14 @@ class CreateVAP(Realm):
                  _ssid=None,
                  _security=None,
                  _password=None,
+                 _mac=None,
                  _host=None,
                  _port=None,
                  _vap_list=None,
+                 _vap_flags=None,
                  _number_template="00000",
-                 _radio="wiphy0",
+                 _radio=None,
+                 _bridge=False,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -46,22 +49,28 @@ class CreateVAP(Realm):
         self.security = _security
         self.password = _password
         self.vap_list = _vap_list
+        if _vap_flags is None:
+            self.vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        else:
+            self.vap_flags = _vap_flags
         self.radio = _radio
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
         self.dhcp = _dhcp
+        self.bridge = _bridge
         self.vap_profile = self.new_vap_profile()
         self.vap_profile.vap_name = self.vap_list
         self.vap_profile.ssid = self.ssid
         self.vap_profile.security = self.security
         self.vap_profile.ssid_pass = self.password
         self.vap_profile.dhcp = self.dhcp
+        self.vap_profile.desired_add_vap_flags = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.vap_profile.desired_add_vap_flags_mask = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
         if self.debug:
             print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.vap_list)
             print("---- ~VAP List ----- ----- ----- ----- ----- ----- \n")
-
 
     def build(self):
         # Build VAPs
@@ -73,12 +82,14 @@ class CreateVAP(Realm):
                                 channel = 36,
                                 up_ = True,
                                 debug = False,
+                                use_ht40=True,
+                                use_ht80=True,
+                                use_ht160=False,
                                 suppress_related_commands_ = True,
-                                use_radius = True,
-                                hs20_enable = False)
+                                use_radius=False,
+                                hs20_enable=False,
+                                bridge=self.bridge)
         self._pass("PASS: VAP build finished")
-
-
 
 
 def main():
@@ -102,11 +113,12 @@ Command example:
     --passwd BLANK
     --debug
             ''')
-    required = parser.add_argument_group('required arguments')
-    #required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
     optional = parser.add_argument_group('optional arguments')
     optional.add_argument('--num_vaps', help='Number of VAPs to Create', required=False)
+    optional.add_argument('--vap_flag', help='VAP flags to add', required=False, default=None, action='append')
+    optional.add_argument('--bridge', help='Create a bridge connecting the VAP to a port', required=False, default=False)
+    optional.add_argument('--mac', help='Custom mac address', default="xx:xx:xx:xx:*:xx")
     args = parser.parse_args()
     #if args.debug:
     #    pprint.pprint(args)
@@ -114,7 +126,7 @@ Command example:
     if (args.radio is None):
        raise ValueError("--radio required")
 
-    num_vap = 2
+    num_vap = 1
     if (args.num_vaps is not None) and (int(args.num_vaps) > 0):
         num_vaps_converted = int(args.num_vaps)
         num_vap = num_vaps_converted
@@ -134,8 +146,10 @@ Command example:
                        _password=args.passwd,
                        _security=args.security,
                        _vap_list=vap,
+                               _vap_flags=args.vap_flag,
                        _radio=args.radio,
                        _proxy_str=args.proxy,
+                               _bridge=args.bridge,
                        _debug_on=args.debug)
 
         create_vap.build()

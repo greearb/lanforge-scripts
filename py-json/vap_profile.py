@@ -220,7 +220,7 @@ class VAPProfile(LFCliBase):
             for port in port_list:
                 for k, v in port.items():
                     if v['alias'] == self.vap_name:
-                        self.local_realm.rm_port(k, check_exists=True)
+                        self.local_realm.rm_port(v['port'], check_exists=True)
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")
@@ -350,6 +350,28 @@ class VAPProfile(LFCliBase):
 
         if (self.up):
             self.admin_up(resource)
+
+    def modify(self, resource, radio):
+        list_ports = self.local_realm.json_get("/port/1/%s" % resource,
+                                               debug_=self.debug)
+        for item in list_ports['interfaces']:
+            if self.vap_name == list(item.values())[0]['alias']:
+                url = (list(item.values())[0]['_links'])
+
+        self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
+        self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
+        self.add_vap_data["radio"] = radio
+        self.add_vap_data["ap_name"] = self.vap_name
+        self.add_vap_data["ssid"] = 'NA'
+        self.add_vap_data["key"] = 'NA'
+        self.add_vap_data['mac'] = 'NA'
+
+        add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap")
+        if self.debug:
+            print(self.add_vap_data)
+        add_vap_r.addPostData(self.add_vap_data)
+        json_response = add_vap_r.jsonPost(self.debug)
+
 
     def cleanup(self, resource, delay=0.03):
         print("Cleaning up VAPs")
