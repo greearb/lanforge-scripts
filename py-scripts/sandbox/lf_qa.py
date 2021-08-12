@@ -176,7 +176,7 @@ class csv_sqlite_dash():
                     kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
                     <td>
-                        <p>{}  {}</p>
+                        {}  {}
                     </td>
                     <td>
                         <a href="{}">
