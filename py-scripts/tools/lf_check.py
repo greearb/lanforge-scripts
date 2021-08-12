@@ -13,8 +13,8 @@ The --production flag determine the email list for results
 
 EXAMPLE:
 lf_check.py  # this will use the defaults
-lf_check.py --use_json --json <unique json file> --test_suite 
-lf_check.py --use_json --json <unique json file> --production 
+lf_check.py --json <unique json file> --test_suite 
+lf_check.py --json <unique json file> --production 
 
 NOTES:
 Before using lf_check.py
@@ -57,7 +57,6 @@ Starting LANforge:
 
 '''
 import datetime
-import pprint
 import sys
 
 if sys.version_info[0] != 3:
@@ -71,10 +70,8 @@ import time
 from time import sleep
 import argparse
 import json
-import configparser
 import subprocess
 import csv
-import shutil
 import shlex
 import paramiko
 import pandas as pd
@@ -96,7 +93,6 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 # lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
-                 _use_json,
                  _json_data,
                  _test_suite,
                  _production,
@@ -105,7 +101,6 @@ class lf_check():
                  _outfile_name,
                  _report_path,
                  _log_path):
-        self.use_json = _use_json
         self.json_data = _json_data
         self.test_suite = _test_suite
         self.production_run = _production
@@ -1032,8 +1027,7 @@ Summary :
 running scripts listed in <config>.ini or <config>.json 
 
 Example :  
-./lf_check.py --ini lf_check_test.ini --suite suite_one
-./lf_check.py --use_json --json lf_check_test.json --suite suite_two
+./lf_check.py --json lf_check_test.json --suite suite_two
 ---------
             ''')
 
@@ -1042,7 +1036,7 @@ Example :
     parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
     parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
     parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
-    parser.add_argument('--use_json', help="--use_json ", action='store_true')
+    parser.add_argument('--use_json', help="--use_json FLAG DEPRECATED", action='store_true')
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
                         action='store_true')
@@ -1053,10 +1047,10 @@ Example :
 
     args = parser.parse_args()
 
+    if args.use_json:
+        print("NOTE: --use_json flag deprecated and unused")
     # load test config file information either <config>.json or <config>.ini
-    use_json = False
     json_data = ""
-    use_json = True
     try:
         print("args.json {}".format(args.json))
         with open(args.json, 'r') as json_config:
@@ -1097,8 +1091,7 @@ Example :
     log_path = report.get_log_path()
 
     # lf_check() class created
-    check = lf_check(_use_json=use_json,
-                     _json_data=json_data,
+    check = lf_check(_json_data=json_data,
                      _test_suite=test_suite,
                      _production=production,
                      _csv_results=csv_results,
