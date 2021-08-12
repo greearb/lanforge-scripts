@@ -40,12 +40,14 @@ class csv_sqlite_dash():
                 _database = 'qa_db',
                 _table = 'qa_table',
                 _server = 'http://192.168.95.6/',
+                _cut = '/home/lanforge/',
                 _png = False):
         self.path = _path
         self.file = _file
         self.database = _database
         self.table = _table
         self.server = _server
+        self.cut = _cut
         self.png = _png
         self.png_generated = False
         self.kpi_list = []
@@ -137,9 +139,9 @@ class csv_sqlite_dash():
                 else:
                     parent_path = os.path.dirname(pdf_info)
                     pdf_path = os.path.join(parent_path,pdf_base_name)
-                    pdf_path = self.server + pdf_path.replace('/home/lanforge/','')
+                    pdf_path = self.server + pdf_path.replace(self.cut,'')
                     html_path = os.path.join(parent_path,"index.html")
-                    html_path = self.server + html_path.replace('/home/lanforge/','')
+                    html_path = self.server + html_path.replace(self.cut,'')
                     base_name = os.path.basename(parent_path)
                     kpi_path = os.path.join(parent_path,"kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
@@ -168,7 +170,7 @@ class csv_sqlite_dash():
             kpi_path = os.path.join(parent_path,"kpi.csv")
             test_tag , test_id = self.get_test_id_test_tag(kpi_path)
             kpi_chart = os.path.abspath(kpi_chart) # Path returns a list of objects
-            kpi_chart = self.server + kpi_chart.replace('/home/lanforge/','')
+            kpi_chart = self.server + kpi_chart.replace(self.cut,'')
             if "print" in kpi_chart:
                 pass
             else: 
@@ -289,7 +291,7 @@ class csv_sqlite_dash():
                                 html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
                                 html_path = html_path.replace(' ','')
                                 # NOTE: html links to png do not like spaces
-                                png_server_img = self.server + png_path.replace('/home/lanforge','')
+                                png_server_img = self.server + png_path.replace(self.cut,'')
                                 # generate png image
                                 kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
                                 #https://plotly.com/python/interactive-html-export/
@@ -314,7 +316,7 @@ class csv_sqlite_dash():
 
                         # link to interactive results
                         kpi_html_path = self.server + html_path
-                        kpi_html_path = kpi_html_path.replace('/home/lanforge/','')
+                        kpi_html_path = kpi_html_path.replace(self.cut,'')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
@@ -325,7 +327,7 @@ class csv_sqlite_dash():
 
                         # link to full test results
                         report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
-                        report_index_html_path = report_index_html_path.replace('/home/lanforge/','')
+                        report_index_html_path = report_index_html_path.replace(self.cut,'')
                         self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_report.html'
@@ -406,6 +408,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     parser.add_argument('--database', help='--database qa_test_db  default: qa_test_db',default='qa_test_db')
     parser.add_argument('--table', help='--table qa_table  default: qa_table',default='qa_table')
     parser.add_argument('--server', help='--server http://<server ip>/   default: http://192.168.95.6/',default='http://192.168.95.6/')
+    parser.add_argument('--cut', help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/',default='/home/lanforge/')
     parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
     parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
@@ -420,6 +423,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
     __server = args.server
     __png = args.png
     __dir = args.dir
+    __cut = args.cut
 
     # needed for refresh button 
     # n_clicks = 0
@@ -459,6 +463,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
                 _database = __database,
                 _table = __table,
                 _server = __server,
+                _cut = __cut,
                 _png = __png)
     if args.store:
         csv_dash.store()
@@ -483,15 +488,15 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report.build_table_title()
 
         pdf_link_path = report.get_pdf_path()
-        pdf_link_path = __server + pdf_link_path.replace('/home/lanforge/','')
+        pdf_link_path = __server + pdf_link_path.replace(__cut,'')
         report.build_pdf_link("PDF_Report",pdf_link_path)
 
         report_path = report.get_path()
-        report_path = __server + report_path.replace('/home/lanforge/','')
+        report_path = __server + report_path.replace(__cut,'')
         report.build_link("Current Test Suite Results Directory",report_path)
 
         report_parent_path = report.get_parent_path()
-        report_parent_path = __server + report_parent_path.replace('/home/lanforge/','')
+        report_parent_path = __server + report_parent_path.replace(__cut,'')
         report.build_link("All Test-Rig Test Suites Results Directory",report_parent_path)
 
  # links table for tests TODO : can this be a table
