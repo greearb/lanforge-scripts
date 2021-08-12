@@ -72,17 +72,19 @@ class MultiPsk(Realm):
     def build(self):
         station_list = []
         for idex, input in enumerate(self.input):
-            # print(input)
+            print(input)
+
             if "." in input['upstream']:
                 num = input['upstream'].split('.')[1]
                 sta_name = "1." + str(self.resource) + ".sta" + str(num)
                 # print(sta_name)
+                station_list.append(sta_name)
             else:
-                number = "10"
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=self.start_id,
+                                                      end_id_=input['num_station'] - 1, padding_number_=100,
+                                                      radio=input['radio'])
                 # implementation for non vlan pending ****
             print("creating stations")
-            # print("hi",sta_name)
-            station_list.append(sta_name)
             self.station_profile.use_security(self.security, self.ssid, str(input['password']))
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -145,9 +147,22 @@ class MultiPsk(Realm):
                             # print(ip_upstream)
                             print(vlan_ips)
                             return vlan_ips
-            else:
+
+    def monitor_non_vlan_ip(self):
+        non_vlan_ips = {}
+        for i in self.input:
+            if "." not in i['upstream']:
                 print(str(i['upstream']) + " is not an vlan upstream port")
-                return 0
+                print("checking its ip ..")
+                data = self.local_realm.json_get("ports/list?fields=IP")
+                for val in data["interfaces"]:
+                    for j in val:
+                        if "1." + str(self.resource) + "." + str(i['upstream']) == j:
+                            ip_upstream = val["1." + str(self.resource) + "." + str(i['upstream'])]['ip']
+                            non_vlan_ips[i['upstream']] = ip_upstream
+                            # print(ip_upstream)
+                            print(non_vlan_ips)
+                            return non_vlan_ips
 
     def get_sta_ip(self):
         # this function gives station ip dict eg{'eth2.100': '172.17.0.100'}
@@ -155,8 +170,8 @@ class MultiPsk(Realm):
         port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
         print("port list", port_list)
         for name, id in zip(port_list, self.input):
-            print(name)
-            print(type(name))
+            # print(name)
+            # print(type(name))
             x = id['upstream'].split('.')[1]
 
             if name == "1." + str(self.resource) + ".sta" + str(x):
@@ -168,8 +183,29 @@ class MultiPsk(Realm):
                             sta_ip = i[name]['ip']
                             # print(sta_ip)
                             station_ip[id['upstream']] = sta_ip
-            print(station_ip)
+            # print(station_ip)
             return station_ip
+
+    def get_non_vlan_sta_ip(self):
+        station_nonvlan_ip = {}
+        x = ""
+        port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
+        # print("port list", port_list)
+        for id in self.input:
+            if "." not in id['upstream']:
+                x = id['upstream']
+        print(x)
+        for name in port_list:
+            if name == "1.1.sta00":
+                data = self.local_realm.json_get("ports/list?fields=IP")
+                for i in data["interfaces"]:
+                    # print(i)
+                    for j in i:
+                        if j == name:
+                            sta_ip = i[name]['ip']
+                            print(sta_ip)
+        station_nonvlan_ip[x] = sta_ip
+        return station_nonvlan_ip
 
     def compare_ip(self):
         vlan_ip = self.monitor_vlan_ip()
@@ -184,6 +220,20 @@ class MultiPsk(Realm):
                     return "Pass"
         else:
             print("station did not got ip from vlan")
+            return "Fail"
+
+    def compare_nonvlan_ip(self):
+        non_vlan_sta_ip = self.get_non_vlan_sta_ip()
+        # print(non_vlan_sta_ip)
+        for id in self.input:
+            if "." not in id['upstream']:
+                x = id['upstream']
+        # print(non_vlan_sta_ip[x])
+        non_vlan = non_vlan_sta_ip[x].split(".")
+        if non_vlan[0] == "192" and non_vlan[1] == "168":
+            # print("Pass")
+            return 'Pass'
+        else:
             return "Fail"
 
     def postcleanup(self):
@@ -201,7 +251,7 @@ def main():
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--ssid', help='WiFi SSID for client to associate to')
     parser.add_argument('--security', help='WiFi Security protocol: {open|wep|wpa2|wpa3', default="wpa2")
-    #parser.add_argument('--input', nargs="+", help="specify list of parameters like passwords,upstream,mac address, number of clients and radio as input, eg password@123,eth2.100,"",1,wiphy0  lanforge@123,eth2.100,"",1,wiphy1")
+    # parser.add_argument('--input', nargs="+", help="specify list of parameters like passwords,upstream,mac address, number of clients and radio as input, eg password@123,eth2.100,"",1,wiphy0  lanforge@123,eth2.100,"",1,wiphy1")
     args = parser.parse_args()
 
     input_data = [{
@@ -210,6 +260,13 @@ def main():
         "mac": "",
         "num_station": 1,
         "radio": "wiphy4"
+        },
+        {
+            "password": "lanforge@123",
+            "upstream": "eth2",
+            "mac": "",
+            "num_station": 1,
+            "radio": "wiphy0"
         },
 
         ]
@@ -225,10 +282,21 @@ def main():
     multi_obj.monitor_vlan_ip()
     multi_obj.get_sta_ip()
     result = multi_obj.compare_ip()
+    print("checking for vlan ips")
     if result == "Pass":
         print("Test pass")
     else:
         print("Test Fail")
+    print("now checking ip for non vlan port")
+    multi_obj.monitor_non_vlan_ip()
+    multi_obj.get_non_vlan_sta_ip()
+    result1 = multi_obj.compare_nonvlan_ip()
+    if result1 == "Pass":
+        print("Test passed for non vlan ip ")
+    else:
+        print("Test failed for non vlan ip")
+    print("all result gathered")
+    print("clean up")
     multi_obj.postcleanup()
 
 
