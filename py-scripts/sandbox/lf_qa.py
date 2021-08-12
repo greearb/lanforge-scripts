@@ -316,8 +316,8 @@ class csv_sqlite_dash():
                         # Constructed path to server manually.  possibly better way
 
                         # NOTE: generate,  display for server (html, pdf) and for dash.
-                        self.children_div.append(html.Br())
-                        self.html_results +="""<br>"""
+                        #self.children_div.append(html.Br())
+                        #self.html_results +="""<br>"""
 
                         # link to interactive results
                         kpi_html_path = self.server + html_path
@@ -327,18 +327,18 @@ class csv_sqlite_dash():
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=kpi_html_path, target='_blank'))
-                        self.html_results +="""<a href={kpi_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_kpi.html </a>
-                        """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+                        # kpi graphs are links self.html_results +="""<a href={kpi_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_kpi.html </a>
+                        # kpi graphs are links """.format(kpi_html_path=kpi_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
 
                         # link to full test results
                         report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
                         report_index_html_path = report_index_html_path.replace(self.cut,'')
                         self.children_div.append(html.Br())
-                        self.html_results +="""<br>"""
+                        #self.html_results +="""<br>"""
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_report.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=report_index_html_path, target='_blank'))
-                        self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_report.html </a>
+                        self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
                         """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
