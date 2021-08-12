@@ -6,7 +6,6 @@ lf_check.py
 
 PURPOSE:
 lf_check.py will tests based on .ini file or .json file. 
-The config file may be copied from lf_check_config_template.ini, or can be generated.   
 The config file name can be passed in as a configuraiton parameter.
 The json file may be copied from lf_check.json and updated.  Currently all the parameters are needed to be set to a value
 
@@ -14,9 +13,6 @@ The --production flag determine the email list for results
 
 EXAMPLE:
 lf_check.py  # this will use the defaults
-lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file>
-lf_check.py --ini <unique ini file>  --test_suite <suite to use in .ini file> --production
-
 lf_check.py --use_json --json <unique json file> --test_suite 
 lf_check.py --use_json --json <unique json file> --production 
 
@@ -101,7 +97,6 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 class lf_check():
     def __init__(self,
                  _use_json,
-                 _config_ini,
                  _json_data,
                  _test_suite,
                  _production,
@@ -112,7 +107,6 @@ class lf_check():
                  _log_path):
         self.use_json = _use_json
         self.json_data = _json_data
-        self.config_ini = _config_ini
         self.test_suite = _test_suite
         self.production_run = _production
         self.report_path = _report_path
@@ -384,10 +378,7 @@ blog: http://{blog}:2368
                 """
 
     def read_config(self):
-        if self.use_json:
-            self.read_config_json()
-        else:
-            self.read_config_ini()
+        self.read_config_json()
 
     # there is probably a more efficient way to do this in python
     # Keeping it obvious for now, may be refactored later
@@ -706,81 +697,6 @@ blog: http://{blog}:2368
             self.upstream_port = self.json_data["test_generic"]["upstream_port"]
         else:
             self.logger.info("upstream_port not in test_generic json")
-            exit(1)
-
-    # functions in this section are/can be overridden by descendants
-    # this code reads the lf_check_config.ini file to populate the test variables
-    def read_config_ini(self):
-        # self.logger.info("read_config_ini_contents {}".format(self.config_ini))
-        config_file = configparser.ConfigParser()
-        success = True
-        success = config_file.read(self.config_ini)
-        self.logger.info("config_file.read result {}".format(success))
-
-        # LF_MGR parameters not used yet
-        if 'LF_MGR' in config_file.sections():
-            section = config_file['LF_MGR']
-            self.lf_mgr = section['LF_MGR_IP']
-            self.lf_mgr_port = section['LF_MGR_PORT']
-            self.logger.info("lf_mgr {}".format(self.lf_mgr))
-            self.logger.info("lf_mgr_port {}".format(self.lf_mgr_port))
-
-        if 'TEST_PARAMETERS' in config_file.sections():
-            section = config_file['TEST_PARAMETERS']
-            self.test_timeout = section['TEST_TIMEOUT']
-            self.use_blank_db = section['LOAD_BLANK_DB']
-            self.use_factory_default_db = section['LOAD_FACTORY_DEFAULT_DB']
-            self.use_custom_db = section['LOAD_CUSTOM_DB']
-            self.custom_db = section['CUSTOM_DB']
-            self.email_list_production = section['EMAIL_LIST_PRODUCTION']
-            self.host_ip_production = section['HOST_IP_PRODUCTION']
-            self.email_list_test = section['EMAIL_LIST_TEST']
-            self.host_ip_test = section['HOST_IP_TEST']
-            self.logger.info("self.email_list_test:{}".format(self.email_list_test))
-
-        if 'TEST_NETWORK' in config_file.sections():
-            section = config_file['TEST_NETWORK']
-            self.http_test_ip = section['HTTP_TEST_IP']
-            self.logger.info("http_test_ip {}".format(self.http_test_ip))
-            self.ftp_test_ip = section['FTP_TEST_IP']
-            self.logger.info("ftp_test_ip {}".format(self.ftp_test_ip))
-            self.test_ip = section['TEST_IP']
-            self.logger.info("test_ip {}".format(self.test_ip))
-
-        if 'TEST_GENERIC' in config_file.sections():
-            section = config_file['TEST_GENERIC']
-            self.radio_lf = section['RADIO_USED']
-            self.logger.info("radio_lf {}".format(self.radio_lf))
-            self.ssid = section['SSID_USED']
-            self.logger.info("ssid {}".format(self.ssid))
-            self.ssid_pw = section['SSID_PW_USED']
-            self.logger.info("ssid_pw {}".format(self.ssid_pw))
-            self.security = section['SECURITY_USED']
-            self.logger.info("secruity {}".format(self.security))
-            self.num_sta = section['NUM_STA']
-            self.logger.info("num_sta {}".format(self.num_sta))
-            self.col_names = section['COL_NAMES']
-            self.logger.info("col_names {}".format(self.col_names))
-            self.upstream_port = section['UPSTREAM_PORT']
-            self.logger.info("upstream_port {}".format(self.upstream_port))
-
-        if 'RADIO_DICTIONARY' in config_file.sections():
-            section = config_file['RADIO_DICTIONARY']
-            self.radio_dict = json.loads(section.get('RADIO_DICT', self.radio_dict))
-            self.logger.info("self.radio_dict {}".format(self.radio_dict))
-
-        if self.test_suite in config_file.sections():
-            section = config_file[self.test_suite]
-            # for json replace the \n and \r they are invalid json characters, allows for multiple line args 
-            try:
-                self.test_dict = json.loads(
-                    section.get('TEST_DICT', self.test_dict).replace('\n', ' ').replace('\r', ' '))
-                self.logger.info("{}:  {}".format(self.test_suite, self.test_dict))
-            except:
-                self.logger.info(
-                    "Exception loading {}, is there comma after the last entry?  Check syntax".format(self.test_suite))
-        else:
-            self.logger.info("EXITING... NOT FOUND Test Suite with name : {}".format(self.test_suite))
             exit(1)
 
     def load_factory_default_db(self):
@@ -1140,22 +1056,13 @@ Example :
     # load test config file information either <config>.json or <config>.ini
     use_json = False
     json_data = ""
-    config_ini = ""
-    if args.use_json:
-        use_json = True
-        try:
-            print("args.json {}".format(args.json))
-            with open(args.json, 'r') as json_config:
-                json_data = json.load(json_config)
-        except:
-            print("Error reading {}".format(args.json))
-    else:
-        config_ini = os.getcwd() + '/' + args.ini
-        if os.path.exists(config_ini):
-            print("TEST CONFIG : {}".format(config_ini))
-        else:
-            print("EXITING: NOTFOUND TEST CONFIG : {} ".format(config_ini))
-            exit(1)
+    use_json = True
+    try:
+        print("args.json {}".format(args.json))
+        with open(args.json, 'r') as json_config:
+            json_data = json.load(json_config)
+    except:
+        print("Error reading {}".format(args.json))
 
     # Test-rig information information
     lanforge_node_version = 'NO_LF_NODE_VER'
@@ -1191,7 +1098,6 @@ Example :
 
     # lf_check() class created
     check = lf_check(_use_json=use_json,
-                     _config_ini=config_ini,
                      _json_data=json_data,
                      _test_suite=test_suite,
                      _production=production,
@@ -1200,12 +1106,6 @@ Example :
                      _outfile_name = outfile_name,
                      _report_path=report_path,
                      _log_path=log_path)
-
-    # get git sha
-    process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
-    (commit_hash, err) = process.communicate()
-    exit_code = process.wait()
-    git_sha = commit_hash.decode('utf-8', 'ignore')
 
     # set up logging
     logfile = args.logfile[:-4]
@@ -1220,10 +1120,6 @@ Example :
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stdout
-
-    # logger setup print out sha
-    logger.info("commit_hash: {}".format(commit_hash))
-    logger.info("commit_hash2: {}".format(commit_hash.decode('utf-8', 'ignore')))
 
     # read config and run tests
     check.read_config()
@@ -1249,7 +1145,7 @@ Example :
 
     try:
         lanforge_node_version = check.get_lanforge_node_version()
-        print("lanforge_node_version {node_ver}".format(node_node=lanforge_node_version))
+        print("lanforge_node_version {node_ver}".format(node_ver=lanforge_node_version))
     except:
         print("lanforge_node_version exception")
 
