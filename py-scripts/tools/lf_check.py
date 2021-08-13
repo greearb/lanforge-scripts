@@ -302,7 +302,7 @@ class lf_check():
 Results from {hostname}:
 http://{ip}/{report}
 QA Report Dashboard:
-http://{qa_url}
+http://{ip_qa}/{qa_url}
 NOTE: Diagrams are links in dashboard
 """.format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
            qa_url=qa_url)
@@ -312,7 +312,7 @@ NOTE: Diagrams are links in dashboard
 http://{ip}/{report}
 QA Report Dashboard:
 QA Report: http://{qa_url}
-""".format(hostname=hostname, ip=ip, report=report_url, qa_url=qa_url)
+""".format(hostname=hostname, ip=ip,report=report_url,ip_qa=ip,qa_url=qa_url)
 
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
