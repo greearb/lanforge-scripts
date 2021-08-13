@@ -173,6 +173,9 @@ class lf_check():
         # DUT , Test rig must match testbed
         self.test_rig = "CT-US-NA"
 
+        # QA report
+        self.qa_html_report = "NA"
+
         # database configuration  # database
         self.database_json = ""
         self.database_config = "True"  # default to False once testing done
@@ -295,18 +298,18 @@ class lf_check():
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 http://{ip}/{report}
-Blog:
-http://{blog}:2368
-NOTE: for now to see stdout and stderr remove /home/lanforge from path.
+QA Report Dashboard:
+http://{qa_report_html}
+NOTE: Diagrams are links in dashboard
 """.format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-           blog=self.blog_host)
+           qa_report_html=self.qa_report_html)
 
         else:
             message_txt = """Results from {hostname}:
 http://{ip}/{report}
-Blog:
-blog: http://{blog}:2368
-""".format(hostname=hostname, ip=ip, report=report_url, blog=self.blog_host)
+QA Report Dashboard:
+QA Report: http://{qa_report_html}
+""".format(hostname=hostname, ip=ip, report=report_url, qa_report_html=self.qa_report_html)
 
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
@@ -989,6 +992,16 @@ blog: http://{blog}:2368
                         else:
                             self.test_result = "Success"
                             background = self.background_blue
+                if 'lf_qa' in command:
+                    line_list = open(stdout_log_txt).readlines()
+                    for line in line_list:
+                        if 'html report:' in line:
+                            self.qa_html_report = line
+                            print("html_report: {report}".format(report=self.qa_html_report))
+                            break
+                            
+                    self.qa_html_report = self.qa_html_report.replace('html report: ','')
+                    
 
                 # stdout_log_link is used for the email reporting to have the corrected path
                 stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
