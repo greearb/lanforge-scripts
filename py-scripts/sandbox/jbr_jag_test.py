@@ -73,41 +73,67 @@ def test_set_port(args=None):
                                               lfclient_port=8080,
                                               debug_=True,
                                               _exit_on_error=True)
-    # my_cmd_flags        = LFJsonPost.set_port_cmd_flags(0x0)
-    my_current_flags = LFP.SetPortCurrentFlags.set_flags(0, ['if_down', 'use_dhcp'])
-    my_interest_flags = LFP.SetPortInterest.set_flags(0, ['current_flags', 'ifdown', 'mac_address'])
+    my_current_flags = 0
+    my_interest_flags = 0;
+    try:
+        my_current_flags = LFP.set_flags(LFP.SetPortCurrentFlags,
+                                         0,
+                                         ['if_down', 'use_dhcp'])
+        my_current_flags = LFP.set_flags(LFP.SetPortCurrentFlags,
+                                         0,
+                                         [
+                                             LFP.SetPortCurrentFlags.if_down,
+                                             LFP.SetPortCurrentFlags.use_dhcp
+                                         ])
 
-    result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
-                                        current_flags=my_current_flags,  # See above, or NA.
-                                        current_flags_msk=my_current_flags,
-                                        # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
-                                        interest=my_interest_flags,
-                                        port='eth2',  # Port number for the port to be modified.
-                                        report_timer=2000,
-                                        resource=1,  # Resource number for the port to be modified.
-                                        shelf=1,  # Shelf number for the port to be modified.
-                                        debug_=True)
-    pprint.pprint(post_request)
+        my_interest_flags = LFP.set_flags(LFP.SetPortInterest, 0, ['current_flags', 'ifdown', 'mac_address'])
 
-    my_current_flags = LFP.SetPortCurrentFlags.clear_flags(my_current_flags,
-                                                           flag_names=LFP.SetPortCurrentFlags.use_dhcp)
-    result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
-                                        current_flags=my_current_flags,  # See above, or NA.
-                                        current_flags_msk=my_current_flags,
-                                        # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
-                                        interest=my_interest_flags,
-                                        port='eth2',  # Port number for the port to be modified.
-                                        report_timer=2000,
-                                        resource=1,  # Resource number for the port to be modified.
-                                        shelf=1,  # Shelf number for the port to be modified.
-                                        debug_=True)
-    get_request = LFG(lfclient_host=args.host,
-                      lfclient_port=8080,
-                      debug_=True,
-                      _exit_on_error=True)
+        result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
+                                            current_flags=my_current_flags,  # See above, or NA.
+                                            current_flags_msk=my_current_flags,
+                                            # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
+                                            interest=my_interest_flags,
+                                            port='eth2',  # Port number for the port to be modified.
+                                            report_timer=2000,
+                                            resource=1,  # Resource number for the port to be modified.
+                                            shelf=1,  # Shelf number for the port to be modified.
+                                            debug_=True)
+        my_current_flags = LFP.clear_flags(LFP.SetPortCurrentFlags,
+                                   my_current_flags,
+                                   flag_names=LFP.SetPortCurrentFlags.use_dhcp)
 
-    result = get_request.get_port(eid_list=["1.1.eth1", "1.1.eth2"], requested_col_names=(), debug_=True)
-    pprint.pprint(result)
+        result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
+                                            current_flags=my_current_flags,  # See above, or NA.
+                                            current_flags_msk=my_current_flags,
+                                            # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
+                                            interest=my_interest_flags,
+                                            port='eth2',  # Port number for the port to be modified.
+                                            report_timer=2000,
+                                            resource=1,  # Resource number for the port to be modified.
+                                            shelf=1,  # Shelf number for the port to be modified.
+                                            debug_=True)
+        get_request = LFG(lfclient_host=args.host,
+                          lfclient_port=8080,
+                          debug_=True,
+                          _exit_on_error=True)
+
+        result = get_request.get_port(eid_list="1.1.eth2",
+                                      requested_col_names=["_links",
+                                                           "alias",
+                                                           "port",
+                                                           "mac",
+                                                           "PORT_SUPPORTED_FLAGS_L",
+                                                           "PORT_SUPPORTED_FLAGS_H",
+                                                           "PORT_CUR_FLAGS_L",
+                                                           "PORT_CUR_FLAGS_H" ],
+                                      debug_=True)
+        pprint.pprint(result)
+    except Exception as x:
+        import traceback
+        traceback.print_tb(x)
+        print(x.__repr__())
+        exit(1)
+
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
