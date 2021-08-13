@@ -288,10 +288,10 @@
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
-                "command":"./sandbox/lf_qa.py",
+                "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./sandbox/qa_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_test_db"
                 ]
             }
         },
