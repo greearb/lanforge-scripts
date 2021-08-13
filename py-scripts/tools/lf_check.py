@@ -287,6 +287,9 @@ class lf_check():
         report_url = report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
             report_url = report_url[1:]
+        qa_url = self.qa_report_html.replace('home/lanforge','')
+        if qa_url.startswith('/'):
+            qa_url = qa_url[1:]
         # following recommendation 
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
         # Mail
@@ -299,17 +302,17 @@ class lf_check():
 Results from {hostname}:
 http://{ip}/{report}
 QA Report Dashboard:
-http://{qa_report_html}
+http://{qa_url}
 NOTE: Diagrams are links in dashboard
 """.format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-           qa_report_html=self.qa_report_html)
+           qa_url=qa_url)
 
         else:
             message_txt = """Results from {hostname}:
 http://{ip}/{report}
 QA Report Dashboard:
-QA Report: http://{qa_report_html}
-""".format(hostname=hostname, ip=ip, report=report_url, qa_report_html=self.qa_report_html)
+QA Report: http://{qa_url}
+""".format(hostname=hostname, ip=ip, report=report_url, qa_url=qa_url)
 
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
