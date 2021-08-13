@@ -15,7 +15,7 @@ TO DO NOTES:
 '''
 import sys
 
-if sys.version_info[0]  != 3:
+if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
@@ -24,8 +24,9 @@ import argparse
 import pprint
 
 from LANforge import lf_json_autogen
-from LANforge.lf_json_autogen import LFJsonGet
-from LANforge.lf_json_autogen import LFJsonPost
+from LANforge.lf_json_autogen import LFJsonGet as LFG
+from LANforge.lf_json_autogen import LFJsonPost as LFP
+
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 def main():
@@ -46,21 +47,21 @@ def main():
     if args.test.endswith("set_port"):
         test_set_port(args)
 
+
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 def test_get_port(args=None):
     print("test_get_port")
     if not args:
         raise ValueError("test_get_port needs args")
-    get_request = LFJsonGet(lfclient_host=args.host,
-                                            lfclient_port=8080,
-                                            debug_=True,
-                                            _exit_on_error=True)
+    get_request = LFG(lfclient_host=args.host,
+                      lfclient_port=8080,
+                      debug_=True,
+                      _exit_on_error=True)
 
     result = get_request.get_port(eid_list=["1.1.eth0", "1.1.eth1", "1.1.eth2"],
                                   requested_col_names=(),
                                   debug_=True)
     pprint.pprint(result)
-
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -73,8 +74,8 @@ def test_set_port(args=None):
                                               debug_=True,
                                               _exit_on_error=True)
     # my_cmd_flags        = LFJsonPost.set_port_cmd_flags(0x0)
-    my_current_flags    = LFJsonPost.set_port_current_flags(LFJsonPost.set_port_current_flags.use_dhcp)
-    my_interest_flags   = LFJsonPost.set_port_interest(LFJsonPost.set_port_interest.dhcp)
+    my_current_flags = LFP.SetPortCurrentFlags.set_flags(0, ['if_down', 'use_dhcp'])
+    my_interest_flags = LFP.SetPortInterest.set_flags(0, ['current_flags', 'ifdown', 'mac_address'])
 
     result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
                                         current_flags=my_current_flags,  # See above, or NA.
@@ -87,7 +88,9 @@ def test_set_port(args=None):
                                         shelf=1,  # Shelf number for the port to be modified.
                                         debug_=True)
     pprint.pprint(post_request)
-    my_current_flags.clear_flags(flag_names=LFJsonPost.set_port_current_flags.use_dhcp)
+
+    my_current_flags = LFP.SetPortCurrentFlags.clear_flags(my_current_flags,
+                                                           flag_names=LFP.SetPortCurrentFlags.use_dhcp)
     result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
                                         current_flags=my_current_flags,  # See above, or NA.
                                         current_flags_msk=my_current_flags,
@@ -98,13 +101,14 @@ def test_set_port(args=None):
                                         resource=1,  # Resource number for the port to be modified.
                                         shelf=1,  # Shelf number for the port to be modified.
                                         debug_=True)
-    get_request = LFJsonGet(lfclient_host=args.host,
-                                        lfclient_port=8080,
-                                        debug_=True,
-                                        _exit_on_error=True)
+    get_request = LFG(lfclient_host=args.host,
+                      lfclient_port=8080,
+                      debug_=True,
+                      _exit_on_error=True)
 
     result = get_request.get_port(eid_list=["1.1.eth1", "1.1.eth2"], requested_col_names=(), debug_=True)
     pprint.pprint(result)
+
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
