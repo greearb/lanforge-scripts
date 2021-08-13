@@ -72,6 +72,7 @@ class DUT(dut):
                  hw_version="NA",
                  serial_num="NA",
                  model_num="NA",
+                 dut_flags=None,
                  ):
         super().__init__(
             lfclient_host=lfmgr,
@@ -80,11 +81,14 @@ class DUT(dut):
             hw_version=hw_version,
             serial_num=serial_num,
             model_num=model_num,
+            desired_dut_flags=dut_flags,
+            desired_dut_flags_mask=dut_flags
         )
         self.cv_dut_name = dut_name
         self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
+
 
     def setup(self):
         self.create_dut()
@@ -156,6 +160,7 @@ def main():
     parser.add_argument("--hw_version", default="NA", help="DUT Hardware version.")
     parser.add_argument("--serial_num", default="NA", help="DUT Serial number.")
     parser.add_argument("--model_num", default="NA", help="DUT Model Number.")
+    parser.add_argument('--dut_flag', help='station flags to add', default=None, action='append')
 
     args = parser.parse_args()
     new_dut = DUT(lfmgr=args.lfmgr,
@@ -166,6 +171,7 @@ def main():
                   hw_version = args.hw_version,
                   serial_num = args.serial_num,
                   model_num = args.model_num,
+                  dut_flags=args.dut_flag
                   )
 
     new_dut.setup()

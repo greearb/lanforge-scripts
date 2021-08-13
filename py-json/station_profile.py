@@ -1,4 +1,3 @@
-
 # !/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFRequest
@@ -32,10 +31,7 @@ class StationProfile:
                  shelf=1,
                  dhcp=True,
                  debug_=False,
-                 use_ht160=False,
-                 COMMANDS=["add_sta", "set_port"],
-                 desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"],
-                 desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]):
+                 use_ht160=False):
         self.debug = debug_
         self.lfclient_url = lfclient_url
         self.ssid = ssid
@@ -48,9 +44,9 @@ class StationProfile:
         self.security = security
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
-        self.COMMANDS = COMMANDS
-        self.desired_add_sta_flags = desired_add_sta_flags
-        self.desired_add_sta_flags_mask = desired_add_sta_flags_mask
+        self.COMMANDS = ["add_sta", "set_port"]
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.number_template = number_template_
         self.station_names = []  # eids, these are created station names
         self.add_sta_data = {
@@ -63,6 +59,7 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
+            "flags_mask": 0
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -229,7 +226,7 @@ class StationProfile:
                 self.set_command_param("add_sta", "ieee80211w", 2)
             # self.add_sta_data["key"] = passwd
 
-    def station_mode_to_number(self,mode):
+    def station_mode_to_number(self, mode):
         modes = ['a', 'b', 'g', 'abg', 'an', 'abgn', 'bgn', 'bg', 'abgn-AC', 'bgn-AC', 'an-AC']
         return modes.index(mode) + 1
 
@@ -535,4 +532,24 @@ class StationProfile:
         if self.debug:
             print("created %s stations" % num)
 
-#
+    def modify(self, radio):
+        for station in self.station_names:
+            print(station)
+            self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+            self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask,
+                                                                   add_sta.add_sta_flags)
+            self.add_sta_data["radio"] = radio
+            self.add_sta_data["sta_name"] = station
+            self.add_sta_data["ssid"] = 'NA'
+            self.add_sta_data["key"] = 'NA'
+            self.add_sta_data['mac'] = 'NA'
+            self.add_sta_data['mode'] = 'NA'
+            self.add_sta_data['suppress_preexec_cli'] = 'NA'
+            self.add_sta_data['suppress_preexec_method'] = 'NA'
+
+            add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
+            if self.debug:
+                print(self.lfclient_url + "/cli_json/add_sta")
+                print(self.add_sta_data)
+            add_sta_r.addPostData(self.add_sta_data)
+            json_response = add_sta_r.jsonPost(self.debug)

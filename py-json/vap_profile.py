@@ -351,13 +351,7 @@ class VAPProfile(LFCliBase):
         if (self.up):
             self.admin_up(resource)
 
-    def modify(self, resource, radio):
-        list_ports = self.local_realm.json_get("/port/1/%s" % resource,
-                                               debug_=self.debug)
-        for item in list_ports['interfaces']:
-            if self.vap_name == list(item.values())[0]['alias']:
-                url = (list(item.values())[0]['_links'])
-
+    def modify(self, radio):
         self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
         self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
         self.add_vap_data["radio"] = radio

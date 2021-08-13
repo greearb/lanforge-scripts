@@ -143,7 +143,6 @@ class CreateChamberview(cv):
                                             );  # To manage scenario
         if not line and not raw_line:
             raise Exception("scenario creation failed")
-            return False
 
         return True
 
@@ -170,9 +169,7 @@ class CreateChamberview(cv):
         print("completed building %s scenario" %scenario_name)
 
 
-
 def main():
-
     parser = argparse.ArgumentParser(
         description="""
         For Two line scenario use --line twice as shown in example, for multi line scenario
@@ -203,7 +200,6 @@ def main():
                         help="delete scenario (by default: False)")
     args = parser.parse_args()
 
-
     Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
                                            port=args.port,
                                            )
@@ -214,7 +210,6 @@ def main():
                              line=args.line,
                              raw_line=args.raw_line)
     Create_Chamberview.build(args.create_scenario)
-
 
 
 if __name__ == "__main__":
