@@ -174,7 +174,7 @@ class lf_check():
         self.test_rig = "CT-US-NA"
 
         # QA report
-        self.qa_html_report = "NA"
+        self.qa_report_html = "NA"
 
         # database configuration  # database
         self.database_json = ""
@@ -996,11 +996,11 @@ QA Report: http://{qa_report_html}
                     line_list = open(stdout_log_txt).readlines()
                     for line in line_list:
                         if 'html report:' in line:
-                            self.qa_html_report = line
-                            print("html_report: {report}".format(report=self.qa_html_report))
+                            self.qa_report_html = line
+                            print("html_report: {report}".format(report=self.qa_report_html))
                             break
                             
-                    self.qa_html_report = self.qa_html_report.replace('html report: ','')
+                    self.qa_report_html = self.qa_report_html.replace('html report: ','')
                     
 
                 # stdout_log_link is used for the email reporting to have the corrected path
