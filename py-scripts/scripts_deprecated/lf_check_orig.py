@@ -93,20 +93,16 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 # lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
-                _json_rig,
-                _json_test,
-                _test_suite,
-                _json_igg,
-                _production,
-                _csv_results,
-                _outfile,
-                _outfile_name,
-                _report_path,
-                _log_path):
-        self.json_rig = _json_rig
-        self.json_test = _json_test
+                 _json_data,
+                 _test_suite,
+                 _production,
+                 _csv_results,
+                 _outfile,
+                 _outfile_name,
+                 _report_path,
+                 _log_path):
+        self.json_data = _json_data
         self.test_suite = _test_suite
-        self.json_igg = _json_igg
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
@@ -176,12 +172,9 @@ class lf_check():
 
         # DUT , Test rig must match testbed
         self.test_rig = "CT-US-NA"
-        self.test_rig_json = ""
 
         # QA report
         self.qa_report_html = "NA"
-        self.database_qa = ""
-        self.table_qa = ""
 
         # database configuration  # database
         self.database_json = ""
@@ -304,7 +297,6 @@ class lf_check():
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
@@ -391,326 +383,324 @@ QA Report: http://{ip_qa}/{qa_url}
                 <br>
                 """
 
+    def read_config(self):
+        self.read_config_json()
+
     # there is probably a more efficient way to do this in python
     # Keeping it obvious for now, may be refactored later
-    # Top level for reading the test rig configuration
-    def read_json_rig(self):
-        # self.logger.info("read_config_json_contents {}".format(self.json_rig))
-        if "test_parameters" in self.json_rig:
+    def read_config_json(self):
+        # self.logger.info("read_config_json_contents {}".format(self.json_data))
+        if "test_parameters" in self.json_data:
             self.logger.info("json: read test_parameters")
-            # self.logger.info("test_parameters {}".format(self.json_rig["test_parameters"]))
+            # self.logger.info("test_parameters {}".format(self.json_data["test_parameters"]))
             self.read_test_parameters()
         else:
-            self.logger.info("EXITING test_parameters not in json {}".format(self.json_rig))
+            self.logger.info("EXITING test_parameters not in json {}".format(self.json_data))
             exit(1)
 
-        if "test_network" in self.json_rig:
+        if "test_network" in self.json_data:
             self.logger.info("json: read test_network")
-            # self.logger.info("test_network {}".format(self.json_rig["test_network"]))
+            # self.logger.info("test_network {}".format(self.json_data["test_network"]))
             self.read_test_network()
         else:
-            self.logger.info("EXITING test_network not in json {}".format(self.json_rig))
+            self.logger.info("EXITING test_network not in json {}".format(self.json_data))
             exit(1)
 
-        if "test_generic" in self.json_rig:
-            self.logger.info("json: read test_generic")
-            # self.logger.info("test_generic {}".format(self.json_rig["test_generic"]))
-            self.read_test_generic()
-        else:
-            self.logger.info("EXITING test_generic not in json {}".format(self.json_rig))
-            exit(1)
-
-        if "radio_dict" in self.json_rig:
-            self.logger.info("json: read radio_dict")
-            # self.logger.info("radio_dict {}".format(self.json_rig["radio_dict"]))
-            self.radio_dict = self.json_rig["radio_dict"]
-            self.logger.info("self.radio_dict {}".format(self.radio_dict))
-        else:
-            self.logger.info("EXITING radio_dict not in json {}".format(self.json_rig))
-            exit(1)
-    # Top Level for reading the tests to run
-    def read_json_test(self):
-        if "test_suites" in self.json_test:
-            self.logger.info("json: read test_suites looking for: {}".format(self.test_suite))
-            # self.logger.info("test_suites {}".format(self.json_test["test_suites"]))
-            if self.test_suite in self.json_test["test_suites"]:
-                self.test_dict = self.json_test["test_suites"][self.test_suite]
-                # self.logger.info("self.test_dict {}".format(self.test_dict))
-            else:
-                self.logger.info("EXITING test_suite {} Not Present in json test_suites: {}".format(self.test_suite,
-                                                                                                    self.json_test[
-                                                                                                        "test_suites"]))
-                exit(1)
-        else:
-            self.logger.info("EXITING test_suites not in json {}".format(self.json_test))
-            exit(1)
-
-    # Top Level for Influx, Grafana, Ghost configuration
-    def read_json_igg(self):
-        if "test_database" in self.json_igg:
+        if "test_database" in self.json_data:
             self.logger.info("json: read test_database")
-            # self.logger.info("test_database {}".format(self.json_rig["test_database"]))
+            # self.logger.info("test_database {}".format(self.json_data["test_database"]))
             self.read_test_database()
         else:
             self.logger.info("NOTE: test_database not found in json")
 
-        if "test_dashboard" in self.json_igg:
+        if "test_dashboard" in self.json_data:
             self.logger.info("json: read test_dashboard")
-            # self.logger.info("test_dashboard {}".format(self.json_rig["test_dashboard"]))
+            # self.logger.info("test_dashboard {}".format(self.json_data["test_dashboard"]))
             self.read_test_dashboard()
         else:
             self.logger.info("NOTE: test_dashboard not found in json")
 
-        if "test_blog" in self.json_igg:
+        if "test_blog" in self.json_data:
             self.logger.info("json: read test_blog")
-            # self.logger.info("test_blog {}".format(self.json_rig["test_blog"]))
+            # self.logger.info("test_blog {}".format(self.json_data["test_blog"]))
             self.read_test_blog()
         else:
             self.logger.info("NOTE: test_blog not found in json")
 
+        if "test_generic" in self.json_data:
+            self.logger.info("json: read test_generic")
+            # self.logger.info("test_generic {}".format(self.json_data["test_generic"]))
+            self.read_test_generic()
+        else:
+            self.logger.info("EXITING test_generic not in json {}".format(self.json_data))
+            exit(1)
+
+        if "radio_dict" in self.json_data:
+            self.logger.info("json: read radio_dict")
+            # self.logger.info("radio_dict {}".format(self.json_data["radio_dict"]))
+            self.radio_dict = self.json_data["radio_dict"]
+            self.logger.info("self.radio_dict {}".format(self.radio_dict))
+        else:
+            self.logger.info("EXITING radio_dict not in json {}".format(self.json_data))
+            exit(1)
+
+        if "test_suites" in self.json_data:
+            self.logger.info("json: read test_suites looking for: {}".format(self.test_suite))
+            # self.logger.info("test_suites {}".format(self.json_data["test_suites"]))
+            if self.test_suite in self.json_data["test_suites"]:
+                self.test_dict = self.json_data["test_suites"][self.test_suite]
+                # self.logger.info("self.test_dict {}".format(self.test_dict))
+            else:
+                self.logger.info("EXITING test_suite {} Not Present in json test_suites: {}".format(self.test_suite,
+                                                                                                    self.json_data[
+                                                                                                        "test_suites"]))
+                exit(1)
+        else:
+            self.logger.info("EXITING test_suites not in json {}".format(self.json_data))
+            exit(1)
 
     def read_test_parameters(self):
-        if "test_timeout" in self.json_rig["test_parameters"]:
-            self.test_timeout = self.json_rig["test_parameters"]["test_timeout"]
+        if "test_timeout" in self.json_data["test_parameters"]:
+            self.test_timeout = self.json_data["test_parameters"]["test_timeout"]
             self.test_timeout_default = self.test_timeout
         else:
             self.logger.info("test_timeout not in test_parameters json")
             exit(1)
-        if "load_blank_db" in self.json_rig["test_parameters"]:
-            self.load_blank_db = self.json_rig["test_parameters"]["load_blank_db"]
+        if "load_blank_db" in self.json_data["test_parameters"]:
+            self.load_blank_db = self.json_data["test_parameters"]["load_blank_db"]
         else:
             self.logger.info("load_blank_db not in test_parameters json")
             exit(1)
-        if "load_factory_default_db" in self.json_rig["test_parameters"]:
-            self.load_factory_default_db = self.json_rig["test_parameters"]["load_factory_default_db"]
+        if "load_factory_default_db" in self.json_data["test_parameters"]:
+            self.load_factory_default_db = self.json_data["test_parameters"]["load_factory_default_db"]
         else:
             self.logger.info("load_factory_default_db not in test_parameters json")
             exit(1)
-        if "load_custom_db" in self.json_rig["test_parameters"]:
-            self.load_custom_db = self.json_rig["test_parameters"]["load_custom_db"]
+        if "load_custom_db" in self.json_data["test_parameters"]:
+            self.load_custom_db = self.json_data["test_parameters"]["load_custom_db"]
         else:
             self.logger.info("load_custom_db not in test_parameters json")
             exit(1)
-        if "custom_db" in self.json_rig["test_parameters"]:
-            self.custom_db = self.json_rig["test_parameters"]["custom_db"]
+        if "custom_db" in self.json_data["test_parameters"]:
+            self.custom_db = self.json_data["test_parameters"]["custom_db"]
         else:
             self.logger.info("custom_db not in test_parameters json, if not using custom_db just put in a name")
             exit(1)
-        if "email_list_production" in self.json_rig["test_parameters"]:
-            self.email_list_production = self.json_rig["test_parameters"]["email_list_production"]
+        if "email_list_production" in self.json_data["test_parameters"]:
+            self.email_list_production = self.json_data["test_parameters"]["email_list_production"]
         else:
             self.logger.info("email_list_production not in test_parameters json")
             exit(1)
-        if "host_ip_production" in self.json_rig["test_parameters"]:
-            self.host_ip_production = self.json_rig["test_parameters"]["host_ip_production"]
+        if "host_ip_production" in self.json_data["test_parameters"]:
+            self.host_ip_production = self.json_data["test_parameters"]["host_ip_production"]
         else:
             self.logger.info("host_ip_production not in test_parameters json")
             exit(1)
-        if "email_list_test" in self.json_rig["test_parameters"]:
-            self.email_list_test = self.json_rig["test_parameters"]["email_list_test"]
+        if "email_list_test" in self.json_data["test_parameters"]:
+            self.email_list_test = self.json_data["test_parameters"]["email_list_test"]
             print(self.email_list_test)
         else:
             self.logger.info("email_list_test not in test_parameters json")
             exit(1)
-        if "host_ip_test" in self.json_rig["test_parameters"]:
-            self.host_ip_test = self.json_rig["test_parameters"]["host_ip_test"]
+        if "host_ip_test" in self.json_data["test_parameters"]:
+            self.host_ip_test = self.json_data["test_parameters"]["host_ip_test"]
         else:
             self.logger.info("host_ip_test not in test_parameters json")
             exit(1)
-        if "email_title_txt" in self.json_rig["test_parameters"]:
-            self.email_title_txt = self.json_rig["test_parameters"]["email_title_txt"]
+        if "email_title_txt" in self.json_data["test_parameters"]:
+            self.email_title_txt = self.json_data["test_parameters"]["email_title_txt"]
         else:
             self.logger.info("email_title_txt not in test_parameters json")
-        if "email_txt" in self.json_rig["test_parameters"]:
-            self.email_txt = self.json_rig["test_parameters"]["email_txt"]
+        if "email_txt" in self.json_data["test_parameters"]:
+            self.email_txt = self.json_data["test_parameters"]["email_txt"]
         else:
             self.logger.info("email_txt not in test_parameters json")
-        if "lf_mgr_ip" in self.json_rig["test_parameters"]:
-            self.lf_mgr_ip = self.json_rig["test_parameters"]["lf_mgr_ip"]
+        if "lf_mgr_ip" in self.json_data["test_parameters"]:
+            self.lf_mgr_ip = self.json_data["test_parameters"]["lf_mgr_ip"]
         else:
             self.logger.info("lf_mgr_ip not in test_parameters json")
-        if "lf_mgr_port" in self.json_rig["test_parameters"]:
-            self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
+        if "lf_mgr_port" in self.json_data["test_parameters"]:
+            self.lf_mgr_port = self.json_data["test_parameters"]["lf_mgr_port"]
         else:
             self.logger.info("lf_mgr_port not in test_parameters json")
-        if "dut_name" in self.json_rig["test_parameters"]:
-            self.dut_name = self.json_rig["test_parameters"]["dut_name"]
+        if "dut_name" in self.json_data["test_parameters"]:
+            self.dut_name = self.json_data["test_parameters"]["dut_name"]
         else:
             self.logger.info("dut_name not in test_parameters json")
-        if "dut_hw" in self.json_rig["test_parameters"]:
-            self.dut_hw = self.json_rig["test_parameters"]["dut_hw"]
+        if "dut_hw" in self.json_data["test_parameters"]:
+            self.dut_hw = self.json_data["test_parameters"]["dut_hw"]
         else:
             self.logger.info("dut_hw not in test_parameters json")
-        if "dut_sw" in self.json_rig["test_parameters"]:
-            self.dut_sw = self.json_rig["test_parameters"]["dut_sw"]
+        if "dut_sw" in self.json_data["test_parameters"]:
+            self.dut_sw = self.json_data["test_parameters"]["dut_sw"]
         else:
             self.logger.info("dut_sw not in test_parameters json")
-        if "dut_model" in self.json_rig["test_parameters"]:
-            self.dut_model = self.json_rig["test_parameters"]["dut_model"]
+        if "dut_model" in self.json_data["test_parameters"]:
+            self.dut_model = self.json_data["test_parameters"]["dut_model"]
         else:
             self.logger.info("dut_model not in test_parameters json")
-        if "dut_serial" in self.json_rig["test_parameters"]:
-            self.dut_serial = self.json_rig["test_parameters"]["dut_serial"]
+        if "dut_serial" in self.json_data["test_parameters"]:
+            self.dut_serial = self.json_data["test_parameters"]["dut_serial"]
         else:
             self.logger.info("dut_serial not in test_parameters json")
-        if "dut_bssid_2g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_2g = self.json_rig["test_parameters"]["dut_bssid_2g"]
+        if "dut_bssid_2g" in self.json_data["test_parameters"]:
+            self.dut_bssid_2g = self.json_data["test_parameters"]["dut_bssid_2g"]
         else:
             self.logger.info("dut_bssid_2G not in test_parameters json")
-        if "dut_bssid_5g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_5g = self.json_rig["test_parameters"]["dut_bssid_5g"]
+        if "dut_bssid_5g" in self.json_data["test_parameters"]:
+            self.dut_bssid_5g = self.json_data["test_parameters"]["dut_bssid_5g"]
         else:
             self.logger.info("dut_bssid_5g not in test_parameters json")
-        if "dut_bssid_6g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_6g = self.json_rig["test_parameters"]["dut_bssid_6g"]
+        if "dut_bssid_6g" in self.json_data["test_parameters"]:
+            self.dut_bssid_6g = self.json_data["test_parameters"]["dut_bssid_6g"]
         else:
             self.logger.info("dut_bssid_6g not in test_parameters json")
 
     def read_test_network(self):
-        if "http_test_ip" in self.json_rig["test_network"]:
-            self.http_test_ip = self.json_rig["test_network"]["http_test_ip"]
+        if "http_test_ip" in self.json_data["test_network"]:
+            self.http_test_ip = self.json_data["test_network"]["http_test_ip"]
         else:
             self.logger.info("http_test_ip not in test_network json")
             exit(1)
-        if "ftp_test_ip" in self.json_rig["test_network"]:
-            self.ftp_test_ip = self.json_rig["test_network"]["ftp_test_ip"]
+        if "ftp_test_ip" in self.json_data["test_network"]:
+            self.ftp_test_ip = self.json_data["test_network"]["ftp_test_ip"]
         else:
             self.logger.info("ftp_test_ip not in test_network json")
             exit(1)
-        if "test_ip" in self.json_rig["test_network"]:
-            self.ftp_test_ip = self.json_rig["test_network"]["test_ip"]
+        if "test_ip" in self.json_data["test_network"]:
+            self.ftp_test_ip = self.json_data["test_network"]["test_ip"]
         else:
             self.logger.info("test_ip not in test_network json")
             exit(1)
 
     def read_test_database(self):
-        if "database_config" in self.json_igg["test_database"]:
-            self.database_config = self.json_igg["test_database"]["database_config"]
+        if "database_config" in self.json_data["test_database"]:
+            self.database_config = self.json_data["test_database"]["database_config"]
         else:
             self.logger.info("database_config not in test_database json")
-        if "database_host" in self.json_igg["test_database"]:
-            self.database_host = self.json_igg["test_database"]["database_host"]
+        if "database_host" in self.json_data["test_database"]:
+            self.database_host = self.json_data["test_database"]["database_host"]
         else:
             self.logger.info("database_host not in test_database json")
-        if "database_port" in self.json_igg["test_database"]:
-            self.database_port = self.json_igg["test_database"]["database_port"]
+        if "database_port" in self.json_data["test_database"]:
+            self.database_port = self.json_data["test_database"]["database_port"]
         else:
             self.logger.info("database_port not in test_database json")
-        if "database_token" in self.json_igg["test_database"]:
-            self.database_token = self.json_igg["test_database"]["database_token"]
+        if "database_token" in self.json_data["test_database"]:
+            self.database_token = self.json_data["test_database"]["database_token"]
         else:
             self.logger.info("database_token not in test_database json")
-        if "database_org" in self.json_igg["test_database"]:
-            self.database_org = self.json_igg["test_database"]["database_org"]
+        if "database_org" in self.json_data["test_database"]:
+            self.database_org = self.json_data["test_database"]["database_org"]
         else:
             self.logger.info("database_org not in test_database json")
-        if "database_bucket" in self.json_igg["test_database"]:
-            self.database_bucket = self.json_igg["test_database"]["database_bucket"]
+        if "database_bucket" in self.json_data["test_database"]:
+            self.database_bucket = self.json_data["test_database"]["database_bucket"]
         else:
             self.logger.info("database_bucket not in test_database json")
-        if "database_tag" in self.json_igg["test_database"]:
-            self.database_tag = self.json_igg["test_database"]["database_tag"]
+        if "database_tag" in self.json_data["test_database"]:
+            self.database_tag = self.json_data["test_database"]["database_tag"]
         else:
             self.logger.info("database_tag not in test_database json")
-        if "test_rig" in self.json_igg["test_database"]:
-            self.test_rig = self.json_igg["test_database"]["test_rig"]
+        if "test_rig" in self.json_data["test_database"]:
+            self.test_rig = self.json_data["test_database"]["test_rig"]
         else:
             self.logger.info("test_rig not in test_database json")
-        if "dut_set_name" in self.json_igg["test_database"]:
-            self.dut_set_name = self.json_igg["test_database"]["dut_set_name"]
+        if "dut_set_name" in self.json_data["test_database"]:
+            self.dut_set_name = self.json_data["test_database"]["dut_set_name"]
         else:
             self.logger.info("dut_set_name not in test_database json")
 
     def read_test_dashboard(self):
-        if "dashboard_config" in self.json_igg["test_dashboard"]:
-            self.dashboard_config = self.json_igg["test_dashboard"]["dashboard_config"]
+        if "dashboard_config" in self.json_data["test_dashboard"]:
+            self.dashboard_config = self.json_data["test_dashboard"]["dashboard_config"]
         else:
             self.logger.info("dashboard_config not in test_dashboard json")
 
-        if "dashboard_host" in self.json_igg["test_dashboard"]:
-            self.dashboard_host = self.json_igg["test_dashboard"]["dashboard_host"]
+        if "dashboard_host" in self.json_data["test_dashboard"]:
+            self.dashboard_host = self.json_data["test_dashboard"]["dashboard_host"]
         else:
             self.logger.info("dashboard_host not in test_dashboard json")
 
-        if "dashboard_token" in self.json_igg["test_dashboard"]:
-            self.dashboard_token = self.json_igg["test_dashboard"]["dashboard_token"]
+        if "dashboard_token" in self.json_data["test_dashboard"]:
+            self.dashboard_token = self.json_data["test_dashboard"]["dashboard_token"]
         else:
             self.logger.info("dashboard_token not in test_dashboard json")
 
     def read_test_blog(self):
-        if "blog_config" in self.json_igg["test_blog"]:
-            self.blog_config = self.json_igg["test_blog"]["blog_config"]
+        if "blog_config" in self.json_data["test_blog"]:
+            self.blog_config = self.json_data["test_blog"]["blog_config"]
         else:
             self.logger.info("blog_config not in test_blog json")
 
-        if "blog_host" in self.json_igg["test_blog"]:
-            self.blog_host = self.json_igg["test_blog"]["blog_host"]
+        if "blog_host" in self.json_data["test_blog"]:
+            self.blog_host = self.json_data["test_blog"]["blog_host"]
         else:
             self.logger.info("blog_host not in test_blog json")
 
-        if "blog_token" in self.json_igg["test_blog"]:
-            self.blog_token = self.json_igg["test_blog"]["blog_token"]
+        if "blog_token" in self.json_data["test_blog"]:
+            self.blog_token = self.json_data["test_blog"]["blog_token"]
         else:
             self.logger.info("blog_token not in test_blog json")
 
-        if "blog_authors" in self.json_igg["test_blog"]:
-            self.blog_authors = self.json_igg["test_blog"]["blog_authors"]
+        if "blog_authors" in self.json_data["test_blog"]:
+            self.blog_authors = self.json_data["test_blog"]["blog_authors"]
         else:
             self.logger.info("blog_authors not in test_blog json")
 
-        if "blog_customer" in self.json_igg["test_blog"]:
-            self.blog_customer = self.json_igg["test_blog"]["blog_customer"]
+        if "blog_customer" in self.json_data["test_blog"]:
+            self.blog_customer = self.json_data["test_blog"]["blog_customer"]
         else:
             self.logger.info("blog_customer not in test_blog json")
 
-        if "blog_user_push" in self.json_igg["test_blog"]:
-            self.blog_user_push = self.json_igg["test_blog"]["blog_user_push"]
+        if "blog_user_push" in self.json_data["test_blog"]:
+            self.blog_user_push = self.json_data["test_blog"]["blog_user_push"]
         else:
             self.logger.info("blog_user_push not in test_blog json")
 
-        if "blog_password_push" in self.json_igg["test_blog"]:
-            self.blog_password_push = self.json_igg["test_blog"]["blog_password_push"]
+        if "blog_password_push" in self.json_data["test_blog"]:
+            self.blog_password_push = self.json_data["test_blog"]["blog_password_push"]
         else:
             self.logger.info("blog_password_push not in test_blog json")
 
-        if "blog_flag" in self.json_igg["test_blog"]:
-            self.blog_flag = self.json_igg["test_blog"]["blog_flag"]
+        if "blog_flag" in self.json_data["test_blog"]:
+            self.blog_flag = self.json_data["test_blog"]["blog_flag"]
         else:
             self.logger.info("blog_flag not in test_blog json")
 
     def read_test_generic(self):
-        if "radio_used" in self.json_rig["test_generic"]:
-            self.radio_lf = self.json_rig["test_generic"]["radio_used"]
+        if "radio_used" in self.json_data["test_generic"]:
+            self.radio_lf = self.json_data["test_generic"]["radio_used"]
         else:
             self.logger.info("radio_used not in test_generic json")
             exit(1)
-        if "ssid_used" in self.json_rig["test_generic"]:
-            self.ssid = self.json_rig["test_generic"]["ssid_used"]
+        if "ssid_used" in self.json_data["test_generic"]:
+            self.ssid = self.json_data["test_generic"]["ssid_used"]
         else:
             self.logger.info("ssid_used not in test_generic json")
             exit(1)
-        if "ssid_pw_used" in self.json_rig["test_generic"]:
-            self.ssid_pw = self.json_rig["test_generic"]["ssid_pw_used"]
+        if "ssid_pw_used" in self.json_data["test_generic"]:
+            self.ssid_pw = self.json_data["test_generic"]["ssid_pw_used"]
         else:
             self.logger.info("ssid_pw_used not in test_generic json")
             exit(1)
-        if "security_used" in self.json_rig["test_generic"]:
-            self.security = self.json_rig["test_generic"]["security_used"]
+        if "security_used" in self.json_data["test_generic"]:
+            self.security = self.json_data["test_generic"]["security_used"]
         else:
             self.logger.info("security_used not in test_generic json")
             exit(1)
-        if "num_sta" in self.json_rig["test_generic"]:
-            self.num_sta = self.json_rig["test_generic"]["num_sta"]
+        if "num_sta" in self.json_data["test_generic"]:
+            self.num_sta = self.json_data["test_generic"]["num_sta"]
         else:
             self.logger.info("num_sta not in test_generic json")
             exit(1)
-        if "col_names" in self.json_rig["test_generic"]:
-            self.num_sta = self.json_rig["test_generic"]["col_names"]
+        if "col_names" in self.json_data["test_generic"]:
+            self.num_sta = self.json_data["test_generic"]["col_names"]
         else:
             self.logger.info("col_names not in test_generic json")
             exit(1)
-        if "upstream_port" in self.json_rig["test_generic"]:
-            self.upstream_port = self.json_rig["test_generic"]["upstream_port"]
+        if "upstream_port" in self.json_data["test_generic"]:
+            self.upstream_port = self.json_data["test_generic"]["upstream_port"]
         else:
             self.logger.info("upstream_port not in test_generic json")
             exit(1)
@@ -1070,9 +1060,7 @@ Example :
                         default="lf_check_config.ini")
     parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
     parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
-    parser.add_argument('--json_rig', help="--json_rig <rig json config> ", default="")
-    parser.add_argument('--json_test', help="--json_test <test json config> ", default="")
-    parser.add_argument('--json_igg', help="--json_igg <influx grafana ghost json config> ", default="")
+    parser.add_argument('--json', help="--json <lf_ckeck_config.json file> ", default="lf_check_config.json")
     parser.add_argument('--use_json', help="--use_json FLAG DEPRECATED", action='store_true')
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
@@ -1087,31 +1075,13 @@ Example :
     if args.use_json:
         print("NOTE: --use_json flag deprecated and unused")
     # load test config file information either <config>.json or <config>.ini
-    json_rig = ""
+    json_data = ""
     try:
-        print("args.json_rig {rig}".format(rig=args.json_rig))
-        with open(args.json_rig, 'r') as json_rig_config:
-            json_rig = json.load(json_rig_config)
+        print("args.json {}".format(args.json))
+        with open(args.json, 'r') as json_config:
+            json_data = json.load(json_config)
     except:
-        print("Error reading {}".format(args.json_rig))        
-
-    json_test = ""
-    try:
-        print("args.json_test {}".format(args.json_test))
-        with open(args.json_test, 'r') as json_test_config:
-            json_test = json.load(json_test_config)
-    except:
-        print("Error reading {}".format(args.json_test))
-
-    json_igg = ""
-    if args.json_igg != "":
-        try:
-            print("args.json_igg {}".format(args.json_igg))
-            with open(args.json_igg, 'r') as json_igg_config:
-                json_igg = json.load(json_igg_config)
-        except:
-            print("Error reading {}".format(args.json_igg))
-
+        print("Error reading {}".format(args.json))
 
     # Test-rig information information
     lanforge_node_version = 'NO_LF_NODE_VER'
@@ -1146,10 +1116,8 @@ Example :
     log_path = report.get_log_path()
 
     # lf_check() class created
-    check = lf_check(_json_rig=json_rig,
-                     _json_test=json_test,
+    check = lf_check(_json_data=json_data,
                      _test_suite=test_suite,
-                     _json_igg=json_igg,
                      _production=production,
                      _csv_results=csv_results,
                      _outfile=outfile,
@@ -1172,13 +1140,7 @@ Example :
     logger.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stdout
 
     # read config and run tests
-    check.read_json_rig()  #check.read_config
-    check.read_json_test()
-    
-    if args.json_igg != "":
-        print("Tests need to have influx parameters passed in")
-        check.read_json_igg()
-
+    check.read_config()
     ping_result = check.check_if_port_exists()
     for key, value in ping_result.items():
         if value[1] is None:

@@ -290,7 +290,10 @@ class csv_sqlite_dash():
                                 # NOTE: html links to png do not like spaces
                                 png_server_img = self.server + png_path.replace(self.cut,'')
                                 # generate png image
-                                kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                                try:
+                                    kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+                                except:
+                                    print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(database=self.database))
                                 #https://plotly.com/python/interactive-html-export/
                                 # generate html image (interactive)
                                 kpi_fig.write_html(html_path)

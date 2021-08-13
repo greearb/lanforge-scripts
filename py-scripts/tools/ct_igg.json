@@ -1,0 +1,42 @@
+{
+    "ct_igg":{
+        "Notes":[
+            "This json file is used as an input to the ./lf_check.py file",
+            "The variables that are all capitalized below are replaced with configuration",
+            "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
+            "The replacement is loosely coupled so the upper and lower case convention is used",
+            "to identify replaced strings in the lf_check.py code.",
+            "this file contains the Influx, Grafana and Ghost configuration"  
+        ]  
+    },
+    "test_database":{
+        "database_config": "True",
+        "database_host": "192.168.100.201",
+        "database_port": "8086",
+        "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
+        "database_org": "Candela",
+        "database_bucket": "lanforge_qa_testing",
+        "dut_set_name": "DUT_NAME ASUSRT-AX88U",
+        "database_tag": "testbed CT-US-001",
+        "test_rig": "CT-US-001"
+    },
+    "test_dashboard":{
+        "dashboard_config": "True",
+        "dashboard_host": "192.168.100.201",
+        "dashboard_token": "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
+    },
+    "test_blog":{
+        "blog_config": "True",
+        "blog_host": "192.168.100.153",
+        "blog_token": "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742",
+        "blog_authors": "Matthew",
+        "blog_customer": "candela",
+        "blog_user_push": "lanforge",
+        "blog_password_push": "lanforge",
+        "blog_flag": "--kpi_to_ghost"
+    }
+}
+			
+	
+		
+	
