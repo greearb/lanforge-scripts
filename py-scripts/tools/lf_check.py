@@ -963,9 +963,13 @@ blog: http://{blog}:2368
                     stderr_log_size = os.path.getsize(stderr_log_txt)
                     if stderr_log_size > 0:
                         self.logger.info("File: {} is not empty: {}".format(stderr_log_txt, str(stderr_log_size)))
-
-                        self.test_result = "Failure"
-                        background = self.background_red
+                        text = open(stderr_log_txt).read()
+                        if 'Error' in text:
+                            self.text_result = "Failure"
+                            background = self.background_red
+                        else:
+                            self.test_result = "Success"
+                            background = self.background_green
                     else:
                         self.logger.info("File: {} is empty: {}".format(stderr_log_txt, str(stderr_log_size)))
                         self.test_result = "Success"
