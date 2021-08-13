@@ -304,9 +304,6 @@ class lf_check():
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-        
-        if self.json_igg != "":
-            qa_url =
 
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
