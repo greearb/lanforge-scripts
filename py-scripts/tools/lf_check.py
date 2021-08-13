@@ -976,7 +976,7 @@ blog: http://{blog}:2368
                     background = self.background_purple
 
                 # Ghost will put data in stderr 
-                if 'ghost' in command:
+                if 'ghost' in command or 'lf_qa' in command:
                     if self.test_result != "TIMEOUT":
                         text = open(stderr_log_txt).read()
                         if 'Error' in text:
