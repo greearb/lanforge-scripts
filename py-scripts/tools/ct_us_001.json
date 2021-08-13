@@ -283,6 +283,16 @@
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG "
                 ]
+            },
+            "CT-US-001_QA":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./sandbox/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database ./sandbox/qa_test_db"
+                ]
             }
         },
         "suite_wc_dp":{

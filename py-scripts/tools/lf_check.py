@@ -271,6 +271,11 @@ class lf_check():
         time.sleep(1)
         return lanforge_gui_version
 
+    def get_radio_status(self):
+        radio_status = self.json_get("/radiostatus/all")
+        print("radio status {radio_status}".format(radio_status=radio_status))
+
+
     # NOT complete : will send the email results
     def send_results_email(self, report_file=None):
         if (report_file is None):
@@ -1153,6 +1158,8 @@ Example :
         print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
     except:
         print("lanforge_gui_version exception")
+
+    #check.get_radio_status()
 
     # LANforge and scripts config
     lf_test_setup = pd.DataFrame()
