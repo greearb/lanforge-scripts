@@ -78,10 +78,11 @@ class csv_sqlite_dash():
     def get_dut_info(self):
         dut_info_df = pd.DataFrame()
         #try:
-        dut_info_df['DUT'] = self.dut_model_num_list[-1]
-        dut_info_df['SW version'] = self.dut_sw_version_list[-1]
-        dut_info_df['HW version'] = self.dut_hw_version_list[-1]
-        dut_info_df['Serial'] = self.dut_serial_num_list[-1]
+        dut_info_df['DUT'] = self.dut_model_num_list[0]
+        dut_info_df['SW version'] = self.dut_sw_version_list[0]
+        dut_info_df['HW version'] = self.dut_hw_version_list[0]
+        dut_info_df['Serial'] = self.dut_serial_num_list[0]
+        print("DUT: {df}".format(df=dut_info_df))
         #except:
         #    dut_info_df['DUT'] = 'NA'
         #    dut_info_df['SW version'] = 'NA'
@@ -469,7 +470,7 @@ Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read 
         report.set_table_title("Device Under Test")
         report.build_table_title()
         dut_info_df = csv_dash.get_dut_info()
-        print("dut_info_df {}".format(dut_info_df))
+        print("DUT Results: {}".format(dut_info_df))
         report.set_table_dataframe(dut_info_df)
         report.build_table()
         

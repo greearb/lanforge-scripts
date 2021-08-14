@@ -304,24 +304,27 @@ class lf_check():
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-
+        message_txt =""
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 http://{ip}/{report}
-QA Report Dashboard:
-http://{ip_qa}/{qa_url}
-NOTE: Diagrams are links in dashboard
-""".format(hostname=hostname, ip=ip, report=report_url, email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip,
-           ip_qa=ip,qa_url=qa_url)
-
+""".format(email_txt=self.email_txt,lf_mgr_ip=self.lf_mgr_ip,hostname=hostname, ip=ip,report=report_url)
         else:
             message_txt = """Results from {hostname}:
-http://{ip}/{report}
-QA Report Dashboard:
-QA Report: http://{ip_qa}/{qa_url}
-""".format(hostname=hostname, ip=ip,report=report_url,ip_qa=ip,qa_url=qa_url)
+http://{ip}/{report}""".format(hostname=hostname, ip=ip,report=report_url)
 
+        # Put in report information current two methods supported, 
+        if(self.json_igg != "" ):
+            message_txt += """
+Blog:
+thhp://{blog}:2368""".format(blog=self.blog_host)
+        else:
+            message_txt +="""
+QA Report Dashboard:
+http://{ip_qa}/{qa_url}
+NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
+        
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
                                                            date=datetime.datetime.now())
