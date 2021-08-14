@@ -78,7 +78,7 @@ class csv_sqlite_dash():
     def get_dut_info(self):
         dut_info_df = pd.DataFrame()
         #try:
-        dut_info_df['DUT'] = self.dut_model_num_list
+        dut_info_df['DUT'] = self.dut_model_num_list[-1]
         dut_info_df['SW version'] = self.dut_sw_version_list[-1]
         dut_info_df['HW version'] = self.dut_hw_version_list[-1]
         dut_info_df['Serial'] = self.dut_serial_num_list[-1]
@@ -259,6 +259,8 @@ class csv_sqlite_dash():
                         self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
                         self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
                         self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
+                        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+                            .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
 
                         units_list = list(df_tmp['Units'])
                         print("GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig,test_tag,group))
