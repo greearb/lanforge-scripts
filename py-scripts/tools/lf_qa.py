@@ -76,28 +76,62 @@ class csv_sqlite_dash():
         return self.html_results
 
     def get_dut_info(self):
-        dut_info_df = pd.DataFrame()
         #try:
         print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
             .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
 
-        dut_info_df['DUT'] = self.dut_model_num_list[0]
-        dut_info_df['SW version'] = self.dut_sw_version_list[0]
-        dut_info_df['HW version'] = self.dut_hw_version_list[0]
-        dut_info_df['Serial'] = self.dut_serial_num_list[0]
-        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+        # use the list length to get the latest DUT - 
+        dut_model_num_list_len = len(self.dut_model_num_list)
+        print("dut_model_num_list_len {len}".format(len=dut_model_num_list_len))
+        dut_sw_version_list_lem = len(self.dut_sw_version_list)
+        dut_hw_version_list_len = len(self.dut_hw_version_list)
+        dut_serial_num_list_len = len(self.dut_serial_num_list)
+
+        if dut_model_num_list_len > 0 and self.dut_model_num_list[-1] != None:
+            dut = self.dut_model_num_list[-1]
+            print("LIST (-1) {list}".format(list=self.dut_model_num_list[-1]))
+            print("DUT (-1) {dut}".format(dut=dut))
+        elif dut_model_num_list_len > 1 and self.dut_model_num_list[-2] != None:
+            dut = self.dut_model_num_list[-2]
+            print("LIST (-2) {list}".format(list=self.dut_model_num_list[-2]))
+            print("DUT (-2) {dut}".format(dut=dut))
+        else:
+            dut = 'NA'            
+
+        if dut_sw_version_list_lem > 0 and self.dut_sw_version_list[-1] != None:
+            sw_ver = self.dut_sw_version_list[-1]
+        elif dut_sw_version_list_lem > 1 and self.dut_sw_version_list[-2] != None:
+            sw_ver = self.dut_sw_version_list[-2]
+        else:
+            sw_ver = 'NA'            
+        
+        if dut_hw_version_list_len > 0 and self.dut_hw_version_list[-1] != None:
+            hw_ver = self.dut_hw_version_list[-1]
+        elif dut_hw_version_list_len > 1 and self.dut_hw_version_list[-2] != None:
+            hw_ver = self.dut_hw_version_list[-2]
+        else:
+            hw_ver = 'NA'            
+
+        if dut_serial_num_list_len > 0 and self.dut_serial_num_list[-1] != None:
+            sn = self.dut_serial_num_list[-1]
+        elif dut_serial_num_list_len > 1 and self.dut_serial_num_list[-2] != None:
+            sn = self.dut_serial_num_list[-2]
+        else:
+            sn = 'NA'            
+
+        print("DUT lists: {DUT} SW:{SW} HW:{HW} SN:{SN}"
             .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
 
-        print("DUT df_na: {df}".format(df=dut_info_df))
-        dut_info_df = dut_info_df.dropna()
-        print("DUT df: {df}".format(df=dut_info_df))
+        dut_dict = {
+            'DUT':[dut],
+            'SW version': [sw_ver],
+            'HW version':[hw_ver],
+            'SN':[sn]
+        }
+        print('DUT dict: {dict}'.format(dict=dut_dict))
+        dut_info_df = pd.DataFrame(dut_dict)
+        print("DUT df from dict: {df}".format(df=dut_info_df))
 
-        #except:
-        #    dut_info_df['DUT'] = 'NA'
-        #    dut_info_df['SW version'] = 'NA'
-        #    dut_info_df['HW version'] = 'NA'
-        #    dut_info_df['Serial'] = 'NA'
-            
         return dut_info_df
 
     def get_parent_path(self,_path):
@@ -230,7 +264,7 @@ class csv_sqlite_dash():
         #https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
         df3 = pd.read_sql_query("SELECT * from {}".format(self.table) ,self.conn) #current connection is sqlite3 /TODO move to SQLAlchemy
-        # sort by date
+        # sort by date from oldest to newest. 
         try:
             df3 = df3.sort_values(by='Date')
         except:
