@@ -474,6 +474,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
 
     #TODO change code so if parameter is not present then implied to be false
     def read_test_parameters(self):
+        if "test_rig" in self.json_rig["test_parameters"]:
+            self.test_rig = self.json_rig["test_parameters"]["test_rig"]
+        else:
+            self.logger.info("test_rig not in test_parameters json")
         if "test_timeout" in self.json_rig["test_parameters"]:
             self.test_timeout = self.json_rig["test_parameters"]["test_timeout"]
             self.test_timeout_default = self.test_timeout
@@ -616,10 +620,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.database_tag = self.json_igg["test_database"]["database_tag"]
         else:
             self.logger.info("database_tag not in test_database json")
-        if "test_rig" in self.json_igg["test_database"]:
-            self.test_rig = self.json_igg["test_database"]["test_rig"]
-        else:
-            self.logger.info("test_rig not in test_database json")
         if "dut_set_name" in self.json_igg["test_database"]:
             self.dut_set_name = self.json_igg["test_database"]["dut_set_name"]
         else:

@@ -11,6 +11,7 @@
     },
     "test_parameters":{
         "test_bed": "CT-US-001",
+        "test_rig": "CT-US-001",
         "lf_mgr_ip": "192.168.100.116",
         "lf_mgr_port": "8080",
         "dut_name": "ASUSRT-AX88U",
