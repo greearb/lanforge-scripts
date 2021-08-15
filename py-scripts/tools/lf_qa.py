@@ -78,11 +78,20 @@ class csv_sqlite_dash():
     def get_dut_info(self):
         dut_info_df = pd.DataFrame()
         #try:
+        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+            .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
+
         dut_info_df['DUT'] = self.dut_model_num_list[0]
         dut_info_df['SW version'] = self.dut_sw_version_list[0]
         dut_info_df['HW version'] = self.dut_hw_version_list[0]
         dut_info_df['Serial'] = self.dut_serial_num_list[0]
-        print("DUT: {df}".format(df=dut_info_df))
+        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+            .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
+
+        print("DUT df_na: {df}".format(df=dut_info_df))
+        dut_info_df = dut_info_df.dropna()
+        print("DUT df: {df}".format(df=dut_info_df))
+
         #except:
         #    dut_info_df['DUT'] = 'NA'
         #    dut_info_df['SW version'] = 'NA'
