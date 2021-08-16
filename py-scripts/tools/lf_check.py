@@ -545,8 +545,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.logger.info("lf_mgr_port not in test_parameters json")
         # dut_set_name selectes the DUT to test against , it is different then dut_name
         # this value gets set in the test
-        if "dut_set_name" in self.json_rig["test_database"]:
-            self.dut_set_name = self.json_rig["test_database"]["dut_set_name"]
+        if "dut_set_name" in self.json_rig["test_parameters"]:
+            self.dut_set_name = self.json_rig["test_parameters"]["dut_set_name"]
         else:
            self.logger.info("dut_set_name not in test_database json")
         # dut name will set a chamberview scenerio for a DUT which can be selected with dut_set_name
