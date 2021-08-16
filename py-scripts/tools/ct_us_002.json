@@ -13,6 +13,7 @@
         "test_bed": "CT-US-002",
         "lf_mgr_ip": "192.168.100.200",
         "lf_mgr_port": "8080",
+        "dut_set_name": "DUT_NAME NETGEAR59-5G",
         "dut_name": "NETGEAR-AX12",
         "dut_bssid_5g": "94:a6:7e:54:d4:33",
         "test_timeout": 1200,
@@ -48,7 +49,6 @@
         "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
         "database_org": "Candela",
         "database_bucket": "lanforge_qa_testing",
-        "dut_set_name": "DUT_NAME NETGEAR59-5G",
         "database_tag": "testbed CT-US-002",
         "test_rig": "CT-US-002"
     },

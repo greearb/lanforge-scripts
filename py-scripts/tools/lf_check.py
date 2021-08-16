@@ -163,6 +163,9 @@ class lf_check():
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
 
+        # dut selection 
+        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
+
         # dut configuration 
         self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_hw = "DUT_HW_NA"
@@ -193,7 +196,6 @@ class lf_check():
         self.database_org = "Candela"
         self.database_bucket = "lanforge_qa_testing"
         self.database_tag = 'testbed CT-US-001'  # the test_rig needs to match
-        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
 
         # grafana configuration  #dashboard
         self.dashboard_json = ""
@@ -541,6 +543,13 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
         else:
             self.logger.info("lf_mgr_port not in test_parameters json")
+        # dut_set_name selectes the DUT to test against , it is different then dut_name
+        # this value gets set in the test
+        if "dut_set_name" in self.json_rig["test_database"]:
+            self.dut_set_name = self.json_rig["test_database"]["dut_set_name"]
+        else:
+           self.logger.info("dut_set_name not in test_database json")
+        # dut name will set a chamberview scenerio for a DUT which can be selected with dut_set_name
         if "dut_name" in self.json_rig["test_parameters"]:
             self.dut_name = self.json_rig["test_parameters"]["dut_name"]
         else:
@@ -620,10 +629,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.database_tag = self.json_igg["test_database"]["database_tag"]
         else:
             self.logger.info("database_tag not in test_database json")
-        if "dut_set_name" in self.json_igg["test_database"]:
-            self.dut_set_name = self.json_igg["test_database"]["dut_set_name"]
-        else:
-            self.logger.info("dut_set_name not in test_database json")
 
     def read_test_dashboard(self):
         if "dashboard_config" in self.json_igg["test_dashboard"]:
