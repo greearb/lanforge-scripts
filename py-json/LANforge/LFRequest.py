@@ -13,7 +13,7 @@ from urllib import error
 from urllib import parse
 
 import json
-from LANforge import LFUtils
+from . import LFUtils
 
 
 class LFRequest:
