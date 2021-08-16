@@ -333,7 +333,7 @@ class csv_sqlite_dash():
                         kpi_html_path = self.server + html_path
                         kpi_html_path = kpi_html_path.replace(self.cut,'')
                         self.children_div.append(html.Br())
-                        self.html_results +="""<br>"""
+                        #self.html_results +="""<br>"""
                         self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
                         .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                             href=kpi_html_path, target='_blank'))
@@ -351,6 +351,8 @@ class csv_sqlite_dash():
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
                         self.children_div.append(html.Br())
+                        self.html_results +="""<br>"""
+                        self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
