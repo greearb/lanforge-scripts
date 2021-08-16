@@ -335,7 +335,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
-                    " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --upstream 1.1.eth2 --batch_size 1,5,10,15,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME" 
