@@ -97,11 +97,17 @@ def test_set_port(args=None):
             print(x.__repr__())
             exit(1)
     try:
-        my_interest_flags = LFP.set_flags(LFP.SetPortInterest, 0, ['current_flags', 'ifdown', 'mac_address'])
-
+        my_interest_flags = LFP.set_flags(LFP.SetPortInterest,
+                                          0,
+                                          [
+                                              'current_flags',
+                                              'ifdown',
+                                              'dhcp'
+                                          ])
         result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
                                             current_flags=my_current_flags,  # See above, or NA.
                                             current_flags_msk=my_current_flags,
+                                            mac='NA',
                                             # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
                                             interest=my_interest_flags,
                                             port='eth2',  # Port number for the port to be modified.
@@ -109,13 +115,33 @@ def test_set_port(args=None):
                                             resource=1,  # Resource number for the port to be modified.
                                             shelf=1,  # Shelf number for the port to be modified.
                                             debug_=True)
+
+
         my_current_flags = LFP.clear_flags(LFP.SetPortCurrentFlags,
-                                   my_current_flags,
-                                   flag_names=LFP.SetPortCurrentFlags.use_dhcp)
+                                           my_current_flags,
+                                           flag_names=LFP.SetPortCurrentFlags.use_dhcp)
+        my_current_flags = LFP.clear_flags(LFP.SetPortCurrentFlags,
+                                           my_current_flags,
+                                           flag_names=[LFP.SetPortCurrentFlags.if_down])
+
+        my_interest_flags = LFP.set_flags(LFP.SetPortInterest,
+                                          0,
+                                          [
+                                              'current_flags',
+                                              'ifdown',
+                                              'dhcp',
+                                              LFP.SetPortInterest.ip_address,
+                                              LFP.SetPortInterest.ip_gateway,
+                                              LFP.SetPortInterest.ip_Mask,
+                                          ])
 
         result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
                                             current_flags=my_current_flags,  # See above, or NA.
                                             current_flags_msk=my_current_flags,
+                                            mac='NA',
+                                            ip_addr='10.32.23.1',
+                                            netmask='255.255.255.0',
+                                            gateway='0.0.0.0',
                                             # This sets 'interest' for flags 'Enable RADIUS service' and higher. See above, or NA.
                                             interest=my_interest_flags,
                                             port='eth2',  # Port number for the port to be modified.
@@ -123,6 +149,7 @@ def test_set_port(args=None):
                                             resource=1,  # Resource number for the port to be modified.
                                             shelf=1,  # Shelf number for the port to be modified.
                                             debug_=True)
+
         get_request = LFG(lfclient_host=args.host,
                           lfclient_port=8080,
                           debug_=True,
@@ -133,6 +160,8 @@ def test_set_port(args=None):
                                                            "alias",
                                                            "port",
                                                            "mac",
+                                                           "down",
+                                                           "ip",
                                                            "PORT_SUPPORTED_FLAGS_L",
                                                            "PORT_SUPPORTED_FLAGS_H",
                                                            "PORT_CUR_FLAGS_L",
