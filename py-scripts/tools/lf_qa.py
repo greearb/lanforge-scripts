@@ -263,17 +263,17 @@ class csv_sqlite_dash():
                         # the set reduces the redundency , list puts it back into a list
                         self.dut_model_num_list = list(set(list(df_tmp['dut-model-num'])))
                         print("in png self.dut_model_num_list {dut_model_num_list}".format(dut_model_num_list=self.dut_model_num_list))
-                        if self.dut_model_num_list[-1] != None:
-                            self.dut_model_num = self.dut_model_num_list[-1]
+                        if self.dut_model_num_list[0] != None:
+                            self.dut_model_num = self.dut_model_num_list[0]
                         self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
-                        if self.dut_sw_version_list[-1] != None:
-                            self.dut_sw_version = self.dut_sw_version_list[-1]
+                        if self.dut_sw_version_list[0] != None:
+                            self.dut_sw_version = self.dut_sw_version_list[0]
                         self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
-                        if self.dut_hw_version_list[-1] != None:
-                            self.dut_hw_version = self.dut_hw_version_list[-1]
+                        if self.dut_hw_version_list[0] != None:
+                            self.dut_hw_version = self.dut_hw_version_list[0]
                         self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
-                        if self.dut_serial_num_list[-1] != None:
-                            self.dut_serial_num_ = self.dut_serial_num_list[-1]
+                        if self.dut_serial_num_list[0] != None:
+                            self.dut_serial_num_ = self.dut_serial_num_list[0]
 
                         print("In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
                             .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
