@@ -74,7 +74,7 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
                     " --test_rig TEST_RIG --set 'DUT_NAME"
                 ]
             },
@@ -243,7 +243,7 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME" 
                 ]
@@ -297,7 +297,7 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: 2' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX210'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX210'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
@@ -364,7 +364,7 @@
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
