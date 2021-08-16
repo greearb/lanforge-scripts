@@ -58,9 +58,13 @@ class csv_sqlite_dash():
         self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded - is this needed? have server
         self.server_started = False
         self.dut_model_num_list = "NA"
+        self.dut_model_num = "NA"
         self.dut_sw_version_list = "NA"
+        self.dut_sw_version = "NA"
         self.dut_hw_version_list = "NA"
+        self.dut_hw_version = "NA"
         self.dut_serial_num_list = "NA"
+        self.dut_serial_num = "NA"
 
         self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
         # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
@@ -77,56 +81,14 @@ class csv_sqlite_dash():
 
     def get_dut_info(self):
         #try:
-        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
-            .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
-
-        # use the list length to get the latest DUT - 
-        dut_model_num_list_len = len(self.dut_model_num_list)
-        print("dut_model_num_list_len {len}".format(len=dut_model_num_list_len))
-        dut_sw_version_list_len = len(self.dut_sw_version_list)
-        dut_hw_version_list_len = len(self.dut_hw_version_list)
-        dut_serial_num_list_len = len(self.dut_serial_num_list)
-
-        if dut_model_num_list_len > 0 and self.dut_model_num_list[-1] != None:
-            dut = self.dut_model_num_list[-1]
-            print("LIST (-1) {list}".format(list=self.dut_model_num_list[-1]))
-            print("DUT (-1) {dut}".format(dut=dut))
-        elif dut_model_num_list_len > 1 and self.dut_model_num_list[-2] != None:
-            dut = self.dut_model_num_list[-2]
-            print("LIST (-2) {list}".format(list=self.dut_model_num_list[-2]))
-            print("DUT (-2) {dut}".format(dut=dut))
-        else:
-            dut = 'NA'            
-
-        if dut_sw_version_list_len > 0 and self.dut_sw_version_list[-1] != None:
-            sw_ver = self.dut_sw_version_list[-1]
-        elif dut_sw_version_list_len > 1 and self.dut_sw_version_list[-2] != None:
-            sw_ver = self.dut_sw_version_list[-2]
-        else:
-            sw_ver = 'NA'            
-        
-        if dut_hw_version_list_len > 0 and self.dut_hw_version_list[-1] != None:
-            hw_ver = self.dut_hw_version_list[-1]
-        elif dut_hw_version_list_len > 1 and self.dut_hw_version_list[-2] != None:
-            hw_ver = self.dut_hw_version_list[-2]
-        else:
-            hw_ver = 'NA'            
-
-        if dut_serial_num_list_len > 0 and self.dut_serial_num_list[-1] != None:
-            sn = self.dut_serial_num_list[-1]
-        elif dut_serial_num_list_len > 1 and self.dut_serial_num_list[-2] != None:
-            sn = self.dut_serial_num_list[-2]
-        else:
-            sn = 'NA'            
-
-        print("DUT lists: {DUT} SW:{SW} HW:{HW} SN:{SN}"
-            .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
+        print("get_dut_info DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+            .format(DUT=self.dut_model_num,SW=self.dut_sw_version,HW=self.dut_hw_version,SN=self.dut_serial_num))
 
         dut_dict = {
-            'DUT':[dut],
-            'SW version': [sw_ver],
-            'HW version':[hw_ver],
-            'SN':[sn]
+            'DUT':[self.dut_model_num],
+            'SW version': [self.dut_sw_version],
+            'HW version':[self.dut_hw_version],
+            'SN':[self.dut_serial_num]
         }
         print('DUT dict: {dict}'.format(dict=dut_dict))
         dut_info_df = pd.DataFrame(dut_dict)
@@ -300,9 +262,19 @@ class csv_sqlite_dash():
                         # get Device Under Test Information , 
                         # the set reduces the redundency , list puts it back into a list
                         self.dut_model_num_list = list(set(list(df_tmp['dut-model-num'])))
+                        print("in png self.dut_model_num_list {dut_model_num_list}".format(dut_model_num_list=self.dut_model_num_list))
+                        if self.dut_model_num_list[-1] != None:
+                            self.dut_model_num = self.dut_model_num_list[-1]
                         self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
+                        if self.dut_sw_version_list[-1] != None:
+                            self.dut_sw_version = self.dut_sw_version_list[-1]
                         self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
+                        if self.dut_hw_version_list[-1] != None:
+                            self.dut_hw_version = self.dut_hw_version_list[-1]
                         self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
+                        if self.dut_serial_num_list[-1] != None:
+                            self.dut_serial_num_ = self.dut_serial_num_list[-1]
+
                         print("In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
                             .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
 
