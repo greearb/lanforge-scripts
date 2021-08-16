@@ -83,7 +83,7 @@ class csv_sqlite_dash():
         # use the list length to get the latest DUT - 
         dut_model_num_list_len = len(self.dut_model_num_list)
         print("dut_model_num_list_len {len}".format(len=dut_model_num_list_len))
-        dut_sw_version_list_lem = len(self.dut_sw_version_list)
+        dut_sw_version_list_len = len(self.dut_sw_version_list)
         dut_hw_version_list_len = len(self.dut_hw_version_list)
         dut_serial_num_list_len = len(self.dut_serial_num_list)
 
@@ -98,9 +98,9 @@ class csv_sqlite_dash():
         else:
             dut = 'NA'            
 
-        if dut_sw_version_list_lem > 0 and self.dut_sw_version_list[-1] != None:
+        if dut_sw_version_list_len > 0 and self.dut_sw_version_list[-1] != None:
             sw_ver = self.dut_sw_version_list[-1]
-        elif dut_sw_version_list_lem > 1 and self.dut_sw_version_list[-2] != None:
+        elif dut_sw_version_list_len > 1 and self.dut_sw_version_list[-2] != None:
             sw_ver = self.dut_sw_version_list[-2]
         else:
             sw_ver = 'NA'            
@@ -303,7 +303,7 @@ class csv_sqlite_dash():
                         self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
                         self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
                         self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
-                        print("DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
+                        print("In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
                             .format(DUT=self.dut_model_num_list,SW=self.dut_sw_version_list,HW=self.dut_hw_version_list,SN=self.dut_serial_num_list))
 
                         units_list = list(df_tmp['Units'])
