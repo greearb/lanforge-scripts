@@ -79,13 +79,24 @@ def test_set_port(args=None):
         my_current_flags = LFP.set_flags(LFP.SetPortCurrentFlags,
                                          0,
                                          ['if_down', 'use_dhcp'])
+    except Exception as x:
+            import traceback
+            traceback.print_tb(x)
+            print(x.__repr__())
+            exit(1)
+    try:
         my_current_flags = LFP.set_flags(LFP.SetPortCurrentFlags,
                                          0,
                                          [
                                              LFP.SetPortCurrentFlags.if_down,
                                              LFP.SetPortCurrentFlags.use_dhcp
                                          ])
-
+    except Exception as x:
+            import traceback
+            traceback.print_tb(x)
+            print(x.__repr__())
+            exit(1)
+    try:
         my_interest_flags = LFP.set_flags(LFP.SetPortInterest, 0, ['current_flags', 'ifdown', 'mac_address'])
 
         result = post_request.post_set_port(alias=None,  # A user-defined name for this interface.  Can be BLANK or NA.
