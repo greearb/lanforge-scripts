@@ -7,6 +7,12 @@ from LANforge import add_sta
 import pprint
 from pprint import pprint
 import time
+# Uncomment below to include autogen library.
+# import os
+# if os.environ.get("LF_USE_AUTOGEN") == 1:
+#    import LANforge
+#    import LANforge.lf_json_autogen
+#    from LANforge.lf_json_autogen import LFJsonPost
 
 
 # use the station profile to set the combination of features you want on your stations
@@ -101,7 +107,6 @@ class StationProfile:
             "txo_bw": None,
             "txo_retries": None,
             "txo_sgi": None
-
         }
 
         self.reset_port_extra_data = {
