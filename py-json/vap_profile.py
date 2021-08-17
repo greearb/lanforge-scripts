@@ -2,7 +2,7 @@
 
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFRequest
-from LANforge import add_vap
+from LANforge import add_vap, set_wifi_radio
 from LANforge import set_port
 from LANforge import LFUtils
 import pprint
@@ -212,7 +212,7 @@ class VAPProfile(LFCliBase):
         return result
 
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
-               use_ht160=False,
+               use_ht160=False, country=0,
                suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
@@ -249,10 +249,10 @@ class VAPProfile(LFCliBase):
             raise ValueError("No radio %s.%s found" % (resource, radio))
 
         eid = "1.%s.%s" % (resource, radio)
-        frequency = 0
-        country = 0
         if eid in jr:
             country = jr[eid]["country"]
+
+        self.mode = set_wifi_radio.set_radio_mode[self.mode]
 
         data = {
             "shelf": 1,
@@ -263,6 +263,7 @@ class VAPProfile(LFCliBase):
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
         }
+        print(data)
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
         if up_ is not None:
             self.up = up_

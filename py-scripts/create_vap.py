@@ -33,8 +33,12 @@ class CreateVAP(Realm):
                  _port=None,
                  _vap_list=None,
                  _vap_flags=None,
+                 _mode=None,
                  _number_template="00000",
                  _radio=None,
+                 _channel=36,
+                 _country_code=0,
+                 _nss=False,
                  _bridge=False,
                  _proxy_str=None,
                  _debug_on=False,
@@ -53,7 +57,10 @@ class CreateVAP(Realm):
             self.vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         else:
             self.vap_flags = _vap_flags
+        self.mode = _mode
         self.radio = _radio
+        self.channel = _channel
+        self.country_code = _country_code
         self.timeout = 120
         self.number_template = _number_template
         self.debug = _debug_on
@@ -65,6 +72,7 @@ class CreateVAP(Realm):
         self.vap_profile.security = self.security
         self.vap_profile.ssid_pass = self.password
         self.vap_profile.dhcp = self.dhcp
+        self.vap_profile.mode = self.mode
         self.vap_profile.desired_add_vap_flags = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.vap_profile.desired_add_vap_flags_mask = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
         if self.debug:
@@ -79,7 +87,8 @@ class CreateVAP(Realm):
         print("Creating VAPs")
         self.vap_profile.create(resource = 1,
                                 radio = self.radio,
-                                channel = 36,
+                                channel = self.channel,
+                                country=self.country_code,
                                 up_ = True,
                                 debug = False,
                                 use_ht40=True,
@@ -119,6 +128,10 @@ Command example:
     optional.add_argument('--vap_flag', help='VAP flags to add', required=False, default=None, action='append')
     optional.add_argument('--bridge', help='Create a bridge connecting the VAP to a port', required=False, default=False)
     optional.add_argument('--mac', help='Custom mac address', default="xx:xx:xx:xx:*:xx")
+    optional.add_argument('--mode', default='AUTO')
+    optional.add_argument('--channel', default=36)
+    optional.add_argument('--country_code', default=0)
+    optional.add_argument('--nss', default=False)
     args = parser.parse_args()
     #if args.debug:
     #    pprint.pprint(args)
@@ -145,12 +158,17 @@ Command example:
                        _ssid=args.ssid,
                        _password=args.passwd,
                        _security=args.security,
+                               _mode=args.mode,
                        _vap_list=vap,
                                _vap_flags=args.vap_flag,
                        _radio=args.radio,
+                               _channel=args.channel,
+                               _country_code=args.country_code,
+                               _nss=args.nss,
                        _proxy_str=args.proxy,
                                _bridge=args.bridge,
                        _debug_on=args.debug)
+        print('Creating VAP')
 
         create_vap.build()
 
