@@ -1,0 +1,80 @@
+{
+    "ct_us_004":{
+        "Notes":[
+            "The json is used to orchastrate the tests to be run on testbed ct_us_004",
+            "This json file is used as an input to the ./lf_check.py file",
+            "The variables that are all capitalized below are replaced with configuration",
+            "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
+            "The replacement is loosely coupled so the upper and lower case convention is used",
+            "to identify replaced strings in the lf_check.py code."  
+        ]  
+    },
+    "test_parameters":{
+        "test_bed": "CT-US-004",
+        "lf_mgr_ip": "192.168.100.194",
+        "lf_mgr_port": "8080",
+        "dut_set_name": "DUT_NAME Asus-RT-AX88U",
+        "dut_name": "Asus-RT-AX88U",
+        "dut_bssid_2g": "d4:5d:64:a0:7f:78",
+        "dut_bssid_5g": "d4:5d:64:a0:7f:7c",
+        "dut_sw": "3.0.0.4.386_44266",
+        "test_timeout": 300,
+        "load_blank_db": false,
+        "load_factory_default_db": true,
+        "load_custom_db": false,
+        "custom_db": "DFLT_ETH1_GEN",
+        "email_list_production": "konikofi@candelatech.com,greearb@candelatech.com,logan.lipke@candelatech.com,dipti.dhond@candelatech.com,chuck.rekiere@candelatech.com,matthew@candelatech.com,iain.davidson@candelatech.com,jreynolds@candelatech.com",
+        "host_ip_production": "192.168.100.201",
+        "email_list_test": "chuck.rekiere@candelatech.com",
+        "host_ip_test": "192.168.100.201",
+        "email_title_txt": "Lanforge QA Testing CT-US-004",
+        "email_txt": "Lanforge QA Testing CT-US-004 "
+    },
+    "test_network":{
+        "http_test_ip": "10.40.0.10",
+        "ftp_test_ip": "10.40.0.10",
+        "test_ip": "192.168.0.104"
+    },
+    "test_generic":{
+        "radio_used": "wiphy1",
+        "ssid_used": "asus11ax-5",
+        "ssid_pw_used": "hello123",
+        "security_used": "wpa2",
+        "num_sta": 1,
+        "col_names": "name,tx_byptes,rx_bytes,dropped",
+        "upstream_port": "eth2"
+    },
+    "test_database":{
+        "database_config": "True",
+        "database_host": "192.168.100.201",
+        "database_port": "8086",
+        "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
+        "database_org": "Candela",
+        "database_bucket": "lanforge_qa_testing",
+        "database_tag": "testbed CT-US-004",
+        "test_rig": "CT-US-004"
+    },
+    "test_dashboard":{
+        "dashboard_config": "True",
+        "dashboard_host": "192.168.100.201",
+        "dashboard_token": "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
+    },
+    "test_blog":{
+        "blog_config": "True",
+        "blog_host": "192.168.100.153",
+        "blog_token": "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742",
+        "blog_authors": "Matthew",
+        "blog_customer": "candela",
+        "blog_user_push": "lanforge",
+        "blog_password_push": "lanforge",
+        "blog_flag": "--kpi_to_ghost"
+    },
+    "radio_dict":{
+        "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"1","SSID":"asus11ax-5","PASSWD":"hello123","SECURITY":"wpa2"},
+        "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"1","SSID":"asus11ax-5","PASSWD":"hello123","SECURITY":"wpa2"}        
+    }
+}
+			
+	
+		
+	
