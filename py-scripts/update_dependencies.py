@@ -14,7 +14,8 @@ import subprocess
 def main():
     print("Installing Script Python3 Dependencies")
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh','pyarrow', 'websocket-client', 'xlsxwriter',\
-         'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial', 'pexpect-serial' ,'scp', 'pyjwt']
+        'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial', 'pexpect-serial' ,'scp', 'pyjwt',\
+        'dash', 'kaleido']
     packages_installed = []
     packages_failed =[]
     subprocess.call("pip3 uninstall jwt", shell=True)
