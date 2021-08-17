@@ -126,6 +126,11 @@ class lf_check():
         self.background_purple = "background-color:purple"
         self.background_blue = "background-color:blue"
 
+        # results
+        self.test_start_time = ""
+        self.test_end_time = ""
+        self.duration = ""
+
         self.http_test_ip = ""
         self.ftp_test_ip = ""
         self.test_ip = ""
@@ -380,6 +385,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         <tr style="text-align: left;">
                           <th>Test</th>
                           <th>Command</th>
+                          <th>Duration</th>
+                          <th>Start</th>
+                          <th>End</th>
                           <th>Result</th>
                           <th>STDOUT</th>
                           <th>STDERR</th>
@@ -983,6 +991,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     command_to_run = command
                     command_to_run = shlex.split(command_to_run)
                     print("running {command_to_run}".format(command_to_run=command_to_run))
+                    self.test_start_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
+                    print("Test start: {time}".format(time=self.test_start_time))
+                    start_time = datetime.datetime.now()
                     try:
                         process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log,
                                                    universal_newlines=True)
@@ -996,6 +1007,14 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     except:
                         print("No such file or directory with command: {}".format(command))
                         self.logger.info("No such file or directory with command: {}".format(command))
+
+                    end_time = datetime.datetime.now()
+                    self.test_end_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
+                    print("Test end time {time}".format(time=self.test_end_time))
+
+                    time_delta = end_time - start_time
+                    self.duration = "{day}d {seconds}s {msec} ms".format(
+                        day=time_delta.days,seconds=time_delta.seconds,msec=time_delta.microseconds)
 
                     if self.test_result != "TIMEOUT":
                         stderr_log_size = os.path.getsize(stderr_log_txt)
@@ -1043,6 +1062,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     stderr_log_link = str(stderr_log_txt).replace('/home/lanforge', '')
                     self.html_results += """
                     <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
+                    <td>""" + str(self.duration) + """</td>
+                    <td>""" + str(self.test_start_time) + """</td>
+                    <td>""" + str(self.test_end_time) + """</td>
                     <td style=""" + str(background) + """>""" + str(self.test_result) + """ 
                     <td><a href=""" + str(stdout_log_link) + """ target=\"_blank\">STDOUT</a></td>"""
                     if self.test_result == "Failure":
@@ -1053,6 +1075,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
                     else:
                         self.html_results += """<td></td>"""
+                    
                     self.html_results += """</tr>"""
 
                     row = [test, command, self.test_result, stdout_log_txt, stderr_log_txt]
