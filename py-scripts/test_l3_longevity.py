@@ -1170,7 +1170,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
 
-    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>',default='localhost')
+    parser.add_argument('--lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>',default='localhost')
     parser.add_argument('--test_duration', help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',default='3m')
     parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',default="BE")
     parser.add_argument('--debug', help='--debug flag present debug on  enable debugging',action='store_true')
@@ -1274,8 +1274,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if args.endp_type:
         endp_types = args.endp_type
 
-    if args.mgr:
-        lfjson_host = args.mgr
+    if args.lfmgr:
+        lfjson_host = args.lfmgr
 
     if args.upstream_port:
         side_b = args.upstream_port
