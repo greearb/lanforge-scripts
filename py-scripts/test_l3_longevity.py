@@ -1036,7 +1036,7 @@ class L3VariableTime(Realm):
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
                           'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps',
-                          'Total-Download-ll-Bps', 'Total-Upload-ll-Bps','Total-UL/DL-ll-Bps'
+                          'Total-Download-LL-Bps', 'Total-Upload-LL-Bps','Total-UL/DL-LL-Bps'
                           ]
         for k in self.user_tags:
             csv_rx_headers.append(k[0])
