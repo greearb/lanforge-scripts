@@ -327,14 +327,16 @@ class L3VariableTime(Realm):
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
+        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
         endps = []
 
         total_ul = 0
+        total_ul_ll = 0
         total_dl = 0
+        total_dl_ll = 0
 
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e;
@@ -360,9 +362,16 @@ class L3VariableTime(Realm):
                                     total_dl += int(value)
                                 else:
                                     total_ul += int(value)
+                            if value_name == 'rx rate ll':
+                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                if item.endswith("-A"):
+                                    total_dl_ll += int(value)
+                                else:
+                                    total_ul_ll += int(value)
+
 
         #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
-        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
+        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
@@ -640,7 +649,7 @@ class L3VariableTime(Realm):
 
                     cur_time = datetime.datetime.now()
                     print("Getting initial values.")
-                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
@@ -651,6 +660,8 @@ class L3VariableTime(Realm):
                     expected_passes = 0
                     total_dl_bps = 0
                     total_ul_bps = 0
+                    total_dl_ll_bps = 0
+                    total_ul_ll_bps = 0
                     endps = []
                     ap_row = []
                     ap_stats_col_titles = []
@@ -667,9 +678,9 @@ class L3VariableTime(Realm):
                             time.sleep(.2)
 
                         self.epoch_time = int(time.time())
-                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
 
-                        #print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
+                        print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps, " total-dl-ll: ", total_dl_ll_bps," total-ul-ll: ", total_ul_ll_bps)
 
                         # AP OUTPUT
                         if self.ap_read:
@@ -894,8 +905,8 @@ class L3VariableTime(Realm):
                                         latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
 
 
-                    # At end of test step, record KPI information.
-                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps)
+                    # At end of test step, record KPI information. This is different the kpi.csv
+                    self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps)
 
                     # At end of test if requested store upload and download stats
                     if self.ap_scheduler_stats:
@@ -946,7 +957,7 @@ class L3VariableTime(Realm):
 
 
     # Submit data to the influx db if configured to do so.
-    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
+    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
 
         tags = dict()
         tags['requested-ul-bps'] = ul
@@ -974,7 +985,8 @@ class L3VariableTime(Realm):
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                    atten,
-                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)
+                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps),
+                   total_dl_ll_bps, total_ul_ll_bps, (total_ul_ll_bps + total_dl_ll_bps)
                    ]
             # Add values for any user specified tags
             for k in self.user_tags:
@@ -1023,7 +1035,8 @@ class L3VariableTime(Realm):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
-                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps'
+                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps',
+                          'Total-Download-ll-Bps', 'Total-Upload-ll-Bps','Total-UL/DL-ll-Bps'
                           ]
         for k in self.user_tags:
             csv_rx_headers.append(k[0])
