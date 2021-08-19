@@ -289,7 +289,12 @@ class L3VariableTime(Realm):
     def get_endp_stats_for_port(self, eid_name, endps):
         lat = 0
         jit = 0
-        tput = 0
+        total_dl_rx_rate = 0
+        total_dl_rx_rate_ll = 0
+        total_dl_rx_pkts_ll = 0
+        total_ul_rx_rate = 0
+        total_ul_rx_rate_ll = 0
+        total_ul_rx_pkts_ll = 0
         count = 0
 
         #print("endp-stats-for-port, port-eid: {}".format(eid_name))
@@ -300,9 +305,9 @@ class L3VariableTime(Realm):
         eid[1] = str(eid[1])
         eid[2] = str(eid[2])
 
-        for e in endps:
-            #pprint(e)
-            eid_endp = e["eid"].split(".")
+        for endp in endps:
+            pprint(endp)
+            eid_endp = endp["eid"].split(".")
             print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
@@ -310,9 +315,18 @@ class L3VariableTime(Realm):
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as 
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                lat += int(e["delay"])
-                jit += int(e["jitter"])
-                tput += int(e["rx rate"])
+                lat += int(endp["delay"])
+                jit += int(endp["jitter"])
+                name = endp["name"]
+                if name.endswith("-A"):
+                    total_dl_rx_rate += int(endp["rx rate"])
+                    total_dl_rx_rate_ll += int(endp["rx rate ll"])
+                    total_dl_rx_pkts_ll += int(endp["rx pkts ll"])
+                else:                    
+                    total_ul_rx_rate += int(endp["rx rate"])
+                    total_ul_rx_rate_ll += int(endp["rx rate ll"])
+                    total_ul_rx_pkts_ll += int(endp["rx pkts ll"])
+
                 count += 1
                 print("matched: ")
             else:
@@ -322,12 +336,12 @@ class L3VariableTime(Realm):
             lat = int(lat / count)
             jit = int(jit / count)
 
-        return lat, jit, tput
+        return lat, jit, total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll, total_ul_rx_rate, total_ul_rx_rate_ll, total_ul_rx_pkts_ll
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25", debug_=False)
+        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
@@ -349,9 +363,15 @@ class L3VariableTime(Realm):
                         endps.append(value)
                         print("endpoint: ", item, " value:\n")
                         pprint(value)
-                    
+                        
                         for value_name, value in value.items():
                             if value_name == 'rx bytes':
+                                endp_rx_map[item] = value
+                            if value_name == 'rx rate':
+                                endp_rx_map[item] = value
+                            if value_name == 'rx rate ll':
+                                endp_rx_map[item] = value
+                            if value_name == 'rx pkts ll':
                                 endp_rx_map[item] = value
                             if value_name == 'rx drop %':
                                 endp_rx_drop_map[item] = value
@@ -755,7 +775,7 @@ class L3VariableTime(Realm):
                                         print("selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
-                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        latency, jitter, total_ul_rx_rate, total_ul_rx_rate_ll, total_ul_rx_pkts_ll, total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll = self.get_endp_stats_for_port(p["port"], endps)
 
                                         # now report the ap_chanim_stats along side of the ap_stats_5g
                                         xtop_reported = False
@@ -783,7 +803,8 @@ class L3VariableTime(Realm):
                                         ap_stats_5g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, tput, ap_row, ap_stats_5g_col_titles) #ap_stats_5g_col_titles used as a length
+                                                            latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, 
+                                                            total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll , ap_row, ap_stats_5g_col_titles) #ap_stats_5g_col_titles used as a length
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
                                 ap_stats_2g="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
@@ -855,7 +876,7 @@ class L3VariableTime(Realm):
                                         print("selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
-                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        latency, jitter, total_ul_rx_rate, total_ul_rx_rate_ll, total_ul_rx_pkts_ll, total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll = self.get_endp_stats_for_port(p["port"], endps)
 
                                         # now report the ap_chanim_stats along side of the ap_stats_2g
                                         xtop_reported = False
@@ -883,7 +904,8 @@ class L3VariableTime(Realm):
                                         ap_stats_2g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, tput, ap_row, ap_stats_2g_col_titles) #ap_stats_2g_col_titles used as a length
+                                                            latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, 
+                                                            total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll, ap_row, ap_stats_2g_col_titles) #ap_stats_2g_col_titles used as a length
 
                         else:
 
@@ -899,10 +921,11 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     p = response['interface']
-                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                    latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll= self.get_endp_stats_for_port(p["port"], endps)
                                 
                                     self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                        latency, jitter, tput, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
+                                        latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, 
+                                        total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll, ap_row, ap_stats_col_titles) #ap_stats_col_titles used as a length
 
 
                     # At end of test step, record KPI information. This is different the kpi.csv
@@ -931,15 +954,15 @@ class L3VariableTime(Realm):
                     if passes == expected_passes:
                             self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput,
-                       ap_row, ap_stats_col_titles):
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, 
+                    total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll, ap_row, ap_stats_col_titles):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
+                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rx_rate,  total_ul_rx_rate_ll, total_ul_rx_pkts_ll, total_dl_rx_rate, total_dl_rx_rate_ll, total_dl_rx_pkts_ll]
 
         #Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
         #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
@@ -1023,7 +1046,7 @@ class L3VariableTime(Realm):
                           'UL-Min-Requested','UL-Max-Requested','DL-Min-Requested','DL-Max-Requested',
                           'UL-Min-PDU','UL-Max-PDU','DL-Min-PDU','DL-Max-PDU','Attenuation',
                           'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter', 'Rx-Goodput-Bps'
+                          'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
                           ]
         # Add in columns we are going to query from the AP
         for col in self.ap_stats_col_titles:
