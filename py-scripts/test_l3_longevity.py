@@ -318,17 +318,20 @@ class L3VariableTime(Realm):
                 lat += int(endp["delay"])
                 jit += int(endp["jitter"])
                 name = endp["name"]
+                print("endp name {name}".format(name=name))
                 if name.endswith("-A"):
+                    print("name has -A")
                     total_dl_rx_rate += int(endp["rx rate"])
                     total_dl_rx_rate_ll += int(endp["rx rate ll"])
                     total_dl_rx_pkts_ll += int(endp["rx pkts ll"])
-                else:                    
+                else:
+                    print("name has -B")
                     total_ul_rx_rate += int(endp["rx rate"])
                     total_ul_rx_rate_ll += int(endp["rx rate ll"])
                     total_ul_rx_pkts_ll += int(endp["rx pkts ll"])
 
                 count += 1
-                print("matched: ")
+                print("matched")
             else:
                 print("Did not match")
 
