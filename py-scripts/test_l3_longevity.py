@@ -299,6 +299,7 @@ class L3VariableTime(Realm):
 
         #print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
+        print("eid_name: {eid_name} eid: {eid}".format(eid_name=eid_name,eid=eid))
 
         # Convert all eid elements to strings
         eid[0] = str(eid[0])
@@ -308,7 +309,7 @@ class L3VariableTime(Realm):
         for endp in endps:
             pprint(endp)
             eid_endp = endp["eid"].split(".")
-            print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
+            print("Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid,eid_endp=eid_endp))
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
             # Then read the eid_endp to get the delay, jitter and rx rate
@@ -823,7 +824,7 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats_2g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
                                 "version: 3\n",
                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                "0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                "0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()

@@ -1040,7 +1040,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             meta_data.write("file {path} \n".format(path=meta_data_path))
                             # split command at test-tag , at rest of string once at the actual test-tag value
                             test_tag = command.split('test-tag',maxsplit=1)[-1].split(maxsplit=1)[0]
-                            meta_data.write("Test_Tag {test_tag} \n".format(test_tag=test_tag))
+                            meta_data.write("command: {command}".format(command=command))
+                            meta_data.write("test_tag {test_tag} \n".format(test_tag=test_tag))
                             meta_data.close()
 
 
