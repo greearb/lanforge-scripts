@@ -120,6 +120,7 @@ class csv_sqlite_dash():
         test_tag = "NA"
         use_meta_test_tag = False
         gui_version_5_4_3 = False
+        print("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
         try: 
             meta_data_path = _kpi_path + '/' + '/meta.txt'
             meta_data_fd = open(meta_data_path, 'r')
@@ -278,14 +279,15 @@ class csv_sqlite_dash():
         print("graph_group_list: {}".format(graph_group_list))
 
         # prior to 5.4.3 there was not test-tag
-        try:
-            test_tag_list = list(df3['test-tag'])
-            test_tag_list = list(set(test_tag_list))
-            print("test_tag_list: {}".format(test_tag_list) )
-        except:
-            test_tag_list = ['NO_TAG_PRE_5.4.4']            
-            print("exception when creating test_tag_list: {}".format(test_tag_list) )
-            print("Check database, exception when creating test_tag_list: {}".format(test_tag_list) )
+        #try:
+        print("dataframe df3 {df3}".format(df3=df3))
+        test_tag_list = list(df3['test-tag'])
+        test_tag_list = list(set(test_tag_list))
+        print("test_tag_list: {}".format(test_tag_list) )
+        #except:
+        #test_tag_list = ['NO_TAG_PRE_5.4.4']            
+        #print("exception when creating test_tag_list: {}".format(test_tag_list) )
+        #print("Check database, exception when creating test_tag_list: {}".format(test_tag_list) )
 
 
         

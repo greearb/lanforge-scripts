@@ -292,8 +292,10 @@ class lf_check():
         self.lanforge_gui_version_full = stdout.readlines()
         # print('\n'.join(output))
         self.lanforge_gui_version_full = [line.replace('\n', '') for line in self.lanforge_gui_version_full]
+        print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
         self.lanforge_gui_version = self.lanforge_gui_verion_full.split('Version:',maxsplit=1)[-1].split(maxsplit=1)[0]
         self.lanforge_gui_version = self.lanforge_gui_version.strip()
+        print("lanforge_gui_version: {lanforge_gui_version}".format(lanforge_gui_version=self.lanforge_gui_version))
         ssh.close()
         time.sleep(1)
         return self.lanforge_gui_version_full
@@ -1053,7 +1055,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             meta_data_fd.write('$ meta.txt file location\n')
                             meta_data_fd.write("file {path}\n".format(path=meta_data_path))
                             meta_data_fd.write('$ LANforge GUI\n')
-                            meta_data_fd.write('gui_version: {gui_version}'.format(gui_version=self.lanforge_gui_version))
+                            meta_data_fd.write('gui_version: {gui_version} \n'.format(gui_version=self.lanforge_gui_version))
                             meta_data_fd.write('$ LANforge command\n')
                             meta_data_fd.write("command {command}\n".format(command=command))
                             # split command at test-tag , at rest of string once at the actual test-tag value
