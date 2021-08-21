@@ -224,12 +224,14 @@ class lf_check():
 
         self.test_run = ""
 
-    def check_if_port_exists(self):
+    def check_if_port_exists(self,json_igg):
         queries = dict()
         queries['LANforge Manager'] = 'http://%s:%s' % (self.lf_mgr_ip, self.lf_mgr_port)
-        queries['Blog Host'] = 'http://%s:%s' % (self.blog_host, self.blog_port)
-        queries['Influx Host'] = 'http://%s:%s' % (self.database_host, self.database_port)
-        queries['Grafana Host'] = 'http://%s:%s' % (self.dashboard_host, self.dashboard_port)
+        # Frame work not required to use specific databases or presentation
+        if json_igg != "":
+            queries['Blog Host'] = 'http://%s:%s' % (self.blog_host, self.blog_port)
+            queries['Influx Host'] = 'http://%s:%s' % (self.database_host, self.database_port)
+            queries['Grafana Host'] = 'http://%s:%s' % (self.dashboard_host, self.dashboard_port)
         results = dict()
         for key, value in queries.items():
             try:
@@ -245,6 +247,7 @@ class lf_check():
         process = subprocess.Popen(["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
         (commit_hash, err) = process.communicate()
         exit_code = process.wait()
+        print("get_scripts_get_sha exit_code: {exit_code}".format(exit_code=exit_code))
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
         return scripts_git_sha
 
@@ -277,7 +280,6 @@ class lf_check():
         return lanforge_kernel_version
 
     def get_lanforge_gui_version(self):
-        output = ""
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
@@ -345,14 +347,12 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=msg,
                     subject=mail_subject,
-                    ip=self.host_ip_production,
                     address=self.email_list_production)
             else:
                 msg = message_txt.format(ip=ip)
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=msg,
                     subject=mail_subject,
-                    ip=ip,  # self.host_ip_test,
                     address=self.email_list_test)
 
             print("running:[{}]".format(command))
@@ -747,6 +747,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         # wait for the process to terminate
         out, err = process.communicate()
         errcode = process.returncode
+        print("load_factory_default_db errcode: {errcode}".format(errcode=errcode))
+
 
     # not currently used
     def load_blank_db(self):
@@ -759,6 +761,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         command = "./{} {}".format("scenario.py", "--load BLANK")
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
+        # wait for the process to terminate
+        out, err = process.communicate()
+        errcode = process.returncode
+        print("load_blank_db errcode: {errcode}".format(errcode=errcode))
+
 
     def load_custom_db(self, custom_db):
         try:
@@ -773,6 +780,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         # wait for the process to terminate
         out, err = process.communicate()
         errcode = process.returncode
+        print("load_custome_db errcode: {errcode}".format(errcode=errcode))
 
     def run_script_test(self):
         self.start_html_results()
@@ -1258,7 +1266,7 @@ Example :
         print("Tests need to have influx parameters passed in")
         check.read_json_igg()
 
-    ping_result = check.check_if_port_exists()
+    ping_result = check.check_if_port_exists(json_igg)
     for key, value in ping_result.items():
         if value[1] is None:
             print(UserWarning('Check your %s IP address, %s is unreachable' % (key, value[0])))
