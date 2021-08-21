@@ -114,6 +114,39 @@ class csv_sqlite_dash():
             print("exception reading csv _kpi_path {}".format(_kpi_path))
         return test_id , test_tag
 
+    # could enter on the command line, except there may be other exceptions
+    # may need an exception file
+    def get_test_tag_from_meta(self,_kpi_path):
+        test_tag = "NA"
+        use_meta_test_tag = False
+        gui_version_5_4_3 = False
+        try: 
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "gui_version:" in line:
+                    gui_version = line.replace("gui_version:","")
+                    gui_version = gui_version.strip()
+                    if gui_version =='5.4.3':
+                        gui_version_5_4_3 = True
+                        use_meta_test_tag = True
+                    print("meta_data_path: {meta_data_path} gui_version: {gui_version} 5.4.3: {gui_version_5_4_3}".format(
+                        meta_data_path=meta_data_path,gui_version=gui_version,gui_version_5_4_3=gui_version_5_4_3))
+            meta_data_fd.close()  
+            if  gui_version_5_4_3:                
+                meta_data_fd = open(meta_data_path, 'r')
+                test_tag = 'NA'
+                for line in meta_data_fd:
+                    if "test_tag" in line:
+                        test_tag = line.replace("test_tag","")
+                        test_tag = test_tag.strip()
+                        print("meta_data_path {meta_data_path} test_tag {test_tag}".format(meta_data_path=meta_data_path,test_tag=test_tag))
+                meta_data_fd.close()                    
+        except:
+            print("exception reading test_tag from {_kpi_path}".format(_kpi_path=_kpi_path)) 
+
+        return use_meta_test_tag, test_tag
+
     #TODO pass in list to lf_report
     #  <table border="1" class="dataframe">
     def get_suite_html(self):
@@ -208,7 +241,11 @@ class csv_sqlite_dash():
 
         for kpi in self.kpi_list: #TODO note empty kpi.csv failed test 
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')  
-            df_kpi_tmp['kpi_path'] = str(kpi).replace('kpi.csv','')  # only store the path to the kpi.csv file
+            _kpi_path = str(kpi).replace('kpi.csv','')  # only store the path to the kpi.csv file
+            df_kpi_tmp['kpi_path'] = _kpi_path
+            use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
+            if use_meta_test_tag:
+                df_kpi_tmp['test_tag'] = test_tag
             df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
@@ -243,6 +280,7 @@ class csv_sqlite_dash():
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
         print("test_tag_list: {}".format(test_tag_list) )
+
         
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
