@@ -245,7 +245,7 @@ class csv_sqlite_dash():
             df_kpi_tmp['kpi_path'] = _kpi_path
             use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
             if use_meta_test_tag:
-                df_kpi_tmp['test_tag'] = test_tag
+                df_kpi_tmp['test-tag'] = test_tag
             df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
