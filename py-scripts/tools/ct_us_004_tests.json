@@ -176,7 +176,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_004_test_db"
                 ]
             }
         },
@@ -419,7 +419,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_004_test_db"
                 ]
             }
 
