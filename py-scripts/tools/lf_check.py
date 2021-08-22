@@ -255,19 +255,19 @@ class lf_check():
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
         return scripts_git_sha
 
-    def get_lanforge_node_version(self):
+    def get_lanforge_system_node_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         # ssh.connect(self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass, banner_timeout=600)
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -n')
-        lanforge_node_version = stdout.readlines()
+        lanforge_system_node_version = stdout.readlines()
         # print('\n'.join(output))
-        lanforge_node_version = [line.replace('\n', '') for line in lanforge_node_version]
+        lanforge_system_node_version = [line.replace('\n', '') for line in lanforge_system_node_version]
         ssh.close()
         time.sleep(1)
-        return lanforge_node_version
+        return lanforge_system_node_version
 
     def get_lanforge_kernel_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
@@ -1209,7 +1209,7 @@ Example :
 
 
     # Test-rig information information
-    lanforge_node_version = 'NO_LF_NODE_VER'
+    lanforge_system_node_version = 'NO_LF_NODE_VER'
     scripts_git_sha = 'NO_GIT_SHA'
     lanforge_kernel_version = 'NO_KERNEL_VER'
     lanforge_gui_version_full = 'NO_LF_GUI_VER'
@@ -1291,10 +1291,10 @@ Example :
         print("git_sha read exception ")
 
     try:
-        lanforge_node_version = check.get_lanforge_node_version()
-        print("lanforge_node_version {node_ver}".format(node_ver=lanforge_node_version))
+        lanforge_system_node_version = check.get_lanforge_system_node_version()
+        print("lanforge_system_node_version {system_node_ver}".format(system_node_ver=lanforge_system_node_version))
     except:
-        print("lanforge_node_version exception")
+        print("lanforge_system_node_version exception")
 
     try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
@@ -1312,9 +1312,9 @@ Example :
 
     #check.get_radio_status()
 
-    # LANforge and scripts config
+    # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
-    lf_test_setup['LANforge'] = lanforge_node_version
+    lf_test_setup['LANforge'] = lanforge_system_node_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
     lf_test_setup['GUI version'] = lanforge_gui_version_full
     lf_test_setup['scripts git sha'] = scripts_git_sha
