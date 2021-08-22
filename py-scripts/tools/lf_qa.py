@@ -108,21 +108,24 @@ class csv_sqlite_dash():
             test_id_list = list(kpi_df['test-id']) 
             test_id = list(set(test_id_list))
             test_id = test_id[-1] # done to get element of list
+        except:
+            print("exception reading test_id in csv _kpi_path {kpi_path}".format(kpi_path=_kpi_path))
+        try:
             test_tag_list = list(kpi_df['test-tag']) 
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1] # done to get element of list
         except:
-            print("exception reading csv _kpi_path {kpi_path}".format(kpi_path=_kpi_path))
+            print("exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(kpi_path=_kpi_path))
 
         #if test_tag still NA then try meta file
         try:
             if test_tag == "NA":
-                _meta_path = _kpi_path.replace('kpi.csv','meta.txt')
-                use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_meta_path)
+                _kpi_path = _kpi_path.replace('kpi.csv','')
+                use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
         except:
-            print("exception reading meta.txt _meta_path: {meta_path}".format(meta_path=_meta_path))
+            print("exception reading meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
         if use_meta_test_tag:
-            print("test_tag from meta.txt _meta_path: {meta_path}".format(meta_path=_meta_path))
+            print("test_tag from meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
         return test_id , test_tag
 
     # could enter on the command line, except there may be other exceptions
