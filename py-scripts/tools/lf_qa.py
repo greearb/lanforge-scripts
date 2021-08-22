@@ -101,6 +101,7 @@ class csv_sqlite_dash():
         return parent_path
 
     def get_test_id_test_tag(self,_kpi_path):
+        test_id = "NA"
         test_tag = "NA"
         use_meta_test_tag = False
         try:
