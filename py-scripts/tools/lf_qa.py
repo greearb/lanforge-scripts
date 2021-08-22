@@ -254,7 +254,8 @@ class csv_sqlite_dash():
         try:
             self.df.to_sql(self.table,self.conn,if_exists='append')
         except:
-            print("attempt to append to database with different column layout, casused exception, input new name --database <new name>")            
+            print("attempt to append to database with different column layout, caused an exception, input new name --database <new name>")            
+            print("Error attempt to append to database with different column layout, caused an exception, input new name --database <new name>", file=sys.stderr)            
             exit(1)
         self.conn.close()
 
