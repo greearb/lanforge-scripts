@@ -266,7 +266,7 @@ class lf_check():
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -n')
         self.lanforge_system_node_version = stdout.readlines()
-        lanforge_system_node_version = [line.replace('\n', '') for line in lanforge_system_node_version]
+        self.lanforge_system_node_version = [line.replace('\n', '') for line in self.lanforge_system_node_version]
         ssh.close()
         time.sleep(1)
         return self.lanforge_system_node_version
@@ -278,7 +278,7 @@ class lf_check():
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command('uname -r')
         self.lanforge_kernel_version = stdout.readlines()
-        lanforge_kernel_version = [line.replace('\n', '') for line in lanforge_kernel_version]
+        self.lanforge_kernel_version = [line.replace('\n', '') for line in self.lanforge_kernel_version]
         ssh.close()
         time.sleep(1)
         return self.lanforge_kernel_version
