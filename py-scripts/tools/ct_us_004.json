@@ -52,7 +52,7 @@
         "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
         "database_org": "Candela",
         "database_bucket": "lanforge_qa_testing",
-        "database_tag": "testbed CT-US-004",
+        "database_tag": "testbed CT-US-004"
     },
     "test_dashboard":{
         "dashboard_config": "True",
