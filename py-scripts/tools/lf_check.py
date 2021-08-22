@@ -1281,10 +1281,6 @@ Example :
         else:
             print('%s IP address %s accessible' % (key, value[1]))
 
-    if ping_result['LANforge Manager'][1] is None:
-        pass
-    else:
-        check.run_script_test()
 
     # get sha and lanforge information for results
     # Need to do this after reading the configuration
@@ -1304,13 +1300,15 @@ Example :
         lanforge_kernel_version = check.get_lanforge_kernel_version()
         print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
     except:
-        print("lanforge_kernel_version exception")
+        print("lanforge_kernel_version exception, tests aborted check lanforge ip")
+        exit(1)
 
     try:
         lanforge_gui_version_full = check.get_lanforge_gui_version()
         print("lanforge_gui_version_full {lanforge_gui_version_full}".format(lanforge_gui_version_full=lanforge_gui_version_full))
     except:
-        print("lanforge_gui_version exception")
+        print("lanforge_gui_version exception, tests aborted check lanforge ip")
+        exit(1)
 
     #check.get_radio_status()
 
@@ -1320,6 +1318,9 @@ Example :
     lf_test_setup['kernel version'] = lanforge_kernel_version
     lf_test_setup['GUI version'] = lanforge_gui_version_full
     lf_test_setup['scripts git sha'] = scripts_git_sha
+
+    # Successfully gathered LANforge information Run Tests
+    check.run_script_test()
 
     # generate output reports
     report.set_title("LF Check: lf_check.py")
