@@ -1066,10 +1066,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             test_tag = test_tag.replace("'","")
                             meta_data_fd.write('$ LANforge test_tag\n')
                             meta_data_fd.write("test_tag {test_tag}\n".format(test_tag=test_tag))
+                            # LANforge information is a list thus [0]
                             meta_data_fd.write('$ LANforge Information\n')
-                            meta_data_fd.write("lanforge_system_node {lanforge_system_node}\n".format(lanforge_system_node=self.lanforge_system_node_version))
-                            meta_data_fd.write("lanforge_kernel_version {lanforge_kernel_version}\n".format(lanforge_kernel_version=self.lanforge_kernel_version))
-                            meta_data_fd.write("lanforge_gui_version_full {lanforge_gui_version_full}\n".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+                            meta_data_fd.write("lanforge_system_node {lanforge_system_node}\n".format(lanforge_system_node=self.lanforge_system_node_version[0]))
+                            meta_data_fd.write("lanforge_kernel_version {lanforge_kernel_version}\n".format(lanforge_kernel_version=self.lanforge_kernel_version[0]))
+                            meta_data_fd.write("lanforge_gui_version_full {lanforge_gui_version_full}\n".format(lanforge_gui_version_full=self.lanforge_gui_version_full[0]))
                             meta_data_fd.close()
 
                     if self.test_result != "TIMEOUT":
