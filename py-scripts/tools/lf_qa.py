@@ -117,11 +117,12 @@ class csv_sqlite_dash():
         #if test_tag still NA then try meta file
         try:
             if test_tag == "NA":
-                use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
+                _meta_path = _kpi_path.replace('kpi.csv','meta.txt')
+                use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_meta_path)
         except:
-            print("exception reading meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
+            print("exception reading meta.txt _meta_path: {meta_path}".format(meta_path=_meta_path))
         if use_meta_test_tag:
-            print("test_tag from meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
+            print("test_tag from meta.txt _meta_path: {meta_path}".format(meta_path=_meta_path))
         return test_id , test_tag
 
     # could enter on the command line, except there may be other exceptions
