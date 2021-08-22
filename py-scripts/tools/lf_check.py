@@ -293,7 +293,7 @@ class lf_check():
         # print('\n'.join(output))
         self.lanforge_gui_version_full = [line.replace('\n', '') for line in self.lanforge_gui_version_full]
         print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
-        self.lanforge_gui_version = self.lanforge_gui_verion_full.split('Version:',maxsplit=1)[-1].split(maxsplit=1)[0]
+        self.lanforge_gui_version = self.lanforge_gui_version_full[0].split('Version:',maxsplit=1)[-1].split(maxsplit=1)[0]
         self.lanforge_gui_version = self.lanforge_gui_version.strip()
         print("lanforge_gui_version: {lanforge_gui_version}".format(lanforge_gui_version=self.lanforge_gui_version))
         ssh.close()
@@ -1212,7 +1212,7 @@ Example :
     lanforge_node_version = 'NO_LF_NODE_VER'
     scripts_git_sha = 'NO_GIT_SHA'
     lanforge_kernel_version = 'NO_KERNEL_VER'
-    lanforge_gui_version = 'NO_LF_GUI_VER'
+    lanforge_gui_version_full = 'NO_LF_GUI_VER'
 
     # select test suite 
     test_suite = args.suite
@@ -1307,8 +1307,8 @@ Example :
         print("lanforge_kernel_version exception")
 
     try:
-        lanforge_gui_version = check.get_lanforge_gui_version()
-        print("lanforge_gui_version {gui_ver}".format(gui_ver=lanforge_gui_version))
+        lanforge_gui_version_full = check.get_lanforge_gui_version()
+        print("lanforge_gui_version_full {lanforge_gui_version_full}".format(lanforge_gui_version_full=lanforge_gui_version_full))
     except:
         print("lanforge_gui_version exception")
 
@@ -1318,7 +1318,7 @@ Example :
     lf_test_setup = pd.DataFrame()
     lf_test_setup['LANforge'] = lanforge_node_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
-    lf_test_setup['GUI version'] = lanforge_gui_version
+    lf_test_setup['GUI version'] = lanforge_gui_version_full
     lf_test_setup['scripts git sha'] = scripts_git_sha
 
     # generate output reports
