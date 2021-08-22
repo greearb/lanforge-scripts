@@ -102,6 +102,7 @@ class csv_sqlite_dash():
 
     def get_test_id_test_tag(self,_kpi_path):
         test_tag = "NA"
+        use_meta_test_tag = False
         try:
             kpi_df = pd.read_csv(_kpi_path, sep='\t')
             test_id_list = list(kpi_df['test-id']) 
@@ -111,7 +112,16 @@ class csv_sqlite_dash():
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1] # done to get element of list
         except:
-            print("exception reading csv _kpi_path {}".format(_kpi_path))
+            print("exception reading csv _kpi_path {kpi_path}".format(kpi_path=_kpi_path))
+
+        #if test_tag still NA then try meta file
+        try:
+            if test_tag == "NA":
+                use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
+        except:
+            print("exception reading meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
+        if use_meta_test_tag:
+            print("test_tag from meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
         return test_id , test_tag
 
     # could enter on the command line, except there may be other exceptions
@@ -183,8 +193,8 @@ class csv_sqlite_dash():
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
                     <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
-                        <td>{}</td><td>{}</td><td><a href="{}" target="_blank">html</a> / <a href="{}" target="_blank">pdf</a></td></tr>
-                    """.format(test_id,test_tag,html_path,pdf_path)
+                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / <a href="{pdf_path}" target="_blank">pdf</a></td></tr>
+                    """.format(test_id=test_id,test_tag=test_tag,html_path=html_path,pdf_path=pdf_path)
         suite_html_results += """
                     </tbody>
                 </table>
