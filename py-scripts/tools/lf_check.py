@@ -30,6 +30,7 @@ Using .json:
 NOTES: getting radio information:
 1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp 
 2. curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user "USERNAME:PASSWORD"
+# https://itnext.io/curls-just-want-to-have-fun-9267432c4b55
 3. (using Python) response = self.json_get("/radiostatus/all"), Currently lf_check.py is independent of py-json libraries
 
 GENERIC NOTES: 
