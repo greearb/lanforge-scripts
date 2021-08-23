@@ -28,8 +28,9 @@ Using .json:
 2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
 
 NOTES: getting radio information:
-1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp | less 
-2. (using Python) response = self.json_get("/radiostatus/all")
+1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp 
+2. curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user "USERNAME:PASSWORD"
+3. (using Python) response = self.json_get("/radiostatus/all"), Currently lf_check.py is independent of py-json libraries
 
 GENERIC NOTES: 
 Starting LANforge:
