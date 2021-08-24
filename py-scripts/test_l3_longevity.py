@@ -334,6 +334,7 @@ class L3VariableTime(Realm):
                 count += 1
                 print("name: {name} Matched: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
             else:
+                name = endp["name"]
                 print("name: {name} Did not match: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
 
         if count > 1:
