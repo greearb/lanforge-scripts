@@ -332,10 +332,10 @@ class L3VariableTime(Realm):
                     total_ul_rx_pkts_ll += int(endp["rx pkts ll"])
 
                 count += 1
-                print("name: {name} Matched: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
+                print("Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
             else:
                 name = endp["name"]
-                print("name: {name} Did not match: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
+                print("No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
 
         if count > 1:
             lat = int(lat / count)
