@@ -332,9 +332,9 @@ class L3VariableTime(Realm):
                     total_ul_rx_pkts_ll += int(endp["rx pkts ll"])
 
                 count += 1
-                print("matched")
+                print("name: {name} Matched: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
             else:
-                print("Did not match")
+                print("name: {name} Did not match: eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
 
         if count > 1:
             lat = int(lat / count)
@@ -723,7 +723,9 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats_5g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
                                 "version: 3\n",
                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                "0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                #`"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+
                             else:
                                 # read from the AP
                                 ap_stats_5g = self.read_ap_stats_5g()
@@ -751,7 +753,7 @@ class L3VariableTime(Realm):
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    #print("#### From LANforge: p, response['insterface']:{}".format(p))
+                                    print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
                                     #print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
     
@@ -824,7 +826,8 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats_2g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
                                 "version: 3\n",
                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                "0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                #"0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()
