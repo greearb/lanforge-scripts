@@ -1,31 +1,23 @@
 #!/usr/bin/python3
 
 '''
-NAME:
-lf_check.py
+NAME: lf_check.py 
 
-PURPOSE:
-lf_check.py will tests based on .ini file or .json file. 
-The config file name can be passed in as a configuraiton parameter.
-The json file may be copied from lf_check.json and updated.  Currently all the parameters are needed to be set to a value
+PURPOSE: lf_check.py run tests based on test rig json input and test command line inputs 
 
-The --production flag determine the email list for results 
-
-EXAMPLE:
-lf_check.py  # this will use the defaults
-lf_check.py --json <unique json file> --test_suite 
-lf_check.py --json <unique json file> --production 
+EXAMPLE: 
+lf_check.py --json_rig <test rig json> --json_test <tests json> --test_suite <suite_name> --path <path to results and db, db table>
+lf_check.py --json_rig <test rig json> --json_test <tests json> --test_suite <suite_name> --path <path to results>  --production
 
 NOTES:
-Before using lf_check.py
-Using .ini:
-1. copy lf_check_config_template.ini to <file name>.ini ,  this will avoid .ini being overwritten on git pull
-2. update <file name>.ini to enable (TRUE) tests to be run in the test suite, the default suite is the TEST_DICTIONARY
-3. update other configuration to specific test bed for example radios 
+Create two json file one for the description of the test-rig and other for the description of the tests
 
-Using .json:
-1. copy lf_check.json to <file name>.json this will avoide .json being overwritten on git pull
-2. update lf_check.json to enable (TRUE) tests to be run in the test suite, the default TEST_DICTIONARY
+Starting LANforge:
+    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
+    On local system the -s LF_MGR will be local_host if not provided
+
+### Below are development Notes ###
+
 
 NOTES: getting radio information:
 1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp 
@@ -49,6 +41,10 @@ Starting LANforge:
 # may need to build in a testbed reboot at the beginning of a day's testing...
 # seeing some dhcp exhaustion and high latency values for testbeds that have been running 
 # for a while that appear to clear up once the entire testbed is power cycled
+
+# Capture the LANforge client output sdtout and stdwrr
+/home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR command > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
+
 
 # issue a shutdown command on the lanforge(s)
 #  ssh root@lanforge reboot (need to verify)  or do a shutdown 
@@ -1155,7 +1151,7 @@ def main():
         prog='lf_check.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            lf_check.py : running scripts listed in <config>.ini or <config>.json 
+            lf_check.py : running scripts  
             ''',
         description='''\
 lf_check.py
@@ -1163,21 +1159,18 @@ lf_check.py
 
 Summary :
 ---------
-running scripts listed in <config>.ini or <config>.json 
+running scripts 
 
 Example :  
-./lf_check.py --json lf_check_test.json --suite suite_two
+./lf_check.py --json_rig ct_us_001.json --json_test tests.json --suite suite_test
 ---------
             ''')
 
-    parser.add_argument('--ini', help="--ini <config.ini file>  default lf_check_config.ini",
-                        default="lf_check_config.ini")
     parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
     parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
     parser.add_argument('--json_rig', help="--json_rig <rig json config> ", default="")
     parser.add_argument('--json_test', help="--json_test <test json config> ", default="")
     parser.add_argument('--json_igg', help="--json_igg <influx grafana ghost json config> ", default="")
-    parser.add_argument('--use_json', help="--use_json FLAG DEPRECATED", action='store_true')
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
                         action='store_true')
@@ -1188,9 +1181,7 @@ Example :
 
     args = parser.parse_args()
 
-    if args.use_json:
-        print("NOTE: --use_json flag deprecated and unused")
-    # load test config file information either <config>.json or <config>.ini
+    # load test config file information either <config>.json
     json_rig = ""
     try:
         print("args.json_rig {rig}".format(rig=args.json_rig))
