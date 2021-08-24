@@ -92,7 +92,7 @@ class MultiPsk(Realm):
             self.station_profile.create(radio=input['radio'], sta_names_=station_list, debug=self.local_realm.debug)
             self.local_realm.wait_until_ports_appear(sta_list=station_list)
             self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(station_list, timeout_sec=60):
+            if self.local_realm.wait_for_ip(station_list, timeout_sec=120):
                 print("All stations got IPs")
             else:
                 print("Stations failed to get IPs")
