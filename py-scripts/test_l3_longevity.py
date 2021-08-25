@@ -296,7 +296,7 @@ class L3VariableTime(Realm):
         total_ul_rate_ll = 0
         total_ul_pkts_ll = 0
         count = 0
-        sta_name = ''
+        sta_name = 'no_station'
 
         #print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
