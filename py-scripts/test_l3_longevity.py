@@ -296,6 +296,7 @@ class L3VariableTime(Realm):
         total_ul_rate_ll = 0
         total_ul_pkts_ll = 0
         count = 0
+        sta_name = ''
 
         #print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
@@ -320,14 +321,9 @@ class L3VariableTime(Realm):
                 jit += int(endp["jitter"])
                 name = endp["name"]
                 print("endp name {name}".format(name=name))
-                if name.endswith("-A"):
-                    print("name has -A")
-                    total_dl_rate += int(endp["rx rate"])
-                    total_dl_rate_ll += int(endp["rx rate ll"])
-                    total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    total_ul_rate += int(endp["tx rate"])
-                    total_ul_rate_ll += int(endp["tx rate ll"])
-                    total_ul_pkts_ll += int(endp["tx pkts ll"])
+                sta_name = name.replace('-A','')
+                #only the -A endpoint will be found so need to look 
+
 
                 count += 1
                 print("Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name,eid=eid,eid_endp=eid_endp))
@@ -338,6 +334,22 @@ class L3VariableTime(Realm):
         if count > 1:
             lat = int(lat / count)
             jit = int(jit / count)
+
+        # need to loop though again to find the upload and download per station if the name matched
+        for endp in endps:
+            if sta_name in endp["name"]:
+                name = endp["name"]
+                if name.endswith("-A"):
+                    print("name has -A")
+                    total_dl_rate += int(endp["rx rate"])
+                    total_dl_rate_ll += int(endp["rx rate ll"])
+                    total_dl_pkts_ll += int(endp["rx pkts ll"])
+                # -B upload side                    
+                else:                    
+                    total_ul_rate += int(endp["rx rate"])
+                    total_ul_rate_ll += int(endp["rx rate ll"])
+                    total_ul_pkts_ll += int(endp["rx pkts ll"])
+
 
         return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll
 
