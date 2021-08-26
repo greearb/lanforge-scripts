@@ -323,11 +323,11 @@ class lf_check():
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
-http://{ip}/{report}
+http://{hostname}/{report}
 """.format(email_txt=self.email_txt,lf_mgr_ip=self.lf_mgr_ip,hostname=hostname, ip=ip,report=report_url)
         else:
             message_txt = """Results from {hostname}:
-http://{ip}/{report}""".format(hostname=hostname, ip=ip,report=report_url)
+http://{hostname}/{report}""".format(hostname=hostname, ip=ip,report=report_url)
 
         # Put in report information current two methods supported, 
         if(self.json_igg != "" ):
@@ -1115,11 +1115,17 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     # stdout_log_link is used for the email reporting to have the corrected path
                     stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
                     stderr_log_link = str(stderr_log_txt).replace('/home/lanforge', '')
+                    if command.find(' ') > 1:
+                        short_cmd = command[0:command.find(' ')]
+                    else:
+                        short_cmd = command
+
                     self.html_results += """
-                    <tr><td>""" + str(test) + """</td><td class='scriptdetails'>""" + str(command) + """</td>
-                    <td>""" + str(self.duration) + """</td>
-                    <td>""" + str(self.test_start_time) + """</td>
-                    <td>""" + str(self.test_end_time) + """</td>
+                    <tr><td>""" + str(test) + """</td>
+                    <td>""" + str(short_cmd) + """</td>
+                    <td class='TimeFont'>""" + str(self.duration) + """</td>
+                    <td class='DateFont'>""" + str(self.test_start_time) + """</td>
+                    <td class='DateFont'>""" + str(self.test_end_time) + """</td>
                     <td style=""" + str(background) + """>""" + str(self.test_result) + """ 
                     <td><a href=""" + str(stdout_log_link) + """ target=\"_blank\">STDOUT</a></td>"""
                     if self.test_result == "Failure":
@@ -1132,6 +1138,12 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         self.html_results += """<td></td>"""
                     
                     self.html_results += """</tr>"""
+                    if command != short_cmd:
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                            <span class='copybtn'>Copy</span>
+                             <tt onclick='copyTextToClipboard(this)'>{command}</tt>
+                             </td></tr>
+                             """.format(command=command)
 
                     row = [test, command, self.test_result, stdout_log_txt, stderr_log_txt]
                     self.csv_results_writer.writerow(row)
@@ -1338,6 +1350,7 @@ Example :
     report.set_custom_html(html_results)
     report.build_custom()
     report.build_footer()
+    report.copy_js()
     html_report = report.write_html_with_timestamp()
     print("html report: {}".format(html_report))
     try:
