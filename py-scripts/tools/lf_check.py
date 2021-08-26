@@ -317,8 +317,14 @@ class lf_check():
         # Mail
         # command to check if mail running : systemctl status postfix
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
-        hostname = socket.gethostname()
+        hostname = socket.getfqdn()
         ip = socket.gethostbyname(hostname)
+
+        # a hostname lacking dots by definition lacks a domain name
+        # this is not useful for hyperlinks outside the known domain, so an IP address should be preferred
+        if hostname.find('.') < 1:
+            hostname = ip
+
         message_txt =""
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
