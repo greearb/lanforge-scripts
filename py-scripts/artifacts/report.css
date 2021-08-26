@@ -36,12 +36,17 @@ table {
 table, td, th {
    border: 1px solid gray;
    padding 4px;
+   background: white;
 }
 table.noborder, table.noborder td, table.noborder th  {
    border: 0 none;
 }
+tr {
+   background: white;
+}
 td {
    background: white;
+   padding: 6px;
 }
 td.ar {
    text-align: right;
@@ -49,6 +54,9 @@ td.ar {
 th {
    color: rgb(42,91,41);
    text-align: center;
+}
+td a, td a:visited {
+   color: #005500;
 }
 #lf_title {
    text-align:          center;
@@ -192,7 +200,7 @@ li {
    background-image:url("banner.png");
    background-repeat:no-repeat;
    padding:    0;
-   margin:     1em;
+   margin:     0 1em;
    min-width:  1000px;
    min-height: 205px;
    width:      1000px;
@@ -270,7 +278,7 @@ div.Section img {
    top: 50%;
    transform: translateY(-50%);
 }
-div.FooterStyle {
+footer.FooterStyle, div.FooterStyle {
    width: 100%;
    vertical-align: middle;
    border: 0 none;
@@ -279,12 +287,12 @@ div.FooterStyle {
    font-size: 12px;
    margin-top: 2em;
 }
-div.FooterStyle img {
+footer.FooterStyle img, div.FooterStyle img {
    width: auto;
    height: auto;
    text-align: right;
 }
-div.FooterStyle span.Gradient {
+footer.FooterStyle span.Gradient, div.FooterStyle span.Gradient {
    background: white;
    color: #2A5B29;
    display: inline-block;  
@@ -307,7 +315,7 @@ div.FooterStyle span.Gradient {
    padding: 0;
    vertical-align: middle;
 }
-div.FooterStyle a.LogoImgLink {
+footer.FooterStyle a.LogoImgLink, div.FooterStyle a.LogoImgLink {
    display: inline-block;
    text-align: right;
    float: right;
@@ -317,10 +325,52 @@ a .LogoImgLink {
 a.LogoImgLink img {
 }
 
+.DateFont {
+   white-space: pre;
+   font-size: smaller;
+}
+.TimeFont {
+   white-space: pre;
+}
+
 table.dataframe {
    margin: 1em;
    padding: 0;
 }
 table.dataframe tr th {
    padding: 0.5em;
+}
+
+.scriptdetails tt {
+   font-size: 10px;
+   overflow: auto;
+   font-family: Consolas,monaco,"Lucida Sans Typewriter","Lucida Typewriter","Courier New",monospace;
+   color: #777;
+   padding: 2px;
+   line-spacing: 1.05;
+   display: block;
+   margin: 0;
+   padding: 0;
+   width: inherit;
+   height: inherit;
+   background: inherit;
+   white-space: break-spaces;
+}
+.scriptdetails:hover tt {
+   background: #dfd;
+   cursor: pointer;
+}
+td.scriptdetails {
+   padding: 2px !important;
+}
+td.scriptdetails span.copybtn {
+   display: none;
+}
+td.scriptdetails:hover span.copybtn {
+   display: inline-block;
+   padding: 5px;
+   font-size: 12px;
+   float: left;
+   color: #050;
+   background: white;
 }
