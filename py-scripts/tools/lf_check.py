@@ -257,6 +257,27 @@ class lf_check():
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
         return scripts_git_sha
 
+    '''
+    self.lf_mgr_ip = "192.168.0.102"
+        self.lf_mgr_port = "8080"
+        self.lf_mgr_user = "lanforge"
+        self.lf_mgr_pass = "lanforge"
+        '''
+    def get_lanforge_radio_information(self):
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr_ip,port=self.lf_mgr_port)
+        request = requests.get(request_command, auth=(self.lf_mgr_user,self.lf_mgr_pass))
+        print("radio request command: {request_command}".format(request_command=request_command))
+        print("radio request status_code {status}".format(status=request.status_code))
+        lanforge_radio_json = request.json()
+        print("radio request.json: {json}".format(json=lanforge_radio_json))
+        lanforge_radio_text = request.text
+        print("radio request.test: {text}".format(text=lanforge_radio_text))
+        return lanforge_radio_json, lanforge_radio_text
+        
+
     def get_lanforge_system_node_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
@@ -330,10 +351,10 @@ class lf_check():
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt,lf_mgr_ip=self.lf_mgr_ip,hostname=hostname, ip=ip,report=report_url)
+""".format(email_txt=self.email_txt,lf_mgr_ip=self.lf_mgr_ip,hostname=hostname,report=report_url)
         else:
             message_txt = """Results from {hostname}:
-http://{hostname}/{report}""".format(hostname=hostname, ip=ip,report=report_url)
+http://{hostname}/{report}""".format(hostname=hostname,report=report_url)
 
         # Put in report information current two methods supported, 
         if(self.json_igg != "" ):
@@ -1144,12 +1165,25 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         self.html_results += """<td></td>"""
                     
                     self.html_results += """</tr>"""
+                    #TODO - plase copy button at end and selectable , so individual sections may be copied
                     if command != short_cmd:
-                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                        '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                             <span class='copybtn'>Copy</span>
                              <tt onclick='copyTextToClipboard(this)'>{command}</tt>
                              </td></tr>
                              """.format(command=command)
+                        '''
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                            <tt <button onclick='copyTextToClipboard(this)>Copy</button>'>{command}</tt>
+                             </td></tr>
+                             """.format(command=command)
+
+                        '''
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                             <tt>{command}</tt>
+                             </td></tr>
+                             """.format(command=command)
+                        '''                            
 
                     row = [test, command, self.test_result, stdout_log_txt, stderr_log_txt]
                     self.csv_results_writer.writerow(row)
@@ -1327,6 +1361,21 @@ Example :
     except:
         print("lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
+
+    #try:
+    lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
+    #lanforge_radio_obj = json.loads(lanforge_radio_json)
+    lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
+    print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
+
+
+    for key in lanforge_radio_json:
+        if 'wiphy' in key: 
+            print("key {}".format(key))
+            print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+
+    #except:
+    #    print("get_lanforge_radio_json excption, no radio data")
 
     #check.get_radio_status()
 
