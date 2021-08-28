@@ -29,6 +29,9 @@ GENERIC NOTES:
 Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
     On local system the -s LF_MGR will be local_host if not provided
+    Saving stdout and stderr to find LANforge issues
+    ./lfclient.bash -cli-socket 3990 > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
+
 
     On LANforge ~lanforge/.config/autostart/LANforge-auto.desktop is used to restart lanforge on boot.
         http://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login
